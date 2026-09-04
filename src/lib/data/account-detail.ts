@@ -1,0 +1,352 @@
+import { TTL, cachedFetcher } from "@/lib/data/cache";
+import { sbRest } from "@/lib/data/supabase";
+
+/**
+ * Everything the single-account page needs (plan §4 detail view).
+ *
+ * The Geelark automation log comes from `geelark_tasks` in Supabase, not the
+ * live Geelark API: the Task Detail Poller already writes every task hourly
+ * WITH its resolved fail_code/fail_desc and action counts, so Supabase holds
+ * strictly more than a live call would return — and it keeps history after
+ * Geelark ages a task out.
+ */
+
+export interface AccountTask {
+  taskId: string;
+  at: string;
+  /** Human label: post / warmup / device-warmup, falling back to the type. */
+  kind: string;
+  status: number | null;
+  statusLabel: string;
+  failCode: string | null;
+  failDesc: string | null;
+  /** e.g. {likes: 3, follows: 1} from the warmup RPA. */
+  actions: Record<string, number> | null;
+  sourceWorkflow: string | null;
+}
+
+export interface AccountDetail {
+  profile: string;
+  username: string | null;
+  platform: "tiktok" | "instagram";
+  character: string | null;
+  allowedContentTypes: string[];
+  isActive: boolean;
+  paused: boolean;
+  health: string;
+  accountCreatedOn: string | null;
+  profileUrl: string | null;
+  /** From the platform itself — null when the lookup fails or is skipped. */
+  avatarUrl: string | null;
+  displayName: string | null;
+  followers: number | null;
+  /** Views, all-time, across both perf tables. */
+  avgViews7d: number | null;
+  highestViews: number | null;
+  totalViews: number | null;
+  postsCounted: number;
+  /** Already fired, newest first. */
+  tasks: AccountTask[];
+  /** Queued by the scheduler, soonest first — a plan, not a log. */
+  pendingTasks: AccountTask[];
+}
+
+/** Geelark task status codes as observed in geelark_tasks. */
+const STATUS_LABEL: Record<number, string> = {
+  1: "Waiting",
+  2: "Running",
+  3: "Success",
+  4: "Failed",
+  7: "Cancelled",
+};
+
+/** task_type when task_category is missing (older rows predate categorising). */
+const TYPE_LABEL: Record<number, string> = {
+  1: "Post",
+  3: "Post",
+  42: "RPA flow",
+  90: "Phone bootup",
+};
+
+/**
+ * Friendly names for task_category. The raw values don't distinguish an
+ * ACCOUNT warmup (type 42 — scrolling, liking and following inside the app)
+ * from a DEVICE boot (type 90 — starting the cloud phone so it stays alive).
+ * Both read as "warmup" in the log, which made a phone bootup today look like
+ * the account had been warmed today.
+ */
+const KIND_LABEL: Record<string, string> = {
+  warmup: "Account warmup",
+  "device-warmup": "Phone bootup",
+  post: "Post",
+};
+
+interface RawTask {
+  task_id: string;
+  schedule_at: string;
+  task_type: number | null;
+  task_category: string | null;
+  status: number | null;
+  fail_code: string | null;
+  fail_desc: string | null;
+  action_counts: Record<string, number> | null;
+  source_workflow: string | null;
+  source_carousel_id: string | null;
+}
+
+function toTask(t: RawTask): AccountTask {
+  return {
+    taskId: t.task_id,
+    at: t.schedule_at,
+    kind: taskKind(t),
+    status: t.status,
+    statusLabel: t.status === null ? "Pending" : (STATUS_LABEL[t.status] ?? `Status ${t.status}`),
+    failCode: t.fail_code,
+    failDesc: t.fail_desc,
+    actions: t.action_counts,
+    sourceWorkflow: t.source_workflow,
+  };
+}
+
+function taskKind(t: {
+  task_category: string | null;
+  task_type: number | null;
+  source_carousel_id: string | null;
+}): string {
+  if (t.task_category) return KIND_LABEL[t.task_category] ?? t.task_category;
+  // A carousel id is proof it was a content post regardless of type.
+  if (t.source_carousel_id) return "post";
+  return t.task_type !== null ? (TYPE_LABEL[t.task_type] ?? `type ${t.task_type}`) : "unknown";
+}
+
+interface ProfileCard {
+  avatarUrl: string | null;
+  displayName: string | null;
+  followers: number | null;
+}
+const EMPTY_CARD: ProfileCard = { avatarUrl: null, displayName: null, followers: null };
+
+/**
+ * How long a cached profile card is trusted. NOT indefinite: the avatar links
+ * are signed CDN URLs (fbcdn / tiktokcdn) that expire, and follower counts
+ * move. 7 days trades a stale-by-a-week follower count for ~7x fewer
+ * ScrapeCreators credits than the previous 24h in-memory cache.
+ */
+const CARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+interface CachedCard {
+  avatar_url: string | null;
+  display_name: string | null;
+  followers: number | null;
+  resolved_at: string;
+}
+
+/** One ScrapeCreators lookup. Throws on a bad response so callers can decide
+ *  whether to fall back — a failure must never be written to the cache. */
+async function fetchProfileCard(handle: string, platform: string): Promise<ProfileCard> {
+  const key = process.env.SCRAPECREATORS_API_KEY;
+  if (!key) throw new Error("SCRAPECREATORS_API_KEY is not configured");
+  const url =
+    platform === "instagram"
+      ? `https://api.scrapecreators.com/v1/instagram/profile?handle=${encodeURIComponent(handle)}`
+      : `https://api.scrapecreators.com/v1/tiktok/profile?handle=${encodeURIComponent(handle)}`;
+
+  const res = await fetch(url, {
+    headers: { "x-api-key": key },
+    signal: AbortSignal.timeout(8_000),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`scrapecreators ${res.status}`);
+  const body = (await res.json()) as Record<string, unknown>;
+
+  if (platform === "instagram") {
+    const u = ((body.data as Record<string, unknown>)?.user ?? {}) as Record<string, unknown>;
+    if (!u.profile_pic_url && !u.profile_pic_url_hd && !u.full_name) {
+      throw new Error("scrapecreators: no instagram user in response");
+    }
+    return {
+      avatarUrl: (u.profile_pic_url_hd ?? u.profile_pic_url ?? null) as string | null,
+      displayName: (u.full_name ?? null) as string | null,
+      followers:
+        ((u.edge_followed_by as Record<string, unknown>)?.count as number | undefined) ?? null,
+    };
+  }
+
+  const u = (body.user ?? {}) as Record<string, unknown>;
+  const st = (body.statsV2 ?? body.stats ?? {}) as Record<string, unknown>;
+  // A deactivated/renamed handle returns success with an empty user. That is a
+  // real answer about the account, so it is cached rather than retried forever.
+  if (!u.uniqueId && body.account_deactivated !== true) {
+    throw new Error("scrapecreators: no tiktok user in response");
+  }
+  const followers = st.followerCount;
+  return {
+    avatarUrl: (u.avatarLarger ?? u.avatarMedium ?? null) as string | null,
+    displayName: (u.nickname ?? null) as string | null,
+    followers: followers == null ? null : Number(followers),
+  };
+}
+
+/**
+ * Profile card, served from Supabase and refreshed on a TTL.
+ *
+ * Cached in the DB rather than in-process because unstable_cache is per server
+ * instance and resets on every deploy — the same account was costing a credit
+ * again and again. Only successful lookups are written; on failure we serve
+ * whatever row exists (even an expired one) in preference to showing nothing.
+ */
+async function getProfileCard(handle: string, platform: string): Promise<ProfileCard> {
+  if (!handle) return EMPTY_CARD;
+
+  let cached: CachedCard | null = null;
+  try {
+    const rows = await sbRest<CachedCard[]>(
+      `account_profile_cards?select=avatar_url,display_name,followers,resolved_at&username=eq.${encodeURIComponent(handle)}`,
+    );
+    cached = rows[0] ?? null;
+  } catch {
+    /* cache unreachable — fall through to a live lookup */
+  }
+
+  const fresh =
+    cached !== null && Date.now() - new Date(cached.resolved_at).getTime() < CARD_TTL_MS;
+  if (cached && fresh) {
+    return {
+      avatarUrl: cached.avatar_url,
+      displayName: cached.display_name,
+      followers: cached.followers,
+    };
+  }
+
+  let card: ProfileCard;
+  try {
+    card = await fetchProfileCard(handle, platform);
+  } catch {
+    // Stale beats empty: an expired avatar URL may still render, and the name
+    // and follower count are almost certainly still right.
+    return cached
+      ? {
+          avatarUrl: cached.avatar_url,
+          displayName: cached.display_name,
+          followers: cached.followers,
+        }
+      : EMPTY_CARD;
+  }
+
+  try {
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/account_profile_cards`, {
+      method: "POST",
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        username: handle,
+        platform,
+        avatar_url: card.avatarUrl,
+        display_name: card.displayName,
+        followers: card.followers,
+        resolved_at: new Date().toISOString(),
+      }),
+      cache: "no-store",
+    });
+  } catch {
+    /* the page still renders; we just pay a credit again next time */
+  }
+
+  return card;
+}
+
+async function fetchDetail(profile: string): Promise<AccountDetail | null> {
+  const enc = encodeURIComponent(profile);
+
+  const nowIso = new Date().toISOString();
+  const TASK_COLS =
+    "task_id,schedule_at,task_type,task_category,status,fail_code,fail_desc,action_counts,source_workflow,source_carousel_id";
+
+  const [rows, healthRows, tasks, pending] = await Promise.all([
+    sbRest<
+      {
+        geelark_profile: string;
+        username: string | null;
+        platform: string;
+        character: string | null;
+        allowed_content_types: string[] | null;
+        is_active: boolean;
+        posting_paused: boolean | null;
+        account_created_on: string | null;
+      }[]
+    >(
+      `accounts_with_content_types?select=geelark_profile,username,platform,character,allowed_content_types,is_active,posting_paused,account_created_on&geelark_profile=eq.${enc}`,
+    ),
+    sbRest<
+      {
+        health: string | null;
+        median_7d_r: number | null;
+      }[]
+    >(
+      `v_account_health_v3?select=health,median_7d_r&geelark_profile=eq.${enc}`,
+    ),
+    // Executed: already fired. A future row is a plan, not a log, so the two
+    // are fetched separately and shown under their own tab.
+    sbRest<RawTask[]>(
+      `geelark_tasks?select=${TASK_COLS}&serial_name=eq.${enc}&schedule_at=lte.${nowIso}&order=schedule_at.desc&limit=200`,
+    ),
+    sbRest<RawTask[]>(
+      `geelark_tasks?select=${TASK_COLS}&serial_name=eq.${enc}&schedule_at=gt.${nowIso}&order=schedule_at.asc&limit=200`,
+    ),
+  ]);
+
+  const a = rows[0];
+  if (!a) return null;
+
+  const platform: "tiktok" | "instagram" = a.platform === "instagram" ? "instagram" : "tiktok";
+
+  // Views live in two tables PostgREST cannot UNION, so pull the account's rows
+  // from each and aggregate here. One account's history is a few hundred rows.
+  const perfTable = platform === "instagram" ? "post_performance" : "tt_post_performance";
+  const views = a.username
+    ? await sbRest<{ views: number | null }[]>(
+        `${perfTable}?select=views&account=eq.${encodeURIComponent(a.username)}`,
+      ).catch(() => [])
+    : [];
+  const nums = views.map((v) => v.views ?? 0).filter((n) => Number.isFinite(n));
+
+  const card = a.username
+    ? await getProfileCard(a.username, platform)
+    : { avatarUrl: null, displayName: null, followers: null };
+
+  return {
+    profile: a.geelark_profile,
+    username: a.username,
+    platform,
+    character: a.character || null,
+    allowedContentTypes: a.allowed_content_types ?? [],
+    isActive: a.is_active,
+    paused: a.posting_paused === true,
+    health: healthRows[0]?.health ?? "no data",
+    accountCreatedOn: a.account_created_on,
+    profileUrl: a.username
+      ? platform === "instagram"
+        ? `https://www.instagram.com/${a.username}/`
+        : `https://www.tiktok.com/@${a.username}`
+      : null,
+    avatarUrl: card.avatarUrl,
+    displayName: card.displayName,
+    followers: card.followers,
+    avgViews7d: healthRows[0]?.median_7d_r ?? null,
+    highestViews: nums.length ? Math.max(...nums) : null,
+    totalViews: nums.length ? nums.reduce((s, n) => s + n, 0) : null,
+    postsCounted: nums.length,
+    tasks: tasks.map(toTask),
+    pendingTasks: pending.map(toTask),
+  };
+}
+
+export function getAccountDetail(profile: string) {
+  // v2 in the key: unstable_cache keys on the string, not the function body, so
+  // a logic change alone will keep serving the old shape until the TTL lapses.
+  return cachedFetcher(`account-detail-v8:${profile}`, TTL.supabase, () => fetchDetail(profile))();
+}

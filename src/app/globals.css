@@ -1,26 +1,134 @@
 @import "tailwindcss";
 
+/*
+ * PM Dashboard theme — THE single source of truth for all visual tokens.
+ * Design language: Transcope reference (2026-08-31) — Space Grotesk, warm
+ * blacks #11100F / #201F1E, 24px card radius, pill controls, barcode bars.
+ * The accent is deliberately ONE variable pair: swap --accent/--accent-deep
+ * (and --accent-soft) to rebrand. The Figma iteration loop depends on every
+ * color/radius living here and nowhere else — never hardcode hex in components.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  --bg: #11100f;
+  --card: #201f1e;
+  --card-raised: #2a2827;
+  --border: #2e2c2a;
+  --text-primary: #f5f4f1;
+  --text-muted: #8f8c87;
+
+  /* Accent — bright rich cyan (Garreth 2026-08-31). Swap these three to rebrand. */
+  --accent: #22d3ee;
+  --accent-deep: #0e9bb5; /* hero-gradient end stop */
+  --accent-soft: rgba(34, 211, 238, 0.12);
+
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  /* Severity step between yellow and red: collapsing / system error. */
+  --orange: #fb923c;
+  --danger: #f87171;
+  /* Deeper red for the one state worse than "collapsing" (shadowbanned). */
+  --danger-deep: #dc2626;
+  --info: #60a5fa;
+
+  --sh-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sh-hero: 0 8px 40px rgba(34, 211, 238, 0.22);
+}
+
+/* Light mode — toggled via data-theme on <html> (sidebar switch). Same token
+ * names, warm-light values; darker accent/status colors for contrast on white. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #eef0f2;
+  --card: #f6f8fa;
+  --card-raised: #eef1f4;
+  --border: #e2e6ea;
+  --text-primary: #1b1d21;
+  --text-muted: #515c6b;
+
+  --accent: #0891b2;
+  --accent-deep: #0e7490;
+  --accent-soft: rgba(8, 145, 178, 0.12);
+
+  --ok: #15803d;
+  --warn: #b45309;
+  --orange: #c2410c;
+  --danger: #dc2626;
+  --danger-deep: #991b1b;
+  --info: #2563eb;
+
+  /* No shadows in light mode (Garreth 2026-08-31) — borders carry the elevation. */
+  --sh-card: none;
+  --sh-hero: none;
+}
+
+/* Theme-conditional visibility (e.g. white vs black logo variants). */
+:root[data-theme="light"] .dark-only {
+  display: none;
+}
+:root:not([data-theme="light"]) .light-only {
+  display: none;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card-raised: var(--card-raised);
+  --color-border: var(--border);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-orange: var(--orange);
+  --color-danger: var(--danger);
+  --color-danger-deep: var(--danger-deep);
+  --color-info: var(--info);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-card: 24px;
+  --radius-nested: 16px;
+
+  --shadow-card: var(--sh-card);
+  --shadow-hero: var(--sh-hero);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+/* Space Grotesk stays on headings and big stat numerals (its character shows
+ * best there); Inter carries body/table text. Garreth 2026-08-31. */
+h1,
+h2,
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* All counts/stats align — tabular figures */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barcode-style bars (Transcope's fleet-distribution treatment) */
+.barcode {
+  mask-image: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px);
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-raised) transparent;
 }
