@@ -1,6 +1,12 @@
 import { ACCOUNTS_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest } from "@/lib/data/supabase";
 import { healthRank } from "@/lib/health";
+import {
+  type AccountOverride,
+  type EffectiveConfig,
+  fetchEffectiveConfig,
+  fetchOverrides,
+} from "@/lib/data/scheduler-overrides";
 
 /**
  * Accounts assembly (plan §4). One row per account (incl. banned/retired —
@@ -64,6 +70,11 @@ export interface AccountRow {
   /** Days since the most recent content post; null = never posted. */
   daysSincePost: number | null;
   lastPostAt: string | null;
+  /** Hand-set schedule for this account, or null if it has never had one. */
+  override: AccountOverride | null;
+  /** What the scheduler resolves today. Null when paused — a paused account is
+   *  filtered out of v_scheduler_account_config, so it has no caps at all. */
+  effective: EffectiveConfig | null;
 }
 
 interface RawAccount {
@@ -94,8 +105,19 @@ async function fetchAccounts(): Promise<AccountRow[]> {
   // Explicit column list on accounts — the table also holds credentials.
   // Include character-assigned accounts PLUS any inactive rows (blank-character
   // banned shells like Profile 66) so half-retired accounts can be cleaned up.
-  const [accounts, medians, errors, logins, failCodes, warmups, lastPosts, liveHealth, reviews] =
-    await Promise.all([
+  const [
+    accounts,
+    medians,
+    errors,
+    logins,
+    failCodes,
+    warmups,
+    lastPosts,
+    liveHealth,
+    reviews,
+    overrides,
+    effective,
+  ] = await Promise.all([
     sbRest<RawAccount[]>(
       "accounts?select=geelark_profile,username,character,platform,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
     ),
@@ -150,6 +172,12 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       "v_account_health_review_latest?select=geelark_profile,human_verdict,reviewed_by," +
         "reviewed_at,note,needs_rereview,effective_health",
     ).catch(() => []),
+    // Hand-set schedules, and what the scheduler currently resolves. Both are
+    // read here rather than by the table so the pill and the modal can never
+    // disagree with the row they sit on. Empty on failure: an unreadable
+    // override must not blank the accounts page.
+    fetchOverrides().catch((): Record<string, AccountOverride> => ({})),
+    fetchEffectiveConfig().catch((): Record<string, EffectiveConfig> => ({})),
   ]);
 
   const medianByKey = new Map(medians.map((m) => [`${m.account}|${m.platform}`, m]));
@@ -244,6 +272,8 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       lastWarmupAt: warmup?.last_warmup_at ?? null,
       daysSincePost: lastPost?.days_since_post ?? null,
       lastPostAt: lastPost?.last_post_at ?? null,
+      override: overrides[a.geelark_profile] ?? null,
+      effective: effective[a.geelark_profile] ?? null,
     };
   });
 

@@ -82,6 +82,8 @@ export interface AccountState {
   posting_paused: boolean | null;
   is_active: boolean;
   status_note: string | null;
+  /** "Character 3" — the outer bound on which content types may be selected. */
+  character: string | null;
   /** true once the Post-Ban workflow has stamped its cleanup note. */
   cleanedUp: boolean;
 }
@@ -89,7 +91,7 @@ export interface AccountState {
 /** Read one account's current state (for old_value + guardrails). */
 export async function getAccountState(profile: string): Promise<AccountState | null> {
   const res = await sbFetch(
-    `accounts?select=posting_paused,is_active,status_note&geelark_profile=eq.${encodeURIComponent(profile)}`,
+    `accounts?select=posting_paused,is_active,status_note,character&geelark_profile=eq.${encodeURIComponent(profile)}`,
     { method: "GET" },
   );
   if (!res.ok) throw new Error(`Supabase read failed (HTTP ${res.status})`);
@@ -97,6 +99,7 @@ export async function getAccountState(profile: string): Promise<AccountState | n
     posting_paused: boolean | null;
     is_active: boolean;
     status_note: string | null;
+    character: string | null;
   }[];
   const row = rows[0];
   if (!row) return null;
@@ -130,6 +133,106 @@ export async function setPostingPaused(
     }),
   });
   if (!res.ok) throw new Error(`Pause write failed (HTTP ${res.status}) — nothing was changed`);
+}
+
+/**
+ * §9.5 per-account scheduler override.
+ *
+ * Stored as up to three rows (bucket null / 'glp' / 'filler') that are always
+ * written and cleared together — a half-written override would give the
+ * scheduler a daily cap with no weekly cap, which reads as "unlimited week".
+ *
+ * Switching off sets active=false rather than deleting, so the numbers are
+ * still there when it is switched back on.
+ */
+export interface SchedulerOverrideInput {
+  maxPostsPerDay: number | null;
+  glpWeekCap: number | null;
+  fillerWeekCap: number | null;
+  onlyContentTypes: string[] | null;
+  bypassGuards: boolean;
+  note: string | null;
+}
+
+const OVERRIDE_PATH = (profile: string) =>
+  `scheduler_overrides?scope=eq.account&scope_key=eq.${encodeURIComponent(profile)}`;
+
+/** Current override rows for an account (for audit old_value). */
+export async function getSchedulerOverrideRows(profile: string): Promise<unknown[]> {
+  const res = await sbFetch(
+    `${OVERRIDE_PATH(profile)}&select=bucket,weekly_cap,max_posts_per_day,bypass_guards,only_content_types,active`,
+    { method: "GET" },
+  );
+  if (!res.ok) throw new Error(`Supabase read failed (HTTP ${res.status})`);
+  return (await res.json()) as unknown[];
+}
+
+export async function saveSchedulerOverride(
+  profile: string,
+  input: SchedulerOverrideInput,
+  userEmail: string,
+): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10);
+  const note = input.note?.trim()
+    ? `${today} ${userEmail}: ${input.note.trim()}`
+    : `${today} ${userEmail}: set via dashboard`;
+
+  // Replace rather than upsert: the unique index is on an expression
+  // (coalesce(bucket,'')), which PostgREST's on_conflict cannot target.
+  const del = await sbFetch(OVERRIDE_PATH(profile), {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
+  if (!del.ok) throw new Error(`Override clear failed (HTTP ${del.status}) — nothing was changed`);
+
+  // PostgREST rejects a bulk insert whose objects don't share the same keys, so
+  // every row carries the full column set and nulls what doesn't apply to it.
+  const row = (
+    bucket: string | null,
+    fields: { weekly_cap?: number | null; max_posts_per_day?: number | null },
+  ) => ({
+    scope: "account",
+    scope_key: profile,
+    bucket,
+    weekly_cap: fields.weekly_cap ?? null,
+    max_posts_per_day: fields.max_posts_per_day ?? null,
+    bypass_guards: bucket === null ? input.bypassGuards : false,
+    only_content_types: bucket === null ? input.onlyContentTypes : null,
+    active: true,
+    note,
+  });
+
+  const rows = [
+    row(null, { max_posts_per_day: input.maxPostsPerDay }),
+    row("glp", { weekly_cap: input.glpWeekCap }),
+    row("filler", { weekly_cap: input.fillerWeekCap }),
+  ];
+
+  const res = await sbFetch("scheduler_overrides", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(rows),
+  });
+  if (!res.ok) {
+    // The delete already landed, so the account is on scheduler defaults —
+    // safe, but say so rather than implying nothing happened.
+    throw new Error(
+      `Override save failed (HTTP ${res.status}) — ${profile} is now on scheduler defaults`,
+    );
+  }
+}
+
+/** Switch an override off without losing the values behind it. */
+export async function setSchedulerOverrideActive(
+  profile: string,
+  active: boolean,
+): Promise<void> {
+  const res = await sbFetch(OVERRIDE_PATH(profile), {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ active }),
+  });
+  if (!res.ok) throw new Error(`Override toggle failed (HTTP ${res.status}) — nothing was changed`);
 }
 
 /** The verdicts a human may record. `confirmed` = "the system is right". */

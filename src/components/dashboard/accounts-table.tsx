@@ -24,6 +24,9 @@ import { RetireModal } from "@/components/dashboard/retire-modal";
 import { HealthReviewModal } from "@/components/dashboard/health-review-modal";
 import { fleetTone, healthTone, needsAttention } from "@/lib/health";
 import type { AccountRow } from "@/lib/data/accounts";
+import type { ContentTypeOption } from "@/lib/data/scheduler-overrides";
+import { summarizeOverride } from "@/lib/data/scheduler-overrides";
+import { PostingSettingsModal } from "@/components/dashboard/posting-settings-modal";
 import { cn } from "@/lib/utils";
 
 type HealthFilter = "all" | "healthy" | "attention";
@@ -111,12 +114,15 @@ export function AccountsTable({
   rows: allRows,
   fetchedAt,
   mode = "page",
+  contentTypeOptions = {},
   className,
 }: {
   rows: AccountRow[];
   fetchedAt: string;
   /** "page" = full detail table with action buttons; "card" = compact homepage card. */
   mode?: "page" | "card";
+  /** Selectable content types per character. Page mode only. */
+  contentTypeOptions?: Record<string, ContentTypeOption[]>;
   className?: string;
 }) {
   const showActions = mode === "page";
@@ -132,8 +138,9 @@ export function AccountsTable({
   const [picked, setPicked] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const [pauseBusy, setPauseBusy] = useState<Set<string>>(new Set());
-  const [rowError, setRowError] = useState<{ profile: string; msg: string } | null>(null);
+  // Posting settings (pause + per-account schedule) live in one modal — the
+  // bare Pause button hid the fact that an account could also be throttled.
+  const [settingsFor, setSettingsFor] = useState<AccountRow | null>(null);
   const [reviewing, setReviewing] = useState<AccountRow | null>(null);
   const [retiring, setRetiring] = useState<AccountRow | null>(null);
   // Profiles whose Live retire is running in the background → "Retiring…" spinner.
@@ -247,29 +254,6 @@ export function AccountsTable({
     );
   };
 
-  async function togglePause(row: AccountRow) {
-    setRowError(null);
-    setPauseBusy((s) => new Set(s).add(row.profile));
-    try {
-      const res = await fetch("/api/accounts/pause", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profile: row.profile, paused: !row.paused }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Pause failed");
-      router.refresh();
-    } catch (err) {
-      setRowError({ profile: row.profile, msg: err instanceof Error ? err.message : "Pause failed" });
-    } finally {
-      setPauseBusy((s) => {
-        const n = new Set(s);
-        n.delete(row.profile);
-        return n;
-      });
-    }
-  }
-
   // Split out so the pills can sit beside the section title while the
   // Filters dropdown and Show-retired toggle stay pinned right.
   const healthPills = (
@@ -364,7 +348,7 @@ export function AccountsTable({
               <tbody>
                 {rows.map((row) => {
                   const url = profileUrl(row);
-                  const busy = pauseBusy.has(row.profile);
+                  const busy = settingsFor?.profile === row.profile;
                   const banSignals = hasBanSignals(row);
                   return (
                     <tr
@@ -544,22 +528,45 @@ export function AccountsTable({
                       </td>
                       {showActions && (
                         <>
-                          {/* Posting column: pause/unpause toggle for active accounts */}
+                          {/* Posting column: one pill showing the EFFECTIVE state
+                              (paused / hand-set / default). Opens the settings
+                              modal, which is now the only place posting is
+                              paused, throttled or restricted. */}
                           <td className="py-2.5">
                             {row.isActive && !retiringProfiles.has(row.profile) ? (
-                              <button
-                                onClick={() => togglePause(row)}
-                                disabled={busy}
-                                className={cn(
-                                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50",
-                                  row.paused
-                                    ? "bg-warn/15 text-warn hover:bg-warn/25"
-                                    : "border border-border bg-card-raised text-text-muted hover:text-text-primary",
-                                )}
-                              >
-                                {busy && <Loader2 className="size-3 animate-spin" />}
-                                {row.paused ? "Unpause" : "Pause"}
-                              </button>
+                              (() => {
+                                const s = summarizeOverride(row.override, row.paused, row.effective);
+                                return (
+                                  <button
+                                    onClick={() => setSettingsFor(row)}
+                                    disabled={busy}
+                                    title={
+                                      s.tone === "paused"
+                                        ? "Posting is paused — the scheduler skips this account"
+                                        : s.clamped
+                                          ? `Set to ${row.override?.maxPostsPerDay}/day, but throttled to ${row.effective?.maxPostsPerDay}/day — ${row.effective?.throttleReason ?? "guard active"}`
+                                          : s.tone === "custom"
+                                            ? "Hand-set schedule — click to change"
+                                            : row.effective?.throttleReason
+                                              ? `Scheduler defaults (${row.effective.throttleReason})`
+                                              : "Scheduler defaults — click to set a custom schedule"
+                                    }
+                                    className={cn(
+                                      "inline-flex max-w-[11rem] items-center gap-1 truncate rounded-full px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50",
+                                      s.tone === "paused" &&
+                                        "bg-warn/15 text-warn hover:bg-warn/25",
+                                      s.tone === "custom" &&
+                                        "bg-accent-soft text-accent hover:opacity-80",
+                                      s.tone === "default" &&
+                                        "border border-border bg-card-raised text-text-muted hover:text-text-primary",
+                                    )}
+                                  >
+                                    {busy && <Loader2 className="size-3 animate-spin" />}
+                                    <span className="truncate">{s.label}</span>
+                                    {s.clamped && <span title="throttled below the set value">*</span>}
+                                  </button>
+                                );
+                              })()
                             ) : (
                               <span className="text-xs text-text-muted">—</span>
                             )}
@@ -667,11 +674,6 @@ export function AccountsTable({
 
         <Card className="flex flex-col gap-6">
           <div className="overflow-x-auto">{table}</div>
-          {rowError && (
-            <p className="text-xs text-danger">
-              {rowError.profile}: {rowError.msg}
-            </p>
-          )}
         </Card>
       </div>
 
@@ -695,6 +697,20 @@ export function AccountsTable({
           account={retiring}
           onClose={() => setRetiring(null)}
           onLiveStarted={handleLiveStarted}
+        />
+      )}
+
+      {settingsFor && (
+        <PostingSettingsModal
+          account={settingsFor}
+          override={settingsFor.override}
+          effective={settingsFor.effective}
+          options={contentTypeOptions[settingsFor.character] ?? []}
+          onClose={() => setSettingsFor(null)}
+          onSaved={() => {
+            setSettingsFor(null);
+            router.refresh();
+          }}
         />
       )}
     </>
