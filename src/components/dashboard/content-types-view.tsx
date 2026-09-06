@@ -314,7 +314,7 @@ function TypeRow({
   const collapsing = isCollapsing(t);
 
   return (
-    <tr className="border-t border-border hover:bg-card-raised/50">
+    <tr className="border-t border-border">
       <td className="py-2.5">
         <span className="font-medium">{t.displayName}</span>
         <span className="block font-mono text-[11px] text-text-muted">{t.contentType}</span>

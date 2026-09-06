@@ -104,7 +104,7 @@ export function ProxiesTable({
                 </thead>
                 <tbody>
                   {rows.map((row) => (
-                    <tr key={row.profile} className="border-t border-border hover:bg-card-raised/50">
+                    <tr key={row.profile} className="border-t border-border">
                       <td className="py-2.5 font-medium whitespace-nowrap">{row.profile}</td>
                       <td className="py-2.5 text-text-muted whitespace-nowrap">
                         {row.character ?? "—"}
@@ -157,7 +157,7 @@ export function ProxiesTable({
                 </thead>
                 <tbody>
                   {rows.map((row) => (
-                    <tr key={row.profile} className="border-t border-border hover:bg-card-raised/50">
+                    <tr key={row.profile} className="border-t border-border">
                       <td className="py-2.5 font-medium whitespace-nowrap">{row.profile}</td>
                       <td className="py-2.5 text-text-muted whitespace-nowrap">
                         {row.character ?? "—"}

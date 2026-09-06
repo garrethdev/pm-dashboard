@@ -181,7 +181,7 @@ export function AccountTaskLog({
             </thead>
             <tbody>
               {rows.map((t) => (
-                <tr key={t.taskId} className="border-t border-border hover:bg-card-raised/50">
+                <tr key={t.taskId} className="border-t border-border">
                   <td className="py-2.5 whitespace-nowrap">
                     <span className="tnum">{formatEtDate(t.at)}</span>
                     <span className="ml-2 text-xs text-text-muted">{relDay(t.at)}</span>

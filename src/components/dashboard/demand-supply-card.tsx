@@ -184,7 +184,7 @@ export function DemandSupplyCard({ initial }: { initial: DemandSupplyData }) {
             {data.rows.map((b) => (
               <tr
                 key={`${b.character}-${b.bucket}`}
-                className="border-t border-border hover:bg-card-raised/50"
+                className="border-t border-border"
               >
                 <td className="py-2.5 font-medium whitespace-nowrap">
                   {b.character.replace("Character ", "Char ")}

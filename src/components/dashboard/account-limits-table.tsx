@@ -157,7 +157,7 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
 
 function LimitRow({ row: r }: { row: AccountConfigRow }) {
   return (
-    <tr className="border-t border-border hover:bg-card-raised/50">
+    <tr className="border-t border-border">
       <td className="py-2.5 font-medium whitespace-nowrap">
         <Link
           href={`/accounts/${r.geelarkProfile.replace(/\D/g, "")}` as never}
