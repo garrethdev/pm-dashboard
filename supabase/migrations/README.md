@@ -51,6 +51,8 @@ select count(*) from (
 drop table _cfg_snapshot;
 ```
 
-**`_cfg_before_20260904` is a leftover.** The 09-04 guard-day-cap migration
-created it as exactly that kind of snapshot and never dropped it. It is dead
-weight, safe to remove once you have confirmed nothing reads it.
+**Snapshot tables are cleaned up.** The 09-04 guard-day-cap migration creates
+`_cfg_before_20260904` and does not drop it, so the file reads as though the
+table is still there. It is not — it was removed after that change was
+verified, and no `_cfg_*` table exists in the database today. Anyone replaying
+these files should drop the snapshot once they have diffed it.
