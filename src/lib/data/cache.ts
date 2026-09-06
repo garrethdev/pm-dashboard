@@ -1,6 +1,42 @@
 import { unstable_cache } from "next/cache";
 
-export type Cached<T> = { data: T; fetchedAt: string };
+export type Cached<T> = {
+  data: T;
+  fetchedAt: string;
+  /**
+   * This is a remembered copy, served because the live read failed. Never set
+   * on a normal read. Anything rendering it MUST say so on screen — a silent
+   * stale calendar is the exact failure this whole mechanism exists to stop.
+   */
+  stale?: boolean;
+};
+
+/**
+ * The last successful payload per live key.
+ *
+ * Live keys never populate unstable_cache — the bypass path returns the fetch
+ * directly — so without this there is nothing to fall back to precisely when
+ * it matters. Per server instance and lost on restart, so it covers an outage
+ * that starts mid-session, not a cold one; that is worth having and not worth
+ * a round trip to store somewhere durable.
+ */
+const lastGood = new Map<string, Cached<unknown>>();
+
+/** Only live keys are written and they roll daily, so the ceiling is really a
+ *  guard against a key set nobody predicted rather than a tuning knob. */
+const LAST_GOOD_MAX = 24;
+
+function remember<T>(key: string, value: Cached<T>): void {
+  // Delete first so a refreshed key moves to the end and the oldest genuinely
+  // falls out of the front.
+  lastGood.delete(key);
+  lastGood.set(key, value as Cached<unknown>);
+  while (lastGood.size > LAST_GOOD_MAX) {
+    const oldest = lastGood.keys().next().value;
+    if (oldest === undefined) break;
+    lastGood.delete(oldest);
+  }
+}
 
 /**
  * Server-side cache for upstream reads (plan §1: Supabase/n8n 60s, external
@@ -40,14 +76,23 @@ export function cachedFetcher<T>(
 
   return async () => {
     try {
-      return await stamp();
-    } catch {
+      const fresh = await stamp();
+      remember(key, fresh);
+      return fresh;
+    } catch (err) {
       // Reading live means an upstream failure has nowhere to hide. Supabase's
       // REST layer times out independently of the database — seen 2026-09-06,
       // when PostgREST took >120s on a query Postgres answered instantly — and
-      // an error page is worse than a day that is a few minutes old and says
-      // so. Falls through to the real error when there is nothing remembered.
-      return await cached();
+      // a day that is twenty minutes old and says so beats an error page.
+      const remembered = lastGood.get(key) as Cached<T> | undefined;
+      if (remembered) return { ...remembered, stale: true };
+      // Nothing remembered. unstable_cache may still hold a copy from before
+      // this key went live; failing that, the real error is the honest answer.
+      try {
+        return { ...(await cached()), stale: true };
+      } catch {
+        throw err;
+      }
     }
   };
 }

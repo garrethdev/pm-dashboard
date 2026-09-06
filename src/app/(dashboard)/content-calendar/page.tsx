@@ -25,9 +25,9 @@ async function CalendarLive() {
   // Fetch inside the try, build JSX outside it: JSX returned from a try block
   // is not actually rendered there, so a render-time error would escape the
   // catch anyway and the guard would be a lie.
-  let data;
+  let data, fetchedAt, stale;
   try {
-    ({ data } = await getCalendarMonth(year, month1));
+    ({ data, fetchedAt, stale } = await getCalendarMonth(year, month1));
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     return (
@@ -38,7 +38,14 @@ async function CalendarLive() {
   }
 
   return (
-    <ContentCalendar initial={data} initialYear={year} initialMonth={month1} today={today} />
+    <ContentCalendar
+      initial={data}
+      initialYear={year}
+      initialMonth={month1}
+      today={today}
+      initialFetchedAt={fetchedAt}
+      initialStale={stale ?? false}
+    />
   );
 }
 

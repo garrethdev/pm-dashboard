@@ -25,8 +25,8 @@ export async function GET(request: Request) {
       if (!DAY_RE.test(day) || Number.isNaN(Date.parse(`${day}T00:00:00Z`))) {
         return NextResponse.json({ error: "invalid day" }, { status: 400 });
       }
-      const { data, fetchedAt } = await getCalendarDay(day);
-      return NextResponse.json({ data, fetchedAt });
+      const { data, fetchedAt, stale } = await getCalendarDay(day);
+      return NextResponse.json({ data, fetchedAt, stale: stale ?? false });
     }
 
     const m = MONTH_RE.exec(month ?? "");
@@ -39,8 +39,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "month out of range" }, { status: 400 });
     }
 
-    const { data, fetchedAt } = await getCalendarMonth(year, month1);
-    return NextResponse.json({ data, fetchedAt });
+    const { data, fetchedAt, stale } = await getCalendarMonth(year, month1);
+    return NextResponse.json({ data, fetchedAt, stale: stale ?? false });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "unknown error" },

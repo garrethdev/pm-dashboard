@@ -14,6 +14,7 @@ import type {
 } from "@/lib/data/calendar";
 import { CalendarDayPanel } from "@/components/dashboard/calendar-day-panel";
 import { DashCard } from "@/components/ui/card";
+import { StaleNotice } from "@/components/ui/stale-notice";
 import { cn } from "@/lib/utils";
 
 /**
@@ -54,18 +55,26 @@ export function ContentCalendar({
   initialYear,
   initialMonth,
   today,
+  initialFetchedAt,
+  initialStale = false,
 }: {
   initial: CalendarMonth;
   initialYear: number;
   initialMonth: number;
   /** ET today, resolved on the server so the highlight matches the scheduler. */
   today: string;
+  initialFetchedAt: string;
+  /** The month came from the last-known-good copy, not from Supabase. */
+  initialStale?: boolean;
 }) {
   const [month, setMonth] = useState({
     year: initialYear,
     month1: initialMonth,
   });
   const [data, setData] = useState(initial);
+  const [stale, setStale] = useState<{ at: string } | null>(
+    initialStale ? { at: initialFetchedAt } : null,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // The open day is held as a date, not a CalendarDay: stepping with the panel's
@@ -81,11 +90,14 @@ export function ContentCalendar({
       );
       const body = (await res.json()) as {
         data?: CalendarMonth;
+        fetchedAt?: string;
+        stale?: boolean;
         error?: string;
       };
       if (!res.ok || !body.data)
         throw new Error(body.error ?? "Could not load that month");
       setData(body.data);
+      setStale(body.stale && body.fetchedAt ? { at: body.fetchedAt } : null);
       setMonth({ year, month1 });
     } catch (err) {
       setError(
@@ -147,6 +159,8 @@ export function ContentCalendar({
             {error}
           </p>
         )}
+
+        {stale && <StaleNotice fetchedAt={stale.at} className="mb-4" />}
 
         <div className="overflow-x-auto">
           <div className="min-w-[46rem]">

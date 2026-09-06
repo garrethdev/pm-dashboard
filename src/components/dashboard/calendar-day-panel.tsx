@@ -5,6 +5,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react
 import type { CalendarDayAccount, CalendarDayDetail, CalendarPost } from "@/lib/data/calendar";
 import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
+import { StaleNotice } from "@/components/ui/stale-notice";
 import { healthTone } from "@/lib/health";
 import { cn } from "@/lib/utils";
 
@@ -96,23 +97,36 @@ export function CalendarDayPanel({
     date: string;
     detail: CalendarDayDetail | null;
     error: string | null;
-  }>({ date, detail: null, error: null });
+    /** Set when the day came from the last-known-good copy, not from Supabase. */
+    staleAt: string | null;
+  }>({ date, detail: null, error: null, staleAt: null });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch(`/api/calendar?day=${date}`);
-        const body = (await res.json()) as { data?: CalendarDayDetail; error?: string };
+        const body = (await res.json()) as {
+          data?: CalendarDayDetail;
+          fetchedAt?: string;
+          stale?: boolean;
+          error?: string;
+        };
         if (cancelled) return;
         if (!res.ok || !body.data) throw new Error(body.error ?? "Could not load that day");
-        setState({ date, detail: body.data, error: null });
+        setState({
+          date,
+          detail: body.data,
+          error: null,
+          staleAt: body.stale && body.fetchedAt ? body.fetchedAt : null,
+        });
       } catch (err) {
         if (cancelled) return;
         setState({
           date,
           detail: null,
           error: err instanceof Error ? err.message : "Could not load that day",
+          staleAt: null,
         });
       }
     })();
@@ -134,6 +148,7 @@ export function CalendarDayPanel({
   const fresh = state.date === date ? state : null;
   const detail = fresh?.detail ?? null;
   const error = fresh?.error ?? null;
+  const staleAt = fresh?.staleAt ?? null;
   const loading = !detail && !error;
 
   return (
@@ -184,6 +199,8 @@ export function CalendarDayPanel({
           {error && (
             <p className="rounded-nested bg-danger/10 px-3 py-2 text-xs text-danger">{error}</p>
           )}
+
+          {staleAt && <StaleNotice fetchedAt={staleAt} />}
 
           {loading && !error && (
             <div className="flex flex-col gap-2">
