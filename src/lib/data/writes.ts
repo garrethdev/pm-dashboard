@@ -379,3 +379,91 @@ export async function saveCadence(
     }
   }
 }
+
+/* ── Content type lifecycle ────────────────────────────────────────────────── */
+
+export type ContentTypeLifecycle = "live" | "paused" | "retired";
+
+export interface RegistryLaneRow {
+  content_type: string;
+  character: string;
+  quota_bucket: string | null;
+  cadence_per_week: number | null;
+  cadence_ceiling_per_week: number | null;
+  cadence_before_pause: number | null;
+  lifecycle: ContentTypeLifecycle;
+  display_name: string;
+}
+
+const LANE_COLUMNS =
+  "content_type,character,quota_bucket,cadence_per_week,cadence_ceiling_per_week," +
+  "cadence_before_pause,lifecycle,display_name";
+
+/** Every registry lane, whatever its lifecycle — the caller needs the paused
+ *  and retired ones to validate a resume and to write the audit old_value. */
+export async function getRegistryLanes(): Promise<RegistryLaneRow[]> {
+  const res = await sbFetch(`content_type_registry?select=${LANE_COLUMNS}`, { method: "GET" });
+  if (!res.ok) throw new Error("Supabase read failed — nothing was changed");
+  return (await res.json()) as RegistryLaneRow[];
+}
+
+export interface LifecycleWrite {
+  contentType: string;
+  lifecycle: ContentTypeLifecycle;
+  /** The target lane's allocation after the change (0 when leaving rotation). */
+  cadencePerWeek: number;
+  /** Remembered so a later resume can offer back what the lane used to have. */
+  cadenceBeforePause: number | null;
+  note: string | null;
+  /** The other lanes of the same character, with their new allocations. */
+  reallocation: { contentType: string; cadencePerWeek: number }[];
+}
+
+/**
+ * Flip one content type's lifecycle and rebalance its character's mix.
+ *
+ * The target is written LAST. Every automation gates on `active`, which the
+ * lifecycle trigger derives, so writing the target first would leave a window —
+ * seconds, but the Smart Scheduler runs on a cron and the poster runs every few
+ * minutes — where the lane is off and its slots have not yet been handed to
+ * anyone. Rebalancing first means the worst case is a brief over-allocation,
+ * which the daily cap absorbs, rather than an under-post.
+ */
+export async function setContentTypeLifecycle(write: LifecycleWrite): Promise<void> {
+  for (const lane of write.reallocation) {
+    const res = await sbFetch(
+      `content_type_registry?content_type=eq.${encodeURIComponent(lane.contentType)}`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ cadence_per_week: lane.cadencePerWeek }),
+      },
+    );
+    if (!res.ok) {
+      throw new Error(
+        `Rebalance failed for ${lane.contentType} (HTTP ${res.status}) — ` +
+          `${write.contentType} was left as it was`,
+      );
+    }
+  }
+
+  const res = await sbFetch(
+    `content_type_registry?content_type=eq.${encodeURIComponent(write.contentType)}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        lifecycle: write.lifecycle,
+        cadence_per_week: write.cadencePerWeek,
+        cadence_before_pause: write.cadenceBeforePause,
+        lifecycle_note: write.note,
+      }),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(
+      `${write.contentType} could not be set to ${write.lifecycle} (HTTP ${res.status}) — ` +
+        `the other lanes were already rebalanced`,
+    );
+  }
+}

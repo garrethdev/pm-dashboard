@@ -33,6 +33,11 @@ applied 2026-09-06) are deliberately not here.
 | 09-06 | `calendar_month_delivery_truth` | same treatment for the month, so grid and day panel agree |
 | 09-06 | `scheduler_buckets_weekly_quota` | a real fleet home for the filler weekly cap |
 | 09-06 | `scheduler_config_fleet_weekly_quota` | account-config view reads `weekly_quota` for both buckets |
+| 09-06 | `content_type_lifecycle` | live / paused / retired on the registry, with `active` kept in step by a trigger |
+| 09-06 | `content_type_thumbnails` | one stored preview frame per content type |
+| 09-06 | `content_type_stats` | per-lane performance driven off the registry, so paused lanes keep their numbers |
+| 09-06 | `scheduler_pool_honours_lifecycle` | the pool view stops counting a paused lane as available supply |
+| 09-06 | `content_type_stats_scheduled_ahead_date_fix` | `scheduled_ahead` compared a UTC-midnight timestamp in ET and lost a day |
 
 ## Two things worth knowing
 
@@ -50,6 +55,13 @@ select count(*) from (
 ) d;   -- 0 means the rewrite changed no behaviour
 drop table _cfg_snapshot;
 ```
+
+**`active` is the one gate.** The Smart Scheduler, `unified_posts_due` (the
+poster), `inventory_check_detail`, `inventory_type_breakdown` and
+`v_scheduler_production_order` all read `content_type_registry.active`. The
+lifecycle column added on 09-06 does not become a second gate that each of them
+would have to learn — a trigger derives `active` from it, in both directions, so
+flipping either one by hand still lands in a coherent state.
 
 **Snapshot tables are cleaned up.** The 09-04 guard-day-cap migration creates
 `_cfg_before_20260904` and does not drop it, so the file reads as though the
