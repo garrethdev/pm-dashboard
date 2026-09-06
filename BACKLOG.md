@@ -90,8 +90,7 @@ the assistant's project memory.
   a post, so there is no frame to capture. They render a placeholder. Nothing
   to do unless one is ever revived.
 
-- **Today's calendar has no outage fallback.** Live days deliberately bypass
-  the cache, so when Supabase is congested the calendar errors instead of
-  showing a stale-but-labelled copy. A last-known-good snapshot shown with its
-  real timestamp would close that gap. Deferred as a design decision rather
-  than a bug fix.
+- ~~Today's calendar has no outage fallback.~~ **Done 2026-09-06** — the last
+  successful payload per live key is kept and served when a live read fails,
+  with its real timestamp and a notice saying what is missing. Still per server
+  instance and lost on restart, so a cold-start outage is not covered.
