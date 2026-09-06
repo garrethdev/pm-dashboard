@@ -1,5 +1,4 @@
 import { DashCard } from "@/components/ui/card";
-import { TopPostsCard } from "@/components/dashboard/top-posts-card";
 import { AnalyticsView } from "@/components/dashboard/analytics-charts";
 import { getAnalytics } from "@/lib/data/analytics";
 
@@ -36,7 +35,6 @@ export default function AnalyticsPage() {
   return (
     <div className="flex flex-col gap-3">
       <AnalyticsLive />
-      <TopPostsCard />
     </div>
   );
 }

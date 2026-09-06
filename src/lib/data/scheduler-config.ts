@@ -123,3 +123,76 @@ export const getSchedulerConfig = cachedFetcher(
   TTL.supabase,
   fetchSchedulerConfig,
 );
+
+/**
+ * Fleet defaults — the scheduler_buckets row pair, which is where an account's
+ * limits start before overrides, the age ramp and the health throttle touch
+ * them. These apply to EVERY account, unlike the per-account overrides.
+ *
+ * v_scheduler_account_config reads them with max() across both bucket rows, so
+ * if the glp and filler rows ever disagree the higher value silently wins.
+ * `divergent` surfaces that rather than letting the editor show one number and
+ * the scheduler use another.
+ */
+export interface FleetDefaults {
+  maxPostsPerDay: number;
+  minGapMinutes: number;
+  /** "11:00" — ET wall clock, stored as a bare time. */
+  windowStart: string;
+  windowEnd: string;
+  /** GLP posts per week per account. */
+  glpWeek: number;
+  /** Filler posts per week per account. */
+  fillerWeek: number;
+  /** Filler posts per day per account (scheduler_buckets filler quota_value). */
+  fillerPerDay: number;
+  divergent: boolean;
+}
+
+interface RawBucket {
+  bucket: string;
+  quota_value: number | null;
+  weekly_quota: number | null;
+  time_window_start: string | null;
+  time_window_end: string | null;
+  min_gap_minutes: number | null;
+  max_posts_per_day_per_profile: number | null;
+}
+
+/** "11:00:00" → "11:00". The column is a bare time; seconds are always zero. */
+export function hhmm(t: string | null | undefined): string {
+  return (t ?? "").slice(0, 5);
+}
+
+async function fetchFleetDefaults(): Promise<FleetDefaults> {
+  const rows = await sbRest<RawBucket[]>(
+    "scheduler_buckets?select=bucket,quota_value,weekly_quota,time_window_start,time_window_end," +
+      "min_gap_minutes,max_posts_per_day_per_profile",
+  );
+  const glp = rows.find((r) => r.bucket === "glp");
+  const filler = rows.find((r) => r.bucket === "filler");
+
+  const shared = <K extends keyof RawBucket>(k: K) =>
+    rows.map((r) => r[k]).filter((v) => v !== null && v !== undefined);
+  const divergent = (["min_gap_minutes", "max_posts_per_day_per_profile", "time_window_start", "time_window_end"] as const).some(
+    (k) => new Set(shared(k)).size > 1,
+  );
+
+  return {
+    // The view takes max(); mirror it so the editor shows what is in force.
+    maxPostsPerDay: Math.max(...rows.map((r) => r.max_posts_per_day_per_profile ?? 3)),
+    minGapMinutes: Math.max(...rows.map((r) => r.min_gap_minutes ?? 120)),
+    windowStart: hhmm(rows.map((r) => r.time_window_start).sort().at(-1) ?? "11:00:00"),
+    windowEnd: hhmm(rows.map((r) => r.time_window_end).sort().at(-1) ?? "22:15:00"),
+    glpWeek: glp?.weekly_quota ?? 10,
+    fillerWeek: filler?.weekly_quota ?? 10,
+    fillerPerDay: filler?.quota_value ?? 2,
+    divergent,
+  };
+}
+
+export const getFleetDefaults = cachedFetcher(
+  "scheduler-buckets",
+  TTL.supabase,
+  fetchFleetDefaults,
+);

@@ -34,7 +34,9 @@ export type TopRange = "week" | "month" | "all";
 
 const RANGE_DAYS: Record<TopRange, number | null> = { week: 7, month: 30, all: null };
 
-async function topRows(range: TopRange): Promise<RawPost[]> {
+export type TopPlatform = "all" | "tiktok" | "instagram";
+
+async function topRows(range: TopRange, platform: TopPlatform): Promise<RawPost[]> {
   // PostgREST can't UNION, so pull each table's top rows and merge in JS.
   const cols = "account,post_id,post_url,views,total_engagement,posted_at,caption_snippet";
 
@@ -45,13 +47,22 @@ async function topRows(range: TopRange): Promise<RawPost[]> {
     ? `&posted_at=gte.${new Date(Date.now() - days * 86_400_000).toISOString()}`
     : "";
 
+  // Skip the table for a platform that was filtered out rather than fetching
+  // and discarding it — each side is a separate round trip.
+  const wantTt = platform !== "instagram";
+  const wantIg = platform !== "tiktok";
+
   const [tt, ig] = await Promise.all([
-    sbRest<Omit<RawPost, "platform">[]>(
-      `tt_post_performance?select=${cols}${filter}&order=views.desc.nullslast&limit=5`,
-    ),
-    sbRest<Omit<RawPost, "platform">[]>(
-      `post_performance?select=${cols}${filter}&order=views.desc.nullslast&limit=5`,
-    ),
+    wantTt
+      ? sbRest<Omit<RawPost, "platform">[]>(
+          `tt_post_performance?select=${cols}${filter}&order=views.desc.nullslast&limit=5`,
+        )
+      : Promise.resolve([]),
+    wantIg
+      ? sbRest<Omit<RawPost, "platform">[]>(
+          `post_performance?select=${cols}${filter}&order=views.desc.nullslast&limit=5`,
+        )
+      : Promise.resolve([]),
   ]);
 
   return [
@@ -157,8 +168,11 @@ async function resolveThumbnail(post: RawPost): Promise<string | null> {
   return url;
 }
 
-export async function getTopPosts(range: TopRange): Promise<TopPost[]> {
-  const rows = await topRows(range);
+export async function getTopPosts(
+  range: TopRange,
+  platform: TopPlatform = "all",
+): Promise<TopPost[]> {
+  const rows = await topRows(range, platform);
   const thumbs = await Promise.all(rows.map(resolveThumbnail));
   return rows.map((r, i) => ({
     platform: r.platform === "instagram" ? "instagram" : "tiktok",

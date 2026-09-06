@@ -2,13 +2,23 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Bare card surface. `hero` applies the one-per-page accent gradient treatment. */
+/**
+ * Bare card surface. `hero` applies the one-per-page accent gradient treatment.
+ *
+ * `sunken` drops the card a step toward the page ground. It is for a card whose
+ * own surface is chrome and whose CONTENT carries the weight — the calendar
+ * grid, where the day cells are the thing being read. cn() is plain clsx with
+ * no tailwind-merge, so this picks the background rather than layering a second
+ * bg-* class and leaving stylesheet order to decide.
+ */
 export function Card({
   hero = false,
+  sunken = false,
   className,
   children,
 }: {
   hero?: boolean;
+  sunken?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -18,7 +28,7 @@ export function Card({
         "rounded-card border p-5 shadow-card",
         hero
           ? "border-accent/40 bg-linear-135 from-accent to-accent-deep shadow-hero"
-          : "border-border bg-card",
+          : cn("border-border", sunken ? "bg-card-sunken" : "bg-card"),
         className,
       )}
     >
@@ -37,6 +47,7 @@ export function DashCard({
   toolbar,
   actions,
   viewAllHref,
+  sunken = false,
   className,
   children,
 }: {
@@ -47,13 +58,15 @@ export function DashCard({
   actions?: React.ReactNode;
   fetchedAt?: string;
   viewAllHref?: string;
+  /** Recede toward the page ground — see Card. */
+  sunken?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
   // gap-6: 24px between the card title row and its content (Garreth 2026-09-02)
   // — tables need room to breathe under their title/filter row.
   return (
-    <Card className={cn("flex flex-col gap-6", className)}>
+    <Card sunken={sunken} className={cn("flex flex-col gap-6", className)}>
       {/* One flat wrap row: title, its pills, then the right-hand controls.
           Flat rather than nested groups so a narrow card wraps to two lines
           (title / pills + controls) instead of three. */}

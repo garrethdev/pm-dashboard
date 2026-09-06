@@ -282,3 +282,100 @@ export async function recordHealthReview(args: {
     throw new Error(`Review not saved (HTTP ${res.status})`);
   }
 }
+
+/* ── Fleet cadence (Adjust Cadence) ─────────────────────────────────────────
+ * Unlike the per-account override, everything here applies to EVERY account:
+ * content_type_registry.cadence_per_week is the mix the scheduler aims for, and
+ * scheduler_buckets is where each account's limits start.
+ */
+
+export interface CadenceLaneWrite {
+  contentType: string;
+  character: string;
+  cadencePerWeek: number;
+}
+
+export interface FleetDefaultsWrite {
+  maxPostsPerDay: number;
+  minGapMinutes: number;
+  /** "HH:MM", ET wall clock. */
+  windowStart: string;
+  windowEnd: string;
+  glpPerWeek: number;
+  fillerPerWeek: number;
+}
+
+const registryPath = (contentType: string, character: string) =>
+  `content_type_registry?content_type=eq.${encodeURIComponent(contentType)}` +
+  `&character=eq.${encodeURIComponent(character)}`;
+
+/** Current registry cadence + bucket rows, for the audit old_value. */
+export async function getCadenceState(): Promise<unknown> {
+  const [reg, buckets] = await Promise.all([
+    sbFetch(
+      "content_type_registry?select=content_type,character,quota_bucket,cadence_per_week&active=is.true",
+      { method: "GET" },
+    ),
+    sbFetch(
+      "scheduler_buckets?select=bucket,quota_value,min_gap_minutes," +
+        "max_posts_per_day_per_profile,time_window_start,time_window_end",
+      { method: "GET" },
+    ),
+  ]);
+  if (!reg.ok || !buckets.ok) throw new Error("Supabase read failed — nothing was changed");
+  return { registry: await reg.json(), buckets: await buckets.json() };
+}
+
+/**
+ * Write the cadence mix and the fleet defaults.
+ *
+ * Lanes are PATCHed one at a time by (content_type, character): that pair is
+ * the registry's identity, and `divorce_story` (Char 2, retired) vs
+ * `divorce_stories` (Char 4, active) is the reason content_type alone is not
+ * enough. Both scheduler_buckets rows get the same fleet values — the account
+ * config view resolves them with max(), so leaving one behind would let the
+ * stale row win.
+ */
+export async function saveCadence(
+  lanes: CadenceLaneWrite[],
+  fleet: FleetDefaultsWrite,
+): Promise<void> {
+  for (const lane of lanes) {
+    const res = await sbFetch(registryPath(lane.contentType, lane.character), {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ cadence_per_week: lane.cadencePerWeek }),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `Cadence write failed for ${lane.contentType} (HTTP ${res.status}) — earlier lanes were saved`,
+      );
+    }
+  }
+
+  const shared = {
+    max_posts_per_day_per_profile: fleet.maxPostsPerDay,
+    min_gap_minutes: fleet.minGapMinutes,
+    time_window_start: `${fleet.windowStart}:00`,
+    time_window_end: `${fleet.windowEnd}:00`,
+    updated_at: new Date().toISOString(),
+  };
+
+  // weekly_quota is per bucket; everything else is the same on both rows
+  // because the account-config view resolves them with max().
+  for (const [bucket, weekly] of [
+    ["glp", fleet.glpPerWeek],
+    ["filler", fleet.fillerPerWeek],
+  ] as const) {
+    const res = await sbFetch(`scheduler_buckets?bucket=eq.${bucket}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ ...shared, weekly_quota: weekly }),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `Fleet defaults write failed for ${bucket} (HTTP ${res.status}) — the cadence mix was saved`,
+      );
+    }
+  }
+}

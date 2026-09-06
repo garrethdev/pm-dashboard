@@ -45,6 +45,7 @@ export const DATA_TAGS = [
   "n8n-executions",
   "proxycheap-proxies",
   "pulse-stats",
+  "scheduler-buckets",
   "scheduler-config",
   "textverified-rentals",
 ] as const;

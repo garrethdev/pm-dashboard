@@ -11,7 +11,7 @@ const SECTION_NAMES: Record<string, string> = {
   "": "Dashboard",
   accounts: "Accounts",
   inventory: "Inventory",
-  cadence: "Cadence",
+  "content-calendar": "Content Calendar",
   proxies: "Proxies & Phones",
   automation: "Automation",
   analytics: "Analytics",

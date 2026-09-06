@@ -13,6 +13,7 @@
 
   --bg: #11100f;
   --card: #201f1e;
+  --card-sunken: #191817;
   --card-raised: #2a2827;
   --border: #2e2c2a;
   --text-primary: #f5f4f1;
@@ -43,6 +44,7 @@
 
   --bg: #eef0f2;
   --card: #f6f8fa;
+  --card-sunken: #f1f3f6;
   --card-raised: #eef1f4;
   --border: #e2e6ea;
   --text-primary: #1b1d21;
@@ -75,6 +77,7 @@
 @theme inline {
   --color-bg: var(--bg);
   --color-card: var(--card);
+  --color-card-sunken: var(--card-sunken);
   --color-card-raised: var(--card-raised);
   --color-border: var(--border);
   --color-text-primary: var(--text-primary);

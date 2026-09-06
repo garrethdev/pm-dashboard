@@ -45,7 +45,7 @@ export async function CadenceCardLive({ className }: { className?: string }) {
       <DashCard
         title="Cadence"
         fetchedAt={formatEtShort(fetchedAt)}
-        viewAllHref="/cadence"
+        viewAllHref="/content-calendar"
         className={className}
       >
         <div className="grid gap-4 md:grid-cols-3">
@@ -61,7 +61,7 @@ export async function CadenceCardLive({ className }: { className?: string }) {
     );
   } catch (err) {
     return (
-      <DashCard title="Cadence" viewAllHref="/cadence" className={className}>
+      <DashCard title="Cadence" viewAllHref="/content-calendar" className={className}>
         <p className="text-sm text-text-muted">
           Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
         </p>

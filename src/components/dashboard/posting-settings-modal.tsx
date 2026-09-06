@@ -140,7 +140,9 @@ export function PostingSettingsModal({
   // already claims, so the pair can never sum past the ceiling.
   const glpMax = weekCeiling === null ? null : Math.max(0, weekCeiling - fillerNow);
   const fillerMax = weekCeiling === null ? null : Math.max(0, weekCeiling - glpNow);
-  const weekOver = weekCeiling !== null && glpNow + fillerNow > weekCeiling;
+  // Both steppers stop at the ceiling, so over-allocation is unreachable from
+  // the UI; under-allocation is the case worth flagging.
+  const weekUnspent = weekCeiling === null ? null : weekCeiling - (glpNow + fillerNow);
   // An empty pool only strands the account when EVERY selected type is empty.
   // With anything else still stocked the scheduler simply picks from what is
   // there, so a partially dry selection is information, not a problem.
@@ -224,14 +226,18 @@ export function PostingSettingsModal({
                 max={fillerMax}
               />
             </div>
-            <p className="text-xs text-text-muted">Leave a field blank to keep the default for it.</p>
-
-            {weekCeiling !== null && (
-              <p className={cn("text-xs", weekOver ? "text-warn" : "text-text-muted")}>
-                At {effDay}/day this account can post at most{" "}
-                <span className="tnum font-semibold">{weekCeiling}</span> times a week, so GLP +
-                filler are capped there ({glpNow} + {fillerNow} ={" "}
-                <span className="tnum">{glpNow + fillerNow}</span>).
+            {/* The ceiling needs no explaining — the + button stops at it. What
+                does need saying is the opposite case: caps that add up to LESS
+                than the account is allowed leave it idle, and nothing else on
+                this screen would tell you (Garreth 2026-09-06). */}
+            {weekUnspent !== null && weekUnspent > 0 && (
+              <p className="text-xs text-danger">
+                GLP + filler come to <span className="tnum font-semibold">{glpNow + fillerNow}</span>{" "}
+                a week, but at {effDay}/day this account is allowed{" "}
+                <span className="tnum font-semibold">{weekCeiling}</span> — it will sit idle for{" "}
+                <span className="tnum">{weekUnspent}</span>{" "}
+                {weekUnspent === 1 ? "slot" : "slots"} a week. Raise GLP or filler to use the full
+                allowance.
               </p>
             )}
 

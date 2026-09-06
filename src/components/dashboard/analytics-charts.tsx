@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import { Card, DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
+import { TopPostsCard } from "@/components/dashboard/top-posts-card";
 import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
 import { formatEtDate } from "@/lib/data/format";
 import { cn } from "@/lib/utils";
@@ -817,6 +818,10 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
           </div>
           <AccountPerformance rows={data.accounts} />
         </Card>
+
+        {/* Inside the view, not beside it on the page, so it can read the
+            platform pills above rather than needing a second set. */}
+        <TopPostsCard platform={platform} />
       </div>
     </div>
   );

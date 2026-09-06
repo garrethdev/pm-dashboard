@@ -68,7 +68,18 @@ function PostThumb({ post }: { post: TopPost }) {
   );
 }
 
-export function TopPostsCard({ className }: { className?: string }) {
+/**
+ * `platform` is the Analytics page's own selector, passed down rather than
+ * duplicated: two platform switchers on one screen that disagreed would be
+ * worse than none (Garreth 2026-09-06).
+ */
+export function TopPostsCard({
+  className,
+  platform = "all",
+}: {
+  className?: string;
+  platform?: "all" | "tiktok" | "instagram";
+}) {
   const [range, setRange] = useState<Range>("week");
   const [posts, setPosts] = useState<TopPost[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +88,7 @@ export function TopPostsCard({ className }: { className?: string }) {
     let cancelled = false;
     setPosts(null);
     setError(null);
-    fetch(`/api/top-posts?range=${range}`, { cache: "no-store" })
+    fetch(`/api/top-posts?range=${range}&platform=${platform}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
@@ -88,11 +99,17 @@ export function TopPostsCard({ className }: { className?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [range]);
+  }, [range, platform]);
 
   return (
     <DashCard
-      title="Top Posts"
+      title={
+        platform === "tiktok"
+          ? "Top Posts · TikTok"
+          : platform === "instagram"
+            ? "Top Posts · Instagram"
+            : "Top Posts"
+      }
       className={className}
       toolbar={
         <FilterPills
