@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, Loader2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AlertTriangle, Loader2, RotateCw, X } from "lucide-react";
+import { HoldButton } from "@/components/ui/hold-button";
 import type { AccountRow } from "@/lib/data/accounts";
-import { cn } from "@/lib/utils";
 
-type Step = "preflight" | "dry_running" | "dry_done" | "live_starting" | "error";
+type Step = "dry_running" | "dry_done" | "live_starting" | "error";
 
 interface DrySummary {
   phoneId?: string | null;
@@ -14,8 +14,21 @@ interface DrySummary {
   tv?: { found?: boolean; number?: string | null };
 }
 
-/** Two-step Post-Ban retire flow (plan §9.4): dry-run → name-confirm → Live.
- *  Live fires in the background; the bell notifies on completion. */
+/**
+ * Post-Ban retire (plan §9.4). Live fires in the background; the bell notifies
+ * on completion.
+ *
+ * One screen, not two. The dry run starts the moment the dialog opens rather
+ * than waiting for a button, because it is report-only — the webhook is called
+ * with "Dry run (report only)" and nothing is deleted — so making the operator
+ * click for it bought no safety and cost a click on every retire (Garreth
+ * 2026-09-06). What it finds still has to be on screen before the destructive
+ * button does anything, so Execute stays disabled until the report lands.
+ *
+ * The guard against a mis-click is the hold, not a second step: the confirm
+ * used to ask for the profile name typed out, which is a memory test rather
+ * than a deliberation, and people paste it.
+ */
 export function RetireModal({
   account,
   onClose,
@@ -25,41 +38,97 @@ export function RetireModal({
   onClose: () => void;
   onLiveStarted: (profile: string) => void;
 }) {
-  const [step, setStep] = useState<Step>("preflight");
-  const [message, setMessage] = useState<string>("");
+  const [step, setStep] = useState<Step>("dry_running");
+  const [message, setMessage] = useState("");
   const [dry, setDry] = useState<DrySummary | null>(null);
-  const [confirmText, setConfirmText] = useState("");
+  // A dialog closed mid-flight must not write state into an unmounted tree.
+  const alive = useRef(true);
+  // The in-flight dry run, so a StrictMode remount reuses it instead of
+  // firing a second webhook call. See the effect below.
+  const inflight = useRef<Promise<{ summary?: DrySummary | null }> | null>(null);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
-  async function run(mode: "dry" | "live") {
-    setStep(mode === "dry" ? "dry_running" : "live_starting");
-    setMessage("");
-    try {
-      const res = await fetch("/api/accounts/post-ban", {
+  const post = useCallback(
+    (mode: "dry" | "live") =>
+      fetch("/api/accounts/post-ban", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile: account.profile, mode }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setStep("error");
-        setMessage(data.error ?? "Request failed");
-        return;
-      }
-      if (mode === "dry") {
+      }).then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Request failed");
+        return data;
+      }),
+    [account.profile],
+  );
+
+  const runDry = useCallback(() => {
+    setStep("dry_running");
+    setMessage("");
+    // A fresh request: the remembered one is the failure being retried.
+    inflight.current = null;
+    post("dry")
+      .then((data) => {
+        if (!alive.current) return;
         setDry((data.summary ?? null) as DrySummary | null);
         setStep("dry_done");
-      } else {
-        // Live is async — hand off to the table (row shows a "Retiring…" spinner)
-        // and close; the bell notifies on completion.
+      })
+      .catch((err: unknown) => {
+        if (!alive.current) return;
+        setMessage(err instanceof Error ? err.message : "Network error");
+        setStep("error");
+      });
+  }, [post]);
+
+  /**
+   * Fire the dry run once, on open.
+   *
+   * The request is held in a ref rather than started fresh each time the
+   * effect runs, and the handlers are attached on every run. StrictMode mounts,
+   * unmounts and remounts in development, so an effect that starts its own
+   * request and cancels it on cleanup fires once and then throws the answer
+   * away on the simulated unmount — which left the dialog spinning forever
+   * (2026-09-06). Reusing the promise means exactly one webhook call, and
+   * whichever mount is alive when it settles renders the result.
+   *
+   * The effect body sets no state of its own; state lands in the continuations.
+   */
+  useEffect(() => {
+    inflight.current ??= post("dry");
+    inflight.current
+      .then((data) => {
+        if (!alive.current) return;
+        setDry((data.summary ?? null) as DrySummary | null);
+        setStep("dry_done");
+      })
+      .catch((err: unknown) => {
+        if (!alive.current) return;
+        setMessage(err instanceof Error ? err.message : "Network error");
+        setStep("error");
+      });
+  }, [post]);
+
+  function runLive() {
+    setStep("live_starting");
+    setMessage("");
+    post("live")
+      .then(() => {
+        // Live is async — hand off to the table (row shows a "Retiring…"
+        // spinner) and close; the bell notifies on completion.
         onLiveStarted(account.profile);
-      }
-    } catch (err) {
-      setStep("error");
-      setMessage(err instanceof Error ? err.message : "Network error");
-    }
+      })
+      .catch((err: unknown) => {
+        if (!alive.current) return;
+        setMessage(err instanceof Error ? err.message : "Network error");
+        setStep("error");
+      });
   }
 
-  const confirmed = confirmText.trim() === account.profile;
   const busy = step === "dry_running" || step === "live_starting";
 
   return (
@@ -99,19 +168,33 @@ export function RetireModal({
           </div>
         </div>
 
-        {/* Dry-run findings */}
-        {step === "dry_done" && dry && (
-          <div className="mb-4 rounded-nested border border-border p-3 text-sm">
+        {/* What the cleanup will touch. Reserved from the start so the dialog
+            does not jump height when the report arrives. */}
+        <div className="mb-4 rounded-nested border border-border p-3 text-sm">
+          {step === "dry_running" ? (
+            <p className="flex items-center gap-2 py-1 text-xs text-text-muted">
+              <Loader2 className="size-3.5 animate-spin" />
+              Checking what this account still holds…
+            </p>
+          ) : dry ? (
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
               <span className="text-text-muted">GeeLark phone</span>
-              <span>{dry.phoneId ? `found (${dry.geePhone ?? dry.phoneId})` : "not found (already gone)"}</span>
+              {/* Just the number. "found (+1...)" said the same thing twice —
+                  a number on the row already means one was found. */}
+              <span>{dry.phoneId ? (dry.geePhone ?? dry.phoneId) : "already gone"}</span>
               <span className="text-text-muted">Proxy</span>
-              <span>{dry.pc?.found ? (dry.pc.ip ?? "found") : "no match"}</span>
+              {/* Same rule: the IP is the answer. "found" only stands in when
+                  the proxy matched but carried no IP. */}
+              <span>{dry.pc?.found ? (dry.pc.ip ?? "matched, no IP") : "no match"}</span>
               <span className="text-text-muted">Phone number</span>
-              <span>{dry.tv?.found ? (dry.tv.number ?? "found") : "not found"}</span>
+              <span>{dry.tv?.found ? (dry.tv.number ?? "no number on file") : "not found"}</span>
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="py-1 text-xs text-text-muted">
+              Couldn&rsquo;t check what this account holds — retry before retiring.
+            </p>
+          )}
+        </div>
 
         {message && (
           <p className="mb-4 flex items-center gap-2 rounded-nested bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -119,54 +202,35 @@ export function RetireModal({
           </p>
         )}
 
-        {/* Controls */}
-        {step === "preflight" || step === "dry_running" || step === "error" ? (
-          <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="rounded-nested border border-border px-4 py-2 text-sm text-text-muted hover:text-text-primary"
+          >
+            Cancel
+          </button>
+          {step === "error" && !dry ? (
             <button
-              onClick={onClose}
-              className="rounded-nested border border-border px-4 py-2 text-sm text-text-muted hover:text-text-primary"
+              onClick={runDry}
+              className="flex items-center gap-2 rounded-nested border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-accent/50"
             >
-              Cancel
+              <RotateCw className="size-4" />
+              Try again
             </button>
-            <button
-              onClick={() => run("dry")}
-              disabled={busy}
-              className="flex items-center gap-2 rounded-nested bg-danger px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {step === "dry_running" && <Loader2 className="size-4 animate-spin" />}
-              Retire
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <label className="text-xs text-text-muted">
-              Type <span className="font-mono font-semibold text-text-primary">{account.profile}</span> to
-              confirm the live cleanup:
-            </label>
-            <input
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder={account.profile}
-              className="rounded-nested border border-border bg-card-raised px-3 py-2 text-sm outline-none focus:border-danger/60"
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={onClose}
-                className="rounded-nested border border-border px-4 py-2 text-sm text-text-muted hover:text-text-primary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => run("live")}
-                disabled={!confirmed || busy}
-                className="flex items-center gap-2 rounded-nested bg-danger px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {step === "live_starting" && <Loader2 className="size-4 animate-spin" />}
-                Execute retire (Live)
-              </button>
-            </div>
-          </div>
-        )}
+          ) : (
+            // Held, not clicked — and never before the report is on screen.
+            <HoldButton onConfirm={runLive} disabled={busy || !dry} className="px-4 py-2 font-semibold">
+              {step === "live_starting" ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Retiring…
+                </>
+              ) : (
+                "Execute retire (Live)"
+              )}
+            </HoldButton>
+          )}
+        </div>
       </div>
     </div>
   );
