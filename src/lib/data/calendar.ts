@@ -1,4 +1,4 @@
-import { type Cached, TTL, cachedFetcher } from "@/lib/data/cache";
+import { CALENDAR_TAG, type Cached, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
 
 /**
@@ -137,6 +137,18 @@ export function addDays(iso: string, delta: number): string {
 }
 
 /**
+ * The earliest day whose calendar can still change.
+ *
+ * Today is obvious — the poster runs 11:00–22:15 ET, so today's row grows all
+ * day. Yesterday counts too: [Reconcile] Daily Failed Posts rewrites the
+ * previous day's posting_status at 14:00 ET, so a copy taken this morning is
+ * wrong by this afternoon. Anything older is finished and safe to remember.
+ */
+export function unsettledFrom(): string {
+  return addDays(etToday(), -1);
+}
+
+/**
  * The 6x7 grid a month is drawn on: the 1st back to its Monday, forward to the
  * Sunday after the last. Returned as dates so the caller never does calendar
  * arithmetic in the component.
@@ -244,6 +256,12 @@ export async function getCalendarMonth(
         .sort((a, b) => a.contentType.localeCompare(b.contentType));
 
       return { start, end, days, legend };
+    },
+    {
+      tags: [CALENDAR_TAG],
+      // A grid that reaches into the unsettled days is read live. Past months
+      // are fully settled, so they stay cached and cost nothing.
+      bypass: end >= unsettledFrom(),
     },
   )();
 }
@@ -411,5 +429,6 @@ export async function getCalendarDay(date: string): Promise<Cached<CalendarDayDe
         },
       };
     },
+    { tags: [CALENDAR_TAG], bypass: date >= unsettledFrom() },
   )();
 }

@@ -11,12 +11,45 @@ export function cachedFetcher<T>(
   key: string,
   ttlSeconds: number,
   fn: () => Promise<T>,
+  opts: {
+    /** Extra tags alongside the key, so a family of date-keyed entries can be
+     *  expired together. Without one, a per-date key is unreachable from the
+     *  Refresh button, which only knows a fixed list. */
+    tags?: string[];
+    /**
+     * Read live instead of from the cache, falling back to the cached copy
+     * only if the upstream read fails.
+     *
+     * unstable_cache is stale-while-revalidate: once the TTL passes, the next
+     * request is handed the OLD value and only kicks off a refresh behind it.
+     * For data that is still being written to, that means whoever looks first
+     * after a change always sees the state before it — which on the calendar
+     * rendered today as empty for hours after the 06:30 scheduler run and read
+     * as "the scheduler never fired" (2026-09-06).
+     */
+    bypass?: boolean;
+  } = {},
 ): () => Promise<Cached<T>> {
-  return unstable_cache(
-    async () => ({ data: await fn(), fetchedAt: new Date().toISOString() }),
-    [key],
-    { revalidate: ttlSeconds, tags: [key] },
-  );
+  const stamp = async () => ({ data: await fn(), fetchedAt: new Date().toISOString() });
+  const cached = unstable_cache(stamp, [key], {
+    revalidate: ttlSeconds,
+    tags: [key, ...(opts.tags ?? [])],
+  });
+
+  if (!opts.bypass) return cached;
+
+  return async () => {
+    try {
+      return await stamp();
+    } catch {
+      // Reading live means an upstream failure has nowhere to hide. Supabase's
+      // REST layer times out independently of the database — seen 2026-09-06,
+      // when PostgREST took >120s on a query Postgres answered instantly — and
+      // an error page is worse than a day that is a few minutes old and says
+      // so. Falls through to the real error when there is nothing remembered.
+      return await cached();
+    }
+  };
 }
 
 export const TTL = {
@@ -35,8 +68,15 @@ export const TTL = {
  *  and not the others silently breaks revalidation after a write. */
 export const ACCOUNTS_TAG = "accounts-data-v14";
 
+/** Shared tags for the caches whose keys carry a date or a range, so Refresh
+ *  can expire the whole family without enumerating every key it might hold. */
+export const CALENDAR_TAG = "calendar";
+export const CONTENT_TYPES_TAG = "content-types";
+
 export const DATA_TAGS = [
   ACCOUNTS_TAG,
+  CALENDAR_TAG,
+  CONTENT_TYPES_TAG,
   "cadence-data",
   "geelark-phones",
   "geelark-wallet",
