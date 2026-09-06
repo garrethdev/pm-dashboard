@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, Sparkles } from "lucide-react";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { StatusPill } from "@/components/ui/pill";
+import { Tooltip } from "@/components/ui/tooltip";
 import { BarcodeBar } from "@/components/ui/barcode-bar";
 import { coverColor } from "@/components/dashboard/inventory-card-live";
 import {
@@ -104,24 +105,30 @@ export function ProductionOrderCard({
       }
     >
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        {/* Left-aligned throughout, and spacing lives on the table rather
+            than on individual cells. The three count columns are pinned narrow
+            so the leftover width falls to Content type and Days of cover, which
+            are the ones that can actually use it — otherwise auto-layout
+            spreads it evenly and every number drifts away from its header. */}
+        <table className="w-full text-left text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
           <thead>
             <tr className="text-left text-xs text-text-muted">
               <th className="pb-2 font-medium">Character</th>
               <th className="pb-2 font-medium">Content type</th>
               <th className="pb-2 font-medium">Status</th>
-              <th className="pb-2 pl-6 font-medium">Days of cover</th>
-              <th className="pb-2 text-right font-medium">Usable</th>
-              <th className="pb-2 text-right font-medium">Quarantined</th>
-              <th className="pb-2 text-right font-medium">Demand/wk</th>
-              <th className="pb-2 text-right font-medium">To Produce</th>
+              <th className="pb-2 font-medium">Days of cover</th>
+              <th className="w-px pb-2 font-medium">Usable</th>
+              <th className="w-px pb-2 font-medium">Quarantined</th>
+              <th className="w-px pb-2 font-medium">Demand/wk</th>
+              <th className="w-px pb-2 font-medium">To Produce</th>
+              <th className="w-px pb-2 font-medium">Generate</th>
             </tr>
           </thead>
           <tbody>
             {shown.map((o) => (
               <tr
                 key={`${o.character}-${o.contentType}`}
-                className="border-t border-border hover:bg-card-raised/50"
+                className="border-t border-border"
               >
                 <td className="py-2.5 font-medium whitespace-nowrap">
                   {o.character.replace("Character ", "Char ")}
@@ -134,7 +141,7 @@ export function ProductionOrderCard({
                     {o.status.toUpperCase()}
                   </StatusPill>
                 </td>
-                <td className="py-2.5 pl-6">
+                <td className="py-2.5">
                   <div className="flex items-center gap-2">
                     <BarcodeBar
                       pct={(Math.min(o.daysCover, 21) / 21) * 100}
@@ -148,23 +155,26 @@ export function ProductionOrderCard({
                     <span className="text-xs tnum">{`${Math.round(o.daysCover)} d`}</span>
                   </div>
                 </td>
-                <td className="py-2.5 text-right tnum">{o.usablePool}</td>
+                <td className="py-2.5 tnum">{o.usablePool}</td>
                 <td
                   className={cn(
-                    "py-2.5 text-right tnum",
+                    "py-2.5 tnum",
                     o.quarantined > 0 ? "text-warn" : "text-text-muted",
                   )}
                 >
                   {o.quarantined}
                 </td>
-                <td className="py-2.5 text-right tnum text-text-muted">{o.weeklyDemand}</td>
+                <td className="py-2.5 tnum text-text-muted">{o.weeklyDemand}</td>
                 {/* The make-up quantity to reach a 21-day buffer — i.e. the
                     deficit. Red only when there is actually something to make;
                     a red "0" would read as an alarm for a healthy lane. */}
-                <td className="py-2.5 text-right">
+                <td className="py-2.5">
                   <StatusPill tone={toProduce(o) > 0 ? "danger" : "gray"} dot={false}>
                     {toProduce(o)}
                   </StatusPill>
+                </td>
+                <td className="py-2.5">
+                  <GenerateButton contentType={o.contentType} />
                 </td>
               </tr>
             ))}
@@ -175,5 +185,29 @@ export function ProductionOrderCard({
         <p className="text-sm text-text-muted">Nothing queued for this character.</p>
       )}
     </DashCard>
+  );
+}
+
+/**
+ * The way into producing a lane, from the row that says how much of it is
+ * needed. The generator itself is v2 — the sidebar carries the same promise —
+ * so this is a placeholder, not a control: a span rather than a button, so it
+ * is not focusable and cannot be clicked into a page that does not exist.
+ *
+ * The tooltip sits to the left because this table scrolls horizontally, which
+ * makes it clip anything placed above a row.
+ */
+function GenerateButton({ contentType }: { contentType: string }) {
+  return (
+    <Tooltip label="Coming soon" side="left">
+      <span
+        className="inline-flex cursor-default items-center gap-1.5 rounded-full border border-border bg-card-raised px-2.5 py-1 text-xs font-medium whitespace-nowrap text-text-muted select-none"
+      >
+        <Sparkles className="size-3 shrink-0" />
+        Generate
+        {/* The tooltip is presentational; assistive tech gets the same fact. */}
+        <span className="sr-only">{contentType} — coming soon</span>
+      </span>
+    </Tooltip>
   );
 }
