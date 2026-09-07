@@ -21,7 +21,15 @@ async function sendMagicLink(formData: FormData) {
     options: { emailRedirectTo: `${origin}/auth/confirm` },
   });
 
-  redirect(error ? "/login?error=send-failed" : "/login?sent=1");
+  if (!error) redirect("/login?sent=1");
+
+  // Rate limiting is the failure people will actually meet, and it is the one
+  // where "try again" is the wrong instruction — retrying is what keeps it
+  // failing. Supabase answers 429 both for the per-address cooldown of about a
+  // minute and for the hourly cap on its built-in sender; the message says wait
+  // either way, because the fix is the same and the difference is not worth a
+  // second string. Seen live 2026-09-07: two links sent, then 429s.
+  redirect(error.status === 429 ? "/login?error=rate-limit" : "/login?error=send-failed");
 }
 
 /** The sign-in form. Static: nothing here depends on the request, so it is what
@@ -49,8 +57,20 @@ function SignInForm({ error }: { error?: string }) {
       {error === "not-allowed" && (
         <p className="text-sm text-danger">This email isn&apos;t on the allowlist.</p>
       )}
+      {error === "rate-limit" && (
+        <p className="text-sm text-warn">
+          Too many sign-in emails have gone out. Wait a few minutes, then try again — a
+          second attempt now will fail the same way.
+        </p>
+      )}
       {error === "send-failed" && (
         <p className="text-sm text-danger">Couldn&apos;t send the link. Try again.</p>
+      )}
+      {error === "bad-link" && (
+        <p className="text-sm text-danger">
+          That link didn&apos;t work. Magic links expire and can only be used once — send a
+          fresh one.
+        </p>
       )}
     </form>
   );

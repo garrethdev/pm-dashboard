@@ -16,5 +16,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(new URL("/login?error=send-failed", request.url));
+  // Not "send-failed": the email arrived, the link in it did not verify. Almost
+  // always an expired or already-used link, which asks for a different action
+  // from the reader than a send failure does.
+  return NextResponse.redirect(new URL("/login?error=bad-link", request.url));
 }
