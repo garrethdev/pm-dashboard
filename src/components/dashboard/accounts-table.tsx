@@ -11,7 +11,7 @@ import {
   ListChecks,
   Loader2,
   SlidersHorizontal,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { Card, DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterPills } from "@/components/ui/filter-pills";
@@ -44,13 +44,13 @@ const TONE_TEXT: Record<string, string> = {
   danger: "text-danger",
 };
 
-/** Freshness dot + label (handover: green ≤1d, yellow 2–7d, red ≥8d/never).
+/** Freshness label, tinted (handover: green ≤1d, yellow 2–7d, red ≥8d/never).
  *  Shared by the Warmup and Last Post columns so they read consistently. */
-function freshnessIndicator(d: number | null): { dotClass: string; label: string } {
-  if (d === null) return { dotClass: "bg-danger", label: "never" };
-  if (d <= 1) return { dotClass: "bg-ok", label: d === 0 ? "today" : "1d" };
-  if (d <= 7) return { dotClass: "bg-warn", label: `${d}d` };
-  return { dotClass: "bg-danger", label: `${d}d` };
+function freshnessIndicator(d: number | null): { textClass: string; label: string } {
+  if (d === null) return { textClass: "text-danger", label: "never" };
+  if (d <= 1) return { textClass: "text-ok", label: d === 0 ? "today" : "1d" };
+  if (d <= 7) return { textClass: "text-warn", label: `${d}d` };
+  return { textClass: "text-danger", label: `${d}d` };
 }
 
 /** Bare profile number ("Profile 29" → "29") for exact multi-select matching. */
@@ -523,11 +523,10 @@ export function AccountsTable({
                           const w = freshnessIndicator(row.daysSinceWarmup);
                           return (
                             <span
-                              className="inline-flex items-center gap-2"
+                              className={cn("tnum", w.textClass)}
                               title={row.lastWarmupAt ? `last warmup ${new Date(row.lastWarmupAt).toLocaleDateString("en-US")}` : "never warmed"}
                             >
-                              <span className={cn("size-2 shrink-0 rounded-full", w.dotClass)} />
-                              <span className="tnum">{w.label}</span>
+                              {w.label}
                             </span>
                           );
                         })()}
@@ -549,11 +548,10 @@ export function AccountsTable({
                           const p = freshnessIndicator(row.daysSincePost);
                           return (
                             <span
-                              className="inline-flex items-center gap-2"
+                              className={cn("tnum", p.textClass)}
                               title={row.lastPostAt ? `last post ${new Date(row.lastPostAt).toLocaleDateString("en-US")}` : "never posted"}
                             >
-                              <span className={cn("size-2 shrink-0 rounded-full", p.dotClass)} />
-                              <span className="tnum">{p.label}</span>
+                              {p.label}
                             </span>
                           );
                         })()}

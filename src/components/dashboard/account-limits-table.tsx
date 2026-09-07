@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterChips } from "@/components/ui/filter-chips";
@@ -200,7 +200,7 @@ function LimitRow({ row: r }: { row: AccountConfigRow }) {
       </td>
       <td className="py-2.5">
         {r.health ? (
-          <StatusPill tone={healthTone(r.health)} dot={false}>
+          <StatusPill tone={healthTone(r.health)}>
             {r.health}
           </StatusPill>
         ) : (
@@ -230,11 +230,11 @@ function LimitRow({ row: r }: { row: AccountConfigRow }) {
       </td>
       <td className="py-2.5 pl-6 whitespace-nowrap">
         {!r.canDeliver ? (
-          <StatusPill tone="danger" dot={false}>
+          <StatusPill tone="danger">
             blocked
           </StatusPill>
         ) : r.throttleReason ? (
-          <StatusPill tone="warn" dot={false}>
+          <StatusPill tone="warn">
             {r.throttleReason}
           </StatusPill>
         ) : (

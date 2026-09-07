@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, SlidersHorizontal, TriangleAlert, X } from "lucide-react";
+import { ChevronDown, Loader2, SlidersHorizontal, TriangleAlert, X } from "@/components/ui/icons";
 import type { CadenceData } from "@/lib/data/cadence";
 import type { FleetDefaults } from "@/lib/data/scheduler-config";
 import { StatusPill } from "@/components/ui/pill";
@@ -210,7 +210,7 @@ export function AdjustCadenceModal({
           <Section
             title="Weekly split"
             aside={
-              <StatusPill tone={overBudget ? "danger" : unspent > 0 ? "warn" : "ok"} dot={false}>
+              <StatusPill tone={overBudget ? "danger" : unspent > 0 ? "warn" : "ok"}>
                 {allocated} / {weekBudget} per week
               </StatusPill>
             }
@@ -269,7 +269,7 @@ export function AdjustCadenceModal({
               </span>
               <span className="flex items-center gap-2">
                 {!mixBalanced && (
-                  <StatusPill tone="danger" dot={false}>
+                  <StatusPill tone="danger">
                     needs attention
                   </StatusPill>
                 )}
@@ -294,7 +294,7 @@ export function AdjustCadenceModal({
                     <div key={c.name}>
                       <div className="mb-2 flex flex-wrap items-center gap-2">
                         <h4 className="text-sm font-semibold">{c.name}</h4>
-                        <StatusPill tone={sum === glp ? "ok" : "danger"} dot={false}>
+                        <StatusPill tone={sum === glp ? "ok" : "danger"}>
                           {sum} / {glp}
                         </StatusPill>
                         {sum !== glp && (

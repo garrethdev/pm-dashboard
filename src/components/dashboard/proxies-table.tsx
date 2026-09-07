@@ -123,7 +123,7 @@ export function ProxiesTable({
                       </td>
                       <td className="py-2.5">
                         {row.subscription ? (
-                          <StatusPill tone={daysTone(row.subscription.daysLeft)} dot={false}>
+                          <StatusPill tone={daysTone(row.subscription.daysLeft)}>
                             {row.subscription.daysLeft} d
                           </StatusPill>
                         ) : (
@@ -132,7 +132,7 @@ export function ProxiesTable({
                       </td>
                       <td className="py-2.5">
                         {row.subscription ? (
-                          <StatusPill tone={row.subscription.autoExtend ? "ok" : "warn"} dot={false}>
+                          <StatusPill tone={row.subscription.autoExtend ? "ok" : "warn"}>
                             {row.subscription.autoExtend ? "on" : "off"}
                           </StatusPill>
                         ) : (
@@ -183,7 +183,7 @@ export function ProxiesTable({
                       </td>
                       <td className="py-2.5">
                         {row.rental?.daysLeft != null ? (
-                          <StatusPill tone={daysTone(row.rental.daysLeft)} dot={false}>
+                          <StatusPill tone={daysTone(row.rental.daysLeft)}>
                             {row.rental.daysLeft} d
                           </StatusPill>
                         ) : (

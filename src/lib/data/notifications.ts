@@ -1,11 +1,20 @@
 import { createHash } from "node:crypto";
 import { sbRest } from "@/lib/data/supabase";
+import {
+  categoryLabel,
+  joinList,
+  parseLegacyRetireBody,
+  retireBody,
+  retireTitle,
+} from "@/lib/data/notification-copy";
 
 /** A single bell item. Retire completions are stored; warmup fails are recomputed. */
 export interface NotificationItem {
   id: string;
   type: "retire" | "warmup_fail";
   severity: "critical" | "warning" | "success" | "info";
+  /** Which part of the system it came from, e.g. "Post-Ban". Shown as a pill. */
+  category: string;
   title: string;
   body: string | null;
   target: string | null;
@@ -88,11 +97,18 @@ async function warmupFailNotifications(): Promise<NotificationItem[]> {
       // changed cohort has to read as a new alert.
       id: `warmup_fail:${code}:${createHash("sha1").update(profiles.join(",")).digest("hex").slice(0, 8)}`,
       type: "warmup_fail",
+      category: categoryLabel("warmup_fail"),
       severity: fleetWide ? "critical" : "warning",
-      title: `${group.length} account${group.length === 1 ? "" : "s"} warming up failing — ${reason}`,
+      title: `${group.length} account${group.length === 1 ? "" : "s"} failing warmup`,
+      // The reason IS the status here, so it leads the sentence rather than
+      // sitting in a pill. Six names then a count: past that the list stops
+      // being readable and the shared-cause note is the useful part anyway.
       body:
-        (fleetWide ? `Likely a shared cause (${code}). ` : "") +
-        `Affected: ${profiles.slice(0, 10).join(", ")}${profiles.length > 10 ? "…" : ""}`,
+        `${reason.charAt(0).toUpperCase()}${reason.slice(1)} on ` +
+        joinList(
+          profiles.length > 6 ? [...profiles.slice(0, 6), `${profiles.length - 6} more`] : profiles,
+        ) +
+        (fleetWide ? ", likely one shared cause" : ""),
       target: code,
       href: "/accounts",
       at: new Date().toISOString(),
@@ -102,22 +118,44 @@ async function warmupFailNotifications(): Promise<NotificationItem[]> {
   return items;
 }
 
+/** "Profile 34" -> "34". Empty when the target is not a numbered profile. */
+function profileNum(target: string | null): string {
+  return String(target ?? "").replace(/\D/g, "");
+}
+
 async function storedNotifications(): Promise<NotificationItem[]> {
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const rows = await sbRest<StoredRow[]>(
     `dashboard_notifications?select=id,at,type,severity,title,body,target,read&at=gte.${since}&order=at.desc&limit=50`,
   );
-  return rows.map((r) => ({
-    id: `stored:${r.id}`,
-    type: "retire" as const,
-    severity: (r.severity as NotificationItem["severity"]) ?? "info",
-    title: r.title,
-    body: r.body,
-    target: r.target,
-    href: "/accounts",
-    at: r.at,
-    read: false,
-  }));
+  return rows.map((r) => {
+    // Rows written before 2026-09-07 stored a middot fragment list and a title
+    // with an em dash. Re-word those from their parts rather than migrating the
+    // table: the copy is presentation, and a rewrite would rewrite history.
+    const legacy = r.body ? parseLegacyRetireBody(r.body, r.severity) : null;
+    const failedOutright = r.severity === "critical";
+    const needsAttention = r.severity === "warning" || failedOutright;
+    return {
+      id: `stored:${r.id}`,
+      type: "retire" as const,
+      category: categoryLabel(r.type),
+      severity: (r.severity as NotificationItem["severity"]) ?? "info",
+      title: r.target ? retireTitle(r.target, failedOutright) : r.title,
+      body: legacy ? retireBody(legacy) : r.body,
+      target: r.target,
+      // A cleanup that needs a human opens the incident feed on its own row.
+      // A clean one has no incident row to open — successes are deliberately
+      // kept out of the feed — so it goes to the account itself rather than
+      // dumping you on the unfiltered list.
+      href: needsAttention
+        ? `/incidents?focus=cleanup:${r.id}`
+        : profileNum(r.target)
+          ? `/accounts/${profileNum(r.target)}`
+          : "/accounts",
+      at: r.at,
+      read: false,
+    };
+  });
 }
 
 const SEV_RANK: Record<NotificationItem["severity"], number> = {
@@ -163,10 +201,7 @@ const MAX_MARK_READ = 200;
  * Upsert rather than insert: marking an already-read item is a no-op the UI
  * can and does trigger (clicking a read row), and it should not 409.
  */
-export async function markNotificationsRead(
-  userEmail: string,
-  keys: string[],
-): Promise<number> {
+export async function markNotificationsRead(userEmail: string, keys: string[]): Promise<number> {
   const unique = [...new Set(keys.filter((k) => typeof k === "string" && k.length > 0))].slice(
     0,
     MAX_MARK_READ,

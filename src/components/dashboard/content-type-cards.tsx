@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Film, Images } from "lucide-react";
+import { ChevronLeft, ChevronRight, Film, Images } from "@/components/ui/icons";
 import { Card } from "@/components/ui/card";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
 import type { CharacterTypes, ContentTypeRow, Lifecycle } from "@/lib/data/content-types";
@@ -77,7 +77,7 @@ function CharacterCard({
     <Card className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h3 className="truncate text-sm font-semibold">{character.name}</h3>
-        <StatusPill tone={character.allocated === glpPerWeek ? "neutral" : "danger"} dot={false}>
+        <StatusPill tone={character.allocated === glpPerWeek ? "neutral" : "danger"}>
           {character.allocated} / {glpPerWeek} per week
         </StatusPill>
       </div>
@@ -93,7 +93,7 @@ function CharacterCard({
       <div className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <h4 className="min-w-0 text-sm font-semibold">{current.displayName}</h4>
-          <StatusPill tone={LIFECYCLE_TONE[current.lifecycle]} dot={false}>
+          <StatusPill tone={LIFECYCLE_TONE[current.lifecycle]}>
             {current.lifecycle}
           </StatusPill>
         </div>

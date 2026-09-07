@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Minus, Plus, ShieldAlert, Sliders, X } from "lucide-react";
+import { Loader2, Minus, Plus, ShieldAlert, Sliders, X } from "@/components/ui/icons";
 import type { AccountRow } from "@/lib/data/accounts";
 import type { AccountOverride, ContentTypeOption, EffectiveConfig } from "@/lib/data/scheduler-overrides";
 import { StatusPill } from "@/components/ui/pill";
@@ -163,7 +163,7 @@ export function PostingSettingsModal({
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-card border border-border bg-card p-6 shadow-card"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-6 flex items-start justify-between gap-3">
+        <div className="-mx-6 -mt-6 mb-5 flex items-start justify-between gap-3 border-b border-border p-6">
           <div className="flex items-center gap-2.5">
             <span className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent">
               <Sliders className="size-4" />

@@ -6,7 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import type {
   CalendarDay,
   CalendarMonth,
@@ -286,7 +286,9 @@ function DayCell({
       )}
     >
       <div className="flex h-full min-h-[8rem] w-full flex-col gap-2">
-        <div className="flex w-full items-center justify-between gap-1">
+        {/* A rule under the date and count, so the content pills below read as a
+            separate list rather than running on from the header. */}
+        <div className="flex w-full items-center justify-between gap-1 border-b border-border/60 pb-2">
           {/* Every date gets the same disc-sized box and only today gets the
               fill. Giving the circle to today alone made it a flex box among
               baseline-aligned text, which dropped it below the other numbers. */}
@@ -333,9 +335,8 @@ function DayCell({
           {day.failed > 0 && (
             <span
               title={`${day.failed} post${day.failed === 1 ? "" : "s"} Geelark could not deliver — open the day for the errors`}
-              className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-medium text-danger"
+              className="inline-flex items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-medium text-danger"
             >
-              <span className="size-1.5 rounded-full bg-current" />
               {day.failed} failed
             </span>
           )}
@@ -361,9 +362,8 @@ function RunPill({ run }: { run: SchedulerRun }) {
     return (
       <span
         title={`Scheduler failed at ${run.errorStep ?? "an unknown step"}${run.errorMessage ? ` — ${run.errorMessage}` : ""}`}
-        className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-medium text-danger"
+        className="inline-flex items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-medium text-danger"
       >
-        <span className="size-1.5 rounded-full bg-current" />
         error
       </span>
     );
@@ -372,9 +372,8 @@ function RunPill({ run }: { run: SchedulerRun }) {
     return (
       <span
         title={`${run.shortfallCount} slot${run.shortfallCount === 1 ? "" : "s"} the scheduler could not fill — usually a content pool ran dry`}
-        className="inline-flex items-center gap-1 rounded-full bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn"
+        className="inline-flex items-center rounded-full bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn"
       >
-        <span className="size-1.5 rounded-full bg-current" />
         {run.shortfallCount} short
       </span>
     );

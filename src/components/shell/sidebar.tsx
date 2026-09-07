@@ -5,33 +5,32 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  House,
   Users,
   Package,
-  CalendarDays,
-  LayoutList,
+  CalendarDots,
+  Cards,
   Globe,
-  Workflow,
-  BarChart3,
-  Sparkles,
-  Settings,
-  LogOut,
-  PanelLeftClose,
-  PanelLeft,
-} from "lucide-react";
+  FlowArrow,
+  ChartBar,
+  Sparkle,
+  Gear,
+  SignOut,
+} from "@/components/ui/icons";
+import { SidebarToggleIcon } from "@/components/ui/sidebar-toggle-icon";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { PeptideMark } from "@/components/ui/peptide-mark";
 import { cn } from "@/lib/utils";
 
 const PIPELINE_ITEMS = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/", icon: House },
   { label: "Accounts", href: "/accounts", icon: Users },
   { label: "Inventory", href: "/inventory", icon: Package },
-  { label: "Content Calendar", href: "/content-calendar", icon: CalendarDays },
-  { label: "Content Types", href: "/content-types", icon: LayoutList },
+  { label: "Content Calendar", href: "/content-calendar", icon: CalendarDots },
+  { label: "Content Types", href: "/content-types", icon: Cards },
   { label: "Proxies & Phones", href: "/proxies", icon: Globe },
-  { label: "Automation", href: "/automation", icon: Workflow },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
+  { label: "Automation", href: "/automation", icon: FlowArrow },
+  { label: "Analytics", href: "/analytics", icon: ChartBar },
 ] as const;
 
 function GroupLabel({ children, collapsed }: { children: React.ReactNode; collapsed: boolean }) {
@@ -101,33 +100,50 @@ export function Sidebar() {
         collapsed ? "w-16 px-2" : "w-60 px-3",
       )}
     >
-      {/* Brand — icon-only when collapsed (logo cropped to its mark) */}
-      <Link href="/" className={cn("flex items-center", collapsed ? "justify-center" : "px-3")}>
-        {collapsed ? (
-          <PeptideMark className="size-9 text-text-primary" />
-        ) : (
-          <>
-            <Image
-              src="/logo-white.svg"
-              alt="Peptide Miracles"
-              width={188}
-              height={54}
-              priority
-              className="dark-only h-[54px] w-auto"
-            />
-            <Image
-              src="/logo-black.svg"
-              alt="Peptide Miracles"
-              width={188}
-              height={54}
-              priority
-              className="light-only h-[54px] w-auto"
-            />
-          </>
+      {/* Brand row — logo left, collapse toggle right. Collapsed, the two stack
+          so the toggle stays reachable without the wordmark's width. */}
+      <div
+        className={cn(
+          "flex items-center",
+          collapsed ? "flex-col gap-2" : "justify-between gap-2 px-3",
         )}
-      </Link>
+      >
+        <Link href="/" className="flex items-center">
+          {collapsed ? (
+            <PeptideMark className="size-8 text-text-primary" />
+          ) : (
+            <>
+              <Image
+                src="/logo-white.svg"
+                alt="Peptide Miracles"
+                width={816}
+                height={287}
+                priority
+                className="dark-only h-9 w-auto"
+              />
+              <Image
+                src="/logo-black.svg"
+                alt="Peptide Miracles"
+                width={816}
+                height={287}
+                priority
+                className="light-only h-9 w-auto"
+              />
+            </>
+          )}
+        </Link>
+        <button
+          type="button"
+          onClick={toggle}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex size-8 shrink-0 items-center justify-center rounded-nested text-text-muted transition-colors hover:bg-card hover:text-text-primary"
+        >
+          <SidebarToggleIcon className="size-[18px]" />
+        </button>
+      </div>
 
-      <nav className="flex flex-1 flex-col">
+      <nav className="mt-3 flex flex-1 flex-col">
         <GroupLabel collapsed={collapsed}>Pipeline</GroupLabel>
         <div className="flex flex-col gap-0.5">
           {PIPELINE_ITEMS.map((item) => (
@@ -150,7 +166,7 @@ export function Sidebar() {
           )}
           aria-disabled
         >
-          <Sparkles className="size-4 shrink-0" />
+          <Sparkle className="size-4 shrink-0" />
           {!collapsed && (
             <>
               Generate
@@ -162,19 +178,6 @@ export function Sidebar() {
         </div>
 
         <div className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
-          <button
-            type="button"
-            onClick={toggle}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={cn(
-              "flex items-center gap-3 rounded-nested py-2 text-sm text-text-muted transition-colors hover:bg-card hover:text-text-primary",
-              collapsed ? "justify-center px-0" : "px-3",
-            )}
-          >
-            {collapsed ? <PanelLeft className="size-4 shrink-0" /> : <PanelLeftClose className="size-4 shrink-0" />}
-            {!collapsed && "Collapse"}
-          </button>
-
           {collapsed ? (
             <div className="flex justify-center">
               <ThemeToggle collapsed />
@@ -186,7 +189,7 @@ export function Sidebar() {
           <NavItem
             href="/settings"
             label="Settings"
-            icon={Settings}
+            icon={Gear}
             collapsed={collapsed}
             active={pathname.startsWith("/settings")}
           />
@@ -199,7 +202,7 @@ export function Sidebar() {
                 collapsed ? "justify-center px-0" : "px-3",
               )}
             >
-              <LogOut className="size-4 shrink-0" />
+              <SignOut className="size-4 shrink-0" />
               {!collapsed && "Logout"}
             </button>
           </form>

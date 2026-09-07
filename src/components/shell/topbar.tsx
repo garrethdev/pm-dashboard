@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowUpRight, Bell, CheckCircle2, RotateCw } from "lucide-react";
-import { StatusPill, type PillTone } from "@/components/ui/pill";
+import { ArrowUpRight, Bell, CheckCircle2, RotateCw } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 const SECTION_NAMES: Record<string, string> = {
@@ -32,6 +31,8 @@ function sectionName(segment: string): string {
 interface NotificationItem {
   id: string;
   type: string;
+  /** Where it came from, e.g. "Post-Ban". Rendered as the grey pill. */
+  category: string;
   severity: "critical" | "warning" | "success" | "info";
   title: string;
   body: string | null;
@@ -71,18 +72,24 @@ function firstNameOf(email?: string): string | null {
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
-const SEV_TONE: Record<NotificationItem["severity"], PillTone> = {
-  critical: "danger",
-  warning: "warn",
-  success: "ok",
-  info: "info",
-};
-const SEV_LABEL: Record<NotificationItem["severity"], string> = {
-  critical: "Critical",
-  warning: "Warning",
-  success: "Done",
-  info: "Info",
-};
+/**
+ * "14h", "3d", "2w". Runs on the viewer's clock, which is safe here because the
+ * panel only ever renders after the feed has been fetched client-side — nothing
+ * time-dependent reaches the server HTML.
+ */
+function timeAgo(iso: string): string {
+  const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 90) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w`;
+  return `${Math.floor(days / 30)}mo`;
+}
 
 export function Topbar({ userEmail }: { userEmail?: string }) {
   const pathname = usePathname();
@@ -274,10 +281,10 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
                           )}
                         />
                         <div className="flex min-w-0 flex-1 flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <StatusPill tone={SEV_TONE[item.severity]}>
-                              {SEV_LABEL[item.severity]}
-                            </StatusPill>
+                          <div className="flex items-start gap-2">
+                            {/* The category pill sits inline so it trails the
+                                last word of a title that wraps, rather than
+                                holding a column of its own. */}
                             <span
                               className={cn(
                                 "min-w-0 flex-1 text-sm",
@@ -285,10 +292,16 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
                               )}
                             >
                               {item.title}
+                              <span className="ml-2 inline-block rounded-full bg-text-muted/10 px-2 py-0.5 align-[1px] text-[11px] font-medium whitespace-nowrap text-text-muted">
+                                {item.category}
+                              </span>
                             </span>
-                            {item.href && <ArrowUpRight className="size-3.5 shrink-0 text-accent" />}
+                            {item.href && (
+                              <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-accent" />
+                            )}
                           </div>
                           {item.body && <p className="text-xs text-text-muted">{item.body}</p>}
+                          <span className="text-[11px] text-text-muted/70">{timeAgo(item.at)}</span>
                         </div>
                       </div>
                     );

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, Loader2, PauseCircle, PlayCircle, TriangleAlert, X } from "lucide-react";
+import { CalendarClock, Loader2, PauseCircle, PlayCircle, TriangleAlert, X } from "@/components/ui/icons";
 import { StatusPill } from "@/components/ui/pill";
 import { HoldButton } from "@/components/ui/hold-button";
 import { Stepper } from "@/components/ui/stepper";
@@ -224,7 +224,7 @@ export function ContentTypeLifecycleModal({
                 <h3 className="text-sm font-semibold">
                   {leaving ? "Where its slots go" : "Where its slots come from"}
                 </h3>
-                <StatusPill tone={short === 0 ? "ok" : "danger"} dot={false}>
+                <StatusPill tone={short === 0 ? "ok" : "danger"}>
                   {allocated} / {glpPerWeek} per week
                 </StatusPill>
               </div>

@@ -1,6 +1,12 @@
 import { TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
 import { TRACKED_WORKFLOWS } from "@/lib/data/automation";
+import {
+  factsFromSummary,
+  parseLegacyRetireBody,
+  retireDetail,
+  type PostBanSummary,
+} from "@/lib/data/notification-copy";
 import type { PillTone } from "@/components/ui/pill";
 
 /**
@@ -17,6 +23,13 @@ import type { PillTone } from "@/components/ui/pill";
  * computes live and never persists — see analyticsFeeds() below.
  */
 export interface Incident {
+  /**
+   * Stable across reloads, because the bell deep-links to a row: a notification
+   * for a half-finished cleanup opens /incidents?focus=<id> and that row is
+   * flashed. An array index would point at a different incident as soon as a
+   * newer one landed.
+   */
+  id: string;
   at: string;
   tone: PillTone;
   type: string;
@@ -75,7 +88,12 @@ async function bans(since: string, limit: number): Promise<Incident[]> {
       `accounts?select=geelark_profile,banned_at,character&banned_at=gte.${since}&order=banned_at.desc&limit=${limit}`,
     ).catch(() => []),
     sbRest<
-      { geelark_profile: string; platform: string | null; source: string | null; event_date: string }[]
+      {
+        geelark_profile: string;
+        platform: string | null;
+        source: string | null;
+        event_date: string;
+      }[]
     >(
       `account_events?select=geelark_profile,platform,source,event_date&event_type=eq.banned&event_date=gte.${since}&order=event_date.desc&limit=${limit}`,
     ).catch(() => []),
@@ -87,6 +105,7 @@ async function bans(since: string, limit: number): Promise<Incident[]> {
   for (const r of current) {
     seen.add(`${r.geelark_profile}|${r.banned_at.slice(0, 10)}`);
     out.push({
+      id: `ban:${r.geelark_profile}:${r.banned_at.slice(0, 10)}`,
       at: r.banned_at,
       tone: "danger",
       type: "Ban",
@@ -100,6 +119,7 @@ async function bans(since: string, limit: number): Promise<Incident[]> {
     if (seen.has(`${e.geelark_profile}|${e.event_date.slice(0, 10)}`)) continue;
     seen.add(`${e.geelark_profile}|${e.event_date.slice(0, 10)}`);
     out.push({
+      id: `ban:${e.geelark_profile}:${e.event_date.slice(0, 10)}`,
       at: e.event_date,
       tone: "danger",
       type: "Ban",
@@ -133,6 +153,7 @@ async function failedDeliveries(since: string, limit: number): Promise<Incident[
     `v_dashboard_failed_deliveries?select=profile,fail_code,fail_desc,meaning,task_created_at&task_created_at=gte.${since}&order=task_created_at.desc&limit=${limit}`,
   );
   return rows.map((r) => ({
+    id: `delivery:${r.profile}:${r.task_created_at}`,
     at: r.task_created_at,
     tone: "danger",
     type: "Failed delivery",
@@ -144,11 +165,18 @@ async function failedDeliveries(since: string, limit: number): Promise<Incident[
 
 async function shortfalls(since: string, limit: number): Promise<Incident[]> {
   const rows = await sbRest<
-    { character: string; content_type: string; slots_missed: number; reason: string | null; created_at: string }[]
+    {
+      character: string;
+      content_type: string;
+      slots_missed: number;
+      reason: string | null;
+      created_at: string;
+    }[]
   >(
     `scheduler_shortfalls?select=character,content_type,slots_missed,reason,created_at&created_at=gte.${since}&order=created_at.desc&limit=${limit}`,
   );
   return rows.map((r) => ({
+    id: `shortfall:${r.character}:${r.content_type}:${r.created_at}`,
     at: r.created_at,
     tone: "warn",
     type: "Shortfall",
@@ -166,11 +194,14 @@ async function workflowFailures(since: string, limit: number): Promise<Incident[
   try {
     // n8n prunes executions on its own retention schedule, so this source
     // cannot reach as far back as the Postgres-backed ones.
-    const res = await fetch(`${base}/api/v1/executions?status=error&limit=${Math.min(limit, 250)}`, {
-      headers: { "X-N8N-API-KEY": key },
-      signal: AbortSignal.timeout(8_000),
-      cache: "no-store",
-    });
+    const res = await fetch(
+      `${base}/api/v1/executions?status=error&limit=${Math.min(limit, 250)}`,
+      {
+        headers: { "X-N8N-API-KEY": key },
+        signal: AbortSignal.timeout(8_000),
+        cache: "no-store",
+      },
+    );
     if (!res.ok) return [];
     const body = (await res.json()) as {
       data: { workflowId: string; startedAt: string; id: string }[];
@@ -178,6 +209,7 @@ async function workflowFailures(since: string, limit: number): Promise<Incident[
     return body.data
       .filter((e) => e.startedAt >= since && nameById.has(e.workflowId))
       .map((e) => ({
+        id: `workflow:${e.id}`,
         at: e.startedAt,
         tone: "danger" as const,
         type: "Workflow",
@@ -231,6 +263,7 @@ async function analyticsFeeds(): Promise<Incident[]> {
             ? `${Math.floor(f.age_hours / 24)}d`
             : `${Math.round(f.age_hours)}h`;
       return {
+        id: `analytics:${f.feed}`,
         at,
         tone: "danger",
         type: "Analytics stale",
@@ -240,21 +273,75 @@ async function analyticsFeeds(): Promise<Incident[]> {
       };
     });
 
-  const crons = (r.cron_failures ?? []).map(
-    (c): Incident => ({
-      at,
-      tone: "danger",
-      type: "Cron failed",
-      entity: c.jobname ?? "pg_cron job",
-      detail: c.detail ?? "scheduled job reported a failure",
-      href: "/automation",
-    }),
-  );
+  const crons = (r.cron_failures ?? []).map((c): Incident => ({
+    id: `cron:${c.jobname ?? "pg_cron"}`,
+    at,
+    tone: "danger",
+    type: "Cron failed",
+    entity: c.jobname ?? "pg_cron job",
+    detail: c.detail ?? "scheduled job reported a failure",
+    href: "/automation",
+  }));
 
   return [...stale, ...crons];
 }
 
-async function fetchIncidents(days: number | null, perSource: number, cap: number): Promise<Incident[]> {
+/**
+ * Post-Ban cleanups that did not finish cleanly.
+ *
+ * The run itself is fire-and-forget — it reports into the bell — but a cleanup
+ * that half-failed leaves something real behind: a proxy still auto-renewing,
+ * a number still on subscription. Those cost money until someone acts, so they
+ * belong in the durable feed rather than only in a notification that ages out
+ * after seven days.
+ *
+ * Successes are deliberately excluded: a clean retire is routine, not an
+ * incident, and 13 of the 15 rows on file are clean.
+ */
+async function postBanCleanups(since: string, limit: number): Promise<Incident[]> {
+  const rows = await sbRest<
+    {
+      id: number;
+      at: string;
+      severity: string;
+      body: string | null;
+      target: string | null;
+      meta: { summary?: PostBanSummary } | null;
+    }[]
+  >(
+    `dashboard_notifications?select=id,at,severity,body,target,meta&type=eq.retire&severity=in.(warning,critical)` +
+      `&at=gte.${since}&order=at.desc&limit=${limit}`,
+  );
+  return rows.map((r) => {
+    const n = profileNum(r.target ?? "");
+    // The bell's sentence drops the per-resource detail to stay one line; this
+    // is where it comes back. Runs from 2026-09-07 keep the whole summary, so
+    // they can also name the step that failed. Older rows are rebuilt from the
+    // middot body they stored, which carries every step but not which errored.
+    const facts = r.meta?.summary
+      ? factsFromSummary(r.meta.summary)
+      : r.body
+        ? parseLegacyRetireBody(r.body, r.severity)
+        : null;
+    return {
+      id: `cleanup:${r.id}`,
+      at: r.at,
+      tone: (r.severity === "critical" ? "danger" : "warn") as PillTone,
+      type: "Cleanup",
+      entity: r.target ?? "—",
+      detail: facts ? retireDetail(facts) : (r.body ?? "cleanup reported a problem"),
+      // The account page, not forensics: what needs checking is the account's
+      // live proxy and number, which is what that page shows.
+      href: n ? `/accounts/${n}` : "/accounts",
+    };
+  });
+}
+
+async function fetchIncidents(
+  days: number | null,
+  perSource: number,
+  cap: number,
+): Promise<Incident[]> {
   const since = sinceIso(days);
   const groups = await Promise.all([
     bans(since, perSource).catch(() => []),
@@ -262,6 +349,7 @@ async function fetchIncidents(days: number | null, perSource: number, cap: numbe
     shortfalls(since, perSource).catch(() => []),
     workflowFailures(since, perSource).catch(() => []),
     analyticsFeeds().catch(() => []),
+    postBanCleanups(since, perSource).catch(() => []),
   ]);
   return groups
     .flat()

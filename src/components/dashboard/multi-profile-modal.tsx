@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X } from "@/components/ui/icons";
 
 /**
  * "Select multiple profiles" picker. Two fields by default, "Add another
@@ -43,10 +43,10 @@ export function MultiProfileModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-card border border-border bg-card p-5 shadow-card"
+        className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-card"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="-mx-6 -mt-6 flex items-center justify-between gap-3 border-b border-border px-6 py-5">
           <h2 className="text-base font-semibold">Select multiple profiles</h2>
           <button
             onClick={onClose}
@@ -57,7 +57,7 @@ export function MultiProfileModal({
           </button>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-5 flex flex-col gap-2.5">
           {fields.map((value, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="w-16 shrink-0 text-xs text-text-muted">Profile</span>
@@ -68,7 +68,7 @@ export function MultiProfileModal({
                 onChange={(e) => setField(i, e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && apply()}
                 placeholder="e.g. 29"
-                className="w-full rounded-full border border-border bg-card-raised px-3.5 py-1.5 text-sm outline-none placeholder:text-text-muted focus:border-accent"
+                className="w-full rounded-full border border-border bg-card-raised px-3.5 py-2 text-sm outline-none placeholder:text-text-muted focus:border-accent"
               />
               <button
                 onClick={() => removeField(i)}
@@ -84,18 +84,18 @@ export function MultiProfileModal({
 
         <button
           onClick={() => setFields((f) => [...f, ""])}
-          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:opacity-80"
+          className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:opacity-80"
         >
           <Plus className="size-3.5" /> Add another profile
         </button>
 
         {unknown.length > 0 && (
-          <p className="mt-3 text-xs text-warn">
+          <p className="mt-4 text-xs text-warn">
             Not in this table: {unknown.map((n) => `Profile ${n}`).join(", ")}
           </p>
         )}
 
-        <div className="mt-5 flex items-center justify-end gap-2">
+        <div className="mt-6 flex items-center justify-end gap-2">
           <button
             onClick={() => {
               onApply([]);

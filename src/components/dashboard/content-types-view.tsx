@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterChips } from "@/components/ui/filter-chips";
@@ -350,7 +350,7 @@ function TypeRow({
         {t.character.replace("Character ", "Char ")}
       </td>
       <td className="py-2.5">
-        <StatusPill tone={LIFECYCLE_TONE[t.lifecycle]} dot={false}>
+        <StatusPill tone={LIFECYCLE_TONE[t.lifecycle]}>
           {t.lifecycle}
         </StatusPill>
       </td>

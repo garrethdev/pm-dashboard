@@ -8,7 +8,13 @@ import { getIncidentHistory } from "@/lib/data/incidents";
  */
 const DEFAULT_RANGE = "30d" as const;
 
-export default async function IncidentsPage() {
+export default async function IncidentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ focus?: string }>;
+}) {
+  // ?focus=<incident id> — set by the bell, so a notification lands on its row.
+  const { focus } = await searchParams;
   let data;
   try {
     ({ data } = await getIncidentHistory(DEFAULT_RANGE));
@@ -21,5 +27,5 @@ export default async function IncidentsPage() {
       </DashCard>
     );
   }
-  return <IncidentHistory initial={data} initialRange={DEFAULT_RANGE} />;
+  return <IncidentHistory initial={data} initialRange={DEFAULT_RANGE} focus={focus ?? null} />;
 }

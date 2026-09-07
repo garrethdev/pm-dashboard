@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, Loader2, Stethoscope, UserCheck, X } from "lucide-react";
+import { AlertTriangle, Check, Loader2, Stethoscope, UserCheck, X } from "@/components/ui/icons";
 import type { AccountRow } from "@/lib/data/accounts";
 import { StatusPill } from "@/components/ui/pill";
 import { healthTone } from "@/lib/health";
@@ -107,7 +107,7 @@ export function HealthReviewModal({
         className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-card border border-border bg-card p-6 shadow-card"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="-mx-6 -mt-6 mb-5 flex items-start justify-between gap-3 border-b border-border p-6">
           <div className="flex items-center gap-2.5">
             <span className="flex size-9 items-center justify-center rounded-full bg-accent/15 text-accent">
               <Stethoscope className="size-5" />

@@ -37,18 +37,18 @@ export default async function LoginPage({
           <Image
             src="/logo-white.svg"
             alt="Peptide Miracles"
-            width={209}
-            height={60}
+            width={816}
+            height={287}
             priority
-            className="dark-only h-15 w-auto"
+            className="dark-only h-14 w-auto"
           />
           <Image
             src="/logo-black.svg"
             alt="Peptide Miracles"
-            width={209}
-            height={60}
+            width={816}
+            height={287}
             priority
-            className="light-only h-15 w-auto"
+            className="light-only h-14 w-auto"
           />
           <div className="text-xs text-text-muted">Pipeline dashboard</div>
         </div>

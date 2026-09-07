@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/pill";
 import { FilterPills } from "@/components/ui/filter-pills";
@@ -25,9 +25,12 @@ function typesOf(incidents: Incident[]): string[] {
 export function IncidentHistory({
   initial,
   initialRange,
+  focus = null,
 }: {
   initial: Incident[];
   initialRange: IncidentRange;
+  /** Incident id to scroll to and flash once, from the bell's ?focus=. */
+  focus?: string | null;
 }) {
   const router = useRouter();
   const [range, setRange] = useState<IncidentRange>(initialRange);
@@ -35,12 +38,28 @@ export function IncidentHistory({
   const [incidents, setIncidents] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Seeded from the prop rather than set in an effect, so the row is already
+  // highlighted on the first paint — arriving from the bell should not need a
+  // second render to show you where to look.
+  const [flash, setFlash] = useState<string | null>(focus);
+
+  useEffect(() => {
+    if (!flash) return;
+    document
+      .getElementById(`incident-${flash}`)
+      ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    // Long enough to catch the eye, short enough not to read as a selection.
+    const t = setTimeout(() => setFlash(null), 1000);
+    return () => clearTimeout(t);
+  }, [flash]);
 
   const load = useCallback(async (r: IncidentRange) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/incidents?range=${r}`, { cache: "no-store" });
+      const res = await fetch(`/api/incidents?range=${r}`, {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = (await res.json()) as { data: Incident[] };
       setIncidents(body.data);
@@ -72,7 +91,10 @@ export function IncidentHistory({
         <FilterPills
           value={range}
           onChange={(v) => pickRange(v as IncidentRange)}
-          options={INCIDENT_RANGES.map((r) => ({ value: r.key, label: r.label }))}
+          options={INCIDENT_RANGES.map((r) => ({
+            value: r.key,
+            label: r.label,
+          }))}
         />
         {types.length > 1 && (
           <FilterPills
@@ -111,9 +133,10 @@ export function IncidentHistory({
                 </tr>
               </thead>
               <tbody>
-                {shown.map((row, i) => (
+                {shown.map((row) => (
                   <tr
-                    key={i}
+                    key={row.id}
+                    id={`incident-${row.id}`}
                     onClick={() => router.push(row.href as never)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -124,7 +147,10 @@ export function IncidentHistory({
                     tabIndex={0}
                     role="link"
                     aria-label={`${row.type} — ${row.entity}`}
-                    className="cursor-pointer border-t border-border hover:bg-card-raised/50 focus-visible:bg-card-raised/50 focus-visible:outline-none"
+                    className={cn(
+                      "cursor-pointer border-t border-border transition-colors duration-700 hover:bg-card-raised/50 focus-visible:bg-card-raised/50 focus-visible:outline-none",
+                      flash === row.id && "bg-accent/15",
+                    )}
                   >
                     <td className="py-2.5 whitespace-nowrap text-text-muted tnum">
                       {formatEtDate(row.at)}
@@ -145,16 +171,6 @@ export function IncidentHistory({
           </div>
         )}
       </DashCard>
-
-      <p className="text-xs text-text-muted">
-        Computed live from the same sources as the dashboard card — bans from{" "}
-        <span className="font-mono">account_events</span> and{" "}
-        <span className="font-mono">accounts.banned_at</span>, deliveries from{" "}
-        <span className="font-mono">geelark_tasks</span>, shortfalls from{" "}
-        <span className="font-mono">scheduler_shortfalls</span>. A &ldquo;Ban&rdquo; row opens that
-        account&apos;s forensics report when one has been produced. Analytics-staleness rows
-        describe the feed right now, not a past moment, so they always sort to the top.
-      </p>
     </div>
   );
 }

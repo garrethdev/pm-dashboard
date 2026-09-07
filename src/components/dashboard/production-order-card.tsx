@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarRange, Sparkles } from "lucide-react";
+import { CalendarRange, Sparkles } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterPills } from "@/components/ui/filter-pills";
@@ -137,7 +137,7 @@ export function ProductionOrderCard({
                   {o.contentType}
                 </td>
                 <td className="py-2.5">
-                  <StatusPill tone={ORDER_TONE[o.status] ?? "neutral"} dot={false}>
+                  <StatusPill tone={ORDER_TONE[o.status] ?? "neutral"}>
                     {o.status.toUpperCase()}
                   </StatusPill>
                 </td>
@@ -169,7 +169,7 @@ export function ProductionOrderCard({
                     deficit. Red only when there is actually something to make;
                     a red "0" would read as an alarm for a healthy lane. */}
                 <td className="py-2.5">
-                  <StatusPill tone={toProduce(o) > 0 ? "danger" : "gray"} dot={false}>
+                  <StatusPill tone={toProduce(o) > 0 ? "danger" : "gray"}>
                     {toProduce(o)}
                   </StatusPill>
                 </td>

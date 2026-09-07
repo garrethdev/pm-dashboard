@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { StatusPill } from "@/components/ui/pill";
@@ -74,10 +74,6 @@ async function AutomationTable() {
   return (
     <DashCard title="Daily workflows" fetchedAt={fetchedAt}>
       {body}
-      <p className="mt-3 border-t border-border pt-3 text-xs text-text-muted">
-        Overdue = past expected time + 30 min grace with no successful run today (ET). Supabase
-        ground-truth columns (scheduler_runs, geelark_tasks) land once schemas are verified.
-      </p>
     </DashCard>
   );
 }

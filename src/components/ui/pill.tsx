@@ -1,15 +1,7 @@
 import { cn } from "@/lib/utils";
 
 export type PillTone =
-  | "ok"
-  | "warn"
-  | "orange"
-  | "danger"
-  | "critical"
-  | "gray"
-  | "info"
-  | "accent"
-  | "neutral";
+  "ok" | "warn" | "orange" | "danger" | "critical" | "gray" | "info" | "accent" | "neutral";
 
 const TONES: Record<PillTone, string> = {
   ok: "bg-ok/10 text-ok",
@@ -27,27 +19,25 @@ const TONES: Record<PillTone, string> = {
   neutral: "bg-card-raised text-text-muted",
 };
 
-/** Status pill — dot + label on a tinted background (reference style: "Completed"). */
+/** Status pill — a label on a tinted background. The tone carries the state;
+ *  a leading dot on top of that was redundant decoration (Garreth 2026-09-07). */
 export function StatusPill({
   tone,
   children,
-  dot = true,
   className,
 }: {
   tone: PillTone;
   children: React.ReactNode;
-  dot?: boolean;
   className?: string;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
         TONES[tone],
         className,
       )}
     >
-      {dot && <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden />}
       {children}
     </span>
   );

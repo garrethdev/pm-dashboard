@@ -4,36 +4,30 @@ import { ACCOUNTS_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { actingUserEmail, auditLog, getAccountState, validProfile } from "@/lib/data/writes";
 import { insertNotification } from "@/lib/data/notifications";
-
-interface PostBanSummary {
-  profile?: string;
-  phoneId?: string | null;
-  geeErr?: string | null;
-  pc?: { found?: boolean; disabled?: boolean; error?: string | null };
-  tv?: { found?: boolean; disabled?: boolean; error?: string | null };
-  supa?: { acctPatched?: boolean; released?: { source_table: string; released: number }[]; error?: string | null };
-}
+import {
+  factsFromSummary,
+  retireBody,
+  retireTitle,
+  type PostBanSummary,
+} from "@/lib/data/notification-copy";
 
 /** Turn the workflow summary into a concise notification (severity/title/body). */
 function summarize(profile: string, s: PostBanSummary) {
-  const parts: string[] = [];
-  parts.push(s.phoneId ? "phone deleted" : "phone already gone");
-  parts.push(s.pc?.disabled ? "proxy auto-extend off" : s.pc?.found ? "proxy already off" : "no proxy found");
-  parts.push(s.tv?.disabled ? "number renewal off" : s.tv?.found ? "number already off" : "no number found");
-  const released = (s.supa?.released ?? []).reduce((n, r) => n + (r.released ?? 0), 0);
-  if (released > 0) parts.push(`${released} content released`);
-  const hadError = Boolean(s.supa?.error || s.pc?.error?.includes("failed") || s.tv?.error?.includes("failed"));
+  const facts = factsFromSummary(s);
   return {
-    severity: hadError ? "warning" : "success",
-    title: `Retired ${profile} — cleanup ${hadError ? "completed with warnings" : "complete"}`,
-    body: parts.join(" · "),
+    severity: facts.hadError ? "warning" : "success",
+    title: retireTitle(profile),
+    body: retireBody(facts),
   };
 }
 
 async function callWorkflow(profile: string, userEmail: string, live: boolean) {
   const res = await fetch(process.env.N8N_POSTBAN_WEBHOOK_URL!, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-webhook-secret": process.env.N8N_POSTBAN_WEBHOOK_SECRET! },
+    headers: {
+      "Content-Type": "application/json",
+      "x-webhook-secret": process.env.N8N_POSTBAN_WEBHOOK_SECRET!,
+    },
     body: JSON.stringify({
       "Profile name": profile,
       "Report email": userEmail,
@@ -69,7 +63,9 @@ export async function POST(request: Request) {
 
   if (!process.env.N8N_POSTBAN_WEBHOOK_URL || !process.env.N8N_POSTBAN_WEBHOOK_SECRET) {
     return NextResponse.json(
-      { error: "Post-Ban webhook is not configured yet (n8n workflow needs its webhook activated)." },
+      {
+        error: "Post-Ban webhook is not configured yet (n8n workflow needs its webhook activated).",
+      },
       { status: 503 },
     );
   }
@@ -80,7 +76,10 @@ export async function POST(request: Request) {
     const state = await getAccountState(profile);
     if (!state) return NextResponse.json({ error: "account not found" }, { status: 404 });
     if (live && !state.is_active && state.cleanedUp) {
-      return NextResponse.json({ error: "account is already retired and cleaned up" }, { status: 409 });
+      return NextResponse.json(
+        { error: "account is already retired and cleaned up" },
+        { status: 409 },
+      );
     }
   } catch (err) {
     return NextResponse.json(
@@ -120,7 +119,9 @@ export async function POST(request: Request) {
         title: n.title,
         body: n.body,
         target: profile,
-        meta: { mode: "Live", triggeredBy: userEmail },
+        // The whole summary, not just the sentence built from it: the copy is
+        // lossy by design and this is the only place the run is written down.
+        meta: { mode: "Live", triggeredBy: userEmail, summary },
       });
       await auditLog({
         userEmail,
@@ -133,12 +134,15 @@ export async function POST(request: Request) {
       await insertNotification({
         type: "retire",
         severity: "critical",
-        title: `Retire failed — ${profile}`,
-        body: err instanceof Error ? err.message : "unknown error; nothing local was changed",
+        title: retireTitle(profile, true),
+        body: `${err instanceof Error ? err.message : "The run failed for an unknown reason"}, and nothing was changed`,
         target: profile,
       });
     }
   });
 
-  return NextResponse.json({ ok: true, profile, mode: "live", live: true, started: true }, { status: 202 });
+  return NextResponse.json(
+    { ok: true, profile, mode: "live", live: true, started: true },
+    { status: 202 },
+  );
 }

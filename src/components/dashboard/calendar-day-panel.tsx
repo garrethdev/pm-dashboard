@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from "@/components/ui/icons";
 import type { CalendarDayAccount, CalendarDayDetail, CalendarPost } from "@/lib/data/calendar";
 import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
@@ -385,7 +385,8 @@ function PostRow({ post: p }: { post: CalendarPost }) {
             aria-expanded={showError}
             className="ml-auto rounded-full transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-danger focus-visible:outline-none"
           >
-            <StatusPill tone={tone}>
+            {/* Two children, so this one keeps a gap the dot-less default drops. */}
+            <StatusPill tone={tone} className="gap-1.5">
               {label}
               <ChevronDown
                 className={cn("size-3 transition-transform", showError && "rotate-180")}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Loader2, RotateCw, X } from "lucide-react";
+import { AlertTriangle, Loader2, RotateCw, X } from "@/components/ui/icons";
 import { HoldButton } from "@/components/ui/hold-button";
 import type { AccountRow } from "@/lib/data/accounts";
 
@@ -137,7 +137,7 @@ export function RetireModal({
         className="w-full max-w-lg rounded-card border border-border bg-card p-6 shadow-card"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="-mx-6 -mt-6 mb-5 flex items-start justify-between gap-3 border-b border-border p-6">
           <div className="flex items-center gap-2.5">
             <span className="flex size-9 items-center justify-center rounded-full bg-danger/15 text-danger">
               <AlertTriangle className="size-5" />

@@ -9,7 +9,7 @@ function CadenceColumn({ group }: { group: CadenceData["characters"][number] }) 
     <div className="flex flex-col gap-3 rounded-nested bg-card-raised/40 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-semibold">{group.name}</span>
-        <StatusPill tone={group.glpSum === 10 ? "ok" : "danger"} dot={false}>
+        <StatusPill tone={group.glpSum === 10 ? "ok" : "danger"}>
           Σ GLP {group.glpSum}/10
         </StatusPill>
       </div>
