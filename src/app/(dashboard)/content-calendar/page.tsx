@@ -49,8 +49,9 @@ async function CalendarLive() {
   );
 }
 
-/** Today's run, beside the page title. Reads the same cached month payload the
- *  grid does, so it costs nothing extra. */
+/** Today's run, beside the page title. Shares the grid's month payload through
+ *  the request-scoped dedupe on getCalendarMonth, so it costs no extra reads —
+ *  the TTL cache alone would not do it, since the current month is read live. */
 async function RunPill() {
   const today = etToday();
   let data;

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { CALENDAR_TAG, type Cached, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
 
@@ -169,7 +170,17 @@ export function monthGridRange(year: number, month1: number): { start: string; e
  * grid. Cached per range — a past month never changes, and the current one is
  * only as stale as the Supabase TTL.
  */
-export async function getCalendarMonth(
+/**
+ * Deduped per request, not just cached.
+ *
+ * The Content Calendar page reads this twice — once for the grid, once for the
+ * run pill beside the title — and for the current month `bypass` is on, so the
+ * cache deliberately does not answer either call. Without React's `cache()`
+ * that is two live reads fanning out to three Supabase queries each, six round
+ * trips where three would do. `cache()` scopes to a single request, so it
+ * collapses the duplicate without touching the freshness `bypass` exists for.
+ */
+export const getCalendarMonth = cache(async function getCalendarMonth(
   year: number,
   month1: number,
 ): Promise<Cached<CalendarMonth>> {
@@ -264,7 +275,7 @@ export async function getCalendarMonth(
       bypass: end >= unsettledFrom(),
     },
   )();
-}
+});
 
 /**
  * What Geelark actually did with the row.

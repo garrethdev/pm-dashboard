@@ -15,6 +15,55 @@ Newest first within each list.
 
 # V1 — open work
 
+## Migrate the cache layer off `unstable_cache`
+
+**Found 2026-09-07 during a backend review.** Next 16's own docs are explicit:
+"`unstable_cache` is replaced by the [`use cache`] directive"
+(`node_modules/next/dist/docs/01-app/02-guides/migrating-to-cache-components.md`).
+Nothing is broken — it still ships and still works in 16.3.3 — but the whole of
+`src/lib/data/cache.ts` is built on it, so the cost of the move grows with every
+fetcher added. Do it before the next major, not after it forces the issue.
+
+**This is not a drop-in swap, and that is the headline.** `use cache` is a Cache
+Components feature: it does nothing until `cacheComponents: true` is set in
+`next.config.ts`, and that flag replaces the route segment configs app-wide and
+turns on instant-navigation validation, which surfaces blocking code as errors
+across every route. So the real unit of work is "adopt Cache Components", not
+"swap a helper". Next ships an adoption skill built for exactly this
+(`npx skills add vercel/next.js --skill next-cache-components-adoption`), with an
+incremental mode that opts every route out of validation first and converts one
+feature per PR. Use it rather than hand-rolling the sweep.
+
+**There is no deadline pressure.** The docs are explicit that existing `fetch`
+and `unstable_cache` caching keeps working as a separate layer once the flag is
+on, so nothing breaks on the day it is enabled and nothing breaks while it is
+not. Schedule this as its own piece of work on its own branch.
+
+**Once the flag is on, the mapping is close to mechanical.**
+`cachedFetcher(key, ttl, fn, opts)` becomes a function carrying `'use cache'`,
+where the key comes from the arguments automatically, `revalidate` becomes
+`cacheLife` and `tags` become `cacheTag`. Roughly 20 fetchers and `DATA_TAGS`
+follow from there.
+
+**Two things that will not map cleanly, and are the actual work:**
+
+1. **`bypass`.** Ours reads live for unsettled days and falls back to the last
+   good payload, because stale-while-revalidate served the pre-scheduler state
+   for hours and read as "the scheduler never fired" (2026-09-06). Whatever
+   replaces it must keep that behaviour and keep marking the payload `stale` so
+   the UI still says so on screen.
+2. **`lastGood`.** A module-level Map, per instance, lost on cold start —
+   deliberately, and documented as covering an outage that starts mid-session
+   rather than a cold one. `use cache` defaults to in-memory storage with the
+   same lifetime, so check whether `use cache: remote` or a cache handler makes
+   this redundant before porting it across.
+
+Sequencing note: turning on `cacheComponents` IS this piece of work, not a step
+inside it. Do not start it alongside unrelated changes, and do not start it on a
+branch that has not been merged.
+
+---
+
 ## Verify the TikTok ingest fix on a real run
 
 **When:** Monday 2026-09-07, after 08:30 ET (20:30 Manila the same day) — the next scheduled run of
