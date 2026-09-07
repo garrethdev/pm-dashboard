@@ -16,6 +16,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Avatar } from "@/components/ui/avatar";
 import { Card, DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { TopPostsCard } from "@/components/dashboard/top-posts-card";
@@ -339,18 +340,7 @@ function BestAccountTile({ data }: { data: AnalyticsData }) {
 
   const inner = (
     <>
-      {b?.avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- CDN host isn't in next.config images
-        <img
-          src={b.avatarUrl}
-          alt=""
-          className="size-10 shrink-0 rounded-full border border-border object-cover"
-        />
-      ) : (
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-sm font-semibold text-text-muted">
-          {b?.account.slice(0, 1).toUpperCase() ?? "—"}
-        </span>
-      )}
+      <Avatar src={b?.avatarUrl} className="size-10" />
       <span className="flex min-w-0 flex-col">
         <span className="flex items-center gap-1.5">
           {b && <PlatformIcon platform={b.platform} className="size-3 shrink-0 text-text-muted" />}

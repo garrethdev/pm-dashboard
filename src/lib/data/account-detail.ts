@@ -134,6 +134,34 @@ const EMPTY_CARD: ProfileCard = { avatarUrl: null, displayName: null, followers:
  */
 const CARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * When the avatar URL's own signature runs out.
+ *
+ * Both platforms hand out signed CDN links that die long before our 7-day
+ * cache does — measured 2026-09-07: a TikTok avatar cached 114h earlier had
+ * expired 3 days prior, an Instagram one 9 hours prior, and both answered 403.
+ * The row was still "fresh" by TTL, so the dashboard kept serving a dead link
+ * and the account showed a broken image.
+ *
+ * TikTok puts the epoch seconds in `x-expires`; Instagram puts them in `oe` as
+ * hex. Reading the URL's own deadline refreshes exactly when it must, instead
+ * of cutting the TTL for everyone and burning ScrapeCreators credits on cards
+ * that were still fine.
+ */
+function avatarExpiresAt(url: string | null): number | null {
+  if (!url) return null;
+  try {
+    const q = new URL(url).searchParams;
+    const tt = q.get("x-expires");
+    if (tt && /^\d+$/.test(tt)) return Number(tt) * 1000;
+    const ig = q.get("oe");
+    if (ig && /^[0-9a-fA-F]+$/.test(ig)) return parseInt(ig, 16) * 1000;
+  } catch {
+    /* not a URL we can read a deadline from — fall back to the TTL alone */
+  }
+  return null;
+}
+
 interface CachedCard {
   avatar_url: string | null;
   display_name: string | null;
@@ -208,8 +236,14 @@ async function getProfileCard(handle: string, platform: string): Promise<Profile
     /* cache unreachable — fall through to a live lookup */
   }
 
+  // Fresh means BOTH: inside our TTL, and the avatar link has not expired.
+  // A 60s margin so a link about to die is not handed to the browser.
+  const expiry = avatarExpiresAt(cached?.avatar_url ?? null);
+  const linkAlive = expiry === null || expiry > Date.now() + 60_000;
   const fresh =
-    cached !== null && Date.now() - new Date(cached.resolved_at).getTime() < CARD_TTL_MS;
+    cached !== null &&
+    Date.now() - new Date(cached.resolved_at).getTime() < CARD_TTL_MS &&
+    linkAlive;
   if (cached && fresh) {
     return {
       avatarUrl: cached.avatar_url,
@@ -222,11 +256,15 @@ async function getProfileCard(handle: string, platform: string): Promise<Profile
   try {
     card = await fetchProfileCard(handle, platform);
   } catch {
-    // Stale beats empty: an expired avatar URL may still render, and the name
-    // and follower count are almost certainly still right.
+    // Stale beats empty for the text: the name and follower count are almost
+    // certainly still right. The avatar is different — a link we have already
+    // established is past its signature will 403, so handing it to the browser
+    // guarantees a failed request per viewer. Drop it and let the placeholder
+    // stand in. (An earlier comment here claimed an expired URL "may still
+    // render"; measured 2026-09-07, it does not.)
     return cached
       ? {
-          avatarUrl: cached.avatar_url,
+          avatarUrl: linkAlive ? cached.avatar_url : null,
           displayName: cached.display_name,
           followers: cached.followers,
         }
