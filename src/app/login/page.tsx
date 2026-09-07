@@ -2,6 +2,8 @@ import Image from "next/image";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { MagicLinkSubmit } from "@/components/shell/magic-link-submit";
+import { SideRays } from "@/components/ui/side-rays";
 import { isEmailAllowed } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,7 +38,7 @@ async function sendMagicLink(formData: FormData) {
  *  the page prerenders and what stands in while the query string resolves. */
 function SignInForm({ error }: { error?: string }) {
   return (
-    <form action={sendMagicLink} className="flex flex-col gap-3">
+    <form action={sendMagicLink} className="flex flex-col gap-4">
       <label className="text-sm text-text-muted" htmlFor="email">
         Sign in with your work email
       </label>
@@ -46,14 +48,9 @@ function SignInForm({ error }: { error?: string }) {
         type="email"
         required
         placeholder="you@example.com"
-        className="rounded-nested border border-border bg-card-raised px-3 py-2.5 text-sm outline-none placeholder:text-text-muted focus:border-accent/60"
+        className="rounded-nested border border-border bg-card-raised px-3.5 py-3 text-sm outline-none placeholder:text-text-muted focus:border-accent/60"
       />
-      <button
-        type="submit"
-        className="rounded-nested bg-accent px-3 py-2.5 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
-      >
-        Send magic link
-      </button>
+      <MagicLinkSubmit />
       {error === "not-allowed" && (
         <p className="text-sm text-danger">This email isn&apos;t on the allowlist.</p>
       )}
@@ -107,9 +104,27 @@ export default function LoginPage({
   searchParams: Promise<{ error?: string; sent?: string }>;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-card border border-border bg-card p-8 shadow-card">
-        <div className="mb-6 flex flex-col gap-2">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      {/* Behind everything, and inert. Cyan rather than the component's default
+          amber: the accent is the one colour this product spends, and a login
+          screen is the one place it can fill the frame. */}
+      <div className="absolute inset-0 z-0">
+        <SideRays
+          rayColor1="#22d3ee"
+          rayColor2="#96c8ff"
+          origin="top-right"
+          speed={1.4}
+          intensity={1.4}
+          spread={1.8}
+          saturation={1.2}
+          blend={0.7}
+          falloff={1.9}
+          opacity={0.5}
+        />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm rounded-card border border-border bg-card/90 px-8 py-12 shadow-card backdrop-blur-xl">
+        <div className="mb-10 flex flex-col gap-2">
           <Image
             src="/logo-white.svg"
             alt="Peptide Miracles"
@@ -126,7 +141,6 @@ export default function LoginPage({
             priority
             className="light-only h-14 w-auto"
           />
-          <div className="text-xs text-text-muted">Pipeline dashboard</div>
         </div>
 
         <Suspense fallback={<SignInForm />}>
