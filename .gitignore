@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the template, which carries no values and is how anyone deploying
+# this knows what to fill in. It was caught by .env* and so was never tracked.
+!.env.example
 
 # vercel
 .vercel
