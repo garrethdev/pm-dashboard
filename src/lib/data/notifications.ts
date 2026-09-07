@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { sbRest } from "@/lib/data/supabase";
 
 /** A single bell item. Retire completions are stored; warmup fails are recomputed. */
@@ -10,6 +11,8 @@ export interface NotificationItem {
   target: string | null;
   href?: string;
   at: string;
+  /** Whether THIS viewer has seen it. Per person, not fleet-wide. */
+  read: boolean;
 }
 
 interface StoredRow {
@@ -77,7 +80,13 @@ async function warmupFailNotifications(): Promise<NotificationItem[]> {
     const profiles = group.map((g) => g.geelark_profile.replace("Profile ", "P")).sort();
     const fleetWide = group.length >= 3;
     items.push({
-      id: `warmup_fail:${code}`,
+      // The cohort is part of the identity, not just the payload. These alerts
+      // are recomputed rather than stored, so a bare `warmup_fail:29997` would
+      // stay read forever once dismissed — including when a different set of
+      // accounts starts failing for the same reason. That was survivable while
+      // read state was per-browser and easily lost; now that it is durable, a
+      // changed cohort has to read as a new alert.
+      id: `warmup_fail:${code}:${createHash("sha1").update(profiles.join(",")).digest("hex").slice(0, 8)}`,
       type: "warmup_fail",
       severity: fleetWide ? "critical" : "warning",
       title: `${group.length} account${group.length === 1 ? "" : "s"} warming up failing — ${reason}`,
@@ -87,6 +96,7 @@ async function warmupFailNotifications(): Promise<NotificationItem[]> {
       target: code,
       href: "/accounts",
       at: new Date().toISOString(),
+      read: false,
     });
   }
   return items;
@@ -106,6 +116,7 @@ async function storedNotifications(): Promise<NotificationItem[]> {
     target: r.target,
     href: "/accounts",
     at: r.at,
+    read: false,
   }));
 }
 
@@ -116,15 +127,73 @@ const SEV_RANK: Record<NotificationItem["severity"], number> = {
   info: 3,
 };
 
-/** Combined bell feed: stored retire completions + recomputed warmup failures. */
-export async function getNotifications(): Promise<NotificationItem[]> {
-  const [stored, warmup] = await Promise.all([
+/** The keys this person has already dismissed. */
+async function readKeys(userEmail: string): Promise<Set<string>> {
+  const rows = await sbRest<{ notification_key: string }[]>(
+    `notification_reads?select=notification_key&user_email=eq.${encodeURIComponent(userEmail)}`,
+  );
+  return new Set(rows.map((r) => r.notification_key));
+}
+
+/**
+ * Combined bell feed: stored retire completions + recomputed warmup failures,
+ * each flagged with whether THIS person has seen it.
+ *
+ * A failed read of the read-state is not a failed feed — the bell still shows
+ * the items, just all unread. Louder than the truth beats an empty bell.
+ */
+export async function getNotifications(userEmail: string): Promise<NotificationItem[]> {
+  const [stored, warmup, seen] = await Promise.all([
     storedNotifications().catch(() => [] as NotificationItem[]),
     warmupFailNotifications().catch(() => [] as NotificationItem[]),
+    readKeys(userEmail).catch(() => new Set<string>()),
   ]);
-  return [...stored, ...warmup].sort(
-    (a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || b.at.localeCompare(a.at),
+  return [...stored, ...warmup]
+    .map((i) => ({ ...i, read: seen.has(i.id) }))
+    .sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || b.at.localeCompare(a.at));
+}
+
+/** Upper bound on one mark-read call. "Mark all" sends the whole panel, which
+ *  the feed itself caps at 50 stored rows plus a handful of warmup groups. */
+const MAX_MARK_READ = 200;
+
+/**
+ * Record that this person has seen these notifications.
+ *
+ * Upsert rather than insert: marking an already-read item is a no-op the UI
+ * can and does trigger (clicking a read row), and it should not 409.
+ */
+export async function markNotificationsRead(
+  userEmail: string,
+  keys: string[],
+): Promise<number> {
+  const unique = [...new Set(keys.filter((k) => typeof k === "string" && k.length > 0))].slice(
+    0,
+    MAX_MARK_READ,
   );
+  if (unique.length === 0) return 0;
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) throw new Error("Supabase service key is not configured");
+
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/notification_reads?on_conflict=user_email,notification_key`,
+    {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(
+        unique.map((notification_key) => ({ user_email: userEmail, notification_key })),
+      ),
+      cache: "no-store",
+    },
+  );
+  if (!res.ok) throw new Error(`mark-read failed: ${res.status} ${await res.text()}`);
+  return unique.length;
 }
 
 /** Insert a stored notification (used by the post-ban after() hook). */

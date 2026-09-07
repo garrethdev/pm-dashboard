@@ -38,9 +38,8 @@ interface NotificationItem {
   target: string | null;
   href?: string;
   at: string;
+  read: boolean;
 }
-
-const READ_KEY = "pm-notif-read";
 
 /**
  * Time-of-day greetings. Picked from the VIEWER's clock, so this has to run
@@ -90,9 +89,13 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
-  // Read state lives per-browser, not in the DB: the warmup alerts are stateless
-  // recomputes with no row to mark, and "have I read this" is genuinely per
-  // person — one of us clearing the bell shouldn't clear it for everyone.
+  // Read state comes from the server, per person. It used to live in
+  // localStorage, which is keyed by scheme+host+port — so opening the Network
+  // URL `next dev` prints instead of localhost, or a port fallback to 3001, or
+  // a second machine, made everything already seen come back unread. Still per
+  // person, not fleet-wide: one of us clearing the bell must not clear it for
+  // everyone. Held separately from `items` so an optimistic mark survives the
+  // next 20s poll landing before the write does.
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [greeting, setGreeting] = useState<string | null>(null);
@@ -115,35 +118,41 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   const section = sectionName(pathname.split("/")[1] ?? "");
   const initials = (userEmail ?? "?").slice(0, 2).toUpperCase();
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(READ_KEY);
-      if (raw) setReadIds(new Set(JSON.parse(raw) as string[]));
-    } catch {
-      /* private mode / blocked storage — start with everything unread */
-    }
-  }, []);
-
   const markRead = useCallback((ids: string[]) => {
+    let fresh: string[] = [];
     setReadIds((prev) => {
-      if (ids.every((id) => prev.has(id))) return prev;
+      fresh = ids.filter((id) => !prev.has(id));
+      if (fresh.length === 0) return prev;
       const next = new Set(prev);
-      ids.forEach((id) => next.add(id));
-      try {
-        localStorage.setItem(READ_KEY, JSON.stringify([...next]));
-      } catch {
-        /* not persisting is survivable; the session still reflects the click */
-      }
+      fresh.forEach((id) => next.add(id));
       return next;
     });
+    if (fresh.length === 0) return;
+    // Optimistic: the dot clears on click and the write follows. A failed write
+    // is not worth an error state — the next load simply shows it unread again,
+    // which is the safe direction to be wrong in.
+    void fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: fresh }),
+      cache: "no-store",
+    }).catch(() => {});
   }, []);
 
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/notifications", { cache: "no-store" });
       if (!res.ok) return;
-      const data = await res.json();
-      setItems(data.items ?? []);
+      const data = (await res.json()) as { items?: NotificationItem[] };
+      const next = data.items ?? [];
+      setItems(next);
+      // Union, not replace: a mark made moments ago may not be in this payload
+      // yet, and dropping it would flash the dot back on.
+      setReadIds((prev) => {
+        const merged = new Set(prev);
+        for (const i of next) if (i.read) merged.add(i.id);
+        return merged.size === prev.size ? prev : merged;
+      });
     } catch {
       /* ignore transient errors */
     }
