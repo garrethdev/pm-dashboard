@@ -1,3 +1,4 @@
+import { PageGlow } from "@/components/shell/page-glow";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 import { authBypassed } from "@/lib/auth";
@@ -18,7 +19,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="page-glow flex min-w-0 flex-1 flex-col">
+        <PageGlow />
         <Topbar userEmail={email} />
         <main className="w-full flex-1 px-6 py-6">{children}</main>
       </div>

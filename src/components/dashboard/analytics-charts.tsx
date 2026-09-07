@@ -55,12 +55,12 @@ function PlatformIcon({ platform, className }: { platform: string; className?: s
 
 function Tip({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
-    <div className="rounded-nested border border-border bg-card px-3 py-2 shadow-card">
-      <p className="mb-1 text-xs font-semibold">{title}</p>
+    <div className="glass-overlay rounded-nested border border-border px-3 py-2">
+      <p className="mb-1.5 text-[11px] text-text-muted">{title}</p>
       {rows.map(([k, v]) => (
-        <div key={k} className="flex items-center gap-4 text-xs whitespace-nowrap">
+        <div key={k} className="flex items-center gap-5 text-xs whitespace-nowrap">
           <span className="text-text-muted">{k}</span>
-          <span className="ml-auto font-semibold tnum">{v}</span>
+          <span className="ml-auto font-medium tnum">{v}</span>
         </div>
       ))}
     </div>
@@ -88,15 +88,15 @@ function ViewsTrend({
         <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="ttG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.55} />
-              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="igG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--info)" stopOpacity={0.55} />
-              <stop offset="100%" stopColor="var(--info)" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="var(--info)" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="var(--info)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke="rgba(255,255,255,0.055)" strokeDasharray="2 4" />
           <XAxis dataKey="label" {...AXIS} interval="preserveStartEnd" minTickGap={28} padding={{ left: 8, right: 8 }} />
           <YAxis
             {...AXIS}
@@ -114,7 +114,7 @@ function ViewsTrend({
             }}
           />
           <Tooltip
-            cursor={{ stroke: "var(--text-muted)", strokeDasharray: "3 3" }}
+            cursor={{ stroke: "rgba(255,255,255,0.28)", strokeDasharray: "2 4" }}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const d = payload[0].payload as SeriesPoint;
@@ -154,7 +154,7 @@ function ViewsTrend({
                   stroke="var(--accent)"
                   strokeWidth={2}
                   fill="url(#ttG)"
-                  activeDot={{ r: 3, strokeWidth: 0 }}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
                   isAnimationActive={false}
                 />
               )}
@@ -166,7 +166,7 @@ function ViewsTrend({
                   stroke="var(--info)"
                   strokeWidth={2}
                   fill="url(#igG)"
-                  activeDot={{ r: 3, strokeWidth: 0 }}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
                   isAnimationActive={false}
                 />
               )}
@@ -181,7 +181,7 @@ function ViewsTrend({
                   stroke="var(--accent)"
                   strokeWidth={2}
                   fill="url(#ttG)"
-                  activeDot={{ r: 3, strokeWidth: 0 }}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
                   isAnimationActive={false}
                 />
               )}
@@ -193,7 +193,7 @@ function ViewsTrend({
                   stroke="var(--info)"
                   strokeWidth={2}
                   fill="url(#igG)"
-                  activeDot={{ r: 3, strokeWidth: 0 }}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
                   isAnimationActive={false}
                 />
               )}
@@ -288,9 +288,9 @@ function MetricTile({
   const Icon = up ? ArrowUpRight : ArrowDownRight;
 
   return (
-    <div className="flex flex-col justify-between gap-2 overflow-hidden rounded-nested border border-border bg-card-raised px-4 py-3">
-      <span className="text-xs text-text-muted">{label}</span>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+    <div className="dot-fade flex flex-col justify-between gap-2 overflow-hidden rounded-nested border border-border bg-card-raised px-4 py-3 text-text-muted">
+      <span className="relative z-10 text-xs text-text-muted">{label}</span>
+      <div className="relative z-10 flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="font-display text-2xl leading-none font-semibold tnum text-text-primary">
           {value}
         </span>
@@ -307,13 +307,13 @@ function MetricTile({
         )}
       </div>
       {/* -mx-4 cancels the tile's horizontal padding so the line runs edge to edge. */}
-      <div className="-mx-4 h-7">
+      <div className="relative z-10 -mx-4 h-7">
         {plottable && (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id={`sp-${id}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={tone} stopOpacity={0.35} />
+                  <stop offset="0%" stopColor={tone} stopOpacity={0.18} />
                   <stop offset="100%" stopColor={tone} stopOpacity={0} />
                 </linearGradient>
               </defs>
@@ -354,16 +354,19 @@ function BestAccountTile({ data }: { data: AnalyticsData }) {
   );
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-nested border border-border bg-card-raised px-4 py-3">
-      <span className="text-xs text-text-muted">Best performing account</span>
+    <div className="dot-fade flex flex-col gap-2.5 rounded-nested border border-border bg-card-raised px-4 py-3 text-text-muted">
+      <span className="relative z-10 text-xs text-text-muted">Best performing account</span>
       {!b ? (
-        <span className="text-sm text-text-muted">No posts in range</span>
+        <span className="relative z-10 text-sm text-text-muted">No posts in range</span>
       ) : num ? (
-        <Link href={`/accounts/${num}` as never} className="flex items-center gap-3 hover:opacity-80">
+        <Link
+          href={`/accounts/${num}` as never}
+          className="relative z-10 flex items-center gap-3 hover:opacity-80"
+        >
           {inner}
         </Link>
       ) : (
-        <span className="flex items-center gap-3">{inner}</span>
+        <span className="relative z-10 flex items-center gap-3">{inner}</span>
       )}
     </div>
   );

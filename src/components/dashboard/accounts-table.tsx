@@ -44,13 +44,18 @@ const TONE_TEXT: Record<string, string> = {
   danger: "text-danger",
 };
 
-/** Freshness label, tinted (handover: green ≤1d, yellow 2–7d, red ≥8d/never).
- *  Shared by the Warmup and Last Post columns so they read consistently. */
-function freshnessIndicator(d: number | null): { textClass: string; label: string } {
-  if (d === null) return { textClass: "text-danger", label: "never" };
-  if (d <= 1) return { textClass: "text-ok", label: d === 0 ? "today" : "1d" };
-  if (d <= 7) return { textClass: "text-warn", label: `${d}d` };
-  return { textClass: "text-danger", label: `${d}d` };
+/**
+ * Freshness label for the Warmup and Last post columns.
+ *
+ * Plain text, the same weight and colour as Character (Garreth 2026-09-07):
+ * these are readings, not verdicts. Health already owns the severity colour in
+ * this table, and tinting two more columns by their own scale meant three
+ * competing colour systems in one row.
+ */
+function freshnessLabel(d: number | null): string {
+  if (d === null) return "never";
+  if (d <= 1) return d === 0 ? "today" : "1d";
+  return `${d}d`;
 }
 
 /** Bare profile number ("Profile 29" → "29") for exact multi-select matching. */
@@ -520,13 +525,12 @@ export function AccountsTable({
                       )}
                       <td className="py-2.5 whitespace-nowrap">
                         {(() => {
-                          const w = freshnessIndicator(row.daysSinceWarmup);
                           return (
                             <span
-                              className={cn("tnum", w.textClass)}
+                              className="tnum"
                               title={row.lastWarmupAt ? `last warmup ${new Date(row.lastWarmupAt).toLocaleDateString("en-US")}` : "never warmed"}
                             >
-                              {w.label}
+                              {freshnessLabel(row.daysSinceWarmup)}
                             </span>
                           );
                         })()}
@@ -545,13 +549,12 @@ export function AccountsTable({
                               </span>
                             );
                           }
-                          const p = freshnessIndicator(row.daysSincePost);
                           return (
                             <span
-                              className={cn("tnum", p.textClass)}
+                              className="tnum"
                               title={row.lastPostAt ? `last post ${new Date(row.lastPostAt).toLocaleDateString("en-US")}` : "never posted"}
                             >
-                              {p.label}
+                              {freshnessLabel(row.daysSincePost)}
                             </span>
                           );
                         })()}

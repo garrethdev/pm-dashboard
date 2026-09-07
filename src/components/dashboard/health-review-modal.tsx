@@ -104,7 +104,7 @@ export function HealthReviewModal({
         role="dialog"
         aria-modal="true"
         aria-label={`Health review for ${account.profile}`}
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-card border border-border bg-card p-6 shadow-card"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-card border border-border glass-overlay p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="-mx-6 -mt-6 mb-5 flex items-start justify-between gap-3 border-b border-border p-6">

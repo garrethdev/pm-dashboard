@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CtaButton } from "@/components/ui/cta-button";
 import { Plus, X } from "@/components/ui/icons";
 
 /**
@@ -43,7 +44,7 @@ export function MultiProfileModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-card"
+        className="w-full max-w-md rounded-card border border-border glass-overlay p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="-mx-6 -mt-6 flex items-center justify-between gap-3 border-b border-border px-6 py-5">
@@ -105,12 +106,7 @@ export function MultiProfileModal({
           >
             Clear
           </button>
-          <button
-            onClick={apply}
-            className="rounded-full bg-accent px-4 py-2 text-xs font-semibold text-bg transition-opacity hover:opacity-90"
-          >
-            Search
-          </button>
+          <CtaButton onClick={apply}>Search</CtaButton>
         </div>
       </div>
     </div>

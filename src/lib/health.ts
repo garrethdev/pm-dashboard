@@ -21,9 +21,9 @@ export function healthRank(status: string): number {
 }
 
 export function healthTone(status: string): PillTone {
-  // Severity ladder, every state on a 10% tint so no one pill shouts over the
-  // table (Garreth 2026-09-02): red -> orange -> yellow -> grey, with blue for
-  // warming and green for healthy.
+  // Severity ladder: red -> orange -> yellow -> grey, with cyan for warming and
+  // green for healthy. StatusPill gives every tone the same flat ground, so the
+  // ladder reads by hue alone (Garreth's Figma redesign 2026-09-07).
   if (["banned", "shadowbanned"].includes(status)) return "danger";
   if (["collapsing", "system error"].includes(status)) return "orange";
   if (status === "watch") return "warn";

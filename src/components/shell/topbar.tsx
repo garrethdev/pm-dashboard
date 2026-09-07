@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, Bell, CheckCircle2, RotateCw } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
@@ -122,6 +123,10 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   }, []);
 
   const panelRef = useRef<HTMLDivElement>(null);
+  // The panel is portalled out of the header (see the render), so the
+  // click-outside test needs its own handle on it.
+  const popRef = useRef<HTMLDivElement>(null);
+  const [anchor, setAnchor] = useState<{ top: number; right: number } | null>(null);
   const section = sectionName(pathname.split("/")[1] ?? "");
   const initials = (userEmail ?? "?").slice(0, 2).toUpperCase();
 
@@ -203,7 +208,9 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
     if (!open) return;
     load();
     const close = (e: MouseEvent) => {
-      if (!panelRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (panelRef.current?.contains(t) || popRef.current?.contains(t)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -213,7 +220,7 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   const hasAlerts = unread.some((i) => i.severity === "critical" || i.severity === "warning");
 
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-border bg-bg/90 px-6 py-3 backdrop-blur">
+    <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-border bg-bg/40 px-6 py-3 backdrop-blur-xl">
       <div className="flex min-w-0 shrink items-baseline gap-1.5 text-sm">
         <span className="text-text-muted">Peptide Miracles</span>
         <span className="text-text-muted">/</span>
@@ -238,7 +245,11 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
 
         <div className="relative" ref={panelRef}>
           <button
-            onClick={() => setOpen((o) => !o)}
+            onClick={() => {
+              const r = panelRef.current?.getBoundingClientRect();
+              if (r) setAnchor({ top: r.bottom + 8, right: window.innerWidth - r.right });
+              setOpen((o) => !o);
+            }}
             title="Notifications"
             className="relative flex size-9 items-center justify-center rounded-full border border-border bg-card text-text-muted transition-colors hover:text-text-primary"
           >
@@ -250,8 +261,18 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
             )}
           </button>
 
-          {open && (
-            <div className="absolute right-0 top-full z-30 mt-2 max-h-[70vh] w-96 overflow-y-auto rounded-nested border border-border bg-card p-2 shadow-card">
+          {/* Portalled to <body>, not rendered in place. The header carries its
+              own backdrop-filter, which makes it a backdrop root: a descendant
+              can only blur what the header itself painted, i.e. nothing. Moving
+              the panel out is what lets it blur the page behind it. */}
+          {open &&
+            anchor &&
+            createPortal(
+              <div
+                ref={popRef}
+                style={{ top: anchor.top, right: anchor.right }}
+                className="fixed z-50 max-h-[70vh] w-96 overflow-y-auto rounded-nested border border-border glass-overlay p-2"
+              >
               <div className="flex items-center justify-between px-3 pb-2 pt-1.5">
                 <span className="text-sm font-semibold">Notifications</span>
                 {unread.length > 0 ? (
@@ -334,8 +355,9 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
                   <CheckCircle2 className="size-4 text-ok" /> No notifications
                 </p>
               )}
-            </div>
-          )}
+              </div>,
+              document.body,
+            )}
         </div>
 
         <span

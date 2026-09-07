@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CtaButton } from "@/components/ui/cta-button";
 import Link from "next/link";
-import { ArrowRight, BarChart3, ExternalLink, Play } from "@/components/ui/icons";
+import { BarChart3, ExternalLink, Play } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -123,14 +124,10 @@ export function TopPostsCard({
         />
       }
       actions={
-        <Link
-          href={`/analytics/analysis?range=${range}`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3.5 py-1.5 text-xs font-semibold text-bg transition-opacity hover:opacity-90"
-        >
+        <CtaButton href={`/analytics/analysis?range=${range}`}>
           <BarChart3 className="size-3.5" />
           View analysis
-          <ArrowRight className="size-3" />
-        </Link>
+        </CtaButton>
       }
     >
       <div className="flex flex-col gap-4">

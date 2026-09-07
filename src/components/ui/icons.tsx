@@ -75,6 +75,13 @@ export interface IconProps {
   size?: number | string;
 }
 
+/**
+ * `fill` is the house weight. The exceptions are all glyphs that fill destroys
+ * rather than merely restyles: a filled CircleNotch is a solid disc that spins
+ * as a dot instead of a spinner, filled carets are solid wedges that read as a
+ * shape rather than a direction, and a filled X is a heavy slab where a close
+ * affordance wants two thin strokes.
+ */
 function icon(Base: PhIcon, name: string, weight: IconWeight = "fill") {
   const Wrapped = (props: IconProps) => <Base {...props} weight={weight} />;
   Wrapped.displayName = name;
@@ -96,9 +103,9 @@ export const CalendarDays = icon(PhCalendarDots, "CalendarDays");
 export const CalendarRange = icon(PhCalendarBlank, "CalendarRange");
 export const Check = icon(PhCheck, "Check");
 export const CheckCircle2 = icon(PhCheckCircle, "CheckCircle2");
-export const ChevronDown = icon(PhCaretDown, "ChevronDown");
-export const ChevronLeft = icon(PhCaretLeft, "ChevronLeft");
-export const ChevronRight = icon(PhCaretRight, "ChevronRight");
+export const ChevronDown = icon(PhCaretDown, "ChevronDown", "bold");
+export const ChevronLeft = icon(PhCaretLeft, "ChevronLeft", "bold");
+export const ChevronRight = icon(PhCaretRight, "ChevronRight", "bold");
 export const CloudOff = icon(PhCloudSlash, "CloudOff");
 export const ExternalLink = icon(PhArrowSquareOut, "ExternalLink");
 export const FileSearch = icon(PhFileMagnifyingGlass, "FileSearch");
@@ -135,7 +142,7 @@ export const UserPlus = icon(PhUserPlus, "UserPlus");
 export const Users = icon(PhUsers, "Users");
 export const Wallet = icon(PhWallet, "Wallet");
 export const Workflow = icon(PhFlowArrow, "Workflow");
-export const X = icon(PhX, "X");
+export const X = icon(PhX, "X", "regular");
 export const House = icon(PhHouse, "House");
 export const CalendarDots = icon(PhCalendarDots, "CalendarDots");
 export const Cards = icon(PhCards, "Cards");

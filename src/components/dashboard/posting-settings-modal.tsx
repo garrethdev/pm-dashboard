@@ -5,6 +5,7 @@ import { Loader2, Minus, Plus, ShieldAlert, Sliders, X } from "@/components/ui/i
 import type { AccountRow } from "@/lib/data/accounts";
 import type { AccountOverride, ContentTypeOption, EffectiveConfig } from "@/lib/data/scheduler-overrides";
 import { StatusPill } from "@/components/ui/pill";
+import { CtaButton } from "@/components/ui/cta-button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -160,7 +161,7 @@ export function PostingSettingsModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-card border border-border bg-card p-6 shadow-card"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-card border border-border glass-overlay p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="-mx-6 -mt-6 mb-5 flex items-start justify-between gap-3 border-b border-border p-6">
@@ -378,14 +379,13 @@ export function PostingSettingsModal({
           >
             {clamped ? "Close" : "Cancel"}
           </button>
-          <button
+          <CtaButton
             onClick={save}
             disabled={busy || (fieldsLive && types.size === 0)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-xs font-semibold text-bg transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
+                      >
             {busy && <Loader2 className="size-3.5 animate-spin" />}
             Save
-          </button>
+          </CtaButton>
           </div>
         </div>
       </div>

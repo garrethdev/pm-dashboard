@@ -174,11 +174,11 @@ export function AccountAnalyticsView({
                 <AreaChart data={data.series} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="acctViews" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.55} />
-                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.02} />
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                  <CartesianGrid stroke="rgba(255,255,255,0.055)" strokeDasharray="2 4" />
                   <XAxis
                     dataKey="label"
                     {...AXIS}
@@ -208,12 +208,12 @@ export function AccountAnalyticsView({
                     }}
                   />
                   <Tooltip
-                    cursor={{ stroke: "var(--text-muted)", strokeDasharray: "3 3" }}
+                    cursor={{ stroke: "rgba(255,255,255,0.28)", strokeDasharray: "2 4" }}
                     content={({ active, payload }) => {
                       if (!active || !payload?.length) return null;
                       const d = payload[0]!.payload as AccountAnalytics["series"][number];
                       return (
-                        <div className="rounded-nested border border-border bg-card px-3 py-2 shadow-card">
+                        <div className="glass-overlay rounded-nested border border-border px-3 py-2">
                           <p className="mb-1 text-xs font-semibold">{d.label}</p>
                           {(
                             [
@@ -301,9 +301,9 @@ function MetricTile({
   const Icon = up ? ArrowUpRight : ArrowDownRight;
 
   return (
-    <div className="flex flex-col justify-between gap-2 overflow-hidden rounded-nested border border-border bg-card-raised px-4 py-3">
-      <span className="text-xs text-text-muted">{label}</span>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+    <div className="dot-fade flex flex-col justify-between gap-2 overflow-hidden rounded-nested border border-border bg-card-raised px-4 py-3 text-text-muted">
+      <span className="relative z-10 text-xs text-text-muted">{label}</span>
+      <div className="relative z-10 flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="font-display text-2xl leading-none font-semibold tnum text-text-primary">
           {value}
         </span>
@@ -320,7 +320,7 @@ function MetricTile({
         )}
       </div>
       {/* -mx-4 cancels the tile's horizontal padding so the line runs edge to edge. */}
-      <div className="-mx-4 h-7">
+      <div className="relative z-10 -mx-4 h-7">
         {plottable && (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
@@ -328,7 +328,7 @@ function MetricTile({
                 {/* SVG gradient ids are document-global, so these carry an
                     account- prefix to stay clear of the fleet page's sp-*. */}
                 <linearGradient id={`acct-sp-${id}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={tone} stopOpacity={0.35} />
+                  <stop offset="0%" stopColor={tone} stopOpacity={0.18} />
                   <stop offset="100%" stopColor={tone} stopOpacity={0} />
                 </linearGradient>
               </defs>

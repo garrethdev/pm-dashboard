@@ -58,7 +58,7 @@ export function Dropdown({
       {open && (
         <div
           className={cn(
-            "absolute top-full z-30 mt-2 min-w-52 rounded-nested border border-border bg-card p-3 shadow-card",
+            "absolute top-full z-30 mt-2 min-w-52 rounded-nested border border-border glass-overlay p-3",
             align === "right" ? "right-0" : "left-0",
             panelClassName,
           )}

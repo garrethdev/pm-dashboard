@@ -1,9 +1,16 @@
 import Link from "next/link";
-import { ArrowRight } from "@/components/ui/icons";
+import { ChevronRight } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 /**
- * Bare card surface. `hero` applies the one-per-page accent gradient treatment.
+ * Bare card surface.
+ *
+ * `glass` is the lit treatment from the 2026-09-07 overhaul: a translucent fill
+ * that borrows the page glow, with an inset top-edge highlight standing in for
+ * a light source above. It only reads on a varied background, which is why the
+ * glow layer on the content column is a prerequisite and not decoration.
+ *
+ * `hero` applies the one-per-page accent gradient treatment.
  *
  * `sunken` drops the card a step toward the page ground. It is for a card whose
  * own surface is chrome and whose CONTENT carries the weight — the calendar
@@ -14,21 +21,25 @@ import { cn } from "@/lib/utils";
 export function Card({
   hero = false,
   sunken = false,
+  glass = false,
   className,
   children,
 }: {
   hero?: boolean;
   sunken?: boolean;
+  glass?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
     <div
       className={cn(
-        "rounded-card border p-5 shadow-card",
+        "rounded-card p-5",
         hero
-          ? "border-accent/40 bg-linear-135 from-accent to-accent-deep shadow-hero"
-          : cn("border-border", sunken ? "bg-card-sunken" : "bg-card"),
+          ? "border border-accent/40 bg-linear-135 from-accent to-accent-deep shadow-hero"
+          : glass
+            ? "glass"
+            : cn("border border-border shadow-card", sunken ? "bg-card-sunken" : "bg-card"),
         className,
       )}
     >
@@ -38,7 +49,7 @@ export function Card({
 }
 
 /**
- * Dashboard section card — header row with title and "View all →", body below.
+ * Dashboard section card — header row with title and "View all ›", body below.
  * `fetchedAt` is still accepted (the data layer stamps it) but not displayed —
  * Garreth removed the timestamp 2026-08-31; re-render it here if that changes.
  */
@@ -48,6 +59,7 @@ export function DashCard({
   actions,
   viewAllHref,
   sunken = false,
+  glass = false,
   className,
   children,
 }: {
@@ -60,27 +72,29 @@ export function DashCard({
   viewAllHref?: string;
   /** Recede toward the page ground — see Card. */
   sunken?: boolean;
+  /** Lit translucent surface — see Card. */
+  glass?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
   // gap-6: 24px between the card title row and its content (Garreth 2026-09-02)
   // — tables need room to breathe under their title/filter row.
   return (
-    <Card sunken={sunken} className={cn("flex flex-col gap-6", className)}>
+    <Card sunken={sunken} glass={glass} className={cn("flex flex-col gap-5", className)}>
       {/* One flat wrap row: title, its pills, then the right-hand controls.
           Flat rather than nested groups so a narrow card wraps to two lines
           (title / pills + controls) instead of three. */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h2 className="truncate text-base font-semibold">{title}</h2>
+        <h2 className="truncate text-sm font-medium text-text-muted">{title}</h2>
         {toolbar}
         <div className="ml-auto flex shrink-0 items-center gap-3">
           {actions}
           {viewAllHref && (
             <Link
               href={viewAllHref as never}
-              className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:opacity-80"
+              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-text-muted transition-colors hover:border-text-muted/50 hover:text-text-primary"
             >
-              View all <ArrowRight className="size-3" />
+              View all <ChevronRight className="size-3" />
             </Link>
           )}
         </div>

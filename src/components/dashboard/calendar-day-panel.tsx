@@ -159,7 +159,7 @@ export function CalendarDayPanel({
       <div
         role="dialog"
         aria-label={`Posts for ${longDate(date)}`}
-        className="my-auto w-full max-w-3xl rounded-card border border-border bg-card-sunken shadow-card"
+        className="my-auto w-full max-w-3xl rounded-card border border-border glass-overlay"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-border p-6">

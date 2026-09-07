@@ -1,4 +1,5 @@
 import { ExternalLink, Globe, Smartphone } from "@/components/ui/icons";
+import { CtaButton } from "@/components/ui/cta-button";
 import { Card } from "@/components/ui/card";
 import { getProxyCheapBalance } from "@/lib/data/proxycheap";
 import { getTextVerifiedBalance } from "@/lib/data/textverified";
@@ -56,17 +57,16 @@ function BalanceCard({
           </div>
         </div>
 
-        <a
+        <CtaButton
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-90 ${
-            low ? "bg-danger text-white" : "bg-accent text-bg"
-          }`}
+          tone={low ? "danger" : "accent"}
+          className="shrink-0"
         >
           Top up
           <ExternalLink className="size-3.5" />
-        </a>
+        </CtaButton>
       </div>
     </Card>
   );

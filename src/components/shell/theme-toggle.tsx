@@ -41,9 +41,11 @@ export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
   }
 
   return (
-    <div className="flex items-center justify-between rounded-nested px-3 py-2 text-sm text-text-muted">
-      <span className="flex items-center gap-3">
-        <Icon className="size-4 shrink-0" />
+    <div className="flex items-center justify-between rounded-nested px-2 py-1.5 text-sm text-text-muted">
+      <span className="flex items-center gap-2.5">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px]">
+          <Icon className="size-4" />
+        </span>
         {theme === "dark" ? "Dark mode" : "Light mode"}
       </span>
       <button

@@ -13,6 +13,7 @@ import {
   type DemandSupplyData,
   type InventoryRangeKey,
 } from "@/lib/data/inventory";
+import { CtaButton } from "@/components/ui/cta-button";
 import { cn } from "@/lib/utils";
 
 /** Demand vs supply. The window is a real recompute server-side, not a scaled
@@ -145,13 +146,9 @@ export function DemandSupplyCard({ initial }: { initial: DemandSupplyData }) {
                   />
                 </label>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => apply(close)}
-                    className="flex-1 rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-bg"
-                  >
+                  <CtaButton type="button" onClick={() => apply(close)} className="flex-1">
                     Apply
-                  </button>
+                  </CtaButton>
                   <button
                     type="button"
                     onClick={() => reset(close)}

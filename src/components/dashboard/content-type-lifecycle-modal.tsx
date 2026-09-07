@@ -7,6 +7,7 @@ import { StatusPill } from "@/components/ui/pill";
 import { HoldButton } from "@/components/ui/hold-button";
 import { Stepper } from "@/components/ui/stepper";
 import type { ContentTypeRow } from "@/lib/data/content-types";
+import { CtaButton } from "@/components/ui/cta-button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -164,7 +165,7 @@ export function ContentTypeLifecycleModal({
       <div
         role="dialog"
         aria-label={copy.title(target.displayName)}
-        className="my-auto w-full max-w-lg rounded-card border border-border bg-card-sunken shadow-card"
+        className="my-auto w-full max-w-lg rounded-card border border-border glass-overlay"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-border p-6">
@@ -314,14 +315,10 @@ export function ContentTypeLifecycleModal({
               {busy ? "Working…" : copy.verb}
             </HoldButton>
           ) : (
-            <button
-              onClick={submit}
-              disabled={!canSave}
-              className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-bg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
+            <CtaButton onClick={submit} disabled={!canSave} className="gap-2">
               {busy && <Loader2 className="size-3.5 animate-spin" />}
               {copy.verb}
-            </button>
+            </CtaButton>
           )}
         </div>
       </div>

@@ -1,22 +1,29 @@
 import { cn } from "@/lib/utils";
 
 export type PillTone =
-  "ok" | "warn" | "orange" | "danger" | "critical" | "gray" | "info" | "accent" | "neutral";
+  | "ok"
+  | "warn"
+  | "orange"
+  | "danger"
+  | "critical"
+  | "gray"
+  | "info"
+  | "accent"
+  | "neutral";
 
 const TONES: Record<PillTone, string> = {
-  ok: "bg-ok/10 text-ok",
-  warn: "bg-warn/10 text-warn",
-  orange: "bg-orange/10 text-orange",
-  danger: "bg-danger/10 text-danger",
-  // Kept for future use; no status maps here since health pills went to a
-  // uniform 10% tint (Garreth 2026-09-02).
+  // One flat ground for every tone; the label carries the state.
+  ok: "bg-pill-bg text-ok",
+  warn: "bg-pill-bg text-pill-yellow",
+  orange: "bg-pill-bg text-pill-amber",
+  danger: "bg-pill-bg text-pill-red",
+  // The one exception: a solid alarm for the single state worse than
+  // "collapsing", where the pill is meant to shout.
   critical: "bg-danger-deep text-white",
-  // Same 10% tint as the status tones, but muted — for a state that is
-  // notable without being an alarm (e.g. an EMPTY production lane).
-  gray: "bg-text-muted/10 text-text-muted",
-  info: "bg-info/10 text-info",
-  accent: "bg-accent/10 text-accent",
-  neutral: "bg-card-raised text-text-muted",
+  gray: "bg-pill-bg text-text-muted",
+  info: "bg-pill-bg text-info",
+  accent: "bg-pill-bg text-accent",
+  neutral: "bg-pill-bg text-text-muted",
 };
 
 /** Status pill — a label on a tinted background. The tone carries the state;

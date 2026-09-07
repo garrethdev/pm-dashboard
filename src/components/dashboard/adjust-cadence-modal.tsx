@@ -7,6 +7,7 @@ import type { CadenceData } from "@/lib/data/cadence";
 import type { FleetDefaults } from "@/lib/data/scheduler-config";
 import { StatusPill } from "@/components/ui/pill";
 import { Stepper } from "@/components/ui/stepper";
+import { CtaButton } from "@/components/ui/cta-button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -140,7 +141,7 @@ export function AdjustCadenceModal({
       <div
         role="dialog"
         aria-label="Adjust posting cadence"
-        className="my-auto w-full max-w-2xl rounded-card border border-border bg-card-sunken shadow-card"
+        className="my-auto w-full max-w-2xl rounded-card border border-border glass-overlay"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-border p-6">
@@ -338,7 +339,7 @@ export function AdjustCadenceModal({
           >
             Cancel
           </button>
-          <button
+          <CtaButton
             onClick={save}
             disabled={!canSave}
             title={
@@ -348,11 +349,10 @@ export function AdjustCadenceModal({
                   ? "Filler + GLP is over the weekly budget"
                   : undefined
             }
-            className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-bg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-          >
+                      >
             {busy && <Loader2 className="size-3.5 animate-spin" />}
             Save for all accounts
-          </button>
+          </CtaButton>
         </div>
       </div>
     </div>

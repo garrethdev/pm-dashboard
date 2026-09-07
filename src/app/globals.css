@@ -2,8 +2,14 @@
 
 /*
  * PM Dashboard theme — THE single source of truth for all visual tokens.
- * Design language: Transcope reference (2026-08-31) — Space Grotesk, warm
- * blacks #11100F / #201F1E, 24px card radius, pill controls, barcode bars.
+ *
+ * Design language (2026-09-07 overhaul): neutral near-blacks lit by a single
+ * ambient glow, glass surfaces that borrow that light, General Sans throughout,
+ * 24px card radius, pill controls.
+ *
+ * Dark is the designed mode. Light keeps every token name but resolves the
+ * atmospherics to nothing — no glow, no blur, no texture — so the same markup
+ * renders flat rather than needing a second set of components.
  * The accent is deliberately ONE variable pair: swap --accent/--accent-deep
  * (and --accent-soft) to rebrand. The Figma iteration loop depends on every
  * color/radius living here and nowhere else — never hardcode hex in components.
@@ -11,13 +17,63 @@
 :root {
   color-scheme: dark;
 
-  --bg: #11100f;
-  --card: #201f1e;
-  --card-sunken: #191817;
-  --card-raised: #2a2827;
-  --border: #2e2c2a;
-  --text-primary: #f5f4f1;
-  --text-muted: #8f8c87;
+  --bg: #0b0b0c;
+
+  /* Surfaces are opaque again (Garreth 2026-09-07). They no longer need to pass
+   * the glow through, because the glow now sits ON TOP of everything as a thin
+   * film rather than underneath as a ground. */
+  --card: #111113;
+  --card-sunken: #0e0e0f;
+
+  /* Floating panels — ported from Garreth's Figma redesign (node 5:1245,
+   * "Panel / Notifications"), which uses Figma's GLASS material:
+   *
+   *   fill #16161a @ 60%   stroke #ffffff @ 11%   radius 16
+   *   blur 14   depth 45   lightAngle -45   lightIntensity 0.8
+   *   refraction 1   dispersion 0.43   splay 0.09
+   *
+   * CSS has no refractive material, so the mapping keeps what carries the look
+   * and drops what it cannot express. Blur, veil, stroke and radius are exact.
+   * `depth` + `lightAngle` + `lightIntensity` become inset shadows: a bright
+   * rim on the top-left edge, a dark one bottom-right, and a soft inner wall
+   * standing in for the 45px thickness. `saturate` stands in for the way glass
+   * concentrates colour behind it. Refraction, dispersion and splay have no CSS
+   * equivalent and are not faked — a coloured fringe drawn by hand reads as a
+   * rendering bug rather than as chromatic aberration. */
+  --overlay-veil: rgba(22, 22, 26, 0.6);
+  --overlay-blur: blur(14px) saturate(1.6);
+  --overlay-rim:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.22), inset 2px 2px 7px rgba(255, 255, 255, 0.055),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.05), inset -2px -2px 9px rgba(0, 0, 0, 0.28),
+    inset 0 0 26px rgba(255, 255, 255, 0.04), 0 16px 40px rgba(0, 0, 0, 0.45);
+  --card-raised: #1a1a1b;
+  --border: #242426;
+  --text-primary: #f4f4f5;
+  --text-muted: #8a8a92;
+
+  /* Atmospherics. The glow has to exist before glass reads as glass: a blur
+   * over a flat fill produces nothing, so the light source comes first and the
+   * translucent surfaces borrow from it. */
+  /* Two tall, heavily blurred ellipses rather than radial gradients — light
+   * shafts, not a vignette. Geometry from Garreth's Figma edit (node 9:2,
+   * "Background light"): 333x845 ellipses, layer blur 131.
+   *
+   * These now sit ABOVE the interface, not behind it, so the alphas are a third
+   * of the Figma values (20%/15% -> 7%/5%). A film over the content compounds
+   * with everything underneath, where a ground only lifted what showed past the
+   * cards; at the drawn strength it washed the whole page. */
+  --glow-a: rgba(217, 217, 217, 0.07);
+  --glow-b: rgba(217, 217, 217, 0.05);
+  --glow-blur: 131px;
+  --glow-rail: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 46%);
+
+  /* Glass. The highlight is an inset top edge, not a border — light from above
+   * hits the top lip of a panel and fades down its sides. */
+  --glass: rgba(255, 255, 255, 0.045);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --glass-blur: blur(16px) saturate(1.15);
+  --dot-opacity: 0.34;
 
   /* Accent — bright rich cyan (Garreth 2026-08-31). Swap these three to rebrand. */
   --accent: #22d3ee;
@@ -33,6 +89,19 @@
   --danger-deep: #dc2626;
   --info: #60a5fa;
 
+  /* Status pills (Garreth's Figma redesign, 2026-09-07). Every pill sits on one
+   * flat neutral ground and only the label is coloured, so a table full of them
+   * reads as a severity ladder rather than a colour chart.
+   *
+   * The pill palette is hotter than --danger/--orange/--warn because a small
+   * label on a dark ground needs more saturation than a block of tinted
+   * background did. Those tokens are unchanged and still serve text, borders,
+   * chart series and alert panels. */
+  --pill-bg: #262627;
+  --pill-red: #ff4949;
+  --pill-amber: #ff9549;
+  --pill-yellow: #fff949;
+
   --sh-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --sh-hero: 0 8px 40px rgba(34, 211, 238, 0.22);
 }
@@ -43,12 +112,28 @@
   color-scheme: light;
 
   --bg: #eef0f2;
-  --card: #f6f8fa;
-  --card-sunken: #f1f3f6;
-  --card-raised: #eef1f4;
-  --border: #e2e6ea;
+  --card: #f7f7f8;
+  --card-sunken: #f2f2f3;
+  --card-raised: #eeeef0;
+  --border: #e4e4e6;
   --text-primary: #1b1d21;
   --text-muted: #515c6b;
+
+  /* Flat by decision (Garreth 2026-09-07): light mode keeps the layout and
+   * drops the atmospherics rather than inventing a second visual language. */
+  --overlay-veil: var(--card);
+  --overlay-blur: none;
+  --overlay-rim: var(--sh-card);
+
+  --glow-a: transparent;
+  --glow-b: transparent;
+  --glow-blur: 0px;
+  --glow-rail: none;
+  --glass: var(--card);
+  --glass-border: var(--border);
+  --glass-highlight: 0 0 #0000;
+  --glass-blur: none;
+  --dot-opacity: 0;
 
   --accent: #0891b2;
   --accent-deep: #0e7490;
@@ -60,6 +145,11 @@
   --danger: #dc2626;
   --danger-deep: #991b1b;
   --info: #2563eb;
+
+  --pill-bg: #e4e8ed;
+  --pill-red: #c81e1e;
+  --pill-amber: #b4530a;
+  --pill-yellow: #856404;
 
   /* No shadows in light mode (Garreth 2026-08-31) — borders carry the elevation. */
   --sh-card: none;
@@ -91,9 +181,13 @@
   --color-danger: var(--danger);
   --color-danger-deep: var(--danger-deep);
   --color-info: var(--info);
+  --color-pill-bg: var(--pill-bg);
+  --color-pill-red: var(--pill-red);
+  --color-pill-amber: var(--pill-amber);
+  --color-pill-yellow: var(--pill-yellow);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-general-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-general-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --radius-card: 24px;
@@ -109,12 +203,90 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Space Grotesk stays on headings and big stat numerals (its character shows
- * best there); Inter carries body/table text. Garreth 2026-08-31. */
+/* One family throughout, as the reference does. Display sizes get tighter
+ * tracking; at body sizes the default fit is right. */
 h1,
 h2,
 .font-display {
   font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* ── Atmospherics ─────────────────────────────────────────────────────────
+ * The glow is anchored to the top of the content column rather than fixed to
+ * the viewport: it is a light source over the page, not a vignette that
+ * follows the reader down it. */
+/* No `isolation: isolate` here. It creates a backdrop root, which silently
+ * kills backdrop-filter for every descendant — the reason the notification
+ * panel and the modals were blurring nothing. It was only ever needed to
+ * contain a z-index:-1 pseudo-element, and the glow now sits above the page. */
+.page-glow {
+  position: relative;
+}
+
+/* Its own clipping box rather than overflow on the column: the ellipses hang
+ * off the right edge, and clipping the column itself would trap the sticky
+ * topbar inside it.
+ *
+ * Sits above every layer in the column, dialogs included, so the light reads as
+ * a film over the interface. `pointer-events: none` is load-bearing — without
+ * it this would swallow every click on the page. */
+.glow-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 60;
+}
+.glow-layer > span {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(var(--glow-blur));
+}
+
+.rail-glow {
+  background-image: var(--glow-rail);
+  background-repeat: no-repeat;
+  background-size: 100% 420px;
+}
+
+/* A floating panel: same lit language as .glass, but the veil is dense enough
+ * to stop live content reading through it. */
+.glass-overlay {
+  background: var(--overlay-veil);
+  box-shadow: var(--overlay-rim);
+  -webkit-backdrop-filter: var(--overlay-blur);
+  backdrop-filter: var(--overlay-blur);
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* Halftone dither in a panel's top-right corner, fading diagonally out. Uses
+ * currentColor so a tile tints its own texture. */
+.dot-fade {
+  position: relative;
+  overflow: hidden;
+}
+.dot-fade::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(currentColor 2px, transparent 2.2px);
+  background-size: 7px 7px;
+  opacity: var(--dot-opacity);
+  -webkit-mask-image: radial-gradient(115% 115% at 100% 0%, #000 0%, transparent 58%);
+  mask-image: radial-gradient(115% 115% at 100% 0%, #000 0%, transparent 58%);
 }
 
 /* All counts/stats align — tabular figures */
