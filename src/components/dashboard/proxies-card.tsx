@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2 } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
+import { ExtendButton } from "@/components/ui/extend-button";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
 
 export interface AttentionItem {
@@ -12,8 +13,12 @@ export interface AttentionItem {
   detail: string;
   tone: PillTone;
   label: string;
-  /** Extend/renew is a Phase 2 write — button renders disabled until then. */
-  extendable: boolean;
+  /**
+   * Provider panel to open for this row, or null when there is nothing to
+   * extend. The dashboard hands the job over rather than doing it: extending
+   * spends money on a card on file, and a mis-fired write here is unrecoverable.
+   */
+  extendHref: string | null;
 }
 
 export interface ProxiesCardProps {
@@ -35,15 +40,7 @@ function AttentionList({ items, footer }: { items: AttentionItem[]; footer: stri
               <span className="w-24 shrink-0 truncate text-sm font-medium">{row.profile}</span>
               <span className="min-w-0 flex-1 truncate text-sm text-text-muted">{row.detail}</span>
               <StatusPill tone={row.tone}>{row.label}</StatusPill>
-              {row.extendable && (
-                <button
-                  disabled
-                  title="Write actions arrive in Phase 2"
-                  className="cursor-not-allowed rounded-full border border-border bg-card-raised px-3 py-1 text-xs font-medium opacity-50"
-                >
-                  Extend
-                </button>
-              )}
+              {row.extendHref && <ExtendButton href={row.extendHref} />}
             </div>
           ))}
         </div>

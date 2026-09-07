@@ -3,6 +3,7 @@ import { CtaButton } from "@/components/ui/cta-button";
 import { Card } from "@/components/ui/card";
 import { getProxyCheapBalance } from "@/lib/data/proxycheap";
 import { getTextVerifiedBalance } from "@/lib/data/textverified";
+import { PROVIDER_LINKS } from "@/lib/provider-links";
 
 /**
  * Balance cards for the two paid providers behind the Proxies & Phones page,
@@ -14,8 +15,8 @@ import { getTextVerifiedBalance } from "@/lib/data/textverified";
 const LOW = 20;
 
 const TOPUP = {
-  proxycheap: "https://app.proxy-cheap.com/billing",
-  textverified: "https://www.textverified.com/app/billing",
+  proxycheap: PROVIDER_LINKS.proxycheapBilling,
+  textverified: PROVIDER_LINKS.textverifiedBilling,
 } as const;
 
 function BalanceCard({

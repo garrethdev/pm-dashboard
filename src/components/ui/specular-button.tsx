@@ -7,7 +7,7 @@ import { Renderer, Program, Mesh, Triangle, Color } from "ogl";
  * SpecularButton — React Bits (https://reactbits.dev), TypeScript + Tailwind
  * variant, adapted for this codebase.
  *
- * Two changes from the published source:
+ * Changes from the published source:
  *
  *  - "use client" and a client-only guard, because every page here is a Server
  *    Component by default and this touches window/WebGL on mount.
@@ -20,6 +20,8 @@ import { Renderer, Program, Mesh, Triangle, Color } from "ogl";
  *    turning those into buttons would have cost middle-click, open-in-new-tab
  *    and the status-bar preview. The effect is element-agnostic — it only reads
  *    a bounding box.
+ *  - The drop shadow is `--sb-shadow` rather than a literal, so light mode can
+ *    switch it off along with every other shadow in the theme.
  *
  * Each instance owns a WebGL context and a requestAnimationFrame loop, so this
  * is for primary calls to action — a couple per screen — not for every button.
@@ -344,7 +346,7 @@ export function SpecularButton({
     };
   }, []);
 
-  const classes = `relative m-0 inline-flex cursor-pointer items-center justify-center border-none leading-none font-medium tracking-[0.01em] no-underline outline-none transition-transform duration-150 [background:color-mix(in_srgb,var(--sb-tint)_calc(var(--sb-tint-opacity)*100%),transparent)] [border-radius:var(--sb-radius)] [backdrop-filter:blur(var(--sb-blur))] [color:var(--sb-text-color)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.25)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-[3px] disabled:cursor-default disabled:opacity-55 disabled:active:scale-100 ${SIZES[size] || SIZES.md}${className ? ` ${className}` : ""}`;
+  const classes = `relative m-0 inline-flex cursor-pointer items-center justify-center border-none leading-none font-medium tracking-[0.01em] no-underline outline-none transition-transform duration-150 [background:color-mix(in_srgb,var(--sb-tint)_calc(var(--sb-tint-opacity)*100%),transparent)] [border-radius:var(--sb-radius)] [backdrop-filter:blur(var(--sb-blur))] [color:var(--sb-text-color)] shadow-(--sb-shadow) active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-[3px] disabled:cursor-default disabled:opacity-55 disabled:active:scale-100 ${SIZES[size] || SIZES.md}${className ? ` ${className}` : ""}`;
 
   const vars = {
     "--sb-radius": `${radius}px`,

@@ -104,6 +104,11 @@
 
   --sh-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --sh-hero: 0 8px 40px rgba(34, 211, 238, 0.22);
+
+  /* SpecularButton's own drop shadow. A token rather than a literal inside the
+   * vendored component so light mode can drop it with every other shadow. */
+  --sb-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 /* Light mode — toggled via data-theme on <html> (sidebar switch). Same token
@@ -135,25 +140,32 @@
   --glass-blur: none;
   --dot-opacity: 0;
 
-  --accent: #0891b2;
-  --accent-deep: #0e7490;
-  --accent-soft: rgba(8, 145, 178, 0.12);
+  /* Semantics run a step deeper than the dark theme's (Garreth 2026-09-07).
+   * On a near-white ground the mid-tone versions read as washed rather than
+   * emphatic, and status text at small sizes needs the extra contrast. */
+  --accent: #0e7490;
+  --accent-deep: #155e75;
+  --accent-soft: rgba(14, 116, 144, 0.12);
 
-  --ok: #15803d;
-  --warn: #b45309;
-  --orange: #c2410c;
-  --danger: #dc2626;
-  --danger-deep: #991b1b;
-  --info: #2563eb;
+  --ok: #166534;
+  --warn: #92400e;
+  --orange: #9a3412;
+  --danger: #b91c1c;
+  --danger-deep: #7f1d1d;
+  --info: #1d4ed8;
 
   --pill-bg: #e4e8ed;
-  --pill-red: #c81e1e;
-  --pill-amber: #b4530a;
-  --pill-yellow: #856404;
+  --pill-red: #a11616;
+  --pill-amber: #8a3f08;
+  --pill-yellow: #6b4f03;
 
   /* No shadows in light mode (Garreth 2026-08-31) — borders carry the elevation. */
   --sh-card: none;
   --sh-hero: none;
+  /* Transparent rather than `none`: this one feeds a Tailwind shadow utility,
+   * which composes it into a comma-separated box-shadow where a literal `none`
+   * would invalidate the whole declaration. */
+  --sb-shadow: 0 0 #0000;
 }
 
 /* Theme-conditional visibility (e.g. white vs black logo variants). */

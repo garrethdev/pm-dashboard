@@ -2,15 +2,24 @@
 
 import { useState } from "react";
 import { DashCard } from "@/components/ui/card";
+import { ExtendButton } from "@/components/ui/extend-button";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { StatusPill } from "@/components/ui/pill";
 import { SearchInput } from "@/components/ui/search-input";
 import { daysTone, formatEtDate, formatPhone } from "@/lib/data/format";
 import type { ProxyPhoneRow } from "@/lib/data/proxies";
+import { phoneExtendHref, proxyExtendHref } from "@/lib/provider-links";
 
 type View = "proxies" | "phones";
 
 const TH = "sticky top-0 z-10 bg-card pb-2 font-medium";
+
+/** Trailing action cell. Empty when the row has nothing to extend. */
+function ExtendCell({ href }: { href: string | null }) {
+  return (
+    <td className="py-2.5 text-right">{href && <ExtendButton href={href} />}</td>
+  );
+}
 
 /** Proxies & phones detail — header search + pill switcher between two tables. */
 export function ProxiesTable({
@@ -100,6 +109,9 @@ export function ProxiesTable({
                     <th className={TH}>Expiry</th>
                     <th className={TH}>Days left</th>
                     <th className={TH}>Auto-renew</th>
+                    <th className={`${TH} text-right`}>
+                      <span className="sr-only">Extend</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -139,6 +151,7 @@ export function ProxiesTable({
                           <span className="text-text-muted">—</span>
                         )}
                       </td>
+                      <ExtendCell href={proxyExtendHref(row)} />
                     </tr>
                   ))}
                 </tbody>
@@ -153,6 +166,9 @@ export function ProxiesTable({
                     <th className={TH}>Rental</th>
                     <th className={TH}>Cycle ends</th>
                     <th className={TH}>Days left</th>
+                    <th className={`${TH} text-right`}>
+                      <span className="sr-only">Extend</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,6 +206,7 @@ export function ProxiesTable({
                           <span className="text-text-muted">—</span>
                         )}
                       </td>
+                      <ExtendCell href={phoneExtendHref(row)} />
                     </tr>
                   ))}
                 </tbody>

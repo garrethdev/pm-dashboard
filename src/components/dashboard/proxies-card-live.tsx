@@ -2,6 +2,7 @@ import { DashCard } from "@/components/ui/card";
 import { ProxiesCard, type AttentionItem } from "@/components/dashboard/proxies-card";
 import { getProxyPhoneData, type ProxyPhoneData } from "@/lib/data/proxies";
 import { daysTone, formatEtShort, formatPhone } from "@/lib/data/format";
+import { phoneExtendHref, proxyExtendHref } from "@/lib/provider-links";
 
 const MAX_ROWS = 6;
 
@@ -16,7 +17,7 @@ function proxyAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
         detail: `${row.proxyHost}:${row.proxyPort} not in proxy-cheap`,
         tone: "warn",
         label: "No sub",
-        extendable: false,
+        extendHref: proxyExtendHref(row),
       });
     } else if (row.subscription && row.subscription.status !== "ACTIVE") {
       attention.push({
@@ -25,7 +26,7 @@ function proxyAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
         detail: `${row.proxyHost}:${row.proxyPort}`,
         tone: "danger",
         label: row.subscription.status.toLowerCase(),
-        extendable: true,
+        extendHref: proxyExtendHref(row),
       });
     } else if (row.subscription && row.subscription.daysLeft <= 7 && !row.subscription.autoExtend) {
       attention.push({
@@ -34,7 +35,7 @@ function proxyAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
         detail: `expires in ${row.subscription.daysLeft} days`,
         tone: daysTone(row.subscription.daysLeft),
         label: `${row.subscription.daysLeft}d left`,
-        extendable: true,
+        extendHref: proxyExtendHref(row),
       });
     }
   }
@@ -64,7 +65,7 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
         detail: `${formatPhone(row.phoneNumber)}, not set to renew`,
         tone: "danger",
         label: rental.daysLeft !== null ? `${rental.daysLeft}d left` : "dropping",
-        extendable: true,
+        extendHref: phoneExtendHref(row),
       });
     } else if (rental.daysLeft !== null && rental.daysLeft <= 7) {
       attention.push({
@@ -73,7 +74,7 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
         detail: `${formatPhone(row.phoneNumber)}, cycle renews in ${rental.daysLeft}d`,
         tone: daysTone(rental.daysLeft),
         label: `${rental.daysLeft}d`,
-        extendable: true,
+        extendHref: phoneExtendHref(row),
       });
     } else if (!rental.renewable) {
       attention.push({
@@ -82,7 +83,7 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
         detail: `${formatPhone(row.phoneNumber)}, non-renewable rental`,
         tone: "warn",
         label: "one-shot",
-        extendable: false,
+        extendHref: phoneExtendHref(row),
       });
     }
   }

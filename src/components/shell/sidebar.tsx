@@ -186,7 +186,15 @@ export function Sidebar() {
           onClick={toggle}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex size-8 shrink-0 items-center justify-center rounded-nested text-text-muted transition-colors hover:bg-card hover:text-text-primary"
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-nested text-text-muted transition-colors hover:bg-card hover:text-text-primary",
+            // Optically aligned, not box-aligned. The 18px glyph sits centred in
+            // a 32px hit target, so matching the row's padding would leave the
+            // visible icon 11px short of the theme switch below it. The button
+            // hangs into the gutter by exactly that much, putting its right edge
+            // on the switch's.
+            !collapsed && "-mr-[11px]",
+          )}
         >
           <SidebarToggleIcon className="size-[18px]" />
         </button>
