@@ -124,8 +124,19 @@ async function resolveViaScrapeCreators(postUrl: string): Promise<string | null>
   }
 }
 
-/** Resolve a thumbnail for one post, cached in post_thumbnails (with TTL). */
-async function resolveThumbnail(post: RawPost): Promise<string | null> {
+/**
+ * Resolve a thumbnail for one post, cached in post_thumbnails (with TTL).
+ *
+ * Exported so the per-account analytics reuses this cache rather than standing
+ * up a second resolver — the CDN URLs expire, the oEmbed/ScrapeCreators calls
+ * are rate-limited, and a null result is persisted on purpose so a post with no
+ * recoverable thumbnail is not re-resolved on every page load.
+ */
+export async function resolveThumbnail(post: {
+  platform: string;
+  post_id: string;
+  post_url: string;
+}): Promise<string | null> {
   // Fresh cache hit?
   try {
     const cached = await sbRest<{ thumbnail_url: string | null; resolved_at: string }[]>(
