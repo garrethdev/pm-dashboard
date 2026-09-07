@@ -1,6 +1,25 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /**
+   * Keep a visited page in the browser for a short while, so going back to one
+   * is instant instead of a fresh round trip.
+   *
+   * Next defaults the dynamic entry to 0, which means every navigation refetches
+   * even if you were just there a second ago. Every page here is dynamic, and
+   * from Manila a round trip to iad1 is roughly half a second, so the second
+   * visit to Inventory cost exactly as much as the first and showed the loading
+   * state again.
+   *
+   * 30s is deliberately under the 60s Supabase TTL these pages already read
+   * through, so this never serves anything older than the server would have.
+   * Writes are unaffected: every mutation path calls router.refresh(), which
+   * drops this cache, and the Refresh button expires the server tags first.
+   */
+  experimental: {
+    staleTimes: { dynamic: 30, static: 180 },
+  },
+
   // /cadence was folded into /content-calendar (2026-09-06): the lane mix moved
   // into the "Adjust Cadence" dialog and the per-account limits table moved
   // under the calendar. Permanent, because the old URL is in people's history
