@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Peptide Miracles Pipeline",
+  title: "Peptide Miracles Dashboard",
   description: "Peptide Miracles content-operations pipeline dashboard",
 };
 
