@@ -42,10 +42,15 @@
    * rendering bug rather than as chromatic aberration. */
   --overlay-veil: rgba(22, 22, 26, 0.6);
   --overlay-blur: blur(14px) saturate(1.6);
+  /* Softened 2026-09-07: the lit edge was drawing as a hard white line around
+   * every panel rather than as light catching a lip. The four white stops came
+   * down together — dimming only the 1px stroke would have left its own bloom
+   * glowing brighter than the edge casting it. The dark stops are untouched;
+   * they carry the depth, and losing them flattens the panel. */
   --overlay-rim:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.22), inset 2px 2px 7px rgba(255, 255, 255, 0.055),
-    inset -1px -1px 0 rgba(255, 255, 255, 0.05), inset -2px -2px 9px rgba(0, 0, 0, 0.28),
-    inset 0 0 26px rgba(255, 255, 255, 0.04), 0 16px 40px rgba(0, 0, 0, 0.45);
+    inset 1px 1px 0 rgba(255, 255, 255, 0.11), inset 2px 2px 7px rgba(255, 255, 255, 0.035),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.03), inset -2px -2px 9px rgba(0, 0, 0, 0.28),
+    inset 0 0 26px rgba(255, 255, 255, 0.025), 0 16px 40px rgba(0, 0, 0, 0.45);
   --card-raised: #1a1a1b;
   --border: #242426;
   --text-primary: #f4f4f5;
@@ -66,6 +71,16 @@
   --glow-b: rgba(217, 217, 217, 0.05);
   --glow-blur: 131px;
   --glow-rail: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 46%);
+  /* The rail's second light, low in the sidebar. Placed at 78% rather than at
+   * the bottom edge because the reference blooms above the footer and lets the
+   * very bottom fall dark again — a glow anchored to the edge instead lights up
+   * Settings and Logout, which is the opposite of what it is for. Neutral grey
+   * like --glow-a/b, not the accent: this is light, not brand. */
+  --glow-rail-bottom: radial-gradient(
+    78% 30% at 50% 78%,
+    rgba(217, 217, 217, 0.045),
+    transparent 72%
+  );
 
   /* Glass. The highlight is an inset top edge, not a border — light from above
    * hits the top lip of a panel and fades down its sides. */
@@ -134,6 +149,7 @@
   --glow-b: transparent;
   --glow-blur: 0px;
   --glow-rail: none;
+  --glow-rail-bottom: none;
   --glass: var(--card);
   --glass-border: var(--border);
   --glass-highlight: 0 0 #0000;
@@ -261,9 +277,16 @@ h2,
 }
 
 .rail-glow {
-  background-image: var(--glow-rail);
+  background-image: var(--glow-rail), var(--glow-rail-bottom);
   background-repeat: no-repeat;
-  background-size: 100% 420px;
+  /* Top rail is a fixed 420px band; the bottom bloom is placed within the full
+     height of the rail, so it tracks the viewport rather than a magic offset. */
+  background-size:
+    100% 420px,
+    100% 100%;
+  background-position:
+    top,
+    bottom;
 }
 
 /* A floating panel: same lit language as .glass, but the veil is dense enough
@@ -307,10 +330,6 @@ h2,
 }
 
 /* Barcode-style bars (Transcope's fleet-distribution treatment) */
-.barcode {
-  mask-image: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px);
-}
-
 ::selection {
   background: var(--accent-soft);
 }
