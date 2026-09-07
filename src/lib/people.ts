@@ -15,7 +15,9 @@ const DISPLAY_NAMES: Record<string, string> = {
   "garrethdottin@gmail.com": "Garreth",
   "takeuchiyuriet@gmail.com": "Yurie",
   "milan@arborvita.io": "Milan",
-  "czedrickjhake.cc@gmail.com": "Czed",
+  // Both addresses are the same person (Garreth 2026-09-07).
+  "czedrickjhake.cc@gmail.com": "Czedrick",
+  "cjcaceres.cc@gmail.com": "Czedrick",
 };
 
 /** "takeuchiyuriet@gmail.com" -> "Yurie"; unknown addresses fall back to the
