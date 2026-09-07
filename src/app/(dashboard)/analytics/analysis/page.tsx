@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "@/components/ui/icons";
 import { Card, DashCard } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/pill";
 import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";

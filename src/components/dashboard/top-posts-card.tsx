@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BarChart3, ExternalLink, Play } from "lucide-react";
+import { ArrowRight, BarChart3, ExternalLink, Play } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { Skeleton } from "@/components/ui/skeleton";

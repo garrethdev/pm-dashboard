@@ -1,4 +1,4 @@
-import { ExternalLink, Globe, Smartphone } from "lucide-react";
+import { ExternalLink, Globe, Smartphone } from "@/components/ui/icons";
 import { Card } from "@/components/ui/card";
 import { getProxyCheapBalance } from "@/lib/data/proxycheap";
 import { getTextVerifiedBalance } from "@/lib/data/textverified";

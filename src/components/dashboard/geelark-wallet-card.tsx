@@ -1,4 +1,4 @@
-import { ExternalLink, Wallet } from "lucide-react";
+import { ExternalLink, Wallet } from "@/components/ui/icons";
 import { Card } from "@/components/ui/card";
 import { getWallet } from "@/lib/data/wallet";
 

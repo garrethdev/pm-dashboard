@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "@/components/ui/icons";
 import { AdjustCadenceModal } from "@/components/dashboard/adjust-cadence-modal";
 import type { CadenceData } from "@/lib/data/cadence";
 import type { FleetDefaults } from "@/lib/data/scheduler-config";

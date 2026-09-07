@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 export type SortDir = "desc" | "asc";

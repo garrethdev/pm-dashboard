@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 /** Inline search field for detail-page tables. */

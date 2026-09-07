@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/pill";
 import { formatEtDate } from "@/lib/data/format";

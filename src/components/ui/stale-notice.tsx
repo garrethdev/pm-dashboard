@@ -1,4 +1,4 @@
-import { CloudOff } from "lucide-react";
+import { CloudOff } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 /**

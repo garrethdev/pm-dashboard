@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowDownRight, ArrowUpRight, ExternalLink, Play } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ExternalLink, Play } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import {
