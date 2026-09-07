@@ -38,7 +38,7 @@ async function sendMagicLink(formData: FormData) {
  *  the page prerenders and what stands in while the query string resolves. */
 function SignInForm({ error }: { error?: string }) {
   return (
-    <form action={sendMagicLink} className="flex flex-col gap-4">
+    <form action={sendMagicLink} className="flex flex-col gap-5">
       <label className="text-sm text-text-muted" htmlFor="email">
         Sign in with your work email
       </label>
@@ -123,8 +123,8 @@ export default function LoginPage({
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-sm rounded-card border border-border bg-card/90 px-8 py-12 shadow-card backdrop-blur-xl">
-        <div className="mb-10 flex flex-col gap-2">
+      <div className="relative z-10 w-full max-w-sm rounded-card border border-border bg-card/90 px-9 py-16 shadow-card backdrop-blur-xl">
+        <div className="mb-14 flex flex-col gap-2">
           <Image
             src="/logo-white.svg"
             alt="Peptide Miracles"

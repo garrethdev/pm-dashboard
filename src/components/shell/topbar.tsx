@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, Bell, CheckCircle2, RotateCw } from "@/components/ui/icons";
+import { displayNameOf } from "@/lib/people";
 import { cn } from "@/lib/utils";
 
 const SECTION_NAMES: Record<string, string> = {
@@ -65,14 +66,6 @@ function greetingFor(now: Date): string {
   return band.options[now.getDate() % band.options.length];
 }
 
-/** "garreth@cryptomiami.net" -> "Garreth". Falls back to no name. */
-function firstNameOf(email?: string): string | null {
-  const local = (email ?? "").split("@")[0];
-  const first = local.split(/[._+-]/)[0];
-  if (!first) return null;
-  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
-}
-
 /**
  * "14h", "3d", "2w". Runs on the viewer's clock, which is safe here because the
  * panel only ever renders after the feed has been fetched client-side — nothing
@@ -107,7 +100,7 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [greeting, setGreeting] = useState<string | null>(null);
-  const name = firstNameOf(userEmail);
+  const name = displayNameOf(userEmail);
 
   useEffect(() => {
     // Deliberate post-mount setState: the greeting comes from the VIEWER's
