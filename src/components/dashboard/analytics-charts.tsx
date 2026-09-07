@@ -20,6 +20,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card, DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { TopPostsCard } from "@/components/dashboard/top-posts-card";
+import { AnalyticsSkeleton } from "@/components/dashboard/analytics-skeleton";
 import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
 import { formatEtDate } from "@/lib/data/format";
 import { cn } from "@/lib/utils";
@@ -155,7 +156,6 @@ function ViewsTrend({
                   strokeWidth={2}
                   fill="url(#ttG)"
                   activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
-                  isAnimationActive={false}
                 />
               )}
               {platform !== "tiktok" && (
@@ -167,7 +167,6 @@ function ViewsTrend({
                   strokeWidth={2}
                   fill="url(#igG)"
                   activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
-                  isAnimationActive={false}
                 />
               )}
             </>
@@ -182,7 +181,6 @@ function ViewsTrend({
                   strokeWidth={2}
                   fill="url(#ttG)"
                   activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
-                  isAnimationActive={false}
                 />
               )}
               {platform !== "tiktok" && (
@@ -194,7 +192,6 @@ function ViewsTrend({
                   strokeWidth={2}
                   fill="url(#igG)"
                   activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
-                  isAnimationActive={false}
                 />
               )}
             </>
@@ -726,91 +723,109 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
       </div>
 
       <div className="flex flex-col gap-3">
-        {/* Bento: best account over a 2x2 of metrics, with the trend beside it. */}
-        {/* 2:3 split — the trend needs more width than the bento beside it. */}
-        <div className="grid gap-3 xl:grid-cols-5">
-          <div className="flex flex-col gap-3 xl:col-span-2">
-            <BestAccountTile data={data} />
-            <div className="grid grid-cols-2 gap-3">
-              <MetricTile
-                id="posts"
-                label="Posts"
-                value={nf(s.posts)}
-                delta={data.deltas.posts}
-                spark={series.map((d) => d.posts)}
-              />
-              <MetricTile
-                id="views"
-                label="Total views"
-                value={compact(s.views)}
-                delta={data.deltas.views}
-                spark={series.map((d) => d.views)}
-              />
-              <MetricTile
-                id="avg"
-                label="Avg views"
-                value={nf(s.avgViews)}
-                delta={data.deltas.avgViews}
-                spark={series.map((d) => d.avgViews)}
-              />
-              <MetricTile
-                id="eng"
-                label="Engagement rate"
-                value={`${s.engagementRate.toFixed(2)}%`}
-                delta={data.deltas.engagementRate}
-                spark={series.map((d) => d.engagementRate)}
-              />
+        {/* While a range or platform switch is in flight, everything below is
+            derived from `data` and so is genuinely stale — show the same
+            skeleton the route uses rather than the old numbers.
+
+            The real tree is hidden rather than unmounted: the charts keep their
+            layout measurements, so the new data draws straight in instead of
+            ResponsiveContainer re-measuring from zero on every switch.
+
+            TopPostsCard stays outside — it holds its own range and does not
+            reload with this one. */}
+        {loading && (
+          <AnalyticsSkeleton
+            accountRows={data.accounts.length || 12}
+            contentTypeRows={data.contentTypes.length || 7}
+          />
+        )}
+        <div className={cn("flex flex-col gap-3", loading && "hidden")}>
+          {/* Bento: best account over a 2x2 of metrics, with the trend beside it. */}
+          {/* 2:3 split — the trend needs more width than the bento beside it. */}
+          <div className="grid gap-3 xl:grid-cols-5">
+            <div className="flex flex-col gap-3 xl:col-span-2">
+              <BestAccountTile data={data} />
+              <div className="grid grid-cols-2 gap-3">
+                <MetricTile
+                  id="posts"
+                  label="Posts"
+                  value={nf(s.posts)}
+                  delta={data.deltas.posts}
+                  spark={series.map((d) => d.posts)}
+                />
+                <MetricTile
+                  id="views"
+                  label="Total views"
+                  value={compact(s.views)}
+                  delta={data.deltas.views}
+                  spark={series.map((d) => d.views)}
+                />
+                <MetricTile
+                  id="avg"
+                  label="Avg views"
+                  value={nf(s.avgViews)}
+                  delta={data.deltas.avgViews}
+                  spark={series.map((d) => d.avgViews)}
+                />
+                <MetricTile
+                  id="eng"
+                  label="Engagement rate"
+                  value={`${s.engagementRate.toFixed(2)}%`}
+                  delta={data.deltas.engagementRate}
+                  spark={series.map((d) => d.engagementRate)}
+                />
+              </div>
             </div>
+
+            <DashCard
+              title="Views"
+              className="min-h-full xl:col-span-3"
+              toolbar={
+                <FilterPills
+                  value={metric}
+                  onChange={(v) => setMetric(v as Metric)}
+                  options={[
+                    { value: "avg", label: "Average" },
+                    { value: "total", label: "Total" },
+                  ]}
+                />
+              }
+              actions={<TrendLegend data={series} platform={platform} metric={metric} />}
+            >
+              <ViewsTrend data={series} platform={platform} metric={metric} />
+            </DashCard>
           </div>
 
-          <DashCard
-            title="Views"
-            className="min-h-full xl:col-span-3"
-            toolbar={
-              <FilterPills
-                value={metric}
-                onChange={(v) => setMetric(v as Metric)}
-                options={[
-                  { value: "avg", label: "Average" },
-                  { value: "total", label: "Total" },
-                ]}
-              />
-            }
-            actions={<TrendLegend data={series} platform={platform} metric={metric} />}
-          >
-            <ViewsTrend data={series} platform={platform} metric={metric} />
-          </DashCard>
-        </div>
-
-        <div className="grid gap-3 xl:grid-cols-5">
-          <DashCard title="Avg views by character" className="xl:col-span-2">
-            <CharacterBars data={data} />
-          </DashCard>
-          <DashCard
-            className="xl:col-span-3"
-            title="Top content types per character"
-            toolbar={
-              <FilterPills
-                value={ctChar}
-                onChange={setCtChar}
-                options={[
-                  { value: "all", label: "All" },
-                  ...ctCharacters.map((c) => ({ value: c, label: c.replace("Character ", "Char ") })),
-                ]}
-              />
-            }
-          >
-            <ContentTypes data={data} only={ctChar} />
-          </DashCard>
-        </div>
-
-        <Card className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-base font-semibold">Account performance</h2>
-            <span className="text-xs tnum text-text-muted">{data.accounts.length} accounts</span>
+          <div className="grid gap-3 xl:grid-cols-5">
+            <DashCard title="Avg views by character" className="xl:col-span-2">
+              <CharacterBars data={data} />
+            </DashCard>
+            <DashCard
+              className="xl:col-span-3"
+              title="Top content types per character"
+              toolbar={
+                <FilterPills
+                  value={ctChar}
+                  onChange={setCtChar}
+                  options={[
+                    { value: "all", label: "All" },
+                    ...ctCharacters.map((c) => ({ value: c, label: c.replace("Character ", "Char ") })),
+                  ]}
+                />
+              }
+            >
+              <ContentTypes data={data} only={ctChar} />
+            </DashCard>
           </div>
-          <AccountPerformance rows={data.accounts} />
-        </Card>
+
+          <Card className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-base font-semibold">Account performance</h2>
+              <span className="text-xs tnum text-text-muted">{data.accounts.length} accounts</span>
+            </div>
+            <AccountPerformance rows={data.accounts} />
+          </Card>
+        </div>
 
         {/* Inside the view, not beside it on the page, so it can read the
             platform pills above rather than needing a second set. */}

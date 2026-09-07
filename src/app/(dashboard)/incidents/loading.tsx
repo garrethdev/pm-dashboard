@@ -1,16 +1,23 @@
-import { CardSkeleton } from "@/components/ui/card-skeleton";
+import { DashCard } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 /**
- * Route-level loading state. Next prefetches this with the static shell, so it
- * paints the instant the link is clicked instead of after the server answers —
- * from Manila that gap is roughly half a second of a page that looks frozen.
- * Card titles are read off the real components so the swap moves nothing.
+ * Mirrors IncidentHistory's frame: the heading shares a wrap row with the range
+ * pills and the "as of" stamp, so both are held open here. Without them the
+ * table would start ~26px higher than it does once loaded and jump on arrival.
  */
 export default function IncidentsLoading() {
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Incidents</h1>
-      <CardSkeleton title="Incident history" lines={12} />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <h1 className="text-xl font-semibold">Incidents</h1>
+        <Skeleton className="h-[26px] w-[160px] rounded-full" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <DashCard title="Incident history">
+        <TableSkeleton rows={12} />
+      </DashCard>
     </div>
   );
 }

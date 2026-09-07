@@ -1,16 +1,15 @@
-import { CardSkeleton } from "@/components/ui/card-skeleton";
+import { AnalyticsSkeleton } from "@/components/dashboard/analytics-skeleton";
 
 /**
- * Route-level loading state. Next prefetches this with the static shell, so it
- * paints the instant the link is clicked instead of after the server answers —
- * from Manila that gap is roughly half a second of a page that looks frozen.
- * Card titles are read off the real components so the swap moves nothing.
+ * Route-level loading state. Shares AnalyticsSkeleton with the in-page state
+ * the view shows while a range switch is in flight, so arriving at the page and
+ * changing its range look like the same thing happening.
  */
 export default function AnalyticsLoading() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Analytics</h1>
-      <CardSkeleton title="Analytics" lines={14} />
+      <AnalyticsSkeleton />
     </div>
   );
 }
