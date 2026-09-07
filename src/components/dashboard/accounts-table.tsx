@@ -450,33 +450,29 @@ export function AccountsTable({
                         </td>
                       )}
                       <td className="py-2.5">
-                        <span className="inline-flex items-center gap-1.5">
-                          {/* The pill is the way into the review, so it has to
-                              look pressable: it lifts, brightens and shows a
-                              ring on hover. Without that nobody finds it. */}
-                          <button
-                            type="button"
-                            onClick={() => setReviewing(row)}
-                            title={verdictEvidence(row)}
-                            aria-label={`Review health verdict for ${row.profile}`}
-                            className="group cursor-pointer rounded-full outline-none transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-accent/70"
+                        {/* The pill is the way into the review, so it has to look
+                            pressable: it lifts, brightens and shows a ring on hover.
+                            Without that nobody finds it.
+
+                            A stale verdict draws no badge beside the pill. The fact is
+                            not lost — verdictEvidence() opens the tooltip with "Needs
+                            another look", and the review modal says it outright — but a
+                            coloured word next to a coloured pill read as a second status
+                            arguing with the first. */}
+                        <button
+                          type="button"
+                          onClick={() => setReviewing(row)}
+                          title={verdictEvidence(row)}
+                          aria-label={`Review health verdict for ${row.profile}`}
+                          className="group cursor-pointer rounded-full outline-none transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-accent/70"
+                        >
+                          <StatusPill
+                            tone={healthTone(row.healthStatus)}
+                            className="ring-1 ring-transparent transition-all duration-150 group-hover:brightness-125 group-hover:ring-current/40"
                           >
-                            <StatusPill
-                              tone={healthTone(row.healthStatus)}
-                              className="ring-1 ring-transparent transition-all duration-150 group-hover:brightness-125 group-hover:ring-current/40"
-                            >
-                              {row.healthStatus}
-                            </StatusPill>
-                          </button>
-                          {row.review?.needsRereview && (
-                            <span
-                              title={verdictEvidence(row)}
-                              className="text-xs font-semibold text-warn"
-                            >
-                              re-check
-                            </span>
-                          )}
-                        </span>
+                            {row.healthStatus}
+                          </StatusPill>
+                        </button>
                       </td>
                       {fullColumns && (
                         <td className="py-2.5 tnum">

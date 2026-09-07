@@ -38,11 +38,19 @@ export function SortButton({
   );
 }
 
-/** desc → asc → off cycle used by all sorters. */
+/**
+ * The cycle used by all sorters: biggest first, then smallest, then off.
+ *
+ * `first` flips which end a fresh column opens on. Countdown columns want the
+ * smallest value first — on "days left", the rows about to expire are the whole
+ * reason you clicked — where every other column reads as a ranking and wants
+ * the largest.
+ */
 export function cycleSort<K extends string>(
   current: { key: K; dir: SortDir } | null,
   key: K,
+  first: SortDir = "desc",
 ): { key: K; dir: SortDir } | null {
-  if (current?.key !== key) return { key, dir: "desc" };
-  return current.dir === "desc" ? { key, dir: "asc" } : null;
+  if (current?.key !== key) return { key, dir: first };
+  return current.dir === first ? { key, dir: first === "desc" ? "asc" : "desc" } : null;
 }

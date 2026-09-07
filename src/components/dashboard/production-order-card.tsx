@@ -113,15 +113,15 @@ export function ProductionOrderCard({
         <table className="w-full text-left text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
           <thead>
             <tr className="text-left text-xs text-text-muted">
-              <th className="pb-2 font-medium">Character</th>
-              <th className="pb-2 font-medium">Content type</th>
-              <th className="pb-2 font-medium">Status</th>
-              <th className="pb-2 font-medium">Days of cover</th>
-              <th className="w-px pb-2 font-medium">Usable</th>
-              <th className="w-px pb-2 font-medium">Quarantined</th>
-              <th className="w-px pb-2 font-medium">Demand/wk</th>
-              <th className="w-px pb-2 font-medium">To produce</th>
-              <th className="w-px pb-2 font-medium">Generate</th>
+              <th className="pb-2 font-medium whitespace-nowrap">Character</th>
+              <th className="pb-2 font-medium whitespace-nowrap">Content type</th>
+              <th className="pb-2 font-medium whitespace-nowrap">Status</th>
+              <th className="pb-2 font-medium whitespace-nowrap">Days of cover</th>
+              <th className="w-px pb-2 font-medium whitespace-nowrap">Usable</th>
+              <th className="w-px pb-2 font-medium whitespace-nowrap">Quarantined</th>
+              <th className="w-px pb-2 font-medium whitespace-nowrap">Demand/wk</th>
+              <th className="w-px pb-2 font-medium whitespace-nowrap">To produce</th>
+              <th className="w-px pb-2 font-medium whitespace-nowrap">Generate</th>
             </tr>
           </thead>
           <tbody>
@@ -138,7 +138,7 @@ export function ProductionOrderCard({
                 </td>
                 <td className="py-2.5">
                   <StatusPill tone={ORDER_TONE[o.status] ?? "neutral"}>
-                    {o.status.toUpperCase()}
+                    {o.status.toLowerCase()}
                   </StatusPill>
                 </td>
                 <td className="py-2.5">

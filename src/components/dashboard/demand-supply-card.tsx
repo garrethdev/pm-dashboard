@@ -164,17 +164,24 @@ export function DemandSupplyCard({ initial }: { initial: DemandSupplyData }) {
       }
     >
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        {/* Fixed layout, not auto. Auto sizes every column to its own content,
+            so "Target" (six characters) sat tight while "Total to produce" got
+            a column half again as wide, and the gaps ran 125px to 343px across
+            one row. The seven data columns are now one width apart; the cover
+            column takes the rest because it holds a bar, not a number. The
+            min-width makes a narrow viewport scroll rather than crush the
+            headers into each other. */}
+        <table className="w-full min-w-[880px] table-fixed text-sm">
           <thead>
             <tr className="text-left text-xs text-text-muted">
-              <th className="pb-2 font-medium">Character</th>
-              <th className="pb-2 font-medium">Bucket</th>
-              <th className="pb-2 text-right font-medium">Target</th>
-              <th className="pb-2 text-right font-medium">Scheduled</th>
-              <th className="pb-2 text-right font-medium">Placeable now</th>
-              <th className="pb-2 text-right font-medium">Shortfall</th>
-              <th className="pb-2 text-right font-medium">Total to produce</th>
-              <th className="pb-2 pl-6 font-medium">Days of cover</th>
+              <th className="w-[10%] pb-2 font-medium whitespace-nowrap">Character</th>
+              <th className="w-[10%] pb-2 font-medium whitespace-nowrap">Bucket</th>
+              <th className="w-[10%] pb-2 font-medium whitespace-nowrap">Target</th>
+              <th className="w-[10%] pb-2 font-medium whitespace-nowrap">Scheduled</th>
+              <th className="w-[10%] pb-2 font-medium whitespace-nowrap">Placeable now</th>
+              <th className="w-[10%] pb-2 font-medium whitespace-nowrap">Shortfall</th>
+              <th className="w-[10%] pb-2 font-medium whitespace-nowrap">Total to produce</th>
+              <th className="w-[30%] pb-2 pl-6 font-medium whitespace-nowrap">Days of cover</th>
             </tr>
           </thead>
           <tbody>
@@ -187,26 +194,29 @@ export function DemandSupplyCard({ initial }: { initial: DemandSupplyData }) {
                   {b.character.replace("Character ", "Char ")}
                 </td>
                 <td className="py-2.5 text-text-muted">{b.bucket === "glp" ? "GLP" : "Filler"}</td>
-                <td className="py-2.5 text-right tnum">{b.target}</td>
-                <td className="py-2.5 text-right tnum">{b.scheduled}</td>
-                <td className="py-2.5 text-right tnum">{b.pool}</td>
-                <td className={cn("py-2.5 text-right tnum", b.shortfall > 0 && "text-danger")}>
+                <td className="py-2.5 tnum">{b.target}</td>
+                <td className="py-2.5 tnum">{b.scheduled}</td>
+                <td className="py-2.5 tnum">{b.pool}</td>
+                <td className={cn("py-2.5 tnum", b.shortfall > 0 && "text-danger")}>
                   {b.shortfall}
                 </td>
-                <td className="py-2.5 text-right font-medium tnum">
+                <td className="py-2.5 font-medium tnum">
                   {b.grandTotal}
                   {b.newAcctAdd > 0 && (
                     <span className="ml-1 text-xs font-normal text-accent">+{b.newAcctAdd}</span>
                   )}
                 </td>
                 <td className="py-2.5 pl-6">
+                  {/* The bar grows into whatever the last column was given.
+                      Left at a fixed width it stopped well short of the card's
+                      right edge, which read as the table failing to fill it. */}
                   <div className="flex items-center gap-2">
                     <BarcodeBar
                       pct={(Math.min(b.daysOfCover, days) / days) * 100}
                       colorClass={coverColor(b.daysOfCover)}
-                      className="h-3 w-24"
+                      className="h-3 min-w-24 flex-1"
                     />
-                    <span className="text-xs tnum">{coverLabel(b.daysOfCover)}</span>
+                    <span className="shrink-0 text-xs tnum">{coverLabel(b.daysOfCover)}</span>
                   </div>
                 </td>
               </tr>

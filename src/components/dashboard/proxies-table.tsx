@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { ExtendButton } from "@/components/ui/extend-button";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { StatusPill } from "@/components/ui/pill";
 import { SearchInput } from "@/components/ui/search-input";
+import { cycleSort, type SortDir } from "@/components/ui/sort-button";
 import { daysTone, formatEtDate, formatPhone } from "@/lib/data/format";
 import type { ProxyPhoneRow } from "@/lib/data/proxies";
 import { phoneExtendHref, proxyExtendHref } from "@/lib/provider-links";
+import { cn } from "@/lib/utils";
 
 type View = "proxies" | "phones";
 
@@ -36,6 +39,10 @@ export function ProxiesTable({
 }) {
   const [view, setView] = useState<View>("proxies");
   const [query, setQuery] = useState("");
+  // One sortable column, but keyed anyway: both tables have a "Days left" and
+  // the sort deliberately survives a switch between them, re-reading whichever
+  // countdown the visible table is showing.
+  const [sort, setSort] = useState<{ key: "daysLeft"; dir: SortDir } | null>(null);
   const q = query.trim().toLowerCase();
   // Match phone digits only when the query is phone-like, so text like "char 3"
   // doesn't match every number containing a 3.
@@ -53,6 +60,43 @@ export function ProxiesTable({
       (phoneQuery !== "" && (r.phoneNumber ?? "").replace(/\D/g, "").includes(phoneQuery))
     );
   });
+
+  /** Whichever countdown the visible table is showing. */
+  const daysLeftOf = (r: ProxyPhoneRow) =>
+    view === "proxies" ? (r.subscription?.daysLeft ?? null) : (r.rental?.daysLeft ?? null);
+
+  if (sort) {
+    const dir = sort.dir === "desc" ? -1 : 1;
+    // Rows with no subscription or no matched rental have no countdown at all;
+    // they sink to the bottom either way rather than pretending to be zero.
+    rows.sort((a, b) => {
+      const av = daysLeftOf(a);
+      const bv = daysLeftOf(b);
+      if (av === null || bv === null) return av === bv ? 0 : av === null ? 1 : -1;
+      return (av - bv) * dir;
+    });
+  }
+
+  /** Sortable column header, matching the Accounts table's. */
+  const daysLeftHeader = () => {
+    const active = sort !== null;
+    const Icon = active ? (sort.dir === "desc" ? ArrowDown : ArrowUp) : ArrowUpDown;
+    return (
+      <th className={TH}>
+        <button
+          type="button"
+          onClick={() => setSort((s) => cycleSort(s, "daysLeft", "asc"))}
+          className={cn(
+            "inline-flex items-center gap-1 whitespace-nowrap transition-colors hover:text-text-primary",
+            active && "text-accent",
+          )}
+        >
+          Days left
+          <Icon className={cn("size-3", !active && "opacity-50")} />
+        </button>
+      </th>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -107,7 +151,7 @@ export function ProxiesTable({
                     <th className={TH}>Character</th>
                     <th className={TH}>Proxy</th>
                     <th className={TH}>Expiry</th>
-                    <th className={TH}>Days left</th>
+                    {daysLeftHeader()}
                     <th className={TH}>Auto-renew</th>
                     <th className={`${TH} text-right`}>
                       <span className="sr-only">Extend</span>
@@ -165,7 +209,7 @@ export function ProxiesTable({
                     <th className={TH}>Phone number</th>
                     <th className={TH}>Rental</th>
                     <th className={TH}>Cycle ends</th>
-                    <th className={TH}>Days left</th>
+                    {daysLeftHeader()}
                     <th className={`${TH} text-right`}>
                       <span className="sr-only">Extend</span>
                     </th>
