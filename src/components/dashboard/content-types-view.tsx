@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { StatusPill } from "@/components/ui/pill";
 import { SearchInput } from "@/components/ui/search-input";
@@ -131,6 +132,26 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
 
   const extraFilters = (status !== "all" ? 1 : 0) + (character !== "all" ? 1 : 0);
 
+  // What the dropdown is currently doing, said out loud beside it.
+  const chips = [
+    ...(status !== "all"
+      ? [{ key: "status", label: status === "live" ? "Live" : "Paused", onClear: () => setStatus("all") }]
+      : []),
+    ...(character !== "all"
+      ? [
+          {
+            key: "character",
+            label: character.replace("Character ", "Char "),
+            onClear: () => setCharacter("all" as CharFilter),
+          },
+        ]
+      : []),
+  ];
+  const clearFilters = () => {
+    setStatus("all");
+    setCharacter("all");
+  };
+
   const peersFor = (t: ContentTypeRow) =>
     data.all.filter(
       (p) =>
@@ -224,6 +245,7 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
                 </div>
               )}
             </Dropdown>
+            <FilterChips chips={chips} onClearAll={clearFilters} />
             <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-text-muted">
               <input
                 type="checkbox"
@@ -240,7 +262,12 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
             value={query}
             onChange={setQuery}
             placeholder="Search content type or character…"
-            className="w-full max-w-xs"
+            // An explicit 24rem, matching the accounts search. `w-full
+            // max-w-sm` cannot work here: DashCard's actions slot is shrink-0
+            // and sized by its content, so `w-full` resolves to the input's own
+            // intrinsic width instead of stretching it. max-w-full keeps it
+            // inside a narrow card.
+            className="w-96 max-w-full"
           />
         }
       >

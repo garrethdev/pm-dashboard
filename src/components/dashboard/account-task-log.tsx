@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, SlidersHorizontal } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { StatusPill } from "@/components/ui/pill";
 import { formatEtDate } from "@/lib/data/format";
@@ -77,6 +78,15 @@ export function AccountTaskLog({
   }, [source, kind, status, newestFirst]);
 
   const activeFilters = (kind !== "all" ? 1 : 0) + (status !== "all" ? 1 : 0);
+
+  // Task and status values come from the data, so they are shown as-is rather
+  // than mapped through a label table that would silently drop a new one.
+  const chips = [
+    ...(kind !== "all" ? [{ key: "kind", label: kind, onClear: () => setKind("all") }] : []),
+    ...(status !== "all"
+      ? [{ key: "status", label: status, onClear: () => setStatus("all") }]
+      : []),
+  ];
   const SortIcon = newestFirst ? ArrowDown : ArrowUp;
 
   return (
@@ -149,6 +159,13 @@ export function AccountTaskLog({
           </div>
           )}
         </Dropdown>
+        <FilterChips
+          chips={chips}
+          onClearAll={() => {
+            setKind("all");
+            setStatus("all");
+          }}
+        />
       </div>
 
       {rows.length === 0 ? (

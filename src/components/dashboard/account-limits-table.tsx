@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SlidersHorizontal } from "lucide-react";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { StatusPill } from "@/components/ui/pill";
 import { SearchInput } from "@/components/ui/search-input";
@@ -51,6 +52,27 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
   }, [data.rows, query, status, platform, character]);
 
   const extraFilters = (platform !== "all" ? 1 : 0) + (character !== "all" ? 1 : 0);
+
+  const chips = [
+    ...(platform !== "all"
+      ? [
+          {
+            key: "platform",
+            label: platform === "tiktok" ? "TikTok" : "Instagram",
+            onClear: () => setPlatform("all" as PlatformFilter),
+          },
+        ]
+      : []),
+    ...(character !== "all"
+      ? [
+          {
+            key: "character",
+            label: character.replace("Character ", "Char "),
+            onClear: () => setCharacter("all" as CharFilter),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <DashCard
@@ -106,6 +128,13 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
               </div>
             )}
           </Dropdown>
+          <FilterChips
+            chips={chips}
+            onClearAll={() => {
+              setPlatform("all");
+              setCharacter("all");
+            }}
+          />
         </div>
       }
       actions={

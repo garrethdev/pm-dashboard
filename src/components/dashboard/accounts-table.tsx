@@ -18,6 +18,7 @@ import { FilterPills } from "@/components/ui/filter-pills";
 import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
 import { StatusPill } from "@/components/ui/pill";
 import { cycleSort, type SortDir } from "@/components/ui/sort-button";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { SearchInput } from "@/components/ui/search-input";
 import { MultiProfileModal } from "@/components/dashboard/multi-profile-modal";
 import { RetireModal } from "@/components/dashboard/retire-modal";
@@ -231,6 +232,37 @@ export function AccountsTable({
   }
 
   const extraFilters = (platform !== "all" ? 1 : 0) + (character !== "all" ? 1 : 0);
+
+  // The dropdown's current state, named beside it. Health has its own pill row
+  // above and is already visible, so it is not repeated here.
+  const filterChips = (
+    <FilterChips
+      chips={[
+        ...(platform !== "all"
+          ? [
+              {
+                key: "platform",
+                label: platform === "tiktok" ? "TikTok" : "Instagram",
+                onClear: () => setPlatform("all"),
+              },
+            ]
+          : []),
+        ...(character !== "all"
+          ? [
+              {
+                key: "character",
+                label: character.replace("Character ", "Char "),
+                onClear: () => setCharacter("all"),
+              },
+            ]
+          : []),
+      ]}
+      onClearAll={() => {
+        setPlatform("all");
+        setCharacter("all");
+      }}
+    />
+  );
 
   const sortHeader = (label: string, key: SortKey, align?: "right", hint?: string) => {
     const active = sort?.key === key;
@@ -648,6 +680,7 @@ export function AccountsTable({
             <h1 className="text-xl font-semibold">Accounts</h1>
             {healthPills}
             {filtersDropdown}
+            {filterChips}
             {showRetired}
           </div>
           <div className="flex max-w-xl flex-1 items-center justify-end gap-2">
