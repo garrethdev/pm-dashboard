@@ -13,7 +13,10 @@
  */
 export const PROVIDER_LINKS = {
   proxycheapBilling: "https://app.proxy-cheap.com/billing",
-  textverifiedBilling: "https://www.textverified.com/app/billing",
+  /** Their footer's own "Buy Credits" link, `?open=true` and all, so Top up
+   *  lands on the card form rather than a page you then have to navigate.
+   *  Replaces /app/billing, which was a guess and 404ed (Garreth 2026-09-07). */
+  textverifiedBilling: "https://www.textverified.com/app/credits/card?open=true",
   /** The rentals list. Supplied by Garreth 2026-09-07 from the logged-in panel;
    *  it cannot be verified from outside, because TextVerified's Blazor app
    *  redirects every /app path to login before its router runs. */
