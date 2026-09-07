@@ -12,7 +12,19 @@
  * path here and every button follows.
  */
 export const PROVIDER_LINKS = {
-  proxycheapBilling: "https://app.proxy-cheap.com/billing",
+  /**
+   * The panel root, which is where the balance is shown.
+   *
+   * Proven 2026-09-07: proxy-cheap's `?modal=` parameter cannot be opened from
+   * outside. Reloading the URL restores the modal, but pasting that same URL
+   * into a fresh tab does not — which is per-tab sessionStorage, not the query
+   * string. The panel writes modal state into the URL for show and reads it back
+   * from storage the reload preserved. No external link can ever open one, so a
+   * route is the deepest any of these reach; for Top up that is the page showing
+   * the balance. The parameter stays because it is the URL the panel itself
+   * produces and costs nothing, not because it does anything.
+   */
+  proxycheapBilling: "https://app.proxy-cheap.com/?modal=account.billing.topUp",
   /** Their footer's own "Buy Credits" link, `?open=true` and all, so Top up
    *  lands on the card form rather than a page you then have to navigate.
    *  Replaces /app/billing, which was a guess and 404ed (Garreth 2026-09-07). */
@@ -28,9 +40,10 @@ export const PROVIDER_LINKS = {
  * extend — a proxy GeeLark knows about but proxy-cheap does not was bought
  * elsewhere or already released.
  *
- * Deep-links straight to that subscription's extend modal (URL shape supplied
- * by Garreth 2026-09-07), so the button lands on the decision rather than on a
- * list the user then has to search.
+ * Lands on that subscription's own page (URL shape supplied by Garreth
+ * 2026-09-07) rather than a list to search through. The `?modal=` parameter is
+ * inert from outside the panel — see proxycheapBilling — so the extend modal is
+ * opened by hand once there; landing on the right row is the part that carries.
  */
 export function proxyExtendHref(row: { subscription: { id: number } | null }): string | null {
   if (!row.subscription) return null;

@@ -1,9 +1,19 @@
 # Backlog
 
-Open items that were deliberately deferred, with enough context to pick each
-one up cold. Newest first.
+Two separate lists. Check which one you are in before picking something up —
+they have different bars for "done".
+
+- **[V1 — open work](#v1--open-work)** is the shipping product. Bugs, unverified
+  fixes and decisions still owed. These block or degrade what is live now.
+- **[V2 — deferred features](#v2--deferred-features)** is work that was
+  understood, costed and consciously postponed. Nothing here is broken; none of
+  it is blocked on discovery. Do not start one of these while a V1 item is open.
+
+Newest first within each list.
 
 ---
+
+# V1 — open work
 
 ## Verify the TikTok ingest fix on a real run
 
@@ -110,3 +120,63 @@ the assistant's project memory.
   successful payload per live key is kept and served when a live read fails,
   with its real timestamp and a notice saying what is missing. Still per server
   instance and lost on restart, so a cold-start outage is not covered.
+
+---
+
+# V2 — deferred features
+
+Each of these is deliberately parked, not unfinished. Every one records why it
+was deferred and what is already confirmed, so it can start from evidence rather
+than from a fresh investigation.
+
+## Renew proxies and phone numbers without leaving the dashboard
+
+**Deferred 2026-09-07 (Garreth).** V1 ships with links out to each provider's
+own panel. Nothing here is blocked: the endpoints are confirmed and the UI is
+small. It waits because it writes to a billing API, not because anything about
+it is unclear.
+
+**Why a link cannot do the job.** proxy-cheap's panel takes a
+`?modal=<ns>.<action>` parameter — `?modal=account.billing.topUp` on the root,
+`?modal=proxies.period.extend` on `/proxies/{id}` — and it cannot be opened from
+outside. Proven by test: reloading such a URL restores the modal, but pasting the
+identical URL into a fresh tab does not. The only difference is per-tab
+`sessionStorage`, so the panel writes modal state into the URL for show and
+restores it from storage the reload preserved. TextVerified is the contrast that
+proves the fault is theirs and not ours — its `?open=true` opens the card form
+from an external link through the same anchor markup. So today the Extend and
+Top up buttons land on the right page and the modal is one more click. Do not
+spend another round trying to deep-link proxy-cheap.
+
+**What to build instead — drive the renewal toggle directly.**
+
+| Provider | Endpoint | Body |
+|---|---|---|
+| proxy-cheap | `POST /proxies/{id}/auto-extend/enable` | none |
+| proxy-cheap | `POST /proxies/{id}/auto-extend/disable` | none |
+| TextVerified | `POST /api/pub/v2/reservations/rental/renewable/{id}` | `{ includeForRenewal: true }` |
+
+Both are confirmed, not guessed. The `disable` halves already run in production
+inside `[Ops] Post-Ban System` (`WmichajTDXL0pT1z`, "Process External" node);
+`enable` exists on the same route (302 unauthenticated where a fake path 404s);
+the TextVerified call is in their published swagger at
+`https://www.textverified.com/swagger/v2/swagger.json`.
+
+Flipping that toggle is the actual fix for most of what the Extend button flags:
+a proxy expiring in five days with auto-extend off renews itself once it is on,
+and the same for a rental excluded from its next cycle. No immediate charge and
+fully reversible.
+
+**Two limits to state in the UI.** It renews at cycle end rather than extending
+now, and it cannot help an already-expired proxy — that needs a paid
+reactivation proxy-cheap's API does not expose. Those rows keep the link.
+
+**Shape.** A write route beside `/api/accounts/pause`, a confirmation naming the
+proxy or number, and an optimistic toggle on the Auto-renew column already in
+`proxies-table.tsx`. Destinations and the row-level rules live in
+`src/lib/provider-links.ts`.
+
+**Related:** an immediate paid renewal is a separate, larger job. TextVerified
+supports it (`/reservations/rentals/extensions`, `/billing-cycles/{id}/renew`,
+`/reservations/rental/{id}/reactivate` with a `GET` cost quote first);
+proxy-cheap has no paid extend endpoint at all — `/proxies/{id}/extend` 404s.
