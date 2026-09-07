@@ -116,7 +116,7 @@ export function HealthReviewModal({
               <h2 className="text-base font-semibold">Health review</h2>
               <p className="text-xs text-text-muted">
                 {account.profile}
-                {account.username ? ` · ${account.username}` : ""}
+                {account.username ? ` ${account.username}` : ""}
               </p>
             </div>
           </div>
@@ -153,7 +153,7 @@ export function HealthReviewModal({
             </p>
           ) : (
             <p className="text-sm text-text-muted">
-              No single dominant reason recorded — the upstream classifier set this directly.
+              No single dominant reason recorded. The upstream classifier set this directly.
             </p>
           )}
 
@@ -163,7 +163,7 @@ export function HealthReviewModal({
               <p className="text-sm text-text-muted">
                 {review.by} reviewed this on {shortDate(review.at)} when the system said &ldquo;
                 {review.verdict}&rdquo;. It now says &ldquo;{systemHealth}&rdquo;, so that review no
-                longer applies — please look again.
+                longer applies. Please look again.
               </p>
             </div>
           )}
@@ -184,7 +184,7 @@ export function HealthReviewModal({
               onChange={(e) => setNote(e.target.value)}
               maxLength={500}
               rows={6}
-              placeholder="e.g. checked the profile — recent reels are getting normal reach"
+              placeholder="e.g. checked the profile, recent reels are getting normal reach"
               className="min-h-36 w-full resize-y rounded-nested border border-border bg-card-raised px-3 py-2 text-sm outline-none placeholder:text-text-muted focus:border-accent"
             />
           </div>
@@ -224,7 +224,7 @@ export function HealthReviewModal({
             ))}
           </div>
 
-          {error && <p className="text-sm text-danger">Could not save — {error}</p>}
+          {error && <p className="text-sm text-danger">Could not save: {error}</p>}
 
           {history === null ? (
             <p className="text-xs text-text-muted">Loading history…</p>
@@ -232,7 +232,7 @@ export function HealthReviewModal({
             history.length > 0 && (
               <div className="flex flex-col gap-2 border-t border-border pt-4">
                 <h3 className="text-xs font-semibold tracking-wide text-text-muted uppercase">
-                  Review history — {history.length}
+                  Review history ({history.length})
                 </h3>
                 <ul className="flex flex-col gap-2">
                   {history.map((h, i) => (

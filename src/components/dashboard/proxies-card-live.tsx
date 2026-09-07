@@ -43,11 +43,11 @@ function proxyAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
   const nearest = Math.min(...healthy.map((r) => r.subscription!.daysLeft));
   const orphanNote =
     data.orphanSubscriptions.length > 0
-      ? ` · ${data.orphanSubscriptions.length} unassigned subscriptions`
+      ? `, ${data.orphanSubscriptions.length} unassigned subscriptions`
       : "";
   return {
     attention: attention.slice(0, MAX_ROWS),
-    footer: `${healthy.length} proxies active — nearest expiry in ${nearest} days${orphanNote}`,
+    footer: `${healthy.length} proxies active, nearest expiry in ${nearest} days${orphanNote}`,
   };
 }
 
@@ -61,7 +61,7 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
       attention.push({
         key: row.profile,
         profile: row.profile,
-        detail: `${formatPhone(row.phoneNumber)} — not set to renew`,
+        detail: `${formatPhone(row.phoneNumber)}, not set to renew`,
         tone: "danger",
         label: rental.daysLeft !== null ? `${rental.daysLeft}d left` : "dropping",
         extendable: true,
@@ -70,7 +70,7 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
       attention.push({
         key: row.profile,
         profile: row.profile,
-        detail: `${formatPhone(row.phoneNumber)} — cycle renews in ${rental.daysLeft}d`,
+        detail: `${formatPhone(row.phoneNumber)}, cycle renews in ${rental.daysLeft}d`,
         tone: daysTone(rental.daysLeft),
         label: `${rental.daysLeft}d`,
         extendable: true,
@@ -79,7 +79,7 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
       attention.push({
         key: row.profile,
         profile: row.profile,
-        detail: `${formatPhone(row.phoneNumber)} — non-renewable rental`,
+        detail: `${formatPhone(row.phoneNumber)}, non-renewable rental`,
         tone: "warn",
         label: "one-shot",
         extendable: false,
@@ -89,7 +89,7 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
 
   return {
     attention: attention.slice(0, MAX_ROWS),
-    footer: `${withRental.length} numbers linked to phones · ${data.unmatchedRentals.length} rentals unlinked`,
+    footer: `${withRental.length} numbers linked to phones, ${data.unmatchedRentals.length} rentals unlinked`,
   };
 }
 
@@ -111,7 +111,7 @@ export async function ProxiesCardLive({ className }: { className?: string }) {
     return (
       <DashCard title="Proxies & phones" viewAllHref="/proxies" className={className}>
         <p className="text-sm text-text-muted">
-          Upstream unreachable — {err instanceof Error ? err.message : "unknown error"}
+          Upstream unreachable: {err instanceof Error ? err.message : "unknown error"}
         </p>
       </DashCard>
     );

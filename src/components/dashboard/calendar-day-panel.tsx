@@ -38,7 +38,7 @@ function resolveStatus(p: CalendarPost): {
     return {
       label: "Failed",
       tone: "danger",
-      title: "Geelark could not post this — click for the error",
+      title: "Geelark could not post this. Click for the error",
     };
   }
   if (p.delivery === "posted") return { label: "Posted", tone: "ok" };
@@ -50,7 +50,7 @@ function resolveStatus(p: CalendarPost): {
   // Marked posted, but no Geelark task exists to confirm it. Said plainly
   // rather than shown in green.
   if (p.status === "Posted") {
-    return { label: "Posted", tone: "neutral", title: "No Geelark task found — unverified" };
+    return { label: "Posted", tone: "neutral", title: "No Geelark task found, unverified" };
   }
   return { label: p.status, tone: "gray" };
 }
@@ -216,8 +216,7 @@ export function CalendarDayPanel({
 
               {detail.accounts.length === 0 ? (
                 <p className="text-sm text-text-muted">
-                  No rows for this day. The Smart Scheduler runs at 06:30 ET and writes the day it
-                  plans for — a future date stays empty until it gets there.
+                  No posts this day.
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -257,7 +256,7 @@ function ShortfallTable({
         .split(";")
         .map((x) => x.trim())
         .filter((x) => x && !/^substituted with /i.test(x))
-        .join(" · ");
+        .join(", ");
       return { ...r, subs, why };
     })
     .sort(
@@ -309,7 +308,7 @@ function ShortfallTable({
                           {shortType(sub)}
                         </span>
                       ))}
-                      {r.why && <span className="text-text-muted">· {r.why}</span>}
+                      {r.why && <span className="text-text-muted">{r.why}</span>}
                     </span>
                   ) : (
                     <span className="text-text-muted">{r.why || "—"}</span>
@@ -338,7 +337,7 @@ function AccountRow({ account }: { account: CalendarDayAccount }) {
         {account.username && (
           <span className="truncate text-xs text-text-muted">@{account.username}</span>
         )}
-        <span className="text-xs text-text-muted">· {account.character}</span>
+        <span className="text-xs text-text-muted">{account.character}</span>
         {account.health && (
           <StatusPill tone={healthTone(account.health)} className="ml-1">
             {account.health}
@@ -372,7 +371,7 @@ function PostRow({ post: p }: { post: CalendarPost }) {
         {!p.registryLane && (
           <span
             className="text-warn"
-            title="not an active registry lane — takes a time slot but no daily-cap slot"
+            title="Not an active registry lane"
           >
             off-registry
           </span>
@@ -404,9 +403,9 @@ function PostRow({ post: p }: { post: CalendarPost }) {
         <div className="mt-1 ml-[4.75rem] rounded-nested border border-danger/30 bg-danger/5 px-2.5 py-1.5">
           <p className="text-danger">{p.failDesc ?? "Geelark reported a failure with no message."}</p>
           <p className="mt-0.5 text-[11px] text-text-muted">
-            {p.failCode && <>Geelark code {p.failCode} · </>}
+            {p.failCode && <>Geelark code {p.failCode}. </>}
             posting_status says &ldquo;{p.status}&rdquo;
-            {p.status === "Posted" && " — the 14:00 ET reconcile has not corrected it yet"}
+            {p.status === "Posted" && ". The 14:00 ET reconcile has not corrected it yet"}
           </p>
         </div>
       )}

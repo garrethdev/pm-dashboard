@@ -213,7 +213,7 @@ export function ContentTypeLifecycleModal({
                 <CalendarClock className="mt-0.5 size-3.5 shrink-0" />
                 {target.scheduledAhead} {target.scheduledAhead === 1 ? "post is" : "posts are"}{" "}
                 already on the calendar for this lane. {target.scheduledAhead === 1 ? "It" : "They"}{" "}
-                will not go out — the poster skips a lane that is not live.
+                will not go out. The poster skips a lane that is not live.
               </p>
             )}
           </section>
@@ -257,7 +257,7 @@ export function ContentTypeLifecycleModal({
               {peerLanes.length === 0 && leaving ? (
                 <p className="mt-3 text-xs text-danger">
                   {target.displayName} is {target.character}&rsquo;s last live content type. Take it
-                  out and the character has nowhere to get its {glpPerWeek} GLP posts a week — bring
+                  out and the character has nowhere to get its {glpPerWeek} GLP posts a week. Bring
                   another type back first.
                 </p>
               ) : short > 0 ? (
@@ -273,7 +273,7 @@ export function ContentTypeLifecycleModal({
                 </p>
               ) : (
                 <p className="mt-3 text-xs text-text-muted">
-                  Every GLP slot accounted for — {target.character} keeps posting {glpPerWeek} times
+                  Every GLP slot accounted for. {target.character} keeps posting {glpPerWeek} times
                   a week.
                 </p>
               )}

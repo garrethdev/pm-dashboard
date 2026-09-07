@@ -116,7 +116,7 @@ export function IncidentHistory({
 
       <DashCard title="Incident history">
         {error ? (
-          <p className="text-sm text-text-muted">Could not load incidents — {error}</p>
+          <p className="text-sm text-text-muted">Could not load incidents: {error}</p>
         ) : shown.length === 0 ? (
           <p className="flex items-center gap-1.5 py-2 text-sm text-text-muted">
             <CheckCircle2 className="size-4 text-ok" /> No incidents in this range.
@@ -146,7 +146,7 @@ export function IncidentHistory({
                     }}
                     tabIndex={0}
                     role="link"
-                    aria-label={`${row.type} — ${row.entity}`}
+                    aria-label={`${row.type}: ${row.entity}`}
                     className={cn(
                       "cursor-pointer border-t border-border transition-colors duration-700 hover:bg-card-raised/50 focus-visible:bg-card-raised/50 focus-visible:outline-none",
                       flash === row.id && "bg-accent/15",

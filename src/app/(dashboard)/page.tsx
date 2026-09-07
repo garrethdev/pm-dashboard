@@ -65,7 +65,7 @@ export default function Home() {
           <div className="relative min-h-0 flex-1">
             <Suspense
               fallback={
-                <CardSkeleton title="Incident feed — last 48h" lines={5} className="absolute inset-0" />
+                <CardSkeleton title="Incident feed, last 48h" lines={5} className="absolute inset-0" />
               }
             >
               <IncidentFeedLive className="absolute inset-0 overflow-auto" />
@@ -86,7 +86,7 @@ export default function Home() {
 
         <Suspense
           fallback={
-            <CardSkeleton title="Incident feed — last 48h" lines={5} className="col-span-12 xl:col-span-6" />
+            <CardSkeleton title="Incident feed, last 48h" lines={5} className="col-span-12 xl:col-span-6" />
           }
         >
           <IncidentFeedLive className="col-span-12 xl:col-span-6" />

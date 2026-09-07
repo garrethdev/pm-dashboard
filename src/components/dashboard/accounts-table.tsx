@@ -94,7 +94,7 @@ function verdictEvidence(row: AccountRow): string | undefined {
   const parts: string[] = [];
   if (r?.needsRereview) {
     parts.push(
-      `Needs another look — a person reviewed this when the system said "${r.verdict}", but it has changed to "${row.systemHealth}" since.`,
+      `Needs another look. A person reviewed this when the system said "${r.verdict}", but it has changed to "${row.systemHealth}" since.`,
     );
   }
   if (row.healthReason) {
@@ -103,7 +103,7 @@ function verdictEvidence(row: AccountRow): string | undefined {
     parts.push(`confidence: ${row.healthConfidence}`);
   }
   if (row.healthCaveat) {
-    parts.push(`Treat with care — ${row.healthCaveat}.`);
+    parts.push(`Treat with care: ${row.healthCaveat}.`);
   }
   if (needsAttention(row.healthStatus) && !r) {
     parts.push("Open the account to confirm before retiring.");
@@ -369,7 +369,7 @@ export function AccountsTable({
                       "Suppressed",
                     "suppressed",
                     undefined,
-                      "Posts that almost nobody saw (10 views or fewer) in the last 7 days — a high % means the platform is barely showing this account.",
+                      "Posts that almost nobody saw (10 views or fewer) in the last 7 days. A high % means the platform is barely showing this account.",
                     )}
                   {sortHeader("Warmup", "warmup")}
                   {sortHeader("Last Post", "lastpost")}
@@ -497,7 +497,7 @@ export function AccountsTable({
                               className="-my-2.5 inline-block w-full cursor-help py-2.5 text-text-muted underline decoration-dotted decoration-text-muted/40 underline-offset-4"
                               title={
                                 row.sampleN !== null && row.sampleN < 4
-                                  ? `${row.sampleN} post${row.sampleN === 1 ? "" : "s"} sampled — not enough to judge suppression`
+                                  ? `${row.sampleN} post${row.sampleN === 1 ? "" : "s"} sampled, not enough to judge suppression`
                                   : "no suppression data"
                               }
                             >
@@ -572,14 +572,14 @@ export function AccountsTable({
                                     disabled={busy}
                                     title={
                                       s.tone === "paused"
-                                        ? "Posting is paused — the scheduler skips this account"
+                                        ? "Paused. The scheduler skips this account"
                                         : s.clamped
-                                          ? `Set to ${row.override?.maxPostsPerDay}/day, but throttled to ${row.effective?.maxPostsPerDay}/day — ${row.effective?.throttleReason ?? "guard active"}`
+                                          ? `Set to ${row.override?.maxPostsPerDay}/day, but throttled to ${row.effective?.maxPostsPerDay}/day. ${row.effective?.throttleReason ?? "guard active"}`
                                           : s.tone === "custom"
-                                            ? "Hand-set schedule — click to change"
+                                            ? "Hand-set schedule. Click to change"
                                             : row.effective?.throttleReason
                                               ? `Scheduler defaults (${row.effective.throttleReason})`
-                                              : "Scheduler defaults — click to set a custom schedule"
+                                              : "Scheduler defaults. Click to set a custom schedule"
                                     }
                                     className={cn(
                                       "inline-flex max-w-[11rem] items-center gap-1 truncate rounded-full px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50",

@@ -25,7 +25,7 @@ export function IncidentFeed({ incidents, className }: { incidents: Incident[]; 
   const shown = expanded ? incidents : incidents.slice(0, DEFAULT_ROWS);
 
   return (
-    <DashCard title="Incident feed — last 48h" viewAllHref="/incidents" className={className}>
+    <DashCard title="Incident feed, last 48h" viewAllHref="/incidents" className={className}>
       {incidents.length === 0 ? (
         <p className="flex items-center gap-1.5 py-2 text-sm text-text-muted">
           <CheckCircle2 className="size-4 text-ok" /> No incidents in the last 48 hours.
@@ -55,7 +55,7 @@ export function IncidentFeed({ incidents, className }: { incidents: Incident[]; 
                     }}
                     tabIndex={0}
                     role="link"
-                    aria-label={`${row.type} — ${row.entity}`}
+                    aria-label={`${row.type}: ${row.entity}`}
                     className="cursor-pointer border-t border-border hover:bg-card-raised/50 focus-visible:bg-card-raised/50 focus-visible:outline-none"
                   >
                     <td className="py-2.5 whitespace-nowrap text-text-muted tnum">{relTime(row.at)}</td>

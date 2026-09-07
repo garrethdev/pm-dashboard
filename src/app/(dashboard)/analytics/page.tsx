@@ -23,7 +23,7 @@ async function AnalyticsLive() {
     return (
       <DashCard title="Analytics">
         <p className="text-sm text-text-muted">
-          Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
+          Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
         </p>
       </DashCard>
     );

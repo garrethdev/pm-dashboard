@@ -55,7 +55,7 @@ export default async function LoginPage({
 
         {params.sent ? (
           <p className="text-sm text-text-muted">
-            Magic link sent — check your inbox and open the link on this device.
+            Magic link sent. Check your inbox and open the link on this device.
           </p>
         ) : (
           <form action={sendMagicLink} className="flex flex-col gap-3">
@@ -80,7 +80,7 @@ export default async function LoginPage({
               <p className="text-sm text-danger">This email isn&apos;t on the allowlist.</p>
             )}
             {params.error === "send-failed" && (
-              <p className="text-sm text-danger">Couldn&apos;t send the link — try again.</p>
+              <p className="text-sm text-danger">Couldn&apos;t send the link. Try again.</p>
             )}
           </form>
         )}

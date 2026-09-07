@@ -119,7 +119,7 @@ function PostCard({ post, rank }: { post: TopContentPost; rank: number }) {
         <p className="text-sm text-text-muted">{post.verdict}</p>
       ) : (
         <p className="text-sm text-text-muted">
-          The judge hasn&rsquo;t scored this post yet — it runs on a schedule after a post matures.
+          The judge hasn&rsquo;t scored this post yet. It runs on a schedule once a post matures.
         </p>
       )}
 
@@ -147,7 +147,7 @@ export default async function AnalysisPage({
         <h1 className="text-xl font-semibold">Top content analysis</h1>
         <DashCard title="Analysis">
           <p className="text-sm text-text-muted">
-            Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
+            Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
           </p>
         </DashCard>
       </div>

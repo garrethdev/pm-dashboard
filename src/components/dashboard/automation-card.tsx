@@ -28,7 +28,7 @@ export async function AutomationCard({ className }: { className?: string }) {
   } catch (err) {
     content = (
       <p className="text-sm text-text-muted">
-        n8n unreachable — {err instanceof Error ? err.message : "unknown error"}
+        n8n unreachable: {err instanceof Error ? err.message : "unknown error"}
       </p>
     );
   }

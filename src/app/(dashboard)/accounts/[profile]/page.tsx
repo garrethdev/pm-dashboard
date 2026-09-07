@@ -81,7 +81,7 @@ async function AnalyticsPanel({
     ({ data: analytics } = await getAccountAnalytics(username, platform, "7d"));
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
-    return <p className="text-sm text-text-muted">Analytics unavailable — {message}</p>;
+    return <p className="text-sm text-text-muted">Analytics unavailable: {message}</p>;
   }
   return <AccountAnalyticsView initial={analytics} account={username} platform={platform} />;
 }

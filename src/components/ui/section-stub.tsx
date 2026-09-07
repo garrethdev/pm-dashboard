@@ -8,8 +8,7 @@ export function SectionStub({ title, phase = "Phase 1" }: { title: string; phase
       <h1 className="text-xl font-semibold">{title}</h1>
       <Card className="flex flex-col gap-4">
         <p className="text-sm text-text-muted">
-          Coming in {phase} — this page will hold the full {title.toLowerCase()} table with
-          row-level drill-downs.
+          Coming in {phase}.
         </p>
         <div className="flex flex-col gap-3">
           <Skeleton className="h-8 w-full" />

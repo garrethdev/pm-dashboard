@@ -10,7 +10,7 @@ import { Stepper } from "@/components/ui/stepper";
 import { cn } from "@/lib/utils";
 
 /**
- * Adjust Posting Cadence — the fleet defaults behind every account.
+ * Adjust posting cadence — the fleet defaults behind every account.
  *
  * Structured as a budget, top to bottom: how often an account may post, then
  * how that week's posts are split between filler and GLP. The per-character
@@ -148,7 +148,7 @@ export function AdjustCadenceModal({
             <span className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent">
               <SlidersHorizontal className="size-4" />
             </span>
-            <h2 className="text-base font-semibold">Adjust Posting Cadence</h2>
+            <h2 className="text-base font-semibold">Adjust posting cadence</h2>
           </div>
           <button
             onClick={onClose}
@@ -161,8 +161,7 @@ export function AdjustCadenceModal({
 
         <div className="max-h-[70vh] overflow-y-auto">
           <p className="border-b border-border px-6 py-3 text-xs text-text-muted">
-            These apply to every account. An account with its own posting settings keeps them — a
-            per-account override always wins.
+            Applies to every account. A per-account override always wins.
           </p>
 
           {fleet.divergent && (
@@ -242,13 +241,13 @@ export function AdjustCadenceModal({
               </p>
             ) : unspent > 0 ? (
               <p className="mt-3 text-xs text-danger">
-                Only {allocated} of the {weekBudget} weekly posts are allocated — each account will
+                Only {allocated} of the {weekBudget} weekly posts are allocated. Each account will
                 sit idle for {unspent} {unspent === 1 ? "slot" : "slots"} a week. Raise filler or
                 GLP to use the full allowance, or lower max posts / day.
               </p>
             ) : (
               <p className="mt-3 text-xs text-text-muted">
-                Every slot allocated — {filler} filler and {glp} GLP a week, per account.
+                Every slot allocated: {filler} filler and {glp} GLP a week, per account.
               </p>
             )}
           </Section>
@@ -285,8 +284,7 @@ export function AdjustCadenceModal({
             {advancedOpen && (
               <div className="flex flex-col gap-6 px-6 pb-6">
                 <p className="text-xs text-text-muted">
-                  Each character&rsquo;s lanes have to add up to {glp} — the GLP allowance above.
-                  Changing GLP per week spreads it evenly here; adjust from there.
+                  Each character&rsquo;s lanes have to add up to {glp}.
                 </p>
                 {cadence.characters.map((c) => {
                   const sum = sums.find((s) => s.name === c.name)?.sum ?? 0;
@@ -300,7 +298,7 @@ export function AdjustCadenceModal({
                         {sum !== glp && (
                           <span className="text-xs text-danger">
                             {sum > glp
-                              ? `${sum - glp} too many — take some back`
+                              ? `${sum - glp} too many`
                               : `${glp - sum} left to place`}
                           </span>
                         )}
@@ -345,7 +343,7 @@ export function AdjustCadenceModal({
             disabled={!canSave}
             title={
               !mixBalanced
-                ? `Open Advanced settings — every character has to add up to ${glp}`
+                ? `Open Advanced settings, every character has to add up to ${glp}`
                 : overBudget
                   ? "Filler + GLP is over the weekly budget"
                   : undefined

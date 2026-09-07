@@ -35,7 +35,7 @@ export function StaleNotice({
       <CloudOff className="mt-0.5 size-3.5 shrink-0" />
       <span>
         Supabase is not responding. Showing the last copy from{" "}
-        <span className="font-medium tnum">{at} ET</span> — anything posted or
+        <span className="font-medium tnum">{at} ET</span>. Anything posted or
         scheduled since then is missing. Refresh to try again.
       </span>
     </p>

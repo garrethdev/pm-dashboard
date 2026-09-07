@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       if (wk > weekCeiling) {
         return NextResponse.json(
           {
-            error: `At ${dayForWeek} posts/day this account can post at most ${weekCeiling} times a week — GLP + filler come to ${wk}`,
+            error: `At ${dayForWeek} posts/day this account can post at most ${weekCeiling} times a week. GLP + filler come to ${wk}`,
           },
           { status: 400 },
         );

@@ -26,9 +26,9 @@ const PIPELINE_ITEMS = [
   { label: "Dashboard", href: "/", icon: House },
   { label: "Accounts", href: "/accounts", icon: Users },
   { label: "Inventory", href: "/inventory", icon: Package },
-  { label: "Content Calendar", href: "/content-calendar", icon: CalendarDots },
-  { label: "Content Types", href: "/content-types", icon: Cards },
-  { label: "Proxies & Phones", href: "/proxies", icon: Globe },
+  { label: "Content calendar", href: "/content-calendar", icon: CalendarDots },
+  { label: "Content types", href: "/content-types", icon: Cards },
+  { label: "Proxies & phones", href: "/proxies", icon: Globe },
   { label: "Automation", href: "/automation", icon: FlowArrow },
   { label: "Analytics", href: "/analytics", icon: ChartBar },
 ] as const;

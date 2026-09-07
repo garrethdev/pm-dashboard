@@ -120,7 +120,7 @@ export function ProductionOrderCard({
               <th className="w-px pb-2 font-medium">Usable</th>
               <th className="w-px pb-2 font-medium">Quarantined</th>
               <th className="w-px pb-2 font-medium">Demand/wk</th>
-              <th className="w-px pb-2 font-medium">To Produce</th>
+              <th className="w-px pb-2 font-medium">To produce</th>
               <th className="w-px pb-2 font-medium">Generate</th>
             </tr>
           </thead>
@@ -206,7 +206,7 @@ function GenerateButton({ contentType }: { contentType: string }) {
         <Sparkles className="size-3 shrink-0" />
         Generate
         {/* The tooltip is presentational; assistive tech gets the same fact. */}
-        <span className="sr-only">{contentType} — coming soon</span>
+        <span className="sr-only">{contentType} coming soon</span>
       </span>
     </Tooltip>
   );

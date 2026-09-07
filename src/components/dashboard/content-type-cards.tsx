@@ -148,8 +148,8 @@ function CharacterCard({
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="text-left text-[11px] text-text-muted">
-              <th className="px-2 pt-2 pb-1 font-medium">Content Type</th>
-              <th className="px-2 pt-2 pb-1 text-right font-medium">Median Views</th>
+              <th className="px-2 pt-2 pb-1 font-medium">Content type</th>
+              <th className="px-2 pt-2 pb-1 text-right font-medium">Median views</th>
             </tr>
           </thead>
           <tbody>
@@ -169,19 +169,15 @@ function CharacterCard({
                     <span className="flex min-w-0 items-center gap-2">
                       <span
                         className={cn(
-                          "size-1.5 shrink-0 rounded-full",
-                          t.lifecycle === "live" ? "bg-ok" : "bg-warn",
-                        )}
-                        aria-hidden
-                      />
-                      <span
-                        className={cn(
                           "min-w-0 truncate text-xs",
                           selected ? "font-medium text-accent" : "text-text-muted",
                         )}
                       >
                         {t.displayName}
                       </span>
+                      {t.lifecycle !== "live" && (
+                        <span className="shrink-0 text-[11px] text-text-muted">paused</span>
+                      )}
                     </span>
                   </td>
                   <td

@@ -174,7 +174,7 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
     <div className="flex flex-col gap-3">
       {/* Header laid out like Analytics: title left, freshness + range right. */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <h1 className="text-lg font-semibold">Content Types</h1>
+        <h1 className="text-lg font-semibold">Content types</h1>
         <div className="flex flex-wrap items-center gap-3">
           {/* Not real-time: both performance tables are filled by scheduled
               ingests, so this is the honest "as of" for every number here. */}
@@ -360,7 +360,7 @@ function TypeRow({
       <td className="py-2.5 tnum">
         {t.posts}
         {t.confidence === "low" && t.posts > 0 && (
-          <span className="ml-1 text-[11px] text-text-muted" title="under 8 posts — the median swings on one hit">
+          <span className="ml-1 text-[11px] text-text-muted" title="Under 8 posts, the median swings on one hit">
             thin
           </span>
         )}
@@ -389,7 +389,7 @@ function TypeRow({
         {t.score === null ? (
           "—"
         ) : (
-          <span title={`tier ${t.tier} · ${t.confidence} confidence`}>
+          <span title={`Tier ${t.tier}, ${t.confidence} confidence`}>
             {t.score}
             <span className="ml-1 text-[11px] text-text-muted">{t.tier}</span>
           </span>
@@ -413,7 +413,7 @@ function TypeRow({
               tone={collapsing ? "danger" : "quiet"}
               title={
                 collapsing
-                  ? "This lane is collapsing — retire it"
+                  ? "This lane is collapsing. Retire it"
                   : "Retire (drops out of the scheduler for good)"
               }
             >

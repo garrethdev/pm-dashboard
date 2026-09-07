@@ -275,7 +275,7 @@ function DayCell({
     <button
       type="button"
       onClick={onOpen}
-      aria-label={`Open ${day.date} — ${day.live} post${day.live === 1 ? "" : "s"}`}
+      aria-label={`Open ${day.date}, ${day.live} post${day.live === 1 ? "" : "s"}`}
       className={cn(
         "block min-h-[9rem] rounded-nested border p-2.5 text-left transition-colors",
         "hover:border-accent/50 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none",
@@ -317,7 +317,7 @@ function DayCell({
           {shown.map((t) => (
             <span
               key={t.contentType}
-              title={`${shortType(t.contentType)} — ${t.live} post${t.live === 1 ? "" : "s"} (${t.chars.join(", ")})`}
+              title={`${shortType(t.contentType)}: ${t.live} post${t.live === 1 ? "" : "s"} (${t.chars.join(", ")})`}
               className="flex items-center justify-between gap-1 rounded-full border border-border/70 bg-card-raised/50 px-1.5 py-0.5 text-[11px] leading-tight text-text-muted"
             >
               <span className="truncate">{shortType(t.contentType)}</span>
@@ -334,7 +334,7 @@ function DayCell({
         <div className="mt-auto flex flex-wrap items-center gap-1.5">
           {day.failed > 0 && (
             <span
-              title={`${day.failed} post${day.failed === 1 ? "" : "s"} Geelark could not deliver — open the day for the errors`}
+              title={`${day.failed} post${day.failed === 1 ? "" : "s"} Geelark could not deliver`}
               className="inline-flex items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-medium text-danger"
             >
               {day.failed} failed
@@ -342,7 +342,7 @@ function DayCell({
           )}
           {day.run && <RunPill run={day.run} />}
           {day.offRegistry && (
-            <span title="a live post here is outside the active registry — it takes a time slot but no daily-cap slot">
+            <span title="Outside the active registry">
               <AlertTriangle className="size-3 text-warn" />
             </span>
           )}
@@ -361,7 +361,7 @@ function RunPill({ run }: { run: SchedulerRun }) {
   if (run.status === "error") {
     return (
       <span
-        title={`Scheduler failed at ${run.errorStep ?? "an unknown step"}${run.errorMessage ? ` — ${run.errorMessage}` : ""}`}
+        title={`Scheduler failed at ${run.errorStep ?? "an unknown step"}${run.errorMessage ? `: ${run.errorMessage}` : ""}`}
         className="inline-flex items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-medium text-danger"
       >
         error
@@ -371,7 +371,7 @@ function RunPill({ run }: { run: SchedulerRun }) {
   if (run.shortfallCount > 0) {
     return (
       <span
-        title={`${run.shortfallCount} slot${run.shortfallCount === 1 ? "" : "s"} the scheduler could not fill — usually a content pool ran dry`}
+        title={`${run.shortfallCount} slot${run.shortfallCount === 1 ? "" : "s"} the scheduler could not fill`}
         className="inline-flex items-center rounded-full bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn"
       >
         {run.shortfallCount} short

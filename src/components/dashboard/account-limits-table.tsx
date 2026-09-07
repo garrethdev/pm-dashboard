@@ -175,11 +175,6 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
         )}
       </div>
 
-      {rows.length > 0 && rows.length !== data.rows.length && (
-        <p className="mt-3 text-xs text-text-muted">
-          Showing {rows.length} of {data.rows.length} accounts.
-        </p>
-      )}
     </DashCard>
   );
 }

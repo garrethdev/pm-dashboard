@@ -66,7 +66,7 @@ async function AutomationTable() {
   } catch (err) {
     body = (
       <p className="text-sm text-text-muted">
-        n8n unreachable — {err instanceof Error ? err.message : "unknown error"}
+        n8n unreachable: {err instanceof Error ? err.message : "unknown error"}
       </p>
     );
   }

@@ -169,10 +169,10 @@ export function PostingSettingsModal({
               <Sliders className="size-4" />
             </span>
             <div>
-              <h2 className="text-base font-semibold">Posting · {account.profile}</h2>
+              <h2 className="text-base font-semibold">Posting: {account.profile}</h2>
               <p className="text-xs text-text-muted">
                 {account.character || "no character"}
-                {account.username ? ` · @${account.username}` : ""}
+                {account.username ? ` @${account.username}` : ""}
               </p>
             </div>
           </div>
@@ -234,7 +234,7 @@ export function PostingSettingsModal({
               <p className="text-xs text-danger">
                 GLP + filler come to <span className="tnum font-semibold">{glpNow + fillerNow}</span>{" "}
                 a week, but at {effDay}/day this account is allowed{" "}
-                <span className="tnum font-semibold">{weekCeiling}</span> — it will sit idle for{" "}
+                <span className="tnum font-semibold">{weekCeiling}</span>. It will sit idle for{" "}
                 <span className="tnum">{weekUnspent}</span>{" "}
                 {weekUnspent === 1 ? "slot" : "slots"} a week. Raise GLP or filler to use the full
                 allowance.
@@ -300,7 +300,7 @@ export function PostingSettingsModal({
                 <p className={cn("mt-2 text-xs", allPickedEmpty ? "text-danger" : "text-warn")}>
                   {allPickedEmpty ? (
                     <>
-                      Nothing selected has anything ready to post — this account will sit idle
+                      Nothing selected has anything ready to post. This account will sit idle
                       until more is produced.
                     </>
                   ) : (
@@ -327,7 +327,7 @@ export function PostingSettingsModal({
                 </span>
                 <span className="mt-1 block text-xs text-text-muted">
                   Skips the age ramp and the health throttle, so these numbers apply as written.
-                  The delivery brake still applies — an account failing most of its posts is
+                  The delivery brake still applies. An account failing most of its posts is
                   never forced to keep trying.
                 </span>
               </span>
@@ -343,7 +343,7 @@ export function PostingSettingsModal({
         {clamped && (
           <div className="mt-4 rounded-nested border border-warn/40 bg-warn/10 px-3 py-2.5 text-xs">
             <p className="font-semibold text-warn">
-              Saved — but the scheduler will use {clamped.effective}/day, not {clamped.requested}
+              Saved, but the scheduler will use {clamped.effective}/day, not {clamped.requested}
               /day.
             </p>
             <p className="mt-1 text-text-muted">

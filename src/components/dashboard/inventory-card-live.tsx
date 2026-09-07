@@ -35,7 +35,7 @@ export async function InventoryCardLive({ className }: { className?: string }) {
           {data.buckets.map((b) => (
             <div key={`${b.character}-${b.bucket}`} className="flex items-center gap-3">
               <span className="w-28 shrink-0 text-[13px] text-text-muted">
-                {b.character.replace("Character ", "Char ")} · {b.bucket === "glp" ? "GLP" : "Filler"}
+                {b.character.replace("Character ", "Char ")}, {b.bucket === "glp" ? "GLP" : "Filler"}
               </span>
               <BarcodeBar
                 pct={(Math.min(b.daysOfCover, 14) / 14) * 100}
@@ -63,7 +63,7 @@ export async function InventoryCardLive({ className }: { className?: string }) {
     return (
       <DashCard title="Inventory" viewAllHref="/inventory" className={className}>
         <p className="text-sm text-text-muted">
-          Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
+          Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
         </p>
       </DashCard>
     );

@@ -105,7 +105,7 @@ export function HoldButton({
       }}
       onKeyUp={stop}
       onBlur={stop}
-      aria-label={typeof children === "string" ? `${children} — press and hold` : undefined}
+      aria-label={typeof children === "string" ? `${children}, press and hold` : undefined}
       className={cn(
         "relative isolate inline-flex select-none items-center gap-2 overflow-hidden rounded-full px-4 py-1.5",
         "text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-40",

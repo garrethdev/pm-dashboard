@@ -32,7 +32,7 @@ async function CalendarLive() {
     const message = err instanceof Error ? err.message : "unknown error";
     return (
       <DashCard title="Content calendar">
-        <p className="text-sm text-text-muted">Supabase unreachable — {message}</p>
+        <p className="text-sm text-text-muted">Supabase unreachable: {message}</p>
       </DashCard>
     );
   }
@@ -82,7 +82,7 @@ async function AccountLimits() {
     const message = err instanceof Error ? err.message : "unknown error";
     return (
       <DashCard title="Per-account posting limits">
-        <p className="text-sm text-text-muted">Supabase unreachable — {message}</p>
+        <p className="text-sm text-text-muted">Supabase unreachable: {message}</p>
       </DashCard>
     );
   }
@@ -95,7 +95,7 @@ export default function ContentCalendarPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="text-xl font-semibold">Content Calendar</h1>
+          <h1 className="text-xl font-semibold">Content calendar</h1>
           <Suspense fallback={null}>
             <RunPill />
           </Suspense>

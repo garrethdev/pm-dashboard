@@ -49,7 +49,7 @@ export function ProxiesTable({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-wrap items-center gap-4">
-          <h1 className="text-xl font-semibold">Proxies &amp; Phones</h1>
+          <h1 className="text-xl font-semibold">Proxies &amp; phones</h1>
           {/* The view selector belongs to the page, not the card — the card
               keeps its own smaller title naming whichever view is active. */}
           <FilterPills
@@ -85,7 +85,7 @@ export function ProxiesTable({
         <div className="flex flex-col gap-3">
           {!charactersAvailable && (
             <p className="rounded-nested bg-warn/10 px-3 py-2 text-xs text-warn">
-              Character column unavailable — Supabase unreachable right now; live-API data unaffected.
+              Character column unavailable. Supabase is unreachable; live-API data is unaffected.
             </p>
           )}
 
@@ -196,11 +196,6 @@ export function ProxiesTable({
               </table>
             )}
           </div>
-
-          <p className="border-t border-border pt-3 text-xs text-text-muted">
-            {allRows.length} cloud phones · sorted soonest proxy expiry first · Extend/renew actions
-            arrive in Phase 2 · TCP liveness probe arrives in Phase 3
-          </p>
         </div>
       </DashCard>
     </div>

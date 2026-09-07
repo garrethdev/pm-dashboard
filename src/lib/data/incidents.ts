@@ -110,7 +110,7 @@ async function bans(since: string, limit: number): Promise<Incident[]> {
       tone: "danger",
       type: "Ban",
       entity: r.geelark_profile,
-      detail: `${r.character || "shell"} — banned_at set; Post-Ban SOP pending`,
+      detail: `${r.character || "shell"}, banned_at set; Post-Ban SOP pending`,
       href: href(r.geelark_profile),
     });
   }
@@ -126,7 +126,7 @@ async function bans(since: string, limit: number): Promise<Incident[]> {
       entity: e.geelark_profile,
       // account_events.detail is a detector debug string ("(new) -> banned
       // (med7d= ... conf=low)"), so it is deliberately not surfaced raw.
-      detail: `${e.platform ?? "account"} — recorded by ${e.source ?? "detector"}`,
+      detail: `${e.platform ?? "account"}, recorded by ${e.source ?? "detector"}`,
       href: href(e.geelark_profile),
     });
   }
@@ -158,7 +158,7 @@ async function failedDeliveries(since: string, limit: number): Promise<Incident[
     tone: "danger",
     type: "Failed delivery",
     entity: r.profile ?? "—",
-    detail: `${r.meaning ?? `fail_code ${r.fail_code ?? "?"}`}${r.fail_desc ? ` — ${r.fail_desc}` : ""}`,
+    detail: `${r.meaning ?? `fail_code ${r.fail_code ?? "?"}`}${r.fail_desc ? `: ${r.fail_desc}` : ""}`,
     href: "/automation",
   }));
 }
@@ -181,7 +181,7 @@ async function shortfalls(since: string, limit: number): Promise<Incident[]> {
     tone: "warn",
     type: "Shortfall",
     entity: r.character,
-    detail: `${r.content_type}: ${r.slots_missed} unfilled${r.reason ? ` — ${r.reason}` : ""}`,
+    detail: `${r.content_type}: ${r.slots_missed} unfilled${r.reason ? `: ${r.reason}` : ""}`,
     href: "/inventory",
   }));
 }
@@ -268,7 +268,7 @@ async function analyticsFeeds(): Promise<Incident[]> {
         tone: "danger",
         type: "Analytics stale",
         entity: f.feed,
-        detail: `no data for ${age}${f.max_age_hours ? ` (limit ${f.max_age_hours}h)` : ""} — ${f.source}`,
+        detail: `no data for ${age}${f.max_age_hours ? ` (limit ${f.max_age_hours}h)` : ""}, ${f.source}`,
         href: "/automation",
       };
     });

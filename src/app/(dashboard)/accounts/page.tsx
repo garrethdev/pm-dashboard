@@ -27,7 +27,7 @@ async function AccountsLive() {
         <h1 className="text-xl font-semibold">Accounts</h1>
         <DashCard title="All accounts">
           <p className="text-sm text-text-muted">
-            Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
+            Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
           </p>
         </DashCard>
       </div>

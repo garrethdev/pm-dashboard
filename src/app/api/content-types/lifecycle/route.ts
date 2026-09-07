@@ -122,7 +122,7 @@ export async function POST(request: Request) {
       return bad(`${lane.display_name} belongs to ${lane.character}, not ${target.character}`);
     }
     if (lane.lifecycle !== "live") {
-      return bad(`${lane.display_name} is ${lane.lifecycle} — it cannot take slots`);
+      return bad(`${lane.display_name} is ${lane.lifecycle} and cannot take slots`);
     }
     if (lane.cadence_ceiling_per_week !== null && cadence > lane.cadence_ceiling_per_week) {
       return bad(`${lane.display_name} is capped at ${lane.cadence_ceiling_per_week} a week`);
@@ -157,8 +157,8 @@ export async function POST(request: Request) {
       return bad(
         `${target.character}'s live mix would add up to ${sum} a week, not ${fleetGlp}` +
           (sum < fleetGlp
-            ? ` — ${fleetGlp - sum} ${fleetGlp - sum === 1 ? "post has" : "posts have"} nowhere to go`
-            : " — that is more than the weekly GLP budget"),
+            ? `, ${fleetGlp - sum} ${fleetGlp - sum === 1 ? "post has" : "posts have"} nowhere to go`
+            : ", which is more than the weekly GLP budget"),
       );
     }
   }

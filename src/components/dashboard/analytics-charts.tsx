@@ -347,7 +347,7 @@ function BestAccountTile({ data }: { data: AnalyticsData }) {
           <span className="truncate text-sm font-semibold text-text-primary">@{b?.account}</span>
         </span>
         <span className="text-xs tnum text-text-muted">
-          {b ? `${nf(b.views)} views · ${nf(b.posts)} posts` : ""}
+          {b ? `${nf(b.views)} views, ${nf(b.posts)} posts` : ""}
         </span>
       </span>
     </>
@@ -581,7 +581,7 @@ function AccountPerformance({ rows }: { rows: AccountPerfRow[] }) {
               "Supp.",
               "suppressedPct",
               "right",
-              "Posts that almost nobody saw (10 views or fewer) in the selected range — a high % means the platform is barely showing this account.",
+              "Posts that almost nobody saw (10 views or fewer) in the selected range. A high % means the platform is barely showing this account.",
             )}
             {head("Likes", "likes", "right")}
             {head("Comments", "comments", "right")}

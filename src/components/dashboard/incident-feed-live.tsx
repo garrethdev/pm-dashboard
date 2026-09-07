@@ -9,9 +9,9 @@ export async function IncidentFeedLive({ className }: { className?: string }) {
     return <IncidentFeed incidents={data} className={className} />;
   } catch (err) {
     return (
-      <DashCard title="Incident feed — last 48h" className={className}>
+      <DashCard title="Incident feed, last 48h" className={className}>
         <p className="text-sm text-text-muted">
-          Data unavailable — {err instanceof Error ? err.message : "unknown error"}
+          Data unavailable: {err instanceof Error ? err.message : "unknown error"}
         </p>
       </DashCard>
     );

@@ -148,7 +148,7 @@ function CaptionMatches({ f }: { f: ForensicsFindings }) {
                 <span className="font-mono text-xs text-text-primary">{m.rule_key ?? "—"}</span>
                 <span className="ml-auto text-xs whitespace-nowrap text-text-muted">
                   <span className="font-semibold tnum text-text-primary">{m.matches ?? 0}</span>{" "}
-                  matches · <span className="tnum">{pct}%</span> of captions
+                  matches, <span className="tnum">{pct}%</span> of captions
                 </span>
               </div>
               {/* How much of the account's output tripped this rule — a number
@@ -224,15 +224,6 @@ interface TimelineRow {
   last: string;
 }
 
-const STATE_DOT: Record<string, string> = {
-  healthy: "bg-ok",
-  ramping: "bg-accent",
-  watch: "bg-warn",
-  shadowbanned: "bg-danger",
-  banned: "bg-danger",
-  collapsing: "bg-danger",
-  unknown: "bg-text-muted",
-};
 
 /**
  * Turn the raw log into the handful of things that actually happened.
@@ -330,18 +321,10 @@ function Health({ f }: { f: ForensicsFindings }) {
           <ol className="flex flex-col">
             {rows.map((r, i) => (
               <li key={i} className="flex gap-3">
-                {/* Rail: a dot per row and a line joining them, so the eye
-                    follows the sequence instead of re-reading dates. */}
+                {/* Rail: a line joining the rows, so the eye follows the
+                    sequence instead of re-reading dates. */}
                 <div className="flex flex-col items-center">
-                  <span
-                    className={cn(
-                      "mt-1.5 size-2 shrink-0 rounded-full",
-                      r.kind === "change"
-                        ? (STATE_DOT[r.to] ?? "bg-text-primary")
-                        : "bg-border ring-1 ring-border",
-                    )}
-                  />
-                  {i < rows.length - 1 && <span className="w-px flex-1 bg-border" />}
+                  <span className="mt-1.5 w-px flex-1 bg-border" />
                 </div>
 
                 <div
@@ -363,7 +346,7 @@ function Health({ f }: { f: ForensicsFindings }) {
                     </>
                   ) : (
                     <span className="text-xs text-text-muted">
-                      {r.count > 1 ? `${r.count} routine checks` : "routine check"} · {r.label}
+                      {r.count > 1 ? `${r.count} routine checks` : "routine check"}, {r.label}
                     </span>
                   )}
                 </div>
@@ -406,8 +389,8 @@ export default async function ForensicsPage({ params }: { params: Promise<{ prof
     return (
       <div className="flex flex-col gap-6">
         {back}
-        <DashCard title={`Ban forensics — ${name}`}>
-          <p className="text-sm text-text-muted">Supabase unreachable — {loadError}</p>
+        <DashCard title={`Ban forensics: ${name}`}>
+          <p className="text-sm text-text-muted">Supabase unreachable: {loadError}</p>
         </DashCard>
       </div>
     );
@@ -417,7 +400,7 @@ export default async function ForensicsPage({ params }: { params: Promise<{ prof
     return (
       <div className="flex flex-col gap-6">
         {back}
-        <DashCard title={`Ban forensics — ${name}`}>
+        <DashCard title={`Ban forensics: ${name}`}>
           <div className="flex items-start gap-3 py-2">
             <FileSearch className="mt-0.5 size-5 shrink-0 text-text-muted" />
             <div className="flex flex-col gap-1">
@@ -426,7 +409,7 @@ export default async function ForensicsPage({ params }: { params: Promise<{ prof
                 Reports are produced by the{" "}
                 <span className="font-mono text-xs">[Layer 4] Ban Forensics</span> workflow in n8n.
                 Run it for <span className="font-medium text-text-primary">{name}</span> and the
-                report will appear here — the workflow now saves every investigation.
+                report will appear here. The workflow saves every investigation.
               </p>
             </div>
           </div>
@@ -442,7 +425,7 @@ export default async function ForensicsPage({ params }: { params: Promise<{ prof
       {back}
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h1 className="text-xl font-semibold">Ban forensics — {name}</h1>
+        <h1 className="text-xl font-semibold">Ban forensics: {name}</h1>
         {latest.confidence && (
           <StatusPill tone={CONFIDENCE_TONE[latest.confidence] ?? "neutral"}>
             {latest.confidence} confidence
@@ -451,7 +434,7 @@ export default async function ForensicsPage({ params }: { params: Promise<{ prof
         <span className="text-xs text-text-muted">
           investigated {formatEtDate(latest.investigatedAt)}
           {earlier.length > 0 &&
-            ` · ${earlier.length} earlier investigation${earlier.length > 1 ? "s" : ""}`}
+            `, ${earlier.length} earlier investigation${earlier.length > 1 ? "s" : ""}`}
         </span>
       </div>
 
@@ -459,7 +442,7 @@ export default async function ForensicsPage({ params }: { params: Promise<{ prof
         <div className="flex items-start gap-2 rounded-card border border-warn/40 bg-warn/10 px-4 py-3">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" />
           <p className="text-sm text-text-muted">
-            Built on partial data — {latest.sourceErrors.length} source
+            Built on partial data. {latest.sourceErrors.length} source
             {latest.sourceErrors.length > 1 ? "s" : ""} failed during the run:{" "}
             <span className="text-text-primary">{latest.sourceErrors.slice(0, 4).join("; ")}</span>
           </p>
@@ -480,7 +463,7 @@ export default async function ForensicsPage({ params }: { params: Promise<{ prof
         <DashCard title="No records found">
           <p className="text-sm text-text-muted">
             {f?.note ??
-              "No rows in accounts, unified_posts, the task ledger, health logs, account events or any content table. That is itself a finding — likely never provisioned, or the profile label does not match."}
+              "No rows in accounts, unified_posts, the task ledger, health logs, account events or any content table. That is itself a finding, likely never provisioned, or the profile label does not match."}
           </p>
         </DashCard>
       ) : (
@@ -533,11 +516,6 @@ export default async function ForensicsPage({ params }: { params: Promise<{ prof
           </ol>
         </DashCard>
       )}
-
-      <p className="text-xs text-text-muted">
-        Produced by the [Layer 4] Ban Forensics workflow
-        {latest.executionId ? ` · execution ${latest.executionId}` : ""}. Read-only.
-      </p>
     </div>
   );
 }

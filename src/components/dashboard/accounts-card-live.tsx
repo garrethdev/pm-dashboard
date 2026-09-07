@@ -15,7 +15,7 @@ export async function AccountsCardLive({ className }: { className?: string }) {
     return (
       <DashCard title="Accounts" viewAllHref="/accounts" className={className}>
         <p className="text-sm text-text-muted">
-          Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
+          Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
         </p>
       </DashCard>
     );

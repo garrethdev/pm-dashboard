@@ -16,7 +16,7 @@ async function InventoryLive() {
     return (
       <DashCard title="Demand vs supply">
         <p className="text-sm text-text-muted">
-          Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
+          Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
         </p>
       </DashCard>
     );

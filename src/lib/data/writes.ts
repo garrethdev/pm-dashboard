@@ -30,7 +30,7 @@ async function sbFetch(path: string, init: RequestInit, retries = 1): Promise<Re
     }
   }
   throw new Error(
-    `Couldn't reach Supabase — nothing was changed (${lastErr instanceof Error ? lastErr.message : "timeout"})`,
+    `Couldn't reach Supabase. Nothing was changed (${lastErr instanceof Error ? lastErr.message : "timeout"})`,
   );
 }
 
@@ -132,7 +132,7 @@ export async function setPostingPaused(
       updated_at: new Date().toISOString(),
     }),
   });
-  if (!res.ok) throw new Error(`Pause write failed (HTTP ${res.status}) — nothing was changed`);
+  if (!res.ok) throw new Error(`Pause write failed (HTTP ${res.status}). Nothing was changed`);
 }
 
 /**
@@ -183,7 +183,7 @@ export async function saveSchedulerOverride(
     method: "DELETE",
     headers: { Prefer: "return=minimal" },
   });
-  if (!del.ok) throw new Error(`Override clear failed (HTTP ${del.status}) — nothing was changed`);
+  if (!del.ok) throw new Error(`Override clear failed (HTTP ${del.status}). Nothing was changed`);
 
   // PostgREST rejects a bulk insert whose objects don't share the same keys, so
   // every row carries the full column set and nulls what doesn't apply to it.
@@ -217,7 +217,7 @@ export async function saveSchedulerOverride(
     // The delete already landed, so the account is on scheduler defaults —
     // safe, but say so rather than implying nothing happened.
     throw new Error(
-      `Override save failed (HTTP ${res.status}) — ${profile} is now on scheduler defaults`,
+      `Override save failed (HTTP ${res.status}). ${profile} is now on scheduler defaults`,
     );
   }
 }
@@ -232,7 +232,7 @@ export async function setSchedulerOverrideActive(
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ active }),
   });
-  if (!res.ok) throw new Error(`Override toggle failed (HTTP ${res.status}) — nothing was changed`);
+  if (!res.ok) throw new Error(`Override toggle failed (HTTP ${res.status}). Nothing was changed`);
 }
 
 /** The verdicts a human may record. `confirmed` = "the system is right". */
@@ -322,7 +322,7 @@ export async function getCadenceState(): Promise<unknown> {
       { method: "GET" },
     ),
   ]);
-  if (!reg.ok || !buckets.ok) throw new Error("Supabase read failed — nothing was changed");
+  if (!reg.ok || !buckets.ok) throw new Error("Supabase read failed. Nothing was changed");
   return { registry: await reg.json(), buckets: await buckets.json() };
 }
 
@@ -348,7 +348,7 @@ export async function saveCadence(
     });
     if (!res.ok) {
       throw new Error(
-        `Cadence write failed for ${lane.contentType} (HTTP ${res.status}) — earlier lanes were saved`,
+        `Cadence write failed for ${lane.contentType} (HTTP ${res.status}). earlier lanes were saved`,
       );
     }
   }
@@ -374,7 +374,7 @@ export async function saveCadence(
     });
     if (!res.ok) {
       throw new Error(
-        `Fleet defaults write failed for ${bucket} (HTTP ${res.status}) — the cadence mix was saved`,
+        `Fleet defaults write failed for ${bucket} (HTTP ${res.status}). the cadence mix was saved`,
       );
     }
   }
@@ -403,7 +403,7 @@ const LANE_COLUMNS =
  *  and retired ones to validate a resume and to write the audit old_value. */
 export async function getRegistryLanes(): Promise<RegistryLaneRow[]> {
   const res = await sbFetch(`content_type_registry?select=${LANE_COLUMNS}`, { method: "GET" });
-  if (!res.ok) throw new Error("Supabase read failed — nothing was changed");
+  if (!res.ok) throw new Error("Supabase read failed. Nothing was changed");
   return (await res.json()) as RegistryLaneRow[];
 }
 
@@ -441,7 +441,7 @@ export async function setContentTypeLifecycle(write: LifecycleWrite): Promise<vo
     );
     if (!res.ok) {
       throw new Error(
-        `Rebalance failed for ${lane.contentType} (HTTP ${res.status}) — ` +
+        `Rebalance failed for ${lane.contentType} (HTTP ${res.status}). ` +
           `${write.contentType} was left as it was`,
       );
     }
@@ -462,7 +462,7 @@ export async function setContentTypeLifecycle(write: LifecycleWrite): Promise<vo
   );
   if (!res.ok) {
     throw new Error(
-      `${write.contentType} could not be set to ${write.lifecycle} (HTTP ${res.status}) — ` +
+      `${write.contentType} could not be set to ${write.lifecycle} (HTTP ${res.status}). ` +
         `the other lanes were already rebalanced`,
     );
   }

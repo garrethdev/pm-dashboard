@@ -10,8 +10,8 @@ const SECTION_NAMES: Record<string, string> = {
   "": "Dashboard",
   accounts: "Accounts",
   inventory: "Inventory",
-  "content-calendar": "Content Calendar",
-  proxies: "Proxies & Phones",
+  "content-calendar": "Content calendar",
+  proxies: "Proxies & phones",
   automation: "Automation",
   analytics: "Analytics",
   settings: "Settings",
@@ -262,7 +262,7 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
                     Mark all read ({unread.length})
                   </button>
                 ) : (
-                  <span className="text-xs text-text-muted">{items.length} · all read</span>
+                  <span className="text-xs text-text-muted">All read</span>
                 )}
               </div>
               {items.length > 0 ? (
@@ -331,7 +331,7 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
                 </div>
               ) : (
                 <p className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-text-muted">
-                  <CheckCircle2 className="size-4 text-ok" /> All clear — no notifications
+                  <CheckCircle2 className="size-4 text-ok" /> No notifications
                 </p>
               )}
             </div>

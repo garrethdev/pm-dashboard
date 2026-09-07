@@ -53,17 +53,13 @@ export async function CadenceCardLive({ className }: { className?: string }) {
             <CadenceColumn key={group.name} group={group} />
           ))}
         </div>
-        <p className="mt-4 border-t border-border pt-3 text-xs text-text-muted">
-          Cadence is a preferred mix, not a hard cap — the scheduler substitutes across types up to
-          each ceiling. Edits take effect at tomorrow&apos;s 06:30 ET run.
-        </p>
       </DashCard>
     );
   } catch (err) {
     return (
       <DashCard title="Cadence" viewAllHref="/content-calendar" className={className}>
         <p className="text-sm text-text-muted">
-          Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
+          Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
         </p>
       </DashCard>
     );

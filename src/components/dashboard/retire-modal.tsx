@@ -144,7 +144,7 @@ export function RetireModal({
             </span>
             <div>
               <h2 className="text-base font-semibold">Retire {account.profile}</h2>
-              <p className="text-xs text-text-muted">Post-Ban cleanup · irreversible from the dashboard</p>
+              <p className="text-xs text-text-muted">Post-Ban cleanup. Irreversible from the dashboard.</p>
             </div>
           </div>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary">
@@ -191,7 +191,7 @@ export function RetireModal({
             </div>
           ) : (
             <p className="py-1 text-xs text-text-muted">
-              Couldn&rsquo;t check what this account holds — retry before retiring.
+              Couldn&rsquo;t check what this account holds. Retry before retiring.
             </p>
           )}
         </div>

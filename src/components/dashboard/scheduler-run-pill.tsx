@@ -13,7 +13,7 @@ export function SchedulerRunPill({ run }: { run: SchedulerRun | null }) {
   if (!run) {
     return (
       <StatusPill tone="warn" className="cursor-default">
-        <span title="The Smart Scheduler runs at 06:30 ET.">Smart Scheduler · not yet run</span>
+        <span title="The Smart Scheduler runs at 06:30 ET.">Smart Scheduler not yet run</span>
       </StatusPill>
     );
   }
@@ -33,12 +33,12 @@ export function SchedulerRunPill({ run }: { run: SchedulerRun | null }) {
     run.errorMessage ? `failed at ${run.errorStep ?? "unknown step"}: ${run.errorMessage}` : null,
   ]
     .filter(Boolean)
-    .join(" · ");
+    .join(", ");
 
   return (
     <StatusPill tone={tone} className="cursor-default">
-      <span title={`${run.rowsScheduled}/${run.slotsPlanned} scheduled · ${detail}`}>
-        Smart Scheduler · {run.status}
+      <span title={`${run.rowsScheduled}/${run.slotsPlanned} scheduled, ${detail}`}>
+        Smart Scheduler {run.status}
       </span>
     </StatusPill>
   );

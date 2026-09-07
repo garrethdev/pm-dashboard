@@ -23,9 +23,9 @@ async function ContentTypesLive() {
     ({ data } = await getContentTypes(CT_DEFAULT_RANGE, fleet.glpWeek));
   } catch (err) {
     return (
-      <DashCard title="Content Types">
+      <DashCard title="Content types">
         <p className="text-sm text-text-muted">
-          Supabase unreachable — {err instanceof Error ? err.message : "unknown error"}
+          Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
         </p>
       </DashCard>
     );

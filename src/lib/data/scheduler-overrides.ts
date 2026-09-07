@@ -279,5 +279,5 @@ export function summarizeOverride(
         : `${ov.onlyContentTypes.length} types`,
     );
   }
-  return { label: bits.length ? bits.join(" · ") : "Custom", tone: "custom", clamped };
+  return { label: bits.length ? bits.join(", ") : "Custom", tone: "custom", clamped };
 }

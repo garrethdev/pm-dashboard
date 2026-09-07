@@ -20,10 +20,10 @@ async function ProxiesLive() {
   } catch (err) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-xl font-semibold">Proxies &amp; Phones</h1>
+        <h1 className="text-xl font-semibold">Proxies &amp; phones</h1>
         <DashCard title="Proxies">
           <p className="text-sm text-text-muted">
-            Upstream unreachable — {err instanceof Error ? err.message : "unknown error"}
+            Upstream unreachable: {err instanceof Error ? err.message : "unknown error"}
           </p>
         </DashCard>
       </div>
@@ -36,7 +36,7 @@ export default function ProxiesPage() {
     <Suspense
       fallback={
         <div className="flex flex-col gap-6">
-          <h1 className="text-xl font-semibold">Proxies &amp; Phones</h1>
+          <h1 className="text-xl font-semibold">Proxies &amp; phones</h1>
           <CardSkeleton title="Proxies" lines={12} />
         </div>
       }

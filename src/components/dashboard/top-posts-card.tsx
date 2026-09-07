@@ -105,10 +105,10 @@ export function TopPostsCard({
     <DashCard
       title={
         platform === "tiktok"
-          ? "Top Posts · TikTok"
+          ? "TikTok top posts"
           : platform === "instagram"
-            ? "Top Posts · Instagram"
-            : "Top Posts"
+            ? "Instagram top posts"
+            : "Top posts"
       }
       className={className}
       toolbar={

@@ -37,7 +37,7 @@ function detailOf(t: AccountTask): string {
   if (t.actions && Object.keys(t.actions).length > 0) {
     return Object.entries(t.actions)
       .map(([k, v]) => `${k}: ${v}`)
-      .join(" · ");
+      .join(", ");
   }
   return t.sourceWorkflow ?? "—";
 }

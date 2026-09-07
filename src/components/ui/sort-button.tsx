@@ -24,8 +24,8 @@ export function SortButton({
       title={
         active
           ? dir === "desc"
-            ? "highest first — click for lowest first"
-            : "lowest first — click to reset"
+            ? "Highest first, click for lowest"
+            : "Lowest first, click to reset"
           : "sort by this column"
       }
       className={cn(
