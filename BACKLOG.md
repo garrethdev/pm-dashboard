@@ -17,35 +17,50 @@ Newest first within each list.
 
 ## Migrate the cache layer off `unstable_cache`
 
-**Found 2026-09-07 during a backend review.** Next 16's own docs are explicit:
-"`unstable_cache` is replaced by the [`use cache`] directive"
-(`node_modules/next/dist/docs/01-app/02-guides/migrating-to-cache-components.md`).
-Nothing is broken — it still ships and still works in 16.3.3 — but the whole of
-`src/lib/data/cache.ts` is built on it, so the cost of the move grows with every
-fetcher added. Do it before the next major, not after it forces the issue.
+**Found 2026-09-07 in a backend review, then spiked the same day.** Next 16's
+docs are explicit that "`unstable_cache` is replaced by the `use cache`
+directive". Nothing is broken — it still ships and works in 16.3.3 — but the
+whole of `src/lib/data/cache.ts` is built on it.
 
-**This is not a drop-in swap, and that is the headline.** `use cache` is a Cache
-Components feature: it does nothing until `cacheComponents: true` is set in
-`next.config.ts`, and that flag replaces the route segment configs app-wide and
-turns on instant-navigation validation, which surfaces blocking code as errors
-across every route. So the real unit of work is "adopt Cache Components", not
-"swap a helper". Next ships an adoption skill built for exactly this
-(`npx skills add vercel/next.js --skill next-cache-components-adoption`), with an
-incremental mode that opts every route out of validation first and converts one
-feature per PR. Use it rather than hand-rolling the sweep.
+**Spiked on `perf/cache-components` and backed out. Read this before starting
+again; the shape of the job is not what it looks like.**
 
-**There is no deadline pressure.** The docs are explicit that existing `fetch`
-and `unstable_cache` caching keeps working as a separate layer once the flag is
-on, so nothing breaks on the day it is enabled and nothing breaks while it is
-not. Schedule this as its own piece of work on its own branch.
+`use cache` does nothing without `cacheComponents: true`, and that flag turns on
+instant-navigation validation across every route. The spike enabled it and
+worked through the failures in order:
 
-**Once the flag is on, the mapping is close to mechanical.**
-`cachedFetcher(key, ttl, fn, opts)` becomes a function carrying `'use cache'`,
-where the key comes from the arguments automatically, `revalidate` becomes
-`cacheLife` and `tags` become `cacheTag`. Roughly 20 fetchers and `DATA_TAGS`
-follow from there.
+1. **`/login`** blocked on `await searchParams` at the top of the page. Fixed
+   properly — the card and logo prerender, only the branch reading the query
+   string suspends. **Kept.**
+2. **`/accounts/[profile]`** blocked on `params`. Fixed properly — the back link
+   prerenders, the profile streams behind a skeleton. **Kept.**
+3. **Every dashboard route** blocked on the shell: `usePathname()` in both
+   `sidebar.tsx` and `topbar.tsx`, plus the session read in the `(dashboard)`
+   layout. Next's own auth guide says to set `export const instant = false` on
+   the layout and convert one route at a time, which cleared all ten at once.
+4. **`/automation` still failed**, and this is the wall. From the migration
+   guide: "Calls like `new Date()`, `Date.now()`, `Math.random()`... during
+   prerender throw a build error **that `instant = false` does not clear**, so a
+   route that uses them won't build until you address it, opt-out or not."
 
-**Two things that will not map cleanly, and are the actual work:**
+**There are 23 such calls across 12 modules** in `src/lib` — automation,
+calendar, incidents, accounts, proxies, pulse, notifications, top-posts,
+account-detail, account-analytics, writes and cache itself. Every one needs
+`await connection()` inside a `<Suspense>` boundary, or to move into a client
+component. That is not a long tail, it is the job, and it cannot be deferred
+behind the escape hatch the way the auth and pathname blockers can.
+
+This dashboard is time-relative by nature — overdue, days left, freshness, "ET
+today" — so those clock reads are not incidental and cannot simply be deleted.
+
+**If you pick this up:** budget for the whole data layer, not the cache helper.
+Use Next's adoption skill
+(`npx skills add vercel/next.js --skill next-cache-components-adoption`) in
+incremental mode. Steps 1-3 above are already solved and documented here, so
+start at the clock reads and decide route by route which need request-time
+freshness and which can be cached.
+
+**Two things that will not map cleanly even after that:**
 
 1. **`bypass`.** Ours reads live for unsettled days and falls back to the last
    good payload, because stale-while-revalidate served the pre-scheduler state
@@ -58,10 +73,16 @@ follow from there.
    same lifetime, so check whether `use cache: remote` or a cache handler makes
    this redundant before porting it across.
 
-Sequencing note: turning on `cacheComponents` IS this piece of work, not a step
-inside it. Do not start it alongside unrelated changes, and do not start it on a
-branch that has not been merged.
+Also note `cachedFetcher`'s own shape does not survive: `use cache` derives its
+key from arguments, so a higher-order function taking `fn` as a parameter cannot
+be cached. Each of the ~20 fetchers becomes its own `'use cache'` function, and
+the shared `fetchedAt` / `stale` / `bypass` machinery needs rebuilding around
+that.
 
+**There is no deadline pressure.** The docs are explicit that existing `fetch`
+and `unstable_cache` caching keeps working as a separate layer once the flag is
+on, so nothing breaks on the day it is enabled and nothing breaks while it is
+not.
 ---
 
 ## Verify the TikTok ingest fix on a real run
