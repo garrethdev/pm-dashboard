@@ -7,6 +7,14 @@ import { SideRays } from "@/components/ui/side-rays";
 import { isEmailAllowed } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * The single gap between the card's three groups — logo, prompt+input, and
+ * button+message. Declared once because it is set on two different containers
+ * (the card, and the form nested inside it), and the whole point is that a
+ * reader cannot tell where one ends and the other begins.
+ */
+const GROUP_GAP = "gap-9";
+
 async function sendMagicLink(formData: FormData) {
   "use server";
   const email = String(formData.get("email") ?? "").trim();
@@ -34,41 +42,58 @@ async function sendMagicLink(formData: FormData) {
   redirect(error.status === 429 ? "/login?error=rate-limit" : "/login?error=send-failed");
 }
 
-/** The sign-in form. Static: nothing here depends on the request, so it is what
- *  the page prerenders and what stands in while the query string resolves. */
+/**
+ * The sign-in form, in two of the card's three groups.
+ *
+ * Group 2 is the prompt and its input; group 3 is the button and whatever
+ * message belongs under it. Both use the same GROUP_GAP as the card puts
+ * between the logo and this form, so every gap between groups is identical and
+ * only the spacing *within* a group is tighter. That is what stops the card
+ * reading as "logo, then a long fall, then some controls".
+ *
+ * Static: nothing here depends on the request, so it is what the page
+ * prerenders and what stands in while the query string resolves.
+ */
 function SignInForm({ error }: { error?: string }) {
   return (
-    <form action={sendMagicLink} className="flex flex-col gap-5">
-      <label className="text-sm text-text-muted" htmlFor="email">
-        Sign in with your work email
-      </label>
-      <input
-        id="email"
-        name="email"
-        type="email"
-        required
-        placeholder="you@example.com"
-        className="rounded-nested border border-border bg-card-raised px-3.5 py-3 text-sm outline-none placeholder:text-text-muted focus:border-accent/60"
-      />
-      <MagicLinkSubmit />
-      {error === "not-allowed" && (
-        <p className="text-sm text-danger">This email isn&apos;t on the allowlist.</p>
-      )}
-      {error === "rate-limit" && (
-        <p className="text-sm text-warn">
-          Too many sign-in emails have gone out. Wait a few minutes, then try again — a
-          second attempt now will fail the same way.
-        </p>
-      )}
-      {error === "send-failed" && (
-        <p className="text-sm text-danger">Couldn&apos;t send the link. Try again.</p>
-      )}
-      {error === "bad-link" && (
-        <p className="text-sm text-danger">
-          That link didn&apos;t work. Magic links expire and can only be used once — send a
-          fresh one.
-        </p>
-      )}
+    <form action={sendMagicLink} className={`flex flex-col ${GROUP_GAP}`}>
+      {/* Group 2 — the ask and where you answer it */}
+      <div className="flex flex-col gap-3">
+        <label className="text-sm text-text-muted" htmlFor="email">
+          Sign in with your work email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          placeholder="you@example.com"
+          className="rounded-nested border border-border bg-card-raised px-3.5 py-3 text-sm outline-none placeholder:text-text-muted focus:border-accent/60"
+        />
+      </div>
+
+      {/* Group 3 — the action, and the consequence of the last one */}
+      <div className="flex flex-col gap-3">
+        <MagicLinkSubmit />
+        {error === "not-allowed" && (
+          <p className="text-sm text-danger">This email isn&apos;t on the allowlist.</p>
+        )}
+        {error === "rate-limit" && (
+          <p className="text-sm text-warn">
+            Too many sign-in emails have gone out. Wait a few minutes, then try again — a
+            second attempt now will fail the same way.
+          </p>
+        )}
+        {error === "send-failed" && (
+          <p className="text-sm text-danger">Couldn&apos;t send the link. Try again.</p>
+        )}
+        {error === "bad-link" && (
+          <p className="text-sm text-danger">
+            That link didn&apos;t work. Magic links expire and can only be used once — send a
+            fresh one.
+          </p>
+        )}
+      </div>
     </form>
   );
 }
@@ -123,8 +148,8 @@ export default function LoginPage({
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-sm rounded-card border border-border bg-card/90 px-9 py-16 shadow-card backdrop-blur-xl">
-        <div className="mb-14 flex flex-col gap-2">
+      <div className={`relative z-10 flex w-full max-w-sm flex-col ${GROUP_GAP} rounded-card border border-border bg-card/90 px-9 py-14 shadow-card backdrop-blur-xl`}>
+        <div className="flex flex-col gap-2">
           <Image
             src="/logo-white.svg"
             alt="Peptide Miracles"
