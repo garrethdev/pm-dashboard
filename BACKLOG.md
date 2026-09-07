@@ -32,8 +32,12 @@ worked through the failures in order:
 1. **`/login`** blocked on `await searchParams` at the top of the page. Fixed
    properly — the card and logo prerender, only the branch reading the query
    string suspends. **Kept.**
-2. **`/accounts/[profile]`** blocked on `params`. Fixed properly — the back link
-   prerenders, the profile streams behind a skeleton. **Kept.**
+2. **`/accounts/[profile]`** blocked on `params`. Streaming it behind a skeleton
+   built and looked right, but **reverted**: `notFound()` then runs inside a
+   Suspense boundary, after the shell has streamed and the status is already
+   committed, so a missing profile served the not-found UI with **HTTP 200
+   instead of 404**. Anything converting a route whose data can 404 has to solve
+   that first — the status has to be decided before the shell is sent.
 3. **Every dashboard route** blocked on the shell: `usePathname()` in both
    `sidebar.tsx` and `topbar.tsx`, plus the session read in the `(dashboard)`
    layout. Next's own auth guide says to set `export const instant = false` on

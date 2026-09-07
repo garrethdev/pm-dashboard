@@ -36,16 +36,6 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-/** Stands in for the header card and tab row while the profile loads. */
-function DetailSkeleton() {
-  return (
-    <>
-      <Skeleton className="h-[152px] w-full rounded-card" />
-      <Skeleton className="mt-6 h-9 w-64 rounded-full" />
-    </>
-  );
-}
-
 /** Mirrors the panel's own layout so nothing jumps when it lands — and carries
  *  no title, because the panel it stands in for has none either. */
 function AnalyticsSkeleton() {
@@ -96,9 +86,11 @@ async function AnalyticsPanel({
   return <AccountAnalyticsView initial={analytics} account={username} platform={platform} />;
 }
 
-/** Everything on this page is keyed by the profile in the URL, so all of it
- *  reads runtime data and all of it streams. */
-async function AccountDetailBody({ params }: { params: Promise<{ profile: string }> }) {
+export default async function AccountDetailPage({
+  params,
+}: {
+  params: Promise<{ profile: string }>;
+}) {
   const { profile } = await params;
   const { data } = await getAccountDetail(toProfileName(profile));
   if (!data) notFound();
@@ -114,7 +106,14 @@ async function AccountDetailBody({ params }: { params: Promise<{ profile: string
   ];
 
   return (
-    <>
+    <div className="flex flex-col gap-3">
+      <Link
+        href="/accounts"
+        className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-text-muted transition-colors hover:text-text-primary"
+      >
+        <ArrowLeft className="size-3.5" /> All accounts
+      </Link>
+
       {/* Header — ported from Figma node 2:160. Identity + platform badge,
           divider, Character/Created, then four stat cards on the right. */}
       <Card className="flex flex-wrap items-center justify-between gap-6">
@@ -202,29 +201,6 @@ async function AccountDetailBody({ params }: { params: Promise<{ profile: string
           </Suspense>
         }
       />
-    </>
-  );
-}
-
-/** The back link is the only thing here that does not depend on the URL, so it
- *  is what prerenders; the profile itself arrives behind a skeleton shaped like
- *  the header it replaces. */
-export default function AccountDetailPage({
-  params,
-}: {
-  params: Promise<{ profile: string }>;
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      <Link
-        href="/accounts"
-        className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-text-muted transition-colors hover:text-text-primary"
-      >
-        <ArrowLeft className="size-3.5" /> All accounts
-      </Link>
-      <Suspense fallback={<DetailSkeleton />}>
-        <AccountDetailBody params={params} />
-      </Suspense>
     </div>
   );
 }
