@@ -53,7 +53,12 @@ function CharacterCard({
   character: CharacterTypes;
   glpPerWeek: number;
 }) {
-  const types = character.types.filter((t) => t.lifecycle !== "retired");
+  // Ranked by median views, which is the column the list actually shows —
+  // ordering by the composite score meant the numbers on screen read out of
+  // order. Lanes with no measurement sink to the bottom rather than to the top.
+  const types = character.types
+    .filter((t) => t.lifecycle !== "retired")
+    .sort((a, b) => (b.medianViews ?? -1) - (a.medianViews ?? -1));
   const [index, setIndex] = useState(0);
   const current = types[Math.min(index, types.length - 1)];
 
@@ -93,7 +98,12 @@ function CharacterCard({
           </StatusPill>
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
+        {/* Even gaps, edge to edge. Four equal columns left dead space after the
+            last value; right-aligning that one closed the space but pushed
+            Trend away from the other three, so it read as a separate thing.
+            justify-between spaces all four the same and still runs the group
+            from padding edge to padding edge. */}
+        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <Stat
             label="Median Views"
             value={current.medianViews === null ? "—" : compact(current.medianViews)}
@@ -128,59 +138,66 @@ function CharacterCard({
       </div>
 
       {/* Every lane, always in the same order — only the selected row moves.
-          A list that reshuffled on each click made the card hard to scan. */}
-      <table className="w-full border-t border-border text-sm">
-        <thead>
-          <tr className="text-left text-[11px] text-text-muted">
-            <th className="px-2 pt-2 pb-1 font-medium">Content Type</th>
-            <th className="px-2 pt-2 pb-1 text-right font-medium">Median Views</th>
-          </tr>
-        </thead>
-        <tbody>
-          {types.map((t) => {
-            const selected = t.contentType === current.contentType;
-            return (
-              <tr
-                key={t.contentType}
-                onClick={() => setIndex(types.indexOf(t))}
-                aria-selected={selected}
-                className={cn(
-                  "cursor-pointer transition-colors",
-                  selected ? "bg-accent-soft" : "hover:bg-card-raised",
-                )}
-              >
-                <td className="rounded-l-nested px-2 py-1.5">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={cn(
-                        "size-1.5 shrink-0 rounded-full",
-                        t.lifecycle === "live" ? "bg-ok" : "bg-warn",
-                      )}
-                      aria-hidden
-                    />
-                    <span
-                      className={cn(
-                        "min-w-0 truncate text-xs",
-                        selected ? "font-medium text-accent" : "text-text-muted",
-                      )}
-                    >
-                      {t.displayName}
-                    </span>
-                  </span>
-                </td>
-                <td
+          A list that reshuffled on each click made the card hard to scan.
+
+          Three rows fit; the rest scrolls. Character 3 carries eight lanes and
+          Character 4 three, so without a cap the three cards were wildly
+          different heights. The height is set to leave the fourth row half
+          visible, which is what tells you there is more to scroll. */}
+      <div className="max-h-[8.25rem] overflow-y-auto border-t border-border">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10 bg-card">
+            <tr className="text-left text-[11px] text-text-muted">
+              <th className="px-2 pt-2 pb-1 font-medium">Content Type</th>
+              <th className="px-2 pt-2 pb-1 text-right font-medium">Median Views</th>
+            </tr>
+          </thead>
+          <tbody>
+            {types.map((t) => {
+              const selected = t.contentType === current.contentType;
+              return (
+                <tr
+                  key={t.contentType}
+                  onClick={() => setIndex(types.indexOf(t))}
+                  aria-selected={selected}
                   className={cn(
-                    "rounded-r-nested px-2 py-1.5 text-right text-xs tnum",
-                    selected ? "font-medium text-accent" : "text-text-primary",
+                    "cursor-pointer transition-colors",
+                    selected ? "bg-accent-soft" : "hover:bg-card-raised",
                   )}
                 >
-                  {t.medianViews === null ? "—" : compact(t.medianViews)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  <td className="rounded-l-nested px-2 py-1.5">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span
+                        className={cn(
+                          "size-1.5 shrink-0 rounded-full",
+                          t.lifecycle === "live" ? "bg-ok" : "bg-warn",
+                        )}
+                        aria-hidden
+                      />
+                      <span
+                        className={cn(
+                          "min-w-0 truncate text-xs",
+                          selected ? "font-medium text-accent" : "text-text-muted",
+                        )}
+                      >
+                        {t.displayName}
+                      </span>
+                    </span>
+                  </td>
+                  <td
+                    className={cn(
+                      "rounded-r-nested px-2 py-1.5 text-right text-xs tnum",
+                      selected ? "font-medium text-accent" : "text-text-primary",
+                    )}
+                  >
+                    {t.medianViews === null ? "—" : compact(t.medianViews)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </Card>
   );
 }
