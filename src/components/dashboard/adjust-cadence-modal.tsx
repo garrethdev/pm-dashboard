@@ -22,6 +22,9 @@ import { cn } from "@/lib/utils";
  * Everything here moves all ~30 accounts. A per-account override still wins.
  */
 
+/** Mirrors MAX_PER_WEEK in /api/cadence — the server's cap on a weekly total. */
+const MAX_GLP_PER_WEEK = 70;
+
 export function AdjustCadenceModal({
   cadence,
   fleet,
@@ -230,7 +233,14 @@ export function AdjustCadenceModal({
                 value={glp}
                 onChange={changeGlp}
                 min={0}
-                max={Math.min(10, Math.max(0, weekBudget - filler))}
+                // Same rule as filler: whatever the day cap leaves. This used to
+                // be min(10, …), which borrowed MAX_LANE_PER_WEEK — the ceiling
+                // on a single content type — and applied it to the weekly total.
+                // The server's limit on the total is MAX_PER_WEEK, and there was
+                // never a rule that GLP could not exceed 10 a week. It only
+                // showed up once the day cap moved to 2 and the remaining budget
+                // was 11 (Garreth 2026-09-08).
+                max={Math.min(MAX_GLP_PER_WEEK, Math.max(0, weekBudget - filler))}
                 suffix="/wk"
               />
             </div>
