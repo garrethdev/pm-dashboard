@@ -79,8 +79,11 @@ export interface IconProps {
  * `fill` is the house weight. The exceptions are all glyphs that fill destroys
  * rather than merely restyles: a filled CircleNotch is a solid disc that spins
  * as a dot instead of a spinner, filled carets are solid wedges that read as a
- * shape rather than a direction, and a filled X is a heavy slab where a close
- * affordance wants two thin strokes.
+ * shape rather than a direction, a filled X is a heavy slab where a close
+ * affordance wants two thin strokes, and filled Plus/Minus are solid rounded
+ * squares — the sign reads as knocked out of a block rather than drawn, which
+ * makes a stepper look like two buttons stamped on top of the control instead
+ * of two marks inside it (Garreth 2026-09-08).
  */
 function icon(Base: PhIcon, name: string, weight: IconWeight = "fill") {
   const Wrapped = (props: IconProps) => <Base {...props} weight={weight} />;
@@ -117,7 +120,7 @@ export const LayoutList = icon(PhCards, "LayoutList");
 export const ListChecks = icon(PhListChecks, "ListChecks");
 export const Loader2 = icon(PhCircleNotch, "Loader2", "bold");
 export const LogOut = icon(PhSignOut, "LogOut");
-export const Minus = icon(PhMinus, "Minus");
+export const Minus = icon(PhMinus, "Minus", "bold");
 export const Moon = icon(PhMoon, "Moon");
 export const Package = icon(PhPackage, "Package");
 export const PanelLeft = icon(PhSidebar, "PanelLeft");
@@ -125,7 +128,7 @@ export const PanelLeftClose = icon(PhSidebarSimple, "PanelLeftClose");
 export const PauseCircle = icon(PhPauseCircle, "PauseCircle");
 export const Play = icon(PhPlay, "Play");
 export const PlayCircle = icon(PhPlayCircle, "PlayCircle");
-export const Plus = icon(PhPlus, "Plus");
+export const Plus = icon(PhPlus, "Plus", "bold");
 export const RotateCw = icon(PhArrowsClockwise, "RotateCw");
 export const Search = icon(PhMagnifyingGlass, "Search");
 export const Settings = icon(PhGear, "Settings");
