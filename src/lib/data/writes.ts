@@ -409,6 +409,8 @@ export async function getRegistryLanes(): Promise<RegistryLaneRow[]> {
 
 export interface LifecycleWrite {
   contentType: string;
+  /** Whose `allowed_content_types` list this lane belongs to. */
+  character: string;
   lifecycle: ContentTypeLifecycle;
   /** The target lane's allocation after the change (0 when leaving rotation). */
   cadencePerWeek: number;
@@ -420,6 +422,57 @@ export interface LifecycleWrite {
 }
 
 /**
+ * Add or remove one content type in `characters.allowed_content_types`.
+ *
+ * That array is the gate the Inventory Monitor reads: it computes demand only
+ * for types listed against the character. A retired lane left in the array goes
+ * on producing shortfalls for content nobody will post; a resumed lane missing
+ * from it is invisible to inventory while the scheduler happily posts it.
+ *
+ * It is `characters`, never `accounts`. `accounts.allowed_content_types` also
+ * exists and looks like the right column, but nothing reads it — the inventory
+ * views take the array from `characters` via `accounts_with_content_types`.
+ *
+ * PostgREST has no array_append, so this is a read-modify-write, and it is a
+ * no-op when the array already says what we want.
+ */
+async function setTypeAllowedForCharacter(
+  character: string,
+  contentType: string,
+  allowed: boolean,
+): Promise<void> {
+  const filter = `character=eq.${encodeURIComponent(character)}`;
+
+  const cur = await sbFetch(`characters?select=allowed_content_types&${filter}`, { method: "GET" });
+  if (!cur.ok) {
+    throw new Error(`Couldn't read ${character}'s content type list (HTTP ${cur.status})`);
+  }
+  const rows = (await cur.json()) as { allowed_content_types: string[] | null }[];
+  if (!rows[0]) throw new Error(`${character} is not in the characters table`);
+
+  const list = rows[0].allowed_content_types ?? [];
+  if (list.includes(contentType) === allowed) return;
+
+  const res = await sbFetch(`characters?${filter}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      allowed_content_types: allowed
+        ? [...list, contentType]
+        : list.filter((t) => t !== contentType),
+      // `characters` has no set_updated_at trigger, so stamp it here.
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `${contentType} could not be ${allowed ? "added to" : "removed from"} ` +
+        `${character}'s content type list (HTTP ${res.status})`,
+    );
+  }
+}
+
+/**
  * Flip one content type's lifecycle and rebalance its character's mix.
  *
  * The target is written LAST. Every automation gates on `active`, which the
@@ -428,8 +481,29 @@ export interface LifecycleWrite {
  * minutes — where the lane is off and its slots have not yet been handed to
  * anyone. Rebalancing first means the worst case is a brief over-allocation,
  * which the daily cap absorbs, rather than an under-post.
+ *
+ * The character's `allowed_content_types` follows the same rule — widen first,
+ * narrow last. Resuming adds the type before the lane goes live, so inventory
+ * can already see it; retiring removes the type after the lane is off, so
+ * demand is never computed for something already switched off. Either way a
+ * half-completed run fails into the same harmless state: an array entry for a
+ * lane that isn't live, which every consumer ignores.
+ *
+ * A pause leaves the array alone. It is meant to be temporary, and `active`
+ * already stops every automation, so churning the list would add drift for
+ * nothing.
  */
 export async function setContentTypeLifecycle(write: LifecycleWrite): Promise<void> {
+  // `filler` and `podcast` are fleet-wide: they carry character "All", which has
+  // no row in `characters` and is listed against every character instead. Their
+  // arrays are not this endpoint's to rewrite — the same test the Content Types
+  // page uses to decide which lanes belong to a character's mix.
+  const perCharacter = write.character.startsWith("Character");
+
+  if (perCharacter && write.lifecycle === "live") {
+    await setTypeAllowedForCharacter(write.character, write.contentType, true);
+  }
+
   for (const lane of write.reallocation) {
     const res = await sbFetch(
       `content_type_registry?content_type=eq.${encodeURIComponent(lane.contentType)}`,
@@ -465,5 +539,9 @@ export async function setContentTypeLifecycle(write: LifecycleWrite): Promise<vo
       `${write.contentType} could not be set to ${write.lifecycle} (HTTP ${res.status}). ` +
         `the other lanes were already rebalanced`,
     );
+  }
+
+  if (perCharacter && write.lifecycle === "retired") {
+    await setTypeAllowedForCharacter(write.character, write.contentType, false);
   }
 }

@@ -170,6 +170,7 @@ export async function POST(request: Request) {
 
     await setContentTypeLifecycle({
       contentType,
+      character: target.character,
       lifecycle,
       cadencePerWeek: requested,
       // Remember what it had, so resuming can offer that number back. Kept as
