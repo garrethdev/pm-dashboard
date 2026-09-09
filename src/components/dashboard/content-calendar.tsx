@@ -120,7 +120,7 @@ export function ContentCalendar({
       <DashCard
         sunken
         title={monthLabel(month.year, month.month1)}
-        actions={
+        headerAction={
           <div className="flex items-center gap-1">
             {loading && (
               <Loader2 className="mr-1 size-3.5 animate-spin text-text-muted" />

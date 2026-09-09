@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "@/components/ui/icons";
+import { CheckCircle2, SlidersHorizontal } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
+import { Dropdown } from "@/components/ui/dropdown";
 import { StatusPill } from "@/components/ui/pill";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { formatEtDate } from "@/lib/data/format";
@@ -84,31 +85,74 @@ export function IncidentHistory({
   const types = typesOf(incidents);
   const shown = type === "all" ? incidents : incidents.filter((i) => i.type === type);
 
+  // Declared once and rendered in two places — the phone's popover and the
+  // desktop row. Same elements, same state; only one branch is ever visible.
+  const rangePills = (
+    <FilterPills
+      value={range}
+      onChange={(v) => pickRange(v as IncidentRange)}
+      options={INCIDENT_RANGES.map((r) => ({
+        value: r.key,
+        label: r.label,
+      }))}
+    />
+  );
+
+  const typePills = types.length > 1 && (
+    <FilterPills
+      value={type}
+      onChange={setType}
+      options={[
+        { value: "all", label: `All (${incidents.length})` },
+        ...types.map((t) => ({
+          value: t,
+          label: `${t} (${incidents.filter((i) => i.type === t).length})`,
+        })),
+      ]}
+    />
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="text-xl font-semibold">Incidents</h1>
-        <FilterPills
-          value={range}
-          onChange={(v) => pickRange(v as IncidentRange)}
-          options={INCIDENT_RANGES.map((r) => ({
-            value: r.key,
-            label: r.label,
-          }))}
-        />
-        {types.length > 1 && (
-          <FilterPills
-            value={type}
-            onChange={setType}
-            options={[
-              { value: "all", label: `All (${incidents.length})` },
-              ...types.map((t) => ({
-                value: t,
-                label: `${t} (${incidents.filter((i) => i.type === t).length})`,
-              })),
-            ]}
-          />
-        )}
+
+        {/* Phone: both switches fold into one Filters popover. Eight options
+            across two full-width rows was most of the screen before a single
+            incident showed. Same Dropdown the Accounts table uses, so the
+            control means the same thing wherever it appears. */}
+        <div className="sm:hidden">
+          <Dropdown
+            label="Filters"
+            icon={<SlidersHorizontal className="size-3.5" />}
+            badge={type === "all" ? 0 : 1}
+          >
+            {() => (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
+                    Time range
+                  </span>
+                  {rangePills}
+                </div>
+                {typePills && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
+                      Type
+                    </span>
+                    {typePills}
+                  </div>
+                )}
+              </div>
+            )}
+          </Dropdown>
+        </div>
+
+        <div className="hidden sm:contents">
+          {rangePills}
+          {typePills}
+        </div>
+
         <span className={cn("text-xs text-text-muted", loading && "animate-pulse")}>
           {loading ? "updating…" : `${shown.length} shown`}
         </span>

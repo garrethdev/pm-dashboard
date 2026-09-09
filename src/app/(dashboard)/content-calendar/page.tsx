@@ -94,15 +94,22 @@ async function AccountLimits() {
 export default function ContentCalendarPage() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2.5">
+      {/* Same shape as a card header: on a phone the title and the one action
+          share the first line and the status pill drops beneath, because
+          "Smart Scheduler not yet run" is too wide to sit beside either.
+          `sm:contents` dissolves the pairing above that, so the desktop header
+          stays the single row it has always been. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2.5">
+        <div className="flex items-center justify-between gap-3 sm:contents">
           <h1 className="text-xl font-semibold">Content calendar</h1>
-          <Suspense fallback={null}>
-            <RunPill />
-          </Suspense>
+          <div className="shrink-0 sm:order-last sm:ml-auto">
+            <Suspense fallback={null}>
+              <CadenceEditor />
+            </Suspense>
+          </div>
         </div>
         <Suspense fallback={null}>
-          <CadenceEditor />
+          <RunPill />
         </Suspense>
       </div>
       <Suspense fallback={<CardSkeleton title="Content calendar" lines={12} />}>

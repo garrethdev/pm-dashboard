@@ -129,7 +129,7 @@ export function ProxiesTable({
       <DashCard
         title={view === "proxies" ? "Proxies" : "Phone numbers"}
         fetchedAt={fetchedAt}
-        actions={
+        headerAction={
           <span className="text-sm text-text-muted">
             {rows.length} of {allRows.length}
           </span>
@@ -144,7 +144,7 @@ export function ProxiesTable({
 
           <div className="overflow-x-auto">
             {view === "proxies" ? (
-              <table className="w-full text-sm">
+              <table className="w-full text-sm [&_td]:pr-4 [&_th]:pr-4 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
                 <thead>
                   <tr className="text-left text-xs text-text-muted">
                     <th className={TH}>Profile</th>
@@ -201,7 +201,7 @@ export function ProxiesTable({
                 </tbody>
               </table>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-sm [&_td]:pr-4 [&_th]:pr-4 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
                 <thead>
                   <tr className="text-left text-xs text-text-muted">
                     <th className={TH}>Profile</th>

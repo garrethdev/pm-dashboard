@@ -1,3 +1,4 @@
+import { MobileNavProvider, ShellColumn } from "@/components/shell/mobile-nav";
 import { PageGlow } from "@/components/shell/page-glow";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
@@ -17,13 +18,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <div className="page-glow flex min-w-0 flex-1 flex-col">
-        <PageGlow />
-        <Topbar userEmail={email} />
-        <main className="w-full flex-1 px-6 py-6">{children}</main>
+    <MobileNavProvider>
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <ShellColumn>
+          <PageGlow />
+          <Topbar userEmail={email} />
+          <main className="w-full flex-1 px-6 py-6">{children}</main>
+        </ShellColumn>
       </div>
-    </div>
+    </MobileNavProvider>
   );
 }

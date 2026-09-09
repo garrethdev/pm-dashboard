@@ -144,12 +144,18 @@ function CharacterCard({
           Character 4 three, so without a cap the three cards were wildly
           different heights. The height is set to leave the fourth row half
           visible, which is what tells you there is more to scroll. */}
-      <div className="max-h-[8.25rem] overflow-y-auto border-t border-border">
-        <table className="w-full text-sm">
+      {/* `table-fixed` is what makes the `truncate` below actually fire. Under
+          auto layout a cell's min-content width is the full nowrap string, so a
+          long lane name widened the table past the card instead of ellipsing —
+          the truncate class was decorative. Fixed layout gives the name column
+          a definite width to shrink into. `overflow-x-auto` is belt-and-braces
+          and matches every other table in `src/components`. */}
+      <div className="max-h-[8.25rem] overflow-x-auto overflow-y-auto border-t border-border">
+        <table className="w-full table-fixed text-sm">
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="text-left text-[11px] text-text-muted">
               <th className="px-2 pt-2 pb-1 font-medium">Content type</th>
-              <th className="px-2 pt-2 pb-1 text-right font-medium">Median views</th>
+              <th className="w-24 px-2 pt-2 pb-1 text-right font-medium">Median views</th>
             </tr>
           </thead>
           <tbody>

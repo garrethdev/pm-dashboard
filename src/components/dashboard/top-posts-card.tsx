@@ -123,9 +123,15 @@ export function TopPostsCard({
           ]}
         />
       }
-      actions={
-        <CtaButton href={`/analytics/analysis?range=${range}`}>
-          <BarChart3 className="size-3.5" />
+      headerAction={
+        // Smaller on a phone. SpecularButton bakes its padding and font into a
+        // fixed `size`, so the phone values have to override rather than
+        // replace them — hence `max-sm:` plus `!`. Desktop keeps `sm`.
+        <CtaButton
+          href={`/analytics/analysis?range=${range}`}
+          className="max-sm:px-3! max-sm:py-1.5! max-sm:text-xs!"
+        >
+          <BarChart3 className="size-3.5 max-sm:size-3" />
           View analysis
         </CtaButton>
       }

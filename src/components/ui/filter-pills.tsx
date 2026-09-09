@@ -7,17 +7,33 @@ export function FilterPills<T extends string>({
   options,
   value,
   onChange,
+  inline = false,
   className,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
+  /** Sit beside other content instead of claiming its own full-width row.
+   *  For a switch that belongs next to a heading; it still scrolls sideways
+   *  rather than pushing the heading off the screen. */
+  inline?: boolean;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        "inline-flex w-fit items-center gap-0.5 rounded-full bg-card-raised p-0.5",
+        // Full width on a phone, hugging its content from `sm:` up. A segmented
+        // control that ends halfway across a card reads as a stray pill rather
+        // than as the card's own switch.
+        //
+        // Scrolls sideways once the labels stop fitting — four options like
+        // "All 29 / Blocked 3 / Throttled 6 / Full cadence" are wider than a
+        // 375px card, and spilling past the pill's own edge looked broken where
+        // scrolling inside it reads as more to see.
+        "no-scrollbar flex items-center gap-0.5 overflow-x-auto rounded-full bg-card-raised p-0.5",
+        inline
+          ? "w-fit max-w-full min-w-0 shrink"
+          : "w-full sm:inline-flex sm:w-fit sm:overflow-visible",
         className,
       )}
     >
@@ -27,7 +43,11 @@ export function FilterPills<T extends string>({
           type="button"
           onClick={() => onChange(o.value)}
           className={cn(
+            // `flex-auto`, not `flex-1`: equal thirds would squeeze "Needs
+            // attention" below its own text and push the row past the card,
+            // where growing proportionally fills the same space and still fits.
             "rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors",
+            inline ? "shrink-0" : "flex-auto sm:flex-none",
             value === o.value
               ? "bg-accent font-medium text-bg"
               : "text-text-muted hover:text-text-primary",

@@ -113,7 +113,7 @@ export function DemandSupplyCard({ initial }: { initial: DemandSupplyData }) {
             label="Simulate new accounts"
             icon={<UserPlus className="size-3.5" />}
             className={cn(whatIf && "border-info text-info")}
-            panelClassName="w-64"
+            panelClassName="sm:w-64"
           >
             {(close) => (
               <div className="flex flex-col gap-3 p-3">

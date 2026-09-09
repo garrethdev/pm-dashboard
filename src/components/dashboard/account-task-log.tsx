@@ -177,8 +177,11 @@ export function AccountTaskLog({
             : "No tasks match these filters."}
         </p>
       ) : (
-        <div>
-          <table className="w-full text-sm [&_td]:pr-8 [&_th]:pr-8 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
+        // Scrolls rather than pushing the page sideways. Four columns plus the
+        // 32px gutters do not fit a phone, and with no floor the table
+        // compressed until it dragged the whole page out from under the header.
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-sm [&_td]:pr-8 [&_th]:pr-8 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
             <thead>
               <tr className="text-left text-xs text-text-muted">
                 <th className="pb-2 font-medium whitespace-nowrap">

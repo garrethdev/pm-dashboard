@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, Bell, CheckCircle2, RotateCw } from "@/components/ui/icons";
+import { MobileNavTrigger } from "@/components/shell/mobile-nav";
 import { displayNameOf } from "@/lib/people";
 import { cn } from "@/lib/utils";
 
@@ -119,7 +120,23 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   // The panel is portalled out of the header (see the render), so the
   // click-outside test needs its own handle on it.
   const popRef = useRef<HTMLDivElement>(null);
-  const [anchor, setAnchor] = useState<{ top: number; right: number } | null>(null);
+  const [anchor, setAnchor] = useState<React.CSSProperties | null>(null);
+  /**
+   * Place the panel under the bell. Below `sm:` it is wider than the gap
+   * between the bell and the left edge of a phone, so hanging it off the
+   * button put half of it past the screen — there it spans the viewport
+   * instead, inset by the page gutter.
+   */
+  const place = useCallback(() => {
+    const r = panelRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setAnchor(
+      window.innerWidth < 640
+        ? { top: r.bottom + 8, left: 12, right: 12 }
+        : { top: r.bottom + 8, right: window.innerWidth - r.right },
+    );
+  }, []);
+
   const section = sectionName(pathname.split("/")[1] ?? "");
   const initials = (userEmail ?? "?").slice(0, 2).toUpperCase();
 
@@ -206,18 +223,26 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
       setOpen(false);
     };
     document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open, load]);
+    window.addEventListener("resize", place);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, load, place]);
 
   const unread = items.filter((i) => !readIds.has(i.id));
   const hasAlerts = unread.some((i) => i.severity === "critical" || i.severity === "warning");
 
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-border bg-bg/40 px-6 py-3 backdrop-blur-xl">
+    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-bg/40 px-4 py-3 backdrop-blur-xl md:gap-4 md:px-6">
+      <MobileNavTrigger />
+      {/* The brand half of the crumb goes below `sm:`. The drawer's own logo
+          says whose dashboard this is, and at 375px the trail was competing
+          with four round controls for one row. */}
       <div className="flex min-w-0 shrink items-baseline gap-1.5 text-sm">
-        <span className="text-text-muted">Peptide Miracles</span>
-        <span className="text-text-muted">/</span>
-        <span className="font-medium">{section}</span>
+        <span className="hidden text-text-muted sm:inline">Peptide Miracles</span>
+        <span className="hidden text-text-muted sm:inline">/</span>
+        <span className="truncate font-medium">{section}</span>
       </div>
 
       <div className="flex flex-1 shrink-0 items-center justify-end gap-3">
@@ -239,8 +264,7 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
         <div className="relative" ref={panelRef}>
           <button
             onClick={() => {
-              const r = panelRef.current?.getBoundingClientRect();
-              if (r) setAnchor({ top: r.bottom + 8, right: window.innerWidth - r.right });
+              place();
               setOpen((o) => !o);
             }}
             title="Notifications"
@@ -263,8 +287,8 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
             createPortal(
               <div
                 ref={popRef}
-                style={{ top: anchor.top, right: anchor.right }}
-                className="fixed z-50 max-h-[70vh] w-96 overflow-y-auto rounded-nested border border-border glass-overlay p-2"
+                style={anchor}
+                className="fixed z-50 max-h-[70vh] w-auto overflow-y-auto rounded-nested border border-border glass-overlay p-2 sm:w-96"
               >
               <div className="flex items-center justify-between px-3 pb-2 pt-1.5">
                 <span className="text-sm font-semibold">Notifications</span>

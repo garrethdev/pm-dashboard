@@ -111,7 +111,7 @@ export function AccountAnalyticsView({
 
       {/* 2:3 split — the trend needs more width than the tiles beside it. */}
       <div className="grid gap-3 xl:grid-cols-5">
-        <div className="grid grid-cols-2 gap-3 xl:col-span-2">
+        <div className="grid min-w-0 grid-cols-2 gap-3 xl:col-span-2">
           <MetricTile
             id="posts"
             label="Posts"
@@ -145,7 +145,7 @@ export function AccountAnalyticsView({
         <DashCard
           sunken
           title="Views"
-          className="xl:col-span-3"
+          className="min-w-0 xl:col-span-3"
           toolbar={
             <FilterPills
               value={metric}
@@ -251,10 +251,11 @@ export function AccountAnalyticsView({
       <div className="grid gap-3 lg:grid-cols-2">
         <TopPostsSection initial={data.topPosts} account={account} platform={platform} />
 
-        <DashCard
-          title="Last 5 posts"
-          actions={<span className="text-xs text-text-muted">most recent first</span>}
-        >
+        {/* min-w-0 on both cards in this row: a grid item will not shrink below
+            its content by default, and on a phone the two share one column — so
+            the wider of them was setting the width for both and running past
+            the screen. */}
+        <DashCard className="min-w-0" title="Last 5 posts">
           {data.recentPosts.length === 0 ? (
             <p className="text-sm text-text-muted">No posts in this range.</p>
           ) : (
@@ -392,8 +393,9 @@ function TopPostsSection({
 
   return (
     <DashCard
+      className="min-w-0"
       title="Top 5 posts"
-      actions={
+      toolbar={
         <FilterPills
           value={range}
           onChange={(r) => {

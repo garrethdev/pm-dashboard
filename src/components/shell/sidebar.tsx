@@ -16,9 +16,11 @@ import {
   Sparkle,
   Gear,
   SignOut,
+  X,
 } from "@/components/ui/icons";
 import { SidebarToggleIcon } from "@/components/ui/sidebar-toggle-icon";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { useMobileNav } from "@/components/shell/mobile-nav";
 import { PeptideMark } from "@/components/ui/peptide-mark";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +57,7 @@ function NavItem({
   active,
   collapsed,
   standalone = false,
+  onNavigate,
 }: {
   href: string;
   label: string;
@@ -64,10 +67,16 @@ function NavItem({
   /** Draw its own active background. Rows inside the Pipeline list leave this
    *  to the sliding pill behind them; rows outside it (Settings) do not. */
   standalone?: boolean;
+  /** Dismiss the mobile drawer. Wired to the rows rather than to a pathname
+   *  effect because tapping the row you are already on has to close it too,
+   *  and because the theme switch and the logout form share this container
+   *  and must not. */
+  onNavigate?: () => void;
 }) {
   return (
     <Link
       href={href as never}
+      onClick={onNavigate}
       data-active={active || undefined}
       title={collapsed ? label : undefined}
       className={cn(
@@ -93,9 +102,20 @@ function NavItem({
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const { open, setOpen } = useMobileNav();
+  const [collapsedPref, setCollapsedPref] = useState(false);
+  // Assumed true for the server render. Below `md:` the drawer is translated
+  // off-screen whatever this says, so a phone never sees the guess; above it,
+  // the guess is simply right.
+  const [isDesktop, setIsDesktop] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLSpanElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Collapse is a desktop preference and nothing else. A drawer you opened on
+  // purpose showing eight unlabelled icons is not a smaller sidebar, it is a
+  // worse one — so the stored pref is read but not applied below `md:`.
+  const collapsed = isDesktop && collapsedPref;
 
   /**
    * Glide the active pill between rows instead of repainting it in place.
@@ -128,12 +148,27 @@ export function Sidebar() {
 
   useEffect(() => {
     try {
-      setCollapsed(localStorage.getItem("pm-sidebar") === "collapsed");
+      setCollapsedPref(localStorage.getItem("pm-sidebar") === "collapsed");
     } catch {}
   }, []);
 
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const sync = () => setIsDesktop(desktop.matches);
+    sync();
+    desktop.addEventListener("change", sync);
+    return () => desktop.removeEventListener("change", sync);
+  }, []);
+
+  // Focus moves into the drawer when it opens; the provider hands it back on
+  // close. Without this, Tab from the hamburger lands nowhere — the column
+  // behind is inert and the drawer was never entered.
+  useEffect(() => {
+    if (open) closeRef.current?.focus();
+  }, [open]);
+
   const toggle = () => {
-    setCollapsed((c) => {
+    setCollapsedPref((c) => {
       const next = !c;
       try {
         localStorage.setItem("pm-sidebar", next ? "collapsed" : "expanded");
@@ -143,12 +178,40 @@ export function Sidebar() {
   };
 
   return (
-    <aside
-      className={cn(
-        "rail-glow sticky top-0 flex h-screen shrink-0 flex-col border-r border-border py-5 transition-[width]",
-        collapsed ? "w-16 px-2" : "w-60 px-3",
-      )}
-    >
+    <>
+      {/* Scrim. Below `md:` only — above it the rail is part of the page and
+          there is nothing to dismiss. Kept mounted and faded rather than
+          conditionally rendered so it has something to transition from. */}
+      <div
+        aria-hidden
+        onClick={() => setOpen(false)}
+        className={cn(
+          "nav-scrim fixed inset-0 z-40 md:hidden",
+          open ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      />
+
+      <aside
+        id="pm-sidebar"
+        role={isDesktop ? undefined : "dialog"}
+        aria-modal={isDesktop ? undefined : true}
+        aria-label={isDesktop ? undefined : "Navigation"}
+        // Closed on a phone it is off-screen but still in the tab order, which
+        // is how an invisible menu ends up swallowing the first eight tabs of
+        // a page. `inert` is the whole fix.
+        inert={!isDesktop && !open}
+        className={cn(
+          // Phone: an off-canvas drawer, out of flow, over the scrim. `h-dvh`
+          // rather than `h-screen` so mobile browser chrome does not push the
+          // logout row under the address bar.
+          "nav-drawer rail-glow fixed top-0 left-0 z-50 flex h-dvh w-60 shrink-0 flex-col border-r border-border bg-bg px-3 py-5",
+          open ? "translate-x-0" : "-translate-x-full",
+          // Desktop: exactly the layout that was here before — a sticky rail in
+          // the flex row, no transform, width animating on collapse.
+          "md:sticky md:z-auto md:h-screen md:translate-x-0 md:bg-transparent md:transition-[width]",
+          collapsed ? "md:w-16 md:px-2" : "md:w-60 md:px-3",
+        )}
+      >
       {/* Brand row — logo left, collapse toggle right. Collapsed, the two stack
           so the toggle stays reachable without the wordmark's width. */}
       <div
@@ -157,7 +220,7 @@ export function Sidebar() {
           collapsed ? "flex-col gap-2" : "justify-between gap-2 px-3",
         )}
       >
-        <Link href="/" className="flex items-center">
+        <Link href="/" onClick={() => setOpen(false)} className="flex items-center">
           {collapsed ? (
             <PeptideMark className="size-8 text-text-primary" />
           ) : (
@@ -181,13 +244,26 @@ export function Sidebar() {
             </>
           )}
         </Link>
+        {/* Close, below `md:` only. It takes the collapse toggle's slot rather
+            than sitting beside it: the two are the same affordance at two
+            breakpoints — get the rail out of the way — and only one of them is
+            ever meaningful. */}
+        <button
+          ref={closeRef}
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Close navigation"
+          className="-mr-[11px] flex size-8 shrink-0 items-center justify-center rounded-nested text-text-muted transition-colors hover:bg-card hover:text-text-primary md:hidden"
+        >
+          <X className="size-[18px]" />
+        </button>
         <button
           type="button"
           onClick={toggle}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-nested text-text-muted transition-colors hover:bg-card hover:text-text-primary",
+            "hidden size-8 shrink-0 items-center justify-center rounded-nested text-text-muted transition-colors hover:bg-card hover:text-text-primary md:flex",
             // Optically aligned, not box-aligned. The 18px glyph sits centred in
             // a 32px hit target, so matching the row's padding would leave the
             // visible icon 11px short of the theme switch below it. The button
@@ -200,7 +276,12 @@ export function Sidebar() {
         </button>
       </div>
 
-      <nav className="mt-3 flex flex-1 flex-col">
+      {/* The nav scrolls, not the drawer, so the close button stays put.
+          `min-h-0` is what bounds it — a flex child defaults to its content
+          height and would simply overflow `h-dvh` instead of scrolling.
+          `overscroll-contain` stops the phone handing the gesture to the page
+          underneath once the list hits its end. */}
+      <nav className="nav-drawer-scroll no-scrollbar mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain md:overflow-visible">
         <GroupLabel collapsed={collapsed}>Pipeline</GroupLabel>
         <div ref={listRef} className="relative flex flex-col gap-0.5">
           <span
@@ -213,6 +294,7 @@ export function Sidebar() {
               key={item.href}
               {...item}
               collapsed={collapsed}
+              onNavigate={() => setOpen(false)}
               active={item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)}
             />
           ))}
@@ -256,6 +338,7 @@ export function Sidebar() {
             standalone
             icon={Gear}
             collapsed={collapsed}
+            onNavigate={() => setOpen(false)}
             active={pathname.startsWith("/settings")}
           />
           <form action="/auth/signout" method="post">
@@ -275,6 +358,7 @@ export function Sidebar() {
           </form>
         </div>
       </nav>
-    </aside>
+      </aside>
+    </>
   );
 }

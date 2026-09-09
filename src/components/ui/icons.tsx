@@ -29,6 +29,7 @@ import {
   Globe as PhGlobe,
   House as PhHouse,
   Images as PhImages,
+  List as PhList,
   ListChecks as PhListChecks,
   MagnifyingGlass as PhMagnifyingGlass,
   Minus as PhMinus,
@@ -120,6 +121,10 @@ export const LayoutList = icon(PhCards, "LayoutList");
 export const ListChecks = icon(PhListChecks, "ListChecks");
 export const Loader2 = icon(PhCircleNotch, "Loader2", "bold");
 export const LogOut = icon(PhSignOut, "LogOut");
+/* Bold, not the house fill. `List` is three strokes and fill only thickens
+ * them into slabs — the same reason the X below is drawn at regular. The two
+ * are the mobile drawer's open and close, and they have to look like a pair. */
+export const Menu = icon(PhList, "Menu", "bold");
 export const Minus = icon(PhMinus, "Minus", "bold");
 export const Moon = icon(PhMoon, "Moon");
 export const Package = icon(PhPackage, "Package");

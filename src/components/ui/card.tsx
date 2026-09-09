@@ -57,6 +57,7 @@ export function DashCard({
   title,
   toolbar,
   actions,
+  headerAction,
   viewAllHref,
   sunken = false,
   glass = false,
@@ -68,6 +69,10 @@ export function DashCard({
   toolbar?: React.ReactNode;
   /** Controls pinned to the right of the header row, before "View all". */
   actions?: React.ReactNode;
+  /** The card's one way out — a CTA that behaves like "View all" does: paired
+   *  with the title on a phone, at the end of the row on a desktop. Filters and
+   *  counts are `actions` and stay below the title; this is not. */
+  headerAction?: React.ReactNode;
   fetchedAt?: string;
   viewAllHref?: string;
   /** Recede toward the page ground — see Card. */
@@ -81,23 +86,49 @@ export function DashCard({
   // — tables need room to breathe under their title/filter row.
   return (
     <Card sunken={sunken} glass={glass} className={cn("flex flex-col gap-5", className)}>
-      {/* One flat wrap row: title, its pills, then the right-hand controls.
-          Flat rather than nested groups so a narrow card wraps to two lines
-          (title / pills + controls) instead of three. */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h2 className="truncate text-sm font-medium text-text-muted">{title}</h2>
-        {toolbar}
-        <div className="ml-auto flex shrink-0 items-center gap-3">
-          {actions}
+      {/* On a phone the title and "View all" share the first line and the
+          controls stack beneath, because the count pill, the filter dropdown
+          and the link together are wider than a 375px card — pinned right and
+          unbreakable, "View all" simply walked off the edge.
+
+          Above `sm:` it collapses back to the one flat wrap row it has always
+          been: `sm:contents` dissolves the mobile-only pairing so the header
+          stays a single flex context, and `sm:order-last` returns the link to
+          the end of it. Flat rather than nested groups so a narrow card wraps
+          to two lines rather than three. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+        <div className="flex items-center justify-between gap-3 sm:contents">
+          {/* A step larger on a phone. At 14px the card's own name was quieter
+              than everything it contained, so a scrolling reader lost track of
+              which card they were in. */}
+          <h2 className="min-w-0 truncate text-base font-medium text-text-muted sm:text-sm">
+            {title}
+          </h2>
+          {headerAction && (
+            <div className={cn("shrink-0 sm:order-last", !actions && "sm:ml-auto")}>
+              {headerAction}
+            </div>
+          )}
           {viewAllHref && (
             <Link
               href={viewAllHref as never}
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-text-muted transition-colors hover:border-text-muted/50 hover:text-text-primary"
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-text-muted transition-colors hover:border-text-muted/50 hover:text-text-primary sm:order-last",
+                // Whichever of these lands first carries the auto margin that
+                // pushes the whole right-hand cluster over.
+                !actions && !headerAction && "sm:ml-auto",
+              )}
             >
               View all <ChevronRight className="size-3" />
             </Link>
           )}
         </div>
+        {toolbar}
+        {actions && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:ml-auto sm:shrink-0 sm:flex-nowrap">
+            {actions}
+          </div>
+        )}
       </div>
       <div className="min-h-0 min-w-0 flex-1">{children}</div>
     </Card>

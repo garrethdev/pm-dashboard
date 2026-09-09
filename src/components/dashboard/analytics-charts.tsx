@@ -375,7 +375,8 @@ function CharacterBars({ data }: { data: AnalyticsData }) {
   return (
     // h-full so the chart grows to match the taller card beside it instead of
     // leaving dead space under a fixed height.
-    <div className="h-full min-h-[200px] w-full">
+    <div className="no-scrollbar h-full min-h-[200px] w-full overflow-x-auto">
+      <div className="h-full min-w-[20rem]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data.characters}
@@ -408,6 +409,7 @@ function CharacterBars({ data }: { data: AnalyticsData }) {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -437,8 +439,8 @@ function ContentTypes({ data, only }: { data: AnalyticsData; only: string }) {
   };
 
   return (
-    <div className="h-[300px] overflow-y-auto">
-        <table className="w-full text-sm">
+    <div className="h-[300px] overflow-auto">
+        <table className="w-full min-w-[34rem] text-sm">
           <thead>
             <tr className="text-left text-xs text-text-muted">
               <th className={cn(TH, "sticky top-0 z-10 bg-card")}>Content type</th>
@@ -696,10 +698,14 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-4">
-          <h1 className="text-xl font-semibold">Analytics</h1>
+      {/* Phone: title and the platform switch share the first line, the range
+          switch gets its own beneath. `sm:contents` dissolves the pairing above
+          that so the desktop header stays the one row it was. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-3">
+        <div className="flex min-w-0 items-center justify-between gap-3 sm:contents">
+          <h1 className="shrink-0 text-xl font-semibold">Analytics</h1>
           <FilterPills
+            inline
             value={platform}
             onChange={(v) => setPlatform(v as PlatformKey)}
             options={[
@@ -709,7 +715,7 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
             ]}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 sm:ml-auto">
           {/* Not real-time: both perf tables are filled by scheduled ingests. */}
           <span className={cn("text-xs whitespace-nowrap text-text-muted", loading && "animate-pulse")}>
             {loading ? "updating…" : `as of ${formatEtDate(data.lastIngest)}`}
@@ -797,11 +803,14 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
           </div>
 
           <div className="grid gap-3 xl:grid-cols-5">
-            <DashCard title="Avg views by character" className="xl:col-span-2">
+            {/* min-w-0: a grid item refuses to shrink below its content by
+                default, so the widest thing inside these two was stretching the
+                column past the viewport and taking the whole page with it. */}
+            <DashCard title="Avg views by character" className="min-w-0 xl:col-span-2">
               <CharacterBars data={data} />
             </DashCard>
             <DashCard
-              className="xl:col-span-3"
+              className="min-w-0 xl:col-span-3"
               title="Top content types per character"
               toolbar={
                 <FilterPills

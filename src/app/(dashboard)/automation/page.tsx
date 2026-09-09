@@ -19,8 +19,11 @@ async function AutomationTable() {
   try {
     const data = await getAutomationStatuses();
     fetchedAt = formatEtShort(data.fetchedAt);
+    // Scrolls rather than squeezes. Six columns do not fit a phone, and without
+    // a floor the table compressed until "Smart Scheduler" wrapped onto two
+    // lines and the right-hand columns fell off the card anyway.
     body = (
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[44rem] text-sm whitespace-nowrap [&_td]:pr-4 [&_th]:pr-4 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
         <thead>
           <tr className="text-left text-xs text-text-muted">
             <th className="pb-2 font-medium">Status</th>
@@ -73,7 +76,7 @@ async function AutomationTable() {
 
   return (
     <DashCard title="Daily workflows" fetchedAt={fetchedAt}>
-      {body}
+      <div className="overflow-x-auto">{body}</div>
     </DashCard>
   );
 }

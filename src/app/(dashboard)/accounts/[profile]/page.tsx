@@ -166,7 +166,10 @@ export default async function AccountDetailPage({
 
           <div className="hidden h-[91px] w-px shrink-0 bg-border sm:block" />
 
-          <div className="flex flex-col gap-3">
+          {/* Side by side on a phone: stacked, two short pairs took four lines
+              of vertical space and pushed the stats below the fold. The desktop
+              header is a wide row, so there they stay stacked. */}
+          <div className="flex flex-row gap-8 sm:flex-col sm:gap-3">
             <Meta label="Character">{data.character ?? "—"}</Meta>
             <Meta label="Created">
               {data.accountCreatedOn ? formatEtDate(data.accountCreatedOn) : "—"}
@@ -175,13 +178,17 @@ export default async function AccountDetailPage({
         </div>
 
         {/* Stats */}
-        <div className="flex flex-1 flex-nowrap items-stretch justify-end gap-2">
+        {/* Two-up on a phone. Four across cannot work here: at 375px each card
+            would be ~70px, and "19,254" alone is wider than that. A 2x2 grid
+            fills the same width and stays readable. From `sm:` up it is the
+            single flexible row it has always been. */}
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-1 sm:flex-nowrap sm:items-stretch sm:justify-end">
           {stats.map((s) => (
             <div
               key={s.label}
-              className="flex min-w-[104px] flex-1 basis-[156px] flex-col items-center justify-center gap-[13px] rounded-nested border border-border bg-card-raised px-[15px] py-[11px] xl:max-w-[156px]"
+              className="flex flex-col items-center justify-center gap-[13px] rounded-nested border border-border bg-card-raised px-[15px] py-[11px] sm:min-w-[104px] sm:flex-1 sm:basis-[156px] xl:max-w-[156px]"
             >
-              <span className="text-xs leading-4 text-text-muted">{s.label}</span>
+              <span className="text-center text-xs leading-4 text-text-muted">{s.label}</span>
               <span className="font-display text-xl leading-5 font-semibold tnum text-text-primary">
                 {s.value}
               </span>
