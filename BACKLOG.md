@@ -1,6 +1,6 @@
 # Backlog
 
-Two separate lists. Check which one you are in before picking something up —
+Three separate lists. Check which one you are in before picking something up —
 they have different bars for "done".
 
 - **[V1 — open work](#v1--open-work)** is the shipping product. Bugs, unverified
@@ -8,6 +8,9 @@ they have different bars for "done".
 - **[V2 — deferred features](#v2--deferred-features)** is work that was
   understood, costed and consciously postponed. Nothing here is broken; none of
   it is blocked on discovery. Do not start one of these while a V1 item is open.
+- **[V3 — architecture](#v3--architecture)** is structural work on how the
+  automations are built, not on what the dashboard shows. Nothing here changes a
+  screen. These are safe to do in any order and none of them block a release.
 
 Newest first within each list.
 
@@ -89,7 +92,269 @@ on, so nothing breaks on the day it is enabled and nothing breaks while it is
 not.
 ---
 
-## Verify the TikTok ingest fix on a real run
+## Concurrent reads make the app say "Supabase unreachable"
+
+**Seen twice on 2026-09-08, from two unrelated directions.** Same root cause,
+and the app blames the wrong thing both times.
+
+**What happened.** Garreth saved the fleet cadence at 07:04:49 UTC. Saving
+expires every cached figure on purpose so the new numbers show at once, so the
+dashboard rebuilt all of its panels simultaneously:
+
+```
+07:03   65 requests   avg   318ms     normal
+07:04  173 requests   avg   936ms     the save
+07:05  177 requests   avg 3,513ms     every panel refetching at once
+07:07                 avg   ~1s       recovered
+```
+
+**Nothing failed.** Zero 5xx across the whole window — every request eventually
+returned 200. But `sbRest` gives up after 10s (`src/lib/data/supabase.ts:11`
+and `:32`; writes use 8s in `writes.ts:24`), and eight reads crossed that line:
+
+| path | slowest |
+|---|---|
+| `viral_filler_content` | **28.2s** |
+| `v_scheduler_pool` | 18.7s |
+| `v_scheduler_account_config` | 17.0s |
+| `filler_library` | 15.0s |
+| `scheduler_overrides` | 13.5s |
+| `content_type_registry` | 12.9s |
+| `post_thumbnails` | 12.7s |
+
+Those panels showed **"Supabase unreachable"** while the database was still
+working and answered seconds later. It was reachable and it was slow — the copy
+asserts a cause it has not established, and sent Garreth looking for an outage
+that never happened.
+
+**Same shape as the TikTok ingest.** That entry describes ~30 upserts firing
+together and each taking 30-60s. This is ~180 reads firing together and taking
+3-28s. Neither is really an ingest problem or a dashboard problem: this database
+degrades sharply under concurrency, and both features happen to create bursts.
+Two entries, one cause.
+
+**Three levers, cheapest first:**
+
+1. **Fix the message.** A timeout is not unreachability. "Supabase is taking
+   longer than 10s — it is still responding, try Refresh" is honest and costs a
+   string. Do not raise the timeout to hide it.
+2. **Stagger the post-save refetch.** Expiring every tag at once is what creates
+   the burst. Expiring only what the write actually changed, or refetching
+   panels in sequence, removes the spike without touching the database.
+3. **PostgREST's connection pool** — already named in the ingest entry as the
+   next lever there. If it is the shared constraint, one change fixes both.
+
+**Worth measuring before choosing.** `viral_filler_content` and `filler_library`
+were the two worst, which is suspicious while a filler cull is in progress — it
+may be table-specific (a missing index, a row-count spike) rather than purely
+concurrency. Check those two on their own before assuming the pool is the answer.
+
+---
+
+## The mobile web version needs fixing
+
+**Raised by Garreth 2026-09-08. Picked up 2026-09-09** — he asked for this
+to be the next session's work, so it jumps the queue ahead of the other V1
+items. No specific screen named — the survey below
+was taken from the code, not from a phone, so treat it as where to look first
+rather than the whole list. Someone should open the deployed app on a real
+handset and add what actually hurts.
+
+**The shell is the main problem, and nothing else can be judged until it is
+fixed.** `src/app/(dashboard)/layout.tsx` is `flex min-h-screen` with the
+sidebar as a permanent flex child, and `sidebar.tsx` has **no breakpoint
+handling at all** — it is `w-60` expanded, `w-16` collapsed, and always
+present. On a 375px phone the expanded sidebar takes 64% of the width and the
+collapsed one still takes 17%. There is no drawer, no off-canvas, nothing
+hidden below a breakpoint. The collapse toggle is a desktop preference stored
+in `localStorage`, not a mobile answer.
+
+**The breakpoint spread says the same thing.** Across `src/`:
+
+```
+sm:  17    md:  2    lg:  5    xl:  49    2xl: 5
+```
+
+`xl:` outnumbers `md:` and `lg:` together by seven to one. Layouts were drawn
+wide and collapse to a single column; the 640-1024px range in the middle has
+had almost no attention, and that is most phones in landscape and every small
+tablet.
+
+**One outright bug.** `content-type-cards.tsx` is the only table in
+`src/components` with no `overflow-x-auto` wrapper — every other one has it.
+It will push the page sideways on a narrow screen instead of scrolling inside
+its own card. Cheap fix, worth doing regardless of the wider work.
+
+**Known wide content that will need a decision, not just a wrapper:**
+
+| where | width | today |
+|---|---|---|
+| `demand-supply-card.tsx` | `min-w-[880px]` table | scrolls in a wrapper |
+| `content-calendar.tsx` | `min-w-[46rem]` (736px) grid | scrolls in a wrapper |
+| `accounts-table.tsx` | ~14 columns | scrolls in a wrapper |
+| `analytics-charts.tsx` | account table, 11 columns | scrolls in a wrapper |
+
+These are handled in the sense that they scroll rather than break the page, but
+a 880px table on a 375px screen is a poor experience even when it scrolls. The
+real question is which columns matter on a phone — a design decision, and one
+this entry cannot make.
+
+**Suggested order:** the missing overflow wrapper first, since it is a bug and
+costs minutes. Then the shell — the sidebar needs to become a drawer or hide
+below `md:`, because every other judgement about mobile is distorted while it
+is eating the width. Only then is it worth going screen by screen.
+
+---
+
+## Three pages still have no loading state, blocked on the 404
+
+**Found 2026-09-08 while adding loading states to the rest of the nav.**
+Garreth's report was that page changes feel slow on the deployed app and that
+opening an individual account is slow too. Eight routes were fixed; these three
+were not, and the reason is a real defect rather than an oversight.
+
+**Missing:** `/accounts`, the dashboard home `/`, and `/accounts/[profile]`.
+
+**Why.** A `loading.tsx` covers every nested route that has no loading.tsx of
+its own, and `/accounts/[profile]` calls `notFound()`. With a boundary above it
+the shell streams and the status is committed before the page decides the
+profile is missing. Measured both ways against a running dev server rather than
+reasoned about:
+
+```
+no loading.tsx                /accounts/9999 -> 404   correct
+(dashboard)/loading.tsx       /accounts/9999 -> 200   wrong
+accounts/loading.tsx          /accounts/9999 -> 200   wrong
+both reverted                 /accounts/9999 -> 404   correct
+```
+
+Either file alone is enough to break it. `npm run build` passes in every one of
+those states, so **only checking the status code catches this** — it is
+invisible to the build, to tsc and to eslint.
+
+This is the same wall the cache-components spike hit (see that entry, step 2).
+Two entries now block on one defect.
+
+**The fix is on the profile page, not on the skeletons.** That route has to
+settle whether the profile exists before its shell is sent — resolve the lookup
+above the boundary, or give the segment a route handler that can 404 early.
+Once a missing profile still returns 404 with a boundary above it, all three
+pages can have a loading.tsx and the cache-components migration loses its
+step-2 blocker at the same time.
+
+**Do not skip the check when picking this up.** `curl -o /dev/null -w "%{http_code}"`
+against a real profile and a made-up one, with the dev server running and
+`AUTH_BYPASS=true`. Production redirects to login before the page renders, so
+the live site cannot answer this.
+
+**Worth knowing about the rest of the work:** the eight routes that did get a
+loading state are at `src/app/(dashboard)/*/loading.tsx`, sharing
+`TableSkeleton` (40px row pitch, matching `py-2.5` on `text-sm`) and, for
+analytics, `AnalyticsSkeleton`, which the view also uses during a range switch.
+Anything added for these three pages should reuse both rather than start again.
+
+---
+
+## Light mode does not hold up
+
+**Raised by Garreth 2026-09-08: "as of now it doesn't look good."** No specific
+screen named yet — treat the survey below as a starting point, not the scope.
+
+The tokens themselves are complete. `globals.css` defines a full light palette
+(`--bg #eef0f2`, card, sunken, raised, border, text) and the theme toggle
+already works. So this is not missing plumbing; it is that the design language
+was drawn for dark and light was derived from it.
+
+**What light mode switches off, all at once:**
+
+```
+--glow-a / --glow-b      transparent
+--glow-blur              0px
+--glow-rail(-bottom)     none
+--glass-blur             none
+--overlay-blur           none
+--glass-highlight        0 0 #0000
+--dot-opacity            0
+```
+
+Every one of those is deliberate — glow and glass on a light ground read as
+smudge, not depth. But together they are the whole visual identity, so the
+light theme is not the dark theme lit differently, it is flat grey cards with
+no texture, no depth cue and no rim. That is the likeliest reason it reads as
+unfinished. Light needs its own device doing the job glow does in dark —
+shadow, a hairline, tighter borders — rather than the dark one turned off.
+
+**One outright bug, cheap to fix.** Four hardcoded whites survive the swap and
+are near-invisible on `#eef0f2`:
+
+```
+analytics-charts.tsx:100      CartesianGrid  stroke rgba(255,255,255,0.055)
+analytics-charts.tsx:118      Tooltip cursor stroke rgba(255,255,255,0.28)
+account-analytics-view.tsx:181  CartesianGrid  same
+account-analytics-view.tsx:211  Tooltip cursor same
+```
+
+Both charts lose their gridlines and hover cursor in light mode. These are the
+only hardcoded colours left in `src/components` — everything else already goes
+through tokens — so the fix is four lines pointing at a token instead.
+
+**The accent differs between themes:** `#22d3ee` dark, `#0e7490` light. That is
+correct — the dark cyan would glare on a light ground — but it means "the cyan
+accent is locked" only pins the dark value, and the light one has had far less
+scrutiny.
+
+**Suggested order:** the four chart colours first, since they are a real bug and
+cost minutes. Then ask Garreth which screens look worst and what "good" means
+here, because replacing glow with a light-mode equivalent is a design decision
+and this entry cannot make it for him.
+
+---
+
+## TikTok ingest — storm fixed, run still fails
+
+**Checked 2026-09-08 against the 2026-09-07 12:30 UTC run (execution `147426`).**
+Four of the five checks pass. The item stays open because the run still
+errors, for a different and much smaller reason than before.
+
+| check | before (09-06) | after (09-07) | verdict |
+|---|---|---|---|
+| gateway timeouts | `504` x65, avg 160s | **zero** | pass |
+| total requests | 99 for ~35 chunks | **31** — one try each | pass |
+| spread | 35 in one second | peak 4/sec over ~12s | pass |
+| dashboard during window | 65 gateway failures | 2 errors project-wide | pass |
+| run succeeds | error, 10-18 min | **error, 4 min** | fail |
+
+**Where it failed.** Not at a read node, which is what this entry predicted.
+The last database call of the run is a single **`520`** on the upsert itself
+at 12:32:58 (2.0s), and the execution stops at 12:33:59. One request, no
+storm behind it. Reconstructed from `edge_logs` rather than n8n's own error
+text: `get_workflow_execution` with `includeData: true` expires the MCP
+session every time while metadata-only works, so the node's message was
+never readable. Worth another attempt from a fresh session.
+
+**The thread underneath.** Batching stopped the upserts fighting each other,
+but each one is still slow — 59s, 51.7s, 41.4s, 35.9s in that run, against
+this entry's own "well under 5s" target, averaging 12-21s. A request held
+open for a minute is a request exposed to exactly the transient gateway
+error that ended this run. So the batching fix treated the symptom and the
+per-write cost is untouched.
+
+**Next.** Wednesday **2026-09-09, 08:30 ET / 12:30 UTC** is the next
+scheduled run, and that is the same day the mobile work is planned — check
+this before starting, it costs one query and the log window is only 24h.
+The run is the free test: succeed and this was a flake and
+the item closes; fail at the upsert again and it is a pattern. Two levers if
+so — PostgREST's pool size, already named below, and the per-row
+`match_content_id` trigger that makes each write expensive in the first
+place (~46 ms/row, see `tt-upsert-trigger-timeout` in project memory).
+
+**Rows did land:** 44 written, latest ingest 12:36:11 that morning, 2,248
+total. Note that 12:36 is after the execution stopped at 12:33:59 — either
+another workflow writes this table or a retry landed late. Unexplained, low
+stakes, worth a glance if someone is in here anyway.
+
+<details>
+<summary>Original plan and the five checks, kept for the next run</summary>
 
 **When:** Monday 2026-09-07, after 08:30 ET (20:30 Manila the same day) — the next scheduled run of
 `[TikTok Analytics] Engine — ScrapeCreators` (`84bcYyXfCgtLB7y4`, cron
@@ -154,6 +419,8 @@ for five minutes — but it was not the original fault.
 If it regresses, the next lever is PostgREST's pool size rather than the
 workflow. See `tt-ingest-concurrency-storm` and `tt-upsert-trigger-timeout` in
 the assistant's project memory.
+
+</details>
 
 ---
 
@@ -254,3 +521,114 @@ proxy or number, and an optimistic toggle on the Auto-renew column already in
 supports it (`/reservations/rentals/extensions`, `/billing-cycles/{id}/renew`,
 `/reservations/rental/{id}/reactivate` with a `GET` cost quote first);
 proxy-cheap has no paid extend endpoint at all — `/proxies/{id}/extend` 404s.
+
+---
+
+## Set up new accounts from inside the dashboard
+
+**Deferred at plan time, 2026-08-28 (Garreth)** — recorded in
+`PM_DASHBOARD_V1_PLAN.md` §12, the v2 parking lot, under the heading "recorded
+per Garreth's instruction — do not build". Moved here 2026-09-09 so the
+deferred list is in one place; §12 is still the original record.
+
+Today, provisioning an account means driving n8n by hand. The point of this
+entry is to front that from the app.
+
+**The dashboard does not re-implement provisioning.** Same delegation pattern as
+the post-ban button (plan §9.4): the chain already exists and already works.
+
+| stage | workflow | what it does |
+|---|---|---|
+| intake | `[Ops] Provision Intake` (`R83SqVUQLs59y3If`) | single or bulk-CSV kickoff into `provision_queue` |
+| orchestration | `[Ops] Provision Orchestrator` (`3ydBlv6JhPgG5NT8`) | one row at a time; calls Create Geelark Profile / Factory Reset / Account Setup / Play-Store-region sub-workflows |
+| writeback | `[Ops] Write Back TikTok Account` (`GhBGyWnbJ67qEWv0`) | post-signup writeback |
+
+**Dashboard scope.** An intake form (character, platform, count, signup path),
+queue submission, and a **progress board over `provision_queue` +
+`orchestrator_runs`** showing each account's stage.
+
+**The part that is easy to get wrong.** Two stages the SOP requires are
+*manual*: the Google login on the google path, and creating the TikTok account
+itself. The board has to surface those as "waiting on human" states with a clear
+hand-back. It must not present them as automated — a progress bar that appears
+to be running while it is actually waiting on a person is worse than no board.
+
+**Already accounted for in v1.** The accounts detail page's data layer was
+designed knowing provisioning states will eventually sit alongside live
+accounts. Nothing was built for it, but the shape should not fight this.
+
+---
+
+# V3 — architecture
+
+Structural work on how the automations are built. Nothing here changes a screen,
+and none of it blocks a release.
+
+**Context, established 2026-09-09.** Garreth asked whether the n8n automations
+should be replaced by scripts. The answer was **no wholesale migration, extract
+selectively** — the entries below are that shortlist. Two findings shaped it and
+are worth keeping:
+
+1. **The dashboard is not coupled to n8n.** It reads Supabase; n8n writes
+   Supabase. The only direct contact is the post-ban webhook and the live
+   provider APIs the app calls itself. So automations can be replaced **one at a
+   time** and the dashboard will not notice. No cutover is needed, ever.
+2. **Migrating would not fix the current bugs.** The TikTok ingest failure and
+   the "Supabase unreachable" entry in V1 are both database-side — the per-row
+   `match_content_id` trigger (~46 ms/row) and PostgREST's pool under burst. A
+   script firing the same writes hits the same wall. Do not start any of this
+   expecting those to close.
+
+**Scale, measured against the live instance on 2026-09-09:** 340 workflows
+total, 103 active among the 200 most recently updated. The instance is shared
+with unrelated projects (Hamming, YC GTM Hunter, Healtsy, Cleora, Virlo,
+LinkedIn), so the Peptide Miracles share is roughly 40-60 live workflows — still
+far too many to rewrite, which is the whole reason this list is a shortlist.
+
+**What should stay in n8n regardless.** All GeeLark device provisioning and
+warmup. Long-running, heavy external-API glue, and genuinely human-in-the-loop
+(the Google login and the TikTok signup itself). Maximum effort, minimum gain.
+
+## Extract the Smart Scheduler's logic into version-controlled code
+
+**The highest-value item on this list.** The context doc says it plainly: the
+Smart Scheduler's *entire* logic lives in one Code node, "Plan Day + Apply", in
+`[Unified] Smart Scheduler` (`Jaf78Yt9XAuj9PNJ`) — to the point that the doc
+tells you to read that node rather than its own description.
+
+That is the brain of the business sitting in an unversioned text box. No diff,
+no review, no tests, and no way to tell what changed when a scheduling rule
+starts behaving differently.
+
+**Shape.** Move the logic into a real repo with tests and have n8n call it over
+HTTP. n8n keeps doing what it is good at — cron, retries, credentials, execution
+history. Nothing around the node has to change, which is what makes this safe.
+
+## Rewrite the TikTok ingest as a script — the pilot
+
+`[TikTok Analytics] Engine — ScrapeCreators` (`84bcYyXfCgtLB7y4`). The right
+first candidate, for reasons that have nothing to do with it being broken:
+
+- **Pure data pipeline** — fetch, normalize, upsert. No devices, no humans.
+- **Isolated.** Nothing else depends on how it runs, only on the rows it lands.
+- **It already needs work** (see its V1 entry), and its remaining fixes —
+  batching, backoff, chunk sizing — are things you express far better in code
+  than in node parameters.
+
+Treat the result as evidence for whether the rest of this list is worth doing,
+not as a commitment to migrate anything else. **Read the V1 entry first** — the
+per-write cost is a database problem and a rewrite does not solve it.
+
+## Put the critical workflows under version control
+
+**Most of what "move to scripts" was really asking for.** The wanted thing is
+version control, review and testability — not a different runtime. Exporting the
+critical workflows' JSON to git, and lifting their Code nodes into tested
+modules that n8n calls, delivers that without a rewrite and without giving up
+the scheduler, the retries or the credential store.
+
+Worth doing before either entry above, since it makes both reviewable.
+
+**Related, already tracked:** the six hardcoded service-role JWTs in
+`84bcYyXfCgtLB7y4` are in V1 under "Also open". Worth doing regardless of which
+direction any of this goes.
