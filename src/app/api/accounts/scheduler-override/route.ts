@@ -98,18 +98,36 @@ export async function POST(request: Request) {
     // steppers, but the rule belongs here too - the endpoint is reachable
     // without it, and a weekly cap the scheduler can never reach is a number
     // that lies to whoever reads it back.
-    const dayForWeek =
-      (body.maxPostsPerDay as number | null | undefined) ??
-      (await readEffectiveFor(profile).catch(() => null))?.maxPostsPerDay ??
-      null;
-    if (dayForWeek !== null) {
+    //
+    // A BLANK weekly field means "inherit", not zero. It used to be read as
+    // `?? 0`, which made the check unreachable for exactly the case that hits
+    // it in practice: leave GLP and filler alone, drop posts/day to 1, and the
+    // sum looked like 0 against a ceiling of 7 and saved happily - leaving the
+    // account told to post 14 times into 7 slots. Every field resolves through
+    // the same effective config the modal shows as its placeholder, so the
+    // error names the numbers actually on screen.
+    const eff = await readEffectiveFor(profile).catch(() => null);
+    const dayForWeek = (body.maxPostsPerDay as number | null | undefined) ?? eff?.maxPostsPerDay ?? null;
+    const glpForWeek = (body.glpWeekCap as number | null | undefined) ?? eff?.glpWeekCap ?? null;
+    const fillerForWeek =
+      (body.fillerWeekCap as number | null | undefined) ?? eff?.fillerWeekCap ?? null;
+    if (dayForWeek !== null && (glpForWeek !== null || fillerForWeek !== null)) {
       const weekCeiling = dayForWeek * 7;
-      const wk =
-        ((body.glpWeekCap as number | null) ?? 0) + ((body.fillerWeekCap as number | null) ?? 0);
+      const wk = (glpForWeek ?? 0) + (fillerForWeek ?? 0);
       if (wk > weekCeiling) {
+        const inherited = [
+          body.glpWeekCap === null || body.glpWeekCap === undefined ? `GLP ${glpForWeek}` : null,
+          body.fillerWeekCap === null || body.fillerWeekCap === undefined
+            ? `filler ${fillerForWeek}`
+            : null,
+        ].filter(Boolean);
         return NextResponse.json(
           {
-            error: `At ${dayForWeek} posts/day this account can post at most ${weekCeiling} times a week. GLP + filler come to ${wk}`,
+            error:
+              `At ${dayForWeek} posts/day this account can post at most ${weekCeiling} times a week. ` +
+              `GLP + filler come to ${wk}` +
+              (inherited.length ? ` (${inherited.join(" and ")} inherited from the defaults)` : "") +
+              `. Raise posts/day, or set GLP and filler explicitly.`,
           },
           { status: 400 },
         );

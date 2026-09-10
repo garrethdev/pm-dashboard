@@ -34,6 +34,40 @@ async function sbFetch(path: string, init: RequestInit, retries = 1): Promise<Re
   );
 }
 
+/**
+ * Call a settings function that applies all of its writes or none of them.
+ *
+ * Every multi-row settings save used to be a sequence of PostgREST calls with
+ * no transaction around it, so a failure part-way through left a state nobody
+ * asked for — most damagingly a completed DELETE followed by a failed INSERT,
+ * which erased an account's overrides and reported it as "now on defaults".
+ * PostgREST cannot span statements, so the transaction lives in the database
+ * and this is how we reach it.
+ *
+ * A raised exception rolls the whole call back, so `friendly` can promise that
+ * nothing changed without having to qualify it.
+ */
+async function sbRpcWrite(fn: string, args: Record<string, unknown>, friendly: string): Promise<unknown> {
+  const res = await sbFetch(`rpc/${fn}`, {
+    method: "POST",
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    // Postgres RAISEs arrive as a JSON body with a message; surface it, since
+    // these functions raise sentences meant to be read.
+    let why = `HTTP ${res.status}`;
+    try {
+      const parsed = JSON.parse(detail) as { message?: string; hint?: string };
+      if (parsed.message) why = parsed.message;
+    } catch {
+      if (detail) why = detail.slice(0, 300);
+    }
+    throw new Error(`${friendly}: ${why}. Nothing was changed`);
+  }
+  return res.json().catch(() => null);
+}
+
 /** The signed-in user's email (for audit + post-ban report). Dev bypass uses the first allowlist entry. */
 export async function actingUserEmail(): Promise<string> {
   if (authBypassed()) {
@@ -56,8 +90,14 @@ export async function auditLog(entry: {
 }): Promise<void> {
   // Best-effort: an audit-insert failure must not roll back a completed action,
   // but we surface it in logs.
+  //
+  // `fetch` only rejects on a network-level failure -- a 400 or a 500 from
+  // PostgREST RESOLVES, and this used to treat that as success. A rejected
+  // insert (bad column, RLS, expired key) therefore produced no log line at
+  // all, and an action could be taken with no audit trail and nothing to say
+  // so. Checking the status is the whole fix; the swallow is still deliberate.
   try {
-    await sbFetch("dashboard_audit_log", {
+    const res = await sbFetch("dashboard_audit_log", {
       method: "POST",
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify({
@@ -68,6 +108,12 @@ export async function auditLog(entry: {
         new_value: entry.newValue ?? null,
       }),
     });
+    if (!res.ok) {
+      console.error(
+        `audit-log insert rejected (HTTP ${res.status}) for ${entry.action} on ${entry.target}:`,
+        await res.text().catch(() => "<no body>"),
+      );
+    }
   } catch (err) {
     console.error("audit-log insert failed", err);
   }
@@ -178,15 +224,13 @@ export async function saveSchedulerOverride(
     : `${today} ${userEmail}: set via dashboard`;
 
   // Replace rather than upsert: the unique index is on an expression
-  // (coalesce(bucket,'')), which PostgREST's on_conflict cannot target.
-  const del = await sbFetch(OVERRIDE_PATH(profile), {
-    method: "DELETE",
-    headers: { Prefer: "return=minimal" },
-  });
-  if (!del.ok) throw new Error(`Override clear failed (HTTP ${del.status}). Nothing was changed`);
-
-  // PostgREST rejects a bulk insert whose objects don't share the same keys, so
-  // every row carries the full column set and nulls what doesn't apply to it.
+  // (coalesce(bucket,'')), which PostgREST's on_conflict cannot target. The
+  // replace now happens inside replace_scheduler_override(), so the clear and
+  // the write are one transaction — a failed write no longer leaves the
+  // account stripped back to scheduler defaults.
+  //
+  // Every row still carries the full column set: the function's insert reads a
+  // fixed column list, and a key missing from one row would land as null.
   const row = (
     bucket: string | null,
     fields: { weekly_cap?: number | null; max_posts_per_day?: number | null },
@@ -208,18 +252,11 @@ export async function saveSchedulerOverride(
     row("filler", { weekly_cap: input.fillerWeekCap }),
   ];
 
-  const res = await sbFetch("scheduler_overrides", {
-    method: "POST",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify(rows),
-  });
-  if (!res.ok) {
-    // The delete already landed, so the account is on scheduler defaults —
-    // safe, but say so rather than implying nothing happened.
-    throw new Error(
-      `Override save failed (HTTP ${res.status}). ${profile} is now on scheduler defaults`,
-    );
-  }
+  await sbRpcWrite(
+    "replace_scheduler_override",
+    { p_scope: "account", p_scope_key: profile, p_rows: rows },
+    `Override save failed for ${profile}`,
+  );
 }
 
 /** Switch an override off without losing the values behind it. */
@@ -305,10 +342,6 @@ export interface FleetDefaultsWrite {
   fillerPerWeek: number;
 }
 
-const registryPath = (contentType: string, character: string) =>
-  `content_type_registry?content_type=eq.${encodeURIComponent(contentType)}` +
-  `&character=eq.${encodeURIComponent(character)}`;
-
 /** Current registry cadence + bucket rows, for the audit old_value. */
 export async function getCadenceState(): Promise<unknown> {
   const [reg, buckets] = await Promise.all([
@@ -340,44 +373,33 @@ export async function saveCadence(
   lanes: CadenceLaneWrite[],
   fleet: FleetDefaultsWrite,
 ): Promise<void> {
-  for (const lane of lanes) {
-    const res = await sbFetch(registryPath(lane.contentType, lane.character), {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ cadence_per_week: lane.cadencePerWeek }),
-    });
-    if (!res.ok) {
-      throw new Error(
-        `Cadence write failed for ${lane.contentType} (HTTP ${res.status}). earlier lanes were saved`,
-      );
-    }
-  }
-
-  const shared = {
-    max_posts_per_day_per_profile: fleet.maxPostsPerDay,
-    min_gap_minutes: fleet.minGapMinutes,
-    time_window_start: `${fleet.windowStart}:00`,
-    time_window_end: `${fleet.windowEnd}:00`,
-    updated_at: new Date().toISOString(),
-  };
-
-  // weekly_quota is per bucket; everything else is the same on both rows
-  // because the account-config view resolves them with max().
-  for (const [bucket, weekly] of [
-    ["glp", fleet.glpPerWeek],
-    ["filler", fleet.fillerPerWeek],
-  ] as const) {
-    const res = await sbFetch(`scheduler_buckets?bucket=eq.${bucket}`, {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ ...shared, weekly_quota: weekly }),
-    });
-    if (!res.ok) {
-      throw new Error(
-        `Fleet defaults write failed for ${bucket} (HTTP ${res.status}). the cadence mix was saved`,
-      );
-    }
-  }
+  // One call, one transaction. Every lane and both bucket rows land together or
+  // none of them do — a mix that is half old and half new adds up to nobody's
+  // allocation, and that is what a failure part-way through used to leave.
+  //
+  // The function also counts affected rows. A PostgREST PATCH whose filter
+  // matches nothing returns a cheerful 204, so a lane sent for the wrong
+  // character — the character comes from the browser — used to save nothing and
+  // report success. That is now an error naming the lane.
+  await sbRpcWrite(
+    "save_cadence_mix",
+    {
+      p_lanes: lanes.map((l) => ({
+        content_type: l.contentType,
+        character_name: l.character,
+        cadence_per_week: l.cadencePerWeek,
+      })),
+      p_fleet: {
+        max_posts_per_day: fleet.maxPostsPerDay,
+        min_gap_minutes: fleet.minGapMinutes,
+        window_start: `${fleet.windowStart}:00`,
+        window_end: `${fleet.windowEnd}:00`,
+        glp_per_week: fleet.glpPerWeek,
+        filler_per_week: fleet.fillerPerWeek,
+      },
+    },
+    "Cadence save failed",
+  );
 }
 
 /* ── Character cadence (Adjust Cadence, scoped to one character) ────────────
@@ -477,14 +499,12 @@ export async function saveCharacterOverride(
     return out;
   };
 
-  const del = await sbFetch(CHARACTER_OVERRIDE_PATH(character), {
-    method: "DELETE",
-    headers: { Prefer: "return=minimal" },
-  });
-  if (!del.ok) throw new Error(`Override clear failed (HTTP ${del.status}). Nothing was changed`);
-
-  // PostgREST rejects a bulk insert whose objects don't share the same keys, so
-  // every row carries the full column set and nulls what doesn't apply to it.
+  // Clear-and-write is one transaction inside replace_scheduler_override(), so
+  // a failed write can no longer leave the character stripped back to the fleet
+  // defaults with its carried columns gone.
+  //
+  // Every row still carries the full column set: the function's insert reads a
+  // fixed column list, and a key missing from one row would land as null.
   const row = (
     bucket: string | null,
     fields: {
@@ -555,36 +575,33 @@ export async function saveCharacterOverride(
     rows.push(row("filler", { weekly_cap: input.fillerWeekCap, daily_cap: fillerDaily }));
   }
 
-  // Everything inherited: the delete above already left the character on the
-  // fleet defaults, and an empty POST is a PostgREST error rather than a no-op.
-  if (rows.length === 0) return;
-
-  const res = await sbFetch("scheduler_overrides", {
-    method: "POST",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify(rows),
-  });
-  if (!res.ok) {
-    throw new Error(
-      `Character override write failed (HTTP ${res.status}). ${character} is now inheriting the fleet defaults`,
-    );
-  }
+  // Everything inherited: an EMPTY rows array is the correct call, not an early
+  // return. It used to be one — the DELETE had already run by this point, so
+  // returning here left the character on the fleet defaults, which was the
+  // intent. Now that the clear happens inside the function, returning early
+  // would skip it and leave the old override rows standing.
+  await sbRpcWrite(
+    "replace_scheduler_override",
+    { p_scope: "character", p_scope_key: character, p_rows: rows },
+    `Character override write failed for ${character}`,
+  );
 }
 
-/** Write one character's GLP lane mix. The fleet buckets are left alone. */
+/** Write one character's GLP lane mix. The fleet buckets are left alone —
+ *  passing a null fleet is what tells the function to skip them. */
 export async function saveCharacterLanes(lanes: CadenceLaneWrite[]): Promise<void> {
-  for (const lane of lanes) {
-    const res = await sbFetch(registryPath(lane.contentType, lane.character), {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ cadence_per_week: lane.cadencePerWeek }),
-    });
-    if (!res.ok) {
-      throw new Error(
-        `Cadence write failed for ${lane.contentType} (HTTP ${res.status}). earlier lanes were saved`,
-      );
-    }
-  }
+  await sbRpcWrite(
+    "save_cadence_mix",
+    {
+      p_lanes: lanes.map((l) => ({
+        content_type: l.contentType,
+        character_name: l.character,
+        cadence_per_week: l.cadencePerWeek,
+      })),
+      p_fleet: null,
+    },
+    "Cadence save failed",
+  );
 }
 
 /* ── Content type lifecycle ────────────────────────────────────────────────── */
@@ -628,56 +645,22 @@ export interface LifecycleWrite {
   reallocation: { contentType: string; cadencePerWeek: number }[];
 }
 
-/**
- * Add or remove one content type in `characters.allowed_content_types`.
+/*
+ * `characters.allowed_content_types` is maintained by
+ * set_content_type_lifecycle(), not from here.
  *
  * That array is the gate the Inventory Monitor reads: it computes demand only
  * for types listed against the character. A retired lane left in the array goes
  * on producing shortfalls for content nobody will post; a resumed lane missing
- * from it is invisible to inventory while the scheduler happily posts it.
+ * from it is invisible to inventory while the scheduler happily posts it. Which
+ * is exactly why it now moves in the same transaction as the lifecycle flip
+ * rather than in a separate read-modify-write either side of it.
  *
  * It is `characters`, never `accounts`. `accounts.allowed_content_types` also
  * exists and looks like the right column, but nothing reads it — the inventory
  * views take the array from `characters` via `accounts_with_content_types`.
- *
- * PostgREST has no array_append, so this is a read-modify-write, and it is a
- * no-op when the array already says what we want.
  */
-async function setTypeAllowedForCharacter(
-  character: string,
-  contentType: string,
-  allowed: boolean,
-): Promise<void> {
-  const filter = `character=eq.${encodeURIComponent(character)}`;
 
-  const cur = await sbFetch(`characters?select=allowed_content_types&${filter}`, { method: "GET" });
-  if (!cur.ok) {
-    throw new Error(`Couldn't read ${character}'s content type list (HTTP ${cur.status})`);
-  }
-  const rows = (await cur.json()) as { allowed_content_types: string[] | null }[];
-  if (!rows[0]) throw new Error(`${character} is not in the characters table`);
-
-  const list = rows[0].allowed_content_types ?? [];
-  if (list.includes(contentType) === allowed) return;
-
-  const res = await sbFetch(`characters?${filter}`, {
-    method: "PATCH",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({
-      allowed_content_types: allowed
-        ? [...list, contentType]
-        : list.filter((t) => t !== contentType),
-      // `characters` has no set_updated_at trigger, so stamp it here.
-      updated_at: new Date().toISOString(),
-    }),
-  });
-  if (!res.ok) {
-    throw new Error(
-      `${contentType} could not be ${allowed ? "added to" : "removed from"} ` +
-        `${character}'s content type list (HTTP ${res.status})`,
-    );
-  }
-}
 
 /**
  * Flip one content type's lifecycle and rebalance its character's mix.
@@ -707,48 +690,32 @@ export async function setContentTypeLifecycle(write: LifecycleWrite): Promise<vo
   // page uses to decide which lanes belong to a character's mix.
   const perCharacter = write.character.startsWith("Character");
 
-  if (perCharacter && write.lifecycle === "live") {
-    await setTypeAllowedForCharacter(write.character, write.contentType, true);
-  }
-
-  for (const lane of write.reallocation) {
-    const res = await sbFetch(
-      `content_type_registry?content_type=eq.${encodeURIComponent(lane.contentType)}`,
-      {
-        method: "PATCH",
-        headers: { Prefer: "return=minimal" },
-        body: JSON.stringify({ cadence_per_week: lane.cadencePerWeek }),
-      },
-    );
-    if (!res.ok) {
-      throw new Error(
-        `Rebalance failed for ${lane.contentType} (HTTP ${res.status}). ` +
-          `${write.contentType} was left as it was`,
-      );
-    }
-  }
-
-  const res = await sbFetch(
-    `content_type_registry?content_type=eq.${encodeURIComponent(write.contentType)}`,
+  // One transaction: the rebalance, the target lane and the character's
+  // allowed list all land together.
+  //
+  // This used to be a careful sequence — target written LAST, allowed list
+  // widened before and narrowed after — because every automation gates on
+  // `active`, which the lifecycle trigger derives, and writing in the wrong
+  // order left a window where a lane was off and its slots had not been handed
+  // on. That reasoning is now moot: inside a transaction there is no window,
+  // and nothing outside ever sees a partly applied change. The ordering is kept
+  // inside the function only because it still reads well.
+  await sbRpcWrite(
+    "set_content_type_lifecycle",
     {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({
-        lifecycle: write.lifecycle,
-        cadence_per_week: write.cadencePerWeek,
-        cadence_before_pause: write.cadenceBeforePause,
-        lifecycle_note: write.note,
-      }),
+      p_content_type: write.contentType,
+      p_character: write.character,
+      p_lifecycle: write.lifecycle,
+      p_cadence_per_week: write.cadencePerWeek,
+      p_cadence_before_pause: write.cadenceBeforePause,
+      p_note: write.note,
+      p_reallocation: write.reallocation.map((l) => ({
+        content_type: l.contentType,
+        cadence_per_week: l.cadencePerWeek,
+      })),
+      p_manage_allowed: perCharacter,
     },
+    `${write.contentType} could not be set to ${write.lifecycle}`,
   );
-  if (!res.ok) {
-    throw new Error(
-      `${write.contentType} could not be set to ${write.lifecycle} (HTTP ${res.status}). ` +
-        `the other lanes were already rebalanced`,
-    );
-  }
-
-  if (perCharacter && write.lifecycle === "retired") {
-    await setTypeAllowedForCharacter(write.character, write.contentType, false);
-  }
 }
+
