@@ -30,8 +30,19 @@ export interface PostBanSummary {
   manualActions?: string[];
 }
 
+/**
+ * What happened to the cloud phone.
+ *
+ * Three states, not two. `phoneId` on its own only says a phone was FOUND —
+ * the delete's own outcome is `geeErr`, which nothing used to read. So a run
+ * that found a phone and then failed to delete it was reported as a deletion,
+ * and a run that found nothing was reported the same way as a successful
+ * delete. Both directions were wrong.
+ */
+export type PhoneState = "deleted" | "delete-failed" | "none";
+
 export interface RetireFacts {
-  phoneDeleted: boolean;
+  phone: PhoneState;
   proxy: StepState;
   number: StepState;
   released: number;
@@ -80,7 +91,9 @@ export function retireTitle(profile: string, failedOutright = false): string {
 export function retireBody(f: RetireFacts): string {
   const inventory = f.released > 0 ? `${posts(f.released)} went back to inventory` : "";
   // Nothing was actually switched off — the account had already gone dormant.
-  const dormant = !f.phoneDeleted && f.proxy !== "disabled" && f.number !== "disabled";
+  // "none" specifically, not "not deleted": a FAILED delete means there is very
+  // much still a phone, which is the opposite of dormant.
+  const dormant = f.phone === "none" && f.proxy !== "disabled" && f.number !== "disabled";
 
   if (f.hadError) {
     const who = f.failed.length > 0 ? joinList(f.failed) : "one step";
@@ -112,7 +125,8 @@ export function parseLegacyRetireBody(body: string, severity: string): RetireFac
     /^(\d+) content released$/.exec(parts.find((p) => p.endsWith("content released")) ?? "")?.[1] ?? 0,
   );
   return {
-    phoneDeleted: has("phone deleted"),
+    // Legacy rows never recorded a failed delete, only the two happy states.
+    phone: has("phone deleted") ? "deleted" : "none",
     proxy: has("proxy auto-extend off") ? "disabled" : has("proxy already off") ? "already-off" : "none",
     number: has("number renewal off") ? "disabled" : has("number already off") ? "already-off" : "none",
     released,
@@ -143,9 +157,14 @@ export function factsFromSummary(s: PostBanSummary): RetireFacts {
   if (s.pc?.error || s.pc?.needsManual) failed.push("the proxy");
   if (s.tv?.error || s.tv?.needsManual) failed.push("the phone number");
   if (s.supa?.error) failed.push("the content release");
+  // geeErr is the cloud phone delete's own outcome. It has been on this type
+  // since the beginning and was never read, so a failed delete was invisible
+  // in both the bell and the incident feed.
+  if (s.geeErr) failed.push("the cloud phone");
   const manualActions = s.manualActions ?? [];
+  const phone: PhoneState = s.geeErr ? "delete-failed" : s.phoneId ? "deleted" : "none";
   return {
-    phoneDeleted: Boolean(s.phoneId),
+    phone,
     proxy: stepState(s.pc),
     number: stepState(s.tv),
     released: (s.supa?.released ?? []).reduce((n, r) => n + (r.released ?? 0), 0),
@@ -153,6 +172,42 @@ export function factsFromSummary(s: PostBanSummary): RetireFacts {
     manualActions,
     hadError: Boolean(s.manualActionRequired) || manualActions.length > 0 || failed.length > 0,
   };
+}
+
+/**
+ * Does this look like a report the workflow actually produced?
+ *
+ * The webhook can answer 200 with something that is not a summary at all —
+ * n8n's own "Workflow was started" acknowledgement is the common one. That used
+ * to be wrapped as `{ raw: text }` and fed through factsFromSummary(), where
+ * every field was absent, every absent field read as "nothing to do", and the
+ * bell announced "Everything was already shut down and there was no content to
+ * release" about a cleanup that had not even been reported on yet.
+ *
+ * A real summary carries at least one of the keys the workflow always sets.
+ */
+export function isPostBanSummary(v: unknown): v is PostBanSummary {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+  const keys = ["phoneId", "geeErr", "pc", "tv", "supa", "manualActionRequired", "manualActions"];
+  return keys.some((k) => k in (v as Record<string, unknown>));
+}
+
+/**
+ * Copy for a live run whose outcome we genuinely do not know: the webhook
+ * answered with something unreadable, or never answered at all.
+ *
+ * It deliberately does NOT say "nothing was changed". The request reached n8n,
+ * so the workflow may have deleted the phone, cancelled the proxy, released the
+ * content, or any prefix of that list. Claiming otherwise sends someone to look
+ * in the wrong place.
+ */
+export function retireUnverifiedBody(reason: string): string {
+  return (
+    `${reason}, so what the cleanup actually did is unknown. It may have ` +
+    `completed, partly completed or not started. Check the account's proxy, ` +
+    `number and cloud phone before retrying — a second run is safe only once ` +
+    `you know where the first one stopped`
+  );
 }
 
 /**
@@ -165,7 +220,11 @@ export function factsFromSummary(s: PostBanSummary): RetireFacts {
  */
 export function retireDetail(f: RetireFacts): string {
   const steps = [
-    f.phoneDeleted ? "cloud phone deleted" : "cloud phone was already gone",
+    f.phone === "deleted"
+      ? "cloud phone deleted"
+      : f.phone === "delete-failed"
+        ? "cloud phone could NOT be deleted"
+        : "cloud phone was already gone",
     f.proxy === "disabled"
       ? "proxy auto renewal turned off"
       : f.proxy === "already-off"
