@@ -54,7 +54,13 @@ export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
   // to nothing, so it is not evidence of health (see The False Green).
   { id: "CXVxRMOUkLluRdBc", name: "Account Login Check", expected: "Tue/Fri 07:00 ET", schedule: { type: "dow", days: [2, 5], hour: 7, minute: 0 } },
   { id: "Q5VXmY5RFMXX2uBZ", name: "Inventory Monitor", expected: "Mon+Fri 09:00 ET", schedule: { type: "dow", days: [1, 5], hour: 9, minute: 0 } },
-  { id: "3AsUAUOwUgXa60cy", name: "GPS Drift", expected: "~2×/day random", schedule: { type: "none" } },
+  // v2 (2026-09-09) replaced the old random ~2×/day drift with ONE daily pass
+  // that batches the whole fleet into a single gps/set call and never boots a
+  // phone. Its trigger reads 04:20 but carries no settings.timezone, so — the
+  // same trap as Failed-Post Reconcile above — it resolves against the n8n
+  // instance default (Asia/Manila) and really fires at 20:20 UTC = 16:20 ET.
+  // Tracked at the time it ACTUALLY runs, not the time the trigger reads.
+  { id: "YJckzOo6hRchFnS1", name: "GPS Drift", expected: "daily 16:20 ET", schedule: { type: "daily", hour: 16, minute: 20 }, note: "n8n trigger unpinned (Asia/Manila) — shifts to 15:20 ET after Nov 1" },
   { id: "FknqQM7GNJJmViRP", name: "Proxy & Account Audit", expected: "biweekly Mon", schedule: { type: "none" } },
 ];
 
