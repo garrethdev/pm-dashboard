@@ -18,6 +18,63 @@ Newest first within each list.
 
 # V1 — open work
 
+## The rest of the 2026-09-09 external code review
+
+**Two findings from the first outside review of this codebase
+(`PM-CODEBASE-REVIEW-2026-09-09.md`) that are still open.** Its high-severity
+items — silent monitoring failures, retirement claiming unproven success, and
+non-atomic settings writes — were fixed on 2026-09-10 and are in `CHANGELOG.md`.
+These are what is left.
+
+Two notes before picking one up. The review was done against a ZIP snapshot, not
+this repo, so **every source link in it is dead** (they point into a deleted
+`/private/tmp/pm-review.*` folder) and it cannot tell fixed from broken. And its
+line numbers are close but no longer exact. Re-confirm before trusting any of it.
+
+**1. Refresh does not refresh everything (the review's #5).** `DATA_TAGS` in
+`cache.ts` omits the analytics range keys, the account-analytics family, the
+inventory-rollup ranges and the incident-history ranges. There is a second
+layer underneath: Calendar, Analytics, Content Types, Demand/Supply and Incident
+History all seed local state from server props, and `router.refresh()` leaves
+that state alone — so those views need an explicit reload for their current
+slice. Shortening TTLs does not touch the second problem.
+
+**2. What is left of the cadence finding (the review's #6).** Two of its three
+parts are now closed: `42af79f` made the route reject a lane belonging to
+another character, and `save_cadence_mix()` raises when a lane matches zero
+registry rows, so a silent no-op PATCH is no longer possible. Still true:
+`parseLanes()` does not reject **duplicate lane identities** before the
+client-side sum check — the database now refuses the save, but the error is a
+late and clumsy way to say "you sent the same lane twice" — and a lane's
+`character` still arrives from the browser rather than being read from
+`content_type_registry`. Derive the allowed mix from the database.
+
+**Also flagged, smaller, all confirmed still true:**
+
+- **The profile-card lookup ignores platform.** `account_profile_cards` *has* a
+  `platform` column, but `account-detail.ts:233` filters on `username` alone, so
+  the same handle on both platforms returns whichever row comes back first. Same
+  family as the account-analytics cache key fixed on 09-10, and about as small.
+- `getSchedulerOverrides` (`scheduler-overrides.ts`) shares `ACCOUNTS_TAG` as
+  its cache key while returning a different shape. It has **no call sites** —
+  give it its own key before wiring it to a screen.
+- Account performance reads and all-time totals do not paginate and will
+  silently truncate at PostgREST's row cap as the corpus grows.
+- The ScrapeCreators health probe reports "ok" when the key merely exists, and
+  still counts toward successful probes.
+- The filler lifecycle modal's `canSave` needs a peer or a resumed self, so a
+  fleet-wide filler lane with no GLP peers cannot be paused or retired there.
+- No test suite and no CI. The passing build cannot catch any of the above.
+
+**Settled, no action:** the review's "registry identity inconsistency" caution.
+`content_type_registry`'s primary key is `content_type` **alone** (checked live
+2026-09-10), so patching by it is correct and cross-character collisions cannot
+happen. Only the code comments describing `(content_type, character)` as the
+identity were wrong. Do not "fix" the joins on the strength of those comments.
+
+**Done when:** each of the two has either landed or been moved to V2 with a
+reason. Do not close this by agreeing with the review — it is wrong in places.
+
 ## Verify Character 5's first scheduled run
 
 **Un-paused 2026-09-10 at ~07:31 ET — an hour after that day's 06:30 run had
@@ -513,6 +570,75 @@ the assistant's project memory.
 Each of these is deliberately parked, not unfinished. Every one records why it
 was deferred and what is already confirmed, so it can start from evidence rather
 than from a fresh investigation.
+
+## Fill the content-intelligence tables — the carousel generator's backend
+
+**Deferred 2026-09-10 (Garreth): this lands with the carousel generator app,
+which is a V2 build in its own right and will be integrated into this
+dashboard.** Nothing here is blocked and nothing is broken. It is parked because
+the thing that consumes it does not exist yet.
+
+**The state, checked live on 2026-09-10 rather than assumed.** All seven tables
+exist in `qlcmgxgwpzmiebzxflai` with the correct `bigint` source keys, and every
+one of them holds **zero rows**:
+
+| Table | Rows |
+|---|---|
+| `references_unified` (existing catalog) | **3,468** |
+| `reference_analysis` | 0 |
+| `reference_beats` | 0 |
+| `angle_blueprints` | 0 |
+| `carousel_briefs` | 0 |
+| `carousel_drafts` | 0 |
+| `carousel_draft_slides` | 0 |
+| `search_chunks` | 0 |
+
+So there are 3,468 collected sources and no analysis of any of them. The schema
+landed; the pipeline was never built. **Creating the tables did not enqueue
+anything** — the migration is DDL with no seed and no backfill, and no worker
+writes to them today.
+
+**Read `supabase/migrations/20260909123000_content_intelligence_engine.sql`
+first.** It is the reconstructed-from-live copy of that schema and carries the
+constraints in full. Four things in it will bite whoever builds the worker:
+
+- **`search_chunks` has two different uniqueness rules,** enforced by two
+  partial indexes: `(source_reference_id, kind)` when `beat_id IS NULL`, and
+  `(source_reference_id, beat_id, kind)` when it is not. One generic PostgREST
+  upsert will not serve both — pick the conflict target per scope.
+- **There is no chunk position field.** Multiple transcript segments for one
+  source cannot all be source-level `kind = 'transcript'`. Decide the grouping
+  before writing the first chunk, not after.
+- **`updated_at` defaults to `now()` and never updates itself.** No trigger
+  exists. Either the worker maintains it or a migration adds a trigger — until
+  then it is a creation timestamp wearing the wrong name, and cannot be used to
+  measure processing freshness.
+- **`analysis_version` is a label, not a history.** `source_reference_id` is
+  unique on `reference_analysis`, so a re-analysis overwrites; it does not keep
+  the previous one.
+
+**Tested, output seen and human-approved are three separate facts, and the
+schema only half-covers them** — `reference_analysis` has approval but no
+internal-test or output-seen field; `angle_blueprints` has
+`internal_test_status` but no approval record. Watching a creator's video is not
+an internal production test. Decide those fields or a provenance table before
+building any reporting on top, and default both to "No" until there is
+evidence. Do not count JSON-can-hold-it as covered.
+
+**RLS is on for all seven with zero policies** — service-role workers only,
+confirmed live. An empty result from an ordinary client key is not evidence the
+table is empty. Do not disable RLS or put a service key in browser code.
+
+**Also worth knowing:** the two source pointers on `carousel_draft_slides` are
+individually constrained but nothing enforces that the beat belongs to that
+source, and `selected_reference_ids` is a plain `bigint[]` with no FK — neither
+existence nor cleanup is enforced. The worker validates these or a later
+migration does.
+
+**Done when:** a source can be traced end to end — reference to analysis to
+beats to chunks, and a brief to drafts to slides — with real creator
+provenance, and a failed video retrieval stays visible as a failed work item
+instead of vanishing from the corpus.
 
 ## Renew proxies and phone numbers without leaving the dashboard
 
