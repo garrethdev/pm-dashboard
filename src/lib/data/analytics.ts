@@ -125,6 +125,12 @@ export interface AnalyticsData {
   accounts: AccountPerfRow[];
   characters: CharacterRow[];
   contentTypes: ContentTypeRow[];
+  /** Every character with live accounts, whether or not it has posted yet.
+   *  The rollup's own lists are grouped FROM the performance rows, so a
+   *  character with nothing measured is simply absent from them — right for a
+   *  chart of results, wrong for a filter, which should offer a character and
+   *  then say it has no data rather than pretend it does not exist. */
+  characterOptions: string[];
 }
 
 /* ── Raw RPC shape (snake_case straight from Postgres) ─────────────────────── */
@@ -235,10 +241,21 @@ function bucketLabel(key: string, bucket: "day" | "week") {
 }
 
 async function fetchAnalytics(days: number | null, platform: PlatformKey): Promise<AnalyticsData> {
-  const raw = await sbRpc<RawRollup>("analytics_rollup", {
-    p_days: days,
-    p_platform: platform,
-  });
+  const [raw, liveAccounts] = await Promise.all([
+    sbRpc<RawRollup>("analytics_rollup", {
+      p_days: days,
+      p_platform: platform,
+    }),
+    // Straight off accounts, not off the rollup: this is the "what exists"
+    // list, and it must not depend on anything having been measured yet.
+    sbRest<{ character: string | null }[]>(
+      "accounts?select=character&is_active=eq.true&character=like.Character*",
+    ).catch((): { character: string | null }[] => []),
+  ]);
+
+  const characterOptions = [
+    ...new Set(liveAccounts.map((a) => a.character).filter((c): c is string => Boolean(c))),
+  ].sort();
 
   // The winning account's avatar is already cached from the Accounts pages, so
   // this costs a Supabase read rather than a ScrapeCreators credit.
@@ -323,6 +340,7 @@ async function fetchAnalytics(days: number | null, platform: PlatformKey): Promi
       views: n(c.views),
       avgViews: n(c.avg_views),
     })),
+    characterOptions,
     contentTypes: (raw.content_types ?? []).map((t) => ({
       character: t.character,
       contentType: t.content_type,
@@ -342,7 +360,7 @@ export function getAnalytics(range: RangeKey = "7d", platform: PlatformKey = "al
   // `?? 7` would be wrong here: "all" carries a deliberate null.
   const entry = RANGES.find((r) => r.key === range);
   const days = entry ? entry.days : 7;
-  return cachedFetcher(`analytics-v11:${range}:${platform}`, TTL.supabase, () =>
+  return cachedFetcher(`analytics-v12:${range}:${platform}`, TTL.supabase, () =>
     fetchAnalytics(days, platform),
   )();
 }

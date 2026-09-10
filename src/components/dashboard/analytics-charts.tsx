@@ -423,6 +423,17 @@ function ContentTypes({ data, only }: { data: AnalyticsData; only: string }) {
   }
 
   const shown = only === "all" ? data.contentTypes : data.contentTypes.filter((t) => t.character === only);
+  // Selected a character the rollup has nothing for. Say which, and say why it
+  // is empty rather than showing a bare table — "no posts measured" is a real
+  // state here, not a glitch: the character may not have posted yet, or its
+  // accounts may not be feeding the analytics ingest.
+  if (shown.length === 0) {
+    return (
+      <p className="text-sm text-text-muted">
+        No posts measured for {only} in this range.
+      </p>
+    );
+  }
   // One scale across everything on screen, so bar lengths stay comparable
   // between characters rather than each group normalising to its own best row.
   const max = Math.max(...shown.map((t) => t.medianViews), 1);
@@ -694,7 +705,15 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
 
   const s = data.summary;
   const series = data.series;
-  const ctCharacters = [...new Set(data.contentTypes.map((t) => t.character))];
+  // Every live character, not only the ones with measured posts. A character
+  // that has not posted yet — or whose platform is not feeding analytics —
+  // should still be selectable, and then say so. Anything the rollup knows
+  // about but accounts does not (an "unassigned" bucket, a retired character
+  // still inside the window) is kept, so nothing silently drops out of the
+  // filter.
+  const ctCharacters = [
+    ...new Set([...data.characterOptions, ...data.contentTypes.map((t) => t.character)]),
+  ].sort();
 
   return (
     <div className="flex flex-col gap-6">
