@@ -34,9 +34,27 @@ export const LIFECYCLE_TONE: Record<Lifecycle, PillTone> = {
 // because a character can sit off the fleet default (Character 5 runs 7 a week
 // against a fleet of 11) and measuring it against the fleet painted a correct
 // mix red.
+/** Wide enough for the four stat columns to sit on one line; on a phone it is
+ *  just under the viewport, so the next card peeks and the row reads as
+ *  scrollable without needing a scrollbar to say so. */
+const CARD_WIDTH = "flex w-[min(86vw,22rem)] shrink-0 snap-start flex-col gap-4";
+
 export function ContentTypeCards({ characters }: { characters: CharacterTypes[] }) {
+  // One row that scrolls sideways rather than a wrapping grid. At three
+  // columns the fourth character dropped to a row of its own and read as a
+  // stray card with three card-widths of empty beside it. Scrolling keeps the
+  // set legible as a set, and keeps working as characters are added.
+  //
+  // The scroll lives on this container, never on the page: the cards are a
+  // fixed width, so the row overflows itself instead of pushing the body wide.
+  // Padding either side stops the focus ring being clipped by overflow-x.
+  //
+  // `no-scrollbar` (globals.css, also used by the filter pills and the sidebar)
+  // hides the bar without disabling the scroll -- wheel, trackpad, drag and
+  // keyboard all still work. The half-visible next card is what says the row
+  // moves, so the bar was only ever noise on top of that.
   return (
-    <div className="grid gap-3 lg:grid-cols-3">
+    <div className="no-scrollbar -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1">
       {characters.map((c) => (
         <CharacterCard key={c.name} character={c} />
       ))}
@@ -56,7 +74,7 @@ function CharacterCard({ character }: { character: CharacterTypes }) {
 
   if (!current) {
     return (
-      <Card className="flex flex-col gap-4">
+      <Card className={CARD_WIDTH}>
         <h3 className="text-sm font-semibold">{character.name}</h3>
         <p className="text-sm text-text-muted">No content types in rotation.</p>
       </Card>
@@ -66,7 +84,7 @@ function CharacterCard({ character }: { character: CharacterTypes }) {
   const step = (delta: number) => setIndex((i) => (i + delta + types.length) % types.length);
 
   return (
-    <Card className="flex flex-col gap-4">
+    <Card className={CARD_WIDTH}>
       <div className="flex items-center justify-between gap-2">
         <h3 className="truncate text-sm font-semibold">{character.name}</h3>
         {/* Against THIS character's budget, not the fleet's. */}
