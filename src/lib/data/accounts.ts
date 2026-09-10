@@ -64,10 +64,13 @@ export interface AccountRow {
   statusNote: string | null;
   /** true once the Post-Ban workflow has stamped its cleanup note. */
   cleanedUp: boolean;
-  /** Days since the most recent real (type-42) warmup; null = never warmed. */
+  /** Days since the last SUCCEEDED (type-42) warmup; null = never warmed.
+   *  A warmup that ran and failed leaves the account as unwarmed as one that
+   *  never ran, so both columns count only status-3 tasks. */
   daysSinceWarmup: number | null;
   lastWarmupAt: string | null;
-  /** Days since the most recent content post; null = never posted. */
+  /** Days since the last post that actually LANDED; null = never posted.
+   *  A task Geelark accepted and then failed is not a post. */
   daysSincePost: number | null;
   lastPostAt: string | null;
   /** Hand-set schedule for this account, or null if it has never had one. */
@@ -131,11 +134,19 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       "v_dashboard_latest_login?select=profile_name,verdict,checked_at",
     ),
     sbRest<{ code: string; meaning: string | null }[]>("geelark_fail_codes?select=code,meaning"),
-    sbRest<{ geelark_profile: string; days_since_warmup: number | null; last_warmup_at: string | null }[]>(
-      "v_account_warmup_health?select=geelark_profile,days_since_warmup,last_warmup_at",
+    // days_since_success / last_success_at, NOT days_since_warmup /
+    // last_warmup_at: the latter pair counts a warmup that errored out, which
+    // makes a stalled account look freshly warmed. The notification feed
+    // already reads the success columns, so this keeps the two in step.
+    sbRest<{ geelark_profile: string; days_since_success: number | null; last_success_at: string | null }[]>(
+      "v_account_warmup_health?select=geelark_profile,days_since_success,last_success_at",
     ),
-    sbRest<{ geelark_profile: string; days_since_post: number | null; last_post_at: string | null }[]>(
-      "v_account_last_post?select=geelark_profile,days_since_post,last_post_at",
+    // days_since_success / last_success_at again, for the same reason: the
+    // days_since_post / last_post_at pair counts a task that errored out, so a
+    // failed upload read as a fresh post. v_account_health_v3 still reads the
+    // any-outcome pair on purpose -- see the 09-10 migration.
+    sbRest<{ geelark_profile: string; days_since_success: number | null; last_success_at: string | null }[]>(
+      "v_account_last_post?select=geelark_profile,days_since_success,last_success_at",
     ),
     // v_account_health_v3 is THE shared verdict — the same row the n8n
     // View-Collapse Detector emails. The vocabulary rules (banned split on
@@ -268,10 +279,10 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       bannedAt: a.banned_at,
       statusNote: a.status_note,
       cleanedUp: /post-ban cleanup/i.test(a.status_note ?? ""),
-      daysSinceWarmup: warmup?.days_since_warmup ?? null,
-      lastWarmupAt: warmup?.last_warmup_at ?? null,
-      daysSincePost: lastPost?.days_since_post ?? null,
-      lastPostAt: lastPost?.last_post_at ?? null,
+      daysSinceWarmup: warmup?.days_since_success ?? null,
+      lastWarmupAt: warmup?.last_success_at ?? null,
+      daysSincePost: lastPost?.days_since_success ?? null,
+      lastPostAt: lastPost?.last_success_at ?? null,
       override: overrides[a.geelark_profile] ?? null,
       effective: effective[a.geelark_profile] ?? null,
     };
