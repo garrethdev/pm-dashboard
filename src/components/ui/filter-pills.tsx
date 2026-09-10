@@ -10,7 +10,10 @@ export function FilterPills<T extends string>({
   inline = false,
   className,
 }: {
-  options: { value: T; label: string }[];
+  /** `marked` puts a dot on the pill — used for "this one is not on the
+   *  default" (a character with its own cadence). Optional and additive; every
+   *  existing caller is unaffected. */
+  options: { value: T; label: string; marked?: boolean }[];
   value: T;
   onChange: (value: T) => void;
   /** Sit beside other content instead of claiming its own full-width row.
@@ -54,6 +57,19 @@ export function FilterPills<T extends string>({
           )}
         >
           {o.label}
+          {o.marked && (
+            <span
+              className={cn(
+                "ml-1",
+                // Amber reads on the muted ground but disappears against the
+                // accent fill, so the selected pill marks itself with its own
+                // text colour instead of a second hue.
+                value === o.value ? "opacity-70" : "text-warn",
+              )}
+            >
+              •
+            </span>
+          )}
         </button>
       ))}
     </div>

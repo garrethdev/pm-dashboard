@@ -330,9 +330,12 @@ h2,
   }
 }
 
-/* Scrolls, shows no track. The global thin scrollbar suits a desktop panel and
- * reads as a grey seam on a phone, where the platform draws its own overlay
- * indicator while the finger is down. */
+/* Redundant since scrollbars went global-hidden above, and kept deliberately.
+ *
+ * It marks the places that wanted a bare scroll edge on their own merits — the
+ * filter pills, the sidebar drawer, the character card row — so that if the
+ * global rule is ever narrowed or dropped, those keep the treatment they were
+ * designed with instead of quietly growing a seam. Costs nothing to leave. */
 .no-scrollbar {
   scrollbar-width: none;
 }
@@ -402,7 +405,27 @@ h2,
   background: var(--accent-soft);
 }
 
+/* No scrollbars anywhere — every scrollable panel, table, modal and page
+ * (Garreth 2026-09-11).
+ *
+ * Only the drawn track and thumb go. Scrolling itself is untouched: wheel,
+ * trackpad, touch, keyboard, and the overlay indicator phones draw while a
+ * finger is down all behave exactly as before. `overflow` is deliberately NOT
+ * set here — hiding the bar must never change WHAT scrolls, only whether you
+ * can see the bar.
+ *
+ * Both declarations are needed and neither is redundant: `scrollbar-width`
+ * covers Firefox and Chromium 121+, and `::-webkit-scrollbar` covers Safari
+ * and older Chromium, which ignore the standard property.
+ *
+ * The trade-off, stated plainly: a scrollbar is also the only passive hint
+ * that a region scrolls at all, and that hint is now gone. Anywhere that
+ * matters, the content itself has to imply it — a row of cards cut off
+ * mid-card, a table that clearly continues. Watch for panels that end on a
+ * clean edge and look complete when they are not. */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--card-raised) transparent;
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
 }

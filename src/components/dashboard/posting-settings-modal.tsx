@@ -131,19 +131,38 @@ export function PostingSettingsModal({
   // at 1/day the account can post at most 7 times a week, so GLP + filler must
   // fit inside that. The scheduler would silently plan the smaller number, so
   // the fields are bounded here instead of accepting a figure it will ignore.
-  const effDay = perDay.trim() === ""
+  // What each field is SHOWING, which is not always what it is holding.
+  //
+  // With Custom Cadence off the fields go blank so their placeholders — the
+  // fleet/character defaults — show through, and every number derived below
+  // has to follow, or the warnings underneath would describe a set of caps
+  // that is not in force. Blank also feeds the `?? effective` fallbacks below,
+  // so "off" resolves to the defaults everywhere by construction.
+  //
+  // The state itself is untouched: flipping the toggle back on brings the
+  // typed values straight back.
+  const perDayField = enabled ? perDay : "";
+  const glpField = enabled ? glpWeek : "";
+  const fillerField = enabled ? fillerWeek : "";
+
+  const effDay = perDayField.trim() === ""
     ? (effective?.maxPostsPerDay ?? null)
-    : Number(perDay);
+    : Number(perDayField);
   const weekCeiling = effDay === null || !Number.isFinite(effDay) ? null : effDay * 7;
-  const glpNow = glpWeek.trim() === "" ? (effective?.glpWeekCap ?? 0) : Number(glpWeek);
-  const fillerNow = fillerWeek.trim() === "" ? (effective?.fillerWeekCap ?? 0) : Number(fillerWeek);
+  const glpNow = glpField.trim() === "" ? (effective?.glpWeekCap ?? 0) : Number(glpField);
+  const fillerNow = fillerField.trim() === "" ? (effective?.fillerWeekCap ?? 0) : Number(fillerField);
   // Each weekly field is bounded by the week's total minus what the other one
   // already claims, so the pair can never sum past the ceiling.
   const glpMax = weekCeiling === null ? null : Math.max(0, weekCeiling - fillerNow);
   const fillerMax = weekCeiling === null ? null : Math.max(0, weekCeiling - glpNow);
-  // Both steppers stop at the ceiling, so over-allocation is unreachable from
-  // the UI; under-allocation is the case worth flagging.
+  // Both steppers stop at the ceiling, so over-allocation cannot be reached by
+  // raising GLP or filler. It is very much reachable from the other direction:
+  // LOWERING posts/day shrinks the ceiling underneath a pair that was already
+  // set, and the steppers have no say in that. Dropping posts/day to 1 while
+  // GLP and filler sit on the inherited 11 and 3 asks for 14 posts in 7 slots.
+  // So both directions are flagged, and the over case blocks the save.
   const weekUnspent = weekCeiling === null ? null : weekCeiling - (glpNow + fillerNow);
+  const weekOver = weekUnspent !== null && weekUnspent < 0 ? -weekUnspent : null;
   // An empty pool only strands the account when EVERY selected type is empty.
   // With anything else still stocked the scheduler simply picks from what is
   // there, so a partially dry selection is information, not a problem.
@@ -191,37 +210,49 @@ export function PostingSettingsModal({
           <Toggle checked={!paused} onChange={(v) => setPaused(!v)} disabled={busy} />
         </label>
 
-        {/* Custom schedule */}
+        {/* Custom Cadence */}
         <div className={cn("mt-5", paused && "pointer-events-none opacity-45")}>
           <label className="flex cursor-pointer items-center justify-between rounded-nested border border-border px-3.5 py-3">
             <span>
-              <span className="text-sm font-medium">Custom schedule</span>
-              <span className="mt-0.5 block text-xs text-text-muted">
-                {enabled ? "This account ignores the fleet defaults" : "Using defaults"}
-              </span>
+              <span className="text-sm font-medium">Custom Cadence</span>
+              {/* Nothing is said in the off state. "Using defaults" restated
+                  what the switch already showed, and — until the fields were
+                  fixed to blank themselves — sat directly above the
+                  switched-off custom numbers, which is how it came to be read
+                  as a claim about them (Garreth 2026-09-11). */}
+              {enabled && (
+                <span className="mt-0.5 block text-xs text-text-muted">
+                  This account ignores the fleet defaults
+                </span>
+              )}
             </span>
             <Toggle checked={enabled} onChange={setEnabled} disabled={busy || paused} />
           </label>
 
+          {/* These used to show the custom values dimmed while the toggle was
+              off. Dimming reads as "disabled", not as "these do not apply", so
+              a card headed "Using defaults" sat directly above 1 / 6 / 1 while
+              the scheduler was really running the account at 2 a day. */}
           <div className={cn("mt-5 space-y-6", !fieldsLive && "pointer-events-none opacity-45")}>
             <div className="grid grid-cols-3 gap-3">
               <NumField
                 label="Max posts / day"
-                value={perDay}
+                value={perDayField}
                 onChange={setPerDay}
                 placeholder={effective ? String(effective.maxPostsPerDay) : "—"}
                 max={dayCeiling}
+                min={1}
               />
               <NumField
                 label="GLP / week"
-                value={glpWeek}
+                value={glpField}
                 onChange={setGlpWeek}
                 placeholder={effective ? String(effective.glpWeekCap) : "—"}
                 max={glpMax}
               />
               <NumField
                 label="Filler / week"
-                value={fillerWeek}
+                value={fillerField}
                 onChange={setFillerWeek}
                 placeholder={effective ? String(effective.fillerWeekCap) : "—"}
                 max={fillerMax}
@@ -231,6 +262,16 @@ export function PostingSettingsModal({
                 does need saying is the opposite case: caps that add up to LESS
                 than the account is allowed leave it idle, and nothing else on
                 this screen would tell you (Garreth 2026-09-06). */}
+            {weekOver !== null && (
+              <p className="text-xs text-danger">
+                GLP + filler come to <span className="tnum font-semibold">{glpNow + fillerNow}</span>{" "}
+                a week, but at {effDay}/day this account can post at most{" "}
+                <span className="tnum font-semibold">{weekCeiling}</span> times. That is{" "}
+                <span className="tnum font-semibold">{weekOver}</span> too many, so the scheduler
+                would quietly plan the smaller number. Raise posts/day, or lower GLP or filler.
+              </p>
+            )}
+
             {weekUnspent !== null && weekUnspent > 0 && (
               <p className="text-xs text-danger">
                 GLP + filler come to <span className="tnum font-semibold">{glpNow + fillerNow}</span>{" "}
@@ -381,7 +422,7 @@ export function PostingSettingsModal({
           </button>
           <CtaButton
             onClick={save}
-            disabled={busy || (fieldsLive && types.size === 0)}
+            disabled={busy || (fieldsLive && (types.size === 0 || weekOver !== null))}
                       >
             {busy && <Loader2 className="size-3.5 animate-spin" />}
             Save
@@ -410,6 +451,7 @@ function NumField({
   onChange,
   placeholder,
   max,
+  min = 0,
 }: {
   label: string;
   value: string;
@@ -417,16 +459,21 @@ function NumField({
   placeholder: string;
   /** Hard ceiling from the scheduler's guards. null = no ceiling. */
   max?: number | null;
+  /** Floor for the stepper. 0 for the weekly buckets, where "none" is a real
+   *  setting — Character 5 runs filler 0 on purpose. 1 for posts/day, where 0
+   *  is not a cap but an off switch, and there is already a Posting switch
+   *  above for that. */
+  min?: number;
 }) {
   // An empty field means "keep the default", so stepping from empty starts at
   // whatever the placeholder shows rather than jumping to 0.
   const current = value.trim() === "" ? Number(placeholder) : Number(value);
   const atMax = max !== null && max !== undefined && current >= max;
-  const atMin = current <= 0;
+  const atMin = current <= min;
 
   const step = (delta: number) => {
     let next = current + delta;
-    if (next < 0) next = 0;
+    if (next < min) next = min;
     if (max !== null && max !== undefined && next > max) next = max;
     onChange(String(next));
   };
@@ -445,11 +492,14 @@ function NumField({
           placeholder={placeholder}
           onChange={(e) => {
             const raw = e.target.value.replace(/[^0-9]/g, "");
+            // Empty is not zero — it means "inherit", and the placeholder shows
+            // what will be used. It has to survive typing.
             if (raw === "") return onChange("");
             const n = Number(raw);
-            // Typing has to respect the same ceiling as the button, or the
-            // guard would be one paste away from being bypassed.
-            onChange(String(max !== null && max !== undefined && n > max ? max : n));
+            // Typing has to respect the same ceiling AND floor as the buttons,
+            // or either guard would be one paste away from being bypassed.
+            const capped = max !== null && max !== undefined && n > max ? max : n;
+            onChange(String(capped < min ? min : capped));
           }}
           className="w-full min-w-0 border-x border-border bg-transparent px-1 py-1.5 text-center text-sm tnum outline-none focus:border-accent"
         />

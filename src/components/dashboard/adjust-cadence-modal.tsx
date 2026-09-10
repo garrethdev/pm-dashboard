@@ -8,6 +8,7 @@ import type { FleetDefaults } from "@/lib/data/scheduler-config";
 import { StatusPill } from "@/components/ui/pill";
 import { Stepper } from "@/components/ui/stepper";
 import { CtaButton } from "@/components/ui/cta-button";
+import { FilterPills } from "@/components/ui/filter-pills";
 import { cn } from "@/lib/utils";
 
 /**
@@ -35,6 +36,10 @@ import { cn } from "@/lib/utils";
 
 /** Mirrors MAX_PER_WEEK in /api/cadence — the server's cap on a weekly total. */
 const MAX_GLP_PER_WEEK = 70;
+
+/** Sentinel for the fleet tab. A character can never be named this, so it
+ *  cannot collide with a real scope key. */
+const FLEET_SCOPE = "__fleet__";
 
 type Scope = { kind: "fleet" } | { kind: "character"; name: string };
 
@@ -126,7 +131,14 @@ export function AdjustCadenceModal({
     ? laneSum(charScope) === effective.glpWeek
     : cadence.characters.every((c) => laneSum(c.name) === glpTargetFor(c.name));
 
-  const canSave = !overBudget && !windowInverted && !windowTooTight && mixBalanced && !busy;
+  // Both buckets on zero is not a cadence, it is an off switch: every account
+  // under this scope would sit idle indefinitely with nothing on screen saying
+  // so afterwards. Under-allocating on ONE bucket stays allowed — Character 5
+  // deliberately runs filler 0 — so this only blocks the pair.
+  const nothingAllocated = effective.fillerWeek === 0 && effective.glpWeek === 0;
+
+  const canSave =
+    !overBudget && !windowInverted && !windowTooTight && mixBalanced && !nothingAllocated && !busy;
 
   /** Spread a GLP total across a character's lanes as evenly as the count allows,
    *  so changing GLP/week does not strand the mix in an unsaveable state. */
@@ -245,44 +257,28 @@ export function AdjustCadenceModal({
         </div>
 
         {/* ── which layer is being edited ─────────────────────────────────── */}
-        <div className="flex flex-wrap gap-1.5 border-b border-border px-6 py-3">
-          <ScopePill
-            active={scope.kind === "fleet"}
-            onClick={() => setScope({ kind: "fleet" })}
-            label="Fleet default"
+        {/* The same segmented control the Accounts and Analytics filters use,
+            rather than a pill row of this modal's own. A dotted pill is a
+            character already sitting off the fleet, so a fleet change will not
+            move it. */}
+        <div className="border-b border-border px-6 py-3">
+          <FilterPills
+            value={scope.kind === "fleet" ? FLEET_SCOPE : scope.name}
+            onChange={(v) =>
+              setScope(v === FLEET_SCOPE ? { kind: "fleet" } : { kind: "character", name: v })
+            }
+            options={[
+              { value: FLEET_SCOPE, label: "Fleet default" },
+              ...cadence.characters.map((c) => ({
+                value: c.name,
+                label: c.name.replace("Character ", "Char "),
+                marked: overriddenNames.includes(c.name),
+              })),
+            ]}
           />
-          {cadence.characters.map((c) => (
-            <ScopePill
-              key={c.name}
-              active={charScope === c.name}
-              onClick={() => setScope({ kind: "character", name: c.name })}
-              label={c.name.replace("Character ", "Char ")}
-              marked={overriddenNames.includes(c.name)}
-            />
-          ))}
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto">
-          <p className="border-b border-border px-6 py-3 text-xs text-text-muted">
-            {charScope ? (
-              <>
-                Only {charScope}. Anything left on <em>fleet default</em> keeps following the fleet,
-                so changing the fleet later still moves it.
-              </>
-            ) : (
-              <>
-                Applies to every account.{" "}
-                {overriddenNames.length > 0 && (
-                  <span className="text-warn">
-                    {overriddenNames.join(", ")} {overriddenNames.length === 1 ? "has" : "have"} its
-                    own cadence and will not follow a change made here.
-                  </span>
-                )}{" "}
-                A per-account override always wins.
-              </>
-            )}
-          </p>
-
           {fleet.divergent && scope.kind === "fleet" && (
             <p className="flex items-start gap-2 border-b border-border bg-warn/5 px-6 py-3 text-xs text-warn">
               <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
@@ -417,18 +413,24 @@ export function AdjustCadenceModal({
                 {allocated} posts a week is more than {effective.maxPostsPerDay} a day allows (
                 {weekBudget}). Lower one of them, or raise max posts / day.
               </p>
+            ) : nothingAllocated ? (
+              <p className="mt-3 text-xs text-danger">
+                Filler and GLP are both 0, so nothing would ever be posted. This cannot be saved —
+                raise one of them, or use the posting switch on an account to pause it instead.
+              </p>
             ) : unspent > 0 ? (
               <p className="mt-3 text-xs text-danger">
                 Only {allocated} of the {weekBudget} weekly posts are allocated. Each account will
                 sit idle for {unspent} {unspent === 1 ? "slot" : "slots"} a week. Raise filler or
                 GLP to use the full allowance, or lower max posts / day.
               </p>
-            ) : (
-              <p className="mt-3 text-xs text-text-muted">
-                Every slot allocated: {effective.fillerWeek} filler and {effective.glpWeek} GLP a
-                week, per account.
-              </p>
-            )}
+            ) : null}
+            {/* Nothing is said when the split adds up. The badge beside the
+                section title already carries the state — "14 / 14 per week" in
+                green — so a sentence restating it is one more thing to read on
+                the screen you are on most often. Copy here is reserved for the
+                two cases that need a decision: over budget, or slots left
+                idle (Garreth 2026-09-11). */}
           </Section>
 
           {/* ── advanced: which GLP lanes make up that number ────────────── */}
@@ -439,14 +441,7 @@ export function AdjustCadenceModal({
               aria-expanded={advancedOpen}
               className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left hover:bg-bg/40"
             >
-              <span>
-                <span className="text-sm font-semibold">Advanced settings</span>
-                <span className="ml-2 text-xs text-text-muted">
-                  {charScope
-                    ? `which content types make up ${charScope}'s ${effective.glpWeek} a week`
-                    : `which GLP content types make up each character's week`}
-                </span>
-              </span>
+              <span className="text-sm font-semibold">Advanced settings</span>
               <span className="flex items-center gap-2">
                 {!mixBalanced && <StatusPill tone="danger">needs attention</StatusPill>}
                 <ChevronDown
@@ -538,35 +533,6 @@ export function AdjustCadenceModal({
   );
 }
 
-/** Scope tab. `marked` flags a character that already sits off the fleet. */
-function ScopePill({
-  active,
-  onClick,
-  label,
-  marked,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  marked?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-        active
-          ? "bg-accent-soft text-accent"
-          : "text-text-muted hover:bg-bg/40 hover:text-text-primary",
-      )}
-    >
-      {label}
-      {marked && <span className="ml-1 text-warn">•</span>}
-    </button>
-  );
-}
 
 /**
  * A number that either follows the fleet or does not.
