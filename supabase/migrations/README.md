@@ -43,6 +43,62 @@ applied 2026-09-06) are deliberately not here.
 | 09-10 | `scheduler_account_config_all_for_paused_preflight` | ramp/resolution moved into a base view so paused accounts can be previewed without the scheduler ever seeing them |
 | 09-10 | `ramp_glp_fills_the_slot_when_a_character_has_no_filler` | the 9-15d slot is filler-only; a character with no filler lane posted nothing, so GLP may take it |
 | 09-10 | `production_order_filler_demand_honours_character_cap` | filler demand read the fleet quota, telling you to make 36 filler for a character with no filler lane |
+| 09-09 | `content_intelligence_engine` | the seven Virlo/knowledge tables — **reconstructed, not replayed; see the note below** |
+| 09-10 | `atomic_settings_writes` | override / cadence / lifecycle saves become one transaction each, with row-count checks |
+| 09-10 | `atomic_settings_writes_revoke_anon` | the revoke above missed `anon`/`authenticated` — see below |
+
+## `revoke ... from public` on a function is never enough here
+
+`atomic_settings_writes` created three functions and ended with
+`revoke all on function ... from public`, which looked like it closed them off.
+It did not. **Supabase ships `ALTER DEFAULT PRIVILEGES` granting EXECUTE on new
+public functions to `anon` and `authenticated` by name**, and a grant made to a
+named role is untouched by revoking from PUBLIC. Reading `pg_proc.proacl` back
+straight after applying showed all three still carrying `anon=X` and
+`authenticated=X` — live on the anon key's PostgREST surface. The follow-up
+migration revokes the two roles explicitly.
+
+**So: whenever a migration here creates a function, name `anon` and
+`authenticated` in the revoke, and read the ACL back afterwards.**
+
+```sql
+select p.proname, array_to_string(p.proacl,' | ') as acl
+from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public' and p.proname = '<your function>';
+-- want: postgres=X/postgres | service_role=X/postgres  (and nothing else)
+```
+
+The three functions were smoke-tested after applying, since none had ever run.
+Confirmed: a failed insert rolls its DELETE back (the old code's data-loss
+case), an empty rows array clears correctly, a row naming another owner is
+refused, a duplicate lane is refused, and a lane sent for the wrong character
+raises instead of silently updating nothing. For the lifecycle function, a
+failure after the allowed-list widening rolls that widening back too.
+
+**These two files carry fuller comments than the statements recorded in
+`schema_migrations`** — the explanatory prose was added when they were written
+to disk. Behaviour is identical; only the comments differ. That is the one place
+the byte-identical rule at the top of this file is relaxed, besides the
+reconstructed migration below.
+
+## The one file that is not a replay## The one file that is not a replay
+
+`20260909123000_content_intelligence_engine.sql` breaks the byte-identical rule
+at the top of this file, and is listed out of date order because it was found
+late.
+
+Those seven tables (`reference_analysis`, `reference_beats`, `angle_blueprints`,
+`carousel_briefs`, `carousel_drafts`, `carousel_draft_slides`, `search_chunks`)
+were applied by hand in the SQL editor and never landed in
+`supabase_migrations.schema_migrations`, so there is no stored statement list to
+copy from. The committed file was reconstructed from the live catalog on
+2026-09-10 and verified against `pg_constraint`, `pg_indexes` and
+`information_schema.columns`. It matches the database; it just cannot be
+MD5-checked like the rest.
+
+**All seven are empty** — 0 rows each, against 3,468 in `references_unified`.
+The schema exists, nothing writes to it, and the ingestion worker is V2 work.
+Do not read "the tables are there" as "the pipeline runs".
 
 ## Two things worth knowing
 
