@@ -4,6 +4,7 @@ import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { getDemandSupply, getInventory } from "@/lib/data/inventory";
 import { DemandSupplyCard } from "@/components/dashboard/demand-supply-card";
 import { ProductionOrderCard } from "@/components/dashboard/production-order-card";
+import { PausedCharacterNote } from "@/components/dashboard/paused-character-note";
 import { formatEtShort } from "@/lib/data/format";
 
 async function InventoryLive() {
@@ -29,6 +30,8 @@ async function InventoryLive() {
       <DemandSupplyCard initial={demand} />
 
       <ProductionOrderCard rows={data.productionOrder} fetchedAt={fetched} />
+
+      <PausedCharacterNote characters={data.pausedCharacters} />
     </>
   );
 }

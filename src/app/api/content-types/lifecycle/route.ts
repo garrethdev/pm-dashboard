@@ -199,7 +199,7 @@ export async function POST(request: Request) {
       "cadence-data",
       "scheduler-config",
       "scheduler-buckets",
-      "inventory-data-v3",
+      "inventory-data-v4",
     ]) {
       revalidateTag(tag, { expire: 0 });
     }

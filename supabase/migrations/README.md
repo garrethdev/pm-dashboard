@@ -38,6 +38,11 @@ applied 2026-09-06) are deliberately not here.
 | 09-06 | `content_type_stats` | per-lane performance driven off the registry, so paused lanes keep their numbers |
 | 09-06 | `scheduler_pool_honours_lifecycle` | the pool view stops counting a paused lane as available supply |
 | 09-06 | `content_type_stats_scheduled_ahead_date_fix` | `scheduled_ahead` compared a UTC-midnight timestamp in ET and lost a day |
+| 09-10 | `account_last_post_success_only` | "Last Post" counted a task that failed; adds success-only columns without touching the pair `v_account_health_v3` reads |
+| 09-10 | `health_v3_posting_failure_is_system_error` | a persistently failing account could read as `warming`; system error no longer gated on `view_health` |
+| 09-10 | `scheduler_account_config_all_for_paused_preflight` | ramp/resolution moved into a base view so paused accounts can be previewed without the scheduler ever seeing them |
+| 09-10 | `ramp_glp_fills_the_slot_when_a_character_has_no_filler` | the 9-15d slot is filler-only; a character with no filler lane posted nothing, so GLP may take it |
+| 09-10 | `production_order_filler_demand_honours_character_cap` | filler demand read the fleet quota, telling you to make 36 filler for a character with no filler lane |
 
 ## Two things worth knowing
 
@@ -62,6 +67,22 @@ poster), `inventory_check_detail`, `inventory_type_breakdown` and
 lifecycle column added on 09-06 does not become a second gate that each of them
 would have to learn — a trigger derives `active` from it, in both directions, so
 flipping either one by hand still lands in a coherent state.
+
+**Display truth and classifier truth are different columns.** `v_account_last_post`
+and `v_account_warmup_health` each expose two pairs: an any-outcome pair
+(`last_post_at` / `days_since_post`, `last_warmup_at` / `days_since_warmup`) and
+a success-only pair (`last_success_at` / `days_since_success`). The accounts
+table shows the success-only pair -- a failed upload is not a post. The
+`warming` rule in `v_account_health_v3` deliberately keeps reading the
+any-outcome pair, because it needs to know whether posting was ATTEMPTED, not
+whether it worked; pointing it at the success-only pair inverts it and makes a
+broken account look like a new one. Do not "tidy" the two into one.
+
+**`v_scheduler_account_config_all` is display only.** It is the same view
+without the `posting_paused IS FALSE` filter, and `v_scheduler_account_config`
+is now a thin filter over it, so the age ramp and the
+account -> character -> fleet chain exist in exactly one place. Nothing that
+plans or posts may read `_all`: paused accounts would start being scheduled.
 
 **Snapshot tables are cleaned up.** The 09-04 guard-day-cap migration creates
 `_cfg_before_20260904` and does not drop it, so the file reads as though the

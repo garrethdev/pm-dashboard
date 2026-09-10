@@ -11,6 +11,14 @@ import { sbRest } from "@/lib/data/supabase";
  * throttle. When the two disagree, the account config wins — so reading the
  * cadence table alone will over-predict what gets posted.
  *
+ * Reads v_scheduler_account_config_all, NOT v_scheduler_account_config. The
+ * two resolve identically; _all simply keeps the paused accounts, which the
+ * scheduler's own view drops because it must never plan for one. Without them
+ * a character whose accounts are all paused — Character 5 until it is
+ * un-paused — is invisible here, and the first sight of its real caps is the
+ * day it starts posting. `paused` on each row says which is which, so a paused
+ * account reads as "not scheduled yet" rather than as a live limit.
+ *
  * Read-only. Caps live in the scheduler; the dashboard never writes them.
  */
 export interface AccountConfigRow {
@@ -36,14 +44,20 @@ export interface AccountConfigRow {
   canDeliver: boolean;
   /** e.g. "health: shadowbanned"; null when nothing is throttling the account. */
   throttleReason: string | null;
+  /** Posting is switched off: these caps are what it WOULD resolve to, not
+   *  what is running. The scheduler skips the account entirely. */
+  paused: boolean;
 }
 
 export interface SchedulerConfigData {
   rows: AccountConfigRow[];
-  /** Accounts the scheduler will refuse to deliver to right now. */
+  /** Accounts the scheduler will refuse to deliver to right now. Paused
+   *  accounts are excluded — they are not blocked, they are switched off. */
   blocked: number;
   /** Accounts still delivering but under a reduced cap. */
   throttled: number;
+  /** Accounts with posting switched off, shown as a preview of their caps. */
+  paused: number;
 }
 
 /** 660 → "11:00". The view stores the posting window as ET minutes-past-midnight. */
@@ -56,6 +70,11 @@ export function minutesToEt(min: number | null): string {
 const num = (v: string | number | null | undefined) => (v == null ? null : Number(v));
 
 async function fetchSchedulerConfig(): Promise<SchedulerConfigData> {
+  const pausedRows = await sbRest<{ geelark_profile: string }[]>(
+    "accounts?select=geelark_profile&posting_paused=is.true",
+  );
+  const pausedProfiles = new Set(pausedRows.map((a) => a.geelark_profile));
+
   const raw = await sbRest<
     {
       geelark_profile: string;
@@ -79,7 +98,7 @@ async function fetchSchedulerConfig(): Promise<SchedulerConfigData> {
       throttle_reason: string | null;
     }[]
   >(
-    "v_scheduler_account_config?select=geelark_profile,character,platform,age_days,health," +
+    "v_scheduler_account_config_all?select=geelark_profile,character,platform,age_days,health," +
       "glp_week_cap,fil_week_cap,max_posts_per_day,max_glp_per_day,max_filler_per_day," +
       "min_gap_minutes,spacing_minutes,window_start_min,window_end_min," +
       "deliv_attempts_7d,deliv_fails_7d,deliv_fail_rate_7d,can_deliver,throttle_reason" +
@@ -108,13 +127,17 @@ async function fetchSchedulerConfig(): Promise<SchedulerConfigData> {
       failRate7d: num(r.deliv_fail_rate_7d),
       canDeliver: r.can_deliver === true,
       throttleReason: r.throttle_reason,
+      paused: pausedProfiles.has(r.geelark_profile),
     }),
   );
 
   return {
     rows,
-    blocked: rows.filter((r) => !r.canDeliver).length,
-    throttled: rows.filter((r) => r.canDeliver && r.throttleReason !== null).length,
+    // A paused account is neither blocked nor throttled — it is switched off,
+    // and counting it as blocked would put a red number on a deliberate state.
+    blocked: rows.filter((r) => !r.paused && !r.canDeliver).length,
+    throttled: rows.filter((r) => !r.paused && r.canDeliver && r.throttleReason !== null).length,
+    paused: rows.filter((r) => r.paused).length,
   };
 }
 

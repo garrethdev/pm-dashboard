@@ -24,9 +24,11 @@ import { cn } from "@/lib/utils";
  * on the page, so a round trip per keystroke would buy nothing.
  */
 
-type StatusFilter = "all" | "blocked" | "throttled" | "full";
+type StatusFilter = "all" | "blocked" | "throttled" | "full" | "paused";
 type PlatformFilter = "all" | "tiktok" | "instagram";
-type CharFilter = "all" | "Character 2" | "Character 3" | "Character 4";
+/** Derived from the rows, never hardcoded — the old fixed union stopped at
+ *  Character 4, so Character 5 could not be filtered for at all. */
+type CharFilter = string;
 
 export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
   const [query, setQuery] = useState("");
@@ -37,9 +39,13 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return data.rows.filter((r) => {
-      if (status === "blocked" && r.canDeliver) return false;
-      if (status === "throttled" && !(r.canDeliver && r.throttleReason)) return false;
-      if (status === "full" && (!r.canDeliver || r.throttleReason)) return false;
+      // Paused is its own state, not a flavour of blocked: the caps on a
+      // paused row are a preview of what it WOULD run at, so it must not
+      // colour the blocked/throttled counts or be hidden behind them.
+      if (status === "paused" && !r.paused) return false;
+      if (status === "blocked" && (r.paused || r.canDeliver)) return false;
+      if (status === "throttled" && (r.paused || !(r.canDeliver && r.throttleReason))) return false;
+      if (status === "full" && (r.paused || !r.canDeliver || r.throttleReason)) return false;
       if (platform !== "all" && r.platform !== platform) return false;
       if (character !== "all" && r.character !== character) return false;
       if (!q) return true;
@@ -52,6 +58,16 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
   }, [data.rows, query, status, platform, character]);
 
   const extraFilters = (platform !== "all" ? 1 : 0) + (character !== "all" ? 1 : 0);
+
+  const characterOptions = useMemo(
+    () => [
+      { value: "all", label: "All" },
+      ...[...new Set(data.rows.map((r) => r.character).filter((c): c is string => Boolean(c)))]
+        .sort()
+        .map((c) => ({ value: c, label: c.replace("Character ", "Char ") })),
+    ],
+    [data.rows],
+  );
 
   const chips = [
     ...(platform !== "all"
@@ -87,6 +103,9 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
               { value: "blocked", label: `Blocked ${data.blocked}` },
               { value: "throttled", label: `Throttled ${data.throttled}` },
               { value: "full", label: "Full cadence" },
+              ...(data.paused > 0
+                ? [{ value: "paused" as StatusFilter, label: `Paused ${data.paused}` }]
+                : []),
             ]}
           />
           <Dropdown
@@ -117,12 +136,7 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
                   <FilterPills
                     value={character}
                     onChange={setCharacter}
-                    options={[
-                      { value: "all", label: "All" },
-                      { value: "Character 2", label: "Char 2" },
-                      { value: "Character 3", label: "Char 3" },
-                      { value: "Character 4", label: "Char 4" },
-                    ]}
+                    options={characterOptions}
                   />
                 </div>
               </div>
@@ -202,7 +216,28 @@ function LimitRow({ row: r }: { row: AccountConfigRow }) {
           <span className="text-xs text-text-muted">—</span>
         )}
       </td>
-      <td className="py-2.5 text-right tnum">{r.maxPostsPerDay ?? "—"}</td>
+      {/* What the account can ACTUALLY place, not the raw day cap. The age
+          ramp sets a flat 2/day at 16-22 days regardless of the character's
+          own cap, so Character 5's Profiles 64/65 read max_posts_per_day = 2
+          while only ever posting 1 — the scheduler places by bucket, and their
+          buckets allow 1 GLP + 0 filler. Showing the cap alone teaches the
+          wrong number; the ceiling is kept as context when the two differ. */}
+      <td className="py-2.5 text-right tnum">
+        {(() => {
+          if (r.maxPostsPerDay === null) return "—";
+          const buckets = (r.maxGlpPerDay ?? 0) + (r.maxFillerPerDay ?? 0);
+          const effective = Math.min(r.maxPostsPerDay, buckets);
+          if (effective === r.maxPostsPerDay) return effective;
+          return (
+            <span
+              title={`the day cap allows ${r.maxPostsPerDay}, but this account's buckets only fill ${effective}`}
+            >
+              {effective}
+              <span className="ml-1 text-xs text-text-muted">of {r.maxPostsPerDay}</span>
+            </span>
+          );
+        })()}
+      </td>
       <td className={cn("py-2.5 text-right tnum", r.maxGlpPerDay === 0 && "text-danger")}>
         {r.maxGlpPerDay ?? "—"}
       </td>
@@ -224,7 +259,9 @@ function LimitRow({ row: r }: { row: AccountConfigRow }) {
           : `${Math.round(r.failRate7d * 100)}% (${r.fails7d}/${r.attempts7d})`}
       </td>
       <td className="py-2.5 pl-6 whitespace-nowrap">
-        {!r.canDeliver ? (
+        {r.paused ? (
+          <StatusPill tone="gray">not scheduled yet</StatusPill>
+        ) : !r.canDeliver ? (
           <StatusPill tone="danger">
             blocked
           </StatusPill>

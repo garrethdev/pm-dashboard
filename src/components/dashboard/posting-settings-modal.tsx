@@ -209,21 +209,21 @@ export function PostingSettingsModal({
                 label="Max posts / day"
                 value={perDay}
                 onChange={setPerDay}
-                placeholder={effective ? String(effective.maxPostsPerDay) : "3"}
+                placeholder={effective ? String(effective.maxPostsPerDay) : "—"}
                 max={dayCeiling}
               />
               <NumField
                 label="GLP / week"
                 value={glpWeek}
                 onChange={setGlpWeek}
-                placeholder={effective ? String(effective.glpWeekCap) : "10"}
+                placeholder={effective ? String(effective.glpWeekCap) : "—"}
                 max={glpMax}
               />
               <NumField
                 label="Filler / week"
                 value={fillerWeek}
                 onChange={setFillerWeek}
-                placeholder={effective ? String(effective.fillerWeekCap) : "10"}
+                placeholder={effective ? String(effective.fillerWeekCap) : "—"}
                 max={fillerMax}
               />
             </div>

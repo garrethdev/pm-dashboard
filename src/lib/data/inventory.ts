@@ -46,15 +46,30 @@ export interface ProductionOrderRow {
   status: string;
 }
 
+/**
+ * A character whose accounts are ALL paused. It has no demand — the scheduler
+ * is not planning for it — so it appears in none of the numbers above, and it
+ * must not: those are kept byte-for-byte in step with the Mon/Fri digest.
+ * This is a separate, deliberately number-free note so that a character
+ * waiting to be switched on is at least visible, with what is ready for it.
+ */
+export interface PausedCharacter {
+  character: string;
+  accounts: number;
+  lanes: { contentType: string; pool: number }[];
+}
+
 export interface InventoryData {
   window: { start: string | null; end: string | null };
   buckets: InventoryBucket[];
   productionOrder: ProductionOrderRow[];
   totalToProduce: number;
+  /** Not part of any total — see PausedCharacter. */
+  pausedCharacters: PausedCharacter[];
 }
 
 async function fetchInventory(): Promise<InventoryData> {
-  const [checks, order] = await Promise.all([
+  const [checks, order, accounts, pools] = await Promise.all([
     sbRest<
       {
         character: string;
@@ -89,7 +104,34 @@ async function fetchInventory(): Promise<InventoryData> {
     >(
       "v_scheduler_production_order?select=character,content_type,bucket,usable_pool,quarantined,weekly_demand,days_cover,slots_missed_14d,last_missed,produce_to_reach_21d,status&order=days_cover.asc",
     ),
+    sbRest<{ character: string | null; posting_paused: boolean | null }[]>(
+      "accounts?select=character,posting_paused&is_active=eq.true&character=like.Character*",
+    ),
+    sbRest<{ content_type: string; character: string; pool_n: number }[]>(
+      "v_scheduler_pool?select=content_type,character,pool_n",
+    ),
   ]);
+
+  // "All paused" means every live account for that character, not merely one.
+  const byCharacter = new Map<string, { total: number; paused: number }>();
+  for (const a of accounts) {
+    if (!a.character) continue;
+    const e = byCharacter.get(a.character) ?? { total: 0, paused: 0 };
+    e.total += 1;
+    if (a.posting_paused === true) e.paused += 1;
+    byCharacter.set(a.character, e);
+  }
+  const pausedCharacters: PausedCharacter[] = [...byCharacter.entries()]
+    .filter(([, e]) => e.total > 0 && e.total === e.paused)
+    .map(([character, e]) => ({
+      character,
+      accounts: e.total,
+      lanes: pools
+        .filter((p) => p.character === character)
+        .map((p) => ({ contentType: p.content_type, pool: p.pool_n }))
+        .sort((x, y) => x.contentType.localeCompare(y.contentType)),
+    }))
+    .sort((a, b) => a.character.localeCompare(b.character));
 
   const buckets = checks
     .map((c): InventoryBucket => {
@@ -127,10 +169,14 @@ async function fetchInventory(): Promise<InventoryData> {
       }),
     ),
     totalToProduce: checks.reduce((acc, c) => acc + (c.grand_total ?? 0), 0),
+    pausedCharacters,
   };
 }
 
-export const getInventory = cachedFetcher("inventory-data-v3", TTL.supabase, fetchInventory);
+// v4: added pausedCharacters. The suffix is bumped whenever InventoryData
+// changes shape — a cache entry written by the previous version has no such
+// field, and the page crashed on `characters.length` reading it back.
+export const getInventory = cachedFetcher("inventory-data-v4", TTL.supabase, fetchInventory);
 
 /* ── Demand vs supply, parameterised window ────────────────────────────────── */
 

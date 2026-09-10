@@ -126,7 +126,7 @@ export const DATA_TAGS = [
   "geelark-phones",
   "geelark-wallet",
   "incidents",
-  "inventory-data-v3",
+  "inventory-data-v4",
   "n8n-executions",
   "proxycheap-proxies",
   "pulse-stats",

@@ -179,7 +179,7 @@ export async function fetchEffectiveConfig(): Promise<Record<string, EffectiveCo
       guard_day_cap: number | null;
     }[]
   >(
-    "v_scheduler_account_config?select=geelark_profile,max_posts_per_day,glp_week_cap," +
+    "v_scheduler_account_config_all?select=geelark_profile,max_posts_per_day,glp_week_cap," +
       "fil_week_cap,age_days,throttle_reason,can_deliver,guard_day_cap",
   );
   const out: Record<string, EffectiveConfig> = {};
@@ -200,9 +200,14 @@ export async function fetchEffectiveConfig(): Promise<Record<string, EffectiveCo
 /**
  * What the scheduler will actually do today, per account.
  *
- * Paused accounts are absent by design — v_scheduler_account_config filters on
- * `posting_paused IS FALSE`, so a paused account has no caps to override. The
- * modal reads that absence as "posting is off" rather than "no data".
+ * Reads the _all view so PAUSED accounts resolve too. They used to be absent
+ * (v_scheduler_account_config filters `posting_paused IS FALSE`), and the
+ * posting-settings modal treated that absence as "no data": it fell back to
+ * invented placeholders of 3/day, 10 GLP, 10 filler, and — worse — lost every
+ * ceiling, because the stepper bounds are all derived from these numbers. That
+ * showed on the one screen you open to UN-pause an account, so the numbers
+ * were wrong exactly when someone was about to act on them. Paused-ness is
+ * read from accounts.posting_paused, never from a row being missing here.
  */
 export const getEffectiveConfig = cachedFetcher(
   "scheduler-effective-config",
@@ -230,7 +235,7 @@ export async function readEffectiveFor(profile: string): Promise<EffectiveConfig
       guard_day_cap: number | null;
     }[]
   >(
-    "v_scheduler_account_config?select=max_posts_per_day,glp_week_cap,fil_week_cap," +
+    "v_scheduler_account_config_all?select=max_posts_per_day,glp_week_cap,fil_week_cap," +
       `age_days,throttle_reason,can_deliver,guard_day_cap&geelark_profile=eq.${encodeURIComponent(profile)}`,
   );
   const r = rows[0];
