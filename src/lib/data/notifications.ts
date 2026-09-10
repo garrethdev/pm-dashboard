@@ -242,7 +242,7 @@ export async function insertNotification(entry: {
 }): Promise<void> {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!key) return;
-  await fetch(`${process.env.SUPABASE_URL}/rest/v1/dashboard_notifications`, {
+  const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/dashboard_notifications`, {
     method: "POST",
     headers: {
       apikey: key,
@@ -260,4 +260,14 @@ export async function insertNotification(entry: {
     }),
     cache: "no-store",
   });
+  // Same trap as auditLog(): a 4xx/5xx resolves rather than throwing, so an
+  // unwritten notification was silent. It stays non-throwing -- the post-ban
+  // after() hook must not fail because the bell entry did -- but it no longer
+  // pretends the row landed.
+  if (!res.ok) {
+    console.error(
+      `notification insert rejected (HTTP ${res.status}) for ${entry.type}/${entry.target ?? "-"}:`,
+      await res.text().catch(() => "<no body>"),
+    );
+  }
 }

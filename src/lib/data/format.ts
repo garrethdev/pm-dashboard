@@ -23,6 +23,9 @@ export const RUN_STATE_TONE: Record<RunState, PillTone> = {
   overdue: "danger",
   failed: "danger",
   unknown: "neutral",
+  // Danger, not neutral: not knowing whether the fleet ran is an incident, and
+  // a grey pill reads as "fine, nothing to see".
+  unreachable: "danger",
 };
 
 export function formatEtShort(iso: string): string {

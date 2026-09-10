@@ -191,35 +191,36 @@ async function workflowFailures(since: string, limit: number): Promise<Incident[
   const key = process.env.N8N_API_KEY;
   if (!base || !key) return [];
   const nameById = new Map(TRACKED_WORKFLOWS.map((w) => [w.id, w.name]));
-  try {
-    // n8n prunes executions on its own retention schedule, so this source
-    // cannot reach as far back as the Postgres-backed ones.
-    const res = await fetch(
-      `${base}/api/v1/executions?status=error&limit=${Math.min(limit, 250)}`,
-      {
-        headers: { "X-N8N-API-KEY": key },
-        signal: AbortSignal.timeout(8_000),
-        cache: "no-store",
-      },
-    );
-    if (!res.ok) return [];
-    const body = (await res.json()) as {
-      data: { workflowId: string; startedAt: string; id: string }[];
-    };
-    return body.data
-      .filter((e) => e.startedAt >= since && nameById.has(e.workflowId))
-      .map((e) => ({
-        id: `workflow:${e.id}`,
-        at: e.startedAt,
-        tone: "danger" as const,
-        type: "Workflow",
-        entity: nameById.get(e.workflowId) ?? e.workflowId,
-        detail: "execution errored",
-        href: "/automation",
-      }));
-  } catch {
-    return [];
-  }
+  // Deliberately unguarded: a fetch, HTTP or parse failure must reach
+  // readSource() so it becomes a visible "could not be read" row. It used to be
+  // caught here and returned as [], which is indistinguishable from "no
+  // workflow has failed" -- the most dangerous thing this source could say.
+  //
+  // n8n prunes executions on its own retention schedule, so this source
+  // cannot reach as far back as the Postgres-backed ones.
+  const res = await fetch(
+    `${base}/api/v1/executions?status=error&limit=${Math.min(limit, 250)}`,
+    {
+      headers: { "X-N8N-API-KEY": key },
+      signal: AbortSignal.timeout(8_000),
+      cache: "no-store",
+    },
+  );
+  if (!res.ok) throw new Error(`n8n HTTP ${res.status}`);
+  const body = (await res.json()) as {
+    data: { workflowId: string; startedAt: string; id: string }[];
+  };
+  return body.data
+    .filter((e) => e.startedAt >= since && nameById.has(e.workflowId))
+    .map((e) => ({
+      id: `workflow:${e.id}`,
+      at: e.startedAt,
+      tone: "danger" as const,
+      type: "Workflow",
+      entity: nameById.get(e.workflowId) ?? e.workflowId,
+      detail: "execution errored",
+      href: "/automation",
+    }));
 }
 
 /**
@@ -337,6 +338,49 @@ async function postBanCleanups(since: string, limit: number): Promise<Incident[]
   });
 }
 
+/**
+ * A source that could not be READ becomes an incident in its own right.
+ *
+ * Every source used to be wrapped in `.catch(() => [])`, which had one very
+ * bad property: if all six failed, aggregation still succeeded and the page
+ * rendered a clean, empty, reassuring feed. A monitoring surface that goes
+ * quiet when its own plumbing breaks is worse than no monitoring surface,
+ * because silence is the same shape as good news.
+ *
+ * Turning the failure into a row rather than a thrown error is deliberate. One
+ * dead source must not blank the other five -- the rest of the feed is still
+ * true and still worth showing. So the read failure travels as data, in the
+ * same list, sorted to the top by its `at`, where it cannot be missed.
+ *
+ * The id is stable per source (not per occurrence) so the bell's deep-link
+ * contract holds and a flapping source does not spawn a new row every minute.
+ */
+async function readSource(
+  label: string,
+  href: string,
+  run: () => Promise<Incident[]>,
+): Promise<Incident[]> {
+  try {
+    return await run();
+  } catch (err) {
+    console.error(`incident source "${label}" could not be read`, err);
+    return [
+      {
+        id: `source-unreadable:${label}`,
+        at: new Date().toISOString(),
+        tone: "danger" as PillTone,
+        type: "Monitoring",
+        entity: label,
+        detail:
+          `${label} could not be read just now, so this feed is incomplete. ` +
+          `Anything from that source is MISSING, not absent -- do not read the ` +
+          `rest of this list as an all-clear until it comes back.`,
+        href,
+      },
+    ];
+  }
+}
+
 async function fetchIncidents(
   days: number | null,
   perSource: number,
@@ -344,12 +388,12 @@ async function fetchIncidents(
 ): Promise<Incident[]> {
   const since = sinceIso(days);
   const groups = await Promise.all([
-    bans(since, perSource).catch(() => []),
-    failedDeliveries(since, perSource).catch(() => []),
-    shortfalls(since, perSource).catch(() => []),
-    workflowFailures(since, perSource).catch(() => []),
-    analyticsFeeds().catch(() => []),
-    postBanCleanups(since, perSource).catch(() => []),
+    readSource("Bans", "/accounts", () => bans(since, perSource)),
+    readSource("Failed deliveries", "/calendar", () => failedDeliveries(since, perSource)),
+    readSource("Scheduler shortfalls", "/calendar", () => shortfalls(since, perSource)),
+    readSource("Workflow failures", "/automation", () => workflowFailures(since, perSource)),
+    readSource("Analytics feeds", "/analytics", () => analyticsFeeds()),
+    readSource("Post-ban cleanups", "/accounts", () => postBanCleanups(since, perSource)),
   ]);
   return groups
     .flat()

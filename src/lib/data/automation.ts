@@ -1,4 +1,4 @@
-import { makeExecutionsFetcher, type N8nExecution } from "@/lib/data/n8n";
+import { UNREACHABLE, makeExecutionsFetcher, type ExecutionRead } from "@/lib/data/n8n";
 
 /**
  * The tracked workflow list — hardcoded per plan §8 (IDs are stable).
@@ -64,7 +64,16 @@ export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
   { id: "FknqQM7GNJJmViRP", name: "Proxy & Account Audit", expected: "biweekly Mon", schedule: { type: "none" } },
 ];
 
-export type RunState = "ok" | "failed" | "overdue" | "stale" | "running" | "pending" | "unknown";
+export type RunState =
+  | "ok"
+  | "failed"
+  | "overdue"
+  | "stale"
+  | "running"
+  | "pending"
+  | "unknown"
+  /** n8n itself could not be read. NOT the same as "this never ran". */
+  | "unreachable";
 
 export interface WorkflowStatus {
   id: string;
@@ -117,7 +126,10 @@ export function formatEt(iso: string | null): string {
   return `${day} ${time}`;
 }
 
-function computeState(wf: TrackedWorkflow, exec: N8nExecution | null, now: Date): { state: RunState; label: string } {
+function computeState(wf: TrackedWorkflow, exec: ExecutionRead, now: Date): { state: RunState; label: string } {
+  // Answered before anything else: with no read there is no evidence, and every
+  // rule below (overdue, stale, "No runs") would otherwise be inventing one.
+  if (exec === UNREACHABLE) return { state: "unreachable", label: "Can't check" };
   if (exec && (exec.status === "running" || exec.status === "waiting" || !exec.finished)) {
     return { state: "running", label: "Running" };
   }
@@ -167,8 +179,11 @@ export async function getAutomationStatuses(): Promise<{
   const now = new Date();
 
   const rows = TRACKED_WORKFLOWS.map((wf) => {
-    const exec = executions[wf.id] ?? null;
-    const { state, label } = computeState(wf, exec, now);
+    const read = executions[wf.id] ?? null;
+    const { state, label } = computeState(wf, read, now);
+    // Everything below wants the execution or nothing; an unreadable source has
+    // no timestamps, no duration and no execution to link to.
+    const exec = read === UNREACHABLE ? null : read;
     return {
       id: wf.id,
       name: wf.name,
