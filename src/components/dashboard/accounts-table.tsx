@@ -32,7 +32,10 @@ import { cn } from "@/lib/utils";
 
 type HealthFilter = "all" | "healthy" | "attention";
 type PlatformFilter = "all" | "tiktok" | "instagram";
-type CharFilter = "all" | "Character 2" | "Character 3" | "Character 4";
+/** Derived from the rows, never a fixed list — the hardcoded union stopped at
+ *  Character 4, so a new character could not be filtered for until someone
+ *  remembered to edit it. */
+type CharFilter = string;
 type SortKey = "views" | "suppressed" | "age" | "warmup" | "lastpost";
 
 const TH = "sticky top-0 z-10 bg-card pb-2 font-medium whitespace-nowrap";
@@ -131,6 +134,12 @@ export function AccountsTable({
   contentTypeOptions?: Record<string, ContentTypeOption[]>;
   className?: string;
 }) {
+  const characterOptions = [
+    { value: "all", label: "All" },
+    ...[...new Set(allRows.map((r) => r.character).filter(Boolean))]
+      .sort()
+      .map((c) => ({ value: c, label: c.replace("Character ", "Char ") })),
+  ];
   const showActions = mode === "page";
   const fullColumns = mode === "page";
   const router = useRouter();
@@ -334,12 +343,7 @@ export function AccountsTable({
             <FilterPills
               value={character}
               onChange={setCharacter}
-              options={[
-                { value: "all", label: "All" },
-                { value: "Character 2", label: "Char 2" },
-                { value: "Character 3", label: "Char 3" },
-                { value: "Character 4", label: "Char 4" },
-              ]}
+              options={characterOptions}
             />
           </div>
         </div>

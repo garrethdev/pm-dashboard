@@ -1,4 +1,5 @@
 import { CONTENT_TYPES_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
+import { fetchCharacterOverrides } from "@/lib/data/cadence";
 import { sbRpc } from "@/lib/data/supabase";
 
 /**
@@ -86,13 +87,18 @@ export interface CharacterTypes {
   types: ContentTypeRow[];
   /** Weekly GLP allocation currently spent across this character's live lanes. */
   allocated: number;
+  /** THIS character's weekly GLP budget: its own override where it has one,
+   *  the fleet number otherwise. Character 5 runs 7 a week against a fleet of
+   *  11, and measuring it against the fleet painted a correct mix red. */
+  glpPerWeek: number;
 }
 
 export interface ContentTypesData {
   rangeDays: number | null;
   /** When the performance tables were last filled — this page is not live. */
   lastIngest: string | null;
-  /** The fleet GLP budget each character's live lanes must add up to. */
+  /** The FLEET GLP budget. Only correct for a character that has no override
+   *  of its own — read CharacterTypes.glpPerWeek per character instead. */
   glpPerWeek: number;
   characters: CharacterTypes[];
   all: ContentTypeRow[];
@@ -190,7 +196,10 @@ function rank(a: ContentTypeRow, b: ContentTypeRow): number {
 }
 
 async function fetchContentTypes(days: number | null, glpPerWeek: number): Promise<ContentTypesData> {
-  const raw = await sbRpc<RawStat[]>("content_type_stats", { p_days: days });
+  const [raw, overrides] = await Promise.all([
+    sbRpc<RawStat[]>("content_type_stats", { p_days: days }),
+    fetchCharacterOverrides(),
+  ]);
   const all = (raw ?? []).map(toRow);
 
   // The cards are per character, and only GLP lanes belong to a character —
@@ -211,6 +220,7 @@ async function fetchContentTypes(days: number | null, glpPerWeek: number): Promi
         allocated: types
           .filter((t) => t.lifecycle === "live")
           .reduce((acc, t) => acc + (t.cadencePerWeek ?? 0), 0),
+        glpPerWeek: overrides[name]?.glpWeekCap ?? glpPerWeek,
       };
     }),
     all: all.sort(

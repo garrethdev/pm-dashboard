@@ -44,7 +44,8 @@ const compact = (v: number) =>
 /** Retired is not one of these: it is the Show-retired toggle's job, the same
  *  split the Accounts table uses for banned accounts. */
 type StatusFilter = "all" | "live" | "paused";
-type CharFilter = "all" | "Character 2" | "Character 3" | "Character 4";
+/** Derived from the data — see the same note in accounts-table. */
+type CharFilter = string;
 
 type SortKey =
   | "displayName"
@@ -78,6 +79,10 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [character, setCharacter] = useState<CharFilter>("all");
+  const characterOptions = [
+    { value: "all", label: "All" },
+    ...data.characters.map((c) => ({ value: c.name, label: c.name.replace("Character ", "Char ") })),
+  ];
   const [showRetired, setShowRetired] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>({
     key: "score",
@@ -200,7 +205,7 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
         </div>
       </div>
 
-      <ContentTypeCards characters={data.characters} glpPerWeek={data.glpPerWeek} />
+      <ContentTypeCards characters={data.characters} />
 
       <DashCard
         title="Performance"
@@ -234,12 +239,7 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
                     <FilterPills
                       value={character}
                       onChange={setCharacter}
-                      options={[
-                        { value: "all", label: "All" },
-                        { value: "Character 2", label: "Char 2" },
-                        { value: "Character 3", label: "Char 3" },
-                        { value: "Character 4", label: "Char 4" },
-                      ]}
+                      options={characterOptions}
                     />
                   </div>
                 </div>
@@ -317,7 +317,10 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
           action={pending.action}
           target={pending.target}
           peers={peersFor(pending.target)}
-          glpPerWeek={data.glpPerWeek}
+          glpPerWeek={
+            data.characters.find((c) => c.name === pending.target.character)?.glpPerWeek ??
+            data.glpPerWeek
+          }
           onClose={() => {
             setPending(null);
             // The server component re-renders with the new registry state; the

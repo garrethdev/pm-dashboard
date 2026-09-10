@@ -2,9 +2,24 @@ import { TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest } from "@/lib/data/supabase";
 
 /**
- * Cadence (plan §6) — content_type_registry grouped by character, with
- * per-character Σ GLP indicator (must equal exactly 10) and each character's
- * filler cadence (registry row character='All', content_type='filler').
+ * Cadence (plan §6) — content_type_registry grouped by character, with each
+ * character's GLP mix and the caps that mix has to add up to.
+ *
+ * There is no single fleet cadence any more. The scheduler resolves
+ *   fleet default -> character override -> account override -> age ramp -> health
+ * and Character 5 (2026-09-10) is the first character to sit off the fleet
+ * default: 7 GLP a week against the fleet's 11, and no filler lane at all.
+ * Everything here therefore carries BOTH the raw override (null = inherits)
+ * and enough to resolve the effective number once the fleet defaults are known.
+ *
+ * Storage gotcha, same as the per-account override: a character's caps live on
+ * THREE rows keyed by bucket —
+ *   bucket = null     -> max_posts_per_day
+ *   bucket = 'glp'    -> weekly_cap
+ *   bucket = 'filler' -> weekly_cap
+ * A row that does not exist is not "zero", it is "inherit the fleet". Keeping
+ * those apart is the whole point: write a row for every character and changing
+ * one fleet number stops moving anyone.
  */
 export interface CadenceLane {
   contentType: string;
@@ -18,14 +33,85 @@ export interface CadenceLane {
   character: string;
 }
 
+/** Raw character-scope override. null on a field = inherits the fleet default. */
+export interface CharacterOverride {
+  maxPostsPerDay: number | null;
+  glpWeekCap: number | null;
+  fillerWeekCap: number | null;
+}
+
+export const NO_OVERRIDE: CharacterOverride = {
+  maxPostsPerDay: null,
+  glpWeekCap: null,
+  fillerWeekCap: null,
+};
+
+export interface CadenceCharacter {
+  name: string;
+  lanes: CadenceLane[];
+  glpSum: number;
+  override: CharacterOverride;
+}
+
 export interface CadenceData {
-  /** Active GLP lanes grouped per character, worst offenders first. */
-  characters: { name: string; lanes: CadenceLane[]; glpSum: number; fillerPerWeek: number }[];
+  /** Active GLP lanes grouped per character. */
+  characters: CadenceCharacter[];
   retired: CadenceLane[];
 }
 
+/** The fleet numbers a character falls back to, field by field. */
+export interface CadenceFallback {
+  maxPostsPerDay: number;
+  glpWeek: number;
+  fillerWeek: number;
+}
+
+/** What a character actually posts to: its own override where set, else fleet. */
+export function resolveCharacterCaps(
+  override: CharacterOverride,
+  fleet: CadenceFallback,
+): CadenceFallback {
+  return {
+    maxPostsPerDay: override.maxPostsPerDay ?? fleet.maxPostsPerDay,
+    glpWeek: override.glpWeekCap ?? fleet.glpWeek,
+    fillerWeek: override.fillerWeekCap ?? fleet.fillerWeek,
+  };
+}
+
+interface RawCharacterOverride {
+  scope_key: string;
+  bucket: string | null;
+  weekly_cap: number | null;
+  max_posts_per_day: number | null;
+  active: boolean;
+}
+
+/** Collapse a character's per-bucket rows into one setting. Inactive rows are
+ *  ignored — switching an override off has to read as "inherit", not as 0. */
+function foldCharacterRows(rows: RawCharacterOverride[]): CharacterOverride {
+  const live = rows.filter((r) => r.active);
+  return {
+    maxPostsPerDay: live.find((r) => r.bucket === null)?.max_posts_per_day ?? null,
+    glpWeekCap: live.find((r) => r.bucket === "glp")?.weekly_cap ?? null,
+    fillerWeekCap: live.find((r) => r.bucket === "filler")?.weekly_cap ?? null,
+  };
+}
+
+/** Un-cached read — callers inside a cached fetcher, and the API route, share it. */
+export async function fetchCharacterOverrides(): Promise<Record<string, CharacterOverride>> {
+  const rows = await sbRest<RawCharacterOverride[]>(
+    "scheduler_overrides?select=scope_key,bucket,weekly_cap,max_posts_per_day,active&scope=eq.character",
+  );
+  const byCharacter: Record<string, RawCharacterOverride[]> = {};
+  for (const r of rows) (byCharacter[r.scope_key] ??= []).push(r);
+
+  const out: Record<string, CharacterOverride> = {};
+  for (const [name, group] of Object.entries(byCharacter)) out[name] = foldCharacterRows(group);
+  return out;
+}
+
 async function fetchCadence(): Promise<CadenceData> {
-  const [registry, pools] = await Promise.all([
+  const [registry, pools, overrides] = await Promise.all([
     sbRest<
       {
         content_type: string;
@@ -43,6 +129,7 @@ async function fetchCadence(): Promise<CadenceData> {
     sbRest<{ content_type: string; character: string; pool_n: number }[]>(
       "v_scheduler_pool?select=content_type,character,pool_n",
     ),
+    fetchCharacterOverrides(),
   ]);
 
   const poolByType = new Map(pools.map((p) => [`${p.content_type}|${p.character}`, p.pool_n]));
@@ -62,9 +149,6 @@ async function fetchCadence(): Promise<CadenceData> {
     character: r.character,
   });
 
-  const fillerRow = registry.find((r) => r.active && r.content_type === "filler");
-  const fillerPerWeek = fillerRow?.cadence_per_week ?? 10;
-
   const glpActive = registry.filter(
     (r) => r.active && r.quota_bucket === "glp" && r.character.startsWith("Character"),
   );
@@ -80,7 +164,7 @@ async function fetchCadence(): Promise<CadenceData> {
         name,
         lanes,
         glpSum: lanes.reduce((acc, l) => acc + (l.cadencePerWeek ?? 0), 0),
-        fillerPerWeek,
+        override: overrides[name] ?? NO_OVERRIDE,
       };
     }),
     retired: registry

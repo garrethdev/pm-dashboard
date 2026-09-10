@@ -380,6 +380,213 @@ export async function saveCadence(
   }
 }
 
+/* ── Character cadence (Adjust Cadence, scoped to one character) ────────────
+ * The character layer sits between the fleet defaults and the per-account
+ * override. Character 5 is the first to use it: 7 GLP a week against the
+ * fleet's 11, no filler at all, 1 post a day.
+ *
+ * The rule that makes this layer safe: a field is written ONLY when it differs
+ * from inherit. An absent row means "follow the fleet", so writing all three
+ * rows for every character — which is what the per-account save does — would
+ * quietly sever every character from the fleet default and turn one edit into
+ * four forever after. `null` here means inherit, and inherit means no row.
+ */
+
+export interface CharacterOverrideWrite {
+  maxPostsPerDay: number | null;
+  glpWeekCap: number | null;
+  fillerWeekCap: number | null;
+}
+
+const CHARACTER_OVERRIDE_PATH = (character: string) =>
+  `scheduler_overrides?scope=eq.character&scope_key=eq.${encodeURIComponent(character)}`;
+
+/**
+ * Columns on a character override row that this editor does NOT manage.
+ *
+ * They are read back and written out again untouched. Character 5's filler row
+ * carries `daily_cap = 0` alongside its `weekly_cap = 0`, and the first version
+ * of this save dropped it to null on a round-trip: rebuilding a row from only
+ * the fields the form knows about silently deletes every field it does not.
+ * Anything added to scheduler_overrides later is preserved by adding it here.
+ *
+ * The value paired with each column is what to write when the bucket has no
+ * row yet. It is null for every nullable column, but `bypass_guards` is NOT
+ * NULL in the table, and PostgREST rejects a bulk insert whose objects do not
+ * all share the same keys — so the column cannot simply be omitted for the
+ * rows that lack it. It has to be present with a legal value.
+ */
+const CARRIED_COLUMNS = {
+  daily_cap: null,
+  min_gap_minutes: null,
+  spacing_minutes: null,
+  window_start: null,
+  window_end: null,
+  bypass_guards: false,
+  only_content_types: null,
+} as const;
+
+type CarriedRow = Record<string, unknown> & { bucket: string | null };
+
+const CHARACTER_OVERRIDE_COLS = [
+  "bucket",
+  "weekly_cap",
+  "max_posts_per_day",
+  "active",
+  ...Object.keys(CARRIED_COLUMNS),
+].join(",");
+
+async function readCharacterRows(character: string): Promise<CarriedRow[]> {
+  const res = await sbFetch(
+    `${CHARACTER_OVERRIDE_PATH(character)}&select=${CHARACTER_OVERRIDE_COLS}`,
+    { method: "GET" },
+  );
+  if (!res.ok) throw new Error(`Supabase read failed (HTTP ${res.status})`);
+  return (await res.json()) as CarriedRow[];
+}
+
+/** Current character override rows, for the audit old_value. */
+export async function getCharacterOverrideState(character: string): Promise<unknown> {
+  return readCharacterRows(character);
+}
+
+/**
+ * Replace one character's override rows.
+ *
+ * Delete-then-insert, not upsert: the unique index is on an expression
+ * (coalesce(bucket,'')), which PostgREST's on_conflict cannot target. Same
+ * reason as saveSchedulerOverride.
+ *
+ * An input of all-nulls deletes every row and leaves the character inheriting
+ * the fleet, which is how a field is cleared back to default.
+ */
+export async function saveCharacterOverride(
+  character: string,
+  input: CharacterOverrideWrite,
+  userEmail: string,
+): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10);
+  const note = `${today} ${userEmail}: set via dashboard`;
+
+  // Read before deleting so the columns this form does not manage survive.
+  const existing = await readCharacterRows(character);
+  const carriedFor = (bucket: string | null) => {
+    const prev = existing.find((r) => r.bucket === bucket);
+    const out: Record<string, unknown> = {};
+    for (const [col, absent] of Object.entries(CARRIED_COLUMNS)) out[col] = prev?.[col] ?? absent;
+    return out;
+  };
+
+  const del = await sbFetch(CHARACTER_OVERRIDE_PATH(character), {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
+  if (!del.ok) throw new Error(`Override clear failed (HTTP ${del.status}). Nothing was changed`);
+
+  // PostgREST rejects a bulk insert whose objects don't share the same keys, so
+  // every row carries the full column set and nulls what doesn't apply to it.
+  const row = (
+    bucket: string | null,
+    fields: {
+      weekly_cap?: number | null;
+      max_posts_per_day?: number | null;
+      daily_cap?: number | null;
+    },
+  ) => ({
+    scope: "character",
+    scope_key: character,
+    bucket,
+    weekly_cap: fields.weekly_cap ?? null,
+    max_posts_per_day: fields.max_posts_per_day ?? null,
+    ...carriedFor(bucket),
+    // After the carried columns so an explicit daily_cap wins over the stored
+    // one; undefined leaves whatever carriedFor put there.
+    ...(fields.daily_cap === undefined ? {} : { daily_cap: fields.daily_cap }),
+    active: true,
+    note,
+  });
+
+  // A bucket gets a row when the form overrides it, and ALSO when it only
+  // carries settings this form does not manage — dropping those would be the
+  // same silent deletion the carried columns exist to prevent.
+  const keeps = (bucket: string | null) =>
+    Object.keys(CARRIED_COLUMNS).some((col) => {
+      const v = existing.find((r) => r.bucket === bucket)?.[col];
+      return v !== null && v !== undefined && v !== false;
+    });
+
+  /** As `keeps`, but for filler, where the daily cap is resolved separately
+   *  above and must not re-justify a row on its own once it has been cleared. */
+  const keepsFiller = (resolvedDaily: number | null | undefined) =>
+    Object.keys(CARRIED_COLUMNS).some((col) => {
+      const v =
+        col === "daily_cap"
+          ? (resolvedDaily ?? null)
+          : existing.find((r) => r.bucket === "filler")?.[col];
+      return v !== null && v !== undefined && v !== false;
+    });
+
+  const rows: ReturnType<typeof row>[] = [];
+  if (input.maxPostsPerDay !== null || keeps(null)) {
+    rows.push(row(null, { max_posts_per_day: input.maxPostsPerDay }));
+  }
+  if (input.glpWeekCap !== null || keeps("glp")) rows.push(row("glp", { weekly_cap: input.glpWeekCap }));
+
+  // Filler's weekly and daily caps have to move together.
+  //
+  // A weekly cap of 0 means "this character has no filler lane", and the daily
+  // cap is a SEPARATE column with its own fallback chain
+  // (account -> character -> fleet). Leaving it empty let it fall back to the
+  // fleet's 2, so the limits table showed room for two filler posts a day on a
+  // character allowed none for the week.
+  //
+  // The reverse matters just as much, and is how this first went wrong: on the
+  // way back to inherit, a daily 0 left behind by a previous save was treated
+  // as a value worth carrying, and Character 4 ended up with a weekly cap of 3
+  // (inherited) against a daily cap of 0 — no filler at all, from a character
+  // that was supposed to be back on the fleet defaults. So a daily 0 is dropped
+  // whenever the weekly cap is not also 0: that pairing is incoherent, and the
+  // only thing that ever writes it is the line above. A daily cap set by hand
+  // to something other than 0 is still carried through untouched.
+  const carriedFillerDaily = existing.find((r) => r.bucket === "filler")?.daily_cap ?? null;
+  const fillerDaily =
+    input.fillerWeekCap === 0 ? 0 : carriedFillerDaily === 0 ? null : undefined;
+  if (input.fillerWeekCap !== null || fillerDaily === 0 || keepsFiller(fillerDaily)) {
+    rows.push(row("filler", { weekly_cap: input.fillerWeekCap, daily_cap: fillerDaily }));
+  }
+
+  // Everything inherited: the delete above already left the character on the
+  // fleet defaults, and an empty POST is a PostgREST error rather than a no-op.
+  if (rows.length === 0) return;
+
+  const res = await sbFetch("scheduler_overrides", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(rows),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Character override write failed (HTTP ${res.status}). ${character} is now inheriting the fleet defaults`,
+    );
+  }
+}
+
+/** Write one character's GLP lane mix. The fleet buckets are left alone. */
+export async function saveCharacterLanes(lanes: CadenceLaneWrite[]): Promise<void> {
+  for (const lane of lanes) {
+    const res = await sbFetch(registryPath(lane.contentType, lane.character), {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ cadence_per_week: lane.cadencePerWeek }),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `Cadence write failed for ${lane.contentType} (HTTP ${res.status}). earlier lanes were saved`,
+      );
+    }
+  }
+}
+
 /* ── Content type lifecycle ────────────────────────────────────────────────── */
 
 export type ContentTypeLifecycle = "live" | "paused" | "retired";

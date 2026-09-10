@@ -30,29 +30,21 @@ export const LIFECYCLE_TONE: Record<Lifecycle, PillTone> = {
   retired: "gray",
 };
 
-export function ContentTypeCards({
-  characters,
-  glpPerWeek,
-}: {
-  characters: CharacterTypes[];
-  glpPerWeek: number;
-}) {
+// No fleet glpPerWeek prop: each character carries its own weekly budget now,
+// because a character can sit off the fleet default (Character 5 runs 7 a week
+// against a fleet of 11) and measuring it against the fleet painted a correct
+// mix red.
+export function ContentTypeCards({ characters }: { characters: CharacterTypes[] }) {
   return (
     <div className="grid gap-3 lg:grid-cols-3">
       {characters.map((c) => (
-        <CharacterCard key={c.name} character={c} glpPerWeek={glpPerWeek} />
+        <CharacterCard key={c.name} character={c} />
       ))}
     </div>
   );
 }
 
-function CharacterCard({
-  character,
-  glpPerWeek,
-}: {
-  character: CharacterTypes;
-  glpPerWeek: number;
-}) {
+function CharacterCard({ character }: { character: CharacterTypes }) {
   // Ranked by median views, which is the column the list actually shows —
   // ordering by the composite score meant the numbers on screen read out of
   // order. Lanes with no measurement sink to the bottom rather than to the top.
@@ -77,8 +69,9 @@ function CharacterCard({
     <Card className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h3 className="truncate text-sm font-semibold">{character.name}</h3>
-        <StatusPill tone={character.allocated === glpPerWeek ? "neutral" : "danger"}>
-          {character.allocated} / {glpPerWeek} per week
+        {/* Against THIS character's budget, not the fleet's. */}
+        <StatusPill tone={character.allocated === character.glpPerWeek ? "neutral" : "danger"}>
+          {character.allocated} / {character.glpPerWeek} per week
         </StatusPill>
       </div>
 
