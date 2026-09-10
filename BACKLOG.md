@@ -18,6 +18,50 @@ Newest first within each list.
 
 # V1 — open work
 
+## Verify Character 5's first scheduled run
+
+**Un-paused 2026-09-10 at ~07:31 ET — an hour after that day's 06:30 run had
+already fired, so nothing was placed on the 10th.** The first run that sees the
+character is **06:30 ET on 2026-09-11**. Until it has been checked once, the
+whole Character 5 wiring is unverified in the only way that counts.
+
+**Expect four placements: one `cleora` each on Profiles 64, 65, 70 and 72.**
+
+Four is the number to hold onto. It would have been two before 2026-09-10 —
+Profiles 70 and 72 are 10 days old, and the 9–15 day ramp tier grants one slot a
+day but zero GLP, because that slot is meant for filler and Character 5 has no
+filler lane. The ramp now lets GLP take the slot where there is no filler, so
+they post from day one instead of waiting until 2026-09-16. **If only 64 and 65
+are placed, that change did not take.**
+
+```sql
+-- 1. the placements themselves
+select geelark_profile, content_type, content_id, posting_time, posting_status
+from unified_posts
+where posting_date::date = (now() at time zone 'America/New_York')::date
+  and geelark_profile in ('Profile 64','Profile 65','Profile 70','Profile 72');
+
+-- 2. must be EMPTY. A 'Character 5 / filler / pool empty' row means something
+--    is still reading the fleet filler quota instead of the character's 0.
+select * from scheduler_shortfalls
+where date = (now() at time zone 'America/New_York')::date and "character" = 'Character 5';
+
+-- 3. resolved caps. max_posts_per_day must be 1 for all four -- 2 would mean
+--    the age ramp is raising the cap above the character's own again.
+select geelark_profile, age_days, health, max_posts_per_day,
+       max_glp_per_day, max_filler_per_day, throttle_reason
+from v_scheduler_account_config where "character" = 'Character 5';
+```
+
+Also worth a look on the first run, since neither has been seen live yet: the
+posts should land inside 11:00–22:15 ET, and `geelark_tasks` should show them
+succeeding rather than failing at upload — Profiles 70, 71 and 72 all failed
+their first post attempt on 2026-09-09 with the same network upload error, which
+is what surfaced the Last Post bug in the first place.
+
+**Done when:** four posts placed, no shortfall row, caps reading 1/day, and at
+least one post confirmed delivered rather than merely scheduled.
+
 ## Migrate the cache layer off `unstable_cache`
 
 **Found 2026-09-07 in a backend review, then spiked the same day.** Next 16's
