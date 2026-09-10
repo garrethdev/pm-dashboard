@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpDown, ArrowUpRight, ExternalLink } from "@/components/ui/icons";
@@ -677,6 +677,9 @@ function AccountPerformance({ rows }: { rows: AccountPerfRow[] }) {
 
 /* ──────────────────────────────── Page shell ──────────────────────────────── */
 
+/** The slice the server rendered into `initial`. */
+const SERVER_KEY = "7d|all";
+
 export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
   const [platform, setPlatform] = useState<PlatformKey>("all");
   const [range, setRange] = useState<RangeKey>("7d");
@@ -685,23 +688,67 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
   const [data, setData] = useState(initial);
   const [loading, setLoading] = useState(false);
 
-  const load = useCallback(async (r: RangeKey, p: PlatformKey) => {
+  /**
+   * Which slice `data` actually holds — not which slice the pills are showing.
+   *
+   * These came apart in two ways, and both put real numbers under a wrong
+   * label. The first was a "skip the redundant first fetch" test written as
+   * `range === "7d" && platform === "all"`, which is true on the initial mount
+   * AND every later time you navigate back to those pills. 7d/all -> 30d/tiktok
+   * -> 7d/all therefore skipped the refetch and left the TikTok 30-day numbers
+   * sitting under a 7-day All header.
+   *
+   * The second was request ordering: two switches in quick succession are two
+   * in-flight fetches, and whichever ANSWERS last won, not whichever was asked
+   * last. A slow 90d response landing after a fast 7d one overwrote it.
+   *
+   * `requestedKey` is the fix for both. It records the slice we last asked for,
+   * so a response that no longer matches is dropped on arrival, and the effect
+   * fires on any real change of selection instead of guessing from the values.
+   */
+  const requestedKey = useRef(SERVER_KEY);
+  const [loadedKey, setLoadedKey] = useState(SERVER_KEY);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+
+  const load = useCallback(async (r: RangeKey, p: PlatformKey, key: string) => {
     setLoading(true);
+    setFailedKey(null);
     try {
       const res = await fetch(`/api/analytics?range=${r}&platform=${p}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`analytics HTTP ${res.status}`);
       const body = await res.json();
-      if (body.data) setData(body.data as AnalyticsData);
-    } catch {
-      /* keep the last good numbers rather than blanking the page */
+      if (requestedKey.current !== key) return; // superseded by a newer pick
+      if (!body.data) throw new Error("analytics response carried no data");
+      setData(body.data as AnalyticsData);
+      setLoadedKey(key);
+    } catch (err) {
+      if (requestedKey.current !== key) return;
+      // The old numbers stay on screen — blanking the page helps nobody — but
+      // the banner below says whose numbers they are, so the header is never
+      // read as a description of what is displayed.
+      console.error("analytics range load failed", err);
+      setFailedKey(key);
+    } finally {
+      if (requestedKey.current === key) setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  // The server already rendered 7d/all, so skip the redundant first fetch.
-  const isInitial = range === "7d" && platform === "all";
+  const wantedKey = `${range}|${platform}`;
   useEffect(() => {
-    if (!isInitial) load(range, platform);
-  }, [range, platform, isInitial, load]);
+    // Guarded on the REQUESTED key, not the loaded one: a failed load must not
+    // re-arm this effect and spin.
+    if (wantedKey === requestedKey.current) return;
+    requestedKey.current = wantedKey;
+    load(range, platform, wantedKey);
+  }, [wantedKey, range, platform, load]);
+
+  const showingOtherSlice = !loading && loadedKey !== wantedKey;
+  const loadedLabel = (() => {
+    const [r, p] = loadedKey.split("|");
+    const rl = RANGES.find((x) => x.key === r)?.label ?? r;
+    const pl = p === "all" ? "All platforms" : p === "tiktok" ? "TikTok" : "Instagram";
+    return `${rl} · ${pl}`;
+  })();
 
   const s = data.summary;
   const series = data.series;
@@ -746,6 +793,19 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
           />
         </div>
       </div>
+
+      {showingOtherSlice && (
+        <div
+          role="status"
+          className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-text"
+        >
+          {failedKey
+            ? "That range could not be loaded."
+            : "That range has not loaded."}{" "}
+          <strong>Everything below is still {loadedLabel}</strong> — not the
+          selection above. Switch again to retry.
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         {/* While a range or platform switch is in flight, everything below is

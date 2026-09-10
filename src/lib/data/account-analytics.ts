@@ -254,6 +254,9 @@ async function fetchAccountAnalytics(
   };
 }
 
+/** Invalidation tag for one handle. Platform-free on purpose — a write about
+ *  an account should expire that handle on both platforms, and over-expiring
+ *  costs a refetch while under-expiring serves a wrong number. */
 export function accountAnalyticsTag(account: string): string {
   return `account-analytics:${account}`;
 }
@@ -266,8 +269,15 @@ export function getAccountAnalytics(
   const entry = ACCOUNT_RANGES.find((r) => r.key === range);
   // `?? 7` would be wrong: "all" carries a deliberate null.
   const days = entry ? entry.days : 7;
+  // Platform belongs in the KEY, even though it is absent from the tag above.
+  // rowsFor() picks a different table per platform (post_performance vs
+  // tt_post_performance), so handle+range alone identified two different
+  // answers: the same username on both platforms — which is the normal case
+  // here, characters are posted to both — served whichever platform's numbers
+  // were fetched first, under the other one's heading. Bumped to v2 so the
+  // v1 entries that were computed under the ambiguous key cannot be read back.
   return cachedFetcher(
-    `account-analytics-v1:${account ?? "none"}:${range}`,
+    `account-analytics-v2:${account ?? "none"}:${platform}:${range}`,
     TTL.supabase,
     () => fetchAccountAnalytics(account, platform, days),
     { tags: account ? [accountAnalyticsTag(account)] : [] },

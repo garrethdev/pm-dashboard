@@ -99,7 +99,10 @@ export default async function AccountDetailPage({
   const isIg = data.platform === "instagram";
 
   const stats: { label: string; value: string }[] = [
-    { label: "Avg views (7d)", value: num(data.avgViews7d) },
+    // Reads v_account_health_v3.median_7d_r — a MEDIAN. It was labelled "Avg
+    // views" for months, which is a different statistic and a materially
+    // different number on a feed with one viral post in it.
+    { label: "Median views (7d)", value: num(data.medianViews7d) },
     { label: "Highest views", value: num(data.highestViews) },
     { label: "Total views", value: num(data.totalViews) },
     { label: "Followers", value: num(data.followers) },

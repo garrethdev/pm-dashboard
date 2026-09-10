@@ -41,7 +41,8 @@ export interface AccountDetail {
   displayName: string | null;
   followers: number | null;
   /** Views, all-time, across both perf tables. */
-  avgViews7d: number | null;
+  /** median_7d_r from v_account_health_v3 — a median, not a mean. */
+  medianViews7d: number | null;
   highestViews: number | null;
   totalViews: number | null;
   postsCounted: number;
@@ -374,7 +375,7 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
     avatarUrl: card.avatarUrl,
     displayName: card.displayName,
     followers: card.followers,
-    avgViews7d: healthRows[0]?.median_7d_r ?? null,
+    medianViews7d: healthRows[0]?.median_7d_r ?? null,
     highestViews: nums.length ? Math.max(...nums) : null,
     totalViews: nums.length ? nums.reduce((s, n) => s + n, 0) : null,
     postsCounted: nums.length,
