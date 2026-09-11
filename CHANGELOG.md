@@ -216,6 +216,15 @@ posts.
   the dialog insisted the freed weekly slots go somewhere, and filler — being
   one fleet-wide lane — has no siblings to give them to. It has no slots to
   hand out either, so it is no longer asked to.
+
+  **The dialog now also says how far the change reaches.** Pausing or retiring
+  filler there stops it for *every* character, because there is only one filler
+  lane in the system. Stopping it for one character is a different screen —
+  that character's own filler cap in Adjust Cadence, which is how Character 5
+  has run no filler since 2026-09-10 while everyone else keeps theirs. Garreth
+  went looking for that on Content Types first, which is a fair place to look,
+  so the dialog now reads: *"This stops filler for every character. To stop it
+  for one, use Adjust Cadence."*
 - **The thumbnail capture script had no limits.** No timeout and no size cap on
   a download, no timeout on the frame extraction; one slow or oversized file
   could hang the whole run indefinitely. Now bounded at 60 seconds and 64MB

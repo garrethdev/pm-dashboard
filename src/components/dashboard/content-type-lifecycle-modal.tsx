@@ -225,6 +225,20 @@ export function ContentTypeLifecycleModal({
               )}
             </p>
 
+            {/* Filler is ONE registry row shared by the whole fleet, so pausing
+                it here is fleet-wide whether you meant that or not. The
+                per-character control is a different screen entirely — a
+                character's own filler cap in Adjust Cadence, which is how
+                Character 5 runs no filler while everyone else keeps theirs.
+                Garreth went looking for that here first (2026-09-11), which is
+                a fair place to look, so the dialog now points at it. */}
+            {leaving && target.bucket === "filler" && (
+              <p className="mt-3 flex items-start gap-2 rounded-nested bg-warn/10 px-3 py-2 text-xs text-warn">
+                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+                This stops filler for every character. To stop it for one, use Adjust Cadence.
+              </p>
+            )}
+
             {leaving && target.scheduledAhead > 0 && (
               <p className="mt-3 flex items-start gap-2 rounded-nested bg-warn/10 px-3 py-2 text-xs text-warn">
                 <CalendarClock className="mt-0.5 size-3.5 shrink-0" />
