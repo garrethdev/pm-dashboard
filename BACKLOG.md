@@ -996,11 +996,76 @@ the post-ban button (plan §9.4): the chain already exists and already works.
 queue submission, and a **progress board over `provision_queue` +
 `orchestrator_runs`** showing each account's stage.
 
+**How it is reached — specified by Garreth, 2026-09-12.** An **Add new account**
+button on the Accounts table, opening a **separate page** rather than a modal.
+That page holds two things:
+
+- **the setup history** — every account that has been through provisioning, in
+  order, with the stage it reached;
+- **what is provisioned but not finished** — the accounts whose phone exists
+  but whose data has not been written back.
+
+The second list is the reason the page exists. Someone setting up an account
+has to be able to see, without asking anyone, that an earlier account is still
+unfinished and therefore is not in the dashboard at all. Today that fact lives
+nowhere: not on a screen, not in an alert, not in a report.
+
+A page, not a modal, because this is a list people come back to and link to —
+and because the unfinished list should be visible when nobody is adding an
+account at all.
+
+**Keep it wordless.** Per the house rule on new screens, the page carries no
+instruction text. The states have to be self-evident from what each row says —
+if a row needs a paragraph explaining what "provisioned, not written back"
+means, the row is named wrong.
+
 **The part that is easy to get wrong.** Two stages the SOP requires are
 *manual*: the Google login on the google path, and creating the TikTok account
 itself. The board has to surface those as "waiting on human" states with a clear
 hand-back. It must not present them as automated — a progress bar that appears
 to be running while it is actually waiting on a person is worse than no board.
+
+**The half that actually breaks — finishing the account, not starting it.**
+Added 2026-09-12 after Profile 73, and this is now the strongest argument for
+the whole entry. Provisioning works. What has no owner is the step *after* the
+human creates the TikTok account: writing the handle, the character and the
+creation date back onto the `accounts` row and switching it active.
+
+Nothing enforces that, nothing chases it, and nothing shows it is outstanding.
+A half-finished account is not a visible "in progress" state — it is simply
+absent. `is_active` defaults to false, which is the same flag that hides
+retired accounts, so the row falls behind the **Show retired** toggle and off
+the Accounts page altogether. The warmup scheduler queries `is_active=eq.true`,
+so it never sees it either. The account exists on TikTok, the phone exists in
+GeeLark, and the system behaves as though neither does.
+
+Measured on 2026-09-12 — three rows were stuck, in **two different states**,
+and the page has to tell them apart:
+
+| profile | created | state | how long |
+| --- | --- | --- | --- |
+| Profile 73 | 2026-08-30 | **account created, never written back** — live on TikTok, nobody recorded the handle | 12 days |
+| Profile 67 | 2026-08-20 | **phone ready, no account created yet** (Garreth, 2026-09-12) | 23 days |
+| Profile 68 | 2026-08-20 | **phone ready, no account created yet** (Garreth, 2026-09-12) | 23 days |
+
+The two states need different things and must not be shown as one "incomplete"
+bucket. Profiles 67 and 68 are waiting on someone to *make* an account — the
+next action is on a person, outside the app. Profile 73 was waiting on someone
+to *record* one — the next action is a form in the app, and the account was
+quietly doing nothing on TikTok the whole time.
+
+Profile 73 also shows the second-order cost: twelve days with no warmup, because
+the warmup scheduler only reads active accounts. By the time it was switched on
+it was eleven days old by the calendar and completely cold — old enough for the
+age ramp to let it post immediately, with no history behind it.
+
+**So the progress board is not a nice-to-have on top of the intake form — it is
+the point.** An account should be visible from the moment its row is created,
+showing which stage it is in and what is waiting on a person, and the "finish
+setup" step should be a form in the app that writes the handle, character and
+creation date in one go. Profiles 67 and 68 should have been on that page for
+23 days saying *phone ready, no account created* — instead they are invisible,
+and the only record that they exist at all is a line in the GLP sheet.
 
 **Already accounted for in v1.** The accounts detail page's data layer was
 designed knowing provisioning states will eventually sit alongside live
