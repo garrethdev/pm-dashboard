@@ -1,4 +1,4 @@
-import { TTL, cachedFetcher } from "@/lib/data/cache";
+import { GEELARK_PHONES_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 
 /**
  * GeeLark OpenAPI — phone list. Parser built from the observed response of
@@ -23,7 +23,26 @@ interface RawPhoneItem {
   equipmentInfo?: { phoneNumber?: string } | null;
 }
 
-async function callGeelark<T>(path: string, body: unknown): Promise<T> {
+/**
+ * A GeeLark call that came back with a non-zero code, carrying that code.
+ *
+ * The code is the only part worth acting on: a caller has to be able to tell
+ * "could not reach the proxy" from "no such phone" without matching on message
+ * text, and the replace route has to say which of its two writes failed.
+ */
+export class GeelarkError extends Error {
+  constructor(
+    readonly code: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "GeelarkError";
+  }
+}
+
+/** Exported so the proxy-replace write path can reach the same envelope
+ *  handling rather than re-implementing GeeLark's `code !== 0` convention. */
+export async function callGeelark<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`https://openapi.geelark.com${path}`, {
     method: "POST",
     headers: {
@@ -37,11 +56,13 @@ async function callGeelark<T>(path: string, body: unknown): Promise<T> {
   });
   if (!res.ok) throw new Error(`geelark HTTP ${res.status}`);
   const envelope = (await res.json()) as { code: number; msg: string; data: T };
-  if (envelope.code !== 0) throw new Error(`geelark code ${envelope.code}: ${envelope.msg}`);
+  if (envelope.code !== 0) throw new GeelarkError(envelope.code, envelope.msg);
   return envelope.data;
 }
 
-async function fetchAllPhones(): Promise<GeelarkPhone[]> {
+/** Uncached read. The replace route needs the phone's real `id` and its
+ *  current proxy at the moment of the write, not a copy up to 15 min old. */
+export async function fetchAllPhones(): Promise<GeelarkPhone[]> {
   const phones: GeelarkPhone[] = [];
   let page = 1;
   for (;;) {
@@ -57,7 +78,11 @@ async function fetchAllPhones(): Promise<GeelarkPhone[]> {
         status: item.status,
         proxy:
           item.proxy?.server && item.proxy.port
-            ? { type: item.proxy.type ?? "socks5", server: item.proxy.server, port: item.proxy.port }
+            ? {
+                type: item.proxy.type ?? "socks5",
+                server: item.proxy.server,
+                port: item.proxy.port,
+              }
             : null,
         phoneNumber: item.equipmentInfo?.phoneNumber ?? null,
       });
@@ -68,4 +93,4 @@ async function fetchAllPhones(): Promise<GeelarkPhone[]> {
   return phones;
 }
 
-export const getGeelarkPhones = cachedFetcher("geelark-phones", TTL.external, fetchAllPhones);
+export const getGeelarkPhones = cachedFetcher(GEELARK_PHONES_TAG, TTL.external, fetchAllPhones);

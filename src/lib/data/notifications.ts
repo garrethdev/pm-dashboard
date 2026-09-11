@@ -11,7 +11,13 @@ import {
 /** A single bell item. Retire completions are stored; warmup fails are recomputed. */
 export interface NotificationItem {
   id: string;
-  type: "retire" | "warmup_fail";
+  /**
+   * The stored type. Deliberately open: the bell gains kinds over time
+   * (proxy_replace joined retire and warmup_fail on 2026-09-12) and a union
+   * here would have to be widened for each one, in a file that does not
+   * otherwise care what the kind is.
+   */
+  type: string;
   severity: "critical" | "warning" | "success" | "info";
   /** Which part of the system it came from, e.g. "Post-Ban". Shown as a pill. */
   category: string;
@@ -22,6 +28,19 @@ export interface NotificationItem {
   at: string;
   /** Whether THIS viewer has seen it. Per person, not fleet-wide. */
   read: boolean;
+  /**
+   * What to write to `notification_reads` when this is marked read, and what
+   * is looked up to decide `read`. Usually just `[id]`.
+   *
+   * It exists for the recomputed alerts, whose id carries a hash of the
+   * accounts involved. Keying read state on that id meant any change to the
+   * set — one account recovering, one more starting to fail — produced a new
+   * id and the alert came back unread, which is the "I read it and it came
+   * back" complaint (Garreth, 2026-09-12). Marking one key per account instead
+   * makes the group read once every account in it has been seen, so a
+   * *shrinking* cohort stays read and only a genuinely new account re-alerts.
+   */
+  markKeys: string[];
 }
 
 interface StoredRow {
@@ -96,6 +115,10 @@ async function warmupFailNotifications(): Promise<NotificationItem[]> {
       // read state was per-browser and easily lost; now that it is durable, a
       // changed cohort has to read as a new alert.
       id: `warmup_fail:${code}:${createHash("sha1").update(profiles.join(",")).digest("hex").slice(0, 8)}`,
+      // One key per account, not one per cohort — see markKeys on the
+      // interface. The id stays cohort-shaped because React needs a key that
+      // changes when the row's content does.
+      markKeys: group.map((g) => `warmup_fail:${code}:${g.geelark_profile}`),
       type: "warmup_fail",
       category: categoryLabel("warmup_fail"),
       severity: fleetWide ? "critical" : "warning",
@@ -129,6 +152,29 @@ async function storedNotifications(): Promise<NotificationItem[]> {
     `dashboard_notifications?select=id,at,type,severity,title,body,target,read&at=gte.${since}&order=at.desc&limit=50`,
   );
   return rows.map((r) => {
+    const base = {
+      id: `stored:${r.id}`,
+      markKeys: [`stored:${r.id}`],
+      type: r.type,
+      category: categoryLabel(r.type),
+      severity: (r.severity as NotificationItem["severity"]) ?? "info",
+      target: r.target,
+      at: r.at,
+      read: false,
+    };
+
+    // Only Post-Ban rows get re-worded. Everything else carries the copy it was
+    // written with — running a proxy swap through retireTitle() would announce
+    // it as a retirement, which is worse than no notification at all.
+    if (r.type !== "retire") {
+      return {
+        ...base,
+        title: r.title,
+        body: r.body,
+        href: r.type === "proxy_replace" ? "/proxies" : "/accounts",
+      };
+    }
+
     // Rows written before 2026-09-07 stored a middot fragment list and a title
     // with an em dash. Re-word those from their parts rather than migrating the
     // table: the copy is presentation, and a rewrite would rewrite history.
@@ -136,13 +182,9 @@ async function storedNotifications(): Promise<NotificationItem[]> {
     const failedOutright = r.severity === "critical";
     const needsAttention = r.severity === "warning" || failedOutright;
     return {
-      id: `stored:${r.id}`,
-      type: "retire" as const,
-      category: categoryLabel(r.type),
-      severity: (r.severity as NotificationItem["severity"]) ?? "info",
+      ...base,
       title: r.target ? retireTitle(r.target, failedOutright) : r.title,
       body: legacy ? retireBody(legacy) : r.body,
-      target: r.target,
       // A cleanup that needs a human opens the incident feed on its own row.
       // A clean one has no incident row to open — successes are deliberately
       // kept out of the feed — so it goes to the account itself rather than
@@ -152,8 +194,6 @@ async function storedNotifications(): Promise<NotificationItem[]> {
         : profileNum(r.target)
           ? `/accounts/${profileNum(r.target)}`
           : "/accounts",
-      at: r.at,
-      read: false,
     };
   });
 }
@@ -186,9 +226,14 @@ export async function getNotifications(userEmail: string): Promise<NotificationI
     warmupFailNotifications().catch(() => [] as NotificationItem[]),
     readKeys(userEmail).catch(() => new Set<string>()),
   ]);
-  return [...stored, ...warmup]
-    .map((i) => ({ ...i, read: seen.has(i.id) }))
-    .sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || b.at.localeCompare(a.at));
+  return (
+    [...stored, ...warmup]
+      // Read once every key behind it has been seen. For a single-key item that
+      // is the old behaviour exactly; for a grouped warmup alert it means a new
+      // failing account reopens it and a recovering one does not.
+      .map((i) => ({ ...i, read: i.markKeys.every((k) => seen.has(k)) }))
+      .sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || b.at.localeCompare(a.at))
+  );
 }
 
 /** Upper bound on one mark-read call. "Mark all" sends the whole panel, which

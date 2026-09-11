@@ -113,6 +113,13 @@ export const TTL = {
  *  and not the others silently breaks revalidation after a write. */
 export const ACCOUNTS_TAG = "accounts-data-v14";
 
+/** The two live-API keys the Replace proxy route must expire, for the same
+ *  reason ACCOUNTS_TAG is exported: a write route that hard-codes the string
+ *  drifts silently the day the key is renamed, and the table then shows the
+ *  old proxy after a successful swap. */
+export const GEELARK_PHONES_TAG = "geelark-phones";
+export const PROXYCHEAP_PROXIES_TAG = "proxycheap-proxies";
+
 /**
  * Shared tags for the caches whose keys carry a date or a range, so Refresh
  * can expire the whole family without enumerating every key it might hold.
@@ -149,12 +156,12 @@ export const DATA_TAGS = [
   INCIDENTS_TAG,
   INVENTORY_TAG,
   "cadence-data",
-  "geelark-phones",
+  GEELARK_PHONES_TAG,
   "geelark-wallet",
   "inventory-data-v4",
   "n8n-executions",
   "proxycheap-balance",
-  "proxycheap-proxies",
+  PROXYCHEAP_PROXIES_TAG,
   "pulse-stats",
   "scheduler-buckets",
   "scheduler-config",
