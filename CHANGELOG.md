@@ -80,6 +80,141 @@ No code changed. This was a database fix.
 
 ---
 
+## 2026-09-12 — The cadence editor now says which character is blocking a save
+
+**From Garreth, after Character 5's second content lane (Cleora ASMR) went live:
+the Adjust cadence window would not save anything, for any character, and
+nothing on screen said why.**
+
+### The problem
+
+Every character has a weekly allowance for its main content, divided between its
+content lanes. The editor refuses to save when a character's lanes do not add up
+to its allowance — a sensible rule, and not what went wrong.
+
+Cleora ASMR was switched on directly in the database on the 11th, as part of
+getting the new content ready. Its 7 posts a week immediately started counting
+toward Character 5's total, making 14, while Character 5's allowance still read 7
+— because raising the allowance was the step still outstanding. The sums stopped
+matching and the editor locked.
+
+It locked **everything**. The Save button on the Fleet tab checks every character
+before it will save anything, so a problem that existed only on Character 5 also
+stopped cadence changes for Characters 2, 3 and 4, and stopped the fleet-wide
+settings being changed at all. Confirmed live: Characters 2, 3 and 4 all read
+11 of 11; only Character 5 was off, at 14 of 7.
+
+Finding that out was the real cost. The screen offered a greyed-out Save button,
+a small "needs attention" badge on the Advanced settings row, and a tooltip on
+the dead button — none of which named the character. Locating it meant opening
+Advanced settings and reading down all four characters looking for the
+mismatched pair.
+
+### What changed
+
+A red banner now appears at the top of the Adjust cadence window whenever this
+happens, naming the character and both numbers: *"Character 5's lanes add up to
+14 a week, but its allowance is 7. Nothing can be saved until the two match."*
+
+- On the **Fleet tab** it lists every character at fault, each as a button that
+  jumps straight to that character's tab — because the fix is always on a
+  character tab, never on the one where the locked button appears.
+- On a **character tab** it offers a one-click **"Set allowance to 14"**, which
+  moves the allowance up to whatever the lanes already add up to and leaves the
+  lane split alone. (Typing the number into the allowance stepper instead
+  re-spreads the lanes evenly, which would turn a deliberate 10 + 4 into 7 + 7.)
+- When the daily cap is what's really in the way, it says so instead of offering
+  a button that cannot work: *"An allowance of 14 a week needs at least 2 posts a
+  day — 1 a day allows only 7. Raise Max posts / day above first."* This was its
+  own dead end: at 1 post a day the allowance stepper simply stopped at 7 with
+  nothing explaining why.
+- The tooltip on the disabled Save button now names the character too.
+
+No rules changed. Nothing can be saved that could not be saved before — the
+banner only says who and where, turning a hunt into a few seconds.
+
+### Also: two smaller things in the same window
+
+**Lane names now read as names.** The GLP mix under Advanced settings labelled
+each lane by its database handle with the underscores swapped for spaces, so the
+new lane read "cleora asmr" and its sibling read "cleora". They now use the name
+the registry already stores for them — **Cleora ASMR** and **Cleora (Animated)**.
+All 25 lanes in the registry carry one, checked live; the code still falls back to
+the handle, because the column is nullable.
+
+**The GLP stepper now says why it has stopped.** The weekly numbers are bounded
+by what the daily cap allows — 2 posts a day is 14 a week — so raising GLP past
+that does nothing until the daily cap moves first. The + button simply went dead,
+with nothing on screen explaining it. Garreth hit this taking Character 5 from 7
+a week to 14: at 1 post a day the ceiling was 7, and the order of the two edits
+was undiscoverable. A small note now appears beside the field whenever the button
+is dead — *"max for 1 post/day"* — naming the field to change.
+
+It stays quiet in the two cases where it would be wrong or useless: when the
+70-a-week hard limit is the binding one instead (the daily cap is not to blame
+there), and when the field is inheriting the fleet value, where there is no
+stepper and no dead button to explain.
+
+### One thing tidied while in there
+
+`"cadence-data"`, the cache key for the cadence payload, was written out as a
+literal in four separate files — including the two routes that must expire it
+after a save. It is now a single exported `CADENCE_TAG`, the same treatment
+`ACCOUNTS_TAG` already had and for the same reason: renaming it in one place and
+not the others would leave the editor showing the old lane mix after a save that
+had already gone through. Nobody had hit that; it was one rename away.
+
+The tag is also bumped to `cadence-data-v2`, because lanes gained a name field
+and a cached copy written by the previous version has no such field — the lane
+steppers would have rendered with blank labels for up to a minute after deploy.
+
+### Why this will keep happening
+
+Every new content lane arrives the same way: the content gets made, the lane is
+wired up and switched on in the database, and the character's allowance is
+raised afterwards — sometimes days later, sometimes by someone else. The gap is
+unavoidable because the two changes happen in different places. Cleora ASMR is
+simply the first time anyone noticed the side effect.
+
+### Verified
+
+The banner's logic is a tested function (`unbalancedCharacters` in
+`cadence-rules.ts`, seven cases) rather than inline screen code, following the
+same reasoning as the 2026-09-09 review's #6: every cadence-validation bug that
+review found was unreachable by a test while it sat inside the screen. The cases
+include the real 09-11 lockout, both directions of mismatch, and the rule that a
+character tab never points at a different character's problem.
+
+The banner itself has not yet been seen against a live failure, because the
+underlying data was corrected the same day (see below). It can be reached
+deliberately: open the Char 5 tab and click "Use fleet default" on GLP, which
+sets the allowance to 11 against lanes of 14.
+
+### Separately, in the database, not the repo
+
+Character 5's cadence was set to **14 GLP a week, 2 posts a day, filler 0** on
+Garreth's instruction — the step the content handover had left outstanding, and
+the one that unlocked the editor. Written through the same database function the
+dashboard's own save uses, with a matching audit-log entry.
+
+Worth knowing: this does **not** double Character 5's output immediately. The age
+ramp caps GLP at 1 a day for accounts aged 16–22 whatever the daily cap says, so
+2 a day starts on 2026-09-13 for Profiles 64 and 65, and 2026-09-23 for Profiles
+70 and 72. Output steps 4/day → 6/day → 8/day.
+
+Then, on Garreth spotting that Character 5's budget had converged on the fleet's
+- both now 14 posts a week at 2 a day, differing only in the split (14 GLP + 0
+filler against 11 + 3) — the daily-cap override was **cleared back to inherit**.
+An override row holding a number identical to the fleet's is not harmless: it
+silently pins that character against future fleet changes, so raising the fleet
+to 3 a day would have moved Characters 2, 3 and 4 and quietly left Character 5
+at 2. Only GLP (14) and filler (0) stay overridden now.
+
+Confirmed live: every resolved number is unchanged — 2 a day on Profiles 64/65,
+1 on the younger 70/72, 14 a week, no filler, same window and gap — and a
+read-only simulation of a fleet move to 3 a day now resolves to 3 for all four
+characters, Character 5 included.
+
 ## 2026-09-12 (later) — Proxy swaps ring the bell, and read state that would not stick
 
 **From Garreth: "I want the bell notification for swaps, so that other person is

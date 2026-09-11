@@ -123,6 +123,44 @@ export function sumLanes(lanes: { cadencePerWeek: number }[]): number {
   return lanes.reduce((acc, l) => acc + l.cadencePerWeek, 0);
 }
 
+/** A character whose lane mix does not add up to its own weekly allowance. */
+export interface UnbalancedCharacter {
+  name: string;
+  /** What its lanes currently add up to. */
+  sum: number;
+  /** What they have to add up to — its own cap, or the fleet's if it inherits. */
+  target: number;
+}
+
+/**
+ * Which characters are blocking a cadence save, and by how much.
+ *
+ * The read-side twin of `mixBalanceError`: that one produces the message the API
+ * refuses a save with, this one produces the list the editor's banner names. Both
+ * exist because the editor's Save button checks EVERY character before it will
+ * save anything, so one character drifting locks cadence for all of them — and
+ * until 2026-09-12 the screen never said which one. See the banner in
+ * `adjust-cadence-modal.tsx`.
+ *
+ * @param characters  each character and what its lanes currently add up to.
+ * @param targetFor   that character's own allowance — its override, else fleet.
+ * @param scopeName   the character tab being edited, or null on the Fleet tab.
+ *                    Scoped to one character, only that character is reported,
+ *                    even when another is also unbalanced: the tab you are on is
+ *                    the only one whose numbers are in front of you, and the
+ *                    Fleet tab is where the full list belongs.
+ */
+export function unbalancedCharacters(
+  characters: { name: string; laneSum: number }[],
+  targetFor: (name: string) => number,
+  scopeName: string | null,
+): UnbalancedCharacter[] {
+  return characters
+    .filter((c) => scopeName === null || c.name === scopeName)
+    .map((c) => ({ name: c.name, sum: c.laneSum, target: targetFor(c.name) }))
+    .filter((c) => c.sum !== c.target);
+}
+
 /**
  * Every character's lane mix has to add up to that character's own GLP cap —
  * not to the fleet's. Character 5 runs 7 a week against a fleet 11, and

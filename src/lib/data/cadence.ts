@@ -1,4 +1,4 @@
-import { TTL, cachedFetcher } from "@/lib/data/cache";
+import { CADENCE_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest } from "@/lib/data/supabase";
 
 /**
@@ -23,6 +23,10 @@ import { sbRest } from "@/lib/data/supabase";
  */
 export interface CadenceLane {
   contentType: string;
+  /** The registry's own name for the lane — "Cleora ASMR", not "cleora asmr".
+   *  The editor used to de-underscore the content type itself, which is the
+   *  database's internal handle and reads as one. */
+  displayName: string;
   sourceTable: string | null;
   bucket: string | null;
   cadencePerWeek: number | null;
@@ -136,6 +140,7 @@ async function fetchCadence(): Promise<CadenceData> {
     sbRest<
       {
         content_type: string;
+        display_name: string | null;
         character: string;
         quota_bucket: string | null;
         cadence_per_week: number | null;
@@ -145,7 +150,7 @@ async function fetchCadence(): Promise<CadenceData> {
         active: boolean;
       }[]
     >(
-      "content_type_registry?select=content_type,character,quota_bucket,cadence_per_week,cadence_ceiling_per_week,unified_poster_active,source_table,active",
+      "content_type_registry?select=content_type,display_name,character,quota_bucket,cadence_per_week,cadence_ceiling_per_week,unified_poster_active,source_table,active",
     ),
     sbRest<{ content_type: string; character: string; pool_n: number }[]>(
       "v_scheduler_pool?select=content_type,character,pool_n",
@@ -157,6 +162,8 @@ async function fetchCadence(): Promise<CadenceData> {
 
   const toLane = (r: (typeof registry)[number]): CadenceLane => ({
     contentType: r.content_type,
+    // Nullable in the table, though all 25 rows carry one (checked 2026-09-12).
+    displayName: r.display_name ?? r.content_type,
     sourceTable: r.source_table,
     bucket: r.quota_bucket,
     cadencePerWeek: r.cadence_per_week,
@@ -195,4 +202,4 @@ async function fetchCadence(): Promise<CadenceData> {
   };
 }
 
-export const getCadence = cachedFetcher("cadence-data", TTL.supabase, fetchCadence);
+export const getCadence = cachedFetcher(CADENCE_TAG, TTL.supabase, fetchCadence);
