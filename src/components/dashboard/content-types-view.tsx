@@ -26,6 +26,7 @@ import {
   type CtRangeKey,
 } from "@/lib/data/content-types";
 import { formatEtDate } from "@/lib/data/format";
+import { useDataRefresh } from "@/lib/refresh-bus";
 import { cn } from "@/lib/utils";
 
 /**
@@ -102,6 +103,11 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
       setLoading(false);
     }
   }, []);
+
+  // The lifecycle modal already reloads this slice when it closes; the global
+  // Refresh button did not, so it left the table showing whatever range had
+  // been picked. Same loader, same range.
+  useDataRefresh(useCallback(() => load(range), [load, range]));
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();

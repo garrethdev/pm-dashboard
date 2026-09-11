@@ -1,5 +1,5 @@
 import { TTL, cachedFetcher } from "@/lib/data/cache";
-import { sbRest } from "@/lib/data/supabase";
+import { sbRest, sbRestAll } from "@/lib/data/supabase";
 
 /**
  * Everything the single-account page needs (plan §4 detail view).
@@ -229,8 +229,16 @@ async function getProfileCard(handle: string, platform: string): Promise<Profile
 
   let cached: CachedCard | null = null;
   try {
+    // Platform is part of the lookup, not just a stored field. A handle is only
+    // unique WITHIN a platform: @somename on TikTok and @somename on Instagram
+    // are two different accounts with two different avatars and follower
+    // counts, and matching on the handle alone would hand one account's card to
+    // the other. No handle is currently on both platforms (checked live
+    // 2026-09-11, 59 accounts), so this has never actually misfired — the
+    // migration alongside it makes sure it cannot start.
     const rows = await sbRest<CachedCard[]>(
-      `account_profile_cards?select=avatar_url,display_name,followers,resolved_at&username=eq.${encodeURIComponent(handle)}`,
+      "account_profile_cards?select=avatar_url,display_name,followers,resolved_at" +
+        `&username=eq.${encodeURIComponent(handle)}&platform=eq.${encodeURIComponent(platform)}`,
     );
     cached = rows[0] ?? null;
   } catch {
@@ -344,11 +352,14 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
   const platform: "tiktok" | "instagram" = a.platform === "instagram" ? "instagram" : "tiktok";
 
   // Views live in two tables PostgREST cannot UNION, so pull the account's rows
-  // from each and aggregate here. One account's history is a few hundred rows.
+  // from each and aggregate here. One account's history is a few hundred rows —
+  // but paged rather than taken in one gulp, because PostgREST stops at 1000
+  // rows without saying so, and "highest" and "total views" computed over a
+  // silent prefix would just be wrong numbers with no way to tell.
   const perfTable = platform === "instagram" ? "post_performance" : "tt_post_performance";
   const views = a.username
-    ? await sbRest<{ views: number | null }[]>(
-        `${perfTable}?select=views&account=eq.${encodeURIComponent(a.username)}`,
+    ? await sbRestAll<{ views: number | null }>(
+        `${perfTable}?select=views&account=eq.${encodeURIComponent(a.username)}&order=post_id.asc`,
       ).catch(() => [])
     : [];
   const nums = views.map((v) => v.views ?? 0).filter((n) => Number.isFinite(n));

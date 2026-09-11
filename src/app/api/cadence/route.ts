@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { ACCOUNTS_TAG } from "@/lib/data/cache";
+import { ACCOUNTS_TAG, CONTENT_TYPES_TAG, INVENTORY_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import {
   fetchCharacterOverrides,
+  fetchLaneCharacters,
   NO_OVERRIDE,
   resolveCharacterCaps,
   type CharacterOverride,
 } from "@/lib/data/cadence";
+import {
+  mixBalanceError,
+  parseLanes,
+  resolveLaneCharacters,
+  sumLanes,
+  weeklyBudgetError,
+} from "@/lib/data/cadence-rules";
 import { getFleetDefaults } from "@/lib/data/scheduler-config";
 import {
   actingUserEmail,
@@ -26,12 +34,12 @@ import {
  * Fleet (no `character` in the body):
  *   { fleet: { maxPostsPerDay, minGapMinutes, windowStart, windowEnd },
  *     fillerPerWeek, glpPerWeek,
- *     lanes: [{ contentType, character, cadencePerWeek }] }
+ *     lanes: [{ contentType, cadencePerWeek }] }
  *   Writes scheduler_buckets and every character's lane mix.
  *
  * Character (`character: "Character 5"`):
  *   { character, maxPostsPerDay, glpPerWeek, fillerPerWeek,
- *     lanes: [{ contentType, character, cadencePerWeek }] }
+ *     lanes: [{ contentType, cadencePerWeek }] }
  *   Each of the three numbers may be null, meaning "inherit the fleet". Writes
  *   scheduler_overrides at character scope plus that character's lanes, and
  *   never touches scheduler_buckets or another character.
@@ -53,7 +61,6 @@ import {
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const MAX_LANE_PER_WEEK = 10;
 const MAX_PER_WEEK = 70;
 const MAX_POSTS_PER_DAY = 12;
 const MAX_GAP_MINUTES = 720;
@@ -79,31 +86,46 @@ function bad(error: string) {
   return NextResponse.json({ error }, { status: 400 });
 }
 
-/** Shared by both scopes: every lane needs a type, a character and a number. */
-function parseLanes(raw: unknown): CadenceLaneWrite[] | string {
-  if (!Array.isArray(raw) || raw.length === 0) return "lanes must be a non-empty array";
-  const lanes: CadenceLaneWrite[] = [];
-  for (const l of raw) {
-    const lane = l as Record<string, unknown>;
-    const cadence = int(lane.cadencePerWeek, 0, MAX_LANE_PER_WEEK);
-    if (
-      typeof lane.contentType !== "string" ||
-      typeof lane.character !== "string" ||
-      cadence === null
-    ) {
-      return `each lane needs a content type, a character, and 0–${MAX_LANE_PER_WEEK} per week`;
-    }
-    lanes.push({
-      contentType: lane.contentType,
-      character: lane.character,
-      cadencePerWeek: cadence,
-    });
+/**
+ * Read the lanes, then ask the REGISTRY who owns each one.
+ *
+ * Both halves of the review's #6 live here. The parse refuses a duplicated
+ * content type before the database has to; the resolve reads each lane's
+ * character out of `content_type_registry` instead of believing the browser.
+ * Returns a message for the user, or the lanes ready to write.
+ */
+async function lanesFromBody(raw: unknown): Promise<CadenceLaneWrite[] | string> {
+  const parsed = parseLanes(raw);
+  if (typeof parsed === "string") return parsed;
+
+  let registry: Record<string, string>;
+  try {
+    registry = await fetchLaneCharacters();
+  } catch {
+    return "Could not read the content type registry";
   }
-  return lanes;
+
+  return resolveLaneCharacters(parsed, registry);
 }
 
+/**
+ * Everything a cadence change moves.
+ *
+ * The last two are the review's #5: changing a lane's weekly number changes
+ * what the Content Types cards say that lane is set to, and changes the demand
+ * side of Demand/Supply, since production targets are derived from the mix.
+ * Neither was being expired, so both pages kept showing the old allocation for
+ * up to a minute after a save that had already gone through.
+ */
 function revalidateCadence() {
-  for (const tag of [ACCOUNTS_TAG, "cadence-data", "scheduler-config", "scheduler-buckets"]) {
+  for (const tag of [
+    ACCOUNTS_TAG,
+    CONTENT_TYPES_TAG,
+    INVENTORY_TAG,
+    "cadence-data",
+    "scheduler-config",
+    "scheduler-buckets",
+  ]) {
     revalidateTag(tag, { expire: 0 });
   }
 }
@@ -139,8 +161,11 @@ async function saveForCharacter(body: Record<string, unknown>, character: string
     return bad(`Filler and GLP per week must be blank, or whole numbers between 0 and ${MAX_PER_WEEK}`);
   }
 
-  const parsed = parseLanes(body.lanes);
+  const parsed = await lanesFromBody(body.lanes);
   if (typeof parsed === "string") return bad(parsed);
+  // A real check now. `l.character` came out of the registry a moment ago, so
+  // this compares the request against the database rather than against another
+  // field of the same request.
   const foreign = parsed.find((l) => l.character !== character);
   if (foreign) {
     return bad(`lane ${foreign.contentType} belongs to ${foreign.character}, not ${character}`);
@@ -159,15 +184,14 @@ async function saveForCharacter(body: Record<string, unknown>, character: string
     { maxPostsPerDay: fleet.maxPostsPerDay, glpWeek: fleet.glpWeek, fillerWeek: fleet.fillerWeek },
   );
 
-  const weekBudget = effective.maxPostsPerDay * 7;
-  if (effective.fillerWeek + effective.glpWeek > weekBudget) {
-    return bad(
-      `At ${effective.maxPostsPerDay} posts a day an account can post ${weekBudget} times a week, ` +
-        `but filler + GLP comes to ${effective.fillerWeek + effective.glpWeek}`,
-    );
-  }
+  const budgetError = weeklyBudgetError(
+    effective.maxPostsPerDay,
+    effective.glpWeek,
+    effective.fillerWeek,
+  );
+  if (budgetError) return bad(budgetError);
 
-  const sum = parsed.reduce((acc, l) => acc + l.cadencePerWeek, 0);
+  const sum = sumLanes(parsed);
   if (sum !== effective.glpWeek) {
     return bad(`${character}'s mix adds up to ${sum}, not ${effective.glpWeek}`);
   }
@@ -240,16 +264,12 @@ async function saveForFleet(body: Record<string, unknown>) {
   if (fillerPerWeek === null || glpPerWeek === null) {
     return bad(`Filler and GLP per week must be whole numbers between 0 and ${MAX_PER_WEEK}`);
   }
-  const weekBudget = maxPostsPerDay * 7;
-  if (fillerPerWeek + glpPerWeek > weekBudget) {
-    return bad(
-      `At ${maxPostsPerDay} posts a day an account can post ${weekBudget} times a week, ` +
-        `but filler + GLP comes to ${fillerPerWeek + glpPerWeek}`,
-    );
-  }
+  const budgetError = weeklyBudgetError(maxPostsPerDay, glpPerWeek, fillerPerWeek);
+  if (budgetError) return bad(budgetError);
 
-  // ── GLP lane mix ─────────────────────────────────────────────────────────
-  const parsed = parseLanes(body.lanes);
+  // GLP lane mix. Lanes carry the character the REGISTRY gives them, so a
+  // payload cannot move a lane between characters to make its sums work.
+  const parsed = await lanesFromBody(body.lanes);
   if (typeof parsed === "string") return bad(parsed);
 
   // A character that overrides its GLP cap is measured against ITS number, not
@@ -262,20 +282,11 @@ async function saveForFleet(body: Record<string, unknown>) {
     return NextResponse.json({ error: "Could not read the character overrides" }, { status: 502 });
   }
 
-  const byCharacter = new Map<string, number>();
-  for (const l of parsed) {
-    byCharacter.set(l.character, (byCharacter.get(l.character) ?? 0) + l.cadencePerWeek);
-  }
-  const wrong = [...byCharacter.entries()]
-    .map(([name, sum]) => ({
-      name,
-      sum,
-      cap: (overrides[name] ?? NO_OVERRIDE).glpWeekCap ?? glpPerWeek,
-    }))
-    .filter((c) => c.sum !== c.cap);
-  if (wrong.length) {
-    return bad(wrong.map((c) => `${c.name}'s mix adds up to ${c.sum}, not ${c.cap}`).join("; "));
-  }
+  const mixError = mixBalanceError(
+    parsed,
+    (name) => (overrides[name] ?? NO_OVERRIDE).glpWeekCap ?? glpPerWeek,
+  );
+  if (mixError) return bad(mixError);
 
   // The filler lane is one registry row shared by every character. It is kept
   // in step with scheduler_buckets.weekly_quota so the two never disagree —

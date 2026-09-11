@@ -1,4 +1,4 @@
-import { TTL, cachedFetcher } from "@/lib/data/cache";
+import { INVENTORY_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
 
 /**
@@ -176,7 +176,9 @@ async function fetchInventory(): Promise<InventoryData> {
 // v4: added pausedCharacters. The suffix is bumped whenever InventoryData
 // changes shape — a cache entry written by the previous version has no such
 // field, and the page crashed on `characters.length` reading it back.
-export const getInventory = cachedFetcher("inventory-data-v4", TTL.supabase, fetchInventory);
+export const getInventory = cachedFetcher("inventory-data-v4", TTL.supabase, fetchInventory, {
+  tags: [INVENTORY_TAG],
+});
 
 /* ── Demand vs supply, parameterised window ────────────────────────────────── */
 
@@ -275,5 +277,8 @@ export async function getDemandSupply(
         characters: [...new Set(rows.map((r) => r.character))].sort(),
       };
     },
+    // One key per (window, what-if), so the family tag is the only way Refresh
+    // reaches whichever combination is on screen.
+    { tags: [INVENTORY_TAG] },
   )();
 }

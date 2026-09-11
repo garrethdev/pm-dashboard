@@ -20,6 +20,508 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-11 (later) — "Supabase unreachable" was usually a lie
+
+**From Garreth, after being told the code-style checker had 32 flags: "can we
+do item 1", and — importantly — "I've encountered `Supabase unreachable` a
+couple of times already".** That second remark changed what this was worth
+doing. The flags were a tidy-up; the message they sat next to was misinforming
+him.
+
+### Fixed: panels blamed the database for something it had not done
+
+Every panel that cannot load its data says so instead of going blank. They all
+said the same thing: **"Supabase unreachable"**.
+
+That was rarely true. On 2026-09-08 the database answered **every single
+request with a success code** — no failures at all — but saving the cadence
+expired every cached figure at once, 180 panels all went to fetch at the same
+moment, and the database slowed to as much as 28 seconds. The dashboard gives
+up waiting after 10. So the screen reported "unreachable" about a database that
+was working fine, and sent Garreth looking for an outage that had never
+happened.
+
+**A timeout means we stopped waiting. It does not mean the other end is gone** —
+if anything it means the opposite, since something genuinely down refuses
+instantly. The three cases are now told apart:
+
+- **We gave up waiting:** *"Supabase took too long to answer — it is probably
+  still running. This usually happens when several panels reload at once. Press
+  Refresh."*
+- **It answered with an error:** *"Supabase answered with an error (503). Press
+  Refresh to try again."*
+- **Anything else:** the raw reason, claiming nothing.
+
+**This makes the screen honest; it does not stop the slowdown.** The two
+remaining fixes for that — not expiring every cache at once after a save, and
+the database's connection limit — are still open in `BACKLOG.md`.
+
+### Fixed: the safety net was wrapped around too much
+
+**The review's finding, and the reason the message above could also have been
+wrong in a second way.**
+
+Those panels wrapped their safety net around two things at once: fetching the
+data, *and* drawing the screen. It is only meant to catch the first. Anything
+going wrong while **drawing** would have been caught by the same net and
+reported as a data problem — telling you the database was unreadable when the
+database was never asked.
+
+Eight files now guard only the fetch. No visible change when everything works.
+
+### Changed: the accounts table no longer takes a timestamp it ignored
+
+Both places that show the accounts table worked out a "last updated" time,
+formatted it, passed it in — and the table dropped it.
+
+**Garreth's call: don't start showing it, delete it.** The "as of" on Analytics
+and Content Types earns its place, because it reports when the numbers were last
+collected *from TikTok and Instagram*, which can be a day or two ago. This one
+only said when the server last read our own database — never more than 60
+seconds, because that is how long the cache lives. A line permanently reading
+"as of a few seconds ago" is clutter that answers nothing.
+
+### Changed: the code-style checker now blocks a merge
+
+It was reporting-only this morning, because 32 pre-existing flags would have
+meant a permanently red build. **All 32 are gone**, so it blocks from now on:
+
+- **26** were the safety-net shape above.
+- **1** was the unused timestamp.
+- **6** were pages that render once and immediately correct themselves. All six
+  are correct as written — the light/dark switch is the clearest, since the
+  server cannot know which theme you chose, so it must draw one and fix it the
+  instant it reaches your browser. Each now carries a written reason on the
+  line.
+
+**None of them were cleared by switching a rule off**, which was the tempting
+option and the one that would have made the check worthless. The workflow file
+says so, for whoever meets a red build next.
+
+---
+
+## 2026-09-11 — six of the review's open findings, and the first tests
+
+**From the 2026-09-09 external code review's remaining backlog, picked up by
+Garreth on 2026-09-11.** Six items closed in one pass: the Refresh button, the
+last of the cadence validation, unpaged performance reads, the platform-blind
+profile card, double-counted lane performance, and the five smaller notes —
+including the one the review put last, that there was no test suite.
+
+Two things were **not** touched, deliberately. The anon-key database hardening
+stays open on Garreth's instruction. The unmonitored Virlo pipeline was not part
+of this batch and is still in `BACKLOG.md`.
+
+### Fixed: Refresh did not refresh the page you were looking at
+
+Pressing **Refresh** on Calendar, Analytics, Content Types, Demand/Supply or
+Incident History did nothing visible, and had not for as long as those pages
+have had range pickers. Two separate faults, stacked:
+
+**The server never forgot four families of data.** Refresh works by naming the
+caches it wants thrown away. Analytics, top content, the Demand/Supply rollup
+and incident history each store one copy *per window you pick*, and none of them
+had a name Refresh knew — so it threw away nothing for them, however many times
+it was pressed. They now do, and so do the proxy-cheap and TextVerified
+balances, which had simply been left off the list.
+
+**The page ignored the new data even when it arrived.** These pages load their
+first view from the server and then fetch every later window themselves. Refresh
+re-ran the server half, which those pages are no longer listening to — so the
+numbers on screen stayed exactly as they were. Each of them now reloads *the
+window it is actually showing*, Demand/Supply keeping any what-if you have
+applied. The spinner stays up until they have all finished, so when it stops the
+figures under it really have been re-read.
+
+**Also fixed while in there:** saving a cadence change left the Content Types
+cards and the Demand/Supply demand figures showing the old allocation for up to
+a minute, and a pause or retire left Demand/Supply showing pre-change targets.
+Both now clear along with everything else the change moves.
+
+### Fixed: the cadence editor was checking the browser against itself
+
+Two-thirds of this was closed on 09-10. The rest:
+
+**Sending the same lane twice got through.** Two entries for one content type
+passed the "does it add up" check — 2 + 3 reads the same as 5 — and were caught
+only by the database, as a failed save. The editor now says *"glowup is in the
+list twice"* before anything is written.
+
+**Which character a lane belonged to was taken from the browser.** The
+request said "this lane is Character 4's", and the check compared that against
+the character *the same request* had named — so it could never disagree. Every
+lane's owner is now read from `content_type_registry`, which is where it has
+always actually lived. A request that misnames a lane's character no longer
+changes what happens; it just gets refused.
+
+An unknown content type is now refused by name instead of quietly saving
+nothing.
+
+### Fixed: an account's totals would have started silently under-counting
+
+Supabase answers at most 1000 rows per request and gives no sign when it has cut
+you off — it looks exactly like an account that only ever had 1000 posts.
+Nothing is wrong today: the busiest account has 203 rows, measured live. But
+"Total views", "Highest" and the All-time analytics were one plain request each,
+so the day an account crossed that line they would have quietly stopped growing
+and nothing on screen would have said so. They now read through in pages.
+
+**Not urgent when it was raised, and still not — this is a trap being closed
+years early.** At current posting rates an account reaches 1000 posts somewhere
+around 2029.
+
+### Fixed: profile cards were stored under the handle alone
+
+The avatar, display name and follower count for an account were looked up by
+handle with no regard for platform, and — worse than the review could see from a
+snapshot — *stored* that way too. The same handle on TikTok and Instagram are
+two different accounts, but they shared one row: whichever refreshed last
+overwrote the other, and the read could hand either one's picture to the other.
+
+Nothing was actually broken, because no handle in the fleet is currently on both
+platforms (checked live: 59 accounts, 56 handles). Both halves are fixed anyway
+— the lookup now asks for the platform, and the stored row is keyed by handle
+*and* platform so the two can coexist. Fixing only the lookup would have made
+things worse: it would have missed the row every time and paid a ScrapeCreators
+credit on every page load.
+
+### Fixed: one lane's numbers counted a post once per profile it went to
+
+**Raised by the review as a caution it could not prove. It was real, and it is
+measured now.** When the same piece of content is scheduled onto several
+profiles, the Content Types page counted its views once *per profile* rather
+than once. Live, this affected exactly one lane — `rich_life_carousel`, which
+read **284 posts and 62,684 views** against a true **280 and 62,664**, and
+scored 44 where it should have scored 46.
+
+Small, and on a lane that is retired, so nothing was decided on it. It is fixed
+because it grows with precisely the thing the calendar is built to do more of:
+put one piece of content on several accounts. A performance row can now only be
+counted once, whatever the calendar does.
+
+**"Scheduled ahead" deliberately still counts per profile.** That column answers
+"how many posts are going out", and one carousel on five profiles really is five
+posts.
+
+### Fixed: five smaller things the review flagged
+
+- **The credential check claimed ScrapeCreators was working without asking it.**
+  It reported "ok" because the key existed, admitted as much in its own detail
+  line, and then counted itself among the working credentials anyway. It now
+  makes a real call. As a bonus it reports the **credits remaining** — 9,819 at
+  the time of writing — which is worth seeing before it reaches zero, since
+  every avatar and follower count on the site is paid for out of it.
+- **The filler lane could be brought back but never taken out.** Pause and
+  Retire were permanently greyed out on it, with nothing on screen saying why:
+  the dialog insisted the freed weekly slots go somewhere, and filler — being
+  one fleet-wide lane — has no siblings to give them to. It has no slots to
+  hand out either, so it is no longer asked to.
+
+  **The dialog now also says how far the change reaches.** Pausing or retiring
+  filler there stops it for *every* character, because there is only one filler
+  lane in the system. Stopping it for one character is a different screen —
+  that character's own filler cap in Adjust Cadence, which is how Character 5
+  has run no filler since 2026-09-10 while everyone else keeps theirs. Garreth
+  went looking for that on Content Types first, which is a fair place to look,
+  so the dialog now reads: *"This stops filler for every character. To stop it
+  for one, use Adjust Cadence."*
+- **The thumbnail capture script had no limits.** No timeout and no size cap on
+  a download, no timeout on the frame extraction; one slow or oversized file
+  could hang the whole run indefinitely. Now bounded at 60 seconds and 64MB
+  each. It also exited reporting success even when every single capture had
+  failed — it now exits with an error if any did.
+- **Two caches were sharing one entry.** A scheduler-overrides read and the
+  accounts read used the same cache name while returning entirely different
+  shapes. It has its own name now, while still being cleared whenever the
+  accounts data is.
+- **The misleading comment about content type identity** has been corrected
+  rather than acted on. It claimed a content type needed its character to
+  identify it, citing two lanes that are simply different content types. Left
+  uncorrected it was an invitation to "fix" joins that are already right.
+
+### Added: a test suite and CI
+
+**The review's last note: "no test suite and no CI — the passing build cannot
+catch any of the above."**
+
+**57 tests**, covering the rules the review actually found bugs in: cadence
+validation (duplicate lanes, registry ownership, the weekly arithmetic), the
+paging that stops Supabase's row cap truncating a total, the Refresh button's
+list of caches, and the account-health ordering and colours.
+
+They are unit tests over pure logic — no browser, no database, no network. That
+is a deliberate limit: every bug the review found was a rule that could be
+checked without leaving the process, and a fast suite that runs on every push
+beats a slow one that gets switched off.
+
+One of them is unusual and worth knowing about: it reads the source of the data
+layer and checks that every cache a page asks for is one the Refresh button
+knows how to clear. That fault has no error message and no wrong type — the
+button just silently does nothing — so there is no other way to catch it.
+
+**CI runs on every push and pull request**: typecheck, lint, tests and a real
+build.
+
+**It earned its place on the very first run**, by failing. `npm run typecheck`
+passed on every machine here and failed in CI, because some of the types this
+app uses are *generated* by Next when it builds — and a fresh checkout has never
+built, so they did not exist yet. Nobody would have found that by hand; it only
+appears on a machine that starts from nothing, which is exactly what CI is. The
+typecheck now generates those types first, and the whole sequence was re-run
+from a genuinely empty state to confirm.
+
+**Lint runs but does not block, on purpose.** There are 32 pre-existing lint
+errors in the codebase, none of them quick. Making them a blocker on day one
+would mean either a permanently red build or switching the rules off to get a
+green tick, and a check that has been quietened down to pass is worth nothing.
+It reports the count instead, and clearing them is now a backlog item.
+
+### Housekeeping
+
+`@types/node` was moved from version 20 to 24. It described a version of Node
+four releases older than the one this is developed on, and the test runner
+refused to install against it.
+
+### How much of this has actually been proven
+
+Being precise, because "fixed" covers three different levels of confidence here.
+
+**Confirmed against the live database:**
+
+- The lane double-count. The function's output was captured before and after and
+  compared column by column: exactly one lane moved, by exactly the predicted
+  amount, and "scheduled ahead" was unchanged everywhere.
+- The profile-card key. Read back after the change; all 29 stored cards intact.
+- No handle exists on both platforms today (59 accounts, 56 handles).
+- The 1000-row cap is real and silent — a request for a 2,357-row table returned
+  exactly 1000 rows and a success code.
+- The ScrapeCreators probe. Called with the real key and with a deliberately
+  wrong one (401), so "ok" now means something. Through the running app the
+  credential screen now reads **"9,777 credits remaining"** where it used to say
+  "key present".
+- **The cadence rules, all four refusals, against the live endpoint.** A
+  duplicated lane is refused by name. A lane sent as Character 2's, which the
+  registry says is Character 4's, is refused with *"lane divorce_stories belongs
+  to Character 4, not Character 2"* — the request said one thing, the database
+  said another, and the database won, which is the whole point of the change. An
+  invented content type is refused by name. Every one of them was a rejection,
+  so nothing was written; the cadence numbers were read back afterwards to
+  confirm it.
+- **The Refresh button, both halves.** The server half expires 21 caches where
+  it expired 15, and 23 on an account page. The client half was **confirmed by
+  Garreth in the running app on 2026-09-11** — the pages re-read their data on
+  Refresh, which is the bar the backlog set for this ("pressing Refresh on each
+  of those five pages demonstrably re-reads what is on screen").
+- Every page touched renders, with no errors in the server log.
+
+**Still unexercised, both small:** the filler lane's Pause and Retire buttons —
+greyed out before, should now be clickable on /content-types — and the thumbnail
+capture script's new time and size limits, which have not been run since.
+
+---
+
+## 2026-09-11 — the day the fleet posted nothing, and why the dashboard looked stale
+
+**From a question about one card: why Profile 54's "Last 5 posts" still ended at
+September 8 when the account had clearly posted since.** No dashboard code
+changed. The card was right and the data behind it was late — but chasing the
+lateness turned up a silent posting outage, so both are recorded here.
+
+**The card was late by design, not broken.** "Last 5 posts" reads
+`tt_post_performance` directly. Nothing refreshes on page load — if a post is not
+in that table, the card cannot show it. The table is filled by an n8n workflow
+that runs **Sunday, Monday, Wednesday and Friday at 8:30am ET**, while posting
+happens in an 11:00–23:00 ET window. Every post therefore goes live *after* that
+morning's read, so no post is ever captured the same day. Realistic lag is
+**21 to 46 hours**. Profile 54's two missing videos went up Wednesday afternoon,
+hours after Wednesday's read; the next read was Friday. The `as of <date>` line
+beside the range picker is the honest marker — inside two days the card is
+waiting, beyond two days something is wrong.
+
+**Confirmed live.** A manual run at 12:14 UTC pulled both missing posts in with
+42 and 59 views, matching TikTok exactly.
+
+**The real problem: nothing posted on September 10, across all 24 accounts.** The
+Posting Agent ran on time and reported **success**. Its first step asks Geelark
+for the list of phones, and Geelark answered `{"code":40011,"msg":"only for paid
+user"}`. With no phones it staged zero rows, finished in **4 seconds**, and
+logged a clean run. A normal run takes 2.5–4 minutes. Nothing alerted.
+
+It was not a billing lapse — the wallet held **$44.11** — and Geelark answered
+normally again the next morning (35 phones listed). A transient API failure with
+no retry and no zero-row alarm. **The tell is run duration, not status.**
+
+**25 pieces of content were stranded and have been released.** `unified_posts_due`
+only ever looks at *today's* date, so a missed day's rows are never retried. The
+25 rows (6 two-slide BA, 6 Glow Up, 11 filler, 2 Character-2 slideshow) were
+backed up to `_backup_sept10_release_20260911`, then had their profile, date,
+time and status cleared so they fall back into the schedulable pool. They were
+deliberately *not* re-dated to today, which would have pushed several accounts
+over their daily cap. The Smart Scheduler will place them on its next run and its
+own caps — 3 a day, 10+10 a week, 120-minute gap, 11:00–23:00 — decide where they
+land. **Confirmed live:** all 25 re-tested against the exact conditions
+`v_scheduler_pool` uses, and all 25 qualify.
+
+### New: the card is now refreshed on the three gap days too
+
+**Garreth's call, after asking whether the lag could be closed cheaply.** A new
+n8n workflow, **`[TikTok] Recent Posts Refresh — gap days`**, runs Tue/Thu/Sat at
+8:30am ET — the three days the analytics engine does not. It reads the same
+active-TikTok-account list, fetches **one page per account with pagination turned
+off**, and upserts into `tt_post_performance`. Nothing else: no outlier judging,
+no report, no email. **Worst-case staleness drops from ~46 hours to under 24.**
+
+**Why one page is enough, measured not assumed:** a single response carries 10
+videos, which spans 3.9 days for accounts posting 2–3 a day. A one-day gap cannot
+overflow it.
+
+**Cost, measured on a real run:** 26 calls, one per account, no pagination, all
+200s, 16 seconds end to end. That is 26 credits a gap day against ~48 for a full
+paginated run — about **1,170 credits a month** all-in, versus ~835 today and
+~1,460 if the whole engine had simply been moved to daily.
+
+**It does not feed the health detector young data.** Every metric in
+`v_account_view_health` filters `posted_at <= now() - '48:00:00'` — the `mat_`
+prefix means matured. A post read 9 hours old counts toward nothing until it is
+two days old. The one place without that guard is the `recent` CTE in
+`v_account_health_v3` (last 8 posts, feeding the `recent_best <= 100` escalation);
+the effect there is a timing shift of about a day, not a new false positive.
+
+**Built as a separate workflow on purpose.** The analytics engine errors on every
+run right now; folding gap days into it would have meant 7 red executions a week
+instead of 4 and no way to tell which half broke. It also would have required
+making the page cap conditional on which trigger fired — and if that expression
+ever misfired toward "one page" on a full day, the main ingest would silently
+truncate from 7 days to 4.
+
+**Two traps deliberately avoided:** the workflow timezone is pinned to
+`America/New_York` (this n8n instance defaults to Asia/Manila, which would have
+fired the cron 12 hours off), and the upsert keeps `batchSize 1` with a 60-second
+timeout (a burst of parallel upserts starved PostgREST fleet-wide once before).
+
+**Known wart:** the two Supabase nodes carry the service-role key in plain header
+values, mirroring the existing engine. n8n flags this. It is not a new exposure —
+the same key is already hardcoded across the sibling workflow — but converting
+both to a stored credential is worth doing in one pass.
+
+**It is on the Automation page.** Added to `TRACKED_WORKFLOWS` as "Recent Posts
+Refresh", expected Tue/Thu/Sat 08:30 ET, so the overdue check covers it. Not
+marked `key`, so it stays off the homepage card — it is a supporting job, not one
+of the six. Tracking it also routes its failures into the incident feed, which
+only surfaces errored executions for workflows in that list; without it a silent
+stop would leave the card quietly stale while every other pill stayed green.
+
+### Found: the analytics engine fails on a database timeout, in the upsert
+
+**Garreth opened the failed execution in the n8n UI after remote inspection kept
+dying.** The failing node is **`Upsert tt_post_performance`** — the ingest step
+itself. Two earlier theories, including one recorded in an earlier draft of this
+entry, were wrong and are corrected here.
+
+**The chain, measured in the Postgres logs:**
+
+1. Each 10-row chunk upsert takes **10–19 seconds** (observed: 10.4s, 10.6s,
+   11.1s, 11.8s, 12.2s, 13.1s, 16.0s, 19.0s).
+2. `service_role` has a **30-second `statement_timeout`**.
+3. Chunks that tip past 30s log `canceling statement due to statement timeout`.
+   Seventeen fired between 12:16 and 12:18 UTC.
+4. PostgREST drops the connection, and n8n renders that as **"The connection was
+   aborted, perhaps the server is offline"** — a message that points at the
+   network and hides a database timeout. That is what sent two investigations
+   down the wrong path.
+5. After 3 retries the node's `onError: stopWorkflow` ends the run.
+
+**The 132 unjudged outliers were a symptom, not a cause.** The run stops at the
+upsert, so Route-and-Judge, the report and the email never execute at all. The
+judging service is fine — a POST to it returned a clean
+`400 {"detail":"outliers must be a non-empty list"}` in 0.69s.
+
+**Why the upsert is slow.** `trg_fill_filler_carousel_tt` is a **BEFORE INSERT**
+trigger, and on an `ON CONFLICT` upsert it fires for *every* row — including the
+~250 that only resolve to an UPDATE. Each call runs `match_content_id`, which
+loops ~29 (source table, caption column) pairs and retries all of them on a
+60-char prefix when the first pass finds nothing. That is up to ~580 dynamically
+planned queries per 10-row chunk.
+
+**Not yet explained:** the new gap-day workflow uses the identical upsert and
+chunk size and completed 26 chunks in 16 seconds — roughly 0.6s per chunk against
+the engine's 10–19s. The difference is not accounted for, so **the clean gap-day
+test is not proof it is immune**; it may simply have run while the database was
+quiet.
+
+**One real gap found along the way:** `cleora_content.caption` is the only one of
+29 registry caption columns with no `text_pattern_ops` prefix index. At 44 rows
+it cannot explain a 30-second timeout, so it is **not** the root cause — but it
+is a seq scan inside a per-row trigger that grows as that table fills.
+
+### Fixed: chunk size halved, and the last missing prefix index added
+
+**Garreth's go-ahead, same session.** Two changes, both small and reversible.
+
+**Chunk size 10 → 5**, in the Normalize node of *both* the analytics engine and
+the new gap-day workflow. Nothing else about the upsert changed. Halving the rows
+per statement halves the per-statement time, putting a chunk at roughly 5–9s
+against the 30-second ceiling instead of 10–19s. It is a headroom fix, not a cure:
+the per-row trigger cost is unchanged, so the real remedy is still to stop doing
+caption attribution inside a BEFORE INSERT trigger. That is logged in
+`BACKLOG.md`, not done here.
+
+Both workflows were **published**, not just saved — an n8n update alone leaves a
+draft, and `versionId` was checked against `activeVersionId` on each.
+
+**The missing index** shipped as
+`20260911140000_cleora_content_caption_prefix_index.sql`, following the #227
+naming convention. **Confirmed live:** all 29 registry caption columns now have a
+`text_pattern_ops` prefix index, 0 missing.
+
+---
+
+## 2026-09-11 — the database access audit, answered
+
+**From the 2026-09-09 external review's only genuine security finding.** No code
+or grants changed — this entry records an answer, because the answer is the kind
+of thing the next reviewer should not have to rediscover.
+
+**Who can reach the database directly: anyone holding the anon key.** Measured
+live, not inferred. 155 of the 180 tables in `public` have row-level security
+off *and* grant `anon` full `SELECT/INSERT/UPDATE/DELETE`; `authenticated` holds
+exactly the same, so signing in changes nothing. 172 of 175 functions are
+executable by `anon`. A plain `GET /rest/v1/content_type_registry` carrying only
+the anon key returned `200` with live rows from the open internet.
+
+**What is genuinely safe, and it is worth knowing why.** The anon key never
+reaches the browser — there is no `NEXT_PUBLIC_` anything in the app — and the
+key is used in only three places, all of them auth-only. Every data read and
+write already goes through the service role. So the grants are not load-bearing:
+removing them should not affect the dashboard at all. 16 tables have RLS on with
+no policy at all, which denies everyone except the service role — that is the
+shape the other 155 need.
+
+**Nothing revoked — Garreth's instruction, same day.** The hardening is written
+up in `BACKLOG.md` as "Close the anon-key hole on the database" with the counts,
+the ordered steps and the revoke SQL, to be picked up later. Filed in V3 at
+first and **promoted to V1 the same day** — it sits last in that list by
+position, not by priority.
+
+The blocking unknown is recorded there too: six n8n credentials point at
+Supabase and n8n will not reveal which key each one holds. If one carries the
+anon key, revoking breaks workflows silently across a 340-workflow instance.
+That has to be read out of the n8n UI, or tested on a Supabase branch, before
+anything is revoked.
+
+**Also established, same day:** the dashboard is internal-team-only (Garreth).
+That lowers the odds but covers less than it sounds like — PostgREST is on the
+public internet whatever the app is for, and public signup is **enabled**
+(`disable_signup: false`), so `ALLOWED_EMAILS` gates the dashboard's front door
+while anyone with the anon key can still register and hold an `authenticated`
+token. It escalates nothing today, since `anon` already has everything
+`authenticated` does. It is recorded because it makes one tempting half-fix —
+revoking `anon` and leaving `authenticated` — useless.
+
+**Carried forward from 2026-09-10:** `revoke … from public` will not do this
+job. Supabase grants to `anon` and `authenticated` **by name**, and a named
+grant survives a revoke from PUBLIC. Name both roles and read the ACL back.
+
 ## 2026-09-11 — two bugs found by testing the day before
 
 Neither came from the 09-10 changes; both are older faults that the checklist

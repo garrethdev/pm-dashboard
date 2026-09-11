@@ -22,6 +22,7 @@ import {
 } from "@/lib/data/account-analytics";
 import { formatEtDate } from "@/lib/data/format";
 import { cn } from "@/lib/utils";
+import { useDataRefresh } from "@/lib/refresh-bus";
 
 /**
  * One account's performance. Deliberately none of the fleet page's comparison
@@ -73,6 +74,10 @@ export function AccountAnalyticsView({
     },
     [account, platform],
   );
+
+  // Before the early return below, so the hook order is the same whether or not
+  // the account has a handle yet.
+  useDataRefresh(useCallback(() => load(range), [load, range]));
 
   if (!account) {
     return (
@@ -390,6 +395,8 @@ function TopPostsSection({
     },
     [account, platform],
   );
+
+  useDataRefresh(useCallback(() => load(range), [load, range]));
 
   return (
     <DashCard

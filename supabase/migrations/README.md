@@ -46,6 +46,32 @@ applied 2026-09-06) are deliberately not here.
 | 09-09 | `content_intelligence_engine` | the seven Virlo/knowledge tables — **reconstructed, not replayed; see the note below** |
 | 09-10 | `atomic_settings_writes` | override / cadence / lifecycle saves become one transaction each, with row-count checks |
 | 09-10 | `atomic_settings_writes_revoke_anon` | the revoke above missed `anon`/`authenticated` — see below |
+| 09-11 | `profile_cards_keyed_by_handle_and_platform` | a handle is unique only within a platform; the old key let one platform overwrite the other's cached profile card |
+| 09-11 | `content_type_stats_one_row_per_measured_post` | performance was joined to a placement table, counting each post once per profile it was sent to |
+| 09-11 | `cleora_content_caption_prefix_index` | the one registered caption column with no prefix index, so every `tt_post_performance` insert seq-scanned it inside a trigger |
+
+## A migration that only replaces a function must leave its grants alone
+
+Both 09-11 migrations were applied and verified live, and the second one
+deliberately did **not** touch grants. `content_type_stats` is currently
+executable by `anon` and `authenticated`, which is part of the open anon-key
+finding in `BACKLOG.md` — held open on Garreth's instruction of 2026-09-11, "do
+not revoke". `CREATE OR REPLACE` preserves the existing ACL, and it was read
+back afterwards to confirm it had.
+
+That is the opposite of the rule in the next section, and the difference is
+worth being clear about: **a migration that CREATES a function must name
+`anon`/`authenticated` in its revoke. A migration that REPLACES one must not
+change the grants at all** — narrowing a single function inside an unrelated fix
+makes the eventual audit harder, because the counts recorded in `BACKLOG.md`
+stop meaning what they say.
+
+The 09-11 function change was verified by snapshotting `content_type_stats(null)`
+before and after and diffing every column: exactly one lane moved
+(`rich_life_carousel`, 284 posts to 280), which is precisely what the fix
+predicted, and `scheduled_ahead` was unchanged everywhere — confirming the
+placement count it deliberately leaves alone was left alone. The snapshot table
+was dropped afterwards.
 
 ## `revoke ... from public` on a function is never enough here
 

@@ -113,25 +113,54 @@ export const TTL = {
  *  and not the others silently breaks revalidation after a write. */
 export const ACCOUNTS_TAG = "accounts-data-v14";
 
-/** Shared tags for the caches whose keys carry a date or a range, so Refresh
- *  can expire the whole family without enumerating every key it might hold. */
+/**
+ * Shared tags for the caches whose keys carry a date or a range, so Refresh
+ * can expire the whole family without enumerating every key it might hold.
+ *
+ * **A per-range or per-date cache needs one of these or Refresh cannot reach
+ * it at all.** The key alone is no use: the Refresh button knows a fixed list
+ * of tags and cannot guess which ranges someone has looked at. Four families
+ * were missing one until 2026-09-11 — analytics, top content, the inventory
+ * rollup and incident history — which is the first half of the review's #5.
+ */
 export const CALENDAR_TAG = "calendar";
 export const CONTENT_TYPES_TAG = "content-types";
+export const ANALYTICS_TAG = "analytics";
+export const INVENTORY_TAG = "inventory";
+export const INCIDENTS_TAG = "incidents";
+/** The whole account-analytics family. Sits alongside the per-handle tag from
+ *  `accountAnalyticsTag()`: a write about one account expires that handle, and
+ *  Refresh expires the lot without having to know which handles exist. */
+export const ACCOUNT_ANALYTICS_TAG = "account-analytics";
 
+/**
+ * Every tag the Refresh button expires.
+ *
+ * Keep in sync with the `cachedFetcher()` calls. A key missing from here is not
+ * "up to 60s stale" if its family has no tag — it is unreachable, and Refresh
+ * silently does nothing for that panel however many times it is pressed.
+ */
 export const DATA_TAGS = [
   ACCOUNTS_TAG,
+  ACCOUNT_ANALYTICS_TAG,
+  ANALYTICS_TAG,
   CALENDAR_TAG,
   CONTENT_TYPES_TAG,
+  INCIDENTS_TAG,
+  INVENTORY_TAG,
   "cadence-data",
   "geelark-phones",
   "geelark-wallet",
-  "incidents",
   "inventory-data-v4",
   "n8n-executions",
+  "proxycheap-balance",
   "proxycheap-proxies",
   "pulse-stats",
   "scheduler-buckets",
   "scheduler-config",
+  "scheduler-content-types",
+  "scheduler-effective-config",
+  "textverified-balance",
   "textverified-rentals",
 ] as const;
 

@@ -87,6 +87,10 @@ export function TopPostsCard({
 
   useEffect(() => {
     let cancelled = false;
+    // Clearing to null IS the loading state — the card shows a skeleton while
+    // posts is null. It has to happen when the range changes, before the fetch
+    // that replaces it, or the old range's posts sit there looking current.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPosts(null);
     setError(null);
     fetch(`/api/top-posts?range=${range}&platform=${platform}`, { cache: "no-store" })

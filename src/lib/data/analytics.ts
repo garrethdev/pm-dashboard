@@ -1,4 +1,4 @@
-import { TTL, cachedFetcher } from "@/lib/data/cache";
+import { ANALYTICS_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
 
 /**
@@ -360,8 +360,13 @@ export function getAnalytics(range: RangeKey = "7d", platform: PlatformKey = "al
   // `?? 7` would be wrong here: "all" carries a deliberate null.
   const entry = RANGES.find((r) => r.key === range);
   const days = entry ? entry.days : 7;
-  return cachedFetcher(`analytics-v12:${range}:${platform}`, TTL.supabase, () =>
-    fetchAnalytics(days, platform),
+  return cachedFetcher(
+    `analytics-v12:${range}:${platform}`,
+    TTL.supabase,
+    () => fetchAnalytics(days, platform),
+    // Without the family tag the Refresh button cannot reach a range it has
+    // never been told about, and there is one key per range per platform.
+    { tags: [ANALYTICS_TAG] },
   )();
 }
 
@@ -404,11 +409,16 @@ export interface TopContentData {
 export function getTopContent(range: ContentRange = "week") {
   const entry = CONTENT_RANGES.find((r) => r.key === range);
   const days = entry ? entry.days : 7;
-  return cachedFetcher(`analytics-top-content-v1:${range}`, TTL.supabase, async () => {
-    const raw = await sbRpc<{ judged: number; posts: TopContentPost[] }>("analytics_top_content", {
-      p_days: days,
-      p_limit: 12,
-    });
-    return { judged: n(raw.judged), posts: raw.posts ?? [] } satisfies TopContentData;
-  })();
+  return cachedFetcher(
+    `analytics-top-content-v1:${range}`,
+    TTL.supabase,
+    async () => {
+      const raw = await sbRpc<{ judged: number; posts: TopContentPost[] }>("analytics_top_content", {
+        p_days: days,
+        p_limit: 12,
+      });
+      return { judged: n(raw.judged), posts: raw.posts ?? [] } satisfies TopContentData;
+    },
+    { tags: [ANALYTICS_TAG] },
+  )();
 }

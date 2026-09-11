@@ -107,11 +107,27 @@ export async function fetchOverrides(): Promise<Record<string, AccountOverride>>
 }
 
 /**
- * Every account that has override rows, on or off. Shares the accounts tag so
- * a save expires the table and the modal together — two tags would let the row
- * pill and the modal disagree about what is set.
+ * Every account that has override rows, on or off.
+ *
+ * Its own cache KEY, the accounts TAG. The two are different jobs and this
+ * used to conflate them: passing `ACCOUNTS_TAG` as the key meant this fetcher
+ * and `getAccounts()` — which return completely different shapes — were asking
+ * one cache entry for their answer. Raised by the 2026-09-09 external review.
+ *
+ * Keeping the tag preserves the reason the key was shared in the first place:
+ * a save has to expire the accounts table and this together, or the row pill
+ * and the posting modal end up disagreeing about what is set.
+ *
+ * No call sites today (the accounts page calls `fetchOverrides` directly from
+ * inside its own cached fetcher). It is fixed now rather than when someone
+ * wires it to a screen and meets the collision as a bug.
  */
-export const getSchedulerOverrides = cachedFetcher(ACCOUNTS_TAG, TTL.supabase, fetchOverrides);
+export const getSchedulerOverrides = cachedFetcher(
+  "scheduler-overrides-v1",
+  TTL.supabase,
+  fetchOverrides,
+  { tags: [ACCOUNTS_TAG] },
+);
 
 async function fetchContentTypeOptions(): Promise<Record<string, ContentTypeOption[]>> {
   const [chars, registry, pool] = await Promise.all([

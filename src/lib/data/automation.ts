@@ -44,6 +44,14 @@ export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
   // someone sees the red. Cron is 0 30 8 * * 0,1,3,5 with the workflow pinned
   // to America/New_York.
   { id: "84bcYyXfCgtLB7y4", name: "TikTok Analytics Engine", expected: "Sun/Mon/Wed/Fri 08:30 ET", schedule: { type: "dow", days: [0, 1, 3, 5], hour: 8, minute: 30 } },
+  // The gap-day half of the pair above. The engine only runs 4 days a week, so
+  // between its runs the "Last 5 posts" card could sit up to 46h behind what is
+  // actually on TikTok. This one covers Tue/Thu/Sat with a single-page fetch
+  // (10 videos, ~4 days — no pagination) straight into tt_post_performance, and
+  // stops there: no outlier judging, no report, no email. Worst-case staleness
+  // is now under 24h. Tracked here for the same reason as the engine — a silent
+  // stop would leave the card quietly stale while everything else looked fine.
+  { id: "61cCaXSQ4bk1q4xv", name: "Recent Posts Refresh", expected: "Tue/Thu/Sat 08:30 ET", schedule: { type: "dow", days: [2, 4, 6], hour: 8, minute: 30 } },
   // The workflow that actually judges whether accounts are being SEEN. Its
   // verdict is what the Health column renders (via v_account_health_v3), so if
   // it stops running the email goes quiet while the dashboard keeps working —

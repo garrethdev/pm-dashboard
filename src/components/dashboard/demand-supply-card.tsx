@@ -15,6 +15,7 @@ import {
 } from "@/lib/data/inventory";
 import { CtaButton } from "@/components/ui/cta-button";
 import { cn } from "@/lib/utils";
+import { useDataRefresh } from "@/lib/refresh-bus";
 
 /** Demand vs supply. The window is a real recompute server-side, not a scaled
  *  14-day number: `scheduled` is an actual count per window and `pool` is a
@@ -49,6 +50,11 @@ export function DemandSupplyCard({ initial }: { initial: DemandSupplyData }) {
     },
     [],
   );
+
+  // Both halves of the current slice: the window and the applied what-if. A
+  // refresh that dropped the what-if would silently change what the table is
+  // answering.
+  useDataRefresh(useCallback(() => load(range, whatIf), [load, range, whatIf]));
 
   const changeRange = (r: InventoryRangeKey) => {
     setRange(r);

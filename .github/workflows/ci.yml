@@ -1,0 +1,80 @@
+# Checks that run on every push and pull request.
+#
+# From the 2026-09-09 external review, whose last note was "no test suite and no
+# CI — the passing build cannot catch any of the above". This is the answer to
+# the second half.
+#
+# Four checks, all of which block a merge:
+#
+#   typecheck  the whole project through tsc. `next build` does not fail on a
+#              type error the way this does, so it is worth its own step. It
+#              runs `next typegen` first: types like `LayoutProps<"/">` are
+#              GENERATED into .next/types, which does not exist on a fresh
+#              checkout, so tsc alone fails here while passing on any machine
+#              that has built once. This CI caught exactly that on its first
+#              run — see CHANGELOG.md, 2026-09-11.
+#   test       the unit tests. These cover the rules the review found bugs in:
+#              cadence validation, PostgREST paging, and the Refresh button's
+#              tag list.
+#   lint       code-style and React-correctness rules.
+#   build      proves it actually compiles, the same thing Vercel does.
+#
+# Lint blocks as of 2026-09-11. It did not on the day this file was written:
+# there were 32 pre-existing errors and making them a blocker would have meant
+# a permanently red build. They were cleared the same day — 26 by only wrapping
+# the data fetch in a try/catch rather than the markup as well, one by deleting
+# a prop nothing used, and six by writing down, on the line, why a deliberate
+# use of the escape hatch is correct there.
+#
+# **Keep it at zero the honest way.** If this step starts failing, fix the code
+# or write a one-line reason on the exact line. Do not switch a rule off in
+# eslint.config.mjs to get the tick back — a check quietened down to pass is
+# worth less than no check at all.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the Node the dashboard is developed against.
+          node-version: 24
+          cache: npm
+
+      # `npm ci` rather than `npm install`: it installs exactly what
+      # package-lock.json says and fails if the two have drifted, which is the
+      # point of running it here.
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+      # No secrets. Everything the dashboard reads is fetched at request time
+      # from Supabase, n8n and the provider APIs, so nothing here needs a live
+      # key — and CI having none means CI cannot leak one.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"

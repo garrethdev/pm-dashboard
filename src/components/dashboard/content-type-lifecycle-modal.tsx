@@ -123,7 +123,23 @@ export function ContentTypeLifecycleModal({
   const short = glpPerWeek - allocated;
   const balanced = !balances || short === 0;
 
-  const canSave = balanced && !busy && peerLanes.length + (leaving ? 0 : 1) > 0;
+  /**
+   * The "somewhere for the slots to go" guard only applies to a lane that has
+   * slots to give away.
+   *
+   * It used to apply to every lane, which locked the filler lane out of its own
+   * dialog: filler is one fleet-wide registry row against character "All", it
+   * has no GLP peers by definition, so `peerLanes.length` was 0 and Pause and
+   * Retire stayed disabled forever with nothing on screen explaining why.
+   * Resume still worked, because the lane itself counted as a destination —
+   * which is how a lane could be brought back but never taken out again.
+   * Raised by the 2026-09-09 external review.
+   *
+   * When `balances` is false there is no mix to divide and nothing to
+   * reallocate, so there is nothing to require.
+   */
+  const hasSomewhereForTheSlots = !balances || peerLanes.length + (leaving ? 0 : 1) > 0;
+  const canSave = balanced && !busy && hasSomewhereForTheSlots;
 
   async function submit() {
     setBusy(true);
@@ -208,6 +224,20 @@ export function ContentTypeLifecycleModal({
                 </>
               )}
             </p>
+
+            {/* Filler is ONE registry row shared by the whole fleet, so pausing
+                it here is fleet-wide whether you meant that or not. The
+                per-character control is a different screen entirely — a
+                character's own filler cap in Adjust Cadence, which is how
+                Character 5 runs no filler while everyone else keeps theirs.
+                Garreth went looking for that here first (2026-09-11), which is
+                a fair place to look, so the dialog now points at it. */}
+            {leaving && target.bucket === "filler" && (
+              <p className="mt-3 flex items-start gap-2 rounded-nested bg-warn/10 px-3 py-2 text-xs text-warn">
+                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+                This stops filler for every character. To stop it for one, use Adjust Cadence.
+              </p>
+            )}
 
             {leaving && target.scheduledAhead > 0 && (
               <p className="mt-3 flex items-start gap-2 rounded-nested bg-warn/10 px-3 py-2 text-xs text-warn">
