@@ -119,15 +119,25 @@ function verdictEvidence(row: AccountRow): string | undefined {
   return parts.length ? parts.join(" ") : undefined;
 }
 
+/**
+ * No `fetchedAt` prop, deliberately.
+ *
+ * It used to take one and never render it — both callers worked out a
+ * timestamp, formatted it, passed it in, and it was dropped. Rather than start
+ * showing it, it is gone: unlike the "as of" on Analytics and Content Types,
+ * which reports when the numbers were last COLLECTED from TikTok and Instagram
+ * and can be a day or two old, this one only said when the server last read
+ * Supabase — never more than 60 seconds ago, because that is the cache
+ * lifetime. A line that permanently reads "as of a few seconds ago" is clutter
+ * that tells you nothing. (Garreth's call, 2026-09-11.)
+ */
 export function AccountsTable({
   rows: allRows,
-  fetchedAt,
   mode = "page",
   contentTypeOptions = {},
   className,
 }: {
   rows: AccountRow[];
-  fetchedAt: string;
   /** "page" = full detail table with action buttons; "card" = compact homepage card. */
   mode?: "page" | "card";
   /** Selectable content types per character. Page mode only. */
@@ -183,6 +193,11 @@ export function AccountsTable({
 
   // Clear the spinner once the account data shows the cleanup landed.
   useEffect(() => {
+    // Syncing local UI against data that has just arrived from the server,
+    // which is what this effect is for: the spinner belongs to this component
+    // but the fact that ends it (the row reading "Retired") arrives as a prop.
+    // There is nowhere else to notice it.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRetiringProfiles((prev) => {
       if (prev.size === 0) return prev;
       const next = new Map(prev);

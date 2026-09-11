@@ -73,14 +73,53 @@ async function ensureBucket() {
   console.log(`created public bucket ${BUCKET}`);
 }
 
+/** Nothing we want a preview frame from is anywhere near this big; a source
+ *  that is has gone wrong, and reading it all into memory is how one bad row
+ *  takes the whole run down. */
+const MAX_DOWNLOAD_BYTES = 64 * 1024 * 1024;
+const DOWNLOAD_TIMEOUT_MS = 60_000;
+/** ffmpeg reads one frame, so it should be quick. A hang here would otherwise
+ *  block the loop indefinitely — there is no timeout in execFile by default. */
+const FFMPEG_TIMEOUT_MS = 60_000;
+
+/**
+ * Fetch a source file, bounded in both time and size.
+ *
+ * Unbounded before — no timeout, no cap, `arrayBuffer()` straight into memory.
+ * A slow or enormous media URL could hang the script for as long as the remote
+ * cared to keep the socket open. Raised by the 2026-09-09 external review.
+ * The body is read in chunks so the cap bites while downloading rather than
+ * after the whole thing is already in memory.
+ */
 async function download(url) {
   const parsed = parseStorageUrl(url);
   const target = parsed
     ? `${SUPABASE_URL}/storage/v1/object/${parsed.bucket}/${parsed.path}`
     : url;
-  const res = await fetch(target, { headers: parsed ? auth : {} });
+
+  const res = await fetch(target, {
+    headers: parsed ? auth : {},
+    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+  });
   if (!res.ok) throw new Error(`download ${res.status}`);
-  return Buffer.from(await res.arrayBuffer());
+
+  // Trust the declared length when there is one — it saves pulling bytes we
+  // are only going to throw away.
+  const declared = Number(res.headers.get("content-length") ?? 0);
+  if (declared > MAX_DOWNLOAD_BYTES) {
+    throw new Error(`source is ${Math.round(declared / 1e6)}MB, over the ${MAX_DOWNLOAD_BYTES / 1e6}MB cap`);
+  }
+
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of res.body) {
+    total += chunk.length;
+    if (total > MAX_DOWNLOAD_BYTES) {
+      throw new Error(`source passed the ${MAX_DOWNLOAD_BYTES / 1e6}MB cap while downloading`);
+    }
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
 }
 
 async function main() {
@@ -128,7 +167,9 @@ async function main() {
 
         // One command for both shapes: for a video this takes the first frame,
         // for a still it just rescales. 540px wide is twice the card's preview.
-        await run("ffmpeg", ["-y", "-i", raw, "-frames:v", "1", "-vf", "scale=540:-2", out]);
+        await run("ffmpeg", ["-y", "-i", raw, "-frames:v", "1", "-vf", "scale=540:-2", out], {
+          timeout: FFMPEG_TIMEOUT_MS,
+        });
 
         const body = await readFile(out);
         const up = await fetch(
@@ -166,6 +207,15 @@ async function main() {
 
   console.log(`\ncaptured ${done.length}, failed ${failed.length}`);
   for (const [t, why] of failed) console.log(`  ${t}: ${why}`);
+
+  // Exit non-zero when anything failed. This used to print the failures and
+  // exit 0, so a run that captured nothing at all still reported success — the
+  // same silent-failure shape the review found in the monitoring code, and the
+  // reason a cron wrapped around this would never have told anyone. Raised by
+  // the 2026-09-09 external review.
+  if (failed.length > 0) {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((err) => {

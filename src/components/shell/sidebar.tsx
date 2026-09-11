@@ -148,6 +148,10 @@ export function Sidebar() {
 
   useEffect(() => {
     try {
+      // localStorage does not exist on the server, so the collapsed
+      // preference cannot be known until this is running in the browser.
+      // Rendering expanded and correcting is the only order available.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCollapsedPref(localStorage.getItem("pm-sidebar") === "collapsed");
     } catch {}
   }, []);

@@ -362,12 +362,20 @@ export async function getCadenceState(): Promise<unknown> {
 /**
  * Write the cadence mix and the fleet defaults.
  *
- * Lanes are PATCHed one at a time by (content_type, character): that pair is
- * the registry's identity, and `divorce_story` (Char 2, retired) vs
- * `divorce_stories` (Char 4, active) is the reason content_type alone is not
- * enough. Both scheduler_buckets rows get the same fleet values — the account
- * config view resolves them with max(), so leaving one behind would let the
- * stale row win.
+ * Lanes are PATCHed one at a time by (content_type, character). The character
+ * is there as a GUARD, not as part of the key: `content_type_registry`'s
+ * primary key is `content_type` alone (checked live 2026-09-10), so the type
+ * already identifies the row and the character clause only makes the update
+ * touch nothing if the two disagree — which is what the row-count check below
+ * turns into a real error. An earlier version of this comment claimed the pair
+ * was the registry's identity and cited `divorce_story` (Char 2, retired)
+ * against `divorce_stories` (Char 4, active); those are two different content
+ * types, so they were never evidence of anything. Do not "fix" the joins
+ * elsewhere on the strength of that story.
+ *
+ * Both scheduler_buckets rows get the same fleet values — the account config
+ * view resolves them with max(), so leaving one behind would let the stale row
+ * win.
  */
 export async function saveCadence(
   lanes: CadenceLaneWrite[],

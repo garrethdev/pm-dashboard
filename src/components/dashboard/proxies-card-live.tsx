@@ -2,6 +2,7 @@ import { DashCard } from "@/components/ui/card";
 import { ProxiesCard, type AttentionItem } from "@/components/dashboard/proxies-card";
 import { getProxyPhoneData, type ProxyPhoneData } from "@/lib/data/proxies";
 import { daysTone, formatEtShort, formatPhone } from "@/lib/data/format";
+import { upstreamMessage } from "@/lib/data/upstream-error";
 import { phoneExtendHref, proxyExtendHref } from "@/lib/provider-links";
 
 const MAX_ROWS = 6;
@@ -96,25 +97,25 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
 
 /** Server wrapper: fetches live data, reduces it to display props. */
 export async function ProxiesCardLive({ className }: { className?: string }) {
+  let data;
   try {
-    const data = await getProxyPhoneData();
-    const proxies = proxyAttention(data);
-    const phones = phoneAttention(data);
-    return (
-      <ProxiesCard
-        fetchedAt={formatEtShort(data.fetchedAt)}
-        className={className}
-        proxies={proxies}
-        phones={phones}
-      />
-    );
+    data = await getProxyPhoneData();
   } catch (err) {
     return (
       <DashCard title="Proxies & phones" viewAllHref="/proxies" className={className}>
         <p className="text-sm text-text-muted">
-          Upstream unreachable: {err instanceof Error ? err.message : "unknown error"}
+          {upstreamMessage(err, "The proxy and phone data")}
         </p>
       </DashCard>
     );
   }
+
+  return (
+    <ProxiesCard
+      fetchedAt={formatEtShort(data.fetchedAt)}
+      className={className}
+      proxies={proxyAttention(data)}
+      phones={phoneAttention(data)}
+    />
+  );
 }

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, Bell, CheckCircle2, RotateCw } from "@/components/ui/icons";
 import { MobileNavTrigger } from "@/components/shell/mobile-nav";
 import { displayNameOf } from "@/lib/people";
+import { reloadClientViews } from "@/lib/refresh-bus";
 import { cn } from "@/lib/utils";
 
 const SECTION_NAMES: Record<string, string> = {
@@ -181,6 +182,10 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   }, []);
 
   useEffect(() => {
+    // Subscribing to an external system — the notifications endpoint — which
+    // is exactly the case this rule exempts. The first call cannot wait for
+    // the 20s interval or the bell would be empty for the first 20 seconds.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     const t = setInterval(load, 20_000);
     const onFocus = () => load();
@@ -192,9 +197,19 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   }, [load]);
 
   /**
-   * router.refresh() re-renders but still reads the same unstable_cache entry,
-   * so on its own the button did nothing for up to 60s. Expire the tags first,
-   * then re-render and re-pull the client-polled panels.
+   * Refresh, in three parts. All three are needed and none of them covers for
+   * another:
+   *
+   *  1. **Expire the server caches.** `router.refresh()` re-renders but reads
+   *     the same `unstable_cache` entry, so without this the button did
+   *     nothing for up to 60 seconds.
+   *  2. **Re-render.** Picks up the newly-expired data for everything drawn on
+   *     the server.
+   *  3. **Reload what the client is holding.** Half the pages seed React state
+   *     from their first server render and fetch every later slice themselves;
+   *     a re-render does not touch that state, so Calendar, Analytics, Content
+   *     Types, Demand/Supply and Incident History would keep showing the slice
+   *     they already had. See `refresh-bus.ts`.
    */
   const refresh = useCallback(async () => {
     if (refreshing) return;
@@ -210,12 +225,18 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
       /* fall through — a plain re-render is still better than nothing */
     }
     router.refresh();
-    await load();
+    // The notification bell and the views that hold their own state, together.
+    // The spinner stays up until they are all done, so "finished" on screen
+    // means the numbers on screen have actually been re-read.
+    await Promise.all([load(), reloadClientViews()]);
     setRefreshing(false);
   }, [refreshing, pathname, router, load]);
 
   useEffect(() => {
     if (!open) return;
+    // Opening the panel is a deliberate "show me the latest": re-reading on
+    // open is the point, not an accident of rendering.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     const close = (e: MouseEvent) => {
       const t = e.target as Node;

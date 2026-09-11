@@ -1,10 +1,18 @@
 # Backlog
 
-Three separate lists. Check which one you are in before picking something up —
-they have different bars for "done".
+Four lists. Check which one you are in before picking something up — they have
+different bars for "done".
 
+- **[From the 2026-09-09 code review](#from-the-2026-09-09-external-code-review)**
+  is what is still open from the first review of this codebase by someone
+  outside the project. **Nearly all of it is now closed** — as of 2026-09-11
+  only the anon-key hardening and the unmonitored Virlo pipeline remain. Grouped by where it came from rather than by tier, because it
+  shares one set of caveats about how far to trust it. Each entry says which
+  tier it would otherwise sit in.
 - **[V1 — open work](#v1--open-work)** is the shipping product. Bugs, unverified
-  fixes and decisions still owed. These block or degrade what is live now.
+  fixes and decisions still owed. These block or degrade what is live now — with
+  one deliberate exception at the end of the list, the anon-key security
+  finding, which degrades nothing visible and is held open by instruction.
 - **[V2 — deferred features](#v2--deferred-features)** is work that was
   understood, costed and consciously postponed. Nothing here is broken; none of
   it is blocked on discovery. Do not start one of these while a V1 item is open.
@@ -16,64 +24,95 @@ Newest first within each list.
 
 ---
 
+# From the 2026-09-09 external code review
+
+`PM-CODEBASE-REVIEW-2026-09-09.md` — the first review of this codebase by
+someone outside the project. **Read this before picking up anything below it.**
+
+**Almost all of it is now closed.** Six of its eight numbered findings were
+fixed by 2026-09-10; the remaining two, plus every one of its smaller cautions,
+were fixed on 2026-09-11 — including the last one, "no test suite and no CI".
+All of it is in `CHANGELOG.md`. **Two things are left**, and they are both
+below.
+
+**How far to trust the document.** It was written against a ZIP snapshot rather
+than this repo, so:
+
+- **Every source link in it is dead** — they point into a deleted
+  `/private/tmp/pm-review.*` folder.
+- **Its line numbers are close but no longer exact.**
+- **It cannot tell fixed from broken.** It predates six migrations and several
+  commits, and it was already wrong about one finding when it was written.
+
+Re-confirm anything from it against the live code before acting. Do not close an
+item here by agreeing with the review.
+
+## Who can reach the database — answered, hardening open in V1
+
+**The review's only genuine security finding, and the one thing from it still
+open by instruction rather than by effort.**
+
+**The answer, measured live 2026-09-11 against `qlcmgxgwpzmiebzxflai`:** the
+review was right, and it is worse than a ZIP could show. 155 of the 180 tables
+in `public` have row-level security off *and* grant `anon` full
+`SELECT/INSERT/UPDATE/DELETE`. A `GET /rest/v1/content_type_registry` carrying
+only the anon key returned `200` with live rows from the open internet.
+
+**Nothing has been revoked, per Garreth's instruction 2026-09-11 — do not
+revoke.** The full finding, the counts, the blast-radius question and the
+hardening plan live in
+[Close the anon-key hole on the database](#close-the-anon-key-hole-on-the-database),
+**last in V1**.
+
+**Why it moved rather than closed.** The dashboard itself is not the exposure —
+the anon key never reaches the browser and every read already goes through the
+service role. What is left is a database-side hardening pass across 155 tables
+and 172 functions, held open by an explicit instruction rather than by
+uncertainty about what to do.
+
+**Standing rule while it is open:** a migration that touches an existing
+function must leave its grants alone. `content_type_stats` was rewritten on
+09-11 and its `anon`/`authenticated` EXECUTE grants were deliberately preserved
+— hardening one function inside an unrelated fix would make the eventual audit
+harder, not easier, because the count would no longer mean what it says here.
+
+## The Virlo research pipeline is not monitored
+
+**A caution from the review. V1. Not part of the 2026-09-11 batch — still
+open.**
+
+The automation card tracks a fixed list of 14 workflows by ID. The Virlo
+research, analysis and bridge workflows are not in it, so if they stop, nothing
+on the dashboard says so.
+
+Two things to keep in mind while fixing it: the card's state is derived from n8n
+executions, which is not evidence that expected rows arrived; and
+`analytics_freshness_check()` may already cover some feeds, but its SQL is not
+in the repo.
+
+## Settled — no action
+
+**The review's "registry identity inconsistency" caution.**
+
+`content_type_registry`'s primary key is `content_type` **alone** — checked live
+2026-09-10, re-confirmed 2026-09-11. Patching by it is correct, and
+cross-character collisions cannot happen. Only the code comments describing
+`(content_type, character)` as the identity were wrong; those were corrected on
+2026-09-11, along with the `divorce_story` / `divorce_stories` story that was
+cited as evidence for them and was never evidence of anything — they are two
+different content types.
+
+**Do not "fix" the joins on the strength of those comments.**
+
+## Also from the review, parked in V2
+
+[Fill the content-intelligence tables](#fill-the-content-intelligence-tables--the-carousel-generators-backend)
+— the seven knowledge tables exist and are all empty against 3,468 collected
+sources. Deferred with the carousel generator that will consume them.
+
+---
+
 # V1 — open work
-
-## The rest of the 2026-09-09 external code review
-
-**Two findings from the first outside review of this codebase
-(`PM-CODEBASE-REVIEW-2026-09-09.md`) that are still open.** Its high-severity
-items — silent monitoring failures, retirement claiming unproven success, and
-non-atomic settings writes — were fixed on 2026-09-10 and are in `CHANGELOG.md`.
-These are what is left.
-
-Two notes before picking one up. The review was done against a ZIP snapshot, not
-this repo, so **every source link in it is dead** (they point into a deleted
-`/private/tmp/pm-review.*` folder) and it cannot tell fixed from broken. And its
-line numbers are close but no longer exact. Re-confirm before trusting any of it.
-
-**1. Refresh does not refresh everything (the review's #5).** `DATA_TAGS` in
-`cache.ts` omits the analytics range keys, the account-analytics family, the
-inventory-rollup ranges and the incident-history ranges. There is a second
-layer underneath: Calendar, Analytics, Content Types, Demand/Supply and Incident
-History all seed local state from server props, and `router.refresh()` leaves
-that state alone — so those views need an explicit reload for their current
-slice. Shortening TTLs does not touch the second problem.
-
-**2. What is left of the cadence finding (the review's #6).** Two of its three
-parts are now closed: `42af79f` made the route reject a lane belonging to
-another character, and `save_cadence_mix()` raises when a lane matches zero
-registry rows, so a silent no-op PATCH is no longer possible. Still true:
-`parseLanes()` does not reject **duplicate lane identities** before the
-client-side sum check — the database now refuses the save, but the error is a
-late and clumsy way to say "you sent the same lane twice" — and a lane's
-`character` still arrives from the browser rather than being read from
-`content_type_registry`. Derive the allowed mix from the database.
-
-**Also flagged, smaller, all confirmed still true:**
-
-- **The profile-card lookup ignores platform.** `account_profile_cards` *has* a
-  `platform` column, but `account-detail.ts:233` filters on `username` alone, so
-  the same handle on both platforms returns whichever row comes back first. Same
-  family as the account-analytics cache key fixed on 09-10, and about as small.
-- `getSchedulerOverrides` (`scheduler-overrides.ts`) shares `ACCOUNTS_TAG` as
-  its cache key while returning a different shape. It has **no call sites** —
-  give it its own key before wiring it to a screen.
-- Account performance reads and all-time totals do not paginate and will
-  silently truncate at PostgREST's row cap as the corpus grows.
-- The ScrapeCreators health probe reports "ok" when the key merely exists, and
-  still counts toward successful probes.
-- The filler lifecycle modal's `canSave` needs a peer or a resumed self, so a
-  fleet-wide filler lane with no GLP peers cannot be paused or retired there.
-- No test suite and no CI. The passing build cannot catch any of the above.
-
-**Settled, no action:** the review's "registry identity inconsistency" caution.
-`content_type_registry`'s primary key is `content_type` **alone** (checked live
-2026-09-10), so patching by it is correct and cross-character collisions cannot
-happen. Only the code comments describing `(content_type, character)` as the
-identity were wrong. Do not "fix" the joins on the strength of those comments.
-
-**Done when:** each of the two has either landed or been moved to V2 with a
-reason. Do not close this by agreeing with the review — it is wrong in places.
 
 ## Verify Character 5's first scheduled run
 
@@ -128,6 +167,12 @@ whole of `src/lib/data/cache.ts` is built on it.
 
 **Spiked on `perf/cache-components` and backed out. Read this before starting
 again; the shape of the job is not what it looks like.**
+
+**One extra thing to carry across, added 2026-09-11:** `cache.test.ts` reads the
+source of `src/lib/data/` and checks that every cache family a fetcher asks for
+is one the Refresh button knows how to clear. Whatever replaces `DATA_TAGS` has
+to keep an equivalent check — the fault it catches (Refresh silently doing
+nothing for a panel) has no error message and no type that can express it.
 
 `use cache` does nothing without `cacheComponents: true`, and that flag turns on
 instant-navigation validation across every route. The spike enabled it and
@@ -195,8 +240,10 @@ not.
 
 ## Concurrent reads make the app say "Supabase unreachable"
 
-**Seen twice on 2026-09-08, from two unrelated directions.** Same root cause,
-and the app blames the wrong thing both times.
+**Seen twice on 2026-09-08, from two unrelated directions, and by Garreth
+"a couple of times" since.** Same root cause. The app used to blame the wrong
+thing; as of 2026-09-11 the message is honest, but the slowdown causing it is
+still here.
 
 **What happened.** Garreth saved the fleet cadence at 07:04:49 UTC. Saving
 expires every cached figure on purpose so the new numbers show at once, so the
@@ -236,9 +283,14 @@ Two entries, one cause.
 
 **Three levers, cheapest first:**
 
-1. **Fix the message.** A timeout is not unreachability. "Supabase is taking
-   longer than 10s — it is still responding, try Refresh" is honest and costs a
-   string. Do not raise the timeout to hide it.
+1. ~~**Fix the message.**~~ **Done 2026-09-11.** A timeout is not
+   unreachability, and the copy no longer says it is: it now says the far end
+   took too long and is probably still running, names the usual cause (several
+   panels reloading at once) and points at Refresh. A far
+   end that genuinely answered with an error quotes the status code instead.
+   The timeout itself is unchanged at 10s — it was not raised to hide the
+   problem, and raising it would only move the symptom. **This makes the screen
+   honest; the slowdown below is untouched, so levers 2 and 3 still stand.**
 2. **Stagger the post-save refetch.** Expiring every tag at once is what creates
    the burst. Expiring only what the write actually changed, or refetching
    panels in sequence, removes the spike without touching the database.
@@ -413,6 +465,38 @@ and this entry cannot make it for him.
 
 ## TikTok ingest — storm fixed, run still fails
 
+> **UPDATE 2026-09-11 — root cause found, headroom fix applied, structural fix
+> still open.** "The thread underneath" below was right, and it is now measured.
+> The failing node is the upsert, and it is a **Postgres `statement_timeout`**,
+> not a gateway flake: 10-row chunks took 10–19s each and 17 crossed the 30s
+> `service_role` ceiling between 12:16 and 12:18 UTC on 09-11, logging
+> `canceling statement due to statement timeout`. PostgREST drops the connection
+> and n8n renders it as *"connection was aborted, perhaps the server is
+> offline"*, which is why three separate investigations blamed the network. The
+> node's `onError: stopWorkflow` then ended the run, so the judging and report
+> half never executed — the unjudged outliers were a symptom, not a cause.
+>
+> **The missing piece this entry never had:** `ON CONFLICT` does **not** spare
+> the trigger. Postgres fires a BEFORE INSERT trigger for every row, including
+> the ones that resolve to UPDATE, so refreshing 250 existing rows costs exactly
+> as much as inserting 250 new ones. That is why per-write cost never improved.
+>
+> **Applied:** chunk 10 → 5 in both the engine and the new gap-day workflow
+> (~5–9s per statement), plus the one missing prefix index
+> (`cleora_content.caption`; 29/29 covered now, though at 44 rows it was never
+> the cause). Both published and verified.
+>
+> **Still open, and this is the real fix:** stop doing caption attribution inside
+> a per-row BEFORE INSERT trigger. `match_content_id` loops ~29 registered
+> caption columns per row and retries all of them on a 60-char prefix when the
+> first pass misses. Halving the chunk buys headroom; it does not reduce that
+> cost, and the cost grows with every content type added to the registry. Move it
+> to a batched post-insert pass, or skip it when the row already exists.
+>
+> **Also unexplained:** the gap-day workflow runs the identical upsert at the
+> same chunk size and averaged 0.6s per chunk against the engine's 10–19s. Worth
+> knowing before assuming the engine is fixed.
+
 **Checked 2026-09-08 against the 2026-09-07 12:30 UTC run (execution `147426`).**
 Four of the five checks pass. The item stays open because the run still
 errors, for a different and much smaller reason than before.
@@ -564,6 +648,149 @@ the assistant's project memory.
   instance and lost on restart, so a cold-start outage is not covered.
 
 ---
+
+## Close the anon-key hole on the database
+
+**The 2026-09-09 review's only genuine security finding, measured live
+2026-09-11. Promoted to V1 by Garreth 2026-09-11 — it sits last in this list by
+position, not by priority.**
+
+Unlike the rest of V1 this is not a broken screen or an unverified fix: nothing
+about it is visible in the product, and leaving it open degrades nothing a user
+would notice. It is here because it is the only open item whose downside is
+someone else's action rather than a defect of our own.
+
+**Standing instruction, Garreth 2026-09-11: do not revoke anything for now.**
+Everything below is written to be picked up later, in order. Nothing in it has
+been applied.
+
+### The findings
+
+Measured against the live database (`qlcmgxgwpzmiebzxflai`), not inferred from
+the review document:
+
+| | count |
+|---|---|
+| Tables in `public` | 180 |
+| **RLS off _and_ `anon` holds SELECT/INSERT/UPDATE/DELETE** | **155** |
+| RLS on with **zero** policies — effectively locked, service role only | 16 |
+| RLS on with policies — never reviewed | 9 |
+| Functions in `public` executable by `anon` | 172 of 175 |
+
+`anon` and `authenticated` each hold `SELECT, INSERT, UPDATE, DELETE, TRUNCATE,
+REFERENCES, TRIGGER` on 231 objects. The two are identical, so signing in
+changes nothing.
+
+**Proven, not assumed:** a `GET /rest/v1/content_type_registry` sent over the
+open internet carrying only the anon key returned `200` with live rows. Read,
+write and delete on the operational data are available to anyone holding that
+key.
+
+**The 16 RLS-on/zero-policy tables are the correct shape.** RLS with no policy
+denies every role except the service role, which bypasses it. That is the target
+state for the other 155 — the fix is not "write 155 policies", it is "grant
+nothing and turn RLS on".
+
+### "It is an internal app" — what that does and does not cover
+
+**Established by Garreth 2026-09-11.** The dashboard is for the team only. That
+is real and it lowers the odds, but it is worth being precise about what it
+protects, because the honest answer is "the app, and nothing else":
+
+- **The app being internal does not make the database internal.** PostgREST sits
+  on the public internet at `<project>.supabase.co/rest/v1/...` regardless of
+  who the dashboard is for. The `200` recorded above was fetched from outside
+  the network.
+- **Public signup is enabled.** Checked live 2026-09-11:
+  `GET /auth/v1/settings` returns `disable_signup: false` with the email
+  provider on. Anyone holding the anon key can create an account against this
+  project and confirm it from their own inbox. `ALLOWED_EMAILS` stops them at
+  the dashboard's front door; it does not stop them getting a valid
+  `authenticated` JWT.
+
+**Today that escalates nothing**, because `anon` already holds everything
+`authenticated` does — same precondition, same access. It matters for the *fix*,
+and it is the reason the revoke below names both roles. See the warning in
+step 2.
+
+**Done when** (small, separable, and worth doing even while the revoke is
+parked): decide whether signup should be open at all. If the team is a fixed
+list, turning signup off in the Supabase dashboard costs nothing and removes a
+whole class of future mistake.
+
+### What is *not* wrong, and why the urgency is lower than the numbers suggest
+
+Both verified 2026-09-11. Re-check both before acting, because if either stops
+being true the tier changes:
+
+- **The anon key never reaches the browser.** No `NEXT_PUBLIC_` anything in
+  `src/` or in either env file; `.env.example` carries a comment saying to keep
+  it that way.
+- **The grants are not load-bearing for the dashboard.** `SUPABASE_ANON_KEY`
+  appears in exactly three places — `proxy.ts`, `lib/supabase/server.ts`, and
+  the health probe — and all three are auth-only (`auth.getUser()`, session
+  cookie refresh). Every data read and write goes through the service role in
+  `lib/supabase/admin.ts`.
+
+So the exposure is a key that has not leaked, rather than an open door on the
+public site. That is worth being honest about in both directions: it is why this
+sat outside V1 until it was promoted, and it is also not a control. A Supabase anon key
+is designed to be publishable, it is one static JWT for the whole project, it
+cannot be rotated per-consumer, and this project is shared.
+
+### The work, in order
+
+**1. Establish the blast radius — this gates everything else.**
+
+Six n8n credentials point at Supabase: `Supabase Service Role`, `Supabase`,
+`Supabase Peptide Miracles`, `Supabase Peptide Miracles Production`, `Supabase
+Research Agent`, `Supabase JobOps`. n8n never returns credential secrets, so
+**which key each one holds is unknown** and the names are not evidence. If any
+one of them carries the anon key, revoking breaks workflows silently across a
+340-workflow instance.
+
+Read the `role` claim out of each credential in the n8n UI, or apply the revoke
+to a Supabase branch and run the workflows against it. Write down what each
+credential holds — that list is worth having on its own.
+
+**2. Revoke, naming both roles.**
+
+**Do not revoke `anon` alone.** The instinct is that `authenticated` is "our
+team" and can keep its grants — that is wrong here, because signup is open (see
+above), so `authenticated` means anyone on the internet who bothered to register.
+Revoking `anon` while keeping `authenticated` looks like a fix, closes nothing,
+and is harder to spot the second time.
+
+The 2026-09-10 `atomic_settings_writes` lesson applies exactly: `revoke … from
+public` does **not** remove a grant Supabase made to `anon` and `authenticated`
+by name, and a named grant survives a revoke from PUBLIC. That mistake shipped
+once already.
+
+```sql
+-- per table, for the 155
+revoke all on table public.<name> from anon, authenticated;
+alter table public.<name> enable row level security;  -- no policy = deny all
+
+-- and the default for anything created later
+alter default privileges in schema public revoke all on tables from anon, authenticated;
+alter default privileges in schema public revoke all on functions from anon, authenticated;
+```
+
+**3. Do the same pass on the 172 anon-executable functions.** A locked table is
+still reachable through a `security definer` function that reads it. Step 2 on
+its own is a half-fix.
+
+**4. Review the 9 RLS-on-with-policies tables.** Never looked at. A permissive
+policy (`using (true)`) is the same hole wearing a policy.
+
+**5. Read the ACL back and re-run the request.** Do not trust the migration's
+exit code — read `proacl`/`role_table_grants` back and confirm `anon` and
+`authenticated` are gone. Reading the ACL back is what caught the 09-10 mistake.
+
+**Done when:** every n8n credential's key is known and written down, the revoke
+is applied, the ACL read-back shows both roles gone, and the same anon `GET`
+that returned `200` on 2026-09-11 returns `401`.
+
 
 # V2 — deferred features
 

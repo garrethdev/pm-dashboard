@@ -120,8 +120,25 @@ export async function GET() {
     }),
 
     probe("scrapecreators", ["SCRAPECREATORS_API_KEY"], async () => {
-      // TODO: live credential — used by the §4.1 visibility cron; probe added with that phase.
-      return { ok: true, detail: "key present (endpoint probe lands with visibility cron)" };
+      // A real request, not a look at process.env. This used to return ok:true
+      // on the strength of the key merely existing, say so in `detail`, and
+      // then count itself among the successful probes anyway — so the one
+      // screen whose job is "which credentials work" reported a working
+      // credential it had never tried. Raised by the 2026-09-09 external
+      // review.
+      //
+      // The credit-balance endpoint is the right one to ask: it needs the key
+      // (a wrong one answers 401 — verified 2026-09-11), it costs no credits,
+      // and what it returns is worth seeing. ScrapeCreators pays for every
+      // avatar and follower count on the accounts pages, so a balance running
+      // down is a real thing to know before it hits zero.
+      const res = await timedFetch("https://api.scrapecreators.com/v1/account/credit-balance", {
+        headers: { "x-api-key": process.env.SCRAPECREATORS_API_KEY! },
+      });
+      if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
+      const body = (await res.json()) as { success?: boolean; creditCount?: number };
+      if (body.success !== true) return { ok: false, detail: "key rejected" };
+      return { ok: true, detail: `${body.creditCount ?? "?"} credits remaining` };
     }),
   ]);
 

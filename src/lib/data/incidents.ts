@@ -1,4 +1,4 @@
-import { TTL, cachedFetcher } from "@/lib/data/cache";
+import { INCIDENTS_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
 import { TRACKED_WORKFLOWS } from "@/lib/data/automation";
 import {
@@ -402,8 +402,11 @@ async function fetchIncidents(
 }
 
 /** Dashboard card: last 48h, trimmed to what the card can show. */
-export const getIncidents = cachedFetcher("incidents", TTL.supabase, () =>
-  fetchIncidents(2, 15, 20),
+export const getIncidents = cachedFetcher(
+  "incidents-card-v1",
+  TTL.supabase,
+  () => fetchIncidents(2, 15, 20),
+  { tags: [INCIDENTS_TAG] },
 );
 
 /**
@@ -413,7 +416,11 @@ export const getIncidents = cachedFetcher("incidents", TTL.supabase, () =>
 export function getIncidentHistory(range: IncidentRange = "30d") {
   const entry = INCIDENT_RANGES.find((r) => r.key === range);
   const days = entry ? entry.days : 30;
-  return cachedFetcher(`incident-history:${range}`, TTL.supabase, () =>
-    fetchIncidents(days, 500, 1000),
+  return cachedFetcher(
+    `incident-history:${range}`,
+    TTL.supabase,
+    () => fetchIncidents(days, 500, 1000),
+    // One key per range, so only the family tag makes Refresh work here.
+    { tags: [INCIDENTS_TAG] },
   )();
 }

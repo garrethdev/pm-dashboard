@@ -11,6 +11,7 @@ import { FilterPills } from "@/components/ui/filter-pills";
 import { formatEtDate } from "@/lib/data/format";
 import { INCIDENT_RANGES, type Incident, type IncidentRange } from "@/lib/data/incidents";
 import { cn } from "@/lib/utils";
+import { useDataRefresh } from "@/lib/refresh-bus";
 
 /**
  * Full incident history. Same five sources as the dashboard card, over a
@@ -70,6 +71,8 @@ export function IncidentHistory({
       setLoading(false);
     }
   }, []);
+
+  useDataRefresh(useCallback(() => load(range), [load, range]));
 
   // Fetching from the change handler rather than an effect: the server already
   // rendered `initialRange`, so an effect would need a "have I mounted yet"

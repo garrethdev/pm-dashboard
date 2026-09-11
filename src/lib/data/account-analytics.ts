@@ -1,5 +1,5 @@
-import { TTL, cachedFetcher, type Cached } from "@/lib/data/cache";
-import { sbRest } from "@/lib/data/supabase";
+import { ACCOUNT_ANALYTICS_TAG, TTL, cachedFetcher, type Cached } from "@/lib/data/cache";
+import { sbRestAll } from "@/lib/data/supabase";
 import { resolveThumbnail } from "@/lib/data/top-posts";
 
 /**
@@ -11,9 +11,10 @@ import { resolveThumbnail } from "@/lib/data/top-posts";
  * Aggregated in TypeScript rather than in an RPC, which is the opposite of the
  * fleet page. That is deliberate: analytics_rollup aggregates in Postgres
  * because PostgREST caps a response at 1000 rows and the two perf tables hold
- * ~2.8k between them, so a client-side sum would silently under-report. One
- * account cannot hit that cap — the busiest has 201 rows, the average 60 — so
- * a plain select is honest here and saves a migration.
+ * ~3.3k between them, so a client-side sum would silently under-report. One
+ * account is far below that cap today — the busiest has 203 rows, the average
+ * 60 — but the read pages anyway (see rowsFor), because the cap gives no sign
+ * when it bites and "we are comfortably under it" is a fact with a shelf life.
  *
  * NOT real-time. Both perf tables are filled by scheduled ingests, so
  * `lastIngest` is the honest "as of" and is rendered beside the range picker.
@@ -118,13 +119,23 @@ function bucketLabel(key: string, bucket: "day" | "week"): string {
   return bucket === "day" ? md : `w/c ${md}`;
 }
 
-/** One account's rows from whichever perf table holds them. */
+/**
+ * One account's rows from whichever perf table holds them.
+ *
+ * Paged, not a plain select. The busiest account holds 203 rows today against
+ * PostgREST's 1000-row cap, so nothing is being truncated yet — but the cap is
+ * silent when it bites, and "All time" on an account that has been posting for
+ * three years is exactly how you would first meet it: no error, just totals
+ * that stopped growing. `post_id` breaks ties in the sort so paging cannot
+ * repeat or drop a row when two posts share a timestamp.
+ */
 async function rowsFor(account: string, platform: string, sinceIso: string | null) {
   const table = platform === "instagram" ? "post_performance" : "tt_post_performance";
   const cols = "post_id,post_url,posted_at,caption_snippet,views,likes,comments,total_engagement,ingested_at";
   const since = sinceIso ? `&posted_at=gte.${sinceIso}` : "";
-  return sbRest<RawRow[]>(
-    `${table}?select=${cols}&account=eq.${encodeURIComponent(account)}${since}&order=posted_at.desc`,
+  return sbRestAll<RawRow>(
+    `${table}?select=${cols}&account=eq.${encodeURIComponent(account)}${since}` +
+      "&order=posted_at.desc,post_id.desc",
   );
 }
 
@@ -280,6 +291,11 @@ export function getAccountAnalytics(
     `account-analytics-v2:${account ?? "none"}:${platform}:${range}`,
     TTL.supabase,
     () => fetchAccountAnalytics(account, platform, days),
-    { tags: account ? [accountAnalyticsTag(account)] : [] },
+    // Two tags, two jobs. The per-handle one lets a write about one account
+    // expire just that account; the family one lets the Refresh button expire
+    // the lot without having to know which handles or ranges exist.
+    {
+      tags: account ? [ACCOUNT_ANALYTICS_TAG, accountAnalyticsTag(account)] : [ACCOUNT_ANALYTICS_TAG],
+    },
   )();
 }

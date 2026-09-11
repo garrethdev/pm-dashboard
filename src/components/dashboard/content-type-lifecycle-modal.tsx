@@ -123,7 +123,23 @@ export function ContentTypeLifecycleModal({
   const short = glpPerWeek - allocated;
   const balanced = !balances || short === 0;
 
-  const canSave = balanced && !busy && peerLanes.length + (leaving ? 0 : 1) > 0;
+  /**
+   * The "somewhere for the slots to go" guard only applies to a lane that has
+   * slots to give away.
+   *
+   * It used to apply to every lane, which locked the filler lane out of its own
+   * dialog: filler is one fleet-wide registry row against character "All", it
+   * has no GLP peers by definition, so `peerLanes.length` was 0 and Pause and
+   * Retire stayed disabled forever with nothing on screen explaining why.
+   * Resume still worked, because the lane itself counted as a destination —
+   * which is how a lane could be brought back but never taken out again.
+   * Raised by the 2026-09-09 external review.
+   *
+   * When `balances` is false there is no mix to divide and nothing to
+   * reallocate, so there is nothing to require.
+   */
+  const hasSomewhereForTheSlots = !balances || peerLanes.length + (leaving ? 0 : 1) > 0;
+  const canSave = balanced && !busy && hasSomewhereForTheSlots;
 
   async function submit() {
     setBusy(true);

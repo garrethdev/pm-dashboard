@@ -97,6 +97,27 @@ function foldCharacterRows(rows: RawCharacterOverride[]): CharacterOverride {
   };
 }
 
+/**
+ * Which character each content type belongs to, straight from the registry.
+ *
+ * The authority on lane ownership. `content_type_registry`'s primary key is
+ * `content_type` alone (checked live 2026-09-10), so one content type has
+ * exactly one character and there is never anything to disambiguate. Every
+ * lifecycle is included — a save that touches a paused or retired lane still
+ * has to know whose it is.
+ *
+ * Un-cached: this is read on the write path, where a stale answer would mean
+ * validating a save against a registry that has since moved.
+ */
+export async function fetchLaneCharacters(): Promise<Record<string, string>> {
+  const rows = await sbRest<{ content_type: string; character: string }[]>(
+    "content_type_registry?select=content_type,character",
+  );
+  const out: Record<string, string> = {};
+  for (const r of rows) out[r.content_type] = r.character;
+  return out;
+}
+
 /** Un-cached read — callers inside a cached fetcher, and the API route, share it. */
 export async function fetchCharacterOverrides(): Promise<Record<string, CharacterOverride>> {
   const rows = await sbRest<RawCharacterOverride[]>(

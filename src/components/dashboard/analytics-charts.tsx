@@ -24,6 +24,7 @@ import { AnalyticsSkeleton } from "@/components/dashboard/analytics-skeleton";
 import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
 import { formatEtDate } from "@/lib/data/format";
 import { cn } from "@/lib/utils";
+import { useDataRefresh } from "@/lib/refresh-bus";
 import {
   RANGES,
   type ContentTypeRow,
@@ -741,6 +742,14 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
     requestedKey.current = wantedKey;
     load(range, platform, wantedKey);
   }, [wantedKey, range, platform, load]);
+
+  // Refresh re-reads the range and platform on screen. `requestedKey` is left
+  // alone deliberately: this is the same slice being asked for again, not a new
+  // pick, so the in-flight guard above should accept the answer rather than
+  // treat it as superseded.
+  useDataRefresh(
+    useCallback(() => load(range, platform, wantedKey), [load, range, platform, wantedKey]),
+  );
 
   const showingOtherSlice = !loading && loadedKey !== wantedKey;
   const loadedLabel = (() => {

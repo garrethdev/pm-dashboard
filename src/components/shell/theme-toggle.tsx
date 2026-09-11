@@ -12,6 +12,10 @@ export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
+    // Same reason as the sidebar: the server has no idea which theme this
+    // viewer chose. A script in the document head applies it before first
+    // paint; this is the toggle catching up with what that script did.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
   }, []);
 

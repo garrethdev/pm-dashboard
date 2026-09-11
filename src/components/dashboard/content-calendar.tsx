@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   AlertTriangle,
   ChevronLeft,
@@ -16,6 +16,7 @@ import { CalendarDayPanel } from "@/components/dashboard/calendar-day-panel";
 import { DashCard } from "@/components/ui/card";
 import { StaleNotice } from "@/components/ui/stale-notice";
 import { cn } from "@/lib/utils";
+import { useDataRefresh } from "@/lib/refresh-bus";
 
 /**
  * Content Calendar — the Smart Scheduler's output as a month grid.
@@ -81,6 +82,10 @@ export function ContentCalendar({
   // arrows can walk off the month currently loaded, and the panel fetches its
   // own rows anyway.
   const [openDay, setOpenDay] = useState<string | null>(null);
+  // Refresh has to re-read the month being LOOKED AT, which after any
+  // navigation is not the month the server rendered.
+  useDataRefresh(useCallback(() => go(month.year, month.month1), [month.year, month.month1]));
+
   async function go(year: number, month1: number) {
     setLoading(true);
     setError(null);

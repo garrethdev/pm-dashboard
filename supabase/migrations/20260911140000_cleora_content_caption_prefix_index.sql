@@ -1,0 +1,39 @@
+-- The one caption column the attribution trigger has to scan instead of seek.
+--
+-- Found 2026-09-11 while tracing why `[TikTok Analytics] Engine — ScrapeCreators`
+-- fails every run. It is NOT the cause of that failure and this migration does
+-- not claim to fix it — see the note at the bottom — but it is a real gap found
+-- on the way, and it gets worse on its own.
+--
+-- `tt_post_performance` carries a BEFORE INSERT trigger,
+-- `trg_fill_filler_carousel_tt`, which calls `match_content_id()` for every row.
+-- That function loops every (source_table, caption column) pair registered in
+-- `content_type_registry` and runs a prefix-range predicate against each:
+--
+--     WHERE <cap> ~>=~ $1 AND <cap> ~<~ ($1 || U&'\+10FFFF')
+--
+-- That predicate is written as a range rather than `left(col, n) = ...` for one
+-- reason: it stays sargable, so a `text_pattern_ops` btree index on the column
+-- can serve it. Ticket #227 (2026-09-02) created those indexes.
+--
+-- 28 of the 29 registered caption columns have one. `cleora_content.caption`
+-- does not — the `cleora` content type was registered after #227 shipped and its
+-- index was never added. Every row inserted into `tt_post_performance` therefore
+-- sequentially scans `cleora_content`, and does it twice whenever stage 1 finds
+-- no candidate and the function retries on a 60-char prefix.
+--
+-- Measured before applying: `cleora_content` holds 44 rows. A 44-row seq scan is
+-- microseconds, which is exactly why this is NOT the reason the engine's chunk
+-- upserts take 10-19 seconds against a 30-second statement_timeout. Do not read
+-- this migration as that fix. It is here because the Cleora workflows are
+-- actively writing to that table, the scan is inside a per-row trigger, and the
+-- cost grows linearly with a table nobody is watching.
+--
+-- Plain CREATE INDEX rather than CONCURRENTLY: 44 rows takes a brief ACCESS
+-- EXCLUSIVE lock for a few milliseconds, and CONCURRENTLY cannot run inside the
+-- transaction a migration is applied in.
+--
+-- Name follows the #227 convention exactly: idx_<table>_<column>_prefix.
+
+create index if not exists idx_cleora_content_caption_prefix
+    on public.cleora_content using btree (caption text_pattern_ops);
