@@ -259,7 +259,16 @@ layer and checks that every cache a page asks for is one the Refresh button
 knows how to clear. That fault has no error message and no wrong type — the
 button just silently does nothing — so there is no other way to catch it.
 
-**CI runs on every push and pull request**: typecheck, tests, and a real build.
+**CI runs on every push and pull request**: typecheck, lint, tests and a real
+build.
+
+**It earned its place on the very first run**, by failing. `npm run typecheck`
+passed on every machine here and failed in CI, because some of the types this
+app uses are *generated* by Next when it builds — and a fresh checkout has never
+built, so they did not exist yet. Nobody would have found that by hand; it only
+appears on a machine that starts from nothing, which is exactly what CI is. The
+typecheck now generates those types first, and the whole sequence was re-run
+from a genuinely empty state to confirm.
 
 **Lint runs but does not block, on purpose.** There are 32 pre-existing lint
 errors in the codebase, none of them quick. Making them a blocker on day one
