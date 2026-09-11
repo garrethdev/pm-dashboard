@@ -20,6 +20,441 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-12 (later) — Profile 73 was in the database all along, just blank
+
+**From Garreth: a new account, Profile 73, belongs to Character 5 but was
+nowhere on the Accounts page.**
+
+### What was actually wrong
+
+Profile 73 was never missing. Its row had been sitting in the database since
+30 August, created the moment the phone was provisioned — but every field that
+makes an account real was still empty: no TikTok handle, no character, no
+created-on date, and the active flag switched off.
+
+That last one is what hid it. The Accounts page shows active accounts by default
+and tucks the rest behind **Show retired**, so Profile 73 was on screen only for
+anyone who turned that toggle on — and when it did appear it read as a nameless
+row with a dash where the character should be.
+
+The blanks were not a mistake. Profile 73 was set up as a phone-number-only
+account, meaning the phone and proxy were provisioned automatically but the
+TikTok account itself had to be created by hand afterwards. Nothing ever went
+back to fill in the handle once it existed.
+
+### What was filled in
+
+- **Handle `sophie.davis83`**, taken from the GLP sheet and checked against
+  live TikTok — the account is real, public, and has never posted.
+- **Created 31 August**, read from TikTok's own record of when the account was
+  opened (14:41 UTC). That puts it in the same signup batch as Profile 71
+  (14:31) and Profile 72 (14:36), and it matters because the age ramp counts
+  from this date.
+- **Character 5**, per Garreth. The GLP sheet still says Character 3, which is
+  stale — the same sheet also still has Profiles 70 and 72 on their old
+  characters after the 10 September reassignment. The account's own bio,
+  *"Forgotten remedies, remembered"*, is the Cleora voice.
+- **Health cleared.** The row was carrying a `banned` verdict stamped on
+  1 September by the twice-weekly detector, which had judged an account with
+  zero posts and zero data. A false positive of exactly the kind seen before.
+  The live health view had it right all along at "no data".
+
+### Posting is deliberately still paused
+
+Profile 73 now appears on the Accounts page under Character 5 and the warmup
+scheduler can pick it up — warmup runs on paused accounts, which is how
+Profiles 64, 65, 70 and 72 warmed up through their own paused spell earlier
+this month.
+
+But it is **not** in the posting scheduler yet, on purpose. In its first twelve
+days Profile 73 ran no warmup sessions at all, while its four Character 5
+siblings ran between 24 and 30 each. Posting from an account that cold is how
+accounts get flagged. Unpause it from the dashboard once warmup has run for a
+few days.
+
+Confirmed live: Profile 73 resolves to the same caps as Profiles 70 and 72 —
+1 post a day, 1 GLP a day, held there by the age ramp until 16 September — and
+returns nothing from the live scheduler view while it stays paused.
+
+No code changed. This was a database fix.
+
+---
+
+## 2026-09-12 — The cadence editor now says which character is blocking a save
+
+**From Garreth, after Character 5's second content lane (Cleora ASMR) went live:
+the Adjust cadence window would not save anything, for any character, and
+nothing on screen said why.**
+
+### The problem
+
+Every character has a weekly allowance for its main content, divided between its
+content lanes. The editor refuses to save when a character's lanes do not add up
+to its allowance — a sensible rule, and not what went wrong.
+
+Cleora ASMR was switched on directly in the database on the 11th, as part of
+getting the new content ready. Its 7 posts a week immediately started counting
+toward Character 5's total, making 14, while Character 5's allowance still read 7
+— because raising the allowance was the step still outstanding. The sums stopped
+matching and the editor locked.
+
+It locked **everything**. The Save button on the Fleet tab checks every character
+before it will save anything, so a problem that existed only on Character 5 also
+stopped cadence changes for Characters 2, 3 and 4, and stopped the fleet-wide
+settings being changed at all. Confirmed live: Characters 2, 3 and 4 all read
+11 of 11; only Character 5 was off, at 14 of 7.
+
+Finding that out was the real cost. The screen offered a greyed-out Save button,
+a small "needs attention" badge on the Advanced settings row, and a tooltip on
+the dead button — none of which named the character. Locating it meant opening
+Advanced settings and reading down all four characters looking for the
+mismatched pair.
+
+### What changed
+
+A red banner now appears at the top of the Adjust cadence window whenever this
+happens, naming the character and both numbers: *"Character 5's lanes add up to
+14 a week, but its allowance is 7. Nothing can be saved until the two match."*
+
+- On the **Fleet tab** it lists every character at fault, each as a button that
+  jumps straight to that character's tab — because the fix is always on a
+  character tab, never on the one where the locked button appears.
+- On a **character tab** it offers a one-click **"Set allowance to 14"**, which
+  moves the allowance up to whatever the lanes already add up to and leaves the
+  lane split alone. (Typing the number into the allowance stepper instead
+  re-spreads the lanes evenly, which would turn a deliberate 10 + 4 into 7 + 7.)
+- When the daily cap is what's really in the way, it says so instead of offering
+  a button that cannot work: *"An allowance of 14 a week needs at least 2 posts a
+  day — 1 a day allows only 7. Raise Max posts / day above first."* This was its
+  own dead end: at 1 post a day the allowance stepper simply stopped at 7 with
+  nothing explaining why.
+- The tooltip on the disabled Save button now names the character too.
+
+No rules changed. Nothing can be saved that could not be saved before — the
+banner only says who and where, turning a hunt into a few seconds.
+
+### Also: two smaller things in the same window
+
+**Lane names now read as names.** The GLP mix under Advanced settings labelled
+each lane by its database handle with the underscores swapped for spaces, so the
+new lane read "cleora asmr" and its sibling read "cleora". They now use the name
+the registry already stores for them — **Cleora ASMR** and **Cleora (Animated)**.
+All 25 lanes in the registry carry one, checked live; the code still falls back to
+the handle, because the column is nullable.
+
+**The GLP stepper now says why it has stopped.** The weekly numbers are bounded
+by what the daily cap allows — 2 posts a day is 14 a week — so raising GLP past
+that does nothing until the daily cap moves first. The + button simply went dead,
+with nothing on screen explaining it. Garreth hit this taking Character 5 from 7
+a week to 14: at 1 post a day the ceiling was 7, and the order of the two edits
+was undiscoverable. A small note now appears beside the field whenever the button
+is dead — *"max for 1 post/day"* — naming the field to change.
+
+It stays quiet in the two cases where it would be wrong or useless: when the
+70-a-week hard limit is the binding one instead (the daily cap is not to blame
+there), and when the field is inheriting the fleet value, where there is no
+stepper and no dead button to explain.
+
+### One thing tidied while in there
+
+`"cadence-data"`, the cache key for the cadence payload, was written out as a
+literal in four separate files — including the two routes that must expire it
+after a save. It is now a single exported `CADENCE_TAG`, the same treatment
+`ACCOUNTS_TAG` already had and for the same reason: renaming it in one place and
+not the others would leave the editor showing the old lane mix after a save that
+had already gone through. Nobody had hit that; it was one rename away.
+
+The tag is also bumped to `cadence-data-v2`, because lanes gained a name field
+and a cached copy written by the previous version has no such field — the lane
+steppers would have rendered with blank labels for up to a minute after deploy.
+
+### Why this will keep happening
+
+Every new content lane arrives the same way: the content gets made, the lane is
+wired up and switched on in the database, and the character's allowance is
+raised afterwards — sometimes days later, sometimes by someone else. The gap is
+unavoidable because the two changes happen in different places. Cleora ASMR is
+simply the first time anyone noticed the side effect.
+
+### Verified
+
+The banner's logic is a tested function (`unbalancedCharacters` in
+`cadence-rules.ts`, seven cases) rather than inline screen code, following the
+same reasoning as the 2026-09-09 review's #6: every cadence-validation bug that
+review found was unreachable by a test while it sat inside the screen. The cases
+include the real 09-11 lockout, both directions of mismatch, and the rule that a
+character tab never points at a different character's problem.
+
+The banner itself has not yet been seen against a live failure, because the
+underlying data was corrected the same day (see below). It can be reached
+deliberately: open the Char 5 tab and click "Use fleet default" on GLP, which
+sets the allowance to 11 against lanes of 14.
+
+### Separately, in the database, not the repo
+
+Character 5's cadence was set to **14 GLP a week, 2 posts a day, filler 0** on
+Garreth's instruction — the step the content handover had left outstanding, and
+the one that unlocked the editor. Written through the same database function the
+dashboard's own save uses, with a matching audit-log entry.
+
+Worth knowing: this does **not** double Character 5's output immediately. The age
+ramp caps GLP at 1 a day for accounts aged 16–22 whatever the daily cap says, so
+2 a day starts on 2026-09-13 for Profiles 64 and 65, and 2026-09-23 for Profiles
+70 and 72. Output steps 4/day → 6/day → 8/day.
+
+Then, on Garreth spotting that Character 5's budget had converged on the fleet's
+- both now 14 posts a week at 2 a day, differing only in the split (14 GLP + 0
+filler against 11 + 3) — the daily-cap override was **cleared back to inherit**.
+An override row holding a number identical to the fleet's is not harmless: it
+silently pins that character against future fleet changes, so raising the fleet
+to 3 a day would have moved Characters 2, 3 and 4 and quietly left Character 5
+at 2. Only GLP (14) and filler (0) stay overridden now.
+
+Confirmed live: every resolved number is unchanged — 2 a day on Profiles 64/65,
+1 on the younger 70/72, 14 a week, no filler, same window and gap — and a
+read-only simulation of a fleet move to 3 a day now resolves to 3 for all four
+characters, Character 5 included.
+
+## 2026-09-12 (later) — Proxy swaps ring the bell, and read state that would not stick
+
+**From Garreth: "I want the bell notification for swaps, so that other person is
+notified for a change in the system by one person." And: "Sometimes, I open the
+app, read the notification, then if I reopen again, it is still being marked as
+unread."**
+
+### Added: a bell notification when someone swaps a proxy
+
+Replacing a proxy now posts to the bell — "Profile 61 moved to a new proxy",
+with the old and new IP and who did it, linking to /proxies. The operator who
+made the change already had the on-screen confirmation; this is for everyone
+else, who would otherwise find an account on a different IP with no explanation.
+
+It never fails the swap: the notification insert swallows its own errors, and
+the `dashboard_audit_log` row is the durable record either way. Confirmed live
+by writing a real row, checking how the bell renders it, and deleting it again.
+
+### Fixed: the bell would have relabelled a proxy swap as a retirement
+
+Every stored notification was run through the Post-Ban wording, because until
+today every stored notification *was* a Post-Ban one. A proxy swap would have
+arrived in the bell titled "Profile 61 retired". Only `retire` rows are
+re-worded now; everything else carries the copy it was written with.
+
+### Fixed: a read notification coming back unread
+
+Two real causes, both found in the code and both fixed. Being straight about
+this: **neither is proven to be the one Garreth hit**, because the stored
+notifications all have their read rows intact and there are no recomputed alerts
+firing right now to test against.
+
+**The warmup alert's identity included the accounts in it.** The id carried a
+hash of the failing profiles, so any change to that set — one account
+recovering, one more starting to fail — produced a different id, and an alert
+already read came back unread. Read state is now recorded per account behind the
+alert: the group counts as read once every account in it has been seen, so a
+shrinking cohort stays read and only a genuinely new failing account reopens it.
+That is the behaviour the original design wanted; keying it on the whole cohort
+just also re-alerted on the way down.
+
+**A failed save was completely silent.** The dot cleared on click, the write
+went off, and a failure was swallowed on the reasoning that the next load would
+show it unread again — "the safe direction to be wrong in". It is, but it is
+also indistinguishable from this exact complaint, and nothing anywhere recorded
+that it happened. A failed save now puts the dot straight back while the row is
+still on screen, and logs the reason.
+
+**A third possibility, not a bug:** read state is per person, by design. Of the
+six allowlisted emails only one has ever recorded a read. Signing in as a
+different address shows that address's read state, which is correct behaviour
+but would look identical to the fault.
+
+### Also: the bell's item type was declared twice
+
+`topbar.tsx` kept its own copy of the notification interface rather than
+importing the one the endpoint actually returns. That is how a field added on
+the server (`markKeys`) could quietly not exist on the client. It now imports
+the real type — `import type`, so nothing from the server module reaches the
+browser bundle.
+
+## 2026-09-12 — Replace proxy, and three proxies GeeLark never listed
+
+**From Garreth, auditing ten proxy names on proxy-cheap: "check in GeeLark and
+in our accounts proxy table in the dashboard if all are matched. Maybe there
+was some proxies that got updated in GeeLark but not in our dashboard." The
+audit found a mismatch, and then: "can we replace proxies inside our dashboard
+app using API on GeeLark?"**
+
+### Fixed: three live accounts were on proxies missing from GeeLark's library
+
+Profiles 8, 28 and 29 were running on proxies that existed nowhere in GeeLark's
+Proxy tab. Nothing was broken — all three are live proxy-cheap subscriptions —
+but any audit that reads the proxy library came up short, and that is how the
+gap stayed invisible.
+
+The cause is that GeeLark accepts a proxy two ways: picked from the library, or
+typed straight onto the profile. Its `phone/detail/update` schema takes either a
+`proxyId` or an inline `proxyConfig`. The phone list API then returns the
+resolved host, port and password **either way, with no proxyId**, so the two are
+indistinguishable after the fact. The only tell is whether that endpoint also
+appears in the library.
+
+All three were added to the library (`proxy/add`, 2026-09-12). Confirmed live:
+the library went 46 → 49, no phone assignment changed, and every phone proxy is
+now in the library.
+
+### Added: a Replace proxy button on each proxies row
+
+Sits to the right of Extend. It offers only **spare** subscriptions — ones
+proxy-cheap is billing for that no phone is using — and swaps the phone onto the
+chosen one via GeeLark.
+
+Decisions worth recording:
+
+- **Picked by id, not typed.** The browser never sees a proxy password; the
+  server resolves credentials from proxy-cheap at the moment of the write. A
+  free-text host/port field would have invited a typo into a live account's
+  network config and could not tell that an IP was already on another phone.
+- **Always via the library.** It adds to the library first, then attaches by id
+  — never an inline config. That is the exact drift above, and doing it this way
+  means it cannot recur.
+- **Two phones on one IP is a hard stop**, not a warning. GeeLark allows it;
+  this refuses it, because one residential IP behind two accounts is the most
+  legible cross-account pattern a platform can see.
+- **Held, not clicked.** A swap changes the account's public IP immediately, so
+  it gets the same press-and-hold gate as a retire. Retired accounts are refused
+  outright, matching the pause route. (A banner spelling out the IP consequence
+  shipped first and was removed the same day on Garreth's call — every operator
+  here already knows it, so it was clutter on every open. The hold is now the
+  only gate.)
+- Every swap writes old → new into `dashboard_audit_log`, which also restores
+  the proxy history that `proxy_audit_log` stopped recording on 2026-08-31.
+
+### Added: paste credentials, because proxy-cheap's names cannot be fetched
+
+**Garreth: "can the choices be proxy names in proxy cheap? That would be easier
+for the people who will replace the proxy."** They can't, and it is worth
+recording why so nobody spends another afternoon on it.
+
+proxy-cheap's API has no name field on any response, and it is read-only —
+`OPTIONS` on a proxy answers `allow: GET`. The names in their panel are produced
+by their own web UI and are not data we can reach.
+
+The obvious workaround was to derive them: the names look like purchase order,
+so with two confirmed names the rest should follow. Garreth confirmed two
+(`82.47.5.7` is Proxy 56, `216.133.189.97` is Proxy 83) and the idea died on
+the numbers. There are 21 active proxies between those two but 27 names —
+**six expired proxies hold slots in the sequence and are invisible to the API.**
+Extrapolating puts `216.133.189.97` at Proxy 77 when it is really Proxy 83. Any
+name computed that way would be confidently wrong, which is worse than no name.
+
+So the dialog now has two tabs, on Garreth's suggestion:
+
+- **Choose from list** — the picker, listing IP, ISP, expiry and days left.
+- **Paste credentials** — an `IP:PORT:USERNAME:PASSWORD` box, the exact string
+  the SOP already has people copy out of proxy-cheap into GeeLark. Whoever is
+  looking at "Proxy 56" on that screen copies its line straight across; no
+  translating a name into an IP. It is also the only route for a proxy bought
+  somewhere other than proxy-cheap.
+
+The paste box reads back what it understood — host, port and username, never the
+password — because the failure that matters is a line that parses cleanly but is
+the *wrong proxy*, and only seeing the host can catch that.
+
+Two rounds of wording, both Garreth's: the picker tab was "Choose a spare" until
+he pointed out that **"spare" reads as second-hand** — someone who has just
+bought a proxy would not think to look for it there. And the sentence above the
+paste box explaining where to copy the line from is gone, along with the longer
+validation message and the "no spare proxies" empty state.
+
+**That second one is a standing rule from here on: new screens do not stack
+instructions on the operator.** The format lives in the placeholder, where it is
+needed and where it disappears once typing starts; the explanation lives in the
+code comment and in this file, where the next person maintaining it will look.
+The people using these screens already know the job.
+
+One parser serves both the dialog and the server, in `proxy-paste.ts`, with
+tests. It was briefly two, which is the shape that eventually accepts something
+in the browser the server then refuses. The tests cover the cases that would do
+real damage: a password containing a colon (kept, not truncated), and a port
+like `4e4` or `41802abc` that a looser check would turn into a number and
+silently attach to the wrong port.
+
+### The dialog now says which half failed, and in plain English
+
+**Garreth: "if bad proxy, wrong credentials, it should tell the user in the app
+... I think the user should be notified that the add succeeds but the phone
+update fails. Because the reason why the user wants to replace the proxy is to
+update the phone's proxy right?"** Exactly right, and the first version did not
+do that.
+
+A replace is two calls to GeeLark, and they fail differently:
+
+- **The proxy check.** GeeLark connects to the proxy before it will accept it.
+  A dead endpoint or a mistyped password fails here — *before the phone is
+  touched* — and the account keeps the working proxy it already had.
+- **Attaching it to the phone.** The proxy passed its check, so this reads like
+  success. But the phone is the entire reason anyone opened the dialog, and if
+  this fails the account has not moved.
+
+Until now both came out as one red line reading `geelark code 45004: check proxy
+failed` — GeeLark's own words, written for whoever built the API, and with no
+way to tell the two apart. Now the dialog says which stage failed and what the
+phone is actually on:
+
+- Check failed → the reason, then "Nothing was changed."
+- Attach failed → the reason, then "Profile 61 was not moved. Still on
+  48.47.121.64:46478."
+
+That second line is **read back from GeeLark at the moment of the failure**,
+not assumed. A timeout can land after GeeLark has already applied the change,
+and telling someone their swap failed when it worked is its own kind of outage —
+so if the re-read shows the new proxy did land, it is reported as the success it
+was.
+
+The codes are translated rather than shown raw. 45004 becomes "GeeLark could not
+connect to that proxy. Check the credentials, or the proxy may be down."
+Confirmed live 2026-09-12 against both a real proxy with a wrong password and an
+endpoint that does not exist; both produce 45004, both now read in plain English,
+and the proxy library was untouched by either attempt.
+
+On success the dialog closes and a green line appears above the table naming the
+move — "Profile 61 moved from 48.47.121.64:46478 to 82.47.5.7:41802" — and the
+row itself re-reads GeeLark live, so the IP, expiry and auto-renew columns all
+update without a manual refresh. There is no bell notification: the action is
+synchronous, so the result is on screen within a second or two. Every swap is
+still written to `dashboard_audit_log` either way.
+
+### The documentation was wrong about duplicate proxies
+
+GeeLark's docs say adding a proxy that already exists returns the same id. It
+does not. Verified live 2026-09-12: it answers `code: 0, msg: "success"` at the
+envelope with `successAmount: 0` and a per-item `45007 "proxy already exists"`,
+and **no id at all**.
+
+Trusting the documented behaviour would have failed every swap onto a spare that
+was already in the library — which is most of them. `addProxyToLibrary` now
+resolves a 45007 by looking the endpoint up instead. The wider lesson is in the
+shape of that response: the envelope reports success while the only item in it
+failed, so any per-item result from this API must be read from `failDetails`,
+never from `code`.
+
+Also confirmed live: GeeLark connectivity-tests a proxy before adding it and
+rejects an unreachable one with `45004`, so a dead proxy can never be attached.
+
+**Not yet exercised:** `phone/detail/update` — the step that actually moves a
+phone — has not been run, because the only way to test it is to change a live
+account's IP. Everything up to it is verified end-to-end.
+
+### Also
+
+`geelark-phones` and `proxycheap-proxies` became exported constants
+(`GEELARK_PHONES_TAG`, `PROXYCHEAP_PROXIES_TAG`) for the same reason
+`ACCOUNTS_TAG` already was: a write route that hard-codes a cache key drifts
+silently the day the key is renamed, and the table would then show the old proxy
+after a successful swap.
+
+---
+
 ## 2026-09-11 (later) — "Supabase unreachable" was usually a lie
 
 **From Garreth, after being told the code-style checker had 32 flags: "can we

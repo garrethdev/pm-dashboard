@@ -798,6 +798,58 @@ Each of these is deliberately parked, not unfinished. Every one records why it
 was deferred and what is already confirmed, so it can start from evidence rather
 than from a fresh investigation.
 
+## Music postability — show when a song will silently stop a post
+
+**Deferred 2026-09-12 (Garreth): "Remove the music postability for now."**
+Nothing was built. Nothing is broken. It is parked because the failure it guards
+against is not currently happening — see the evidence below, which is the whole
+point of writing this down rather than re-investigating later.
+
+**What it would be.** Two computed states per song in `music_library`, surfaced
+on any content row carrying a `music_id` and as "N rows blocked by music" in
+inventory:
+
+- postable on Instagram — `is_active` and `same_style_url` is set
+- postable on TikTok — `is_active` and `tiktok_ref_video_id` is set
+
+**Why it was on the list.** The Unified Poster attaches sound by reading a row's
+`music_id`, looking the song up, and taking the Instagram reel URL or the TikTok
+video id. If the song is switched off, or the reference for that platform is
+missing, **the row is skipped and nothing is logged anywhere**. The row stays in
+the pool and never posts. Silence is the entire problem — there is no error to
+find.
+
+**What is already confirmed (live, 2026-09-12), so nobody has to re-derive it:**
+
+- **Nothing in the dashboard touches music at all.** Zero mentions across `src/`.
+  This is a build from scratch, not an extension.
+- **Seven content tables carry a `music_id`**: `cleora_asmr`,
+  `conspiracy_kitchen`, `dating_profile_ba`, `divorce_story_content`,
+  `celebrity_verdict`, `char3_before_after`, `char3_influencer_lying`. So it is a
+  fleet-wide feature, not a Character 5 one.
+- **Thirteen live lanes have `needs_music = true` but only seven tables have the
+  column**, so the rest must pick music another way. That gap is unexplained and
+  is the first thing to establish if this is picked up.
+- **11 of the 76 active songs have neither an Instagram nor a TikTok reference.**
+  Any row mapped to one of those is a silent skip waiting to happen.
+- **But there is no live failure right now.** The lane that looks worst,
+  `dating_profile_ba`, has 13 of 25 rows on reference-less songs — and all 13
+  have already posted. Its two unposted rows are both on songs that do have
+  references. Checked row by row.
+- **Cleora ASMR, the lane that prompted this, is clean**: all 50 rows have a
+  `music_id`, every song is active, and both platform references are present.
+  `v_scheduler_pool` additionally requires `music_id IS NOT NULL` for that lane,
+  so a row with no song never even reaches the pool.
+
+**What would make this urgent.** A new batch mapped to songs whose references
+were never sourced, or someone switching a song off in `music_library` while rows
+still point at it. Either shows up as content that sits in the pool and never
+posts, with nothing on any screen explaining why.
+
+**Source.** `HANDOVER-character-5-cleora-cadence.md` §5.4 called this "the single
+most useful build for lane 2". That was written before the reference sourcing was
+finished; it has since been done, which is why the urgency dropped.
+
 ## Fill the content-intelligence tables — the carousel generator's backend
 
 **Deferred 2026-09-10 (Garreth): this lands with the carousel generator app,

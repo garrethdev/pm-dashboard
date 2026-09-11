@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
+// The shape the bell endpoint returns, imported rather than restated. It was a
+// second copy of the interface here until 2026-09-12, which is how `markKeys`
+// could be added server-side and silently not exist on the client. `import
+// type` is erased at build, so nothing from the server module reaches the
+// bundle.
+import type { NotificationItem } from "@/lib/data/notifications";
 import { ArrowUpRight, Bell, CheckCircle2, RotateCw } from "@/components/ui/icons";
 import { MobileNavTrigger } from "@/components/shell/mobile-nav";
 import { displayNameOf } from "@/lib/people";
@@ -30,20 +36,6 @@ function sectionName(segment: string): string {
   if (SECTION_NAMES[segment]) return SECTION_NAMES[segment];
   if (!segment) return "Dashboard";
   return segment.charAt(0).toUpperCase() + segment.slice(1);
-}
-
-interface NotificationItem {
-  id: string;
-  type: string;
-  /** Where it came from, e.g. "Post-Ban". Rendered as the grey pill. */
-  category: string;
-  severity: "critical" | "warning" | "success" | "info";
-  title: string;
-  body: string | null;
-  target: string | null;
-  href?: string;
-  at: string;
-  read: boolean;
 }
 
 /**
@@ -141,25 +133,46 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   const section = sectionName(pathname.split("/")[1] ?? "");
   const initials = (userEmail ?? "?").slice(0, 2).toUpperCase();
 
-  const markRead = useCallback((ids: string[]) => {
-    let fresh: string[] = [];
+  const markRead = useCallback((marking: NotificationItem[]) => {
+    let fresh: NotificationItem[] = [];
     setReadIds((prev) => {
-      fresh = ids.filter((id) => !prev.has(id));
+      fresh = marking.filter((i) => !prev.has(i.id));
       if (fresh.length === 0) return prev;
       const next = new Set(prev);
-      fresh.forEach((id) => next.add(id));
+      fresh.forEach((i) => next.add(i.id));
       return next;
     });
     if (fresh.length === 0) return;
-    // Optimistic: the dot clears on click and the write follows. A failed write
-    // is not worth an error state — the next load simply shows it unread again,
-    // which is the safe direction to be wrong in.
+
+    // Optimistic: the dot clears on click and the write follows.
+    //
+    // A failure used to be swallowed entirely, on the reasoning that the next
+    // load would show the item unread again and that is the safe direction to
+    // be wrong in. It is — but it is also indistinguishable from the bug it
+    // causes: the item looks read, you close the app, and it is back. That is
+    // the complaint Garreth raised on 2026-09-12, and no amount of reading the
+    // code explains an individual case because nothing anywhere recorded that
+    // the write failed. So a failed write now puts the dot straight back,
+    // while the row is still on screen, and says so in the console.
+    const keys = fresh.flatMap((i) => (i.markKeys?.length ? i.markKeys : [i.id]));
     void fetch("/api/notifications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: fresh }),
+      body: JSON.stringify({ ids: keys }),
       cache: "no-store",
-    }).catch(() => {});
+    })
+      .then((res) => {
+        if (res.ok) return;
+        throw new Error(`mark-read HTTP ${res.status}`);
+      })
+      .catch((err: unknown) => {
+        console.error("Could not save notification read state", err);
+        setReadIds((prev) => {
+          const next = new Set(prev);
+          fresh.forEach((i) => next.delete(i.id));
+          return next;
+        });
+      });
   }, []);
 
   const load = useCallback(async () => {
@@ -311,88 +324,90 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
                 style={anchor}
                 className="fixed z-50 max-h-[70vh] w-auto overflow-y-auto rounded-nested border border-border glass-overlay p-2 sm:w-96"
               >
-              <div className="flex items-center justify-between px-3 pb-2 pt-1.5">
-                <span className="text-sm font-semibold">Notifications</span>
-                {unread.length > 0 ? (
-                  <button
-                    onClick={() => markRead(items.map((i) => i.id))}
-                    className="text-xs font-medium text-accent hover:opacity-80"
-                  >
-                    Mark all read ({unread.length})
-                  </button>
-                ) : (
-                  <span className="text-xs text-text-muted">All read</span>
-                )}
-              </div>
-              {items.length > 0 ? (
-                <div className="flex flex-col divide-y divide-border">
-                  {items.map((item) => {
-                    const isUnread = !readIds.has(item.id);
-                    const inner = (
-                      <div className="flex gap-2 py-2.5">
-                        {/* Unread marker holds its column either way, so titles
+                <div className="flex items-center justify-between px-3 pb-2 pt-1.5">
+                  <span className="text-sm font-semibold">Notifications</span>
+                  {unread.length > 0 ? (
+                    <button
+                      onClick={() => markRead(items)}
+                      className="text-xs font-medium text-accent hover:opacity-80"
+                    >
+                      Mark all read ({unread.length})
+                    </button>
+                  ) : (
+                    <span className="text-xs text-text-muted">All read</span>
+                  )}
+                </div>
+                {items.length > 0 ? (
+                  <div className="flex flex-col divide-y divide-border">
+                    {items.map((item) => {
+                      const isUnread = !readIds.has(item.id);
+                      const inner = (
+                        <div className="flex gap-2 py-2.5">
+                          {/* Unread marker holds its column either way, so titles
                             stay aligned as items are read. */}
-                        <span
-                          aria-hidden
-                          className={cn(
-                            "mt-1.5 size-1.5 shrink-0 rounded-full",
-                            isUnread ? "bg-accent" : "bg-transparent",
-                          )}
-                        />
-                        <div className="flex min-w-0 flex-1 flex-col gap-1">
-                          <div className="flex items-start gap-2">
-                            {/* The category pill sits inline so it trails the
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "mt-1.5 size-1.5 shrink-0 rounded-full",
+                              isUnread ? "bg-accent" : "bg-transparent",
+                            )}
+                          />
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            <div className="flex items-start gap-2">
+                              {/* The category pill sits inline so it trails the
                                 last word of a title that wraps, rather than
                                 holding a column of its own. */}
-                            <span
-                              className={cn(
-                                "min-w-0 flex-1 text-sm",
-                                isUnread ? "font-semibold" : "font-normal text-text-muted",
-                              )}
-                            >
-                              {item.title}
-                              <span className="ml-2 inline-block rounded-full bg-text-muted/10 px-2 py-0.5 align-[1px] text-[11px] font-medium whitespace-nowrap text-text-muted">
-                                {item.category}
+                              <span
+                                className={cn(
+                                  "min-w-0 flex-1 text-sm",
+                                  isUnread ? "font-semibold" : "font-normal text-text-muted",
+                                )}
+                              >
+                                {item.title}
+                                <span className="ml-2 inline-block rounded-full bg-text-muted/10 px-2 py-0.5 align-[1px] text-[11px] font-medium whitespace-nowrap text-text-muted">
+                                  {item.category}
+                                </span>
                               </span>
+                              {item.href && (
+                                <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-accent" />
+                              )}
+                            </div>
+                            {item.body && <p className="text-xs text-text-muted">{item.body}</p>}
+                            <span className="text-[11px] text-text-muted/70">
+                              {timeAgo(item.at)}
                             </span>
-                            {item.href && (
-                              <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-accent" />
-                            )}
                           </div>
-                          {item.body && <p className="text-xs text-text-muted">{item.body}</p>}
-                          <span className="text-[11px] text-text-muted/70">{timeAgo(item.at)}</span>
                         </div>
-                      </div>
-                    );
-                    return item.href ? (
-                      <Link
-                        key={item.id}
-                        href={item.href as never}
-                        onClick={() => {
-                          markRead([item.id]);
-                          setOpen(false);
-                        }}
-                        className="rounded-[10px] px-3 transition-colors hover:bg-card-raised"
-                      >
-                        {inner}
-                      </Link>
-                    ) : (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => markRead([item.id])}
-                        className="rounded-[10px] px-3 text-left transition-colors hover:bg-card-raised"
-                      >
-                        {inner}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-text-muted">
-                  <CheckCircle2 className="size-4 text-ok" /> No notifications
-                </p>
-              )}
+                      );
+                      return item.href ? (
+                        <Link
+                          key={item.id}
+                          href={item.href as never}
+                          onClick={() => {
+                            markRead([item]);
+                            setOpen(false);
+                          }}
+                          className="rounded-[10px] px-3 transition-colors hover:bg-card-raised"
+                        >
+                          {inner}
+                        </Link>
+                      ) : (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => markRead([item])}
+                          className="rounded-[10px] px-3 text-left transition-colors hover:bg-card-raised"
+                        >
+                          {inner}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-text-muted">
+                    <CheckCircle2 className="size-4 text-ok" /> No notifications
+                  </p>
+                )}
               </div>,
               document.body,
             )}

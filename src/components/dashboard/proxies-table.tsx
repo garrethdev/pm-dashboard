@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { ExtendButton } from "@/components/ui/extend-button";
@@ -10,6 +11,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { cycleSort, type SortDir } from "@/components/ui/sort-button";
 import { daysTone, formatEtDate, formatPhone } from "@/lib/data/format";
 import type { ProxyPhoneRow } from "@/lib/data/proxies";
+import { ReplaceProxyModal, type AvailableProxy } from "@/components/dashboard/replace-proxy-modal";
 import { phoneExtendHref, proxyExtendHref } from "@/lib/provider-links";
 import { cn } from "@/lib/utils";
 
@@ -24,19 +26,49 @@ function ExtendCell({ href }: { href: string | null }) {
   );
 }
 
+/**
+ * Replace proxy — sits to the right of Extend on the proxies view only.
+ *
+ * Styled as a sibling of ExtendButton rather than reusing it: that one is a
+ * hand-off link to a provider's panel, this one writes to GeeLark, and two
+ * controls that do such different things should not be the same control with a
+ * different label. Muted until hover, so the row still reads as data first.
+ */
+function ReplaceProxyButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Point this phone at a different proxy"
+      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card-raised px-3 py-1 text-xs font-medium text-text-muted transition-colors hover:border-accent hover:text-accent"
+    >
+      Replace Proxy
+    </button>
+  );
+}
+
 /** Proxies & phones detail — header search + pill switcher between two tables. */
 export function ProxiesTable({
   rows: allRows,
   fetchedAt,
   charactersAvailable,
+  availableProxies,
   balances,
 }: {
   rows: ProxyPhoneRow[];
   fetchedAt: string;
   charactersAvailable: boolean;
+  /** Spare subscriptions a swap can draw from — the ones no phone is using. */
+  availableProxies: AvailableProxy[];
   /** Rendered under the page header — a server component passed in as a slot. */
   balances?: React.ReactNode;
 }) {
+  const router = useRouter();
+  // The row whose swap dialog is open, and the last completed swap. The result
+  // is held on screen because the table behind it repaints from a fresh GeeLark
+  // read, and a row quietly changing IP is not enough to tell you it worked.
+  const [replacing, setReplacing] = useState<ProxyPhoneRow | null>(null);
+  const [done, setDone] = useState<string | null>(null);
   const [view, setView] = useState<View>("proxies");
   const [query, setQuery] = useState("");
   // One sortable column, but keyed anyway: both tables have a "Days left" and
@@ -136,6 +168,10 @@ export function ProxiesTable({
         }
       >
         <div className="flex flex-col gap-3">
+          {done && (
+            <p className="rounded-nested bg-ok/10 px-3 py-2 text-xs text-ok">{done}</p>
+          )}
+
           {!charactersAvailable && (
             <p className="rounded-nested bg-warn/10 px-3 py-2 text-xs text-warn">
               Character column unavailable. Supabase is unreachable; live-API data is unaffected.
@@ -154,7 +190,7 @@ export function ProxiesTable({
                     {daysLeftHeader()}
                     <th className={TH}>Auto-renew</th>
                     <th className={`${TH} text-right`}>
-                      <span className="sr-only">Extend</span>
+                      <span className="sr-only">Actions</span>
                     </th>
                   </tr>
                 </thead>
@@ -195,7 +231,12 @@ export function ProxiesTable({
                           <span className="text-text-muted">—</span>
                         )}
                       </td>
-                      <ExtendCell href={proxyExtendHref(row)} />
+                      <td className="py-2.5">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {proxyExtendHref(row) && <ExtendButton href={proxyExtendHref(row)!} />}
+                          <ReplaceProxyButton onClick={() => setReplacing(row)} />
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -259,6 +300,21 @@ export function ProxiesTable({
           </div>
         </div>
       </DashCard>
+
+      {replacing && (
+        <ReplaceProxyModal
+          row={replacing}
+          available={availableProxies}
+          onClose={() => setReplacing(null)}
+          onDone={(from, to) => {
+            setDone(`${replacing.profile} moved from ${from ?? "no proxy"} to ${to}.`);
+            setReplacing(null);
+            // The route already expired the GeeLark and proxy-cheap caches;
+            // this is what makes the server component re-read them.
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   parseLanes,
   resolveLaneCharacters,
   sumLanes,
+  unbalancedCharacters,
   weeklyBudgetError,
 } from "@/lib/data/cadence-rules";
 
@@ -204,5 +205,69 @@ describe("sumLanes", () => {
 
   it("adds the weekly numbers", () => {
     expect(sumLanes([{ cadencePerWeek: 4 }, { cadencePerWeek: 3 }, { cadencePerWeek: 0 }])).toBe(7);
+  });
+});
+
+describe("unbalancedCharacters", () => {
+  /**
+   * The 2026-09-11 lockout, as it actually happened: `cleora_asmr` was switched
+   * on in the database, so Character 5's lanes asked 7 + 7 while its allowance
+   * still read 7. Every other character balanced. The Fleet tab refused to save
+   * anything for anyone and named nobody.
+   */
+  const CHARACTERS = [
+    { name: "Character 2", laneSum: 11 },
+    { name: "Character 3", laneSum: 11 },
+    { name: "Character 4", laneSum: 11 },
+    { name: "Character 5", laneSum: 14 },
+  ];
+  const capFor = (name: string) => (name === "Character 5" ? 7 : 11);
+
+  it("names only the character at fault, on the fleet tab", () => {
+    expect(unbalancedCharacters(CHARACTERS, capFor, null)).toEqual([
+      { name: "Character 5", sum: 14, target: 7 },
+    ]);
+  });
+
+  it("is empty once that character's allowance is raised to match", () => {
+    const fixed = (name: string) => (name === "Character 5" ? 14 : 11);
+    expect(unbalancedCharacters(CHARACTERS, fixed, null)).toEqual([]);
+  });
+
+  it("reports the scoped character when it is the one at fault", () => {
+    expect(unbalancedCharacters(CHARACTERS, capFor, "Character 5")).toEqual([
+      { name: "Character 5", sum: 14, target: 7 },
+    ]);
+  });
+
+  /** The banner must not point at a character whose numbers are not on screen:
+   *  on the Char 2 tab, Character 5's problem is not actionable. */
+  it("stays silent on another character's tab", () => {
+    expect(unbalancedCharacters(CHARACTERS, capFor, "Character 2")).toEqual([]);
+  });
+
+  it("reports every offender on the fleet tab, not just the first", () => {
+    const twoWrong = [
+      { name: "Character 2", laneSum: 9 },
+      { name: "Character 5", laneSum: 14 },
+    ];
+    expect(unbalancedCharacters(twoWrong, capFor, null)).toEqual([
+      { name: "Character 2", sum: 9, target: 11 },
+      { name: "Character 5", sum: 14, target: 7 },
+    ]);
+  });
+
+  /** Under-allocating locks the save exactly as over-allocating does, and the
+   *  banner has to read correctly in that direction too. */
+  it("catches a mix that falls short of the allowance", () => {
+    expect(unbalancedCharacters([{ name: "Character 4", laneSum: 8 }], capFor, null)).toEqual([
+      { name: "Character 4", sum: 8, target: 11 },
+    ]);
+  });
+
+  it("treats a character with no lanes at all as unbalanced against a live cap", () => {
+    expect(unbalancedCharacters([{ name: "Character 3", laneSum: 0 }], capFor, null)).toEqual([
+      { name: "Character 3", sum: 0, target: 11 },
+    ]);
   });
 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { ACCOUNTS_TAG, CONTENT_TYPES_TAG, INVENTORY_TAG } from "@/lib/data/cache";
+import { ACCOUNTS_TAG, CADENCE_TAG, CONTENT_TYPES_TAG, INVENTORY_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import {
   fetchCharacterOverrides,
@@ -122,7 +122,7 @@ function revalidateCadence() {
     ACCOUNTS_TAG,
     CONTENT_TYPES_TAG,
     INVENTORY_TAG,
-    "cadence-data",
+    CADENCE_TAG,
     "scheduler-config",
     "scheduler-buckets",
   ]) {

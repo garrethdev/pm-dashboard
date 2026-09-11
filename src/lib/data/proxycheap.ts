@@ -1,4 +1,4 @@
-import { TTL, cachedFetcher } from "@/lib/data/cache";
+import { PROXYCHEAP_PROXIES_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 
 /**
  * Proxy-Cheap API — subscription list. Parser built from the observed
@@ -50,7 +50,7 @@ async function fetchProxies(): Promise<ProxySubscription[]> {
   }));
 }
 
-export const getProxySubscriptions = cachedFetcher("proxycheap-proxies", TTL.external, fetchProxies);
+export const getProxySubscriptions = cachedFetcher(PROXYCHEAP_PROXIES_TAG, TTL.external, fetchProxies);
 
 /**
  * Account balance. GET /account/balance -> {"balance": 31.37} (verified live
@@ -88,3 +88,49 @@ export const getProxyCheapBalance = cachedFetcher(
   TTL.external,
   fetchBalance,
 );
+
+/**
+ * One subscription, read live, including its credentials.
+ *
+ * Deliberately separate from `getProxySubscriptions` and never cached: the
+ * username and password are the only secrets in this file, and the list
+ * payload is handed to the browser. Keeping them on a call the replace route
+ * makes at the moment of the write means they are never serialised into a
+ * cache entry or a client bundle.
+ *
+ * Verified live 2026-09-12: GET /proxies/{id} answers with the same record
+ * shape as the list endpoint.
+ */
+export interface ProxyCredentials {
+  id: number;
+  status: string;
+  server: string;
+  port: number;
+  username: string;
+  password: string;
+}
+
+export async function fetchProxyCredentials(id: number): Promise<ProxyCredentials | null> {
+  const res = await fetch(`https://api.proxy-cheap.com/proxies/${id}`, {
+    headers: {
+      "X-Api-Key": process.env.PROXYCHEAP_API_KEY!,
+      "X-Api-Secret": process.env.PROXYCHEAP_API_SECRET!,
+      Accept: "application/json",
+    },
+    signal: AbortSignal.timeout(10_000),
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`proxy-cheap HTTP ${res.status}`);
+  const p = (await res.json()) as RawProxy & {
+    authentication?: { username?: string; password?: string };
+  };
+  const server = p.connection?.connectIp ?? p.connection?.publicIp ?? "";
+  const port = p.connection?.socks5Port ?? p.connection?.httpPort ?? null;
+  const username = p.authentication?.username ?? "";
+  const password = p.authentication?.password ?? "";
+  // A proxy with no endpoint or no credentials cannot be attached to a phone;
+  // treat it as unusable rather than handing GeeLark a half-formed config.
+  if (!server || !port || !username || !password) return null;
+  return { id: p.id, status: p.status, server, port, username, password };
+}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Loader2, SlidersHorizontal, TriangleAlert, X } from "@/components/ui/icons";
 import { resolveCharacterCaps, type CadenceData } from "@/lib/data/cadence";
+import { unbalancedCharacters } from "@/lib/data/cadence-rules";
 import type { FleetDefaults } from "@/lib/data/scheduler-config";
 import { StatusPill } from "@/components/ui/pill";
 import { Stepper } from "@/components/ui/stepper";
@@ -127,9 +128,56 @@ export function AdjustCadenceModal({
   const windowInverted = scope.kind === "fleet" && windowMinutes <= 0;
   const windowTooTight = scope.kind === "fleet" && !windowInverted && needMinutes > windowMinutes;
 
-  const mixBalanced = charScope
-    ? laneSum(charScope) === effective.glpWeek
-    : cadence.characters.every((c) => laneSum(c.name) === glpTargetFor(c.name));
+  /**
+   * Every character whose lane mix does not add up to its own weekly allowance.
+   *
+   * This is the state that locked the editor on 2026-09-11: `cleora_asmr` was
+   * switched on in the database, which added 7 a week to Character 5's lanes
+   * while its allowance still read 7 — and the Fleet tab checks EVERY character
+   * before it will save anything, so a problem on one character stopped every
+   * cadence change for every character and for the fleet. The Save button went
+   * grey and named no culprit, so finding it meant opening Advanced settings and
+   * reading down all four characters looking for the mismatched pair.
+   *
+   * Every new lane arrives exactly this way — content made, lane wired and
+   * switched on in the database, allowance raised afterwards, sometimes days
+   * later and by someone else — so this recurs by design. Hence the list rather
+   * than a bare boolean: the banner below needs to be able to NAME the character
+   * and offer the fix.
+   */
+  const unbalanced = unbalancedCharacters(
+    cadence.characters.map((c) => ({ name: c.name, laneSum: laneSum(c.name) })),
+    // In character scope the allowance is the one being edited in this form,
+    // which may not be saved yet; on the Fleet tab it is each character's own.
+    (name) => (charScope ? effective.glpWeek : glpTargetFor(name)),
+    charScope,
+  );
+
+  const mixBalanced = unbalanced.length === 0;
+
+  /** How high the GLP allowance can go in this scope — the same bound as the GLP
+   *  stepper's `max`, so the banner can tell the difference between "click here
+   *  to fix it" and "the day cap is in the way, raise that first". */
+  const glpRoom = Math.min(MAX_GLP_PER_WEEK, Math.max(0, weekBudget - effective.fillerWeek));
+
+  /**
+   * Why the GLP + button has stopped, shown only when it actually has.
+   *
+   * The weekly steppers are bounded by `maxPostsPerDay * 7`, so raising GLP past
+   * that is impossible until the day cap moves first — and the + simply went
+   * dead with nothing on screen saying so. Garreth hit this on 2026-09-12 taking
+   * Character 5 from 7 a week to 14: at 1 post a day the ceiling was 7, and the
+   * only way to discover the order was to be told it.
+   *
+   * Deliberately silent when the 70-a-week hard cap is the binding one instead —
+   * blaming the day cap there would be wrong — and when the field is inheriting,
+   * because then there is no stepper and no dead button to explain.
+   */
+  const glpShown = charScope ? active!.glp : glp;
+  const glpCeilingHint =
+    glpShown !== null && glpShown >= glpRoom && glpRoom < MAX_GLP_PER_WEEK
+      ? `max for ${effective.maxPostsPerDay} post${effective.maxPostsPerDay === 1 ? "" : "s"}/day`
+      : undefined;
 
   // Both buckets on zero is not a cadence, it is an off switch: every account
   // under this scope would sit idle indefinitely with nothing on screen saying
@@ -170,6 +218,20 @@ export function AdjustCadenceModal({
     if (!charScope) return;
     setCharOverrides((prev) => ({ ...prev, [charScope]: { ...prev[charScope]!, [field]: value } }));
     if (field === "glp") rebalance(charScope, value ?? fleet.glpWeek);
+  }
+
+  /**
+   * Move the allowance up to whatever the lanes already add up to.
+   *
+   * Deliberately NOT `setCharField("glp", …)`: that rebalances the mix, which
+   * spreads the new total evenly and throws away the split the lanes are already
+   * carrying — a deliberate 10 + 4 would come back as 7 + 7. When a lane has
+   * just been switched on, the lanes ARE the intent and the allowance is the
+   * number that is behind, so the mix must be left exactly as it is.
+   */
+  function matchAllowanceToLanes(total: number) {
+    if (!charScope) return;
+    setCharOverrides((prev) => ({ ...prev, [charScope]: { ...prev[charScope]!, glp: total } }));
   }
 
   async function save() {
@@ -279,6 +341,75 @@ export function AdjustCadenceModal({
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto">
+          {/* ── a character's lanes do not add up to its allowance ─────────────
+              Shown in BOTH scopes, because the character at fault is usually not
+              the tab you are on: the Fleet tab is where the locked Save button
+              appears, and the fix is always on a character tab. Naming the
+              character is the whole point — see `unbalanced` above. */}
+          {unbalanced.length > 0 && (
+            <div className="border-b border-border bg-danger/5 px-6 py-3">
+              <p className="flex items-start gap-2 text-xs text-danger">
+                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+                <span>
+                  {unbalanced.length === 1 ? (
+                    <>
+                      <span className="font-semibold">{unbalanced[0]!.name}</span>&rsquo;s lanes add up
+                      to {unbalanced[0]!.sum} a week, but its allowance is {unbalanced[0]!.target}.
+                      Nothing can be saved until the two match.
+                    </>
+                  ) : (
+                    <>
+                      {unbalanced.length} characters have lanes that do not add up to their weekly
+                      allowance. Nothing can be saved until they match.
+                    </>
+                  )}
+                </span>
+              </p>
+              {/* Indented to the text, not the icon: 0.875rem icon + 0.5rem gap. */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 pl-[1.375rem]">
+                {charScope ? (
+                  unbalanced[0]!.sum <= glpRoom ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => matchAllowanceToLanes(unbalanced[0]!.sum)}
+                        className="rounded-full border border-danger/40 px-2.5 py-1 text-[11px] font-medium text-danger hover:bg-danger/10"
+                      >
+                        Set allowance to {unbalanced[0]!.sum}
+                      </button>
+                      <span className="text-[11px] text-text-muted">
+                        or change the lane numbers in Advanced settings
+                      </span>
+                    </>
+                  ) : (
+                    /* The day cap is the blocker, not the allowance. Without this
+                       the GLP stepper simply stops at its max with nothing saying
+                       why — the dead end Garreth hit on 2026-09-12, when
+                       Character 5 sat at 1 post a day and 14 could not be
+                       reached until the day cap moved first. */
+                    <span className="text-[11px] text-text-muted">
+                      An allowance of {unbalanced[0]!.sum} a week needs at least{" "}
+                      {Math.ceil((unbalanced[0]!.sum + effective.fillerWeek) / 7)} posts a day —{" "}
+                      {effective.maxPostsPerDay} a day allows only {glpRoom}. Raise{" "}
+                      <span className="font-medium">Max posts / day</span> above first.
+                    </span>
+                  )
+                ) : (
+                  unbalanced.map((c) => (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => setScope({ kind: "character", name: c.name })}
+                      className="rounded-full border border-danger/40 px-2.5 py-1 text-[11px] font-medium text-danger hover:bg-danger/10"
+                    >
+                      Open {c.name.replace("Character ", "Char ")} — {c.sum} of {c.target}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {fleet.divergent && scope.kind === "fleet" && (
             <p className="flex items-start gap-2 border-b border-border bg-warn/5 px-6 py-3 text-xs text-warn">
               <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
@@ -374,8 +505,9 @@ export function AdjustCadenceModal({
                     fleetValue={fleet.glpWeek}
                     onChange={(v) => setCharField("glp", v)}
                     min={0}
-                    max={Math.min(MAX_GLP_PER_WEEK, Math.max(0, weekBudget - effective.fillerWeek))}
+                    max={glpRoom}
                     suffix="/wk"
+                    hint={glpCeilingHint}
                   />
                 </>
               ) : (
@@ -401,8 +533,9 @@ export function AdjustCadenceModal({
                     // never a rule that GLP could not exceed 10 a week. It only
                     // showed up once the day cap moved to 2 and the remaining budget
                     // was 11 (Garreth 2026-09-08).
-                    max={Math.min(MAX_GLP_PER_WEEK, Math.max(0, weekBudget - filler))}
+                    max={glpRoom}
                     suffix="/wk"
+                    hint={glpCeilingHint}
                   />
                 </>
               )}
@@ -484,7 +617,7 @@ export function AdjustCadenceModal({
                           return (
                             <Stepper
                               key={key}
-                              label={l.contentType.replace(/_/g, " ")}
+                              label={l.displayName}
                               hint={l.poolNow === 0 ? "pool empty" : `${l.poolNow} ready`}
                               hintTone={l.poolNow === 0 ? "danger" : "muted"}
                               value={mix[key] ?? 0}
@@ -518,7 +651,9 @@ export function AdjustCadenceModal({
             disabled={!canSave}
             title={
               !mixBalanced
-                ? "Open Advanced settings — the lane mix has to add up"
+                ? unbalanced.length === 1
+                  ? `${unbalanced[0]!.name}'s lanes add up to ${unbalanced[0]!.sum} a week, not ${unbalanced[0]!.target}`
+                  : `${unbalanced.length} characters' lanes do not add up to their allowance`
                 : overBudget
                   ? "Filler + GLP is over the weekly budget"
                   : undefined
@@ -550,6 +685,7 @@ function OverridableStepper({
   max,
   suffix,
   zeroNote,
+  hint,
 }: {
   label: string;
   /** null = inherit the fleet default. */
@@ -560,6 +696,9 @@ function OverridableStepper({
   max: number;
   suffix?: string;
   zeroNote?: string;
+  /** Shown above the stepper, right-aligned. Costs no vertical space: the inner
+   *  Stepper always renders that row, and with `label=""` it sits empty. */
+  hint?: string;
 }) {
   const inherited = value === null;
   return (
@@ -591,6 +730,7 @@ function OverridableStepper({
             min={min}
             max={max}
             suffix={suffix}
+            hint={hint}
           />
           {value === 0 && zeroNote && (
             <p className="mt-1 text-[11px] text-text-muted">{zeroNote}</p>

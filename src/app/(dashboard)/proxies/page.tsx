@@ -31,6 +31,9 @@ async function ProxiesLive() {
       rows={data.rows}
       fetchedAt={formatEtShort(data.fetchedAt)}
       charactersAvailable={data.charactersAvailable}
+      // The spare pool and the "paying for nothing" list are the same set —
+      // see the note on orphanSubscriptions.
+      availableProxies={data.orphanSubscriptions}
       balances={<ProviderBalanceCards />}
     />
   );

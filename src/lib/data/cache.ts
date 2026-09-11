@@ -114,6 +114,26 @@ export const TTL = {
 export const ACCOUNTS_TAG = "accounts-data-v14";
 
 /**
+ * The cadence payload tag. Exported for the reason ACCOUNTS_TAG is: the cadence
+ * route and the content-type lifecycle route both have to expire the same key
+ * `getCadence()` writes, and all three used to spell it out as a literal — so
+ * renaming it in one place would have left the cadence editor showing the old
+ * lane mix after a save that had already gone through.
+ *
+ * **v2 (2026-09-12):** `CadenceLane` gained `displayName`. A cache entry written
+ * by v1 has no such field, and the lane steppers would have rendered with blank
+ * labels until the TTL rolled. Bump this whenever `CadenceData` changes shape.
+ */
+export const CADENCE_TAG = "cadence-data-v2";
+
+/** The two live-API keys the Replace proxy route must expire, for the same
+ *  reason ACCOUNTS_TAG is exported: a write route that hard-codes the string
+ *  drifts silently the day the key is renamed, and the table then shows the
+ *  old proxy after a successful swap. */
+export const GEELARK_PHONES_TAG = "geelark-phones";
+export const PROXYCHEAP_PROXIES_TAG = "proxycheap-proxies";
+
+/**
  * Shared tags for the caches whose keys carry a date or a range, so Refresh
  * can expire the whole family without enumerating every key it might hold.
  *
@@ -148,13 +168,13 @@ export const DATA_TAGS = [
   CONTENT_TYPES_TAG,
   INCIDENTS_TAG,
   INVENTORY_TAG,
-  "cadence-data",
-  "geelark-phones",
+  CADENCE_TAG,
+  GEELARK_PHONES_TAG,
   "geelark-wallet",
   "inventory-data-v4",
   "n8n-executions",
   "proxycheap-balance",
-  "proxycheap-proxies",
+  PROXYCHEAP_PROXIES_TAG,
   "pulse-stats",
   "scheduler-buckets",
   "scheduler-config",

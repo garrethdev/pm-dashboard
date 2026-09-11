@@ -13,6 +13,9 @@ import { getProxySubscriptions, type ProxySubscription } from "@/lib/data/proxyc
  */
 export interface ProxyPhoneRow {
   profile: string;
+  /** GeeLark's own phone id — what `phone/detail/update` needs to swap the
+   *  proxy. `serialName` ("Profile 70") is a label, not an address. */
+  phoneId: string;
   character: string | null;
   proxyHost: string | null;
   proxyPort: number | null;
@@ -37,7 +40,12 @@ export interface ProxyPhoneRow {
 
 export interface ProxyPhoneData {
   rows: ProxyPhoneRow[];
-  orphanSubscriptions: (ProxySubscription & { daysLeft: number })[]; // paying for nothing
+  /**
+   * Subscriptions no phone is using: money going out for nothing, and at the
+   * same time exactly the pool a Replace proxy swap can draw from. One list,
+   * because "spare" and "wasted" are the same set seen from two directions.
+   */
+  orphanSubscriptions: (ProxySubscription & { daysLeft: number })[];
   unmatchedRentals: PhoneRental[]; // rentals not tied to any phone
   charactersAvailable: boolean; // false while Supabase is unreachable
   fetchedAt: string;
@@ -99,6 +107,7 @@ export async function getProxyPhoneData(): Promise<ProxyPhoneData> {
 
     return {
       profile: phone.serialName,
+      phoneId: phone.id,
       character: characters?.get(phone.serialName) ?? null,
       proxyHost: phone.proxy?.server ?? null,
       proxyPort: phone.proxy?.port ?? null,

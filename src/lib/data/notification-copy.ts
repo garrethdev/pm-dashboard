@@ -57,6 +57,7 @@ export interface RetireFacts {
 const CATEGORY: Record<string, string> = {
   retire: "Post-Ban",
   warmup_fail: "Warmup",
+  proxy_replace: "Proxies",
 };
 
 export function categoryLabel(type: string): string {

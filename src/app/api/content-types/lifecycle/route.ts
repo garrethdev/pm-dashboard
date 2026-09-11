@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireSession } from "@/lib/api-auth";
-import { ACCOUNTS_TAG, CALENDAR_TAG, CONTENT_TYPES_TAG, INVENTORY_TAG } from "@/lib/data/cache";
+import {
+  ACCOUNTS_TAG,
+  CADENCE_TAG,
+  CALENDAR_TAG,
+  CONTENT_TYPES_TAG,
+  INVENTORY_TAG,
+} from "@/lib/data/cache";
 import { getFleetDefaults } from "@/lib/data/scheduler-config";
 import {
   actingUserEmail,
@@ -196,7 +202,7 @@ export async function POST(request: Request) {
       // Pausing a lane changes what is on the calendar, so its cached past days
       // have to go too — the live days are read fresh anyway.
       CALENDAR_TAG,
-      "cadence-data",
+      CADENCE_TAG,
       "scheduler-config",
       "scheduler-buckets",
       // The family tag, not the inventory card's key. Taking a lane out of
