@@ -20,6 +20,160 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-12 (latest) — The Figma design system is on General Sans
+
+**From Garreth: he installed General Sans in Figma and applied it by hand.**
+
+All 188 pieces of text on the Design System page now use the real typeface —
+the same one the dashboard itself uses. Nothing is left on the temporary
+stand-in.
+
+### Why this had to be done by hand
+
+The automated connection to Figma can only see Google Fonts — 1,938 of them,
+and no fonts installed on the Mac. So it could *display* General Sans but never
+*apply* it. This is worth remembering: any future font change in Figma is a
+manual job, not something that can be scripted from here.
+
+### One rough edge, left as-is by decision
+
+Changing a typeface in Figma resets every weight to Regular, which flattened
+the whole type hierarchy. Most of it was rebuilt, but three things ended up one
+weight lighter than the app uses:
+
+- card titles
+- control labels (pills, buttons, chips)
+- the rule lines and the big figures on the cover
+
+Garreth decided not to chase the last pass, which is fine — it is cosmetic, it
+only affects the reference boards, and no component or colour token is touched.
+`globals.css` is still the authority on weight, and the difference is now
+written down in `docs/DESIGN-TOKENS.md` so nobody later assumes Figma and the
+code agree on it.
+
+### Also worth knowing
+
+Applying the font by hand broke the link between the text styles and the
+font-family variable. That variable still holds the right value but no longer
+controls anything, so the "change one value to switch the whole library" trick
+no longer works. Not worth rebuilding for ten styles.
+
+---
+
+## 2026-09-12 (latest) — The design system got redesigned, and the Figma font question got a real answer
+
+**From Garreth, reviewing the first version: make it look like an
+award-winning design system, and cut the text — he wants it visual.**
+
+Fair criticism, and a pointed one. The first version printed the rule *"no
+instruction text on a screen"* on a page that was itself mostly paragraphs.
+
+### What changed
+
+Both the HTML page and the Figma boards were rebuilt around the same idea:
+**the tokens are the content, not the captions.**
+
+- **Prose is gone.** The explanatory paragraphs under every component were
+  deleted. What is left is the component itself plus one line of the actual
+  code you would copy.
+- **The twelve rules are now twelve single lines** in large type, instead of
+  twelve paragraphs. "Glass needs glow." "Every number is tabular."
+- **Colour is shown as large blocks** in an uneven mosaic — the accent gets a
+  big tile, the status colours get a row — rather than small chips with
+  captions underneath.
+- **Everything got bolder**: an oversized cover, outlined section numbers,
+  hairline column guides, tiny uppercase mono labels, and the ambient glow used
+  as an actual design element rather than as background.
+- The HTML page also gained a section index, scroll-in animation, and
+  a hover lift on the colour tiles. All of it switches off under the system's
+  reduce-motion setting.
+
+Explanation now lives only in `docs/DESIGN-TOKENS.md`, which is where a written
+reference belongs.
+
+### The font, answered properly
+
+Garreth installed General Sans in Figma, so the substitution should have been
+removable. **It could not be, and the reason is worth recording.**
+
+The Figma connection this project drives can see 1,938 font families and every
+single one is a Google Font. It has no access to fonts installed on the Mac. So
+General Sans is genuinely available in Garreth's Figma, but not to the
+automation — trying to use it fails outright with "the font family General Sans
+does not exist".
+
+**This is a ten-second fix on Garreth's side**, and only because of a decision
+made in the first pass: the font is wired through a single variable rather than
+set on each piece of text. Open Variables → Typography → `font-family/sans`,
+change the value to "General Sans", and all ten text styles follow at once. The
+instruction is written into the variable itself in Figma.
+
+### Nothing was lost in the rebuild
+
+The four component sets and the dialog were moved out before the old boards
+were deleted, then moved back into the new ones. All 111 variables, 6 effect
+styles and 10 text styles are untouched. The token parity test still passes
+(87 tests), and typecheck and lint are clean.
+
+---
+
+## 2026-09-12 (latest) — The design system is written down, in three places that check each other
+
+**From Garreth: before the Carousel Generator gets built, capture the look the
+dashboard already has, so the new screens inherit it instead of inventing a
+second one.**
+
+Nothing about the running dashboard changed. This is documentation plus one new
+test.
+
+### What now exists
+
+- **`docs/design-system.html`** — a page you can open by double-clicking. It
+  shows every colour, text size, surface and control the dashboard uses, and
+  next to each one the actual code that builds it. It has the same dark/light
+  switch the app has, so you can see what light mode does to each piece.
+- **`docs/DESIGN-TOKENS.md`** — the same information written out, with the
+  reasoning behind each decision and a section at the end on what the Carousel
+  Generator should reuse.
+- **The Figma file** — the *Design System* page of `Peptide Miracles App` now
+  holds the real thing: 111 variables across five collections, with Dark and
+  Light as switchable modes, 6 effect styles, 10 text styles, and four
+  components (status pill, button, card, input) plus a dialog. Changing the
+  Color collection from Dark to Light repaints all of it, the same way the app
+  does.
+
+### The part that stops this going stale
+
+The values now live in four places, and copies drift. So
+**`src/lib/design-tokens.test.ts`** reads `globals.css`, the HTML page and the
+markdown, and fails if any value disagrees. Changing a colour in `globals.css`
+and forgetting to update the other two now breaks `npm test` and names the
+token that drifted. Verified by deliberately changing one colour by a single
+digit and watching the test catch it.
+
+Figma is the exception — no test can reach it. When a token changes, the Figma
+variable has to be updated by hand.
+
+### Two things worth knowing
+
+- **Figma does not have General Sans.** It is a Fontshare font and Figma's
+  renderer does not carry it, which shows up as text getting cut off rather
+  than as an error. The Figma library uses Plus Jakarta Sans instead, which is
+  the closest available. It is wired through a single variable, so if General
+  Sans ever gets installed for Figma, switching the whole library over is one
+  change rather than a pass over every piece of text.
+- **Nothing was overwritten.** The *Design System* page was empty, and the
+  *Individual Accounts Page* was left exactly as it was.
+
+### Still only in the HTML, not in Figma
+
+The segmented filter control, sort button, filter chip, stepper, table layout,
+progress bar, loading skeleton, stale-data notice, tooltip and sidebar row.
+They are drawn and documented on the HTML page; they just are not Figma
+components yet.
+
+---
+
 ## 2026-09-12 (later) — Profile 73 was in the database all along, just blank
 
 **From Garreth: a new account, Profile 73, belongs to Character 5 but was

@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Peptide Miracles — Design System</title>
+
+    <!--
+      PM DASHBOARD — VISUAL DESIGN SYSTEM
+      ════════════════════════════════════════════════════════════════════
+
+      Rebuilt 2026-09-12 (second pass, Garreth): show, don't tell. The first
+      version explained the system in paragraphs, which contradicted the
+      system's own rule against instruction text. Prose is gone; the tokens
+      are the content. Every component still carries its real Tailwind class
+      string in one mono line, because that is the part you actually copy.
+
+      SOURCE OF TRUTH: `src/app/globals.css`. The :root blocks below are
+      copied from it verbatim and `src/lib/design-tokens.test.ts` fails if any
+      value drifts. Change globals.css, mirror it here, run `npm test`.
+
+      Explanation lives in `docs/DESIGN-TOKENS.md`, not on this page.
+
+      Hand-written CSS rather than Tailwind: this file opens by double-click
+      with no build step. The class strings printed on the page are authority.
+      Type is General Sans from Fontshare (the app self-hosts the same face).
+    -->
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://api.fontshare.com/v2/css?f%5B%5D=general-sans@200,300,400,500,600,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ═══ TOKENS — verbatim from src/app/globals.css ═══════════════════
+       * Do not edit values here. Edit globals.css, then mirror.
+       * src/lib/design-tokens.test.ts enforces that these match.
+       * ═════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: dark;
+
+        --bg: #0b0b0c;
+        --card: #111113;
+        --card-sunken: #0e0e0f;
+
+        --overlay-veil: rgba(22, 22, 26, 0.6);
+        --overlay-blur: blur(14px) saturate(1.6);
+        --overlay-rim:
+          inset 1px 1px 0 rgba(255, 255, 255, 0.11),
+          inset 2px 2px 7px rgba(255, 255, 255, 0.035),
+          inset -1px -1px 0 rgba(255, 255, 255, 0.03),
+          inset -2px -2px 9px rgba(0, 0, 0, 0.28),
+          inset 0 0 26px rgba(255, 255, 255, 0.025), 0 16px 40px rgba(0, 0, 0, 0.45);
+
+        --scrim: rgba(6, 6, 7, 0.6);
+        --scrim-blur: blur(2px);
+        --card-raised: #1a1a1b;
+        --border: #242426;
+        --text-primary: #f4f4f5;
+        --text-muted: #8a8a92;
+
+        --glow-a: rgba(217, 217, 217, 0.07);
+        --glow-b: rgba(217, 217, 217, 0.05);
+        --glow-blur: 131px;
+        --glow-rail: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 46%);
+        --glow-rail-bottom: radial-gradient(
+          78% 30% at 50% 78%,
+          rgba(217, 217, 217, 0.045),
+          transparent 72%
+        );
+
+        --glass: rgba(255, 255, 255, 0.045);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+        --glass-blur: blur(16px) saturate(1.15);
+        --dot-opacity: 0.34;
+
+        --accent: #22d3ee;
+        --accent-deep: #0e9bb5;
+        --accent-soft: rgba(34, 211, 238, 0.12);
+
+        --ok: #4ade80;
+        --warn: #fbbf24;
+        --orange: #fb923c;
+        --danger: #f87171;
+        --danger-deep: #dc2626;
+        --info: #60a5fa;
+
+        --pill-bg: #262627;
+        --pill-red: #ff4949;
+        --pill-amber: #ff9549;
+        --pill-yellow: #fff949;
+
+        --sh-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+        --sh-hero: 0 8px 40px rgba(34, 211, 238, 0.22);
+
+        --sb-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.25);
+
+        --radius-card: 24px;
+        --radius-nested: 16px;
+      }
+
+      :root[data-theme="light"] {
+        color-scheme: light;
+
+        --bg: #eef0f2;
+        --card: #f7f7f8;
+        --card-sunken: #f2f2f3;
+        --card-raised: #eeeef0;
+        --border: #e4e4e6;
+        --text-primary: #1b1d21;
+        --text-muted: #515c6b;
+
+        --overlay-veil: var(--card);
+        --overlay-blur: none;
+        --overlay-rim: var(--sh-card);
+
+        --scrim: rgba(27, 29, 33, 0.32);
+        --scrim-blur: none;
+
+        --glow-a: transparent;
+        --glow-b: transparent;
+        --glow-blur: 0px;
+        --glow-rail: none;
+        --glow-rail-bottom: none;
+        --glass: var(--card);
+        --glass-border: var(--border);
+        --glass-highlight: 0 0 #0000;
+        --glass-blur: none;
+        --dot-opacity: 0;
+
+        --accent: #0e7490;
+        --accent-deep: #155e75;
+        --accent-soft: rgba(14, 116, 144, 0.12);
+
+        --ok: #166534;
+        --warn: #92400e;
+        --orange: #9a3412;
+        --danger: #b91c1c;
+        --danger-deep: #7f1d1d;
+        --info: #1d4ed8;
+
+        --pill-bg: #e4e8ed;
+        --pill-red: #a11616;
+        --pill-amber: #8a3f08;
+        --pill-yellow: #6b4f03;
+
+        --sh-card: none;
+        --sh-hero: none;
+        --sb-shadow: 0 0 #0000;
+      }
+
+      /* ═══ APP PRIMITIVES — literal copies from globals.css ═════════════ */
+      .glass-overlay {
+        background: var(--overlay-veil);
+        box-shadow: var(--overlay-rim);
+        -webkit-backdrop-filter: var(--overlay-blur);
+        backdrop-filter: var(--overlay-blur);
+      }
+      .glass {
+        background: var(--glass);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-highlight);
+        -webkit-backdrop-filter: var(--glass-blur);
+        backdrop-filter: var(--glass-blur);
+      }
+      .dot-fade { position: relative; overflow: hidden; }
+      .dot-fade::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(currentColor 2px, transparent 2.2px);
+        background-size: 7px 7px;
+        opacity: var(--dot-opacity);
+        -webkit-mask-image: radial-gradient(115% 115% at 100% 0%, #000 0%, transparent 58%);
+        mask-image: radial-gradient(115% 115% at 100% 0%, #000 0%, transparent 58%);
+      }
+      .rail-glow {
+        background-image: var(--glow-rail), var(--glow-rail-bottom);
+        background-repeat: no-repeat;
+        background-size: 100% 420px, 100% 100%;
+        background-position: top, bottom;
+      }
+      .tnum { font-variant-numeric: tabular-nums; }
+      ::selection { background: var(--accent-soft); }
+      * { scrollbar-width: none; }
+      *::-webkit-scrollbar { display: none; }
+
+      /* ═══ PAGE ════════════════════════════════════════════════════════ */
+      *, *::before, *::after { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text-primary);
+        font-family: "General Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      /* Hairline column grid. Structure made visible — and the reason the
+         page feels built rather than typed. */
+      .grid-lines {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        max-width: 1520px;
+        margin: 0 auto;
+        padding: 0 40px;
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+      }
+      .grid-lines span {
+        border-left: 1px solid var(--border);
+        opacity: 0.5;
+      }
+      .grid-lines span:last-child { border-right: 1px solid var(--border); }
+
+      .glow-layer {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 1;
+      }
+      .glow-layer > span {
+        position: absolute;
+        display: block;
+        border-radius: 50%;
+        filter: blur(var(--glow-blur));
+        width: 333px;
+        height: 845px;
+      }
+      .g-a { top: -240px; left: 14%; background: var(--glow-a); }
+      .g-b { top: -180px; right: 8%; background: var(--glow-b); }
+
+      .wrap {
+        position: relative;
+        z-index: 2;
+        max-width: 1520px;
+        margin: 0 auto;
+        padding: 0 40px;
+      }
+
+      /* ── Micro-typography: every label on this page ── */
+      .mono {
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .mono-val {
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 11px;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--text-muted);
+      }
+
+      /* ── Hero ── */
+      .hero {
+        min-height: 86vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-block: 120px 80px;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(58px, 13.5vw, 208px);
+        line-height: 0.84;
+        font-weight: 600;
+        letter-spacing: -0.045em;
+        text-transform: uppercase;
+      }
+      .hero h1 em {
+        font-style: normal;
+        display: block;
+        color: var(--accent);
+      }
+      .hero-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 48px;
+      }
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin-top: 56px;
+        border-top: 1px solid var(--border);
+      }
+      .hero-meta div {
+        flex: 1 1 160px;
+        padding: 18px 20px 18px 0;
+      }
+      .hero-meta b {
+        display: block;
+        font-size: 26px;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+        margin-bottom: 4px;
+      }
+
+      /* ── Sections ── */
+      section { padding-block: 96px; border-top: 1px solid var(--border); }
+
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin-bottom: 48px;
+      }
+      .sec-num {
+        font-size: clamp(44px, 7vw, 96px);
+        line-height: 0.8;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        color: transparent;
+        -webkit-text-stroke: 1px var(--text-muted);
+        opacity: 0.45;
+        font-variant-numeric: tabular-nums;
+      }
+      .sec-head h2 {
+        margin: 0;
+        font-size: clamp(30px, 4.6vw, 60px);
+        line-height: 0.95;
+        font-weight: 600;
+        letter-spacing: -0.035em;
+      }
+      .sec-head .mono { margin-left: auto; align-self: center; }
+
+      .sub {
+        margin: 48px 0 16px;
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+      }
+      .sub::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+      .sub:first-of-type { margin-top: 0; }
+
+      /* ── Colour mosaic ── */
+      .mosaic {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 6px;
+      }
+      .tile {
+        position: relative;
+        grid-column: span 3;
+        min-height: 132px;
+        border-radius: 10px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 2px;
+        overflow: hidden;
+        /* Near-black tokens sit on a near-black page; without a hairline they
+           dissolve into it and the swatch shows nothing. */
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+        transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      :root[data-theme="light"] .tile {
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.09);
+      }
+      .tile:hover { transform: translateY(-3px); }
+      .tile.xl { grid-column: span 6; min-height: 270px; }
+      .tile.lg { grid-column: span 4; min-height: 200px; }
+      .tile.sm { grid-column: span 2; min-height: 110px; }
+      .tile .n {
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1.3;
+      }
+      .tile .v {
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 10px;
+        line-height: 1.3;
+        opacity: 0.62;
+      }
+      /* The chip's own label has to survive on top of the chip's own colour. */
+      .on-dark { color: #f4f4f5; }
+      .on-light { color: #0b0b0c; }
+      /* Checkerboard so alpha reads as alpha rather than as a flat colour. */
+      .alpha::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background-image:
+          linear-gradient(45deg, rgba(128, 128, 128, 0.26) 25%, transparent 25%),
+          linear-gradient(-45deg, rgba(128, 128, 128, 0.26) 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, rgba(128, 128, 128, 0.26) 75%),
+          linear-gradient(-45deg, transparent 75%, rgba(128, 128, 128, 0.26) 75%);
+        background-size: 14px 14px;
+        background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+      }
+      .alpha { isolation: isolate; }
+
+      /* ── Type scale ── */
+      .ramp { border-top: 1px solid var(--border); }
+      .row {
+        display: flex;
+        align-items: baseline;
+        gap: 24px;
+        padding: 22px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .row .spec {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .row .mono { flex: 0 0 auto; text-align: right; }
+      .t1 { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; }
+      .t2 { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.02em; }
+      .t3 { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-muted); }
+      .t4 { font-size: 14px; line-height: 20px; font-weight: 600; }
+      .t5 { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
+      .t6 { font-size: 14px; line-height: 20px; }
+      .t7 { font-size: 12px; line-height: 16px; }
+      .t8 { font-size: 12px; line-height: 16px; font-weight: 500; }
+      .t9 { font-size: 11px; line-height: 15px; color: var(--text-muted); }
+      .t10 { font-size: 10px; line-height: 14px; font-weight: 600; color: var(--text-muted); }
+
+      /* ── Specimen stage: a component, and one mono line of code ── */
+      .stage {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-nested);
+        background: var(--card-sunken);
+        overflow: hidden;
+      }
+      .stage-in {
+        padding: 44px 32px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+      }
+      .stage-in.col { display: block; }
+      .stage-code {
+        padding: 11px 16px;
+        border-top: 1px solid var(--border);
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 10.5px;
+        line-height: 1.6;
+        color: var(--text-muted);
+        word-break: break-word;
+      }
+      .stage-code b { color: var(--accent); font-weight: 400; }
+      .grid2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      /* ── Components (computed output of the app's Tailwind classes) ── */
+      .c-card { border-radius: var(--radius-card); padding: 20px; border: 1px solid var(--border); background: var(--card); box-shadow: var(--sh-card); }
+      .c-card--sunken { background: var(--card-sunken); }
+      .c-card--glass { border: 1px solid var(--glass-border); background: var(--glass); box-shadow: var(--glass-highlight); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+      .c-card--hero { border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: linear-gradient(135deg, var(--accent), var(--accent-deep)); box-shadow: var(--sh-hero); color: var(--bg); }
+      .card-k { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+      .c-card--hero .card-k { color: inherit; opacity: 0.8; }
+      .card-v { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; margin-top: 8px; font-variant-numeric: tabular-nums; }
+
+      .c-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 500; white-space: nowrap; background: var(--pill-bg); }
+      .p-ok { color: var(--ok); } .p-accent { color: var(--accent); } .p-info { color: var(--info); }
+      .p-neutral { color: var(--text-muted); } .p-warn { color: var(--pill-yellow); }
+      .p-orange { color: var(--pill-amber); } .p-danger { color: var(--pill-red); }
+      .p-critical { background: var(--danger-deep); color: #fff; }
+
+      .c-cta { position: relative; display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 999px; padding: 8px 18px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--bg); background: linear-gradient(180deg, var(--accent), var(--accent-deep)); box-shadow: var(--sb-shadow); overflow: hidden; }
+      .c-cta::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(115deg, rgba(255,255,255,0.55), transparent 42%); mix-blend-mode: screen; pointer-events: none; }
+      .c-cta--danger { color: #fff; background: linear-gradient(180deg, var(--pill-red), #a01d1d); }
+      :root[data-theme="light"] .c-cta { color: #fff; }
+      .c-btn2 { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid var(--border); background: var(--card-raised); padding: 7px 15px; font: inherit; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: color 150ms, border-color 150ms; }
+      .c-btn2:hover { color: var(--text-primary); }
+      .c-btn2--ext:hover { border-color: var(--accent); color: var(--accent); }
+      .c-btn3 { border: none; background: none; border-radius: 999px; padding: 7px 16px; font: inherit; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: color 150ms; }
+      .c-btn3:hover { color: var(--text-primary); }
+      .c-hold { position: relative; isolation: isolate; display: inline-flex; align-items: center; overflow: hidden; border: none; border-radius: 999px; padding: 7px 16px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--danger); background: color-mix(in srgb, var(--danger) 25%, transparent); }
+      .c-hold-fill { position: absolute; inset: 0; z-index: -1; transform-origin: left; background: var(--danger); }
+
+      .c-seg { display: inline-flex; align-items: center; gap: 2px; border-radius: 999px; background: var(--card-raised); padding: 2px; }
+      .c-seg button { border: none; background: none; border-radius: 999px; padding: 5px 13px; font: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; color: var(--text-muted); cursor: pointer; transition: color 150ms, background-color 150ms; }
+      .c-seg button:hover { color: var(--text-primary); }
+      .c-seg button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+      .c-sort { display: inline-flex; align-items: center; gap: 4px; border: none; background: none; border-radius: 999px; padding: 5px 13px; font: inherit; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; }
+      .c-sort[data-active] { background: var(--accent-soft); color: var(--accent); }
+      .c-chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; background: var(--accent-soft); padding: 5px 6px 5px 11px; font-size: 12px; font-weight: 500; color: var(--accent); }
+      .c-chip button { display: inline-flex; border: none; background: none; border-radius: 999px; padding: 2px; color: color-mix(in srgb, var(--accent) 70%, transparent); cursor: pointer; }
+      .c-chip button:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
+
+      .c-search { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--card-raised); padding: 7px 15px; min-width: 250px; }
+      .c-search input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 13px; color: var(--text-primary); }
+      .c-search input::placeholder { color: var(--text-muted); }
+      .c-step { display: inline-flex; align-items: stretch; overflow: hidden; border-radius: var(--radius-nested); border: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 60%, transparent); }
+      .c-step button { display: flex; width: 30px; flex-shrink: 0; align-items: center; justify-content: center; border: none; background: none; color: var(--text-muted); cursor: pointer; transition: background-color 150ms, color 150ms; }
+      .c-step button:hover { background: var(--card); color: var(--text-primary); }
+      .c-step span { display: flex; align-items: center; gap: 4px; border-inline: 1px solid var(--border); padding: 7px 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
+      .c-step i { font-style: normal; font-size: 11px; color: var(--text-muted); }
+
+      table.c-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+      table.c-tbl thead tr { text-align: left; font-size: 12px; color: var(--text-muted); }
+      table.c-tbl th { font-weight: 500; padding: 0 16px 10px 0; }
+      table.c-tbl tbody tr { border-top: 1px solid var(--border); }
+      table.c-tbl td { padding: 11px 16px 11px 0; }
+      table.c-tbl th:last-child, table.c-tbl td:last-child { padding-right: 0; }
+      .num { font-variant-numeric: tabular-nums; }
+      .c-bar { position: relative; height: 14px; width: 100%; overflow: hidden; border-radius: 4px; background: color-mix(in srgb, var(--text-muted) 20%, transparent); }
+      .c-bar > span { position: absolute; inset-block: 0; left: 0; border-radius: 4px; background: var(--accent); -webkit-mask-image: linear-gradient(to left, #000 0 12px, transparent 44px); mask-image: linear-gradient(to left, #000 0 12px, transparent 44px); }
+      .c-skel { border-radius: var(--radius-nested); background: var(--card-raised); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      .c-stale { display: flex; align-items: flex-start; gap: 8px; border-radius: var(--radius-nested); background: color-mix(in srgb, var(--warn) 10%, transparent); padding: 10px 14px; font-size: 12px; color: var(--warn); margin: 0; max-width: 62ch; }
+      .c-tip { border-radius: var(--radius-nested); border: 1px solid var(--border); padding: 5px 9px; font-size: 12px; font-weight: 500; white-space: nowrap; color: var(--text-primary); box-shadow: var(--sh-card); }
+
+      .c-nav { display: flex; flex-direction: column; gap: 2px; min-width: 216px; padding: 16px 12px; border-radius: var(--radius-nested); border: 1px solid var(--border); background: var(--card-sunken); }
+      .c-nav a { position: relative; display: flex; align-items: center; gap: 10px; border-radius: var(--radius-nested); padding: 7px 8px; font-size: 13px; color: var(--text-muted); text-decoration: none; transition: background-color 200ms, color 200ms; }
+      .c-nav a:hover { background: var(--card); color: var(--text-primary); }
+      .c-nav a[data-active] { font-weight: 500; color: var(--text-primary); }
+      .c-nav i { display: flex; width: 28px; height: 28px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 10px; transition: background-color 200ms, color 200ms; }
+      .c-nav a[data-active] i { background: var(--text-primary); color: var(--bg); }
+
+      .c-scrim { position: relative; display: flex; align-items: center; justify-content: center; padding: 40px 16px; border-radius: var(--radius-nested); background: rgba(0, 0, 0, 0.6); }
+      .c-modal { width: 100%; max-width: 440px; border-radius: var(--radius-card); border: 1px solid var(--border); padding: 24px; }
+      .c-modal h4 { margin: 0 0 5px; font-size: 16px; font-weight: 600; }
+      .c-modal p { margin: 0 0 18px; font-size: 13px; color: var(--text-muted); }
+      .c-modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+      /* ── Space + radius ── */
+      .ramp-row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-end; }
+      .ramp-row div { text-align: center; }
+      .ramp-bar { background: var(--accent); height: 44px; border-radius: 3px; margin-bottom: 10px; }
+      .rad-row { display: flex; flex-wrap: wrap; gap: 16px; }
+      .rad {
+        width: 148px; height: 116px;
+        border: 1px solid var(--accent);
+        background: var(--accent-soft);
+        display: flex; align-items: flex-end;
+        padding: 12px;
+      }
+
+      /* ── Rules: one line each ── */
+      .rules { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+      .rules li {
+        display: flex;
+        align-items: baseline;
+        gap: 20px;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: clamp(17px, 2.4vw, 27px);
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        transition: color 200ms;
+      }
+      .rules li::before {
+        content: attr(data-n);
+        flex: 0 0 auto;
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 11px;
+        font-weight: 400;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        letter-spacing: normal;
+      }
+      .rules li:hover { color: var(--accent); }
+
+      /* ── Theme switch + section index ── */
+      .sw { display: inline-flex; flex-shrink: 0; align-items: center; gap: 2px; border-radius: 999px; background: var(--card-raised); padding: 3px; }
+      .sw button { border: none; background: none; border-radius: 999px; padding: 6px 15px; font: inherit; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; }
+      .sw button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+
+      .idx {
+        position: fixed;
+        right: 22px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+      }
+      .idx a {
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        text-decoration: none;
+        opacity: 0.5;
+        transition: opacity 200ms, color 200ms;
+      }
+      .idx a:hover, .idx a.on { opacity: 1; color: var(--accent); }
+
+      footer {
+        padding-block: 72px 96px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px 48px;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+
+      /* ── Scroll reveal ── */
+      .rv { opacity: 0; transform: translateY(22px); transition: opacity 700ms cubic-bezier(0.22,1,0.36,1), transform 700ms cubic-bezier(0.22,1,0.36,1); }
+      .rv.in { opacity: 1; transform: none; }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .rv { opacity: 1; transform: none; transition: none; }
+        .c-skel { animation: none; }
+        .tile { transition: none; }
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 1100px) {
+        .idx { display: none; }
+        .grid-lines { grid-template-columns: repeat(3, 1fr); }
+      }
+      @media (max-width: 860px) {
+        .tile { grid-column: span 6; }
+        .tile.xl, .tile.lg { grid-column: span 12; }
+        .tile.sm { grid-column: span 4; }
+      }
+      @media (max-width: 640px) {
+        .wrap, .grid-lines { padding: 0 16px; }
+        .grid-lines { grid-template-columns: repeat(2, 1fr); }
+        body { font-size: 14px; }
+        section { padding-block: 64px; }
+        .hero { min-height: auto; padding-block: 88px 56px; }
+        .sec-head { gap: 14px; margin-bottom: 32px; }
+        .sec-head .mono { margin-left: 0; flex-basis: 100%; }
+        .stage-in { padding: 28px 18px; }
+        .row { gap: 12px; flex-wrap: wrap; }
+        .row .mono { flex-basis: 100%; text-align: left; }
+        .tile { grid-column: span 6; min-height: 108px; }
+        .tile.sm { grid-column: span 6; }
+        .rad { width: 116px; height: 96px; }
+      }
+
+      .scroll-x { overflow-x: auto; }
+    </style>
+  </head>
+
+  <body>
+    <div class="grid-lines" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="glow-layer" aria-hidden="true">
+      <span class="g-a"></span><span class="g-b"></span>
+    </div>
+
+    <nav class="idx" aria-label="Sections">
+      <a href="#colour">01</a><a href="#type">02</a><a href="#surface">03</a>
+      <a href="#control">04</a><a href="#data">05</a><a href="#space">06</a><a href="#rules">07</a>
+    </nav>
+
+    <div class="wrap">
+      <!-- ═══ HERO ═══ -->
+      <header class="hero">
+        <div class="hero-top">
+          <span class="mono">Peptide Miracles — Dashboard</span>
+          <div class="sw" role="group" aria-label="Theme">
+            <button type="button" data-set="dark" aria-pressed="true">Dark</button>
+            <button type="button" data-set="light" aria-pressed="false">Light</button>
+          </div>
+        </div>
+
+        <h1>Design<em>System</em></h1>
+
+        <div class="hero-meta">
+          <div><b class="tnum">111</b><span class="mono">Tokens</span></div>
+          <div><b class="tnum">02</b><span class="mono">Themes</span></div>
+          <div><b>General Sans</b><span class="mono">200–700 variable</span></div>
+          <div><b class="tnum">24/16</b><span class="mono">Radius</span></div>
+          <div><b style="color: var(--accent)">#22D3EE</b><span class="mono">Accent · locked</span></div>
+        </div>
+      </header>
+
+      <!-- ═══ 01 COLOUR ═══ -->
+      <section id="colour" class="rv">
+        <div class="sec-head">
+          <span class="sec-num">01</span>
+          <h2>Colour</h2>
+          <span class="mono">28 tokens · dark / light</span>
+        </div>
+
+        <div class="sub"><span class="mono">Accent · one use per screen</span></div>
+        <div class="mosaic">
+          <div class="tile xl on-dark" style="background: var(--accent)">
+            <span class="n">--accent</span><span class="v">#22d3ee → #0e7490</span>
+          </div>
+          <div class="tile lg on-dark" style="background: var(--accent-deep)">
+            <span class="n">--accent-deep</span><span class="v">#0e9bb5 → #155e75</span>
+          </div>
+          <div class="tile sm alpha on-dark" style="background: var(--accent-soft)">
+            <span class="n">--accent-soft</span><span class="v">12%</span>
+          </div>
+        </div>
+
+        <div class="sub"><span class="mono">Surface</span></div>
+        <div class="mosaic">
+          <div class="tile sm on-dark" style="background: var(--bg)"><span class="n">--bg</span><span class="v">#0b0b0c</span></div>
+          <div class="tile sm on-dark" style="background: var(--card)"><span class="n">--card</span><span class="v">#111113</span></div>
+          <div class="tile sm on-dark" style="background: var(--card-sunken)"><span class="n">--card-sunken</span><span class="v">#0e0e0f</span></div>
+          <div class="tile sm on-dark" style="background: var(--card-raised)"><span class="n">--card-raised</span><span class="v">#1a1a1b</span></div>
+          <div class="tile sm on-dark" style="background: var(--border)"><span class="n">--border</span><span class="v">#242426</span></div>
+          <div class="tile sm alpha on-dark" style="background: var(--glass)"><span class="n">--glass</span><span class="v">4.5%</span></div>
+        </div>
+
+        <div class="sub"><span class="mono">Ink</span></div>
+        <div class="mosaic">
+          <div class="tile lg on-light" style="background: var(--text-primary)"><span class="n">--text-primary</span><span class="v">#f4f4f5 → #1b1d21</span></div>
+          <div class="tile lg on-light" style="background: var(--text-muted)"><span class="n">--text-muted</span><span class="v">#8a8a92 → #515c6b</span></div>
+          <div class="tile lg alpha on-dark" style="background: var(--overlay-veil)"><span class="n">--overlay-veil</span><span class="v">60%</span></div>
+        </div>
+
+        <div class="sub"><span class="mono">Status · meaning, never style</span></div>
+        <div class="mosaic">
+          <div class="tile sm on-light" style="background: var(--ok)"><span class="n">--ok</span><span class="v">healthy</span></div>
+          <div class="tile sm on-light" style="background: var(--warn)"><span class="n">--warn</span><span class="v">attention</span></div>
+          <div class="tile sm on-light" style="background: var(--orange)"><span class="n">--orange</span><span class="v">collapsing</span></div>
+          <div class="tile sm on-light" style="background: var(--danger)"><span class="n">--danger</span><span class="v">banned</span></div>
+          <div class="tile sm on-dark" style="background: var(--danger-deep)"><span class="n">--danger-deep</span><span class="v">shadowbanned</span></div>
+          <div class="tile sm on-light" style="background: var(--info)"><span class="n">--info</span><span class="v">neutral</span></div>
+        </div>
+
+        <div class="sub"><span class="mono">Pill · hotter, for small labels</span></div>
+        <div class="mosaic">
+          <div class="tile on-dark" style="background: var(--pill-bg)"><span class="n">--pill-bg</span><span class="v">#262627</span></div>
+          <div class="tile on-light" style="background: var(--pill-yellow)"><span class="n">--pill-yellow</span><span class="v">#fff949</span></div>
+          <div class="tile on-light" style="background: var(--pill-amber)"><span class="n">--pill-amber</span><span class="v">#ff9549</span></div>
+          <div class="tile on-light" style="background: var(--pill-red)"><span class="n">--pill-red</span><span class="v">#ff4949</span></div>
+        </div>
+      </section>
+
+      <!-- ═══ 02 TYPE ═══ -->
+      <section id="type" class="rv">
+        <div class="sec-head">
+          <span class="sec-num">02</span>
+          <h2>Type</h2>
+          <span class="mono">General Sans · one family · 10px floor</span>
+        </div>
+
+        <div class="ramp">
+          <div class="row"><span class="spec t1">Accounts &amp; profiles</span><span class="mono">text-xl / 20·28 / 600</span></div>
+          <div class="row"><span class="spec t2">Cadence per character</span><span class="mono">text-base / 16·24 / 600</span></div>
+          <div class="row"><span class="spec t3">Inventory</span><span class="mono">card title / 14·20 / 500</span></div>
+          <div class="row"><span class="spec t4">Dry run summary</span><span class="mono">text-sm / 14·20 / 600</span></div>
+          <div class="row"><span class="spec t5">Scheduler overrides</span><span class="mono">overline / 12·16 / 600</span></div>
+          <div class="row"><span class="spec t6">Body copy — the default for anything read</span><span class="mono">text-sm / 14·20 / 400</span></div>
+          <div class="row"><span class="spec t7">Secondary text and column heads</span><span class="mono">text-xs / 12·16 / 400</span></div>
+          <div class="row"><span class="spec t8">Throttled · Collapsing · Banned</span><span class="mono">control / 12·16 / 500</span></div>
+          <div class="row"><span class="spec t9">Hints, suffixes, timestamps</span><span class="mono">11px / 11·15</span></div>
+          <div class="row"><span class="spec t10">BADGE COUNT 12</span><span class="mono">10px / floor</span></div>
+          <div class="row"><span class="spec t1 tnum">1,284,310 · 0,917 · 3,160</span><span class="mono">.tnum · tabular</span></div>
+        </div>
+      </section>
+
+      <!-- ═══ 03 SURFACE ═══ -->
+      <section id="surface" class="rv">
+        <div class="sec-head">
+          <span class="sec-num">03</span>
+          <h2>Surface</h2>
+          <span class="mono">glass needs glow</span>
+        </div>
+
+        <div class="stage">
+          <div class="stage-in col">
+            <div class="grid2">
+              <div class="c-card"><div class="card-k">Accounts</div><div class="card-v">29</div></div>
+              <div class="c-card c-card--sunken"><div class="card-k">Calendar</div><div class="card-v">14</div></div>
+              <div class="c-card c-card--glass"><div class="card-k">Proxies</div><div class="card-v">6</div></div>
+              <div class="c-card c-card--hero dot-fade"><div class="card-k">Attribution</div><div class="card-v">86%</div></div>
+            </div>
+          </div>
+          <div class="stage-code">
+            <b>Card</b> rounded-card p-5 · default: border border-border shadow-card bg-card · sunken: bg-card-sunken · glass: .glass · hero: border-accent/40 bg-linear-135 from-accent to-accent-deep shadow-hero
+          </div>
+        </div>
+
+        <div class="sub"><span class="mono">Floating panel · dropdown, tooltip, every modal</span></div>
+        <div class="stage">
+          <div class="stage-in">
+            <div class="glass-overlay" style="border-radius: var(--radius-nested); border: 1px solid var(--border); padding: 14px; min-width: 236px">
+              <div style="font-size: 12px; font-weight: 600; margin-bottom: 10px">Notifications</div>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-bottom: 8px">
+                <span class="c-pill p-danger">Banned</span><span>Profile 41 · 2h</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted)">
+                <span class="c-pill p-warn">Throttled</span><span>Profile 58 · 5h</span>
+              </div>
+            </div>
+            <span class="c-tip glass-overlay">Last read 14:20 ET</span>
+          </div>
+          <div class="stage-code"><b>.glass-overlay</b> rounded-nested border border-border glass-overlay p-3 · backdrop-filter: blur(14px) saturate(1.6)</div>
+        </div>
+      </section>
+
+      <!-- ═══ 04 CONTROL ═══ -->
+      <section id="control" class="rv">
+        <div class="sec-head">
+          <span class="sec-num">04</span>
+          <h2>Control</h2>
+          <span class="mono">everything clickable is a pill</span>
+        </div>
+
+        <div class="stage">
+          <div class="stage-in">
+            <button class="c-cta" type="button">Generate carousel</button>
+            <button class="c-btn2" type="button">Cancel</button>
+            <button class="c-btn2 c-btn2--ext" type="button">Extend
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5 3h8v8h-2V6.41l-6.3 6.3-1.4-1.42L9.59 5H5V3z"/></svg>
+            </button>
+            <button class="c-btn3" type="button">Skip for now</button>
+            <button class="c-cta c-cta--danger" type="button">Retire account</button>
+            <button class="c-hold" type="button">
+              <span class="c-hold-fill" style="transform: scaleX(0.68)"></span>
+              <span style="position: relative; color: #fff">Press and hold</span>
+            </button>
+          </div>
+          <div class="stage-code">
+            <b>CtaButton</b> tone="accent" | "danger" — one per screen, owns a WebGL context · <b>Secondary</b> rounded-full border border-border bg-card-raised px-3.5 py-1.5 text-xs font-medium text-text-muted · <b>Ghost</b> rounded-full px-4 py-1.5 text-sm · <b>HoldButton</b> bg-danger/25 text-danger, 1100ms, label flips white past 50%
+          </div>
+        </div>
+
+        <div class="sub"><span class="mono">Severity ladder</span></div>
+        <div class="stage">
+          <div class="stage-in">
+            <span class="c-pill p-ok">Active</span>
+            <span class="c-pill p-accent">Ramping</span>
+            <span class="c-pill p-info">Scheduled</span>
+            <span class="c-pill p-neutral">Paused</span>
+            <span class="c-pill p-warn">Throttled</span>
+            <span class="c-pill p-orange">Collapsing</span>
+            <span class="c-pill p-danger">Banned</span>
+            <span class="c-pill p-critical">Shadowbanned</span>
+          </div>
+          <div class="stage-code"><b>StatusPill</b> inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium · all bg-pill-bg except critical: bg-danger-deep text-white · no leading dot</div>
+        </div>
+
+        <div class="sub"><span class="mono">Select, filter, input</span></div>
+        <div class="stage">
+          <div class="stage-in">
+            <div class="c-seg" role="group" aria-label="Filter">
+              <button type="button" aria-pressed="true">All 29</button>
+              <button type="button" aria-pressed="false">Blocked 3</button>
+              <button type="button" aria-pressed="false">Throttled 6</button>
+            </div>
+            <button class="c-sort" type="button" data-active>Views
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 12.5 3.5 8h9L8 12.5z"/></svg>
+            </button>
+            <span class="c-chip">Character: cleora
+              <button type="button" aria-label="Remove filter">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M12.7 4.7 11.3 3.3 8 6.6 4.7 3.3 3.3 4.7 6.6 8l-3.3 3.3 1.4 1.4L8 9.4l3.3 3.3 1.4-1.4L9.4 8l3.3-3.3z"/></svg>
+              </button>
+            </span>
+            <div class="c-search">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="color: var(--text-muted); flex-shrink: 0" aria-hidden="true"><path d="M7 2a5 5 0 1 0 3.1 8.94l3.2 3.2 1.4-1.41-3.19-3.2A5 5 0 0 0 7 2zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+              <input type="text" placeholder="Search profiles" aria-label="Search profiles" />
+            </div>
+            <div class="c-step">
+              <button type="button" aria-label="decrease"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="7.2" width="10" height="1.6" rx="0.8"/></svg></button>
+              <span>2 <i>/ day</i></span>
+              <button type="button" aria-label="increase"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M7.2 3h1.6v4.2H13v1.6H8.8V13H7.2V8.8H3V7.2h4.2V3z"/></svg></button>
+            </div>
+          </div>
+          <div class="stage-code"><b>Segment</b> no-scrollbar flex gap-0.5 overflow-x-auto rounded-full bg-card-raised p-0.5, selected bg-accent text-bg · <b>Sort active</b> bg-accent-soft text-accent · <b>Chip</b> bg-accent-soft pl-2.5 pr-1 · <b>Search</b> rounded-full border bg-card-raised px-3.5 py-1.5 · <b>Stepper</b> rounded-nested, max = the real remaining budget</div>
+        </div>
+
+        <div class="sub"><span class="mono">Navigation · active state is neutral, not branded</span></div>
+        <div class="stage">
+          <div class="stage-in">
+            <div class="c-nav rail-glow">
+              <a href="#control" data-active><i><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2h5v5H2V2zm7 0h5v5H9V2zM2 9h5v5H2V9zm7 0h5v5H9V9z"/></svg></i>Dashboard</a>
+              <a href="#control"><i><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 7c3 0 5.5 1.8 5.5 4v1h-11v-1c0-2.2 2.5-4 5.5-4z"/></svg></i>Accounts</a>
+              <a href="#control"><i><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 12h2.5v2H2v-2zm3.8-4h2.4v6H5.8V8zm3.7-4h2.5v10H9.5V4z"/></svg></i>Analytics</a>
+            </div>
+            <div class="c-scrim" style="flex: 1 1 320px">
+              <div class="c-modal glass-overlay">
+                <h4>Replace proxy</h4>
+                <p>Profile 41 · currently 198.51.100.22</p>
+                <div class="c-search" style="width: 100%; min-width: 0">
+                  <input type="text" placeholder="IP:PORT:USERNAME:PASSWORD" aria-label="Proxy line" />
+                </div>
+                <div class="c-modal-foot">
+                  <button class="c-btn3" type="button">Cancel</button>
+                  <button class="c-hold" type="button"><span class="c-hold-fill" style="transform: scaleX(0)"></span><span style="position: relative">Replace</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="stage-code"><b>NavItem</b> rounded-nested px-2 py-1.5, icon box size-7 rounded-[10px], active bg-text-primary text-bg · <b>Modal</b> fixed inset-0 z-50 bg-black/60 p-4 → w-full max-w-lg rounded-card border border-border glass-overlay p-6</div>
+        </div>
+      </section>
+
+      <!-- ═══ 05 DATA ═══ -->
+      <section id="data" class="rv">
+        <div class="sec-head">
+          <span class="sec-num">05</span>
+          <h2>Data</h2>
+          <span class="mono">no zebra · no vertical rules · tabular</span>
+        </div>
+
+        <div class="stage">
+          <div class="stage-in col">
+            <div class="scroll-x">
+              <table class="c-tbl">
+                <thead>
+                  <tr><th>Profile</th><th>Character</th><th>Status</th><th style="text-align:right">Posts</th><th style="text-align:right">Views</th><th>Suppression</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Profile 9</td><td style="color: var(--text-muted)">cleora</td><td><span class="c-pill p-ok">Active</span></td><td style="text-align:right" class="num">214</td><td style="text-align:right" class="num">1,284,310</td><td style="min-width:130px"><div class="c-bar"><span style="width:18%"></span></div></td></tr>
+                  <tr><td>Profile 58</td><td style="color: var(--text-muted)">cleora_asmr</td><td><span class="c-pill p-warn">Throttled</span></td><td style="text-align:right" class="num">96</td><td style="text-align:right" class="num">218,044</td><td><div class="c-bar"><span style="width:61%; background: var(--warn)"></span></div></td></tr>
+                  <tr><td>Profile 41</td><td style="color: var(--text-muted)">cleora</td><td><span class="c-pill p-danger">Banned</span></td><td style="text-align:right" class="num">8</td><td style="text-align:right" class="num">3,160</td><td><div class="c-bar"><span style="width:94%; background: var(--danger)"></span></div></td></tr>
+                  <tr><td>Profile 73</td><td style="color: var(--text-muted)">cleora_asmr</td><td><span class="c-pill p-neutral">Paused</span></td><td style="text-align:right" class="num">0</td><td style="text-align:right" class="num">—</td><td><div class="c-bar"><span style="width:0%"></span></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="stage-code"><b>Table</b> w-full text-sm · head text-left text-xs text-text-muted, th pb-2 font-medium · rows border-t border-border · <b>BarcodeBar</b> h-3.5 rounded-[4px] bg-text-muted/20, fill masked to a 44px tip</div>
+        </div>
+
+        <div class="sub"><span class="mono">Loading · degraded</span></div>
+        <div class="stage">
+          <div class="stage-in col">
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:22px">
+              <div class="c-skel" style="width:110px;height:15px"></div>
+              <div class="c-skel" style="width:60px;height:15px"></div>
+              <div class="c-skel" style="width:150px;height:15px"></div>
+            </div>
+            <p class="c-stale">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="margin-top:1px;flex-shrink:0" aria-hidden="true"><path d="M4.5 12a3 3 0 0 1-.3-5.98A4 4 0 0 1 11.8 5.2 2.9 2.9 0 0 1 11.5 12h-7zM2.2 2.5 13.5 13.8l-1 1L1.2 3.5l1-1z"/></svg>
+              <span>Supabase is not responding. Showing the last copy from <span class="num" style="font-weight:500">14:20 ET</span>. Anything posted since then is missing.</span>
+            </p>
+          </div>
+          <div class="stage-code"><b>Skeleton</b> animate-pulse rounded-nested bg-card-raised · <b>StaleNotice</b> role="status" rounded-nested bg-warn/10 px-3 py-2 text-xs text-warn</div>
+        </div>
+      </section>
+
+      <!-- ═══ 06 SPACE ═══ -->
+      <section id="space" class="rv">
+        <div class="sec-head">
+          <span class="sec-num">06</span>
+          <h2>Space</h2>
+          <span class="mono">4px scale · 24 out / 16 in / pill</span>
+        </div>
+
+        <div class="stage">
+          <div class="stage-in col">
+            <div class="ramp-row">
+              <div><div class="ramp-bar" style="width:2px"></div><span class="mono">0.5</span></div>
+              <div><div class="ramp-bar" style="width:4px"></div><span class="mono">1</span></div>
+              <div><div class="ramp-bar" style="width:8px"></div><span class="mono">2</span></div>
+              <div><div class="ramp-bar" style="width:10px"></div><span class="mono">2.5</span></div>
+              <div><div class="ramp-bar" style="width:12px"></div><span class="mono">3</span></div>
+              <div><div class="ramp-bar" style="width:14px"></div><span class="mono">3.5</span></div>
+              <div><div class="ramp-bar" style="width:16px"></div><span class="mono">4</span></div>
+              <div><div class="ramp-bar" style="width:20px"></div><span class="mono">5</span></div>
+              <div><div class="ramp-bar" style="width:24px"></div><span class="mono">6</span></div>
+            </div>
+          </div>
+          <div class="stage-code"><b>Spacing</b> gap-3 card-to-card · p-5 card padding · gap-5 title-to-content · px-6 py-6 page</div>
+        </div>
+
+        <div class="sub"><span class="mono">Radius</span></div>
+        <div class="stage">
+          <div class="stage-in">
+            <div class="rad" style="border-radius:24px"><span class="mono" style="color:var(--accent)">24 card</span></div>
+            <div class="rad" style="border-radius:16px"><span class="mono" style="color:var(--accent)">16 nested</span></div>
+            <div class="rad" style="border-radius:10px"><span class="mono" style="color:var(--accent)">10 nav</span></div>
+            <div class="rad" style="border-radius:4px"><span class="mono" style="color:var(--accent)">4 bar</span></div>
+            <div class="rad" style="border-radius:999px"><span class="mono" style="color:var(--accent)">999 pill</span></div>
+          </div>
+          <div class="stage-code"><b>Radius</b> rounded-card 24 · rounded-nested 16 · rounded-full every control</div>
+        </div>
+      </section>
+
+      <!-- ═══ 07 RULES ═══ -->
+      <section id="rules" class="rv">
+        <div class="sec-head">
+          <span class="sec-num">07</span>
+          <h2>Rules</h2>
+          <span class="mono">the part no token can record</span>
+        </div>
+
+        <ol class="rules">
+          <li data-n="01">Never hardcode a hex.</li>
+          <li data-n="02">One accent use per screen.</li>
+          <li data-n="03">Dark is designed. Light is the same markup, flat.</li>
+          <li data-n="04">No instruction text on a screen.</li>
+          <li data-n="05">Every number is tabular.</li>
+          <li data-n="06">Destructive means press and hold.</li>
+          <li data-n="07">Glass needs glow.</li>
+          <li data-n="08">Controls are pills. Surfaces are 24 out, 16 in.</li>
+          <li data-n="09">The limit in the UI is the real limit.</li>
+          <li data-n="10">Say what is missing, not that something failed.</li>
+          <li data-n="11">No scrollbars — so imply the scroll.</li>
+          <li data-n="12">Changelog in the same pass.</li>
+        </ol>
+      </section>
+
+      <footer>
+        <div>
+          <div class="mono" style="margin-bottom: 8px">Source of truth</div>
+          <div style="font-size: 15px">src/app/globals.css</div>
+        </div>
+        <div>
+          <div class="mono" style="margin-bottom: 8px">Explanation</div>
+          <div style="font-size: 15px">docs/DESIGN-TOKENS.md</div>
+        </div>
+        <div>
+          <div class="mono" style="margin-bottom: 8px">Guard</div>
+          <div style="font-size: 15px">npm test — token parity</div>
+        </div>
+        <div>
+          <div class="mono" style="margin-bottom: 8px">v1 · 2026-09-12</div>
+          <div style="font-size: 15px">Next: Carousel Generator</div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      /* Theme — same mechanism as the app: data-theme on <html>. */
+      (function () {
+        var btns = document.querySelectorAll("[data-set]");
+        function apply(theme) {
+          if (theme === "light") document.documentElement.dataset.theme = "light";
+          else delete document.documentElement.dataset.theme;
+          btns.forEach(function (b) {
+            b.setAttribute("aria-pressed", String(b.dataset.set === theme));
+          });
+          try { localStorage.setItem("pm-ds-theme", theme); } catch (e) {}
+        }
+        btns.forEach(function (b) {
+          b.addEventListener("click", function () { apply(b.dataset.set); });
+        });
+        var saved = "dark";
+        try { saved = localStorage.getItem("pm-ds-theme") || "dark"; } catch (e) {}
+        apply(saved);
+      })();
+
+      /* Scroll reveal + section index. Both are progressive: with JS off or
+         reduced motion on, everything is already visible. */
+      (function () {
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var revealables = document.querySelectorAll(".rv");
+
+        if (reduce || !("IntersectionObserver" in window)) {
+          revealables.forEach(function (el) { el.classList.add("in"); });
+        } else {
+          var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+              if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+            });
+          }, { rootMargin: "0px 0px -12% 0px" });
+          revealables.forEach(function (el) { io.observe(el); });
+        }
+
+        var links = document.querySelectorAll(".idx a");
+        var sections = [].map.call(links, function (a) {
+          return document.querySelector(a.getAttribute("href"));
+        });
+        if ("IntersectionObserver" in window) {
+          var spy = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+              if (!e.isIntersecting) return;
+              var i = sections.indexOf(e.target);
+              links.forEach(function (l, j) { l.classList.toggle("on", i === j); });
+            });
+          }, { rootMargin: "-45% 0px -45% 0px" });
+          sections.forEach(function (s) { if (s) spy.observe(s); });
+        }
+      })();
+    </script>
+  </body>
+</html>
