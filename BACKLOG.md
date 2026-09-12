@@ -437,29 +437,51 @@ no texture, no depth cue and no rim. That is the likeliest reason it reads as
 unfinished. Light needs its own device doing the job glow does in dark —
 shadow, a hairline, tighter borders — rather than the dark one turned off.
 
-**One outright bug, cheap to fix.** Four hardcoded whites survive the swap and
-are near-invisible on `#eef0f2`:
+**One outright bug — DONE 2026-09-12 (`178a12b`).** Four hardcoded whites used
+to survive the swap and were near-invisible on `#eef0f2`: the `CartesianGrid`
+and the `Tooltip` cursor, in both `analytics-charts.tsx` and
+`account-analytics-view.tsx`. They now read `--chart-grid` and `--chart-cursor`,
+whose dark values are byte-identical to what shipped and whose light values are
+their own. Those were the last hardcoded colours in `src/components`.
 
-```
-analytics-charts.tsx:100      CartesianGrid  stroke rgba(255,255,255,0.055)
-analytics-charts.tsx:118      Tooltip cursor stroke rgba(255,255,255,0.28)
-account-analytics-view.tsx:181  CartesianGrid  same
-account-analytics-view.tsx:211  Tooltip cursor same
-```
+Checked on `docs/design-system.html`, which carries the same token block under
+the parity test — **not** in the running app in light mode, because headless
+light-mode capture of the app does not complete. Still worth thirty seconds at
+`/analytics` with the toggle flipped.
 
-Both charts lose their gridlines and hover cursor in light mode. These are the
-only hardcoded colours left in `src/components` — everything else already goes
-through tokens — so the fix is four lines pointing at a token instead.
+**The analytics charts need a light-mode design pass — not just visible lines.**
+**Raised by Garreth 2026-09-12.** Tokens made the grid and cursor *present*; they
+did not make the charts look *designed* on a pale ground, and that is the actual
+ask. The chart language was drawn for dark and every device it leans on is
+either switched off or weaker in light:
+
+- **The gradient area fill under each line** was tuned to fade into a dark card.
+  On `#eef0f2` a fade to transparent has much less to fade into, so the fill
+  either barely registers or muddies the ground.
+- **No glow, no rim, no dot grid.** In dark, those separate the plot from the
+  card. In light the plot sits directly on flat grey with nothing framing it.
+- **The two series colours are the platform and must stay legible as such** —
+  cyan is always TikTok, blue always Instagram. The accent's light value
+  (`#0e7490`) has had far less scrutiny than the dark one, and the pair has to
+  stay distinguishable from each other *and* from the new grid on a pale ground.
+- **Axis labels, tooltip surface and the empty/one-point states** were all read
+  against a dark card and none has been looked at in light.
+
+Chart rules live in §6 of `docs/DESIGN-TOKENS.md` and the Chart section of
+`docs/design-system.html`; whatever is decided here updates `globals.css` first,
+then both of those, or the parity test fails.
 
 **The accent differs between themes:** `#22d3ee` dark, `#0e7490` light. That is
 correct — the dark cyan would glare on a light ground — but it means "the cyan
 accent is locked" only pins the dark value, and the light one has had far less
 scrutiny.
 
-**Suggested order:** the four chart colours first, since they are a real bug and
-cost minutes. Then ask Garreth which screens look worst and what "good" means
-here, because replacing glow with a light-mode equivalent is a design decision
-and this entry cannot make it for him.
+**Suggested order:** the four chart colours are done. Next is the chart design
+pass above — it is the one piece with a named owner and a clear surface, and
+`/analytics` in light mode is the place to start looking. Then ask Garreth which
+other screens look worst and what "good" means here, because replacing glow with
+a light-mode equivalent is a design decision and this entry cannot make it for
+him.
 
 ---
 
