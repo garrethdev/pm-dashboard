@@ -4,31 +4,50 @@ The written reference for every visual value the dashboard uses. Written
 2026-09-12, ahead of the Carousel Generator, so that feature inherits the
 existing look instead of inventing a second one.
 
-## The three files, and which one wins
+## Where the design system lives
 
-| File | What it is | Who reads it |
+| File | What it is | Maintained? |
 |---|---|---|
-| `src/app/globals.css` | **The source of truth.** The only place a value is defined. | The running app |
-| `docs/design-system.html` | The rendered catalogue — every token and control, shown next to the code that builds it. Opens by double-click. | A person designing or building a screen |
-| `docs/DESIGN-TOKENS.md` | This file. The same values as prose and tables, with the reasoning. | A person, or an agent, deciding what to use |
-| Figma → *Design System* page | The same tokens as Figma variables, styles and components. | A person moving things by hand |
+| `src/app/globals.css` | **The source of truth.** The only place a value is defined. | Yes — by the running app |
+| `docs/design-system.html` | The rendered catalogue — every token and control, next to the code that builds it. Opens by double-click. | **Yes** |
+| `docs/DESIGN-TOKENS.md` | This file. The same values as prose, with the reasoning. | **Yes** |
+| Figma → *Design System* page | A snapshot: 114 variables, 2 modes, 6 effect styles, 10 text styles, 9 components. | **No — frozen 2026-09-12** |
 
-**`globals.css` wins every disagreement.** The other three restate its values
-because none of them can run Tailwind. That restating is normally how a
+**`globals.css` wins every disagreement.** The HTML page and this file restate
+its values because neither can run Tailwind. That restating is normally how a
 reference goes stale in a week, so it is checked rather than trusted:
-`src/lib/design-tokens.test.ts` parses `globals.css`, this file and the HTML
-page, and fails with the name of any token that has drifted.
+`src/lib/design-tokens.test.ts` parses all three and fails with the name of any
+token that has drifted.
 
-So the maintenance loop is three steps and `npm test` tells you if you missed
+So the maintenance loop is three steps, and `npm test` tells you if you missed
 one:
 
 1. Edit the value in `src/app/globals.css`.
 2. Mirror it in `docs/design-system.html` and in the table below.
 3. Run `npm test`.
 
-Changing it in Figma is a fourth step and it is *not* enforced by anything —
-Figma has no test. When a token changes, say so, and the Figma variable gets
-updated in the same pass.
+### Figma is frozen (Garreth, 2026-09-12)
+
+**Do not add to it, and do not treat it as current.** New design work goes into
+the HTML page and this file only.
+
+The reason to know this rather than discover it: Figma is the one surface no
+test can reach, so it is the one that can be wrong without anything failing. It
+was already one weight light in three places, and its cover still prints the old
+token count. Treating it as a dated snapshot is honest; treating it as a
+parallel source of truth is not.
+
+The upside of the decision is that **every surface still being maintained is now
+covered by the parity test.** There is no unguarded copy left.
+
+What the snapshot is still good for: hand-editing, exploring a layout, or
+showing someone the system without running anything. What it is not good for:
+looking up a value.
+
+Nine components are documented in the HTML page but were never built in Figma —
+the segmented control, sort button, filter chip, stepper, table pattern,
+barcode bar, skeleton, stale notice and sidebar nav row. That gap is now
+permanent by choice, not an outstanding task.
 
 ## Two non-negotiables
 
@@ -421,8 +440,8 @@ value can be traced in either direction.
 
 | Collection | Modes | Holds | Maps to |
 |---|---|---|---|
-| `Primitives` | `Value` | 51 raw values — 39 solids and 12 alpha | Nothing directly. Hidden from every picker and from publishing, because the app never references a raw value. |
-| `Color` | **`Dark`** / `Light` | 28 semantic tokens, every one an alias | `:root` and `:root[data-theme="light"]` |
+| `Primitives` | `Value` | 53 raw values — 39 solids and 14 alpha | Nothing directly. Hidden from every picker and from publishing, because the app never references a raw value. |
+| `Color` | **`Dark`** / `Light` | 29 semantic tokens, every one an alias | `:root` and `:root[data-theme="light"]` |
 | `Radius` | `Value` | 5 | `--radius-card`, `--radius-nested`, and the three literals |
 | `Spacing` | `Value` | 9 | Tailwind's scale |
 | `Typography` | `Value` | 18 | font family, 7 sizes, 7 line heights, 3 weights |
@@ -442,10 +461,11 @@ Two naming notes that will otherwise look like mistakes:
   purely algorithmic ramp filed it under red, which is a name that contradicts
   its meaning.
 
-One token exists in Figma that has no CSS custom property:
-`color/status/danger-soft`. In code that ground is the Tailwind opacity
-modifier `bg-danger/25`, not a variable — but Figma needs a concrete value to
-bind, and paint-level opacity does not survive instancing.
+Two tokens exist in Figma with no CSS custom property — `color/status/danger-soft`
+(`bg-danger/25`, the press-and-hold ground) and `color/status/warn-soft`
+(`bg-warn/10`, the stale-notice and running-long ground). In code both are
+Tailwind opacity modifiers rather than variables, but Figma needs a concrete
+value to bind, and paint-level opacity does not survive instancing.
 
 ### Styles
 
@@ -461,7 +481,7 @@ line height bound to the Typography variables.
 
 ### Components
 
-Four component sets, all fully token-bound:
+Seven component sets plus two standalone components, all fully token-bound:
 
 | Component | Variants | Properties |
 |---|---|---|
@@ -469,8 +489,11 @@ Four component sets, all fully token-bound:
 | `Button` | 5 kinds — Primary, Secondary, Ghost, Destructive, Hold | `Label` (text) |
 | `Card` | 4 surfaces — Default, Sunken, Glass, Hero | — |
 | `Input` | 2 kinds — Search, Text | `Placeholder` (text) |
+| `EmptyState` | 3 kinds — First run, No results, All clear | — |
+| `WorkingState` | 4 kinds — Indeterminate, Progress, Running long, Slides | — |
+| `Dropdown` | 2 kinds — Trigger, Panel | `Label` (text) |
 
-Plus a `Dialog` component assembling the modal shape from them.
+Plus two standalone components: `Dialog`, which assembles the modal shape from the others, and `Tooltip`.
 
 A variant grid can only ever show **one** value for a text property, so every
 variant of `StatusPill` reads "Label". The severity ladder with its real words
@@ -484,7 +507,10 @@ it is the one hard-coded-colour exception in the codebase too.
 
 Still only in `docs/design-system.html`, not yet in Figma: the segmented filter
 control, sort button, filter chip, stepper, table pattern, barcode bar,
-skeleton, stale notice, tooltip and sidebar nav row.
+skeleton, stale notice and sidebar nav row.
+
+The Figma **Icon & Overlay** board carries the icon set, the size scale and the
+four fill exceptions as documentation — icons are a convention, not a component.
 
 **Font: General Sans, applied by hand (2026-09-12).**
 
@@ -577,6 +603,32 @@ nothing to this system. Specifically:
   state word.
 - A destructive step — discarding a draft, overwriting an approved carousel — is
   a `HoldButton`, with no warning paragraph above it.
-- The generator will want an empty state and a long-running state. Neither exists
-  in the system yet, so they are the two things worth designing deliberately
-  rather than improvising, and adding back here once settled.
+### Empty and Working — added 2026-09-12
+
+Both states the generator needs now exist, in the HTML page (§State) and as
+Figma component sets.
+
+**Empty is three states, not one.** Conflating them is the usual mistake:
+
+| Kind | When | Exit |
+|---|---|---|
+| First run | Nothing created yet | The screen's single accent action |
+| No results | A filter or search matched nothing | Secondary — and it echoes the filters back rather than explaining them |
+| All clear | Nothing to report, and that is good | None. It spends `--ok` and offers no action |
+
+No explanatory line on any of them — the button label carries the verb.
+
+**Working is not loading.** Loading fetches something that exists; generating
+makes something that does not, and it can take a minute.
+
+| Kind | Shows |
+|---|---|
+| Indeterminate | A travelling sweep, not a fill — there is no honest percentage yet |
+| Progress | Named steps, elapsed time, `N of M`, and a way out |
+| Running long | The bar turns `--warn` and it states what has stalled **and when it last moved** |
+| Slides | Once the count is known, the shape — filled in as each lands |
+
+`Running long` is the one that matters. This project has been bitten by work
+that reported success and did nothing; a spinner that turns forever is how that
+failure hides. Saying *when something last moved* is the difference between
+catching a stall in thirty seconds and catching it tomorrow.

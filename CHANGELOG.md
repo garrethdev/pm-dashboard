@@ -20,6 +20,119 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-12 (latest) — Figma is frozen; the design system lives in the repo now
+
+**Garreth's decision.** No more design work goes into Figma. From here, the HTML
+page and the tokens document are the only places the design system is updated.
+
+### Why this is a good thing
+
+Figma was the one copy nothing could check. The HTML page and the tokens
+document are both read by a test that fails if any value drifts from
+`globals.css` — Figma is not, and cannot be. It was already slightly wrong in
+two ways (one weight light in three places, and a token count on its cover that
+is now out of date), and neither showed up as a failure because nothing was
+watching.
+
+So the practical effect of freezing it is that **every surface still being
+maintained is now covered by the test.** There is no unguarded copy left.
+
+### What the Figma file is now
+
+A dated snapshot — 114 variables, both themes, 6 effect styles, 10 text styles
+and 9 components, as of today. Good for moving things around by hand or showing
+someone the system without running anything. Not good for looking up a value;
+use the HTML page or the tokens document for that.
+
+Nine components that are documented on the HTML page were never built in Figma.
+That gap is now permanent by choice rather than an outstanding task, and it is
+written down as such.
+
+Nothing in the running dashboard changed.
+
+---
+
+## 2026-09-12 (latest) — Icons, tooltip and dropdown added; token count corrected
+
+**From Garreth, after asking what was still missing.**
+
+### Put back what the redesign dropped
+
+The visual rewrite earlier today lost the **Icons** section — the one that says
+the icons are Phosphor at fill weight, always inheriting their row's colour, and
+that four glyphs are exceptions because filling them changes what they mean
+rather than how they look. That was a regression on my part, not a decision. It
+is back, and now shows the set, the three sizes, and the four exceptions drawn
+the way the code actually draws them.
+
+**Tooltip and Dropdown** were also missing. Both are now on the page and both
+are real Figma components.
+
+### The token count was wrong in three places
+
+The page, the tokens document and the Figma cover all still said **111 tokens**.
+The real number is **114** — two more colours were added when the amber notice
+ground needed a token of its own. The page and the document are corrected. The
+number printed on the Figma cover still says 111 and has to be changed by hand,
+because that text is General Sans and the automation cannot write it.
+
+### Where things are
+
+The page now has nine sections; Icon sits with the other foundations after Type,
+so everything below it shifted by one. Figma gained a sixth board, **Icon &
+Overlay**.
+
+Nothing in the running dashboard changed.
+
+---
+
+## 2026-09-12 (latest) — Empty and Working states added to the design system
+
+**From Garreth: design the two states the system was missing, show them first,
+then add them.** Approved as shown.
+
+These are the two states the Carousel Generator needs on day one and the design
+system did not cover.
+
+### Empty is three states, not one
+
+Treating "nothing here" as a single thing is the usual mistake. Each of these
+needs a different way out:
+
+- **First run** — nothing created yet. Carries the screen's one accent action.
+- **No results** — a filter matched nothing. It shows the filters back to you
+  and offers to clear them.
+- **All clear** — nothing to report, and that is good news. No action at all.
+
+None of them explains what to do; the button label carries the verb.
+
+### Working is not the same as loading
+
+Loading fetches something that already exists. Generating makes something that
+does not, and it can take a minute. Four versions:
+
+- **Starting** — a sweeping bar, because there is no honest percentage yet.
+- **Progress** — named steps, a timer, and "3 of 5".
+- **Running long** — the bar turns amber and it says plainly what has stalled
+  *and when it last moved*.
+- **Slides** — once the count is known, seven boxes filling in as each lands.
+
+The third one is the point. This project has been bitten before by work that
+reported success and did nothing, and a spinner that turns forever is exactly
+how that hides. Telling an operator when something last moved is the difference
+between catching a stall in thirty seconds and catching it the next day.
+
+### Where they are
+
+Both are in `docs/design-system.html` under a new **State** section, which also
+gathers the loading and degraded states that were previously filed under Data.
+Both are also Figma component sets. One new colour token was added for the
+amber notice ground.
+
+Nothing in the running dashboard changed.
+
+---
+
 ## 2026-09-12 (latest) — The Figma design system is on General Sans
 
 **From Garreth: he installed General Sans in Figma and applied it by hand.**
