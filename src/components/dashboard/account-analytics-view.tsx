@@ -183,7 +183,7 @@ export function AccountAnalyticsView({
                       <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.055)" strokeDasharray="2 4" />
+                  <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="2 4" />
                   <XAxis
                     dataKey="label"
                     {...AXIS}
@@ -213,7 +213,7 @@ export function AccountAnalyticsView({
                     }}
                   />
                   <Tooltip
-                    cursor={{ stroke: "rgba(255,255,255,0.28)", strokeDasharray: "2 4" }}
+                    cursor={{ stroke: "var(--chart-cursor)", strokeDasharray: "2 4" }}
                     content={({ active, payload }) => {
                       if (!active || !payload?.length) return null;
                       const d = payload[0]!.payload as AccountAnalytics["series"][number];

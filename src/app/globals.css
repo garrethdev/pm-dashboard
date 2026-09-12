@@ -124,6 +124,19 @@
   --pill-amber: #ff9549;
   --pill-yellow: #fff949;
 
+  /* Chart chrome. Recharts takes colours as strings on props rather than from
+   * the cascade, so the gridline and the hover cursor need their own tokens —
+   * they were the last two white-alpha literals in the app, and being white
+   * they did not survive the light theme.
+   *
+   * Deliberately NOT --border: the grid resolves a shade lighter than a row
+   * rule (#1e1e20 against a #242426 border) and that difference is the reason
+   * a dashed grid sits behind the data instead of competing with it. Reusing
+   * --border would have strengthened every chart's grid, which is a look
+   * change, not a refactor. */
+  --chart-grid: rgba(255, 255, 255, 0.055);
+  --chart-cursor: rgba(255, 255, 255, 0.28);
+
   --sh-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --sh-hero: 0 8px 40px rgba(34, 211, 238, 0.22);
 
@@ -187,6 +200,15 @@
   --pill-red: #a11616;
   --pill-amber: #8a3f08;
   --pill-yellow: #6b4f03;
+
+  /* Black alpha rather than white, and the same relationships kept: the grid
+   * stays a shade lighter than --border, and the cursor lands between the grid
+   * and --text-muted. The cursor runs a step deeper than the dark theme's 0.28
+   * for the reason every semantic does here — on a near-white ground the
+   * mirrored alpha reads as washed, and a hover crosshair you have to look for
+   * is not doing its job. */
+  --chart-grid: rgba(0, 0, 0, 0.06);
+  --chart-cursor: rgba(0, 0, 0, 0.32);
 
   /* No shadows in light mode (Garreth 2026-08-31) — borders carry the elevation. */
   --sh-card: none;

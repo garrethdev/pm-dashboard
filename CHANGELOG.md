@@ -20,7 +20,85 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## 2026-09-12 (latest) — Figma is frozen; the design system lives in the repo now
+## 2026-09-12 (latest) — Charts are documented, and their last two hardcoded colours are gone
+
+**From the design-system handover.** Charts were the one part of the dashboard
+the design system said nothing about, and they were also the last place a colour
+was written by hand instead of coming from a token.
+
+### The bug: two colours that could not follow the theme
+
+The chart gridline and the line that follows your pointer across a chart were
+written as **white**, directly in the code, in both `analytics-charts.tsx` and
+`account-analytics-view.tsx` — four places in total.
+
+White is invisible on a white page. In light mode the grid and the hover line
+were effectively not there. Everything else in those files already used tokens,
+so this was the only bit that could not follow the theme.
+
+They are now two tokens, `--chart-grid` and `--chart-cursor`, with a dark value
+and a light one. Garreth picked the names.
+
+**How far this was checked.** The running dashboard was opened in the browser in
+**dark mode** and the charts are unchanged, as expected — the dark values are the
+same numbers that were hardcoded, so nothing moved. The **light** values were
+checked on `docs/design-system.html`, which carries the identical token block
+(the parity test fails if it does not), and there the grid and the hover line are
+clearly visible on the pale ground. What has *not* been done is opening the real
+dashboard in light mode; headless screenshots of it would not complete. The
+mechanism is the same one every other chart colour already uses, so the risk is
+low — but it is a desk check, not a live one, and worth thirty seconds of
+eyeballing next time the app is open in light mode.
+
+This is **the only change in this entry that the running dashboard renders.**
+Everything below is documentation.
+
+### Charts are written down now
+
+A new **Chart** section in `docs/design-system.html` and a matching **§6** in
+`docs/DESIGN-TOKENS.md`. The rules were all already in the code; none of them
+were anywhere else, so a new chart had to be written by reading the old one.
+
+The one that matters most: **the series colour is the platform.** Cyan is always
+TikTok, blue is always Instagram, on every chart on every page. That is why you
+can glance at a chart and know which line is which without reading the legend,
+and it is why a new chart must not pick its colours for contrast or variety.
+
+Also written down: the dashed grid and matching hover line, the gradient fills,
+why the bar chart uses one colour for every bar, why the y-axis labels are pushed
+right out to the card edge, and why a sparkline with only one data point draws
+nothing at all.
+
+**One divergence is recorded rather than fixed.** The original 2026-09-07 design
+notes asked for dotted grids and *no* area fills. The charts that shipped have
+dashed grids and do have fills. Since that is what has been on screen for weeks,
+the code is treated as the intent and the old note as the stale half. Nothing
+about any chart's appearance was changed.
+
+### Three more components documented, two ruled out
+
+`Avatar`, `PeptideMark` and the TikTok / Instagram glyphs now appear in both
+documents. The note worth reading is on `Avatar`: it falls back to a drawn
+silhouette when the image **fails to load**, not only when there is no image at
+all — the platforms hand out photo links that expire after a day or two, and
+without that the dashboard would show a browser broken-image icon and look like
+it was the thing that was broken.
+
+`SectionStub` and `SideRays` are now explicitly recorded as **not** part of the
+design system — one is scaffolding for pages not yet built, the other is
+decoration on the login screen — so their absence reads as a decision rather
+than an oversight.
+
+### Figma is untouched
+
+It stayed frozen. The two new tokens exist in the repo and not in Figma, and the
+`114` on its cover is correct for Figma's own variables and stays as it is. That
+gap is now written down in the tokens document, so the next person does not read
+it as a mistake.
+
+---
+
+## 2026-09-12 — Figma is frozen; the design system lives in the repo now
 
 **Garreth's decision.** No more design work goes into Figma. From here, the HTML
 page and the tokens document are the only places the design system is updated.
@@ -52,7 +130,7 @@ Nothing in the running dashboard changed.
 
 ---
 
-## 2026-09-12 (latest) — Icons, tooltip and dropdown added; token count corrected
+## 2026-09-12 — Icons, tooltip and dropdown added; token count corrected
 
 **From Garreth, after asking what was still missing.**
 
@@ -86,7 +164,7 @@ Nothing in the running dashboard changed.
 
 ---
 
-## 2026-09-12 (latest) — Empty and Working states added to the design system
+## 2026-09-12 — Empty and Working states added to the design system
 
 **From Garreth: design the two states the system was missing, show them first,
 then add them.** Approved as shown.
@@ -133,7 +211,7 @@ Nothing in the running dashboard changed.
 
 ---
 
-## 2026-09-12 (latest) — The Figma design system is on General Sans
+## 2026-09-12 — The Figma design system is on General Sans
 
 **From Garreth: he installed General Sans in Figma and applied it by hand.**
 
@@ -173,7 +251,7 @@ no longer works. Not worth rebuilding for ten styles.
 
 ---
 
-## 2026-09-12 (latest) — The design system got redesigned, and the Figma font question got a real answer
+## 2026-09-12 — The design system got redesigned, and the Figma font question got a real answer
 
 **From Garreth, reviewing the first version: make it look like an
 award-winning design system, and cut the text — he wants it visual.**
@@ -230,7 +308,7 @@ styles and 10 text styles are untouched. The token parity test still passes
 
 ---
 
-## 2026-09-12 (latest) — The design system is written down, in three places that check each other
+## 2026-09-12 — The design system is written down, in three places that check each other
 
 **From Garreth: before the Carousel Generator gets built, capture the look the
 dashboard already has, so the new screens inherit it instead of inventing a

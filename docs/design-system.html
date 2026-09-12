@@ -96,6 +96,9 @@
         --pill-amber: #ff9549;
         --pill-yellow: #fff949;
 
+        --chart-grid: rgba(255, 255, 255, 0.055);
+        --chart-cursor: rgba(255, 255, 255, 0.28);
+
         --sh-card: 0 1px 2px rgba(0, 0, 0, 0.4);
         --sh-hero: 0 8px 40px rgba(34, 211, 238, 0.22);
 
@@ -149,6 +152,9 @@
         --pill-red: #a11616;
         --pill-amber: #8a3f08;
         --pill-yellow: #6b4f03;
+
+        --chart-grid: rgba(0, 0, 0, 0.06);
+        --chart-cursor: rgba(0, 0, 0, 0.32);
 
         --sh-card: none;
         --sh-hero: none;
@@ -557,11 +563,17 @@
       .ramp-row div { text-align: center; }
       .ramp-bar { background: var(--accent); height: 44px; border-radius: 3px; margin-bottom: 10px; }
       .rad-row { display: flex; flex-wrap: wrap; gap: 16px; }
+      /* Proportions matter here: at 999px the radius clamps to half the shorter
+       * side, so a near-square swatch turns into a lozenge that reads as a
+       * mistake. A wider box clamps to a clean stadium — which is what
+       * rounded-full actually produces on a control. The label is centred
+       * rather than bottom-left because a stadium has no straight bottom-left
+       * edge to sit against, and it overhung the curve. */
       .rad {
-        width: 148px; height: 116px;
+        width: 152px; height: 84px;
         border: 1px solid var(--accent);
         background: var(--accent-soft);
-        display: flex; align-items: flex-end;
+        display: flex; align-items: center; justify-content: center;
         padding: 12px;
       }
 
@@ -697,10 +709,64 @@
       .icon-size div { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text-muted); }
       .icon-exc { display: flex; flex-wrap: wrap; gap: 26px; }
       .icon-exc div { display: flex; flex-direction: column; align-items: center; gap: 9px; color: var(--text-muted); text-align: center; }
+      .ident { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 26px; }
+      .ident > div { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text-muted); text-align: center; }
+      .ident .av { width: 38px; height: 38px; border-radius: 999px; border: 1px solid var(--border); object-fit: cover; }
       /* Dropdown panel, shown open — it is a hover/click state at rest otherwise. */
       .c-dd { border-radius: var(--radius-nested); border: 1px solid var(--border); padding: 12px; min-width: 210px; }
       .c-dd-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 4px; color: var(--text-muted); }
       .c-dd-row[data-on] { color: var(--text-primary); }
+
+      /* ── Chart ──
+       * Inline SVG, not recharts: this page has no build step. The curves are
+       * the same monotone-cubic interpolation type="monotone" produces, and
+       * every colour is the token the app passes on the prop. */
+      .ch { display: block; width: 100%; height: auto; overflow: visible; }
+      .ch-grid line { stroke: var(--chart-grid); stroke-dasharray: 2 4; }
+      .ch-line { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; }
+      .ch-cursor { stroke: var(--chart-cursor); stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
+      .ch-dot { stroke: var(--bg); stroke-width: 2; }
+      .ch-ax text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+      .ch--bar .ch-ax text { font-variant-numeric: normal; }
+      .ch--bar .ch-ax text[text-anchor="middle"] { font-variant-numeric: normal; }
+
+      .ch-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 18px; font-size: 12px; color: var(--text-muted); }
+      .ch-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+      .ch-legend i { width: 8px; height: 8px; border-radius: 999px; }
+      .ch-legend b { font-weight: 600; color: var(--text-primary); }
+
+      /* Below ~460px the 660-unit viewBox renders 11px axis labels at about
+       * 7px, so the plot stops scaling and the stage scrolls instead. */
+      .ch-scroll { overflow-x: auto; }
+      .ch-scroll > * { min-width: 460px; }
+      /* Widths match the cards these plots really sit in: the trend takes the
+       * wide two-thirds column, the bars a half-width card. Left to fill the
+       * stage they render at an aspect the app never shows. */
+      /* Capped at the viewBox width so both plots render 1:1 — the axis labels
+       * are then literally the 11px the app draws, not a scaled approximation,
+       * and the bars stop reading as a wall of accent across a wide stage. */
+      .ch-wrap { position: relative; max-width: 660px; }
+      .ch--bar { max-width: 660px; }
+      /* Pinned to the hovered bucket and nudged clear of it, the way recharts
+       * offsets a tooltip from the cursor. */
+      .ch-tip { position: absolute; top: 4%; transform: translateX(-108%); border-radius: var(--radius-nested); border: 1px solid var(--border); padding: 8px 12px; min-width: 168px; pointer-events: none; }
+      .ch-tip p { margin: 0 0 6px; font-size: 11px; color: var(--text-muted); }
+      .ch-tip > div { display: flex; align-items: center; gap: 20px; font-size: 12px; white-space: nowrap; }
+      .ch-tip > div span { color: var(--text-muted); }
+      .ch-tip > div b { margin-left: auto; font-weight: 500; }
+
+      /* MetricTile — the label, the value with its delta, and the sparkline. */
+      .mt { flex: 1 1 200px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; overflow: hidden; border-radius: var(--radius-nested); border: 1px solid var(--border); background: var(--card-raised); padding: 12px 16px; }
+      .mt-k { font-size: 12px; color: var(--text-muted); }
+      .mt-v { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 8px; }
+      .mt-v b { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; color: var(--text-primary); }
+      .mt-d { font-size: 12px; font-weight: 500; }
+      .mt-d.up { color: var(--ok); }
+      .mt-d.dn { color: var(--danger); }
+      /* -mx-4: the line runs past the tile padding, edge to edge. */
+      .mt-s { height: 28px; margin: 0 -16px -12px; }
+      .sp { display: block; width: 100%; height: 100%; }
+      .sp-line { fill: none; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 
       /* ── Responsive ── */
       @media (max-width: 1100px) {
@@ -725,8 +791,9 @@
         .row .mono { flex-basis: 100%; text-align: left; }
         .tile { grid-column: span 6; min-height: 108px; }
         .tile.sm { grid-column: span 6; }
-        .rad { width: 116px; height: 96px; }
+        .rad { width: 116px; height: 66px; }
         .state-grid--work { grid-template-columns: 1fr; }
+        .ch-tip { display: none; }
       }
 
       .scroll-x { overflow-x: auto; }
@@ -742,7 +809,7 @@
     </div>
 
     <nav class="idx" aria-label="Sections">
-      <a href="#colour">01</a><a href="#type">02</a><a href="#icon">03</a><a href="#surface">04</a><a href="#control">05</a><a href="#data">06</a><a href="#state">07</a><a href="#space">08</a><a href="#rules">09</a>
+      <a href="#colour">01</a><a href="#type">02</a><a href="#icon">03</a><a href="#surface">04</a><a href="#control">05</a><a href="#data">06</a><a href="#chart">07</a><a href="#state">08</a><a href="#space">09</a><a href="#rules">10</a>
     </nav>
 
     <div class="wrap">
@@ -852,7 +919,7 @@
         <div class="sec-head">
           <span class="sec-num">03</span>
           <h2>Icon</h2>
-          <span class="mono">phosphor · fill · currentColor</span>
+          <span class="mono">phosphor · fill · currentColor · identity marks</span>
         </div>
 
         <div class="stage">
@@ -897,6 +964,45 @@
             </div>
           </div>
           <div class="stage-code">Fill is the house weight everywhere else. These four are stroked or bold because filling them changes what they mean, not just how they look.</div>
+        </div>
+
+        <div class="sub"><span class="mono">Identity — the mark, the platforms, the avatar</span></div>
+        <div class="stage">
+          <div class="stage-in">
+            <div class="ident">
+              <div>
+                <svg width="46" height="46" viewBox="130 12 275 282" fill="currentColor" aria-label="Peptide Miracles"><path d="M347.63,121.14c16.85-12.04,46.67-39.68,35.42-59.23-11.55-20.1-55.93-15.49-77.43-11-12.43,2.55-24.1,5.86-36.22,9.86.16-9.56,1.01-18.43,3.09-27.82,20.64-6.34,41.5-10.41,62.98-11.45,18-.41,36.53,1.22,52.24,10.03,19.99,11.21,28.36,34.36,20.81,55.91s-27.11,40.27-46.14,54.57c-11.66,8.49-23.46,15.69-36.06,22.4-8.07-5.28-15.08-10.86-21.71-17.77,15.34-7.46,29.41-15.57,43.02-25.5Z"/><path d="M279.76,185c7.59,15.29,15.58,29.44,25.6,43.05,10.94,14.67,27,32.84,44.38,37.08,8.25,2.01,16.21-.7,21.2-7.66,9.33-13.01,9.24-34.87,7.66-50.99-2.04-19.45-6.58-37.94-13-56.84,9.64.08,18.52,1.08,27.88,3.12,5.63,18.46,9.42,36.85,10.97,55.95,1.35,19.94.34,40.2-8.98,58.05-10.7,20.47-34.18,29.67-56.01,22.2-21.09-7.22-37.5-23.98-51.38-41.36-9.99-13.03-18.39-26.51-26.09-41.01,5.17-7.77,10.44-14.65,17.77-21.59Z"/><path d="M173.26,52.17c-8.66,16.23-7.11,39.63-4.53,57.98,2.48,16.1,6.53,31.29,11.75,46.93-9.69-.09-18.52-1.07-27.89-3.11-5.18-17.26-8.95-34.41-10.61-52.3-1.87-21.09-1.19-43.22,8.85-62.04,10.64-19.96,33.39-29.03,54.88-22.14,23.4,7.5,41.68,27.43,56.39,47.01,8.36,11.55,15.41,23.26,22.04,35.66-5.38,8.04-10.89,15.12-17.84,21.65-7.34-15.15-15.3-29.07-25.08-42.55-11.07-14.78-26.17-32.18-43.54-37.36-9.97-2.97-19.51,1.08-24.41,10.27Z"/><path d="M276.55,246.03c.28,9.15-.94,18.28-2.94,27.82-17.32,5.1-34.46,8.96-52.34,10.62-21.2,1.91-44.8,1.06-63.38-9.62-19.37-11.13-27.69-33.9-20.47-54.98,7.12-20.78,23.05-36.54,40.07-50.43,13.46-10.43,27.33-19.21,42.34-27.1,8.01,5.24,15.04,10.87,21.67,17.76-17.42,8.46-33.3,17.78-48.31,29.5-12.96,10.44-28.16,24.77-31.94,40.53-1.98,8.28.72,16.3,7.74,21.22,12,8.4,29.97,8.91,44.72,8.08,21.26-1.43,41.42-6.32,62.84-13.41Z"/><path d="M237.89,193.9c-.43.51-2.14-.93-2.34-1.7,22.94-22.04,20.41-57.52-3.91-77.63l1.97-1.97c21.83,23.06,57.32,23.35,77.7-1.13l1.97,2.21c-23.03,21.87-20.31,57.51,3.81,77.61l-1.86,1.93c-21.11-22.41-56.79-23.68-77.33.66Z"/></svg>
+                <span class="mono">PeptideMark</span>
+              </div>
+              <div>
+                <svg width="30" height="30" viewBox="0 0 32 32" fill="currentColor" aria-label="TikTok"><path d="M16.656 1.029c1.637-0.025 3.262-0.012 4.886-0.025 0.054 2.031 0.878 3.859 2.189 5.213l-0.002-0.002c1.411 1.271 3.247 2.095 5.271 2.235l0.028 0.002v5.036c-1.912-0.048-3.71-0.489-5.331-1.247l0.082 0.034c-0.784-0.377-1.447-0.764-2.077-1.196l0.052 0.034c-0.012 3.649 0.012 7.298-0.025 10.934-0.103 1.853-0.719 3.543-1.707 4.954l0.020-0.031c-1.652 2.366-4.328 3.919-7.371 4.011l-0.014 0c-0.123 0.006-0.268 0.009-0.414 0.009-1.73 0-3.347-0.482-4.725-1.319l0.040 0.023c-2.508-1.509-4.238-4.091-4.558-7.094l-0.004-0.041c-0.025-0.625-0.037-1.25-0.012-1.862 0.49-4.779 4.494-8.476 9.361-8.476 0.547 0 1.083 0.047 1.604 0.136l-0.056-0.008c0.025 1.849-0.050 3.699-0.050 5.548-0.423-0.153-0.911-0.242-1.42-0.242-1.868 0-3.457 1.194-4.045 2.861l-0.009 0.030c-0.133 0.427-0.21 0.918-0.21 1.426 0 0.206 0.013 0.41 0.037 0.61l-0.002-0.024c0.332 2.046 2.086 3.59 4.201 3.59 0.061 0 0.121-0.001 0.181-0.004l-0.009 0c1.463-0.044 2.733-0.831 3.451-1.994l0.010-0.018c0.267-0.372 0.45-0.822 0.511-1.311l0.001-0.014c0.125-2.237 0.075-4.461 0.087-6.698 0.012-5.036-0.012-10.060 0.025-15.083z"/></svg>
+                <span class="mono">TikTokIcon</span>
+              </div>
+              <div>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-label="Instagram"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                <span class="mono">InstagramIcon</span>
+              </div>
+              <div>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="#E4405F" aria-label="Instagram, brand colour"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                <span class="mono">text-[#E4405F]</span>
+              </div>
+              <div>
+                <img class="av" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%236b6b74'/%3E%3Cstop offset='100%25' stop-color='%233a3a40'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="" />
+                <span class="mono">Avatar</span>
+              </div>
+              <div>
+                <svg class="av" viewBox="0 0 100 100" role="img" aria-label="No profile photo">
+                  <circle cx="50" cy="50" r="50" fill="var(--card-raised)"/>
+                  <clipPath id="ds-av"><circle cx="50" cy="50" r="50"/></clipPath>
+                  <g clip-path="url(#ds-av)" fill="var(--text-muted)">
+                    <circle cx="50" cy="38" r="17"/><ellipse cx="50" cy="88" rx="28" ry="24"/>
+                  </g>
+                </svg>
+                <span class="mono">AvatarFallback</span>
+              </div>
+            </div>
+          </div>
+          <div class="stage-code"><b>PeptideMark</b> the atom from the logo, icon-only · <b>Brand glyphs</b> currentColor, so they take the row's state colour — the magenta above is the single place a brand hex is allowed · <b>Avatar</b> the fallback is an SVG on --card-raised + --text-muted, so it follows the theme, and it is driven by onError as well as a null src: the platforms hand out signed CDN URLs that expire, and a broken-image glyph reads as our bug</div>
         </div>
       </section>
 
@@ -1071,10 +1177,116 @@
 
       </section>
 
-      <!-- ═══ 06 STATE ═══ -->
-      <section id="state" class="rv">
+      <!-- ═══ 07 CHART ═══ -->
+      <section id="chart" class="rv">
         <div class="sec-head">
           <span class="sec-num">07</span>
+          <h2>Chart</h2>
+          <span class="mono">series colour is the platform · dashed grid · gradient fill</span>
+        </div>
+
+        <div class="sub"><span class="mono">Area — the trend, two platforms</span></div>
+        <div class="stage">
+          <div class="stage-in col">
+            <div class="ch-legend">
+              <span class="tnum">4.1M views</span>
+              <span><i style="background: var(--accent)"></i>TikTok<b class="tnum">63,400 avg</b></span>
+              <span><i style="background: var(--info)"></i>Instagram<b class="tnum">29,600 avg</b></span>
+            </div>
+            <div class="ch-scroll"><div class="ch-wrap">
+              <svg class="ch" viewBox="0 0 660 216" role="img" aria-label="Average views per day, TikTok and Instagram">
+              <defs>
+                <linearGradient id="ds-ttG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.2" />
+                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+                </linearGradient>
+                <linearGradient id="ds-igG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--info)" stop-opacity="0.2" />
+                  <stop offset="100%" stop-color="var(--info)" stop-opacity="0" />
+                </linearGradient>
+              </defs>
+              <g class="ch-grid"><line x1="52" y1="186" x2="652" y2="186" /><line x1="52" y1="143" x2="652" y2="143" /><line x1="52" y1="100" x2="652" y2="100" /><line x1="52" y1="57" x2="652" y2="57" /><line x1="52" y1="14" x2="652" y2="14" /><line x1="60" y1="14" x2="60" y2="186" /><line x1="113.1" y1="14" x2="113.1" y2="186" /><line x1="166.2" y1="14" x2="166.2" y2="186" /><line x1="219.3" y1="14" x2="219.3" y2="186" /><line x1="272.4" y1="14" x2="272.4" y2="186" /><line x1="325.5" y1="14" x2="325.5" y2="186" /><line x1="378.5" y1="14" x2="378.5" y2="186" /><line x1="431.6" y1="14" x2="431.6" y2="186" /><line x1="484.7" y1="14" x2="484.7" y2="186" /><line x1="537.8" y1="14" x2="537.8" y2="186" /><line x1="590.9" y1="14" x2="590.9" y2="186" /><line x1="644" y1="14" x2="644" y2="186" /></g>
+              <path class="ch-fill" d="M60 155C77.7 152.7 95.4 148.2 113.1 148.2C130.8 148.2 148.5 153.3 166.2 153.3C183.9 153.3 201.6 139.6 219.3 139.6C237 139.6 254.7 144.7 272.4 144.7C290.1 144.7 307.8 131 325.5 131C343.2 131 360.8 137.8 378.5 137.8C396.2 137.8 413.9 124.1 431.6 124.1C449.3 124.1 467 134.4 484.7 134.4C502.4 134.4 520.1 117.2 537.8 117.2C555.5 117.2 573.2 127.5 590.9 127.5C608.6 127.5 626.3 117.2 644 112L644 186L60 186Z" fill="url(#ds-igG)" />
+              <path class="ch-fill" d="M60 113.8C77.7 116.6 95.4 122.4 113.1 122.4C130.8 122.4 148.5 98.3 166.2 98.3C183.9 98.3 201.6 105.2 219.3 105.2C237 105.2 254.7 75.9 272.4 75.9C290.1 75.9 307.8 88 325.5 88C343.2 88 360.8 62.2 378.5 62.2C396.2 62.2 413.9 74.2 431.6 74.2C449.3 74.2 467 43.2 484.7 43.2C502.4 43.2 520.1 58.7 537.8 58.7C555.5 58.7 573.2 27.8 590.9 27.8C608.6 27.8 626.3 32.3 644 34.6L644 186L60 186Z" fill="url(#ds-ttG)" />
+              <path class="ch-line" d="M60 155C77.7 152.7 95.4 148.2 113.1 148.2C130.8 148.2 148.5 153.3 166.2 153.3C183.9 153.3 201.6 139.6 219.3 139.6C237 139.6 254.7 144.7 272.4 144.7C290.1 144.7 307.8 131 325.5 131C343.2 131 360.8 137.8 378.5 137.8C396.2 137.8 413.9 124.1 431.6 124.1C449.3 124.1 467 134.4 484.7 134.4C502.4 134.4 520.1 117.2 537.8 117.2C555.5 117.2 573.2 127.5 590.9 127.5C608.6 127.5 626.3 117.2 644 112" stroke="var(--info)" />
+              <path class="ch-line" d="M60 113.8C77.7 116.6 95.4 122.4 113.1 122.4C130.8 122.4 148.5 98.3 166.2 98.3C183.9 98.3 201.6 105.2 219.3 105.2C237 105.2 254.7 75.9 272.4 75.9C290.1 75.9 307.8 88 325.5 88C343.2 88 360.8 62.2 378.5 62.2C396.2 62.2 413.9 74.2 431.6 74.2C449.3 74.2 467 43.2 484.7 43.2C502.4 43.2 520.1 58.7 537.8 58.7C555.5 58.7 573.2 27.8 590.9 27.8C608.6 27.8 626.3 32.3 644 34.6" stroke="var(--accent)" />
+              <line class="ch-cursor" x1="484.7" y1="14" x2="484.7" y2="186" />
+              <circle class="ch-dot" cx="484.7" cy="43.2" r="4" fill="var(--accent)" />
+              <circle class="ch-dot" cx="484.7" cy="134.4" r="4" fill="var(--info)" />
+              <g class="ch-ax"><text x="0" y="186" dy="4">0</text><text x="0" y="143" dy="4">25.0k</text><text x="0" y="100" dy="4">50.0k</text><text x="0" y="57" dy="4">75.0k</text><text x="0" y="14" dy="4">100.0k</text><text x="60" y="206" text-anchor="middle">Aug 28</text><text x="166.2" y="206" text-anchor="middle">Aug 30</text><text x="272.4" y="206" text-anchor="middle">Sep 1</text><text x="378.5" y="206" text-anchor="middle">Sep 3</text><text x="484.7" y="206" text-anchor="middle">Sep 5</text><text x="590.9" y="206" text-anchor="middle">Sep 7</text></g>
+            </svg>
+              <div class="ch-tip glass-overlay" style="left: 73.4%">
+                <p>Sep 5</p>
+                <div><span>Views</span><b class="tnum">148,320</b></div>
+                <div><span>Posts</span><b class="tnum">42</b></div>
+                <div><span>Avg views</span><b class="tnum">3,531</b></div>
+                <div><span>TikTok</span><b class="tnum">83,100 (26p)</b></div>
+                <div><span>Instagram</span><b class="tnum">30,200 (16p)</b></div>
+              </div>
+            </div></div>
+          </div>
+          <div class="stage-code"><b>Series</b> --accent is TikTok, --info is Instagram — never restyled per chart · <b>Fill</b> linearGradient of the series colour, stopOpacity 0.2 &rarr; 0 · <b>Grid</b> stroke="var(--chart-grid)" strokeDasharray="2 4" · <b>Cursor</b> stroke="var(--chart-cursor)", same dash · <b>activeDot</b> r=4 strokeWidth=2 stroke="var(--bg)" · <b>YAxis</b> tick anchored x=0, so labels line up with the card title, not the axis · <b>Tooltip</b> glass-overlay rounded-nested border-border px-3 py-2</div>
+        </div>
+
+        <div class="sub"><span class="mono">Bar — one accent, no rainbow</span></div>
+        <div class="stage">
+          <div class="stage-in col">
+            <div class="ch-scroll"><svg class="ch ch--bar" viewBox="0 0 660 200" role="img" aria-label="Average views by character">
+              <g class="ch-ax"><text x="0" y="172" dy="4">0</text><text x="0" y="132" dy="4">25.0k</text><text x="0" y="92" dy="4">50.0k</text><text x="0" y="52" dy="4">75.0k</text><text x="0" y="12" dy="4">100.0k</text><text x="96.2" y="190" text-anchor="middle">Character 2</text><text x="212.6" y="190" text-anchor="middle">Character 3</text><text x="329" y="190" text-anchor="middle">Character 4</text><text x="445.4" y="190" text-anchor="middle">Character 5</text><text x="561.8" y="190" text-anchor="middle">Character 6</text></g>
+              <path d="M48.5 172V30.8a6 6 0 0 1 6-6h83.4a6 6 0 0 1 6 6V172Z" fill="var(--accent)" /><path d="M164.9 172V64.4a6 6 0 0 1 6-6h83.4a6 6 0 0 1 6 6V172Z" fill="var(--accent)" /><path d="M281.3 172V85.2a6 6 0 0 1 6-6h83.4a6 6 0 0 1 6 6V172Z" fill="var(--accent)" /><path d="M397.7 172V107.6a6 6 0 0 1 6-6h83.4a6 6 0 0 1 6 6V172Z" fill="var(--accent)" /><path d="M514.1 172V134.8a6 6 0 0 1 6-6h83.4a6 6 0 0 1 6 6V172Z" fill="var(--accent)" />
+            </svg></div>
+          </div>
+          <div class="stage-code"><b>Bar</b> radius={[6, 6, 0, 0]} barCategoryGap="18%" isAnimationActive={false} · every Cell fill="var(--accent)": the categories are peers, so colour carries nothing · <b>cursor</b> {{ fill: "var(--card-raised)" }} — a block, not a line, because a bar already owns its column · no CartesianGrid</div>
+        </div>
+
+        <div class="sub"><span class="mono">Sparkline — direction, not value</span></div>
+        <div class="stage">
+          <div class="stage-in">
+            <div class="mt">
+              <span class="mt-k">Total views</span>
+              <div class="mt-v"><b class="tnum">4.1M</b><span class="mt-d up tnum">&#9650; 12%</span></div>
+              <div class="mt-s"><svg class="sp" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true">
+                    <defs><linearGradient id="ds-sp-up" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="var(--ok)" stop-opacity="0.18" />
+                      <stop offset="100%" stop-color="var(--ok)" stop-opacity="0" />
+                    </linearGradient></defs>
+                    <path d="M0 25.5C7.4 26 14.8 27 22.2 27C29.6 27 37 21.8 44.4 21.8C51.9 21.8 59.3 23.2 66.7 23.2C74.1 23.2 81.5 18 88.9 18C96.3 18 103.7 19.5 111.1 19.5C118.5 19.5 125.9 12.8 133.3 12.8C140.7 12.8 148.1 14.2 155.6 14.2C163 14.2 170.4 9.3 177.8 7.5C185.2 5.7 192.6 4.5 200 3L200 30L0 30Z" fill="url(#ds-sp-up)" />
+                    <path class="sp-line" d="M0 25.5C7.4 26 14.8 27 22.2 27C29.6 27 37 21.8 44.4 21.8C51.9 21.8 59.3 23.2 66.7 23.2C74.1 23.2 81.5 18 88.9 18C96.3 18 103.7 19.5 111.1 19.5C118.5 19.5 125.9 12.8 133.3 12.8C140.7 12.8 148.1 14.2 155.6 14.2C163 14.2 170.4 9.3 177.8 7.5C185.2 5.7 192.6 4.5 200 3" stroke="var(--ok)" />
+                  </svg></div>
+            </div>
+            <div class="mt">
+              <span class="mt-k">Avg views</span>
+              <div class="mt-v"><b class="tnum">29.6k</b><span class="mt-d dn tnum">&#9660; 8%</span></div>
+              <div class="mt-s"><svg class="sp" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true">
+                    <defs><linearGradient id="ds-sp-dn" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="var(--danger)" stop-opacity="0.18" />
+                      <stop offset="100%" stop-color="var(--danger)" stop-opacity="0" />
+                    </linearGradient></defs>
+                    <path d="M0 5.4C7.4 4.6 14.8 3 22.2 3C29.6 3 37 8.6 44.4 8.6C51.9 8.6 59.3 7.8 66.7 7.8C74.1 7.8 81.5 14.2 88.9 14.2C96.3 14.2 103.7 12.6 111.1 12.6C118.5 12.6 125.9 16.8 133.3 18.2C140.7 19.6 148.1 20.5 155.6 21.4C163 22.3 170.4 22.9 177.8 23.8C185.2 24.7 192.6 25.9 200 27L200 30L0 30Z" fill="url(#ds-sp-dn)" />
+                    <path class="sp-line" d="M0 5.4C7.4 4.6 14.8 3 22.2 3C29.6 3 37 8.6 44.4 8.6C51.9 8.6 59.3 7.8 66.7 7.8C74.1 7.8 81.5 14.2 88.9 14.2C96.3 14.2 103.7 12.6 111.1 12.6C118.5 12.6 125.9 16.8 133.3 18.2C140.7 19.6 148.1 20.5 155.6 21.4C163 22.3 170.4 22.9 177.8 23.8C185.2 24.7 192.6 25.9 200 27" stroke="var(--danger)" />
+                  </svg></div>
+            </div>
+            <div class="mt">
+              <span class="mt-k">Engagement</span>
+              <div class="mt-v"><b class="tnum">3.4%</b></div>
+              <div class="mt-s"><svg class="sp" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true">
+                    <defs><linearGradient id="ds-sp-flat" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="var(--text-muted)" stop-opacity="0.18" />
+                      <stop offset="100%" stop-color="var(--text-muted)" stop-opacity="0" />
+                    </linearGradient></defs>
+                    <path d="M0 21C7.4 17 14.8 9 22.2 9C29.6 9 37 27 44.4 27C51.9 27 59.3 15 66.7 15C74.1 15 81.5 21 88.9 21C96.3 21 103.7 3 111.1 3C118.5 3 125.9 21 133.3 21C140.7 21 148.1 17 155.6 15C163 13 170.4 9 177.8 9C185.2 9 192.6 17 200 21L200 30L0 30Z" fill="url(#ds-sp-flat)" />
+                    <path class="sp-line" d="M0 21C7.4 17 14.8 9 22.2 9C29.6 9 37 27 44.4 27C51.9 27 59.3 15 66.7 15C74.1 15 81.5 21 88.9 21C96.3 21 103.7 3 111.1 3C118.5 3 125.9 21 133.3 21C140.7 21 148.1 17 155.6 15C163 13 170.4 9 177.8 9C185.2 9 192.6 17 200 21" stroke="var(--text-muted)" />
+                  </svg></div>
+            </div>
+          </div>
+          <div class="stage-code"><b>Tone</b> --ok rising, --danger falling, --text-muted flat — every metric here reads better when it rises, so up is always green · <b>Line</b> strokeWidth 1.5, dot={false}, gradient 0.18 &rarr; 0 · <b>-mx-4</b> cancels the tile padding so the line runs edge to edge · <b>One bucket</b> draws nothing: a flat line looks like a finding</div>
+        </div>
+      </section>
+
+      <!-- ═══ 08 STATE ═══ -->
+      <section id="state" class="rv">
+        <div class="sec-head">
+          <span class="sec-num">08</span>
           <h2>State</h2>
           <span class="mono">empty · loading · working · degraded</span>
         </div>
@@ -1151,10 +1363,10 @@
         </div>
       </section>
 
-      <!-- ═══ 07 SPACE ═══ -->
+      <!-- ═══ 09 SPACE ═══ -->
       <section id="space" class="rv">
         <div class="sec-head">
-          <span class="sec-num">08</span>
+          <span class="sec-num">09</span>
           <h2>Space</h2>
           <span class="mono">4px scale · 24 out / 16 in / pill</span>
         </div>
@@ -1189,10 +1401,10 @@
         </div>
       </section>
 
-      <!-- ═══ 08 RULES ═══ -->
+      <!-- ═══ 10 RULES ═══ -->
       <section id="rules" class="rv">
         <div class="sec-head">
-          <span class="sec-num">09</span>
+          <span class="sec-num">10</span>
           <h2>Rules</h2>
           <span class="mono">the part no token can record</span>
         </div>

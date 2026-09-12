@@ -65,7 +65,12 @@ assumed:
 | `ui/cta-button.tsx`, `ui/specular-button.tsx` | accent, danger, white/grey | The shine is drawn in WebGL by `ogl`, which parses hex and cannot parse `var()`. These also read the theme in JavaScript rather than from the cascade. |
 | `ui/side-rays.tsx` and `app/login/page.tsx` | `#22d3ee`, `#96c8ff`, `#EAB308` | Same reason — WebGL ray colours passed as props. |
 | `accounts/[profile]/page.tsx` | `#E4405F` | Instagram's brand colour. A brand asset is not ours to tokenise. |
-| `dashboard/analytics-charts.tsx` | one gridline at `rgba(255,255,255,0.055)` | **This one is a real gap, not a justified exception** — a hardcoded white alpha that will not adapt in light mode. Everything else in that file uses tokens correctly. |
+
+That table is the whole list. **The chart files used to be on it** — a gridline
+and a hover cursor hardcoded as white alphas in `analytics-charts.tsx` and
+`account-analytics-view.tsx`, which meant they did not survive the light theme.
+They became `--chart-grid` and `--chart-cursor` on 2026-09-12 and are now
+covered by the parity test like everything else.
 
 So the rule is better stated as: **a hex literal is only acceptable when the
 renderer cannot read a CSS variable (WebGL) or the colour belongs to someone
@@ -153,6 +158,29 @@ chart series and alert panels.
 | `--pill-yellow` | `#fff949` | `#6b4f03` | The `warn` pill's label. |
 | `--pill-amber` | `#ff9549` | `#8a3f08` | The `orange` pill's label. |
 | `--pill-red` | `#ff4949` | `#a11616` | The `danger` pill's label, and the destructive CTA's tint. |
+
+### Chart chrome
+
+Two tokens that exist because Recharts takes colours as strings on props rather
+than reading them from the cascade. See §6 for how charts use them.
+
+| Token | Dark | Light | What it is for |
+|---|---|---|---|
+| `--chart-grid` | `rgba(255, 255, 255, 0.055)` | `rgba(0, 0, 0, 0.06)` | The dashed `CartesianGrid` behind every plot. |
+| `--chart-cursor` | `rgba(255, 255, 255, 0.28)` | `rgba(0, 0, 0, 0.32)` | The dashed vertical line that follows the pointer across an area chart. |
+
+**Neither is `--border`, on purpose.** The grid resolves a shade *lighter* than a
+row rule — `#1e1e20` against a `#242426` border — and that gap is the reason a
+dashed grid sits behind the data rather than competing with it. Pointing it at
+`--border` would have strengthened the grid in every chart, which is a change to
+the look rather than a refactor.
+
+The light values are black alphas holding the same two relationships: the grid
+stays a shade lighter than `--border`, and the cursor lands between the grid and
+`--text-muted`. The cursor runs a step deeper than the dark theme's `0.28` for
+the same reason every semantic does here — on a near-white ground the mirrored
+alpha reads as washed, and a hover crosshair you have to hunt for is not doing
+its job.
 
 ---
 
@@ -411,7 +439,142 @@ in front of a coloured label was saying it twice.
 
 ---
 
-## 6. Icons
+## 6. Charts
+
+Three files draw charts, all with `recharts`:
+
+| File | What it draws |
+|---|---|
+| `dashboard/analytics-charts.tsx` | The fleet page — the views trend, the metric-tile sparklines, avg views by character |
+| `dashboard/account-analytics-view.tsx` | The same patterns for one account |
+| `dashboard/account-detail-tabs.tsx` | Composes the above; no chart colours of its own |
+
+The rules below were in the code and nowhere else until 2026-09-12. Nothing here
+is new — it is what shipped, written down.
+
+### Series colour is the platform
+
+**`--accent` is TikTok. `--info` is Instagram.** Everywhere, without exception.
+
+This is the one rule to keep if you keep only one. It is why a reader can glance
+at any chart on any page and know which line is which without consulting a
+legend, and it is why a chart must never pick its series colours for contrast or
+variety. A new platform gets a new token; it does not get to borrow `--ok`.
+
+```
+<Area dataKey="tiktokViews"    stroke="var(--accent)" fill="url(#ttG)" />
+<Area dataKey="instagramViews" stroke="var(--info)"   fill="url(#igG)" />
+```
+
+The legend dots and the per-platform figures above the plot use the same two
+variables, so the legend cannot drift from the lines it labels.
+
+### Area fills
+
+Each series is filled with a vertical gradient **of its own stroke colour**,
+`stopOpacity` 0.2 at the top to 0 at the axis:
+
+```
+<linearGradient id="ttG" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0%"   stopColor="var(--accent)" stopOpacity={0.2} />
+  <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+</linearGradient>
+```
+
+**A divergence worth knowing about.** The 2026-09-07 overhaul notes asked for
+*"dotted chart grids with no area fills."* The shipped charts have dashed grids
+and they do have fills. The code is what Garreth has been reading for weeks, so
+**the code is the intent** and the note is the stale half. Recorded here rather
+than quietly corrected in either direction — but do not change a chart's
+appearance to close the gap without asking.
+
+Gradient ids are document-global in SVG, which is a real trap: the per-account
+sparklines carry an `acct-sp-` prefix precisely so they do not collide with the
+fleet page's `sp-`. Any new gradient needs its own prefix.
+
+### Grid and cursor
+
+| | Value | Why |
+|---|---|---|
+| Grid | `stroke="var(--chart-grid)"` `strokeDasharray="2 4"` | Dashed and very low contrast. A grid is a measuring aid, not content. |
+| Hover cursor | `stroke="var(--chart-cursor)"` `strokeDasharray="2 4"` | A vertical line on the same dash, so it reads as the grid lighting up rather than as a new object. |
+| Bar cursor | `cursor={{ fill: "var(--card-raised)" }}` | A block, not a line — a bar already owns its column, so the highlight is the column. |
+| Active dot | `r={4}` `strokeWidth={2}` `stroke="var(--bg)"` | The page colour as the ring, so the dot sits on the line rather than in it. |
+
+`--chart-grid` and `--chart-cursor` are documented in §1. They exist because
+Recharts takes colours as props rather than reading them from the cascade, and
+until 2026-09-12 they were hardcoded white alphas that did not survive the light
+theme.
+
+The bar chart has **no grid at all** — bars are read against each other and
+against their own labels, so gridlines only add ink.
+
+### Axis labels
+
+X axis is `interval="preserveStartEnd"` with `minTickGap={28}`, so labels thin
+out as the range widens rather than overlapping.
+
+The Y axis is the unusual one, and it is deliberate:
+
+```
+tick={(props) => (
+  <text x={0} textAnchor="start" fill="var(--text-muted)" fontSize={11}>…</text>
+)}
+```
+
+Recharts right-aligns Y labels against the axis line by default, which inset
+them from the card edge and left them floating in the middle of the card's left
+padding. **Anchoring at `x=0` lines them up with the card title instead.** The
+plot keeps its own left/right gutter (`-mb-5` on the wrapper, `padding` on the
+XAxis) so nothing runs into the card edge.
+
+Values are formatted by `compact()` — `1.2M`, `34.5k`, or the plain integer
+below 1,000. Every axis and every tooltip figure is tabular (`tnum`).
+
+### Bars
+
+One accent, no rainbow:
+
+```
+<Bar dataKey="avgViews" radius={[6, 6, 0, 0]} isAnimationActive={false}>
+  {data.characters.map((c) => <Cell key={c.character} fill="var(--accent)" />)}
+</Bar>
+```
+
+The categories are peers — five characters, no ranking beyond their height — so
+colour carries no information and giving each one its own hue would invent a
+meaning that is not there. `barCategoryGap="18%"`.
+
+### Sparklines
+
+The metric tiles carry a 28px line whose colour is its direction, not its
+platform:
+
+| Delta | Tone |
+|---|---|
+| Rising | `--ok` |
+| Falling | `--danger` |
+| Flat or unknown | `--text-muted` |
+
+Every metric on these tiles reads better when it rises, so up is green
+throughout and no tile needs to invert the mapping. Stroke is `1.5`, `dot={false}`,
+gradient `0.18 → 0`, and `-mx-4` cancels the tile's padding so the line runs edge
+to edge.
+
+**One bucket draws nothing.** A single data point has no shape, and a flat line
+across a tile looks like a finding rather than an absence. The fleet trend does
+the same thing at a larger scale: fewer than two buckets and it prints
+"Only one day of posts in this range" instead of a plot.
+
+### Tooltip
+
+`glass-overlay rounded-nested border border-border px-3 py-2` — the same
+floating-panel material as every other overlay. Label in `text-text-muted`, rows
+as name-then-value with the value pushed right and tabular.
+
+---
+
+## 7. Icons
 
 | | |
 |---|---|
@@ -428,9 +591,50 @@ close affordance wants two thin strokes, not a slab), and `Plus` / `Minus`
 (filled signs read as knocked out of a block, which makes a stepper look like two
 buttons stamped onto the control instead of two marks inside it).
 
+
+### Identity marks
+
+Three components draw something other than a Phosphor glyph. All three render in
+`docs/design-system.html` §Icon.
+
+| Component | File | What it is |
+|---|---|---|
+| `PeptideMark` | `ui/peptide-mark.tsx` | The atom from the logo, icon-only. `currentColor`, so it is white on dark and dark on light without a second asset. |
+| `TikTokIcon` / `InstagramIcon` | `ui/brand-icons.tsx` | The platform glyphs. Also `currentColor` — they take their row's state colour like any other icon. |
+| `Avatar` / `AvatarFallback` | `ui/avatar.tsx` | The account photo, and the silhouette drawn when there isn't one. |
+
+**The brand glyphs are `currentColor`, not brand-coloured.** That surprises
+people, so it is worth saying plainly: the one place a brand hex appears is
+`accounts/[profile]/page.tsx`, where the Instagram mark is `text-[#E4405F]`
+because it is identifying the platform rather than labelling a row's state. A
+brand asset is not ours to tokenise — see "Two non-negotiables" — but it is also
+not the default.
+
+**`Avatar` falls back on `onError`, not only on a null `src`.** This is the part
+worth knowing, because the obvious implementation is wrong here: the platforms
+hand out **signed CDN URLs that expire in a day or two**, so a URL we hold can be
+perfectly well-formed and still answer 403. A plain `<img>` renders that as the
+browser's broken-image glyph, which reads as a bug in the dashboard rather than
+as an expired link.
+
+The fallback is drawn rather than imported — a disc of `--card-raised` with a
+`--text-muted` figure clipped to it — so it follows the theme instead of being a
+fixed grey, and it is the same pairing every empty state uses.
+
+### Not part of the design system
+
+Two components under `ui/` are deliberately **not** documented here, so nobody
+reads their absence as an oversight:
+
+| Component | Why not |
+|---|---|
+| `SectionStub` | Scaffolding. It marks a page that has not been built yet and is deleted as each one lands — documenting it would give a temporary thing the standing of a pattern. |
+| `SideRays` | Decoration on the login screen only. It is WebGL, owns its own colours as hex props (already listed under "Two non-negotiables"), and there is nothing about it to reuse. |
+
+
 ---
 
-## 7. Figma mapping
+## 8. Figma mapping
 
 The same system exists on the **Design System** page of the
 `Peptide Miracles App` Figma file. Collections and names map one-to-one so a
@@ -466,6 +670,13 @@ Two tokens exist in Figma with no CSS custom property — `color/status/danger-s
 (`bg-warn/10`, the stale-notice and running-long ground). In code both are
 Tailwind opacity modifiers rather than variables, but Figma needs a concrete
 value to bind, and paint-level opacity does not survive instancing.
+
+It now runs the other way too. **`--chart-grid` and `--chart-cursor` exist in CSS
+with no Figma variable**, because they were added on 2026-09-12, after the
+snapshot was frozen. The `114` on the Figma cover is the count of *Figma*
+variables and stays 114; it was never the count of CSS custom properties, which
+is why the two numbers no longer move together. Anything added from here on
+widens that gap by design — see "Figma is frozen" at the top of this file.
 
 ### Styles
 
@@ -550,7 +761,7 @@ Label/Overline and Label/Micro are **Semibold**; the rest are **Regular**.
 
 ---
 
-## 8. The rules that are not values
+## 9. The rules that are not values
 
 No token can record these, and a new screen gets them wrong without being told.
 
@@ -587,7 +798,7 @@ No token can record these, and a new screen gets them wrong without being told.
 
 ---
 
-## 9. For the Carousel Generator
+## 10. For the Carousel Generator
 
 The feature is a V2 item in `BACKLOG.md`; its backend — the seven
 content-intelligence tables — is still empty. When the UI gets built, it adds
