@@ -874,6 +874,16 @@ finished; it has since been done, which is why the urgency dropped.
 
 ## Fill the content-intelligence tables — the carousel generator's backend
 
+**Update 2026-09-14: the generator now has a plan, and most of these tables
+are no longer empty.** Read `docs/CAROUSEL-GENERATOR-PLAN.md` first. The
+carousel-search worker ran between 09-10 and 09-12: `reference_analysis` holds
+1,073 rows, `reference_beats` 5,591, `search_chunks` 6,795, and
+`carousel_search_documents` 21,893. Only the three generator tables
+(`carousel_briefs`, `carousel_drafts`, `carousel_draft_slides`) are still at
+zero, and the plan uses them as the generation record. The row counts and the
+"no worker writes to them" line below are a 09-10 snapshot and are stale; the
+four schema cautions still hold.
+
 **Deferred 2026-09-10 (Garreth): this lands with the carousel generator app,
 which is a V2 build in its own right and will be integrated into this
 dashboard.** Nothing here is blocked and nothing is broken. It is parked because

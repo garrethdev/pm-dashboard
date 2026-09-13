@@ -307,7 +307,7 @@ export function Sidebar() {
         <GroupLabel collapsed={collapsed}>Content</GroupLabel>
         {/* v2 — visible but disabled (plan §2.5) */}
         <div
-          title={collapsed ? "Generate (v2)" : undefined}
+          title={collapsed ? "Carousel Generator (v2)" : undefined}
           className={cn(
             "flex cursor-not-allowed items-center gap-2.5 rounded-nested py-1.5 text-sm text-text-muted opacity-50",
             collapsed ? "justify-center px-0" : "px-2",
@@ -319,7 +319,7 @@ export function Sidebar() {
           </span>
           {!collapsed && (
             <>
-              Generate
+              Carousel Generator
               <span className="ml-auto rounded-full bg-card-raised px-2 py-0.5 text-[10px] font-medium text-text-muted">
                 v2
               </span>

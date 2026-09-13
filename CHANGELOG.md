@@ -20,7 +20,26 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## 2026-09-13 (latest) — Claude Design now has the dashboard's components
+## 2026-09-14 (latest) — The sidebar now says "Carousel Generator"
+
+**Garreth's instruction, 2026-09-14, at the start of planning the generator.**
+The greyed-out item under *Content* in the left sidebar was labelled "Generate"
+with a "v2" badge, a placeholder carried over from the v1 plan. It now reads
+"Carousel Generator". It is still disabled and still carries the badge, because
+the page behind it does not exist yet: this session produced the plan for it
+(`docs/CAROUSEL-GENERATOR-PLAN.md`), not the page.
+
+Same day, the plan was revised after the source of the existing
+`carousel-command-center` Vercel app was recovered. It had never been in Git;
+all 25 files were pulled from the Aug 3 deployment through the Vercel API into
+`carousel-command-center/` beside this repo. Two finds changed the plan: a
+working direction-chat endpoint that is an early version of the per-lane
+direction bot, and a July design for batch generation whose lessons are now
+§4.5 of the plan. Nothing else in this repo changed.
+
+---
+
+## 2026-09-13 — Claude Design now has the dashboard's components
 
 **Garreth's go-ahead, 2026-09-13.** This is the second step, which the entry
 below left for later. Claude Design already had the colours, type and spacing;
