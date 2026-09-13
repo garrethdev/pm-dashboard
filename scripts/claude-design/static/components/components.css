@@ -1,0 +1,290 @@
+/* Peptide Miracles Dashboard: component styles.
+   Hand-ported from the Tailwind class strings in pm-dashboard/src/components/ui/*.tsx.
+   Styles live here rather than inline so the JSX stays free of raw colours and
+   pixel values, and so hover, focus and disabled states work. Tokens come from tokens/*.css. */
+
+:root {
+  --pm-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pm-pulse {
+  50% { opacity: 0.5; }
+}
+
+/* ── Surfaces: card.tsx ─────────────────────────────────────────────────── */
+.pm-card { box-sizing: border-box; border-radius: var(--radius-card); padding: var(--pad-card); }
+.pm-card--default { border: 1px solid var(--border); box-shadow: var(--sh-card); background: var(--card); }
+.pm-card--sunken { border: 1px solid var(--border); box-shadow: var(--sh-card); background: var(--card-sunken); }
+.pm-card--hero {
+  border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  background-image: linear-gradient(135deg in oklab, var(--accent), var(--accent-deep));
+  box-shadow: var(--sh-hero);
+}
+
+.pm-dashcard { display: flex; flex-direction: column; gap: var(--space-20); }
+.pm-dashcard__head { display: flex; flex-direction: column; gap: var(--space-12); }
+.pm-dashcard__pair { display: flex; align-items: center; justify-content: space-between; gap: var(--space-12); }
+/* A step larger on a phone: at 14px the card's own name was quieter than everything in it. */
+.pm-dashcard__title { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 16px/24px var(--font-sans); color: var(--text-muted); }
+.pm-dashcard__headaction { flex-shrink: 0; }
+.pm-dashcard__actions { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-12); row-gap: var(--space-8); }
+.pm-dashcard__body { min-width: 0; min-height: 0; flex: 1; }
+.pm-viewall {
+  display: inline-flex; flex-shrink: 0; align-items: center; gap: var(--space-4);
+  border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 4px 10px;
+  font: 500 12px/16px var(--font-sans); color: var(--text-muted); text-decoration: none;
+  transition: color 150ms var(--pm-ease), border-color 150ms var(--pm-ease);
+}
+.pm-viewall:hover { border-color: color-mix(in oklab, var(--text-muted) 50%, transparent); color: var(--text-primary); }
+@media (min-width: 640px) {
+  .pm-dashcard__head { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: var(--space-16); row-gap: var(--space-8); }
+  .pm-dashcard__pair { display: contents; }
+  .pm-dashcard__title { font: 500 14px/20px var(--font-sans); }
+  .pm-dashcard__headaction, .pm-viewall { order: 9999; }
+  .pm-dashcard__actions { margin-left: auto; flex-shrink: 0; flex-wrap: nowrap; }
+  .pm-push { margin-left: auto; }
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+/* cta-button.tsx. The app draws a moving specular streak in WebGL, which takes
+   hex rather than var(); these literals mirror its TONE table exactly. Here the
+   streak is approximated by a rim that brightens on hover. */
+.pm-cta {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  margin: 0; border: 0; border-radius: var(--radius-pill); padding: 10px 22px;
+  font: 500 0.85rem/1 var(--font-sans); letter-spacing: 0.01em; white-space: nowrap; text-decoration: none;
+  color: var(--cta-text); background: var(--cta-tint); cursor: pointer;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cta-base) 45%, transparent), var(--sb-shadow);
+  transition: transform 150ms var(--pm-ease), box-shadow 200ms var(--pm-ease);
+}
+.pm-cta:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cta-base) 45%, transparent),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.55), var(--sb-shadow);
+}
+.pm-cta:active { transform: scale(0.97); }
+.pm-cta:focus-visible { outline: 2px solid var(--cta-tint); outline-offset: 3px; }
+.pm-cta:disabled { cursor: default; opacity: 0.55; transform: none; }
+.pm-cta__label { position: relative; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.pm-cta--accent { --cta-tint: var(--accent); --cta-text: var(--bg); --cta-base: var(--accent-deep); }
+.pm-cta--danger { --cta-tint: #ff4949; --cta-text: #ffffff; --cta-base: #a01d1d; }
+[data-theme="light"] .pm-cta--accent { --cta-text: #ffffff; }
+[data-theme="light"] .pm-cta--danger { --cta-tint: #b91c1c; --cta-base: #7f1d1d; }
+
+/* hold-button.tsx */
+.pm-hold {
+  position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: var(--space-8);
+  overflow: hidden; margin: 0; border: 0; border-radius: var(--radius-pill); padding: 6px 16px;
+  font: 500 14px/20px var(--font-sans); user-select: none; -webkit-user-select: none;
+  touch-action: none; cursor: pointer; transition: opacity 150ms var(--pm-ease);
+}
+.pm-hold:not(:disabled):hover { opacity: 0.9; }
+.pm-hold:disabled { cursor: not-allowed; opacity: 0.4; }
+.pm-hold--danger { background: color-mix(in oklab, var(--danger) 25%, transparent); color: var(--danger); }
+.pm-hold--warn { background: color-mix(in oklab, var(--warn) 25%, transparent); color: var(--warn); }
+.pm-hold__fill { position: absolute; inset: 0; z-index: -1; transform-origin: left; }
+.pm-hold__fill--idle { transition: transform 150ms var(--pm-ease); }
+.pm-hold--danger .pm-hold__fill { background: var(--danger); }
+.pm-hold--warn .pm-hold__fill { background: var(--warn); }
+.pm-hold__label { position: relative; }
+.pm-hold--danger .pm-hold__label--lit { color: #ffffff; }
+.pm-hold--warn .pm-hold__label--lit { color: var(--bg); }
+
+/* Secondary and ghost: the recipes in docs/DESIGN-TOKENS.md §5. */
+.pm-button {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0; border-radius: var(--radius-pill);
+  font-family: var(--font-sans); font-weight: 500; white-space: nowrap; text-decoration: none;
+  color: var(--text-muted); cursor: pointer; transition: color 150ms var(--pm-ease);
+}
+.pm-button:hover:not(:disabled) { color: var(--text-primary); }
+.pm-button:disabled { cursor: not-allowed; opacity: 0.4; }
+.pm-button--secondary { border: 1px solid var(--border); background: var(--card-raised); padding: 6px 14px; font-size: 12px; line-height: 16px; }
+.pm-button--ghost { border: 0; background: none; padding: 6px 16px; font-size: 14px; line-height: 20px; }
+
+/* extend-button.tsx */
+.pm-extend {
+  display: inline-flex; flex-shrink: 0; align-items: center; gap: var(--space-4);
+  border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--card-raised);
+  padding: 4px 12px; font: 500 12px/16px var(--font-sans); color: var(--text-muted); text-decoration: none;
+  transition: color 150ms var(--pm-ease), border-color 150ms var(--pm-ease);
+}
+.pm-extend:hover { border-color: var(--accent); color: var(--accent); }
+
+/* sort-button.tsx */
+.pm-sort {
+  display: inline-flex; align-items: center; gap: var(--space-4); margin: 0; border: 0;
+  border-radius: var(--radius-pill); background: none; padding: 4px 12px;
+  font: 500 12px/16px var(--font-sans); white-space: nowrap; color: var(--text-muted); cursor: pointer;
+  transition: color 150ms var(--pm-ease), background-color 150ms var(--pm-ease);
+}
+.pm-sort:hover { color: var(--text-primary); }
+.pm-sort--active, .pm-sort--active:hover { background: var(--accent-soft); color: var(--accent); }
+.pm-sort__icon--idle { opacity: 0.6; }
+
+/* ── Pills ──────────────────────────────────────────────────────────────── */
+/* pill.tsx: one flat ground, the label carries the state. */
+.pm-pill {
+  display: inline-flex; align-items: center; border-radius: var(--radius-pill); padding: 2px 10px;
+  font: 500 12px/16px var(--font-sans); white-space: nowrap; background: var(--pill-bg);
+}
+.pm-pill--ok { color: var(--ok); }
+.pm-pill--accent { color: var(--accent); }
+.pm-pill--info { color: var(--info); }
+.pm-pill--gray, .pm-pill--neutral { color: var(--text-muted); }
+.pm-pill--warn { color: var(--pill-yellow); }
+.pm-pill--orange { color: var(--pill-amber); }
+.pm-pill--danger { color: var(--pill-red); }
+.pm-pill--critical { background: var(--danger-deep); color: #ffffff; }
+
+/* filter-pills.tsx: the segmented control. */
+.pm-seg {
+  display: flex; align-items: center; gap: var(--space-2); box-sizing: border-box; overflow-x: auto;
+  border-radius: var(--radius-pill); background: var(--card-raised); padding: 2px; scrollbar-width: none;
+}
+.pm-seg::-webkit-scrollbar { display: none; }
+.pm-seg--block { width: 100%; }
+.pm-seg--inline { width: fit-content; max-width: 100%; min-width: 0; flex-shrink: 1; }
+.pm-seg__opt {
+  margin: 0; border: 0; border-radius: var(--radius-pill); background: none; padding: 4px 12px;
+  font: 500 12px/16px var(--font-sans); white-space: nowrap; color: var(--text-muted); cursor: pointer;
+  transition: color 150ms var(--pm-ease), background-color 150ms var(--pm-ease);
+}
+.pm-seg__opt:hover { color: var(--text-primary); }
+.pm-seg--block .pm-seg__opt { flex: 1 1 auto; }
+.pm-seg--inline .pm-seg__opt { flex-shrink: 0; }
+.pm-seg__opt--on, .pm-seg__opt--on:hover { background: var(--accent); color: var(--bg); }
+.pm-seg__mark { margin-left: var(--space-4); color: var(--warn); }
+.pm-seg__opt--on .pm-seg__mark { color: inherit; opacity: 0.7; }
+@media (min-width: 640px) {
+  .pm-seg--block { display: inline-flex; width: fit-content; overflow: visible; }
+  .pm-seg--block .pm-seg__opt { flex: none; }
+}
+
+/* filter-chips.tsx */
+.pm-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-8); }
+.pm-chip {
+  display: inline-flex; align-items: center; gap: var(--space-4); border-radius: var(--radius-pill);
+  background: var(--accent-soft); padding: 4px 4px 4px 10px;
+  font: 500 12px/16px var(--font-sans); white-space: nowrap; color: var(--accent);
+}
+.pm-chip__x {
+  display: inline-flex; margin: 0; border: 0; border-radius: var(--radius-pill); background: none; padding: 2px;
+  color: color-mix(in oklab, var(--accent) 70%, transparent); cursor: pointer;
+  transition: color 150ms var(--pm-ease), background-color 150ms var(--pm-ease);
+}
+.pm-chip__x:hover { background: color-mix(in oklab, var(--accent) 15%, transparent); color: var(--accent); }
+.pm-chips__clear {
+  margin: 0; border: 0; background: none; padding: 0; font: 500 12px/16px var(--font-sans);
+  white-space: nowrap; color: var(--text-muted); cursor: pointer; transition: color 150ms var(--pm-ease);
+}
+.pm-chips__clear:hover { color: var(--text-primary); }
+
+/* ── Forms ──────────────────────────────────────────────────────────────── */
+/* search-input.tsx */
+.pm-search {
+  display: flex; align-items: center; gap: var(--space-8); box-sizing: border-box;
+  border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--card-raised); padding: 6px 14px;
+}
+.pm-search__icon { flex-shrink: 0; color: var(--text-muted); }
+.pm-search__input {
+  width: 100%; min-width: 0; margin: 0; border: 0; padding: 0; background: transparent;
+  font: 400 14px/20px var(--font-sans); color: var(--text-primary); outline: none;
+}
+.pm-search__input::placeholder { color: var(--text-muted); }
+.pm-search__clear { display: inline-flex; flex-shrink: 0; margin: 0; border: 0; padding: 0; background: none; color: var(--text-muted); cursor: pointer; }
+.pm-search__clear:hover { color: var(--text-primary); }
+
+/* dropdown.tsx. Below 640px the panel centres on the viewport; anchoring is a desktop idea. */
+.pm-dd { position: relative; }
+.pm-dd__trigger {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--card-raised); padding: 6px 14px;
+  font: 500 12px/16px var(--font-sans); color: var(--text-muted); cursor: pointer; transition: color 150ms var(--pm-ease);
+}
+.pm-dd__trigger:hover, .pm-dd__trigger--open { color: var(--text-primary); }
+.pm-dd__badge {
+  display: flex; width: 16px; height: 16px; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--accent); font: 600 10px/1 var(--font-sans); color: var(--bg);
+}
+.pm-dd__chev { transition: transform 150ms var(--pm-ease); }
+.pm-dd__trigger--open .pm-dd__chev { transform: rotate(180deg); }
+.pm-dd__panel {
+  z-index: 30; box-sizing: border-box; border: 1px solid var(--border); border-radius: var(--radius-nested); padding: 12px;
+  position: fixed; top: var(--dd-top); left: 50%; width: calc(100vw - 1.5rem); max-width: 24rem; transform: translateX(-50%);
+}
+@media (min-width: 640px) {
+  .pm-dd__panel { position: absolute; top: 100%; margin-top: 8px; width: auto; max-width: none; min-width: 13rem; transform: none; }
+  .pm-dd__panel--left { left: 0; right: auto; }
+  .pm-dd__panel--right { right: 0; left: auto; }
+}
+
+/* stepper.tsx. The caps are the point: max is what the budget actually has left. */
+.pm-stepper__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-8); margin-bottom: var(--space-4); }
+.pm-stepper__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 12px/16px var(--font-sans); color: var(--text-muted); }
+.pm-stepper__hint { flex-shrink: 0; font: 400 11px/15px var(--font-sans); color: var(--text-muted); }
+.pm-stepper__hint--danger { color: var(--danger); }
+.pm-stepper__box {
+  display: flex; align-items: stretch; overflow: hidden; border: 1px solid var(--border);
+  border-radius: var(--radius-nested); background: color-mix(in oklab, var(--bg) 60%, transparent);
+}
+.pm-stepper__mid { display: flex; width: 100%; min-width: 0; align-items: center; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+.pm-stepper__input {
+  width: 100%; min-width: 0; margin: 0; border: 0; background: transparent; padding: 6px 4px;
+  text-align: center; font: 400 14px/20px var(--font-sans); font-variant-numeric: tabular-nums;
+  color: var(--text-primary); outline: none;
+}
+.pm-stepper__suffix { padding-right: 8px; font: 400 11px/15px var(--font-sans); color: var(--text-muted); }
+.pm-stepper__btn {
+  display: flex; width: 28px; flex-shrink: 0; align-items: center; justify-content: center;
+  margin: 0; border: 0; background: none; padding: 0; color: var(--text-muted); cursor: pointer;
+  transition: color 150ms var(--pm-ease), background-color 150ms var(--pm-ease);
+}
+.pm-stepper__btn:hover { background: var(--card); color: var(--text-primary); }
+.pm-stepper__btn:disabled { cursor: not-allowed; opacity: 0.3; }
+.pm-stepper__btn:disabled:hover { background: transparent; color: var(--text-muted); }
+
+/* ── Feedback ───────────────────────────────────────────────────────────── */
+/* tooltip.tsx. Use side="left" inside a horizontally scrolling table, where "top" gets clipped. */
+.pm-tt { position: relative; display: inline-flex; }
+.pm-tt__tip {
+  pointer-events: none; position: absolute; z-index: 20; box-sizing: border-box;
+  border: 1px solid var(--border); border-radius: var(--radius-nested); padding: 4px 8px;
+  font: 500 12px/16px var(--font-sans); white-space: nowrap; color: var(--text-primary);
+  opacity: 0; transition: opacity 100ms var(--pm-ease);
+}
+.pm-tt:hover .pm-tt__tip, .pm-tt__tip--open { opacity: 1; }
+.pm-tt__tip--top { bottom: 100%; left: 50%; margin-bottom: 6px; transform: translateX(-50%); }
+.pm-tt__tip--left { top: 50%; right: 100%; margin-right: 6px; transform: translateY(-50%); }
+
+/* stale-notice.tsx. Serving stale data is only acceptable when it announces itself. */
+.pm-stale {
+  display: flex; align-items: flex-start; gap: var(--space-8); margin: 0; border-radius: var(--radius-nested);
+  background: color-mix(in oklab, var(--warn) 10%, transparent); padding: 8px 12px;
+  font: 400 12px/16px var(--font-sans); color: var(--warn);
+}
+.pm-stale__icon { flex-shrink: 0; margin-top: 2px; }
+.pm-stale__at { font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* skeleton.tsx, card-skeleton.tsx, table-skeleton.tsx. Table rows are 36px + 4px gap: the real row pitch. */
+.pm-skeleton { border-radius: var(--radius-nested); background: var(--card-raised); animation: pm-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.pm-skel-lines { display: flex; flex-direction: column; gap: var(--space-12); }
+.pm-skel-table { display: flex; flex-direction: column; gap: var(--space-4); }
+.pm-skel-table > .pm-skeleton { flex-shrink: 0; }
+
+/* ── Data ───────────────────────────────────────────────────────────────── */
+/* barcode-bar.tsx. Solid colour for the last 12px of the fill, gone by 44px in. */
+.pm-barcode { position: relative; height: 14px; overflow: hidden; border-radius: var(--radius-bar); background: color-mix(in oklab, var(--text-muted) 20%, transparent); }
+.pm-barcode__fill {
+  position: absolute; top: 0; bottom: 0; left: 0; border-radius: var(--radius-bar);
+  -webkit-mask-image: linear-gradient(to left, #000 0 12px, transparent 44px);
+  mask-image: linear-gradient(to left, #000 0 12px, transparent 44px);
+}
+.pm-barcode__fill--accent { background: var(--accent); }
+.pm-barcode__fill--ok { background: var(--ok); }
+.pm-barcode__fill--warn { background: var(--warn); }
+.pm-barcode__fill--orange { background: var(--orange); }
+.pm-barcode__fill--danger { background: var(--danger); }
+.pm-barcode__fill--info { background: var(--info); }
+
+/* ── Identity ───────────────────────────────────────────────────────────── */
+/* avatar.tsx */
+.pm-avatar { flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--border); border-radius: 50%; object-fit: cover; }
