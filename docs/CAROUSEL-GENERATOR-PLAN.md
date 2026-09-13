@@ -249,6 +249,33 @@ the `perez-slides-v1` run with free text from an older run, and `topic` is a
 comma-joined string, not an array. Filter to `perez-slides-v1` or normalise
 before using either as a facet.
 
+**How the library fills itself** (read from the two n8n workflows on
+2026-09-14, after Garreth switched on their MCP access). It is a job queue,
+`content_pipeline_jobs`, with five job types and three workers:
+
+| Step | Job type | Who runs it | Cadence |
+|---|---|---|---|
+| Import Virlo slideshows into `references_unified`; turn `source_discovery_evidence` rows into references and queue `media_enrich` | (none) | n8n "[Virlo] References → Story Finder Bridge" `O8RNjCtOR77d8WvA` | every 5 min |
+| Fetch media, transcript, images | `media_enrich` (243 done) | **a worker outside n8n, not on this Mac** | continuous, last run 2026-09-13 |
+| Slide-by-slide analysis into `reference_analysis` and `reference_beats` | `visual_analyze` (132 done, policy "cheap-chinese-image"), `video_analyze` (100 done) | same external worker | same |
+| Build and embed search documents into `carousel_search_documents` | `index_publish` (231 done) | n8n "PM Carousel Shared Analysis and Search" `yzDMPwIOrBJYXivh` | every minute |
+| Cluster story structure and opening layout into `angle_blueprints`, mark a blueprint replicated at 5 sources from 3 creators | `pattern_match` (217 done) | same n8n workflow | every 10 min |
+
+`source_discovery_evidence` is the front door: 247 rows so far (122 Virlo
+carousels, 100 Virlo short videos, 25 legacy backfill), every one linked to a
+reference. Anything inserted there with a `source_url`, `platform`,
+`source_format` and a `provider` becomes a reference and gets analysed
+without touching n8n. That is the hook the Trends page uses (§6.5).
+
+**A security finding from reading the bridge.** Its "Import Virlo References"
+code node carries the service-role keys of **both** Supabase projects as
+plain text in the script, rather than as n8n credentials. The developer
+handover admitted this in general terms; the specific node is now known. Any
+n8n editor can read them. They should move to n8n credentials (the other
+nodes in the same workflow already use one) and then be rotated. Not done in
+this session; it is a change to a live workflow and a key rotation, both
+Garreth's call.
+
 ### 2.7 The study digest is an email, not data
 
 "Daily Study Digest Email" in n8n is two nodes: a webhook and a Gmail send. It
@@ -495,10 +522,11 @@ carries links. When a digest lands, the Trends page's Analyse step:
 2. Checks each against `references_unified.source_url`. A link already in the
    library has slide-level or beat-level analysis waiting in
    `reference_analysis` and `reference_beats`. A link that is new is inserted
-   as a source so the existing carousel-search worker picks it up on its next
-   30-minute run; carousels get slide-by-slide analysis, and short videos are
-   already handled by that pipeline (all 100 short videos in the library are
-   analysed today).
+   into `source_discovery_evidence` with `provider = 'study_digest'` and the
+   digest id in `raw_evidence`; within five minutes the bridge workflow turns
+   it into a reference and queues `media_enrich`, the external worker
+   analyses it (carousels slide by slide, short videos already supported), and
+   the indexer publishes it to search (§2.6 table).
 3. Runs the pattern pass over the digest text plus the analyses of its linked
    posts, not over the text alone, and stores the result in
    `study_digests.analysis` with the reference ids it drew on.
@@ -799,12 +827,15 @@ Still open:
    never both render one row (`render_status`, `rendered_at`).
 2. **The `carousel-command-center` source** is recovered and reference-only
    (§2.4); nothing further needed.
-3. **MCP access for two n8n workflows** ("PM Carousel Shared Analysis and
-   Search", "[Virlo] References → Story Finder Bridge"). In n8n Cloud, open the
-   workflow, open its settings from the menu at the top right, switch on
-   "Available in MCP", and save. Until then §6.5 step 2 rests on the developer
-   handover's description of that worker, not on a read of it.
-4. **Czedrick's sign-in email** for `ALLOWED_EMAILS`. The address the n8n
+3. **Who runs the Phase 0 analysis worker?** The `media_enrich`,
+   `visual_analyze` and `video_analyze` jobs in `content_pipeline_jobs` are
+   processed by something that is not in n8n and not on Czed's Mac, and it
+   was active on 2026-09-13. Most likely the `search-worker.mjs` from the
+   developer handover, run by whoever wrote it. The Trends page depends on it
+   staying up; if it stops, new sources queue but are never analysed.
+4. **Move the two hardcoded service keys** in the bridge workflow's code node
+   into n8n credentials and rotate them (§2.6).
+5. **Czedrick's sign-in email** for `ALLOWED_EMAILS`. The address the n8n
    digests go to is the likely one; confirm before adding.
 
 ---
