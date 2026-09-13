@@ -1,0 +1,21 @@
+/* Peptide Miracles Dashboard fonts.
+   General Sans (Fontshare, ITF Free Font License, see assets/fonts/GeneralSans-LICENSE.txt):
+   the same self-hosted variable file the app ships, one file covering 200–700.
+   Geist Mono comes from Google Fonts, so it needs a network connection. */
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap");
+
+@font-face {
+  font-family: "General Sans";
+  src: url("../assets/fonts/GeneralSans-Variable.woff2") format("woff2");
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* One family throughout; there is no second display face. The app points these
+   at a next/font variable; here they name the family directly. */
+:root {
+  --font-sans: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+}

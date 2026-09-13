@@ -1,0 +1,40 @@
+/* Peptide Miracles Dashboard type ramp.
+   The app builds these from Tailwind utilities; this restates the ramp in
+   pm-dashboard/docs/DESIGN-TOKENS.md §3 as shorthand tokens and classes.
+   10px is the floor: if something must be smaller to fit, the layout is wrong.
+   Every number also carries .tnum (tabular figures). */
+
+:root {
+  --text-page-title: 600 20px/28px var(--font-display);
+  --text-section: 600 16px/24px var(--font-display);
+  --text-card-title: 500 14px/20px var(--font-sans);
+  --text-card-title-phone: 500 16px/24px var(--font-sans);
+  --text-sub: 600 14px/20px var(--font-sans);
+  --text-overline: 600 12px/16px var(--font-sans);
+  --text-control: 500 12px/16px var(--font-sans);
+  --text-body: 400 14px/20px var(--font-sans);
+  --text-secondary: 400 12px/16px var(--font-sans);
+  --text-hint: 400 11px/15px var(--font-sans);
+  --text-micro: 600 10px/14px var(--font-sans);
+
+  --tracking-display: -0.02em; /* page titles and section headings only */
+  --tracking-overline: 0.025em;
+}
+
+.t-page-title { font: var(--text-page-title); letter-spacing: var(--tracking-display); }
+.t-section { font: var(--text-section); letter-spacing: var(--tracking-display); }
+
+/* A step larger on a phone: at 14px the card's own name was quieter than
+   everything inside it, so a scrolling reader lost track of which card they were in. */
+.t-card-title { font: var(--text-card-title-phone); color: var(--text-muted); }
+@media (min-width: 640px) {
+  .t-card-title { font: var(--text-card-title); }
+}
+
+.t-sub { font: var(--text-sub); }
+.t-overline { font: var(--text-overline); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--text-muted); }
+.t-control { font: var(--text-control); }
+.t-body { font: var(--text-body); }
+.t-secondary { font: var(--text-secondary); }
+.t-hint { font: var(--text-hint); }
+.t-micro { font: var(--text-micro); }

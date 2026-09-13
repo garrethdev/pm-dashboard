@@ -1,0 +1,26 @@
+/* Peptide Miracles Dashboard space and radius.
+   Tailwind's 4px scale; only the steps the dashboard actually uses, named in px.
+   Radius values match --radius-card / --radius-nested in globals.css @theme. */
+
+:root {
+  --space-2: 2px;   /* 0.5: segmented track padding, pill vertical padding */
+  --space-4: 4px;   /* 1: icon-to-label gap, chip internals */
+  --space-8: 8px;   /* 2: control gaps */
+  --space-10: 10px; /* 2.5: pill horizontal padding, nav row gap */
+  --space-12: 12px; /* 3: card-to-card gap on every page */
+  --space-14: 14px; /* 3.5: search field and dropdown horizontal padding */
+  --space-16: 16px; /* 4: button horizontal padding, header column gap */
+  --space-20: 20px; /* 5: card padding, title-to-content gap */
+  --space-24: 24px; /* 6: page padding, dialog padding */
+
+  --gap-card: var(--space-12);
+  --pad-card: var(--space-20);
+  --pad-page: var(--space-24);
+
+  /* The nesting rule: 24 outside, 16 inside, pill for anything you click. */
+  --radius-card: 24px;     /* cards and dialogs */
+  --radius-nested: 16px;   /* notices, dropdown panels, steppers, tooltips, skeletons, nav rows */
+  --radius-pill: 999px;    /* every control */
+  --radius-nav-icon: 10px; /* the nav icon square */
+  --radius-bar: 4px;       /* the barcode bar */
+}

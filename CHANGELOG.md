@@ -20,7 +20,136 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## 2026-09-12 (latest) — Charts are documented, and their last two hardcoded colours are gone
+## 2026-09-13 (latest) — Claude Design now has the dashboard's components
+
+**Garreth's go-ahead, 2026-09-13.** This is the second step, which the entry
+below left for later. Claude Design already had the colours, type and spacing;
+now it has the building blocks too, so designs made there use the dashboard's
+real cards, buttons and pills instead of lookalikes.
+
+### What was added to Claude Design
+
+Twenty components, carried over from `src/components/ui/`:
+
+- **Cards:** `Card` and `DashCard`, the section card every page is built from.
+- **Buttons:** `CtaButton`, `HoldButton`, `Button` (secondary and ghost), `ExtendButton` and `SortButton`.
+- **Pills and filters:** `StatusPill`, `FilterPills` and `FilterChips`.
+- **Forms:** `SearchInput`, `Dropdown` and `Stepper`.
+- **Feedback:** `Tooltip`, `StaleNotice` and the loading skeletons.
+- **Data:** `BarcodeBar`.
+- **Identity:** `Avatar`, the atom mark, the TikTok and Instagram glyphs, and
+  `Icon` with all 65 of the app's icons.
+
+Each one comes with a description of its options and a short usage note that
+carries the dashboard's rules, such as one `CtaButton` per screen and no warning
+text above a `HoldButton`. There are also eight preview cards showing them.
+
+Claude Design can't run Tailwind or the app's Next.js code, so each component
+was rewritten as plain React with its styles gathered into one stylesheet.
+
+### Where the copies differ from the app
+
+- **`CtaButton` has no moving shine.** In the app, a streak of light follows the
+  pointer around the button, drawn in WebGL. Here the rim brightens on hover.
+  Colours, shape and size match.
+- **`Button` is new as a named component.** In the app, secondary and ghost
+  buttons are written out as class strings wherever they are used. Here they
+  follow the recipe in `docs/DESIGN-TOKENS.md` under one name.
+- **Controls work on their own.** `FilterPills`, `SearchInput`, `Stepper` and
+  `Dropdown` keep their own state when nothing is wired to them, so they can be
+  clicked in a mock.
+- **Left out on purpose:** `SectionStub`, which is temporary scaffolding, and
+  `SideRays`, the login-screen decoration.
+
+### In the repo: `scripts/claude-design/` grew
+
+- `static/components/` holds the rewritten components.
+- `build.mjs` now generates the icons, the atom mark and the platform glyphs
+  straight from the app's source files. That was prompted by a mistake: the
+  first attempt copied the logo's shape data by hand, it came out wrong, and it
+  was thrown away before anything was uploaded.
+- `verify.mjs` now also checks the components, and `build.mjs --preview` makes
+  the component cards viewable locally before an upload.
+
+**A new upkeep cost.** The components are copies. When one changes in
+`src/components/ui/`, its copy in `scripts/claude-design/static/components/` has
+to be updated by hand, and nothing flags it if that is forgotten. The icons and
+marks are the exception, because they are regenerated on every build.
+
+**Nothing the dashboard renders changed.**
+
+**How far this was checked.**
+
+- `verify.mjs` passes. All 80 token values still match. The components contain
+  no raw colours or pixel values, every style class and icon name they use
+  exists, and the logo and platform shapes match the app exactly.
+- The code checker (lint) is clean.
+- Every component card was rendered in Chrome and looked at, including a hold
+  button, an open dropdown and an avatar falling back after its photo failed to
+  load.
+- All 72 files uploaded.
+
+**Not yet confirmed:** that Claude Design has picked the components up. It
+builds its own list of components itself, and straight after the upload that
+list was still empty. Opening the project should show a Components section. If
+it doesn't, that is the first thing to look at.
+
+---
+
+## 2026-09-13 — The design system now has a copy in Claude Design
+
+**Garreth's decision, 2026-09-13.** Design work is moving to a loop: plan in
+Claude Code, design in Claude Design (claude.ai/design), then build it back here.
+Claude Design can only design things that match the dashboard once it knows
+what the dashboard looks like, so step one was loading the design system into it.
+Garreth scoped it to **the design system only, with no page designs yet.**
+
+### What was set up in Claude Design
+
+A new project, **Peptide Miracles Dashboard**, now holds:
+
+- every colour and material value (glass, glow, shadow) in dark and light mode,
+  plus the type ramp, spacing and radius;
+- the same General Sans font file the app uses;
+- 11 preview cards: surfaces and text, accent, semantic colours, status pills,
+  chart colours, glass and glow, cards and shadow, type ramp, numbers, spacing,
+  and radius;
+- a guide covering the rules no colour value can hold: cyan about once per
+  screen, no instruction text, TikTok is cyan and Instagram is blue, and 24
+  outside, 16 inside, pill for anything you click.
+
+Components are not in it yet. Carrying them over is a separate, later step,
+because each one has to be rewritten without Tailwind before Claude Design can use it.
+
+### New in the repo: `scripts/claude-design/`
+
+The scripts that built that copy, saved so the next token change can be sent
+without rebuilding them from scratch. `build.mjs` reads `globals.css` directly,
+so no value is retyped. `verify.mjs` fails and names the problem if anything in
+the copy disagrees with the app. The folder's `README.md` has the three re-send
+steps. The build output goes to `dist/`, which git ignores.
+
+`globals.css` is still the source of truth. Claude Design is a copy of it, the
+same as `docs/design-system.html` and `docs/DESIGN-TOKENS.md`. The difference is
+that `npm test` does not check the Claude Design copy. It gets checked by
+`verify.mjs` each time it is re-sent.
+
+**Nothing the dashboard renders changed.**
+
+**How far this was checked.** Before uploading, `verify.mjs` confirmed that all
+40 dark and 40 light values match `globals.css`. Every preview card was
+screenshotted, and three were fixed. The radius samples all looked like circles.
+The numbers card compared two columns that looked identical, because General
+Sans already draws its digits at equal width. The third card had spare empty
+space. After uploading, the project's file list showed all 22 files, and the
+colour file read back intact. The scripts were then run again from their new
+place in the repo; they pass and produce files identical to what was uploaded.
+**Not yet done:** looking at the cards inside Claude Design's own Design System
+tab. The screenshots were taken locally.
+
+---
+
+## 2026-09-12 — Charts are documented, and their last two hardcoded colours are gone
 
 **From the design-system handover.** Charts were the one part of the dashboard
 the design system said nothing about, and they were also the last place a colour

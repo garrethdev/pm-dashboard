@@ -1,0 +1,72 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Data" subtitle="Inventory bars coloured by state, and the table pattern with tabular numbers" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; padding: 20px; }
+  .lbl { margin: 0 0 8px; font: 600 10px/14px var(--font-sans); letter-spacing: 0.025em; text-transform: uppercase; color: var(--text-muted); }
+  .bars { display: grid; gap: 10px; margin-bottom: 22px; }
+  .bar { display: grid; grid-template-columns: 170px 1fr 40px; align-items: center; gap: 12px; }
+  .tbl { width: 100%; border-collapse: collapse; font: 400 14px/20px var(--font-sans); }
+  .tbl th { padding: 0 16px 8px 0; text-align: left; font: 500 12px/16px var(--font-sans); color: var(--text-muted); }
+  .tbl td { padding: 10px 16px 10px 0; border-top: 1px solid var(--border); }
+  .tbl .num { padding-right: 0; text-align: right; }
+  .who { display: flex; align-items: center; gap: 10px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { BarcodeBar, StatusPill, SortButton, Avatar } = window.PeptideMiraclesDashboard_26e60f;
+  const lanes = [
+    ["Cleora · carousel", 82, "ok", "11d"],
+    ["Char 5 · question", 55, "accent", "7d"],
+    ["Cleora ASMR · video", 30, "warn", "4d"],
+    ["Char 3 · before-after", 8, "danger", "1d"],
+  ];
+  const accounts = [
+    ["Profile 60", "ok", "Active", "48,904"],
+    ["Profile 59", "warn", "Throttled", "7,210"],
+    ["Profile 62", "critical", "Shadowbanned", "1,111"],
+  ];
+  function Demo() {
+    return (
+      <>
+        <div className="lbl">Inventory</div>
+        <div className="bars">
+          {lanes.map(([name, pct, tone, left]) => (
+            <div className="bar" key={name}>
+              <span className="t-secondary" style={{ color: "var(--text-muted)" }}>{name}</span>
+              <BarcodeBar pct={pct} tone={tone} />
+              <span className="t-body tnum" style={{ textAlign: "right" }}>{left}</span>
+            </div>
+          ))}
+        </div>
+        <div className="lbl">Table</div>
+        <table className="tbl">
+          <thead>
+            <tr><th>Account</th><th>Status</th><th className="num"><SortButton label="Views" active dir="desc" /></th></tr>
+          </thead>
+          <tbody>
+            {accounts.map(([name, tone, label, views]) => (
+              <tr key={name}>
+                <td><span className="who"><Avatar src={null} size={28} />{name}</span></td>
+                <td><StatusPill tone={tone}>{label}</StatusPill></td>
+                <td className="num tnum">{views}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body>
+</html>
