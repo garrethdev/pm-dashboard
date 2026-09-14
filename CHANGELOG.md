@@ -20,7 +20,100 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## 2026-09-14 (latest) — The sidebar now says "Carousel Generator"
+## 2026-09-14 (latest) — Carousel Generator: the flows, the template, and the Phase 0 checks
+
+**Garreth's request, 2026-09-14: get the Phase 0 and Phase 1 items of the
+generator plan done.** Phase 1 is design only, by Garreth's rule, so nothing
+the dashboard does has changed and no screen looks different. What changed is
+the paperwork the build will follow.
+
+**Added:**
+
+- `docs/CAROUSEL-GENERATOR-FLOWS.md`: every journey through the generator,
+  step by step (making a batch, reviewing it, rendering, resuming, running it
+  again, editing a direction, the image library, making and editing a
+  template, wiring a new content type, study digests). Each says which button
+  is the main one, what needs a press-and-hold, what the empty screens are
+  and what the person sees when something fails. It is a draft for sign-off;
+  its last section lists the answers it needs.
+- `docs/carousel-templates/`: Glow Up and Covered Eye written down as data
+  instead of as Python, with `docs/CAROUSEL-TEMPLATE-MODEL.md` explaining the
+  format. This is the contract the new painter and the studio will both be
+  built to.
+- `scripts/carousel-templates/verify.mjs`: compares every number in those two
+  files with the Python painters' formulas and the 102 live Glow Up decks.
+  **All 134 checks pass**, and it was confirmed to fail when a number is
+  changed, so it will catch a template that drifts.
+
+**Checked and written into the plan (`docs/CAROUSEL-GENERATOR-PLAN.md`):**
+
+- **One table per content type works as decided.** The Posting Agent, the
+  Smart Scheduler and Inventory were checked by reading their live
+  definitions, not by running anything. None of them needs changing for a new
+  lane beyond the steps the wiring runbook already lists.
+- **Two corrections:** Glow Up deck ids are `GU-153` style, not the format the
+  plan guessed; and Glow Up's `slide_1` to `slide_6` text columns are empty,
+  so the plan no longer says to fill them. The port spec also said the old
+  painter writes slides 1 to 8; it writes 1 to 7.
+
+**Found, and not changed (each is Garreth's call):**
+
+- **Supabase keys sit as plain text in more n8n workflows than we knew.** The
+  plan had flagged the Virlo bridge; the Posting Agent and the Smart Scheduler
+  carry them too. The keys should move into n8n's credential store before any
+  of them is rotated, or posting stops.
+- **52 Glow Up decks have a closing line in the database that was never on
+  the posted slide.** Every one of the 102 recent decks was painted with the
+  same fixed closing line; one batch's column holds a different, AI-written
+  line. The posts are fine; the column is misleading.
+- **There is no Anthropic key in the local settings**, and the Vercel settings
+  could not be checked from this Mac. The generator needs one before Phase 2.
+- **Czedrick is not yet on the sign-in list.** The likely address is the one
+  the Smart Scheduler already emails, and it needs confirming first.
+
+**Garreth's answers, later the same day, now written into the documents:**
+
+- **A finished deck is called "Generated".** The plan had said "Ready", which
+  already means *scheduled for today* elsewhere in the dashboard.
+- **Glow Up's closing line is always the fixed one.** The template enforces
+  it, and the check script now tests it too (135 checks, all passing).
+- **Covered Eye's slide 1 is the hook**, so the hook column will always hold
+  the same text.
+- **The writer may pick any song on TikTok or Instagram.** Our posting system
+  can only attach songs that are in the music library, so a new song is looked
+  up on both platforms and added to the library before its deck is handed off
+  (flow F14). A live test showed the lookup has to check each post's actual
+  sound rather than its caption. An Instagram reel checked out correctly. The
+  first TikTok video captioned "Karma - Summer Walker" turned out to be a
+  re-upload using its creator's own sound. No genuine TikTok match came up in
+  that one test, so the TikTok half is designed but not yet proven.
+- **The music library itself needs attention:** 26 of its 76 active songs lack
+  a proper Instagram link (11 have no links at all, 15 have a TikTok link
+  where the Instagram one belongs). The proposal is that the lookup repairs
+  each one when a deck chooses it.
+
+**And a second round of answers, the same evening:**
+
+- **The music lookup checks up to 5 posts on each platform.** If none of them
+  carries the right song, the deck is flagged for a person and is not handed
+  off.
+- **New content types are wired through a reviewed database function**, never
+  a direct database connection, so every table the app creates follows one
+  checked definition.
+- **Where the music lookup sits.** Garreth's "wiring workflow" meant wiring
+  new content types, so the lookup is now a named step of that wiring. It also
+  runs on every deck the generator makes, Glow Up and Covered Eye included.
+  Those lanes' past batches were made outside one pipeline, which is how songs
+  were picked without working links; the generator exists so that gap cannot
+  reopen.
+
+With these, the flows have nothing left to decide before the screens are
+designed.
+
+**Not done yet:** the screen designs, which come after the flows are signed
+off.
+
+## 2026-09-14 — The sidebar now says "Carousel Generator"
 
 **Garreth's instruction, 2026-09-14, at the start of planning the generator.**
 The greyed-out item under *Content* in the left sidebar was labelled "Generate"

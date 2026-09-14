@@ -316,6 +316,14 @@ nodes in the same workflow already use one) and then be rotated. Not done in
 this session; it is a change to a live workflow and a key rotation, both
 Garreth's call.
 
+**Wider than one workflow (found 2026-09-14, during the Phase 0 check).** The
+`[Unified] Posting Agent` carries this project's legacy service-role key as
+plain text in five of its HTTP nodes, and the `[Unified] Smart Scheduler`
+carries a secret key in its code node (runbook §9 already noted that one).
+Rotating a key before every workflow that uses it has moved to credentials
+would stop posting, so the order is: sweep every workflow, move each to n8n
+credentials, publish, and only then rotate.
+
 ### 2.7 The study digest is an email, not data
 
 "Daily Study Digest Email" in n8n is two nodes: a webhook and a Gmail send. It
@@ -465,7 +473,7 @@ Each deck passes through, and each is visible as a pill on its card:
    field. **Approve means the generated copy is accepted, nothing more.**
 4. **Rendered.** The painter has produced every slide and the URLs are on the
    lane row.
-5. **Handed off.** The lane row exists with art, caption and music, with
+5. **Generated.** (Named by Garreth, 2026-09-14; first called Handed off.) The lane row exists with art, caption and music, with
    `gatekeep_status = 'pending'` and `scheduler_ready = false`. Gatekeeping
    and everything after it happen outside this app, exactly as today
    (Garreth's decision, 2026-09-14). The generator never writes
@@ -616,6 +624,31 @@ showing the new lane's row count. The n8n MEDIA entry and the cadence
 rebalance stay human steps, with the cadence editor that already exists in the
 dashboard linked from the wiring screen.
 
+**Verified 2026-09-14 (Phase 1).** Option A was checked by reading the live
+definitions of everything downstream. Nothing assumes a fixed list of tables
+except the two hand-wired views and the Smart Scheduler's media map, all of
+which the runbook already covers:
+
+- `unified_posts` (22 content types) and `v_scheduler_pool` (17) are
+  hand-written, one block per lane table. A new table needs one block in each.
+- `inventory_check` reads only `v_scheduler_pool` and `v_new_account_demand`.
+  `inventory_rollup`, `v_scheduler_production_order` and `content_type_score`
+  read the registry and those views. None reads a lane table directly (the
+  production order also reads `filler_contents`, for filler only).
+- The Posting Agent reads `unified_posts_due` (built on `unified_posts`, the
+  registry and `accounts`) and writes back to whichever `source_table` and
+  `source_id_column` the registry names. It is fully registry-driven.
+- The Smart Scheduler reads the registry and queries each `source_table` by
+  name. Its only hardcoded lists are `MEDIA` and `CAPCOL` (runbook §9).
+
+So one table per type works with no change to any consumer beyond the
+runbook's steps. The flow is F11 in `docs/CAROUSEL-GENERATOR-FLOWS.md`.
+
+**Decided 2026-09-14 (Garreth):** the app creates a lane through a reviewed
+database function that builds the standard shape, never through a direct
+database connection. Wiring also confirms every first-batch track's TikTok
+and Instagram sources (flow F14) before any deck is written to the new table.
+
 ---
 
 ## 5. Data model
@@ -655,10 +688,13 @@ row's id back on the draft (`generation_metadata.lane_row_id`). The lane row is
 what the scheduler, poster, inventory and analytics already read. Nothing
 downstream learns about briefs or drafts.
 
-Glow Up row from a draft: `carousel_id` (`GLW-<batch>-<n>`, same convention as
-today's rows, verify against the last batch first), `hook`, `hook_text`,
-`before_line`, `transition_line`, `after_line`, `tip_face`, `tip_stomach`,
-`tip_waist`, `quiz_line`, `slide_1..6`, `caption`, `music`, `pillar =
+Glow Up row from a draft (checked against the live rows 2026-09-14; the exact
+mapping is `lane` and `copy_contract` in `docs/carousel-templates/glowup.v1.json`):
+`carousel_id` (`GU-<n>`; the highest today is `GU-153`), `deck_key`, `hook`,
+`hook_text`, `before_line`, `after_line`, `tip_face`, `tip_stomach`,
+`tip_waist`, `quiz_line`, `caption`, `music` (`transition_line` and the
+`slide_1..6` text columns are drawn on no slide; see
+`docs/CAROUSEL-TEMPLATE-MODEL.md` §4), `pillar =
 'glowup_carousel'`, `character = 'char2'`, `batch`, `render_set`,
 `render_manifest`, `render_status = 'queued'` (**not** `'ready'`: the Mac
 painter selects `'ready'`, and `'queued'` is a value no Python script reads,
@@ -811,7 +847,7 @@ CTA. Submitting creates the brief and redirects to the batch page.
 **Batch page** while generating: a grid of deck cards, one per requested deck,
 filling in as each returns. A card shows the hook large, the slides as a
 numbered list of copy, the caption, the music suggestion, and the gate pill
-(Written / Flagged with the reason / Approved / Rendered / Ready). A progress
+(Written / Flagged with the reason / Approved / Rendered / Generated). A progress
 line at the top: "7 of 20 written". No spinner per card; the empty card is the
 loading state, and the copy arriving is the feedback.
 
@@ -822,7 +858,7 @@ batch, so they do not animate. Discard is a `HoldButton`.
 
 **Batch actions:** Approve all unflagged, Render approved. Render is the CTA
 once anything is approved. Rendering fills in slide thumbnails on the card
-as they land. When every approved deck is Ready, the page says how many
+as they land. When every approved deck is Generated, the page says how many
 pieces went into the pool and links to Inventory.
 
 **Empty and failed:** the three empty states from the design system (first
@@ -978,6 +1014,17 @@ them. Garreth confirms or changes this order in §10, item 11.
 - Move the two hardcoded service keys in the bridge workflow into n8n
   credentials and rotate them (§2.6).
 
+**Status, checked 2026-09-14.** Nothing in Phase 0 was changed; these are the
+findings for Garreth to act on.
+
+| Item | Finding |
+|---|---|
+| Anthropic key | **Not in `.env.local`.** Vercel's variables could not be read from this Mac (no Vercel CLI). No Anthropic library is installed yet, which is expected before Phase 2. |
+| Supabase service role | Present in `.env.local`. |
+| Czedrick in `ALLOWED_EMAILS` | Not added. The likely address is the one the Smart Scheduler already emails its alerts to, `czedrickjhake.cc@gmail.com`; confirm it is the address Czedrick signs in with. |
+| Hardcoded keys | Wider than the bridge: the Posting Agent and the Smart Scheduler carry keys too (§2.6). Sweep, move, publish, then rotate. |
+| Open questions | §10 items 3 (analysis worker), 4 (keys) and 5 (email) are still open. Item 1c (music) was answered the same day. |
+
 ### Phase 1 — flows and designs, finalised (no feature code)
 
 Garreth's instruction, 2026-09-14: nothing is developed until the flows and
@@ -1012,6 +1059,15 @@ designs are final.
 - **Done when:** Garreth has signed off every flow and every screen, and the
   template JSON for Glow Up and Covered Eye reproduces the port spec.
 
+**Progress, 2026-09-14.**
+
+| Deliverable | State |
+|---|---|
+| Flows | Drafted: `docs/CAROUSEL-GENERATOR-FLOWS.md`, 13 flows and the screen inventory. Awaiting sign-off; its §4 lists the answers needed. |
+| Template model | Written: `docs/CAROUSEL-TEMPLATE-MODEL.md` and `docs/carousel-templates/*.v1.json`. `scripts/carousel-templates/verify.mjs` confirms both reproduce their Python painters (134 checks). Four questions in its §5. |
+| Wiring decision | Verified; see §4.8. |
+| Screens | Not started. They are designed from the flows once the flows are signed off. |
+
 ### Phase 2 — the middle: templates, generic painter, batch generation
 
 - Migrations: the brief columns and status additions (§5.1),
@@ -1019,7 +1075,7 @@ designs are final.
   `v_image_assets`; the two imported templates inserted from the port spec.
 - The generic painter (§4.6): SVG text layer with stroke, sharp composition,
   bundled fonts (Liberation Sans Bold, Inter Bold, Noto Color Emoji), atomic
-  row claims (port spec §C.3), upload retries, a vision QA pass before Ready.
+  row claims (port spec §C.3), upload retries, a vision QA pass before Generated.
 - Lanes and content-type pages (§6.1, §6.7), Generate and batch review
   (§6.2), History with Run again and Continue (§6.3), Library read-only over
   the two banks (§6.8), the standing direction as a plain editor.
@@ -1096,6 +1152,12 @@ Still open:
    heuristic over `music_library` (prefer Sade-tagged tracks for emotionally
    loaded hooks), not the n8n Music Recommender the plan assumed. Confirm the
    generator should call the recommender for both lanes.
+   **Answered by Garreth, 2026-09-14:** neither. The writer chooses any track
+   available on TikTok or Instagram. A track not in `music_library` has its
+   TikTok video and Instagram reel found first and is added to the library
+   before the deck is handed off, because the Posting Agent attaches music
+   only from the library. Flow F14 in `docs/CAROUSEL-GENERATOR-FLOWS.md`,
+   including a live test of the lookup.
 2. **The `carousel-command-center` source** is recovered and reference-only
    (§2.4); nothing further needed.
 3. **Who runs the Phase 0 analysis worker?** The `media_enrich`,
@@ -1104,10 +1166,12 @@ Still open:
    was active on 2026-09-13. Most likely the `search-worker.mjs` from the
    developer handover, run by whoever wrote it. The Trends page depends on it
    staying up; if it stops, new sources queue but are never analysed.
-4. **Move the two hardcoded service keys** in the bridge workflow's code node
-   into n8n credentials and rotate them (§2.6).
-5. **Czedrick's sign-in email** for `ALLOWED_EMAILS`. The address the n8n
-   digests go to is the likely one; confirm before adding.
+4. **Move the hardcoded service keys** into n8n credentials and rotate them:
+   the bridge workflow's code node, and also the Posting Agent and the Smart
+   Scheduler (found 2026-09-14, §2.6). Move all of them before rotating.
+5. **Czedrick's sign-in email** for `ALLOWED_EMAILS`. The Smart Scheduler
+   emails its alerts to `czedrickjhake.cc@gmail.com`, the likely one; confirm
+   before adding.
 
 Added 2026-09-14 with the widened scope:
 

@@ -257,8 +257,9 @@ seeded from `deck_key` is fine.
 Does not write `rendered_at`, which no Python script writes, so the in-app
 painter can own that column.
 
-**Bug to fix, not port:** the URL range is hardcoded 1..8 regardless of slide
-count (`:158`). Write only the slides painted.
+**Bug to fix, not port:** the URL range is hardcoded to slides 1..7
+(`range(1, 8)`) regardless of slide count (`:158`; corrected 2026-09-14, this
+line first said 1..8). Write only the slides painted.
 
 ### B.3 Where the three Glow Up generations disagree
 
@@ -389,7 +390,7 @@ it.**
 
 - Covered Eye slot re-numbering when a slide has no image (`:519-521`, `:561`).
 - Covered Eye `--mark-rendered` writing raw bank URLs (`:588-591`).
-- Glow Up URL range hardcoded 1..8 (`paint_manifest.py:158`).
+- Glow Up URL range hardcoded to 1..7 (`paint_manifest.py:158`).
 - Glow Up QUIZ CTA wording drift between `make_glowup_decks.py:17` and the
   rules file.
 - Glow Up datestamp hardcoded in `make_glowup_decks.py:157`.

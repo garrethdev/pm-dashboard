@@ -1,0 +1,238 @@
+{
+  "schema": "pm.carousel-template/1",
+  "slug": "glowup",
+  "version": 1,
+  "status": "active",
+  "name": "Glow Up",
+  "character": "Character 2",
+  "content_type": "glowup",
+
+  "canvas": { "width": 1080, "height": 1440, "background": "#0C0A09" },
+  "output": { "format": "png", "bucket": "glowup-renders", "path": "{deck_key}/slide{n}.png" },
+  "fit": { "mode": "cover", "position": "centre", "resample": "bicubic", "exif_transpose": false },
+  "text_origin": "ascender",
+
+  "fonts": {
+    "caption": { "family": "Liberation Sans", "weight": 700, "file": "LiberationSans-Bold.ttf", "replaces": "Arial Bold" }
+  },
+
+  "text_styles": {
+    "caption": {
+      "font": "caption",
+      "fill": "#FFFFFF",
+      "stroke": { "width": 3, "color": "#000000" },
+      "shadow": { "kind": "hard", "dx": 2, "dy": 3, "blur": 0, "color": "#000000", "opacity": 1, "stroked": false },
+      "line_height": { "ratio": 1.2 },
+      "wrap": { "rule": "greedy_whitespace", "width": 928.8 },
+      "align": "center",
+      "emoji": null
+    },
+    "datestamp": {
+      "font": "caption",
+      "fill": "#FFFFFF",
+      "stroke": { "width": 3, "color": "#000000" },
+      "shadow": { "kind": "hard", "dx": 2, "dy": 3, "blur": 0, "color": "#000000", "opacity": 1, "stroked": false },
+      "line_height": { "px": 66 },
+      "wrap": { "rule": "explicit_newlines" },
+      "align": "right",
+      "emoji": null
+    }
+  },
+
+  "image_sources": {
+    "bank": {
+      "table": "glowup_image_bank",
+      "filter": { "status": "active" },
+      "tag": "pool, or pool:category",
+      "luminance_column": "luminance"
+    }
+  },
+
+  "slides": [
+    {
+      "n": 1,
+      "layout": "quad",
+      "cells": [
+        { "x": 0, "y": 0, "w": 540, "h": 720 },
+        { "x": 540, "y": 0, "w": 540, "h": 720 },
+        { "x": 0, "y": 720, "w": 540, "h": 720 },
+        { "x": 540, "y": 720, "w": 540, "h": 720 }
+      ],
+      "images": { "rule": "distinct", "pools": ["cover"] },
+      "text": [
+        { "role": "hook", "style": "caption", "size": 56, "anchor": { "kind": "block_centre_y", "at": 0.5 } }
+      ]
+    },
+    {
+      "n": 2,
+      "layout": "single",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1440 }],
+      "images": { "rule": "one", "pools": ["cover"] },
+      "text": [
+        { "role": "before_line", "style": "caption", "size": 48, "anchor": { "kind": "block_centre_y", "at": 0.5 } }
+      ]
+    },
+    {
+      "n": 3,
+      "layout": "quad",
+      "cells": [
+        { "x": 0, "y": 0, "w": 540, "h": 720 },
+        { "x": 540, "y": 0, "w": 540, "h": 720 },
+        { "x": 0, "y": 720, "w": 540, "h": 720 },
+        { "x": 540, "y": 720, "w": 540, "h": 720 }
+      ],
+      "images": {
+        "rule": "diagonal_pairs",
+        "body_pools": ["feature:face"],
+        "evidence_pools": ["evidence:water"]
+      },
+      "text": [
+        { "role": "tip_face", "style": "caption", "size": 50, "anchor": { "kind": "block_centre_y", "at": 0.5 } }
+      ]
+    },
+    {
+      "n": 4,
+      "layout": "quad",
+      "cells": [
+        { "x": 0, "y": 0, "w": 540, "h": 720 },
+        { "x": 540, "y": 0, "w": 540, "h": 720 },
+        { "x": 0, "y": 720, "w": 540, "h": 720 },
+        { "x": 540, "y": 720, "w": 540, "h": 720 }
+      ],
+      "images": {
+        "rule": "diagonal_pairs",
+        "body_pools": ["feature:stomach", "feature:waist", "body:abs"],
+        "evidence_pools": ["evidence:protein", "evidence:eggs", "evidence:greens", "evidence:meal_prep"]
+      },
+      "text": [
+        { "role": "tip_stomach", "style": "caption", "size": 48, "anchor": { "kind": "block_centre_y", "at": 0.5 } }
+      ]
+    },
+    {
+      "n": 5,
+      "layout": "quiz",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1440 }],
+      "images": { "rule": "one", "pools": ["quiz"] },
+      "text": [
+        { "role": "quiz_line", "style": "caption", "size": 44, "anchor": { "kind": "block_centre_y", "at": 0.13 } },
+        { "role": "quiz_cta", "style": "caption", "size": 40, "anchor": { "kind": "block_centre_y", "at": 0.9 } }
+      ]
+    },
+    {
+      "n": 6,
+      "layout": "quad",
+      "cells": [
+        { "x": 0, "y": 0, "w": 540, "h": 720 },
+        { "x": 540, "y": 0, "w": 540, "h": 720 },
+        { "x": 0, "y": 720, "w": 540, "h": 720 },
+        { "x": 540, "y": 720, "w": 540, "h": 720 }
+      ],
+      "images": {
+        "rule": "diagonal_pairs",
+        "body_pools": ["feature:waist", "body:abs", "body:gym"],
+        "evidence_pools": ["evidence:steps", "evidence:measure"]
+      },
+      "text": [
+        { "role": "tip_waist", "style": "caption", "size": 50, "anchor": { "kind": "block_centre_y", "at": 0.5 } }
+      ]
+    },
+    {
+      "n": 7,
+      "layout": "single",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1440 }],
+      "images": { "rule": "one", "pools": ["after", "body:gym"] },
+      "text": [
+        { "role": "after_line", "style": "caption", "size": 42, "anchor": { "kind": "block_centre_y", "at": 0.5 } },
+        { "role": "datestamp", "style": "datestamp", "size": 60, "anchor": { "kind": "stack_right", "right": 46, "top": 40 } }
+      ]
+    }
+  ],
+
+  "image_rules": {
+    "distinct": "One image per cell, drawn without replacement from the pools. If the pools run out, repeat rather than leave a cell empty.",
+    "one": "One image drawn from the union of the pools.",
+    "diagonal_pairs": {
+      "composition": "two body cells and two evidence cells",
+      "orders": [
+        ["body", "evidence", "evidence", "body"],
+        ["evidence", "body", "body", "evidence"]
+      ],
+      "order_choice": "either order with probability 0.5, so each matching pair sits on a diagonal",
+      "luminance_tolerance": 40,
+      "pair_rule": "Pick a random anchor; keep candidates within the tolerance; if none, take the nearest. Fewer than two candidates duplicates the one available. For the evidence pair, prefer a different category among in-tolerance candidates. Brightness is the hard rule, category variety the tiebreak."
+    },
+    "seed": "Any deterministic PRNG seeded from deck_key. Stability comes from persisting the chosen URLs in render_manifest, not from the seed."
+  },
+
+  "copy_contract": [
+    { "role": "hook", "columns": ["hook", "hook_text"], "writer": "ai", "max_chars": 65, "observed": { "p50": 32, "p95": 54, "max": 65 } },
+    {
+      "role": "before_line", "columns": ["before_line"], "writer": "per_batch",
+      "fixed": "4 years stuck. i didn't give up a single thing.",
+      "max_chars": 100, "observed": { "p50": 47, "p95": 76, "max": 100 }
+    },
+    { "role": "tip_face", "columns": ["tip_face"], "writer": "ai", "max_chars": 71, "observed": { "p50": 45, "p95": 57, "max": 71 } },
+    { "role": "tip_stomach", "columns": ["tip_stomach"], "writer": "ai", "max_chars": 61, "observed": { "p50": 44, "p95": 58, "max": 61 } },
+    { "role": "quiz_line", "columns": ["quiz_line"], "writer": "ai", "max_chars": 109, "observed": { "p50": 101, "p95": 101, "max": 109 } },
+    { "role": "tip_waist", "columns": ["tip_waist"], "writer": "ai", "max_chars": 68, "observed": { "p50": 42, "p95": 63, "max": 68 } },
+    {
+      "role": "after_line", "columns": ["after_line"], "writer": "fixed",
+      "decided": "Garreth, 2026-09-14: always the fixed closing line, as on every posted deck; the column holds what was painted",
+      "fixed": "honestly the peptide was the cheat code. it helped me keep the weight off. But I wouldn't change a thing..",
+      "max_chars": 113, "observed": { "p50": 106, "p95": 106, "max": 113 }
+    },
+    { "role": "quiz_cta", "columns": [], "writer": "fixed", "fixed": "comment the word QUIZ and I will send you the link" },
+    { "role": "datestamp", "columns": [], "writer": "per_batch", "format": "{Month}\\n{YYYY}", "stored_in": "render_manifest" },
+    { "role": "caption", "columns": ["caption"], "writer": "ai", "painted": false, "max_chars": 342, "observed": { "p50": 302, "p95": 331, "max": 342 } }
+  ],
+
+  "not_painted": {
+    "transition_line": "Filled on all 102 manifest_v2 decks, drawn on no slide.",
+    "slide_1..slide_6": "Empty on all 102 manifest_v2 decks. The painted copy lives in the named columns above."
+  },
+
+  "directions": {
+    "copy": null,
+    "caption": null,
+    "image": null,
+    "carried_from": "The Glow-Up Writer / Hook Maker n8n prompt and the Caption Maker's voice rules, copied in during Phase 2."
+  },
+
+  "music": {
+    "column": "music",
+    "writer": "ai, any track available on TikTok or Instagram (Garreth, 2026-09-14)",
+    "if_missing": "Before the lane row is written, find a TikTok video and an Instagram reel that use the track, confirmed from each post's own sound data, checking up to 5 posts per platform, and add it to music_library. If none matches, flag the deck for a person and do not hand it off. Flow F14 in docs/CAROUSEL-GENERATOR-FLOWS.md.",
+    "must_match": "An active music_library track, written as '{artist} - {title}'. The Posting Agent lower-cases and collapses spaces before matching.",
+    "why": "The registry marks carousels needs_music; the Posting Agent skips a row whose music label is not found."
+  },
+
+  "lane": {
+    "table": "glowup_decks",
+    "id": { "column": "carousel_id", "format": "GU-{n}", "highest_on_2026_09_14": 153 },
+    "render_key": { "column": "deck_key", "format": "glowup-{epoch_ms}-{k}" },
+    "batch": { "column": "batch", "live_examples": ["glowmax-reframe-2026-07-31-A", "glowmax-ydiw-2026-07-31-A"] },
+    "set_on_materialise": {
+      "pillar": "glowup_carousel",
+      "character": "char2",
+      "render_set": "glowup_v1",
+      "render_status": "queued",
+      "gatekeep_status": "pending",
+      "approved": false,
+      "scheduler_ready": false
+    },
+    "manifest": { "column": "render_manifest", "model": "manifest_v2" },
+    "claim": { "where": { "render_status": "queued" }, "set": { "render_status": "rendering" }, "key": "deck_key" },
+    "on_rendered": {
+      "url_columns": "slide_{n}_url, for the slides painted only",
+      "set": { "render_status": "rendered" },
+      "timestamp_column": "rendered_at"
+    },
+    "sweeper": { "from": "rendering", "to": "queued", "after_minutes": 10 }
+  },
+
+  "provenance": {
+    "imported_from": "paint_manifest.py and deck_rules.json (version 2026-07-31), glowup.zip, 2026-09-14",
+    "checked_against": ["docs/CAROUSEL-RENDERER-PORT-SPEC.md §B.2", "all 102 manifest_v2 rows in glowup_decks, 2026-09-14"],
+    "source_reference_id": null
+  }
+}

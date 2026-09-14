@@ -1,0 +1,179 @@
+{
+  "schema": "pm.carousel-template/1",
+  "slug": "covered-eye",
+  "version": 1,
+  "status": "active",
+  "name": "Covered Eye",
+  "character": "Character 3",
+  "content_type": "covered_eye_carousel",
+
+  "canvas": { "width": 1080, "height": 1920, "background": null },
+  "output": { "format": "jpeg", "quality": 92, "bucket": "covered-eye-images", "path": "renders/{carousel_id}/slide_{nn}.jpg" },
+  "fit": { "mode": "cover", "position": "centre", "resample": "lanczos", "exif_transpose": true },
+  "text_origin": "ascender",
+
+  "fonts": {
+    "caption": { "family": "Inter", "weight": 700, "file": "Inter-Bold.ttf", "replaces": "SF Pro (variable, Bold instance)" },
+    "emoji": { "family": "Noto Color Emoji", "file": "NotoColorEmoji.ttf", "replaces": "Apple Color Emoji" }
+  },
+
+  "text_styles": {
+    "caption": {
+      "font": "caption",
+      "fill": "#FFFFFF",
+      "stroke": { "width": 7, "color": "#000000" },
+      "shadow": { "kind": "soft", "dx": 5, "dy": 5, "blur": 19, "color": "#000000", "opacity": 0.6667, "stroked": false },
+      "line_height": { "px": 80 },
+      "wrap": { "rule": "greedy_whitespace", "width": 952 },
+      "align": "center",
+      "emoji": {
+        "font": "emoji",
+        "height_ratio": 1.0,
+        "advance_extra": 6,
+        "x_offset": 3,
+        "y_offset_ratio": 0.3,
+        "shadow_y_offset_ratio": 0,
+        "strip": ["U+FE0F"]
+      }
+    }
+  },
+
+  "image_sources": {
+    "bank": {
+      "table": "covered_eye_image_bank",
+      "filter": { "status": "active" },
+      "tag": "pool",
+      "cover_column": "is_cover"
+    }
+  },
+
+  "slides": [
+    {
+      "n": 1,
+      "layout": "single",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1920 }],
+      "images": { "rule": "one", "pools": ["slide1_selfie"], "prefer_cover": true },
+      "text": [
+        {
+          "role": "slide_1", "style": "caption", "size": 72,
+          "anchor": { "kind": "top", "y": 105 },
+          "quote": { "when_hook_type": ["Jealous Friend"], "open": "“", "close": "”" }
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "layout": "single",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1920 }],
+      "images": { "rule": "one", "pools": ["food"], "distinct_group": "food" },
+      "text": [{ "role": "slide_2", "style": "caption", "size": 72, "anchor": { "kind": "top", "y": 105 } }]
+    },
+    {
+      "n": 3,
+      "layout": "single",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1920 }],
+      "images": { "rule": "one", "pools": ["food"], "distinct_group": "food" },
+      "text": [{ "role": "slide_3", "style": "caption", "size": 72, "anchor": { "kind": "top", "y": 105 } }]
+    },
+    {
+      "n": 4,
+      "layout": "single",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1920 }],
+      "images": { "rule": "one", "pools": ["food"], "distinct_group": "food" },
+      "text": [{ "role": "slide_4", "style": "caption", "size": 72, "anchor": { "kind": "top", "y": 105 } }]
+    },
+    {
+      "n": 5,
+      "layout": "single",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1920 }],
+      "images": { "rule": "one", "pools": ["product"] },
+      "text": [
+        {
+          "role": "slide_5", "style": "caption", "size": 65,
+          "line_height": { "px": 72 },
+          "stroke": { "width": 6, "color": "#000000" },
+          "anchor": { "kind": "bottom", "margin": 105 }
+        }
+      ]
+    },
+    {
+      "n": 6,
+      "layout": "single",
+      "cells": [{ "x": 0, "y": 0, "w": 1080, "h": 1920 }],
+      "images": { "rule": "one", "pools": ["body"] },
+      "text": [{ "role": "slide_6", "style": "caption", "size": 72, "anchor": { "kind": "top", "y": 105 } }]
+    }
+  ],
+
+  "image_rules": {
+    "one": "One image drawn from the pools.",
+    "prefer_cover": "Restrict to is_cover = true; if that leaves nothing, fall back to the whole pool.",
+    "distinct_group": "Slides sharing a group never repeat an image within one deck, unless the pool is exhausted.",
+    "seed": "Any deterministic PRNG seeded from carousel_id. Chosen URLs are persisted before painting.",
+    "numbering": "Key everything off the original slide number. A slide with no image is an error on the card, never a silent renumber."
+  },
+
+  "copy_contract": [
+    {
+      "role": "slide_1", "beat": "hook", "columns": ["slide_1", "hook_text"], "writer": "ai",
+      "decided": "Garreth, 2026-09-14: slide 1 is the hook, so hook_text always holds the same text",
+      "max_chars": 86, "observed": { "p50": 50, "p95": 69, "max": 86 }
+    },
+    { "role": "slide_2", "beat": "judgment", "columns": ["slide_2"], "writer": "ai", "max_chars": 107, "observed": { "p50": 44, "p95": 87, "max": 107 } },
+    { "role": "slide_3", "beat": "truth", "columns": ["slide_3"], "writer": "ai", "max_chars": 187, "observed": { "p50": 39, "p95": 135, "max": 187 } },
+    { "role": "slide_4", "beat": "confession", "columns": ["slide_4"], "writer": "ai", "max_chars": 170, "observed": { "p50": 47, "p95": 129, "max": 170 } },
+    { "role": "slide_5", "beat": "discovery, brand named once", "columns": ["slide_5"], "writer": "ai", "max_chars": 226, "observed": { "p50": 62, "p95": 196, "max": 226 } },
+    { "role": "slide_6", "beat": "resolution", "columns": ["slide_6"], "writer": "ai", "max_chars": 128, "observed": { "p50": 31, "p95": 81, "max": 128 } },
+    {
+      "role": "hook_type", "columns": ["hook_type"], "writer": "ai", "painted": false,
+      "values": ["Validation", "Question", "Jealous Friend", "POV", "Open Loop", "Reframe", "What I Eat"]
+    },
+    { "role": "peptide_angle", "columns": ["peptide_angle"], "writer": "ai", "painted": false },
+    { "role": "caption", "columns": ["caption"], "writer": "ai", "painted": false, "max_chars": 1446, "observed": { "p50": 298, "p95": 1146, "max": 1446 } }
+  ],
+
+  "directions": {
+    "copy": null,
+    "caption": null,
+    "image": null,
+    "carried_from": "The Covered Eye n8n scriptwriter's five-beat prompt and the Caption Maker's voice rules, copied in during Phase 2."
+  },
+
+  "music": {
+    "column": "music",
+    "writer": "ai, any track available on TikTok or Instagram (Garreth, 2026-09-14)",
+    "if_missing": "Before the lane row is written, find a TikTok video and an Instagram reel that use the track, confirmed from each post's own sound data, checking up to 5 posts per platform, and add it to music_library. If none matches, flag the deck for a person and do not hand it off. Flow F14 in docs/CAROUSEL-GENERATOR-FLOWS.md.",
+    "must_match": "An active music_library track, written as '{artist} - {title}'. The Posting Agent lower-cases and collapses spaces before matching.",
+    "why": "The registry marks carousels needs_music; the Posting Agent skips a row whose music label is not found."
+  },
+
+  "lane": {
+    "table": "covered_eye_carousel",
+    "id": { "column": "carousel_id", "format": "CE-{n}", "highest_on_2026_09_14": 240 },
+    "batch": { "column": "batch", "live_examples": ["covered-eye-selflove-q-2026-08-13"] },
+    "set_on_materialise": {
+      "pillar": "covered_eye",
+      "status": "scripted",
+      "gatekeep_status": "pending",
+      "approved": false,
+      "scheduler_ready": false
+    },
+    "claim": {
+      "where": { "status": "scripted", "rendered_at": null },
+      "set": { "status": "rendering" },
+      "key": "carousel_id"
+    },
+    "on_rendered": {
+      "url_columns": "slide_{n}_url, always pointing at the captioned render",
+      "set": { "status": "rendered" },
+      "timestamp_column": "rendered_at"
+    },
+    "sweeper": { "from": "rendering", "to": "scripted", "after_minutes": 10 }
+  },
+
+  "provenance": {
+    "imported_from": "covered_eye_carousel.py, covered_eye.zip, 2026-09-14",
+    "checked_against": ["docs/CAROUSEL-RENDERER-PORT-SPEC.md §B.1", "covered_eye_carousel rows and covered_eye_image_bank, 2026-09-14"],
+    "source_reference_id": null
+  }
+}
