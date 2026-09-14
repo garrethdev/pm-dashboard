@@ -31,7 +31,7 @@ the brain's decision, the painter paints the manifest literally.
 | `text_origin` | Always `ascender` for the imported templates. See §2, rule 1. |
 | `fonts` | Named font files, each recording the macOS font it stands in for. |
 | `text_styles` | Named styles: fill, stroke, shadow, line height, wrap, alignment, emoji handling. |
-| `image_sources` | Where images come from (today, the two bank tables). |
+| `image_sources` | Where images come from (today, the two bank tables). From Phase 2 this is the image library the content type points at, and the pools are its groups (`CAROUSEL-GENERATOR-PLAN.md` §5.3). |
 | `slides[]` | `n`, a `layout` label, `cells[]` as pixel rectangles, an `images` rule, and `text[]` boxes. A text box names a `role`, a `style`, a `size` and an `anchor`, and may override any field of its style. |
 | `image_rules` | What each `images.rule` means, in words the painter's author implements. |
 | `copy_contract[]` | Every role the writer fills: which lane columns it lands in, who writes it (`ai`, `fixed`, `per_batch`), and a length limit. |

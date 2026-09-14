@@ -17,8 +17,8 @@ Every number below was pulled live on 2026-09-14. Re-run the queries in
 is a pipeline with a front, a middle and a back. **Front:** an idea, either a
 trending reference carousel or our own, is turned into a new carousel
 **template** with an AI helper inside a sandbox canvas, where the copy styles
-(font, weight, stroke, shadow, position), the image sources (a library folder
-or AI-generated) and the directions for copy and captions are set by hand,
+(font, weight, stroke, shadow, position), the image library it draws from
+(chosen or made, then filled by upload or AI generation) and the directions for copy and captions are set by hand,
 then saved as a new content type with a name and a character. **Middle:** a
 content type generates decks in batches, each reviewed and approved before
 rendering. **Back:** an approved new content type is wired into Supabase (its
@@ -62,7 +62,7 @@ and back of the pipeline.
 
 | # | Requirement | Where it lands |
 |---|---|---|
-| A1 | A page of existing carousel lanes; pick one and generate | Lanes page (§6.1) |
+| A1 | A page of existing carousel lanes; pick one and generate | Carousel types page (§6.1) |
 | A2 | Start with one or two lanes, the most-used or best-performing, then add the rest | Glow Up then Covered Eye (§3) |
 | A3 | While a batch generates, show the copy it will use, with Redo or Approve per carousel | Batch review (§6.2) |
 | A4 | Use the carousel-command-center app as the baseline for how carousels are made; keep the generation scripts, redo the UI | §4 and §5 |
@@ -92,7 +92,7 @@ and back of the pipeline.
 | # | Requirement | Where it lands |
 |---|---|---|
 | E1 | A visual-bucket page of image folders | Library page (§6.8) |
-| E2 | A generation session can point at a folder for its base images | Generate form, "Images from" (§6.2) |
+| E2 | A generation session can point at a folder for its base images | The content type's image library, chosen in the Studio (§4.7), and confirmed or repointed on the Generate form (§6.2) |
 
 ### F. Constraints carried over from the dashboard
 
@@ -479,7 +479,7 @@ Each deck passes through, and each is visible as a pill on its card:
    (Garreth's decision, 2026-09-14). The generator never writes
    `gatekeep_status = 'approved'` or `scheduler_ready = true`.
 
-The Lanes page still shows the postable count from `v_scheduler_pool`, so the
+The Carousel types page still shows the postable count from `v_scheduler_pool`, so the
 team can see decks waiting at the gate as a separate number from decks
 waiting to be generated.
 
@@ -518,8 +518,8 @@ A template holds:
 - **Canvas:** width and height (1080×1350, 1080×1440, 1080×1920 today).
 - **Slides:** an ordered list, each with a `layout` (`single`, `quad`,
   `quiz`, or a free layout of positioned cells), its **image slots** (each
-  with a role such as `cover`, `food`, `evidence:water`, and a source: a
-  library folder, a pool tag, or an AI-generation prompt), and its **text
+  with a role such as `cover`, `food`, `evidence:water`, and the group of
+  the content type's image library it draws from), and its **text
   boxes** (each with a `copy_role` such as `hook`, `beat_2`, `cta`, and a
   style: font family, weight, size, line height, wrap width, alignment,
   position, stroke width and colour, shadow offset, blur and colour, quote
@@ -563,9 +563,12 @@ draggable; the inspector on the right edits the selected box's style (font,
 weight, size, stroke, shadow, alignment, wrap width) with the change visible
 at once. Sample copy fills the boxes so the styles can be judged; a
 "Regenerate sample" action asks the AI for fresh sample copy under the
-current direction. Image slots show either a picked library image, or the AI
-prompt that will generate one, and can be pointed at a folder (§6.8). AI
-images are generated with **Higgsfield** (Garreth's decision, 2026-09-14),
+current direction. The template points at one **image library** (§6.8),
+asked for when the Studio opens: an existing library or a new one. Each image
+slot draws from a group in that library, and the Generate form can repoint
+it to another library (§6.2; Garreth, 2026-09-14). New images are not made in the
+Studio; they are uploaded or generated inside a library, independent of any
+content type. AI images are generated with **Higgsfield** (Garreth's decision, 2026-09-14),
 which the dashboard already has connected; its character and reference
 features cover the likeness-anchored generation the Covered Eye bank was
 built with on fal.ai.
@@ -578,8 +581,9 @@ browser's text layout and the server's are never identical to the pixel.
 Design sign-off happens on the rendered preview, not the HTML one.
 
 **Save as content type** asks for a name, a character and a content-type slug,
-snapshots the template as version 1, and creates the standing direction. The
-type then appears on the Lanes page as "not wired", and its first batch can
+snapshots the template as version 1 pointing at its image library, and
+creates the standing direction. The
+type then appears on the Carousel types page as "not wired", and its first batch can
 be generated and reviewed before anything touches the database schema.
 
 ### 4.8 Wiring a new content type
@@ -664,7 +668,7 @@ They were designed for this and match Garreth's requirements almost exactly.
 | `carousel_draft_slides` | **one slide of one draft** | `draft_id`, `position`, `narrative_role`, `copy`, `visual_brief`, `asset_query`, `source_reference_id`, `source_beat_id`, `status` |
 
 `constraints` on the brief holds what the form captured: `lane`
-(content_type), `count`, `image_folder`, `direction_version`, `note`, and
+(content_type), `count`, `image_library`, `direction_version`, `note`, and
 `rerun_of` (the brief this was cloned from). Creating a brief also inserts the
 matching `content_batches` row under the existing
 `{type}-{YYYY-MM-DD}-{letter}` convention, so the digest and inventory tooling
@@ -778,19 +782,27 @@ same path once the carousel and short-video route is proven.
 Trends page appends to it. Two columns to add: `source_digest_id` and
 `approved_by`, so a rule can say which digest proposed it and who accepted it.
 
-**`image_folders`** — the visual buckets (E1).
+**`image_libraries`** — the image libraries (E1). A library holds images of a
+character, a place and anything else a carousel needs, and belongs to no
+content type (Garreth, 2026-09-14).
 
 | Column | Purpose |
 |---|---|
-| `id`, `name`, `content_type` (nullable) | a folder, optionally tied to a lane |
+| `id`, `name` | one library |
 | `bucket`, `prefix` | where the files live in Storage |
-| `role_tags text[]` | e.g. `cover`, `food`, `before`, `after`, `evidence` |
+| `groups text[]` | the groups a template's image cells draw from, e.g. `cover`, `food`, `before`, `after` (today's pools) |
 | `is_active`, `created_by`, `created_at` | |
 
-Phase 1 seeds it from the two existing banks (`glowup_image_bank` pools,
-`covered_eye_image_bank` pools) as read-only folders. Uploading into folders
-is Phase 4. Images themselves stay in the existing bank tables; a view
-`v_image_assets` unions them into `{folder_id, public_url, is_cover, tags}`.
+A content type points at one library through its template
+(`carousel_templates.image_library_id`, so repointing is a new template
+version); several content types may point at the same library. Phase 2 seeds
+two libraries from the existing banks (`glowup_image_bank`,
+`covered_eye_image_bank`) as read-only, each pointed at by its content type,
+with the banks' pools as groups. Those images stay in the bank tables. Images
+in new libraries go in `image_library_images`, the same bank shape (§2.5) plus
+`library_id` and, for generated images, the prompt, shape and likeness images.
+A view `v_image_assets` unions both into `{library_id, public_url, is_cover,
+group, category}`. New libraries, uploading and generating are Phase 4.
 
 ### 5.4 Templates
 
@@ -801,6 +813,7 @@ is Phase 4. Images themselves stay in the existing bank tables; a view
 | `id`, `slug`, `version` | one row per saved version; `active` marks the current one |
 | `name`, `character`, `content_type` (nullable until saved as a type) | |
 | `canvas` jsonb, `slides` jsonb, `copy_contract` jsonb | the template model of §4.6 |
+| `image_library_id` | the image library this version draws from |
 | `copy_direction`, `caption_direction`, `image_direction` text | |
 | `source_reference_id` bigint (nullable) | the reference it was recreated from |
 | `generation_metadata` jsonb | model, prompt version, drafting inputs |
@@ -821,26 +834,33 @@ handlers do, with the service role, after `requireSession()`.
 
 ## 6. Pages
 
-All under `/carousel-generator`, added to `PIPELINE_ITEMS` in the sidebar
-under the *Content* group (replacing the disabled placeholder) once Phase 1
-ships. Sub-pages use the same shell; the Topbar breadcrumb shows where you are.
+All under `/carousel-generator`. The way in is the sidebar's **Generate**
+item, first in the *Content* group above Content calendar and Content types:
+`/generate` shows one card per kind of content the dashboard can generate
+(only Carousel today), and the Carousel card opens Carousel types (Garreth,
+2026-09-14). Inside, the generator has its own left menu instead of the
+dashboard's, topped by **← Dashboard** back to `/generate`; the items and the
+rules for them are in `CAROUSEL-GENERATOR-FLOWS.md` §1. Both routes exist
+already; `/carousel-generator` is a placeholder until Phase 2. Sub-pages use the same shell; the Topbar breadcrumb shows where you are.
 
-### 6.1 Lanes — `/carousel-generator`
+### 6.1 Carousel types — `/carousel-generator`
 
 One card per carousel lane, live lanes first, retired ones in a collapsed
 group. Each card: display name and character, postable count with days of
 cover (from `v_scheduler_pool` and cadence), last batch date, 28-day median
 views, a **Generate** button. Lanes without a renderer or copy schema (Char2
 Slideshow) show the card with the button absent and the pill "Not wired",
-never a disabled button with no explanation. The screen's one `CtaButton` is
-Generate on the lane with the least cover; the others are secondary.
+never a disabled button with no explanation. Every card's Generate is the same
+secondary button; none is singled out as the accent (Garreth, 2026-09-14).
 
 ### 6.2 Generate — `/carousel-generator/generate?lane=glowup`, then `/carousel-generator/batches/[id]`
 
 **Form** (before the batch exists): lane (pre-filled), how many (a number
-the user types, defaulting to the lane's 14-day shortfall, capped at 50 per
-batch, Garreth's decision 2026-09-14), images from (a folder
-picker showing only folders tagged for this lane), the active direction shown
+the user types, pre-filled with 50 and capped at 50 per batch, Garreth's
+decisions 2026-09-14), the image library (the
+one the content type points at, with Change to repoint it, or a required
+choice when it points at none; a repoint is saved as a new template version
+and the batch records the library it used, Garreth 2026-09-14), the active direction shown
 read-only with a link to edit it, and a one-off note field. **Generate** is the
 CTA. Submitting creates the brief and redirects to the batch page.
 
@@ -874,8 +894,8 @@ decision, 2026-09-14).
 ### 6.3 History — `/carousel-generator/history`
 
 A table of briefs: date, lane, requested, approved, rendered, ready, who ran
-it, and a **Run again** action that clones the brief (same lane, count, folder,
-note) under the current direction version and opens the new batch page.
+it, and a **Run again** action that clones the brief (same lane, count,
+note) under the current direction version and image library and opens the new batch page.
 Rows open the batch page in read mode. Filters are pills by lane and a
 Dropdown for date range, matching the accounts table.
 
@@ -904,7 +924,7 @@ The Directions bot reads accepted rules; it never reads raw digests.
 
 ### 6.6 Studio — `/carousel-generator/studio` and `/carousel-generator/studio/[template]`
 
-The canvas of §4.7. Entry points: "New from idea" on the Lanes page, "Recreate
+The canvas of §4.7. Entry points: "New from idea" on the Carousel types page, "Recreate
 this" on a Trends result, and "Edit template" on a lane card. Three regions:
 the filmstrip of slides on the left, the canvas in the middle, the inspector
 on the right, with the AI conversation collapsible under the inspector. The
@@ -919,16 +939,23 @@ One page per content type, imported or studio-made: the active template
 version and its history, the standing direction (the Directions page of §6.4
 folds into this page as a tab), the batches run under it, and the wiring
 status with the wiring flow of §4.8 when the type is not yet a lane. The
-Lanes page (§6.1) becomes the index of this page.
+Carousel types page (§6.1) becomes the index of this page.
 
 ### 6.8 Library — `/carousel-generator/library`
 
-A grid of folders, each showing a cover image, the count, the lane and role
-tags. Opening a folder shows its images as a grid with `is_cover` marked. Phase
-1 is read-only over the existing banks. Phase 4 adds upload into a folder,
-tagging, and retiring an image (a `HoldButton`, since a retired image may be
-referenced by an unrendered manifest).
-
+A grid of image libraries, each showing a cover image, the image count, its
+groups and the content types pointing at it. Opening a library shows its
+images by group with `is_cover` marked. A library belongs to no content type:
+it holds images of a character, a place and anything else a carousel needs,
+and any content type can be pointed at it (Garreth, 2026-09-14). Phase 2 is
+read-only over the existing banks. Phase 4 adds New library, upload into a
+group, retiring an image (a `HoldButton`, since a retired image may be
+referenced by an unrendered manifest), and **generating images with
+Higgsfield**, which depends on no content type: a prompt, what it shows
+(character, place or other), the group, a count, a shape, and for a character
+the library's own images of that character as the likeness reference.
+Generated images wait for a person to keep them before they join a group.
+Flow F7 in `docs/CAROUSEL-GENERATOR-FLOWS.md`.
 ---
 
 ## 7. Design and UX rules for the build
@@ -959,7 +986,7 @@ the caution in the affordance rather than in prose.
 **Frequency decides motion** (emil-design-eng): Approve and Redo are pressed
 tens of times per batch, so they get the 100 to 160 ms press feedback and
 nothing else. Cards arriving in a batch may stagger in at 30 to 50 ms each;
-cards never animate from scale zero. Dropdowns and the folder picker use the
+cards never animate from scale zero. Dropdowns and the library picker use the
 existing 150 to 250 ms ease-out. Anything keyboard-driven does not animate.
 Respect `prefers-reduced-motion`.
 
@@ -1034,7 +1061,7 @@ designs are final.
   journey step by step: recreate from a reference, create from scratch, edit
   a template, generate a batch, review and approve, render, wire a new type,
   resume a stopped batch, rerun a batch, analyse a digest, accept a rule,
-  manage a folder. Each flow names its screens, its one accent action, its
+  manage an image library. Each flow names its screens, its one accent action, its
   destructive steps, its empty states and its failure states.
 - **Screens.** Every page in §6 designed with the dashboard's own components,
   in dark and light mode (dark designed first, light from the same tokens;
@@ -1072,12 +1099,12 @@ designs are final.
 ### Phase 2 — the middle: templates, generic painter, batch generation
 
 - Migrations: the brief columns and status additions (§5.1),
-  `carousel_templates` (§5.4), `carousel_lane_directions`, `image_folders`,
+  `carousel_templates` (§5.4), `carousel_lane_directions`, `image_libraries`,
   `v_image_assets`; the two imported templates inserted from the port spec.
 - The generic painter (§4.6): SVG text layer with stroke, sharp composition,
   bundled fonts (Liberation Sans Bold, Inter Bold, Noto Color Emoji), atomic
   row claims (port spec §C.3), upload retries, a vision QA pass before Generated.
-- Lanes and content-type pages (§6.1, §6.7), Generate and batch review
+- Carousel types and content-type pages (§6.1, §6.7), Generate and batch review
   (§6.2), History with Run again and Continue (§6.3), Library read-only over
   the two banks (§6.8), the standing direction as a plain editor.
 - Only for lanes that are healthy, performing and frequently used (Garreth,
@@ -1098,7 +1125,7 @@ designs are final.
   the reference's slides, plus its beats and visual notes from the library).
 - Directions conversation with versions and knowledge-rule citations (§6.4),
   now inside the content-type page.
-- Save as content type, appearing on Lanes as "not wired"; a first batch can
+- Save as content type, appearing on Carousel types as "not wired"; a first batch can
   be generated and reviewed before wiring.
 
 ### Phase 4 — the back: wiring, and AI images
@@ -1108,9 +1135,10 @@ designs are final.
   and the n8n MEDIA step.
 - Caption and music in the batch pass for studio-made types, identical to the
   imported lanes.
-- AI image generation with Higgsfield into a folder from the studio's image
-  directions (the fal.ai prompt-maker scripts are the reference for how the
-  banks were built), plus upload, tagging and retiring in the Library (§6.8).
+- New image libraries, and AI image generation with Higgsfield inside a
+  library, independent of any content type (Garreth, 2026-09-14; the fal.ai
+  prompt-maker scripts are the reference for how the banks were built), plus
+  upload and retiring in the Library (§6.8).
 
 ### Phase 5 — learning, and the rest
 

@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
+  ArrowLeft,
   House,
   Users,
   Package,
@@ -24,16 +25,86 @@ import { useMobileNav } from "@/components/shell/mobile-nav";
 import { PeptideMark } from "@/components/ui/peptide-mark";
 import { cn } from "@/lib/utils";
 
-const PIPELINE_ITEMS = [
-  { label: "Dashboard", href: "/", icon: House },
-  { label: "Accounts", href: "/accounts", icon: Users },
-  { label: "Inventory", href: "/inventory", icon: Package },
-  { label: "Content calendar", href: "/content-calendar", icon: CalendarDots },
-  { label: "Content types", href: "/content-types", icon: Cards },
-  { label: "Proxies & phones", href: "/proxies", icon: Globe },
-  { label: "Automation", href: "/automation", icon: FlowArrow },
-  { label: "Analytics", href: "/analytics", icon: ChartBar },
-] as const;
+interface NavLink {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  /** Which paths light the row. A function rather than a prefix because a
+   *  row can own pages that do not share its address. */
+  isActive: (pathname: string) => boolean;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavLink[];
+}
+
+interface NavConfig {
+  groups: NavGroup[];
+  /** A way out drawn above the groups, for a section with a menu of its own. */
+  back?: { href: string; label: string };
+}
+
+const under = (href: string) => (pathname: string) => pathname.startsWith(href);
+
+const DASHBOARD_NAV: NavConfig = {
+  groups: [
+    {
+      label: "Pipeline",
+      items: [
+        { label: "Dashboard", href: "/", icon: House, isActive: (pathname) => pathname === "/" },
+        { label: "Accounts", href: "/accounts", icon: Users, isActive: under("/accounts") },
+        { label: "Inventory", href: "/inventory", icon: Package, isActive: under("/inventory") },
+        { label: "Proxies & phones", href: "/proxies", icon: Globe, isActive: under("/proxies") },
+        { label: "Automation", href: "/automation", icon: FlowArrow, isActive: under("/automation") },
+        { label: "Analytics", href: "/analytics", icon: ChartBar, isActive: under("/analytics") },
+      ],
+    },
+    {
+      // Generate first: making content is the group's reason to exist, and the
+      // two pages that plan and describe it follow (Garreth, 2026-09-14).
+      label: "Content",
+      items: [
+        { label: "Generate", href: "/generate", icon: Sparkle, isActive: under("/generate") },
+        { label: "Content calendar", href: "/content-calendar", icon: CalendarDots, isActive: under("/content-calendar") },
+        { label: "Content types", href: "/content-types", icon: Cards, isActive: under("/content-types") },
+      ],
+    },
+  ],
+};
+
+/**
+ * The Carousel Generator's own menu (Garreth, 2026-09-14). An item is added
+ * when its screen is built, never shown disabled ahead of it; the full list and
+ * its phases are in docs/CAROUSEL-GENERATOR-FLOWS.md §1. Back goes to the
+ * Generate page, because that is where the generator was opened from.
+ */
+const CAROUSEL_NAV: NavConfig = {
+  back: { href: "/generate", label: "Dashboard" },
+  groups: [
+    {
+      label: "Carousel Generator",
+      items: [
+        {
+          label: "Carousel types",
+          href: "/carousel-generator",
+          icon: Cards,
+          // A type's own page and its Generate form belong to this row too.
+          isActive: (pathname) =>
+            pathname === "/carousel-generator" ||
+            pathname.startsWith("/carousel-generator/types") ||
+            pathname.startsWith("/carousel-generator/generate"),
+        },
+      ],
+    },
+  ],
+};
+
+const NAVS = { dashboard: DASHBOARD_NAV, carousel: CAROUSEL_NAV };
+
+/** Which menu the rail shows. A name rather than the menu itself, because the
+ *  layouts that choose it are server components and cannot hand icons over. */
+export type SidebarNav = keyof typeof NAVS;
 
 function GroupLabel({ children, collapsed }: { children: React.ReactNode; collapsed: boolean }) {
   if (collapsed) return <div className="pt-4" />;
@@ -64,7 +135,7 @@ function NavItem({
   icon: React.ComponentType<{ className?: string }>;
   active: boolean;
   collapsed: boolean;
-  /** Draw its own active background. Rows inside the Pipeline list leave this
+  /** Draw its own active background. Rows inside the grouped list leave this
    *  to the sliding pill behind them; rows outside it (Settings) do not. */
   standalone?: boolean;
   /** Dismiss the mobile drawer. Wired to the rows rather than to a pathname
@@ -100,7 +171,8 @@ function NavItem({
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ nav = "dashboard" }: { nav?: SidebarNav }) {
+  const { groups, back } = NAVS[nav];
   const pathname = usePathname();
   const { open, setOpen } = useMobileNav();
   const [collapsedPref, setCollapsedPref] = useState(false);
@@ -286,45 +358,50 @@ export function Sidebar() {
           `overscroll-contain` stops the phone handing the gesture to the page
           underneath once the list hits its end. */}
       <nav className="nav-drawer-scroll no-scrollbar mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain md:overflow-visible">
-        <GroupLabel collapsed={collapsed}>Pipeline</GroupLabel>
-        <div ref={listRef} className="relative flex flex-col gap-0.5">
+        {/* The way out of a section with its own menu. Above the groups and
+            outside the pill's list: it is never the page you are on. */}
+        {back && (
+          <div className="mt-3">
+            <NavItem
+              href={back.href}
+              label={back.label}
+              icon={ArrowLeft}
+              active={false}
+              collapsed={collapsed}
+              onNavigate={() => setOpen(false)}
+            />
+          </div>
+        )}
+
+        {/* Every group shares one positioned list so the active pill glides
+            across the group labels too, rather than each group keeping a pill
+            of its own that blinks out in one and appears in the other. The pill
+            is measured from offsetTop, which is relative to this div because
+            the group wrappers inside it are not positioned. */}
+        <div ref={listRef} className="relative flex flex-col">
           <span
             ref={pillRef}
             aria-hidden
             className="glass pointer-events-none absolute inset-x-0 top-0 rounded-nested opacity-0 transition-[transform,height,opacity] duration-300 ease-out"
           />
-          {PIPELINE_ITEMS.map((item) => (
-            <NavItem
-              key={item.href}
-              {...item}
-              collapsed={collapsed}
-              onNavigate={() => setOpen(false)}
-              active={item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)}
-            />
+          {groups.map((group) => (
+            <Fragment key={group.label}>
+              <GroupLabel collapsed={collapsed}>{group.label}</GroupLabel>
+              <div className="flex flex-col gap-0.5">
+                {group.items.map((item) => (
+                  <NavItem
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    collapsed={collapsed}
+                    onNavigate={() => setOpen(false)}
+                    active={item.isActive(pathname)}
+                  />
+                ))}
+              </div>
+            </Fragment>
           ))}
-        </div>
-
-        <GroupLabel collapsed={collapsed}>Content</GroupLabel>
-        {/* v2 — visible but disabled (plan §2.5) */}
-        <div
-          title={collapsed ? "Carousel Generator (v2)" : undefined}
-          className={cn(
-            "flex cursor-not-allowed items-center gap-2.5 rounded-nested py-1.5 text-sm text-text-muted opacity-50",
-            collapsed ? "justify-center px-0" : "px-2",
-          )}
-          aria-disabled
-        >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px]">
-            <Sparkle className="size-4" />
-          </span>
-          {!collapsed && (
-            <>
-              Carousel Generator
-              <span className="ml-auto rounded-full bg-card-raised px-2 py-0.5 text-[10px] font-medium text-text-muted">
-                v2
-              </span>
-            </>
-          )}
         </div>
 
         <div className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">

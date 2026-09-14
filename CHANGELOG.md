@@ -20,7 +20,163 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## 2026-09-14 (latest) — Carousel Generator: the screens get light mode too
+## 2026-09-14 (latest) — Carousel Generator: first design, D1 Carousel types
+
+**Garreth's request, 2026-09-14:** design ticket D1 as a clickable prototype,
+with the sidebar looking exactly like the app's.
+
+New: `docs/designs/carousel-generator/d1-carousel-types.build.mjs`, which
+builds the D1 screens (desktop, phone, and the empty first-run state) for a
+Claude Design canvas. It reads the app's own font, logo and icons, so the
+design cannot drift from them, and it fills the screens with made-up sample
+content. Running it again rebuilds the screens after a change.
+
+Revised the same day after Garreth's first review: each card now shows only
+the name, the character (to its right), an arrow that opens the details
+(posts left, days of cover, median views, last batch), the status on the left
+and Generate on the right. Every Generate button is now the same grey button;
+none is highlighted for the type with the least cover. The plan, the flows and
+the design tickets say the same.
+
+Nothing in the app changed.
+
+## 2026-09-14 — Carousel Generator: the development tickets
+
+**Garreth's request, 2026-09-14,** once the design tickets existed: turn the
+plan and the flows into development tickets, assuming the design step is
+finished.
+
+New: `docs/CAROUSEL-GENERATOR-DEV-TICKETS.md`, 36 tickets (DEV-00 to DEV-35)
+in the plan's build order: the prerequisites, then the middle of the pipeline
+(database, painter, copy writer, quality gate, music lookup, batch screens)
+ending with a real batch posted for Glow Up and Covered Eye, then the Studio,
+then wiring and image generation, then Trends. Each ticket says what it
+depends on, which design and flow it builds, and how to prove it is done.
+
+**Finalised the same day (Garreth):** the Generate form's "How many" now
+starts at **50** for every carousel type, instead of the "14-day shortfall"
+the plan and flows first described. Nothing in the dashboard calculates a
+shortfall per carousel type, so both documents were updated to match. The
+question of how wiring adds a new type to the two master lists the scheduler
+and poster read is left open, listed at the end of the tickets with the other
+questions still to answer. None of them holds up Phase 2. The ticket
+document also lists six defaults it proposes where the plan was silent, such
+as a "Finish here" button so a stopped batch cannot block its carousel type
+forever.
+
+Nothing in the app changed.
+
+## 2026-09-14 — Carousel Generator: the design tickets
+
+**Garreth's request, 2026-09-14,** at the start of the design step.
+
+New: `docs/CAROUSEL-GENERATOR-DESIGN-TICKETS.md`, ten design tickets (D1 to
+D10) listing which screens to design in Claude Design, in order. The order
+follows the path a person takes through the tool rather than the build
+phases, as Garreth directed: the landing screen first, then making a batch,
+then creating a new carousel type, then the rest of the menu. It also sets the
+rules for the designs, including Garreth's instruction that they use made-up
+sample content rather than the dashboard's live data.
+
+Nothing in the app changed.
+
+## 2026-09-14 — Sidebar: a Generate page, and the Carousel Generator gets its own menu
+
+**Garreth's requests, 2026-09-14,** after deciding the Carousel Generator stays
+inside the dashboard rather than becoming its own app: first the new Content
+section and Generate page, then a menu of the generator's own, with the names
+"Carousel types" and "History".
+
+**Changed:**
+
+- The sidebar's **Content** section now holds **Generate**, **Content
+  calendar** and **Content types**, in that order. The last two used to sit
+  under Pipeline. The greyed-out "Carousel Generator" row with its "v2" badge
+  is gone; Generate replaces it.
+- **New page, Generate** (`/generate`): a row of cards, one per kind of content
+  the dashboard can make. Only **Carousel** exists today. Adding another kind
+  later is one more card.
+- The Carousel card opens the **Carousel Generator**, which swaps the
+  dashboard's left menu for one of its own, with **← Dashboard** at the top to
+  go back to the Generate page. The top bar, sign-in and data stay the
+  dashboard's; only the menu changes.
+- That menu holds one item today, **Carousel types**, and its page is a
+  placeholder saying it comes in Phase 2. **History**, image libraries, the
+  Studio and Trends are added to the menu as each screen is built, rather
+  than sitting there greyed out. There is no separate database page; History,
+  Carousel types and image libraries already cover what the generator stores.
+- The page name in the top bar now reads "Content types" on that page. It used
+  to read "Content-types", because the page was missing from the list of
+  names.
+- `docs/CAROUSEL-GENERATOR-PLAN.md` §6 and `docs/CAROUSEL-GENERATOR-FLOWS.md`
+  (§1, F1 and the decisions list) now describe this way in and the
+  generator's menu. The screen both documents called "Lanes" is now named
+  **Carousel types** there too.
+
+The code compiles and passes the lint check, and the Generate page, the
+generator's menu and its phone layout were checked in a local browser.
+Nothing about the data changed.
+
+## 2026-09-14 — Written checklist for adding an Instagram account to analytics
+
+**Garreth's direction, 2026-09-14, after connecting Profiles 64 and 65.** Both
+accounts were missing from Instagram analytics because they had never given our
+app permission to read their numbers. Profile 65's first attempt failed with
+"Insufficient developer role": our Meta app is in test mode, so Instagram only
+accepts accounts invited as testers. Garreth asked for that to be written down
+as the first step, so the next new account doesn't hit the same wall.
+
+New: `docs/INSTAGRAM-ANALYTICS-ONBOARDING.md`, the checklist in order: tester
+invite first, then switch to a Creator account, check the handle matches, open
+the login link, then confirm. It also covers what each common error means.
+
+No code changed. Confirmed live: both accounts' access is saved in the database
+(checked by query), and the 7 accounts that already had it are exactly the 7 on
+the tester list. Their posts appear after the next scheduled stats run.
+
+## 2026-09-14 — Carousel Generator: image libraries stand on their own
+
+**Garreth's direction, 2026-09-14, while reading the plain-English walk-through
+of the flows.** First: the image library should let you make new images with
+AI. Then a correction to how that was first written up: a library is not tied
+to one content type. It holds images of a character, a place and anything else
+a carousel needs. One content type normally uses it, but another can be pointed
+at the same library, so making images inside it must not depend on any content
+type. And a content type should be asked which library it uses: when it is
+created, and each time a new batch is generated for it, where its library can
+be changed (or chosen, if it has none).
+
+**Changed:**
+
+- `docs/CAROUSEL-GENERATOR-FLOWS.md`:
+  - F7: libraries are their own thing. Phase 4 adds New library and a
+    **Generate images** button (Higgsfield). You write the prompt, say whether
+    it shows a character, a place or something else, pick the group it goes
+    in, how many and the shape, and for a character, which of its existing
+    images keep the face consistent. Nothing is pre-filled from a content
+    type. An earlier draft of this same change said the prompt started from
+    the content type's instructions; that was wrong and is gone.
+  - F8 and F9: the Studio asks for an image library first (an existing one, or
+    a new one from Phase 4).
+  - F1: the Generate form shows the content type's library with **Change**,
+    or asks for one when it has none. A change sticks for later batches, and
+    each batch remembers which library it used. Generate is unavailable if
+    the library has no images for a group the carousel needs. F5's Run again
+    uses the current library.
+- `docs/CAROUSEL-GENERATOR-PLAN.md`: the image table is now `image_libraries`
+  with no content-type column; a template records which library it points at.
+  The Studio, Generate, History, Library and Phase 4 sections say the same.
+- `docs/CAROUSEL-TEMPLATE-MODEL.md`: one line saying the pools become a
+  library's groups.
+- Suggested defaults, which stand unless Garreth changes them: up to 8 images
+  per run; portrait, tall or square; new images wait for Keep before use; the
+  library is asked for first in the Studio; brand-new libraries arrive in
+  Phase 4, when they can be filled.
+
+Nothing the dashboard does has changed. No generator screen exists yet. The
+flow diagrams page has not been redrawn for this.
+
+## 2026-09-14 — Carousel Generator: the screens get light mode too
 
 **Garreth's decision, 2026-09-14, while reviewing the flow diagrams:** the
 generator lives inside the dashboard, so its screens work in dark and light

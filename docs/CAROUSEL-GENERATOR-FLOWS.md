@@ -52,14 +52,15 @@ is finished.
 
 | Screen | Route | Phase | Accent action | Hold |
 |---|---|---|---|---|
-| Lanes | `/carousel-generator` | 2 | Generate, on the lane with the fewest days of cover | — |
+| Generate hub | `/generate` | built 2026-09-14 | none; each card opens its generator | — |
+| Carousel types | `/carousel-generator` | 2 | none; every card's Generate is the same secondary button | — |
 | Generate | `/carousel-generator/generate?lane=` | 2 | Generate | — |
 | Batch | `/carousel-generator/batches/[id]` | 2 | Render approved, once anything is approved | Discard deck; Withdraw approval |
 | History | `/carousel-generator/history` | 2 | Only in the first-run empty state: Generate | — |
 | Content type | `/carousel-generator/types/[slug]` | 2 | Generate | — |
 | · Direction tab | same, `?tab=direction` | 2 plain, 3 conversation | Save version | — |
 | · Wiring tab | same, `?tab=wiring` | 4 | none; the run is itself a hold | Wire |
-| Library | `/carousel-generator/library` | 2 read-only, 4 editable | Phase 4: Upload | Phase 4: Retire image |
+| Library | `/carousel-generator/library`, `/library/[id]` | 2 read-only, 4 editable | Phase 4: Upload; Generate images in an empty library | Phase 4: Retire image |
 | Studio | `/carousel-generator/studio`, `/studio/[template]` | 3 | Save as content type, or Save version | Discard draft |
 | Trends | `/carousel-generator/trends` | 5 | Analyse, on the newest unanalysed digest | — |
 
@@ -69,6 +70,28 @@ token names. Same shell, Topbar breadcrumb. At phone width the
 deck grid is one column, batch actions become a bottom bar, and nothing
 scrolls sideways.
 
+### The generator's own menu
+
+The generator does not use the dashboard sidebar (Garreth, 2026-09-14). The
+dashboard's **Generate** item opens the Generate hub (`/generate`), one card
+per kind of content; the **Carousel** card opens Carousel types. From there
+every generator screen shares a left menu of its own, in the same shell and
+top bar. Its top row, **← Dashboard**, returns to the Generate hub.
+
+| Menu item | Opens | Phase |
+|---|---|---|
+| Carousel types | Carousel types; a type's page and Generate keep it lit | 2 |
+| History | History | 2 |
+| Image libraries | Library | 2 |
+| Studio | Studio, empty | 3 |
+| Trends | Trends | 5 |
+
+An item appears once its screen is built; nothing sits in the menu disabled.
+There is no separate database page: History, Carousel types and Image
+libraries already show everything the generator stores. **Proposed:** the
+menu folds to icons while the Studio is open, since the canvas needs the
+width.
+
 ---
 
 ## 2. Flows
@@ -76,40 +99,48 @@ scrolls sideways.
 ### F1. Generate a batch
 
 - **When:** a lane is running low. Phase 2, for Glow Up and Covered Eye.
-- **Screens:** Lanes, then Generate, then Batch.
+- **Screens:** the sidebar's Generate item opens the Generate hub; its
+  Carousel card opens Carousel types; then Generate, then Batch.
 - **Steps:**
-  1. Lanes shows one card per lane: name, character, postable count and days
+  1. Carousel types shows one card per lane: name, character, postable count and days
      of cover (from `v_scheduler_pool` and cadence), last batch date, 28-day
      median views. Live lanes first, retired lanes in a collapsed group.
   2. Press Generate on a card. Generate opens with the lane filled in.
-  3. The form: **How many** (a number, pre-filled with the lane's 14-day
-     shortfall, capped at 50), **Images from** (a Dropdown of folders tagged
-     for this lane), **Direction** (the active version shown read-only, with
-     its version number and a link to the Direction tab), **Note** (one line,
-     optional), and for Glow Up the per-batch choices from the template: **Opening line**
-     (Fixed or Written) and the **Datestamp** (a month and year). The closing
-     line is always the fixed one (Garreth, 2026-09-14), so it is not a field.
+  3. The form: **How many** (a number, pre-filled with 50 and capped at 50;
+     Garreth, 2026-09-14), **Image library** (Garreth, 2026-09-14:
+     the library the content type points at, with **Change** to repoint it,
+     or a required choice when it points at none), **Direction** (the active
+     version shown read-only, with its version number and a link to the
+     Direction tab), **Note** (one line, optional), and for Glow Up the
+     per-batch choices from the template: **Opening line** (Fixed or Written)
+     and the **Datestamp** (a month and year). The closing line is always the
+     fixed one (Garreth, 2026-09-14), so it is not a field.
+     **Proposed:** a repoint is saved to the content type as a new template
+     version with only the library changed, so later batches use the new
+     library too. Batches already made keep the library they recorded.
   4. Press Generate. The app creates the brief, the `content_batches` row
      and one empty deck card per requested deck, then opens Batch.
   5. Batch requests decks one at a time. Each card fills in as its copy
      arrives. The progress line reads "7 of 20 written" and is announced
      politely to screen readers.
-- **Accent action:** Generate (Lanes and Generate).
+- **Accent action:** Generate (Carousel types and Generate).
 - **Hold:** none.
-- **Empty:** Lanes has no first-run state, because lanes always exist. A lane
+- **Empty:** Carousel types has no first-run state, because lanes always exist. A lane
   whose type is not wired shows a "Not wired" pill and no Generate button.
 - **Fails:**
   - A lane already has a batch generating: its card's Generate becomes
-    **Open running batch** (secondary), and the page accent moves to the
-    next lane. One active run per lane (plan §4.5).
+    **Open running batch** (secondary). One active run per lane (plan §4.5).
   - Count above 50: the field caps at 50 as the person types; no message.
   - A deck's model call fails: that card shows the error and Retry; the batch
     carries on.
   - No progress for 60 seconds: the progress line turns `warn` and says which
     deck has stalled and when it last moved.
   - The tab is closed: nothing is lost; see F4.
-- **Writes:** `carousel_briefs`, `content_batches`, `carousel_drafts`,
-  `carousel_draft_slides`.
+  - The chosen library has no images in a group the template draws from:
+    Generate is unavailable and the empty groups are named.
+- **Writes:** `carousel_briefs` (recording the library the batch used),
+  `content_batches`, `carousel_drafts`, `carousel_draft_slides`, and
+  `carousel_templates` when the library is repointed.
 
 ### F2. Review and approve
 
@@ -181,7 +212,7 @@ scrolls sideways.
   - The claim returns nothing: the card reads "Rendering elsewhere" and
     refreshes when that finishes. Someone ran the old Python painter, or a
     second tab.
-  - An image fails to download, or a pool is empty: the card is Failed with
+  - An image fails to download, or a library group is empty: the card is Failed with
     the slide number and Retry. Other decks continue.
   - An upload fails three times: Failed, Retry.
   - A row stuck in Rendering for more than ten minutes: **Proposed:** the
@@ -216,8 +247,8 @@ scrolls sideways.
 - **Steps:**
   1. History is a table: date, lane, requested, approved, rendered,
      generated, who ran it. Filter pills by lane, a Dropdown for date range.
-  2. **Run again** on a row clones lane, count, folder, note and per-batch
-     copy choices under the **current** direction version, and opens the new
+  2. **Run again** on a row clones lane, count, note and per-batch
+     copy choices under the **current** direction version and image library, and opens the new
      batch, generating.
   3. The new brief records `rerun_of`, so History shows the pair.
 - **Accent action:** none (Run again is per row, secondary).
@@ -252,58 +283,101 @@ scrolls sideways.
 - **Fails:** the bot call fails: the error sits under the message, with Retry.
 - **Writes:** `carousel_lane_directions`.
 
-### F7. Browse and manage the library
+### F7. Browse and manage the image libraries
 
-- **When:** checking what images a lane can draw from. Phase 2 read-only;
-  Phase 4 upload, tag and retire.
-- **Screens:** Library, then a folder.
+- **When:** checking what images a content type can draw from, or filling a
+  library. Phase 2 read-only; Phase 4 new libraries, upload, generate and
+  retire.
+- **What a library is (Garreth, 2026-09-14):** a collection of images of a
+  character, a place, and anything else a carousel needs, sorted into groups
+  (today's pools, such as `cover` or `food`). A library belongs to no content
+  type. A content type points at one library and draws from its groups.
+  Usually one content type uses a library, but any other content type can be
+  pointed at the same one (F8 to F10).
+- **Screens:** Library, then one library.
 - **Steps:**
-  1. A grid of folders: cover image, count, lane, role tags. Phase 2 seeds
-     them from the two banks' pools, read-only.
-  2. A folder shows its images as a grid, covers marked.
-  3. Phase 4: **Upload** adds images to the folder; each can be tagged.
-  4. Phase 4: **Retire image** removes an image from future picks.
-- **Accent action:** Phase 4: Upload.
+  1. A grid of libraries: cover image, image count, its groups, and the
+     content types pointing at it. Phase 2 seeds two, from the Glow Up and
+     Covered Eye banks, each already pointed at by its content type,
+     read-only.
+  2. A library shows its images by group, covers marked.
+  3. Phase 4: **New library** (secondary, on the grid) asks for a name and
+     creates an empty library.
+  4. Phase 4: **Upload** adds images; each goes into a group.
+  5. Phase 4: **Generate images** (Garreth, 2026-09-14) makes new images with
+     Higgsfield, the provider already chosen (plan §4.7). It does not depend
+     on any content type: nothing is pre-filled from one. The form:
+     **Prompt**, **Shows** (Character, Place or Other), **Group** (an existing
+     group or a new one), **How many** (**Proposed:** capped at 8 per run),
+     **Shape** (**Proposed:** portrait, tall or square; the painter crops each
+     image to its slide cell), and, when it shows a character, **Likeness
+     from**: images of that character already in this library, which
+     Higgsfield uses to keep the face the same.
+  6. Each requested image appears as a Generating tile, then fills in.
+     **Proposed:** generated images wait in a review row and join their group
+     only when a person presses **Keep**. **Discard** drops one.
+  7. Phase 4: **Retire image** removes an image from future picks.
+- **Accent action:** Phase 4: Upload. **Proposed:** Generate images sits
+  beside it as secondary, and becomes the accent in an empty library.
 - **Hold:** Retire image, because an unrendered manifest may still reference
-  it.
-- **Empty:** first run (Phase 4, a new folder): Upload. No results (a tag
-  filter): the tags echoed back. A pool with one image shows its count with
-  no commentary; the thin pools are visible as numbers.
-- **Fails:** an upload fails: the tile shows Failed and Retry.
-- **Writes:** Phase 4 only: `image_folders`, the bank tables, Storage.
+  it. Discarding an unkept generated image is not a hold; nothing uses it yet.
+- **Empty:** first run (Phase 4, a new library): Generate images and Upload.
+  No results (a group filter): the filter echoed back. A group with one image
+  shows its count with no commentary; the thin groups are visible as numbers.
+  All clear: the review row is empty once every generated image is kept or
+  discarded.
+- **Fails:**
+  - An upload fails: the tile shows Failed and Retry.
+  - A generation fails: that tile shows Failed and Retry; the other images
+    in the run carry on.
+  - Higgsfield is out of credits or unreachable: every waiting tile shows
+    Failed with the reason and Retry.
+- **Writes:** Phase 4 only: `image_libraries`, `image_library_images`,
+  Storage. A generated image also records its prompt, shape, likeness images
+  and who kept it, so a good image can be made again.
 
 ### F8. Create a template from scratch
 
 - **When:** Garreth has an idea for a new carousel. Phase 3.
-- **Screens:** Lanes ("New from idea", secondary), then Studio.
+- **Screens:** Carousel types ("New from idea", secondary), then Studio.
 - **Steps:**
-  1. Studio opens empty, with the conversation open. Describe the idea.
-  2. The AI drafts a template: slide count, layouts, text boxes, style guess,
-     image slots with a pool or a generation prompt, and a direction note. It
-     asks at most one question.
-  3. The canvas shows slide 1 at true aspect ratio; the filmstrip shows the
+  1. Studio opens empty and first asks for the **Image library** (Garreth,
+     2026-09-14): an existing library, or **New library** with a name.
+     **Proposed:** it is asked first so the draft and Render preview use real
+     images; it can be changed at any point before saving. New library
+     arrives in Phase 4 with upload and generation, so in Phase 3 only an
+     existing library can be chosen.
+  2. The conversation opens. Describe the idea.
+  3. The AI drafts a template: slide count, layouts, text boxes, style guess,
+     image cells each drawing from a group in the chosen library, and a
+     direction note. It asks at most one question.
+  4. The canvas shows slide 1 at true aspect ratio; the filmstrip shows the
      rest. Sample copy fills the text boxes.
-  4. Select a text box to edit its font, weight, size, stroke, shadow,
+  5. Select a text box to edit its font, weight, size, stroke, shadow,
      alignment and wrap width in the inspector; drag it to move it. Select an
-     image cell to point it at a folder or edit its generation prompt.
-  5. **Regenerate sample** asks for new sample copy under the current
+     image cell to choose which group of the library it draws from. A cell
+     whose group has no images shows "No images". New images are made in the
+     library (F7), not here.
+  6. **Regenerate sample** asks for new sample copy under the current
      direction.
-  6. **Render preview** runs the real painter on the current slide and shows
+  7. **Render preview** runs the real painter on the current slide and shows
      the exact output beside the canvas. Sign-off happens on this, not on the
      HTML canvas.
-  7. **Save as content type** asks for a name, a character and a slug, saves
-     version 1, creates the standing direction, and the type appears on Lanes
-     as Not wired.
+  8. **Save as content type** asks for a name, a character and a slug, saves
+     version 1 pointing at the chosen library, creates the standing
+     direction, and the type appears on Carousel types as Not wired.
 - **Accent action:** Save as content type.
 - **Hold:** Discard draft.
-- **Empty:** first run: the conversation input is the only thing on the
-  canvas.
+- **Empty:** first run: the library choice is the only thing on the canvas.
 - **Fails:**
   - The draft call fails: the error in the conversation, with Retry.
   - Render preview fails: the error in place of the preview, with Retry; the
     canvas is untouched.
   - The slug is taken: the field says "Taken".
-- **Writes:** `carousel_templates`, `carousel_lane_directions`.
+  - No library chosen: Save as content type is unavailable.
+- **Writes:** `carousel_templates` (including `image_library_id`),
+  `carousel_lane_directions`, and `image_libraries` when a new library is
+  made.
 
 ### F9. Recreate a reference
 
@@ -312,11 +386,15 @@ scrolls sideways.
 - **Screens:** Trends ("Recreate this") or a reference id, then Studio.
 - **Steps:**
   1. Studio opens with the reference's slides in a strip above the canvas.
-  2. The AI reads the reference's beats and visual notes from the library,
+  2. **Image library** (Garreth, 2026-09-14): a reference comes with none, so
+     one is chosen, as in F8 step 1.
+  3. The AI reads the reference's beats and visual notes from the reference
+     library,
      runs a vision pass over its slides, and drafts a template with the same
-     slide count, layouts and text placement, plus a direction note
-     describing the construction.
-  3. From here it is F8 from step 3. The saved template records
+     slide count, layouts and text placement, image cells drawing from groups
+     in the chosen library, plus a direction note describing the
+     construction.
+  4. From here it is F8 from step 4. The saved template records
      `source_reference_id`.
 - **Accent action:** Save as content type.
 - **Hold:** Discard draft.
@@ -331,8 +409,9 @@ scrolls sideways.
 - **Screens:** Content type ("Edit template", secondary), then Studio.
 - **Steps:**
   1. Studio opens the active version, with sample copy from the lane's most
-     recent approved deck.
-  2. Edit as in F8 steps 4 to 6.
+     recent approved deck, drawing images from the library the content type
+     points at. The library is changed on the Generate form (F1), not here.
+  2. Edit as in F8 steps 5 to 7.
   3. **Save version** saves version N+1 and makes it active. Batches already
      generated keep the version they recorded; new batches use the new one.
   4. Past versions are listed, each with **Make active**.
@@ -374,7 +453,7 @@ scrolls sideways.
      its track confirmed on TikTok and Instagram (F14) and is then written to
      the new table. A deck whose track is not found stays Flagged on its card
      and is not written; the music item shows how many decks are waiting. The
-     lane appears on Lanes with its pool count.
+     lane appears on Carousel types with its pool count.
   6. **The Smart Scheduler media entry stays a human step.** The tab shows
      the exact line to add to the `MEDIA` map in n8n, and reminds that saving
      is not publishing. **Proposed:** the tab reads the Smart Scheduler's
@@ -389,7 +468,7 @@ scrolls sideways.
   - The cadence sum does not match the budget: Wire is unavailable and the
     rebalance field shows the sum.
   - The media entry is not found in the published workflow: that item stays
-    unticked and the lane's card on Lanes shows "Media map missing". The lane
+    unticked and the lane's card on Carousel types shows "Media map missing". The lane
     can still post, but unrendered rows could be scheduled (runbook §9).
   - **Decided (Garreth, 2026-09-14):** the dashboard has never run schema
     changes. It creates a lane through a reviewed database function that
@@ -543,25 +622,43 @@ scrolls sideways.
    for a person (F14).
 6. Wiring creates a lane through a reviewed database function, never a direct
    database connection (F11).
+7. An image library belongs to no content type. A content type points at one
+   library, and several may share one. Generating images inside a library does
+   not depend on any content type (F7, Phase 4).
+8. Creating a content type, from an idea or a reference, asks which image
+   library it uses (F8, F9). Generating a batch for an existing content type
+   shows its library with Change to repoint it, or asks for one when it has
+   none (F1).
+9. The generator has its own left menu, with ← Dashboard back to the Generate
+   hub. Its items are named Carousel types and History (§1).
 
 Nothing is left to decide before the screens.
 
 **Proposed defaults, accepted unless changed**
 
-7. Approve writes the lane row after a 5-second window, for single and bulk
+8. Approve writes the lane row after a 5-second window, for single and bulk
    approvals alike (F2).
-8. Redo on one slide creates a new version (F2).
-9. Keyboard `A`, `R`, `J`, `K` on the batch page (F2).
-10. Withdraw approval, as a hold, until rendering starts (F2).
-11. The stuck-row sweeper runs on page load and on Render, not on a timer (F3).
-12. A template edit does not interrupt a batch already generating (F10).
-13. Unwired types approve and render into drafts; lane rows are written at
+9. Redo on one slide creates a new version (F2).
+10. Keyboard `A`, `R`, `J`, `K` on the batch page (F2).
+11. Withdraw approval, as a hold, until rendering starts (F2).
+12. The stuck-row sweeper runs on page load and on Render, not on a timer (F3).
+13. A template edit does not interrupt a batch already generating (F10).
+14. Unwired types approve and render into drafts; lane rows are written at
     wiring (F11).
-14. The wiring tab checks the n8n media entry against the published workflow
+15. The wiring tab checks the n8n media entry against the published workflow
     (F11).
-15. The music lookup runs at approval, not while the copy is being written,
+16. The music lookup runs at approval, not while the copy is being written,
     so discarded decks cost no lookups (F14).
-16. The 26 library tracks with a missing or wrong link are repaired when a
+17. The 26 library tracks with a missing or wrong link are repaired when a
     deck chooses them (F14).
-17. Glow Up's `transition_line` stops being written, since no slide draws it
+18. Glow Up's `transition_line` stops being written, since no slide draws it
     (`CAROUSEL-TEMPLATE-MODEL.md` §5).
+19. Library generation makes up to 8 images per run, offers portrait, tall or
+    square, and a generated image joins its group only when a person presses
+    Keep (F7).
+20. The Studio asks for the image library first, so the draft and Render
+    preview use real images (F8).
+21. Repointing a content type on the Generate form is saved as a new template
+    version, so later batches use that library too (F1).
+22. Generate is unavailable while the chosen library has no images in a group
+    the template draws from (F1).
