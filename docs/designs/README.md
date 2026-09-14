@@ -14,7 +14,7 @@ done, or the one Garreth names.
   Every ticket's screens go here.
 - **Carousel Generator Prototype**, the click-through of every approved screen:
   https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175.
-  A desktop artboard and a phone artboard; holds D1 and D2 (2026-09-14). It
+  A desktop artboard and a phone artboard; holds D1, D2 and D3 (2026-09-14). It
   is built only from `main`, by one session, after a ticket is approved.
   Ticket sessions never save it.
 - The separate D2 canvas (`815e3cc0-…`) is retired and no longer updated.

@@ -139,6 +139,42 @@ the edges are tested, not just the happy middle.
 
 ## D3. Batch — while writing
 
+- **Status:** **done.** Approved by Garreth on 2026-09-14; light mode
+  designed and D3 added to the Carousel Generator Prototype
+  (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
+  the same day. Pictures, one screen per state, in both themes: writing (desktop, phone, phone
+  scrolled to where written meets unwritten), regenerating a deck while the
+  batch writes (desktop and phone), stalled, one deck failed, and stopped then
+  reopened (desktop and phone).
+  **First review** (Garreth, 2026-09-14): any written deck can be regenerated
+  with feedback while the rest of the batch keeps writing (Regenerate on the
+  card opens a feedback box in place; the deck then waits as **Up next**, ahead
+  of unwritten decks, with its note shown); nothing is approved while a batch
+  writes, so the stopped batch shows Written, not Approved.
+  **Flagged decks** (Garreth, 2026-09-14): never rendered. The top bar's bell
+  gets an item ("Deck 6 flagged", the type and the reason); clicking it opens
+  the batch at that deck, which carries a subtle red outline and its reason in
+  a red pill. Four more pictures: the bell open and the batch opened from it,
+  desktop and phone.
+  **Second review** (Garreth, 2026-09-14): Regenerate, Retry and the feedback
+  box's Regenerate are the Secondary button's shape with an outline and no
+  fill; the hook and slides sit in a fixed-height box that scrolls, and the
+  caption holds two lines, so the caption rule and footer line up across every
+  card. D3 is copy only: rendered slide images first appear in D5. On the Carousel Generator Designs canvas
+  (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
+  pages **D3 · Dark** and **D3 · Light**, built by
+  `docs/designs/carousel-generator/d3-batch-writing.build.mjs`.
+  **Confirmed in review:** the deck card here is the card D4 will
+  add review actions to (deck number, state pill, hook, slides 2–7, caption,
+  music), so a card keeps its shape from empty to reviewable; the progress
+  line sticks under the top bar; a waiting deck is a still skeleton and only
+  the deck being written pulses; on the phone, a stopped batch's Continue sits
+  in a bottom bar, like Generate on D2.
+  **Decided (Garreth, 2026-09-14):** no way to stop a batch while it is
+  writing; once the batch is finished, the person regenerates the whole batch,
+  one carousel in it, or one slide of a carousel, with feedback for the AI
+  (to design in D4). The page
+  does not show which batch it is (date, who ran it) for now.
 - **You get here from:** pressing Generate in D2.
 - **Flows:** F1 steps 4–5, F4.
 - **Design:**
@@ -154,39 +190,56 @@ the edges are tested, not just the happy middle.
     where the progress line was.
 - **Done when:** approved in dark at both sizes.
 
-## D4. Batch — review and approve (includes the deck card)
+## D4. Batch — finished writing, review (includes the deck card)
 
-- **You get here from:** D3, as decks finish writing.
-- **Flows:** F2, F14.
-- **Design the deck card first**, since the page is mostly a grid of them:
+- **Reshaped by Garreth, 2026-09-14, during D3's review:** there is no
+  approval step. A written deck counts as accepted unless someone regenerates
+  or discards it; gatekeeping outside the app is still the check before
+  posting. This replaces Approve, Approve all unflagged, the 5-second undo and
+  Withdraw approval. The flows (F2, F3, F14) are updated to match once D3 is
+  approved.
+- **You get here from:** D3, once every deck is written.
+- **Flows:** F2, F14 (to be rewritten as above).
+- **Design the deck card first**, since the page is mostly a grid of them. It
+  is D3's card:
   - Hook large, every slide's copy as a numbered list, caption, music, state
     pill.
-  - Card states: **Written**, **Flagged** with its reason ("Score 5.2",
-    "Compliance: brand name"), **Approved** with the 5-second undo, **Track
-    not found on TikTok** with Retry and Change track, **New track** note,
-    **Music lookup failed**.
-  - **Redo deck**, **Redo slide** on one slide, and the version switcher.
-  - **Discard deck** and **Withdraw approval**, both hold buttons.
+  - Card states: **Written**; **Flagged** with its reason ("Score 5.2",
+    "Compliance: brand name", "Track not found on TikTok") and a subtle red
+    outline; **Track not found** with Retry and Change track; **New track**
+    note; **Music lookup failed**.
+  - **Regenerate** the deck, or **one slide** of it, each with feedback for
+    the AI, and the version switcher.
+  - **Discard deck**, a hold button.
 - **Then the page:**
-  - **Approve all unflagged** and its toast with **Undo**.
-  - **Render approved** appearing as the accent once anything is approved.
-  - Keyboard focus moving between cards (A approve, R redo, J/K next and
+  - **Regenerate the whole batch**, with feedback.
+  - **Render** as the accent: renders every written deck that is not flagged.
+  - Flagged decks are never rendered. Each one sends a notification to the
+    top bar's bell; clicking it opens the batch at that deck, with its red
+    outline.
+  - Keyboard focus moving between cards (R regenerate, J/K next and
     previous).
   - Someone else already running the batch: read-only, with who and when it
     last moved.
-  - All clear: every card approved or discarded.
 - **Done when:** the card in every state and the page are approved in dark at
   both sizes.
 
 ## D5. Batch — render and finish
 
-- **You get here from:** Render approved in D4.
+- **You get here from:** Render in D4.
 - **Flows:** F3.
 - **Design:**
-  - Slide thumbnails filling in on each approved card as they land.
+  - Slide thumbnails filling in on each written, unflagged card as they land.
+    Flagged cards keep their red outline and are skipped (Garreth,
+    2026-09-14).
   - The progress line: "4 of 12 rendered".
   - The automatic check flagging a slide (cut-off text, text too long, poor
     contrast), with an outline on that thumbnail.
+  - **Full-size preview** (Garreth, 2026-09-14): pressing a thumbnail opens
+    the rendered deck at real slide shape, one slide at a time, on the slide
+    that was pressed. Next and previous (arrow keys; swipe on the phone), the
+    slide number ("3 of 7"), the check's reason on a flagged slide, and close
+    back to the card. A slide not rendered yet shows its empty shape.
 - **States:**
   - **Rendering elsewhere** on a card.
   - **Failed** with the slide number and **Retry**.

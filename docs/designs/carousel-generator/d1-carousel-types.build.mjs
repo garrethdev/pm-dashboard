@@ -231,7 +231,7 @@ function vals(firstRun) {
         isRunning: isLive && !!t.running,
         openType: function () { self.note("Opens the page for " + t.name + " · D7"); },
         generate: function () { ctx.open("generate", { name: t.name, character: t.character, slides: t.slides + " slides" }, "Opens the Generate form for " + t.name + " · D2"); },
-        openBatch: function () { self.note("Opens the running batch · D3"); }
+        openBatch: function () { ctx.open("batch", { name: t.name, character: t.character, slides: t.slides + " slides", count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); }
       };
     };
 

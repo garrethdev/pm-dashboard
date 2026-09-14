@@ -433,7 +433,7 @@ function vals(init) {
         clearTimeout(self.busyTimer);
         self.busyTimer = setTimeout(function () {
           self.setState({ busy: false });
-          self.note("Opens the batch: " + s.count + " decks of " + NAME + " · D3");
+          ctx.open("batch", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", count: s.count }, "Opens the batch: " + s.count + " decks of " + NAME + " · D3");
         }, 900);
       },
       submit: function (e) { e.preventDefault(); }

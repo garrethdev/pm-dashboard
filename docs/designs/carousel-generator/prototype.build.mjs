@@ -17,13 +17,14 @@ import { fileURLToPath } from "node:url";
 import { artboard } from "./generator-kit.mjs";
 import { typesScreen } from "./d1-carousel-types.build.mjs";
 import { generateScreen, copyCovers } from "./d2-generate-form.build.mjs";
+import { batchScreen } from "./d3-batch-writing.build.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(process.argv[2] ?? path.join(HERE, "out-prototype"));
 
 /* Approved screens, in the order a person meets them.
-   D1 Carousel types (approved 2026-09-14), D2 Generate form (approved 2026-09-14). */
-const SCREENS = () => [typesScreen(), generateScreen()];
+   D1 Carousel types, D2 Generate form, D3 Batch while writing (all approved 2026-09-14). */
+const SCREENS = () => [typesScreen(), generateScreen(), batchScreen({ auto: true })];
 
 fs.mkdirSync(OUT, { recursive: true });
 copyCovers(OUT);
@@ -37,7 +38,7 @@ for (const b of BOARDS) {
 }
 
 const note =
-  "Every approved screen, linked. Generate on a carousel type opens its Generate form; Carousel types, in the menu or above the form's title, brings you back. The menu's switch flips dark and light.\n\nScreens not approved yet show a Prototype note naming their ticket.\n\nIn so far: D1 Carousel types, D2 Generate form.";
+  "Every approved screen, linked. Generate on a carousel type opens its Generate form; Generate there opens the batch, and Open running batch on a card opens one part-way. Carousel types, in the menu or above a title, brings you back. The menu's switch flips dark and light.\n\nOn the batch, decks write one by one: deck 5 fails once (Retry), deck 6 is flagged and rings the bell (its item leads to the deck), and Regenerate on any written deck takes feedback and sends it back as Up next.\n\nScreens not approved yet show a Prototype note naming their ticket.\n\nIn so far: D1 Carousel types, D2 Generate form, D3 Batch while writing.";
 fs.writeFileSync(
   path.join(OUT, "canvas.json"),
   JSON.stringify(
