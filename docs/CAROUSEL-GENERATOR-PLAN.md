@@ -556,7 +556,11 @@ weight, size, stroke, shadow, alignment, wrap width) with the change visible
 at once. Sample copy fills the boxes so the styles can be judged; a
 "Regenerate sample" action asks the AI for fresh sample copy under the
 current direction. Image slots show either a picked library image, or the AI
-prompt that will generate one, and can be pointed at a folder (§6.8).
+prompt that will generate one, and can be pointed at a folder (§6.8). AI
+images are generated with **Higgsfield** (Garreth's decision, 2026-09-14),
+which the dashboard already has connected; its character and reference
+features cover the likeness-anchored generation the Covered Eye bank was
+built with on fal.ai.
 
 **Fidelity rule.** The canvas is an HTML preview built from the same template
 JSON the painter reads, and the fonts are the same bundled files, so
@@ -594,10 +598,18 @@ makes the lane report zeros, which is worse.
   `v_scheduler_pool` and the Posting Agent need checking for anything that
   assumes a table is one lane.
 
-The plan recommends **Option B**, verified against those three consumers in
-Phase 1's design work, because it turns wiring into a repeatable, reversible
-step rather than a schema change per type. Either way the wiring flow in the
-app shows what it is about to do (the generated SQL or the registry values),
+**Garreth's decision, 2026-09-14: Option A, one table per content type**, so
+each type keeps its own identity and can be paused, unpaused or retired on
+its own. For the record: a shared table can keep identity too, because a
+lane's identity is its `content_type_registry` row and every downstream tool
+keys on `content_type`, not the table; and a middle path exists (one physical
+table, one small view per type registered as that type's `source_table`).
+Both are noted here only in case the per-type migrations become a burden
+later. The wiring flow therefore generates a per-type migration from the
+runbook's standard shape (`content_id`, `slide_1_url` to `slide_12_url`,
+`caption`, `music`, the twelve required posting columns, the `scheduler_ready`
+trigger) plus the two view blocks, and the wiring flow in the app shows what
+it is about to do (the generated SQL or the registry values),
 requires a `HoldButton` to run it, writes an audit-log entry, and then
 verifies itself by reading `unified_posts` and `v_scheduler_pool` back and
 showing the new lane's row count. The n8n MEDIA entry and the cadence
@@ -979,10 +991,14 @@ designs are final.
   destructive steps, its empty states and its failure states.
 - **Screens.** Every page in §6 designed with the dashboard's own components,
   dark mode first, at desktop and phone widths, including the studio canvas
-  and inspector. Where to design them is Garreth's call (§10, item 13): the
-  Claude Design project already holds the tokens and twenty components; the
-  design-system HTML page in `docs/` can host static mocks under a parity
-  test; Figma is frozen.
+  and inspector. **Designed in Claude Design** (Garreth's decision,
+  2026-09-14), whose project already holds the tokens and twenty components,
+  with the round trip kept open: a screen can be captured into a **new**
+  Figma file for iteration (the design-system Figma file stays frozen), read
+  back into Claude Code with the Figma tools, and pushed to Claude Design
+  again with the scripts in `scripts/claude-design/`. Canvases drift on
+  fonts and glass effects, so Figma iterations are for layout and flow, and
+  final sign-off is on the Claude Design or in-app version.
 - **The template model, written down.** The JSON shape of §4.6 with the two
   imported lanes expressed in it, reviewed against the port spec, so the
   painter and the studio are built to the same contract.
@@ -1007,8 +1023,13 @@ designs are final.
 - Lanes and content-type pages (§6.1, §6.7), Generate and batch review
   (§6.2), History with Run again and Continue (§6.3), Library read-only over
   the two banks (§6.8), the standing direction as a plain editor.
-- Glow Up first, Covered Eye second (§3), each ending with a batch that the
-  Smart Scheduler assigns and the Posting Agent posts, confirmed live.
+- Only for lanes that are healthy, performing and frequently used (Garreth,
+  2026-09-14). Glow Up qualifies outright. Covered Eye is frequently used and
+  the healthiest lane in the system but not a performer; it stays in this
+  phase because it is Character 3's only carousel lane and that pool is zero,
+  **pending Garreth's confirmation (§10, item 16)**. Each lane ends with a
+  batch that the Smart Scheduler assigns and the Posting Agent posts,
+  confirmed live.
 - Ten decks per lane rendered side by side against their Python originals
   before the in-app painter is trusted.
 
@@ -1030,9 +1051,9 @@ designs are final.
   and the n8n MEDIA step.
 - Caption and music in the batch pass for studio-made types, identical to the
   imported lanes.
-- AI image generation into a folder from the studio's image directions (the
-  fal.ai prompt-maker scripts are the reference for how the banks were built),
-  plus upload, tagging and retiring in the Library (§6.8).
+- AI image generation with Higgsfield into a folder from the studio's image
+  directions (the fal.ai prompt-maker scripts are the reference for how the
+  banks were built), plus upload, tagging and retiring in the Library (§6.8).
 
 ### Phase 5 — learning, and the rest
 
@@ -1090,21 +1111,21 @@ Still open:
 
 Added 2026-09-14 with the widened scope:
 
-11. **Build order.** The plan builds the middle (batch generation for the two
-    live lanes) before the front (the studio), so stock is refilled while the
-    studio is designed. Confirm, or ask for the studio first.
-12. **One table per content type, or one shared table** for studio-made
-    types (§4.8). The plan recommends the shared table, pending the Phase 1
-    check of `inventory_check`, `v_scheduler_pool` and the Posting Agent.
-13. **Where the Phase 1 screens are designed.** Claude Design (has the tokens
-    and components), static mocks on the design-system page in the repo, or
-    another canvas. Figma is frozen.
-14. **AI image generation provider** for the studio's image directions. The
-    existing banks were built with fal.ai `gpt-image-2`; the dashboard has
-    Higgsfield connected. One provider for the first version.
-15. **Studio fidelity.** Is a rendered preview per slide (a few seconds each)
-    acceptable as the sign-off surface, with the live HTML canvas for
-    editing, as §4.7 proposes?
+Decided by Garreth on 2026-09-14:
+
+| # | Question | Decision |
+|---|---|---|
+| 11 | Build order | **Middle first, after Phase 1**, and only for lanes that are healthy, performing and frequently used (§9 Phase 2). |
+| 12 | One table per type or shared | **One table per content type** (§4.8), for per-type pause, unpause and retirement. Shared-table and view-per-type alternatives noted there. |
+| 13 | Design medium | **Claude Design**, with the Figma round trip kept open for iterations in a new file (§9 Phase 1). |
+| 14 | AI image provider | **Higgsfield** (§4.7). |
+| 15 | Studio fidelity | **Yes**: live HTML canvas for editing, rendered preview per slide for sign-off. |
+
+Still open:
+
+16. **Does Covered Eye qualify for Phase 2?** It is frequently used and the
+    healthiest lane but not a performer. The plan keeps it because Character 3
+    has no other carousel lane and a pool of zero. Confirm or drop.
 
 ---
 
