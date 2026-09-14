@@ -35,7 +35,15 @@ all 25 files were pulled from the Aug 3 deployment through the Vercel API into
 `carousel-command-center/` beside this repo. Two finds changed the plan: a
 working direction-chat endpoint that is an early version of the per-lane
 direction bot, and a July design for batch generation whose lessons are now
-§4.5 of the plan. Nothing else in this repo changed.
+§4.5 of the plan.
+
+Later the same day, Garreth's team sent the two Python renderer folders as
+zips. Reading them answered who runs the painters (Garreth's own Mac, by hand)
+and produced `docs/CAROUSEL-RENDERER-PORT-SPEC.md`: the exact layout numbers,
+image-selection rules and status handshake the in-app painter must reproduce.
+It also corrected the plan in one place: generated Glow Up rows are written as
+`queued`, not `ready`, because the old painter picks up `ready` rows and would
+overwrite the app's slides. Nothing else in this repo changed.
 
 ---
 

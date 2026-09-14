@@ -90,8 +90,8 @@ Six carousel lanes are registered. Three are live.
 
 | Lane | Character | Table | Live | Posts/wk | Renderer today | Image bank |
 |---|---|---|---|---|---|---|
-| Glow Up `glowup` | 2 | `glowup_decks` | yes | 4 | Python on a Mac (`paint_manifest.py`) | `glowup_image_bank`, 100 images |
-| Covered Eye `covered_eye_carousel` | 3 | `covered_eye_carousel` | yes | 2 | Python on a Mac (`covered_eye_carousel.py`) | `covered_eye_image_bank`, 55 images |
+| Glow Up `glowup` | 2 | `glowup_decks` | yes | 4 | Python, by hand on Garreth's Mac (`paint_manifest.py`) | `glowup_image_bank`, 100 images |
+| Covered Eye `covered_eye_carousel` | 3 | `covered_eye_carousel` | yes | 2 | Python, by hand on Garreth's Mac (`covered_eye_carousel.py`) | `covered_eye_image_bank`, 55 images |
 | Char2 Slideshow `char2_slideshow` | 2 | `char2_slideshow` | yes | 3 | unknown, one batch ever | none |
 | Rich Life `rich_life_carousel` | 2 | `rich_life_carousel_posts` | retired | | Vercel `carousel-command-center` | `rich-life-images/bg/lavish` |
 | BA Journey `ba_journey` | 2 | `ba_journey_carousel` | off | | | |
@@ -146,6 +146,17 @@ paints the slides, uploads to the `glowup-renders` bucket and sets
 `render_status = 'rendered'`. Music comes from the "Universal Music
 Recommender" webhook. **Zero runs of the writer are on record in n8n**, so the
 existing decks were most likely made from a Claude desktop session.
+
+**Where the two painters run (answered 2026-09-14).** Garreth's team sent the
+renderer folders as `covered_eye.zip` and `glowup.zip`. They are byte-identical
+to the GitHub repo. The compiled bytecode inside embeds the path
+`/Users/garrethdottin/Claude/peptide-renderers/...`, so both run **by hand on
+Garreth's own MacBook Pro** under Python 3.14, from Claude Code sessions, with
+no cron or launchd. The newest rendered output is Covered Eye CE-240 on
+2026-08-14; two Glow Up rows have sat at `render_status = 'ready'` since
+2026-08-01 because nobody ran the painter. The full port specification,
+including the exact layout numbers and the race guard, is in
+`docs/CAROUSEL-RENDERER-PORT-SPEC.md`.
 
 **Covered Eye.** An n8n scriptwriter reads rows that have a hook but no slide 2,
 writes slides 2 to 6 with Claude Sonnet 5 in a fixed five-beat arc (judgment,
@@ -465,7 +476,9 @@ today's rows, verify against the last batch first), `hook`, `hook_text`,
 `before_line`, `transition_line`, `after_line`, `tip_face`, `tip_stomach`,
 `tip_waist`, `quiz_line`, `slide_1..6`, `caption`, `music`, `pillar =
 'glowup_carousel'`, `character = 'char2'`, `batch`, `render_set`,
-`render_manifest`, `render_status = 'ready'`, `quality_score`, `quality_status`,
+`render_manifest`, `render_status = 'queued'` (**not** `'ready'`: the Mac
+painter selects `'ready'`, and `'queued'` is a value no Python script reads,
+see the port spec §C.3), `quality_score`, `quality_status`,
 `gatekeep_status = 'pending'`, `approved = false`, `scheduler_ready = false`.
 The generator's own approval lives on `carousel_drafts.human_approved`; the
 lane row's `approved` and `gatekeep_status` belong to the gatekeeping step
@@ -476,9 +489,13 @@ Covered Eye row: `carousel_id`, `hook_text`, `hook_type`, `peptide_angle`,
 'scripted'`, `quality_score`, `quality_status`, `gatekeep_status = 'pending'`,
 `approved = false`, `scheduler_ready = false`.
 
-Rendering then fills `slide_N_url`, `rendered_at` and (Glow Up)
-`render_status = 'rendered'`, exactly as the Python painters do today, so the
-old renderers can still be pointed at these rows if the in-app one is down.
+Rendering claims the row first with one conditional update (`queued` to
+`rendering`, or for Covered Eye `scripted` to `rendering` while `rendered_at`
+is null); an empty response means another process has it. On success it fills
+`slide_N_url`, `rendered_at` and `render_status = 'rendered'`. A sweeper
+returns rows stuck in `rendering` for more than ten minutes to `queued`. The
+old painters can still be pointed at these rows by hand if the in-app one is
+down; they simply never pick them up on their own.
 
 ### 5.3 New tables
 
@@ -748,10 +765,16 @@ phase is needed for an earlier one to be useful.
 - Generate form and batch page (§6.2) for `glowup`: copy, caption, music
   suggestion, gate score, Approve, Redo, per-slide Redo, materialise into
   `glowup_decks`.
-- The in-app painter for Glow Up: port `paint_manifest.py`'s `quad`, `single`,
-  `quiz` layouts and `deck_rules.json` to Satori and sharp with bundled fonts;
-  the Director step that builds `render_manifest` (image pairing by pool and
-  brightness, diagonal rule) moves into the route handler.
+- The in-app painter for Glow Up, to the letter of
+  `docs/CAROUSEL-RENDERER-PORT-SPEC.md`: port `paint_manifest.py`'s `quad`,
+  `single`, `quiz` layouts and `deck_rules.json`; the Director step that builds
+  `render_manifest` (pools per slide, brightness matching on the bank's
+  `luminance` column, the 2+2 diagonal rule, per-batch datestamp and fixed
+  copy) moves into the route handler. Captions are drawn as an SVG text layer
+  with stroke and composited with sharp, not through Satori, which cannot
+  stroke text. Bundle Liberation Sans Bold in place of Arial Bold. Rows are
+  claimed atomically before painting (port spec §C.3). Before it ships, ten
+  decks are rendered side by side against their Python originals.
 - History page (§6.3) with Run again.
 - A plain textarea version of Directions for `glowup` (the bot comes in Phase 2)
   so the batch always records a direction version.
@@ -768,8 +791,12 @@ posts one, confirmed live.
 ### Phase 2 — Covered Eye, and the Directions bot
 
 - Covered Eye copy (five-beat arc), image assignment by pool (seeded by
-  `carousel_id` as today), caption-on-image painter for 1080×1920 with the
-  slide-5 bottom placement, materialise into `covered_eye_carousel`.
+  `carousel_id` as today), caption-on-image painter for 1080×1920 per the port
+  spec §B.1: slide-5 bottom placement at 0.9 scale, the blurred shadow layer,
+  quotes on Jealous Friend hooks only. Inter Bold replaces SF Pro and Noto
+  Color Emoji replaces Apple Color Emoji, which is a visible change Garreth
+  signs off on a side-by-side. Always upload the captioned render and point
+  `slide_N_url` at it (the Aug 13 batch did not, port spec §C.6).
 - Directions page with the conversation panel, versions, and knowledge-rule
   citations (§6.4).
 - Library reads `covered_eye_image_bank` too.
@@ -821,10 +848,21 @@ Answered by Garreth on 2026-09-14, and applied above:
 
 Still open:
 
-1. **Who runs the Glow Up and Covered Eye painters today, and on which
-   machine?** Garreth is asking the team. Until answered, assume they keep
-   running and that the in-app painter must write the same columns so the two
-   never both render one row (`render_status`, `rendered_at`).
+1. **Who runs the Glow Up and Covered Eye painters?** Answered 2026-09-14:
+   Garreth's own Mac, by hand (§2.4). The in-app painter replaces them; the
+   race guard in the port spec §C.3 covers the case where someone runs the old
+   script anyway.
+1b. **Should the 60 Covered Eye decks from Aug 13 (CE-181 to CE-240) be
+   repaired?** Their `slide_N_url` columns point at raw bank photos without
+   captions, and 59 of them are marked Posted. One spot-check of a posted
+   TikTok settles whether they went out captionless. The captioned renders for
+   all of them are in the zip's `out/` folder, now on Czed's Mac, so repointing
+   the rows is an upload, not a re-render. Garreth's call; not part of the
+   generator build.
+1c. **Music for Glow Up.** The Python painter picked music with a local
+   heuristic over `music_library` (prefer Sade-tagged tracks for emotionally
+   loaded hooks), not the n8n Music Recommender the plan assumed. Confirm the
+   generator should call the recommender for both lanes.
 2. **The `carousel-command-center` source** is recovered and reference-only
    (§2.4); nothing further needed.
 3. **Who runs the Phase 0 analysis worker?** The `media_enrich`,
@@ -896,6 +934,9 @@ group by 1 order by median_views desc;
 - `carousel-command-center/` (recovered 2026-09-14 from Vercel deployment
   `dpl_7Uou7pf7NedqZKB6eLPDPK2ZpPd6`): the live command center, its four
   functions, and `ORCHESTRATOR_DESIGN.md`.
+- `covered_eye.zip` and `glowup.zip` (Garreth's team, 2026-09-14): the
+  renderer folders as they sit on the Mac that runs them, including 135
+  rendered Covered Eye decks. Analysed in `docs/CAROUSEL-RENDERER-PORT-SPEC.md`.
 - `github.com/garrethdev/content-render-scripts`: every renderer, including
   the mirrored `render-carousel.js`.
 - n8n instance `czed.app.n8n.cloud`, read-only, 2026-09-14.
