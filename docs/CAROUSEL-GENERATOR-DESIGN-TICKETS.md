@@ -164,6 +164,14 @@ the edges are tested, not just the happy middle.
   (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
   pages **D3 · Dark** and **D3 · Light**, built by
   `docs/designs/carousel-generator/d3-batch-writing.build.mjs`.
+  **Reopened during D4's review** (Garreth, 2026-09-14), both pages re-saved:
+  Regenerate is a full-width button pinned to the bottom of every card whatever its
+  state (a still skeleton until the deck has copy, Retry there on a failed
+  deck), the title no longer shows the character and slide-count pills, and a
+  deck sent back with feedback says **Rewriting**, not Writing, once its turn
+  comes (the Regenerate pictures show one Rewriting and one Up next).
+  **Approved again with D4** (Garreth, 2026-09-15) and the Prototype rebuilt:
+  once every deck is written, the batch moves on to D4's review.
   **Confirmed in review:** the deck card here is the card D4 will
   add review actions to (deck number, state pill, hook, slides 2–7, caption,
   music), so a card keeps its shape from empty to reviewable; the progress
@@ -192,6 +200,54 @@ the edges are tested, not just the happy middle.
 
 ## D4. Batch — finished writing, review (includes the deck card)
 
+- **Status:** **done.** Dark mode approved by Garreth on 2026-09-15; light
+  mode designed the same day and D4 added to the Carousel Generator Prototype
+  (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175),
+  where D3 hands over to it once every deck is written. Pictures,
+  one screen per state, on the Carousel Generator Designs canvas
+  (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
+  pages **D4 · Dark** and **D4 · Light**, built by
+  `docs/designs/carousel-generator/d4-batch-review.build.mjs`: every card
+  state on one desktop board, keyed by a note beside it; review (desktop and
+  phone); regenerate one slide, swiping between versions, track not found,
+  track search, Discard deck being held (phone); Regenerate batch (desktop
+  and phone); someone else running the batch (desktop and phone).
+  **Proposed in this design, for review:**
+  - The card keeps D3's shape (D3's styles are imported, not copied).
+    **Second review** (Garreth, 2026-09-14): Regenerate is the full-width
+    button at the bottom of every card, in D3 too; track actions sit opposite
+    the song and drop under it when they do not fit; More sits at the end of
+    the pills; **third review:** **Retry music lookup** is the only track
+    button, split with a caret on its right that opens **Change track**;
+    a deck or slide being rewritten says **Rewriting**; no New track pill; no
+    character or slide-count pills in the title.
+  - Regenerate opens D3's feedback box with a picker: **Deck**, **Hook**, 2–7.
+    On the desktop, a small button at the end of any slide row opens the box
+    on that slide. A whole deck waits as Up next, as in D3; one slide rewrites
+    in place while the rest of the deck stays readable.
+  - Versions (Garreth, 2026-09-14): a deck with more than one version carries
+    a grey pill, **Version 2 of 2**. On the desktop, pointing at the card shows
+    round arrows on its left and right edges, with no arrow past the first or
+    newest version; on the phone the copy swipes sideways. **Proposed with
+    it:** the version showing is the version that counts, so there is no
+    separate "Use this version".
+  - **Discard deck** is the hold button inside a **More** (…) menu, so twenty
+    cards do not each carry a red button. The More icon (Phosphor DotsThree)
+    is new; icons.tsx has no overflow icon yet.
+  - **Change track** (Garreth, 2026-09-14) is a search of the music library:
+    suggestions narrow as the person types, the typed part in bold, and the
+    last option looks the typed name up as a new track. Either way it is a new
+    version with only the music different. It is also the way out when Retry
+    music lookup keeps failing.
+  - **Render 16 decks** names its count and leaves out flagged decks and tracks
+    still being checked. "3 flagged" in the progress line jumps from one
+    flagged deck to the next.
+  - Keyboard: J and K move focus between cards (the kit's focus ring), R opens
+    the focused card's feedback box; no motion on either.
+  - Someone else running it: no actions anywhere, "Sam is reviewing this
+    batch, last moved 4 min ago" in the progress line.
+  - Phone: the counts and Render sit in a bottom bar, Regenerate batch under
+    the title.
 - **Reshaped by Garreth, 2026-09-14, during D3's review:** there is no
   approval step. A written deck counts as accepted unless someone regenerates
   or discards it; gatekeeping outside the app is still the check before

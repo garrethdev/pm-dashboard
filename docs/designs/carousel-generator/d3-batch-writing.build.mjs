@@ -18,6 +18,12 @@
  * sit in a fixed-height box that scrolls, so every card's caption rule and
  * footer line up (Garreth, 2026-09-14). D4 builds on the same card.
  *
+ * Reopened during D4's review (Garreth, 2026-09-14): Regenerate is a full-width
+ * button at the bottom of every card, whatever its state (a still skeleton
+ * until the deck has copy, Retry on a failed deck), the title no longer
+ * carries the character and slide-count pills, and a deck sent back with
+ * feedback says Rewriting (not Writing) once its turn comes.
+ *
  * Decisions from review (Garreth, 2026-09-14): a written deck can be
  * regenerated with feedback while the rest keep writing, and waits as Up next;
  * nothing is approved while a batch writes; a flagged deck is never rendered,
@@ -158,10 +164,17 @@ ${S} .dcopy { height: ${phone ? 240 : 224}px; overflow-y: auto; overscroll-behav
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
 ${S} .dcopy:focus-visible { outline-offset: 4px; border-radius: 8px; }
 ${S} .dcap { height: 53px; overflow-y: auto; margin: 0; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; line-height: 20px; color: var(--text-muted); text-wrap: pretty; }
-/* Music left, Regenerate right. */
+/* The music. */
 ${S} .dfoot { display: flex; align-items: center; gap: 8px; min-height: 30px; margin-top: 10px; }
 ${S} .dmusic { display: flex; flex: 1; min-width: 0; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--text-muted); }
 ${S} .dmusic span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Regenerate: the bottom of every card, full width, whatever the deck's state (Garreth, 2026-09-14, in D4's review).
+   A deck with nothing to regenerate yet holds its shape as a skeleton; a failed deck's Retry takes the same place. */
+/* Pinned to the card's bottom edge, so it sits in the same place on every card in a row, however short the card's
+   own content (Garreth, 2026-09-14). The card is a flex column; the auto margin takes up the slack. */
+${S} .dact { margin-top: auto; padding-top: 12px; }
+${S} .btn2--full { display: flex; width: 100%; justify-content: center; padding: 8px 14px; }
+${S} .dact .sk { display: block; height: 34px; }
 
 /* Not written yet: the card's shape, still. Writing: the same shape, pulsing (skeleton.tsx). */
 ${S} .sk { display: block; height: 8px; border-radius: 999px; background: var(--card-raised); }
@@ -239,7 +252,8 @@ ${S} .bar .status { min-width: 0; font-size: 12px; line-height: 16px; color: var
 ${S} .bar .status b { display: block; font-size: 13px; line-height: 18px; font-weight: 500; color: var(--text-primary); }
 ${S} .bar .cta { margin-left: auto; padding: 15px 26px; }
 /* 44px touch targets: the controls keep their look, the hit area grows. */
-${S} .dfoot .btn2::after, ${S} .derr .btn2::after, ${S} .dfb .btn2::after, ${S} .tbtn::after { content: ""; position: absolute; inset: -12px -8px; }
+${S} .dfoot .btn2::after, ${S} .dfb .btn2::after, ${S} .tbtn::after { content: ""; position: absolute; inset: -12px -8px; }
+${S} .dact .btn2::after { content: ""; position: absolute; inset: -5px 0; }
 `
     : ""
 }
@@ -266,6 +280,7 @@ const deckCard = `
                 <sc-if value="{{d.pillWritten}}" hint-placeholder-val="{{ true }}"><span class="pill">Written</span></sc-if>
                 <sc-if value="{{d.pillFlag}}" hint-placeholder-val="{{ false }}"><span class="pill pill--danger">{{d.flag}}</span></sc-if>
                 <sc-if value="{{d.pillWriting}}" hint-placeholder-val="{{ false }}"><span class="pill pill--accent">Writing</span></sc-if>
+                <sc-if value="{{d.pillRewriting}}" hint-placeholder-val="{{ false }}"><span class="pill pill--accent">Rewriting</span></sc-if>
                 <sc-if value="{{d.pillFailed}}" hint-placeholder-val="{{ false }}"><span class="pill pill--danger">Failed</span></sc-if>
                 <sc-if value="{{d.pillUpnext}}" hint-placeholder-val="{{ false }}"><span class="pill">Up next</span></sc-if>
               </div>
@@ -278,7 +293,6 @@ const deckCard = `
                   <p class="dcap">{{d.caption}}</p>
                   <div class="dfoot">
                     <div class="dmusic">${D3I.music}<span>Artist Name – Song Title</span></div>
-                    <sc-if value="{{d.showRegen}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn2 btn2--line" onClick="{{d.regen}}">${D3I.retry}Regenerate</button></sc-if>
                   </div>
                 </div>
                 <sc-if value="{{d.isEditing}}" hint-placeholder-val="{{ false }}">
@@ -286,20 +300,27 @@ const deckCard = `
                     <textarea class="{{d.taCls}}" rows="3" aria-label="{{d.fbLabel}}" placeholder="Shorter hook, warmer tone" value="{{d.note}}" onChange="{{d.type}}"></textarea>
                     <div class="dfbact">
                       <button type="button" class="tbtn" onClick="{{d.cancel}}">Cancel</button>
-                      <button type="button" class="btn2 btn2--line" onClick="{{d.submit}}">${D3I.retry}Regenerate</button>
                     </div>
                   </div>
                 </sc-if>
+                <div class="dact">
+                  <sc-if value="{{d.showRegen}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn2 btn2--line btn2--full" onClick="{{d.regen}}">${D3I.retry}Regenerate</button></sc-if>
+                  <sc-if value="{{d.isEditing}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2 btn2--line btn2--full" onClick="{{d.submit}}">${D3I.retry}Regenerate</button></sc-if>
+                </div>
               </sc-if>
               <sc-if value="{{d.isSkeleton}}" hint-placeholder-val="{{ false }}">
                 <div class="dcopy">
                   <sc-if value="{{d.hasNote}}" hint-placeholder-val="{{ false }}"><p class="dnote">{{d.quote}}</p></sc-if>
-                  <sc-if value="{{d.isFailed}}" hint-placeholder-val="{{ false }}"><div class="derr" role="alert"><span>Writing timed out</span><button type="button" class="btn2 btn2--line" onClick="{{d.retry}}">${D3I.retry}Retry</button></div></sc-if>
+                  <sc-if value="{{d.isFailed}}" hint-placeholder-val="{{ false }}"><div class="derr" role="alert"><span>Writing timed out</span></div></sc-if>
                   <sc-if value="{{d.notFailed}}" hint-placeholder-val="{{ true }}"><div class="dhook"><i class="sk" style="width: {{d.h0}}%"></i><i class="sk" style="width: {{d.h1}}%"></i></div></sc-if>
                   <ol class="dslides" aria-hidden="true">${rows((k) => `<i class="sk" style="width: {{d.w${k}}}%"></i>`)}</ol>
                 </div>
                 <div class="dcap" aria-hidden="true"><i class="sk" style="width: 92%"></i><i class="sk" style="width: 38%"></i></div>
                 <div class="dfoot" aria-hidden="true"><div class="dmusic"><i class="sk" style="width: 42%"></i></div></div>
+                <div class="dact">
+                  <sc-if value="{{d.isFailed}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2 btn2--line btn2--full" onClick="{{d.retry}}">${D3I.retry}Retry</button></sc-if>
+                  <sc-if value="{{d.notFailed}}" hint-placeholder-val="{{ true }}"><i class="sk" aria-hidden="true"></i></sc-if>
+                </div>
               </sc-if>
             </article>`;
 
@@ -309,12 +330,9 @@ function page() {
         <div class="page">
           <div class="phead">
             <button type="button" class="upcrumb" onClick="{{backToTypes}}">${I.backSm}Carousel types</button>
+            <!-- No character or slide-count pills: the person is already inside this carousel type (Garreth, 2026-09-14). -->
             <div class="ptitle">
               <h1>{{batchName}}</h1>
-              <div class="cmeta">
-                <span class="pill">{{batchCharacter}}</span>
-                <span class="pill tnum">{{batchSlides}}</span>
-              </div>
             </div>
           </div>
           <div class="prog {{progCls}}">
@@ -461,7 +479,18 @@ function vals({ auto, init }) {
       self.setState({ d3decks: cur, d3notif: bell });
       if (nx < 0) {
         clearInterval(self.d3timer); self.d3timer = null;
-        self.note("Every deck written. Review and render · D4");
+        /* Every deck written and none left failed or open for feedback: the batch moves on to review (D4),
+           a moment after the last deck lands, carrying which decks are flagged. */
+        var settled = !cur.some(function (d) { return d.st === "failed" || d.st === "editing"; });
+        if (settled) {
+          var doneParams = Object.assign({}, st.params || {}, {
+            count: cur.length,
+            flagged: cur.filter(function (d) { return d.st === "flagged"; }).map(function (d) { return d.n; })
+          });
+          setTimeout(function () {
+            if ((self.state || {}).screen === "batch") ctx.open("review", doneParams, "Every deck written. Review and render · D4");
+          }, 1200);
+        }
       }
     };
     var busy = decks.some(function (d) { return d.st === "writing" || d.st === "upnext" || d.st === "waiting"; });
@@ -492,7 +521,10 @@ function vals({ auto, init }) {
         busy: d.st === "writing" ? "true" : "false",
         pillWritten: d.st === "written" || d.st === "editing",
         pillFlag: d.st === "flagged",
-        pillWriting: d.st === "writing",
+        /* A deck sent back with feedback says Rewriting once its turn comes, so a redo reads apart from a first write
+           (Garreth, 2026-09-14, matching D4). */
+        pillWriting: d.st === "writing" && !d.rewritten,
+        pillRewriting: d.st === "writing" && !!d.rewritten,
         pillFailed: d.st === "failed",
         pillUpnext: d.st === "upnext",
         flag: d.flag || FLAG,
@@ -502,7 +534,7 @@ function vals({ auto, init }) {
         isSkeleton: !copy,
         isFailed: d.st === "failed",
         notFailed: d.st !== "failed",
-        hasNote: d.st === "upnext" && !!d.note,
+        hasNote: (d.st === "upnext" || d.st === "writing") && !!d.note,
         quote: "\\u201c" + (d.note || "") + "\\u201d",
         note: d.note || "",
         taCls: FOCUS_CLS,
@@ -604,7 +636,7 @@ function decks(spec, total = 20) {
   return range(1, total).map((n) => {
     const v = spec[n];
     const o = typeof v === "object" ? v : { st: v || "waiting" };
-    return { n, st: o.st, prev: o.prev || "", note: o.note || "", flag: o.flag || "", ver: 0, retried: false, rewritten: false, fresh: false };
+    return { n, st: o.st, prev: o.prev || "", note: o.note || "", flag: o.flag || "", ver: o.rewritten ? 1 : 0, retried: false, rewritten: !!o.rewritten, fresh: false };
   });
 }
 const writtenTo = (k) => Object.fromEntries(range(1, k).map((n) => [n, "written"]));
@@ -616,8 +648,9 @@ const MOMENTS = {
     decks: decks({
       ...writtenTo(7),
       2: { st: "editing", prev: "written", note: "The hook sounds like an ad. Keep slide 5 under ten words." },
-      4: { st: "upnext", note: "Warmer, and drop the numbers" },
-      8: "writing",
+      /* Two decks sent back: one being rewritten now, one waiting its turn. The writer does one deck at a time. */
+      4: { st: "writing", note: "Warmer, and drop the numbers", rewritten: true },
+      5: { st: "upnext", note: "Shorter captions" },
     }),
     focusCls: "is-focus",
   },
@@ -628,7 +661,7 @@ const MOMENTS = {
   stopped: { decks: decks(writtenTo(12)), mode: "stopped" },
 };
 
-const DESK_H = 1480;
+const DESK_H = 1620;
 
 function build(OUT) {
   fs.mkdirSync(OUT, { recursive: true });
