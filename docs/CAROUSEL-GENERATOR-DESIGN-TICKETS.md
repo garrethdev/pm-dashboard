@@ -107,8 +107,7 @@ the edges are tested, not just the happy middle.
   `docs/designs/carousel-generator/d2-generate-form.build.mjs`.
   **Added beyond the ticket, approved with it and now in F1 and DEV-15**: on
   the phone, Generate sits in a bottom bar with the reason
-  it is unavailable beside it; changing the library offers **Undo**; the
-  datestamp is a month-and-year picker.
+  it is unavailable beside it; changing the library offers **Undo**.
   **First review** (Garreth, 2026-09-14): the form fills the page width; the
   character and slide pills sit opposite the type name; library covers are
   placeholder photos; the desktop picker hangs just under **Change**; the
@@ -117,7 +116,8 @@ the edges are tested, not just the happy middle.
   line; both back buttons (the menu's and "Carousel types") use the outline
   "<".
   **Light mode: designed 2026-09-14 at Garreth's request, awaiting review**,
-  all six screens on the D2 · Light page.
+  all six screens on the D2 · Light page. **Datestamp removed** from the form
+  after approval (Garreth, 2026-09-14).
 - **You get here from:** Generate on a card in D1.
 - **Flows:** F1 step 3.
 - **Design:**
@@ -127,7 +127,8 @@ the edges are tested, not just the happy middle.
   - **Direction** shown read-only with its version number and a link to edit.
   - **Note** (one line).
   - Per-type choices from the template, shown with one sample type's
-    opening-line choice (Fixed or Written) and a month-and-year datestamp.
+    opening-line choice (Fixed or Written). No datestamp field (Garreth,
+    2026-09-14).
   - **Generate** as the accent.
 - **States:**
   - No library chosen: Generate unavailable until one is picked.

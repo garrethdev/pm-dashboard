@@ -13,8 +13,10 @@ done, or the one Garreth names.
   One page per ticket and theme (`D1 · Dark`, `D1 · Light`, `D2 · Dark` …).
   Every ticket's screens go here.
 - **Carousel Generator Prototype**, the click-through of every approved screen:
-  not built yet. It is built only from `main`, by one session, after a ticket
-  is approved. Ticket sessions never save it.
+  https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175.
+  A desktop artboard and a phone artboard; holds D1 and D2 (2026-09-14). It
+  is built only from `main`, by one session, after a ticket is approved.
+  Ticket sessions never save it.
 - The separate D2 canvas (`815e3cc0-…`) is retired and no longer updated.
 
 ## The rules
@@ -57,9 +59,9 @@ other's way:
 - **Never rebuild the whole canvas.** Your branch only holds your own ticket,
   so a full rebuild would wipe every other ticket's pages. Load the saved
   canvas and swap in your own pages (steps 3–6 below).
-- **The shared shell stays put.** The menu, top bar, glow and theme are copied
-  from the D1 and D2 scripts. Changes to them happen only on `main`, as their
-  own task, followed by re-placing every ticket.
+- **The shared shell stays put.** The menu, top bar, glow and theme live in
+  `generator-kit.mjs`. Changes to it happen only on `main`, as their own task,
+  followed by re-placing every ticket and rebuilding the prototype.
 - **The plan, flows and dev tickets** change only after Garreth approves the
   design, and only in the sections for this ticket.
 - **Commits** go to the ticket's branch when Garreth asks; he merges branches
@@ -67,16 +69,20 @@ other's way:
 
 ## How a ticket gets built
 
-1. **Start from the latest build script.** Copy
+1. **Describe the screen, not the shell.** Copy
    `carousel-generator/d2-generate-form.build.mjs` to
-   `carousel-generator/dN-<name>.build.mjs`. It already has the generator's
-   shell (menu, top bar, page glow, both themes, the phone drawer, the
-   prototype note) and reads the font, logo, logo mark and Phosphor icons from
-   the repo, so nothing visual is retyped. Replace the page content and sample
-   data; keep the shell as it is. Set the active menu item to the screen's
-   own. Start every artboard title with `DN · `, and give the script's
-   `canvas.json` a `pages` list (`[{ "id": "dark", "name": "Dark" }]`, adding
-   `light` when light mode is designed).
+   `carousel-generator/dN-<name>.build.mjs` and replace its screen: page CSS,
+   markup, starting state and behaviour. The shell (menu, top bar, page glow,
+   both themes, phone drawer, prototype note, font, logo and icons) comes from
+   `generator-kit.mjs`, so nothing visual is retyped; the kit's header lists
+   what a screen provides. Give the screen an `id` and the menu item it sits
+   under as `nav`, and export it (`export function <name>Screen()`) so the
+   prototype can add it once approved. Links to another screen go through
+   `ctx.open(id, params, note)`, which opens it in the prototype and shows the
+   Prototype note on the review canvas. Scope any class another screen also
+   uses under `.screen-<id>`. Start every artboard title with `DN · `, and give
+   the script's `canvas.json` a `pages` list (`[{ "id": "dark", "name":
+   "Dark" }]`, adding `light` when light mode is designed).
 2. **Build the artboards** into a scratch folder:
    `node docs/designs/carousel-generator/dN-<name>.build.mjs <scratch>/dN`
 3. **Load the saved canvas.** Read the Designs canvas with the Artifact tool
@@ -101,6 +107,23 @@ other's way:
    handing over.
 8. **Update the ticket's Status line** with its page names, then stop for
    review.
+
+## Adding an approved ticket to the prototype
+
+On `main`, once the ticket's branch is merged:
+
+1. In `carousel-generator/prototype.build.mjs`, import the ticket's screen and
+   add it to `SCREENS`. Point the links that lead to it (for example D2's
+   Generate, which will open D3) at its id through `ctx.open`.
+2. Build it: `node docs/designs/carousel-generator/prototype.build.mjs <scratch>/proto`
+3. Package and check it, from inside `<scratch>/proto`:
+   `node <design>/seed-canvas.mjs --template <design>/payload.template.html --out ../carousel-generator-prototype.html --title "Carousel Generator Prototype" --artboard Main.dc.html --artboard Phone.dc.html <an --image for every image in the folder> --canvas canvas.json`,
+   then `--check` it as for the Designs canvas.
+4. Save it with the Artifact tool: `url` set to the Prototype link,
+   `contract: "0.1.31"`, `favicon: "🕹️"`, no `capabilities`. The prototype is
+   rebuilt whole from `main` every time, so nothing on it is merged by hand.
+5. Click through it before handing over: every link into and out of the new
+   screen, on desktop and phone.
 
 ## Status
 

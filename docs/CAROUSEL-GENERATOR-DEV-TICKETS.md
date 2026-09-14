@@ -546,8 +546,11 @@ promises.
   - From the approved D2 (Garreth, 2026-09-14): **Undo** beside Change puts
     the previous library back after a repoint; the library picker lists each
     library's cover, name and image count, and opens as a centred modal on a
-    phone; the datestamp is a month-and-year picker; on a phone, Generate sits
-    in a bottom bar with the reason it is unavailable beside it.
+    phone; on a phone, Generate sits in a bottom bar with the reason it is
+    unavailable beside it.
+  - **Open:** the form has no datestamp field (Garreth, 2026-09-14), but the
+    Glow Up template prints a month and year on a slide for each batch. Where
+    that value comes from is not decided yet.
   - Submit calls `POST batches` and opens the batch page.
 - **Done when:** a batch can be started for each lane from the form, and a
   repoint shows up as a new template version by query.

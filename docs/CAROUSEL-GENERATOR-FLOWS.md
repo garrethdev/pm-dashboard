@@ -112,8 +112,9 @@ width.
      or a required choice when it points at none), **Direction** (the active
      version shown read-only, with its version number and a link to the
      Direction tab), **Note** (one line, optional), and for Glow Up the
-     per-batch choices from the template: **Opening line** (Fixed or Written)
-     and the **Datestamp** (a month and year). The closing line is always the
+     per-batch choices from the template: **Opening line** (Fixed or Written).
+     The form has no datestamp field (Garreth, 2026-09-14); where Glow Up's
+     datestamp comes from is open (DEV-15). The closing line is always the
      fixed one (Garreth, 2026-09-14), so it is not a field.
      **Proposed:** a repoint is saved to the content type as a new template
      version with only the library changed, so later batches use the new
