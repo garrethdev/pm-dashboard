@@ -43,7 +43,17 @@ and produced `docs/CAROUSEL-RENDERER-PORT-SPEC.md`: the exact layout numbers,
 image-selection rules and status handshake the in-app painter must reproduce.
 It also corrected the plan in one place: generated Glow Up rows are written as
 `queued`, not `ready`, because the old painter picks up `ready` rows and would
-overwrite the app's slides. Nothing else in this repo changed.
+overwrite the app's slides.
+
+Then Garreth widened the scope, and the plan was restructured around the full
+pipeline: a studio at the front where a reference or an idea becomes a new
+carousel template on a sandbox canvas with AI help, the batch generation in
+the middle, and at the back the wiring of an approved new content type into
+Supabase so the scheduler, poster and inventory can see it. The two live lanes
+enter the pipeline in the middle as the first imported templates. Phase 1 is
+now flows and designs, finalised and signed off, with nothing built. The
+Covered Eye Aug 13 batch finding is parked at Garreth's instruction. Nothing
+else in this repo changed.
 
 ---
 

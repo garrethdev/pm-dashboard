@@ -13,21 +13,50 @@ Every number below was pulled live on 2026-09-14. Re-run the queries in
 
 ## 0. The one-paragraph version
 
-Three carousel lanes are live and posting every day, and **nobody has made a
-new carousel for any of them in 32 to 44 days.** Across all three there are
-**two** postable pieces left. Posting works, rendering works, the images
-exist, the performance is fine. The supply stopped. The generator's first job
-is to restart the supply for the two lanes that matter most, **Glow Up**
-(Character 2) and **Covered Eye** (Character 3), with a human approving copy
-before anything renders. Everything else in Garreth's notes (per-lane AI
-direction, history and rerun, the trend knowledge base, image folders) hangs
-off that spine and is phased in behind it.
+**Revised 2026-09-14 after Garreth widened the scope.** The Carousel Generator
+is a pipeline with a front, a middle and a back. **Front:** an idea, either a
+trending reference carousel or our own, is turned into a new carousel
+**template** with an AI helper inside a sandbox canvas, where the copy styles
+(font, weight, stroke, shadow, position), the image sources (a library folder
+or AI-generated) and the directions for copy and captions are set by hand,
+then saved as a new content type with a name and a character. **Middle:** a
+content type generates decks in batches, each reviewed and approved before
+rendering. **Back:** an approved new content type is wired into Supabase (its
+own lane, registry row, views), captioned, and becomes visible to the Smart
+Scheduler, the Unified Posting Agent and Inventory. The two lanes that are
+live today, **Glow Up** (Character 2) and **Covered Eye** (Character 3), enter
+this pipeline in the middle as the first two imported templates, because
+nobody has made a new deck for either in 32 to 44 days and there are two
+postable pieces left between them. **Phase 1 is flows and designs, finalised
+and signed off, with nothing built.**
 
 ---
 
 ## 1. Requirements, organised
 
 Garreth's notes, grouped and numbered so the phases in §9 can refer to them.
+Groups G and H were added on 2026-09-14 when the scope widened to the front
+and back of the pipeline.
+
+### G. Create (the front of the pipeline)
+
+| # | Requirement | Where it lands |
+|---|---|---|
+| G1 | Start from an idea: a reference carousel found in Trends, or our own | Studio entry (§6.6), "Recreate this" on Trends (§6.5) |
+| G2 | With AI help, recreate the reference or draft a carousel from scratch as a new **template** for a content type | Studio, AI draft step (§4.6) |
+| G3 | AI prepares the template on a sandbox canvas | Studio canvas (§4.7) |
+| G4 | Move and experiment with hook and copy styles: font, weight, stroke, shadow, position | Studio canvas, text-box inspector |
+| G5 | Direct which images to use: a library folder, or generate new ones with AI | Studio, image direction (§6.8, §6.6) |
+| G6 | Give the AI directions for captions and copy | Studio, direction fields; same model as §6.4 |
+| G7 | Save the result as a new content type: name, character; then generate in batch | Studio, "Save as content type" (§5.4) |
+
+### H. Wire (the back of the pipeline)
+
+| # | Requirement | Where it lands |
+|---|---|---|
+| H1 | Once a new content type is approved, wire it into Supabase as a new carousel lane | Wiring flow (§4.8) |
+| H2 | Captioning | Same pass as generation (§4.4) |
+| H3 | The Smart Scheduler, the Unified Posting Agent and Inventory can see it | Wiring flow, verified by `v_scheduler_pool` and `unified_posts` |
 
 ### A. Generate
 
@@ -62,7 +91,7 @@ Garreth's notes, grouped and numbered so the phases in §9 can refer to them.
 
 | # | Requirement | Where it lands |
 |---|---|---|
-| E1 | A visual-bucket page of image folders | Library page (§6.6) |
+| E1 | A visual-bucket page of image folders | Library page (§6.8) |
 | E2 | A generation session can point at a folder for its base images | Generate form, "Images from" (§6.2) |
 
 ### F. Constraints carried over from the dashboard
@@ -225,7 +254,7 @@ Two existing tables it leans on that this plan now reuses: `batch_briefs`
   Its code is pure TypeScript and imports cleanly into Next.js.
 - **The image-bank table shape** `{pool, category, character, public_url,
   is_cover, status, fact_tags[]}` used by both Glow Up and Covered Eye. The
-  image library in §6.6 should be this shape, not a third one.
+  image library in §6.8 should be this shape, not a third one.
 - **`api/direction-chat.js`**: the system prompt (converge fast, one
   clarifying question, at most two alternatives, be honest about what
   direction cannot change) and the per-lane notes. The Directions page in
@@ -332,6 +361,37 @@ of history. It comes back in Phase 5 with a schema change.
 
 ---
 
+## 3.5 The full pipeline
+
+```
+ IDEA                       STUDIO                      CONTENT TYPE
+ a reference from Trends    AI drafts a template        saved with name +
+ or our own idea     ──►    on a sandbox canvas;  ──►   character; standing
+                            styles, images and          direction; template
+                            directions set by hand      version 1
+                                                              │
+        ┌─────────────────────────────────────────────────────┘
+        ▼
+ BATCH                      REVIEW                      RENDER
+ N decks of copy +   ──►    approve / redo per   ──►    generic painter
+ caption + music            deck and per slide          paints the template
+                                                              │
+        ┌─────────────────────────────────────────────────────┘
+        ▼
+ WIRE (first batch of a new type only)          HAND-OFF
+ lane table, registry row, unified_posts   ──►  gatekeeping outside the app,
+ and v_scheduler_pool blocks, character          then Smart Scheduler, Posting
+ allow-list, n8n media entry, cadence            Agent and Inventory see it
+```
+
+Glow Up and Covered Eye are already wired, so for them the pipeline starts at
+BATCH: their layouts are imported into the studio as templates once (§4.6),
+and everything after that is shared with studio-made types. The plan builds
+the middle first for that reason (§9), so stock is refilled while the front is
+being designed and built.
+
+---
+
 ## 4. Architecture
 
 ### 4.1 Shape
@@ -347,6 +407,11 @@ Next.js route handlers (the only holder of secrets)
    ├── Satori + sharp ........... the in-app painter (ported from render-carousel.js)
    └── n8n webhooks ............. Music Recommender (call), Posting Agent (leave alone)
 ```
+
+Three additions for the widened scope: a **template model** (§4.6) that every
+content type, imported or studio-made, is expressed in; a **generic painter**
+that renders any template, replacing per-lane painters; and a **wiring step**
+(§4.8) that turns an approved studio-made type into a real lane.
 
 The generator **replaces** the n8n writers, the 15-minute quality gate and the
 caption webhook for the lanes it owns. It **calls** the music recommender and
@@ -431,6 +496,113 @@ What still applies once the renderers live in the app:
   The materialise step writes what each lane's downstream actually reads.
 - **Votes on `carousel_copy` expire after 140 hours** in the Unified Renderer.
   Irrelevant to the two chosen lanes; relevant if the retired lanes return.
+
+### 4.6 The template model and the generic painter
+
+Every content type is described by one JSON document, the **template**, and
+one painter renders any template. This is the "one brain, one painter" idea
+from the Glow Up renderer taken one step further: the Director's manifest
+already said which images and which text go where; the template also says
+how they look.
+
+A template holds:
+
+- **Canvas:** width and height (1080×1350, 1080×1440, 1080×1920 today).
+- **Slides:** an ordered list, each with a `layout` (`single`, `quad`,
+  `quiz`, or a free layout of positioned cells), its **image slots** (each
+  with a role such as `cover`, `food`, `evidence:water`, and a source: a
+  library folder, a pool tag, or an AI-generation prompt), and its **text
+  boxes** (each with a `copy_role` such as `hook`, `beat_2`, `cta`, and a
+  style: font family, weight, size, line height, wrap width, alignment,
+  position, stroke width and colour, shadow offset, blur and colour, quote
+  wrapping rule).
+- **Copy contract:** the list of copy roles the writer must fill, with
+  length limits per role, so the AI copy step knows what to produce.
+- **Directions:** the standing copy direction, the caption direction and the
+  image direction the batch step reads.
+- **Provenance:** `source_reference_id` when the template was recreated from
+  a reference, the model and prompt version that drafted it, and the version
+  number.
+
+The port spec's numbers (`docs/CAROUSEL-RENDERER-PORT-SPEC.md` §B) are the
+first two templates, written down as data instead of Python: Glow Up is a
+1080×1440 template of seven slides with `quad`, `single` and `quiz` layouts,
+Liberation Sans Bold, 3 px stroke and a 2/3 px offset shadow; Covered Eye is
+a 1080×1920 template of six slides with one text box per slide, 7 px stroke,
+a 19 px blurred shadow, and slide 5 pinned to the bottom at 0.9 scale. Their
+image-selection rules (pools, distinct groups, brightness matching, the
+diagonal rule) become template settings on the image slots.
+
+The painter takes a template, one deck's copy and one deck's image
+assignments and produces the slides: cover-fit the images into their cells,
+draw each text box as an SVG text layer with stroke, rasterise and composite
+with sharp, upload. It knows nothing about lanes.
+
+### 4.7 The studio canvas
+
+The studio is where a template is made and changed. Two ways in: **from a
+reference** (a Trends result or any reference id: the AI reads the reference's
+beats and visual notes from the library, runs a vision pass over its slides,
+and drafts a template with matching slide count, layouts, text placement and a
+style guess, plus a direction note describing the construction), or **from
+scratch** (Garreth describes the idea; the AI drafts a template and asks at
+most one clarifying question, in the manner of the recovered direction-chat
+endpoint).
+
+The canvas shows one slide at a time at true aspect ratio, with the other
+slides as a filmstrip. Text boxes and image cells are selectable and
+draggable; the inspector on the right edits the selected box's style (font,
+weight, size, stroke, shadow, alignment, wrap width) with the change visible
+at once. Sample copy fills the boxes so the styles can be judged; a
+"Regenerate sample" action asks the AI for fresh sample copy under the
+current direction. Image slots show either a picked library image, or the AI
+prompt that will generate one, and can be pointed at a folder (§6.8).
+
+**Fidelity rule.** The canvas is an HTML preview built from the same template
+JSON the painter reads, and the fonts are the same bundled files, so
+positions and wraps match closely. A **Render preview** action runs the real
+painter on the current slide and shows the exact output, because the
+browser's text layout and the server's are never identical to the pixel.
+Design sign-off happens on the rendered preview, not the HTML one.
+
+**Save as content type** asks for a name, a character and a content-type slug,
+snapshots the template as version 1, and creates the standing direction. The
+type then appears on the Lanes page as "not wired", and its first batch can
+be generated and reviewed before anything touches the database schema.
+
+### 4.8 Wiring a new content type
+
+The runbook `WIRE-NEW-CONTENT-TYPE.md` (workspace root) lists what a lane
+needs before the rest of the system can see it: a source table in the
+standard shape, a `content_type_registry` row, the character's
+`allowed_content_types`, the `scheduler_ready` trigger, a block in the
+`unified_posts` view, a block in `v_scheduler_pool`, the n8n MEDIA entry, and a
+cadence rebalance. Skipping any of them does not make the lane disappear; it
+makes the lane report zeros, which is worse.
+
+**Decision needed (§10, item 12): one table per type, or one shared table.**
+
+- **Option A, one table per type**, exactly as the runbook and every existing
+  lane do it. Each new type creates a table plus two view blocks. This is
+  DDL run from an app, which the dashboard has never done; it needs a
+  reviewed migration each time.
+- **Option B, one shared table** `studio_carousel_posts` with a
+  `content_type` column and slots for up to 12 slides. A new type then needs
+  a registry row, the allow-list entry and one view block that filters on
+  `content_type`, all of which are data or small view edits, not new tables.
+  It breaks the "one table per lane" convention, so `inventory_check`,
+  `v_scheduler_pool` and the Posting Agent need checking for anything that
+  assumes a table is one lane.
+
+The plan recommends **Option B**, verified against those three consumers in
+Phase 1's design work, because it turns wiring into a repeatable, reversible
+step rather than a schema change per type. Either way the wiring flow in the
+app shows what it is about to do (the generated SQL or the registry values),
+requires a `HoldButton` to run it, writes an audit-log entry, and then
+verifies itself by reading `unified_posts` and `v_scheduler_pool` back and
+showing the new lane's row count. The n8n MEDIA entry and the cadence
+rebalance stay human steps, with the cadence editor that already exists in the
+dashboard linked from the wiring screen.
 
 ---
 
@@ -572,7 +744,26 @@ Phase 1 seeds it from the two existing banks (`glowup_image_bank` pools,
 is Phase 4. Images themselves stay in the existing bank tables; a view
 `v_image_assets` unions them into `{folder_id, public_url, is_cover, tags}`.
 
-### 5.4 Row-level security
+### 5.4 Templates
+
+**`carousel_templates`** — one row per template version.
+
+| Column | Purpose |
+|---|---|
+| `id`, `slug`, `version` | one row per saved version; `active` marks the current one |
+| `name`, `character`, `content_type` (nullable until saved as a type) | |
+| `canvas` jsonb, `slides` jsonb, `copy_contract` jsonb | the template model of §4.6 |
+| `copy_direction`, `caption_direction`, `image_direction` text | |
+| `source_reference_id` bigint (nullable) | the reference it was recreated from |
+| `generation_metadata` jsonb | model, prompt version, drafting inputs |
+| `status` | `draft`, `active`, `retired` |
+| `created_by`, `created_at` | |
+
+`carousel_briefs` gains `template_id` so every batch records the exact
+template version it was rendered with. The two imported lanes get their
+templates inserted by the Phase 2 migration, from the port spec's numbers.
+
+### 5.5 Row-level security
 
 The seven knowledge tables have RLS on with zero policies; service role only.
 Keep it that way for every new table. The browser never queries them; route
@@ -654,6 +845,8 @@ can answer "which instruction produced this".
 
 Two panes. **Digests:** the `study_digests` list, newest first, with the body
 readable in place and an **Analyse** action per digest (or for the last N).
+Every reference the analysis links to shows its slides and carries a
+**Recreate this** action that opens the Studio with that reference (§6.6).
 Analysis extracts candidate patterns: a proposed rule, the evidence lines from
 the digest, a confidence, and which lanes it applies to. **Knowledge base:**
 `content_knowledge_base` browsable by lane and confidence, with proposed rules
@@ -661,7 +854,26 @@ shown as pending until accepted. Accepting appends the rule with
 `source_digest_id` and the session email. Rejecting records nothing.
 The Directions bot reads accepted rules; it never reads raw digests.
 
-### 6.6 Library — `/carousel-generator/library`
+### 6.6 Studio — `/carousel-generator/studio` and `/carousel-generator/studio/[template]`
+
+The canvas of §4.7. Entry points: "New from idea" on the Lanes page, "Recreate
+this" on a Trends result, and "Edit template" on a lane card. Three regions:
+the filmstrip of slides on the left, the canvas in the middle, the inspector
+on the right, with the AI conversation collapsible under the inspector. The
+screen's one accent action is **Save as content type** for a new template or
+**Save version** for an existing one; Render preview, Regenerate sample and
+Discard are secondary, and Discard is a `HoldButton`. Every saved version is
+listed and can be made active again.
+
+### 6.7 Content types — `/carousel-generator/types/[slug]`
+
+One page per content type, imported or studio-made: the active template
+version and its history, the standing direction (the Directions page of §6.4
+folds into this page as a tab), the batches run under it, and the wiring
+status with the wiring flow of §4.8 when the type is not yet a lane. The
+Lanes page (§6.1) becomes the index of this page.
+
+### 6.8 Library — `/carousel-generator/library`
 
 A grid of folders, each showing a cover image, the count, the lane and role
 tags. Opening a folder shows its images as a grid with `is_cover` marked. Phase
@@ -740,96 +952,99 @@ quality gate address both.
 
 ## 9. Phases
 
-Each phase ships on its own and leaves the app working. Nothing in a later
-phase is needed for an earlier one to be useful.
+Each phase ships on its own and leaves the app working. The order builds the
+middle of the pipeline before the front, so stock is refilled early and the
+painter and review loop are proven on real lanes before the studio depends on
+them. Garreth confirms or changes this order in §10, item 11.
 
 ### Phase 0 — decisions and prerequisites (no code)
 
-- Answers to the questions in §10.
-- Locate the `carousel-command-center` repo (it is not under Garreth's GitHub
-  account; check the Vercel project's Git settings).
-- Turn on MCP access for the two n8n workflows that could not be read ("PM
-  Carousel Shared Analysis and Search", "[Virlo] References → Story Finder
-  Bridge"), so the plan does not fight a worker it cannot see.
+- Answers to the open items in §10.
 - Confirm secrets available to the deployed app: Anthropic key, Supabase
   service role (already there).
 - Add Czedrick's email to `ALLOWED_EMAILS` on Vercel and in `.env.local`.
-- Migrations: the two brief columns, the status additions,
-  `carousel_lane_directions`, `image_folders`, `v_image_assets`. Commit the
-  reconstructed content-intelligence migration alongside so the repo matches
-  the live schema.
+- Move the two hardcoded service keys in the bridge workflow into n8n
+  credentials and rotate them (§2.6).
 
-### Phase 1 — Glow Up, end to end
+### Phase 1 — flows and designs, finalised (no feature code)
 
-- Lanes page (§6.1) with live numbers.
-- Generate form and batch page (§6.2) for `glowup`: copy, caption, music
-  suggestion, gate score, Approve, Redo, per-slide Redo, materialise into
-  `glowup_decks`.
-- The in-app painter for Glow Up, to the letter of
-  `docs/CAROUSEL-RENDERER-PORT-SPEC.md`: port `paint_manifest.py`'s `quad`,
-  `single`, `quiz` layouts and `deck_rules.json`; the Director step that builds
-  `render_manifest` (pools per slide, brightness matching on the bank's
-  `luminance` column, the 2+2 diagonal rule, per-batch datestamp and fixed
-  copy) moves into the route handler. Captions are drawn as an SVG text layer
-  with stroke and composited with sharp, not through Satori, which cannot
-  stroke text. Bundle Liberation Sans Bold in place of Arial Bold. Rows are
-  claimed atomically before painting (port spec §C.3). Before it ships, ten
-  decks are rendered side by side against their Python originals.
-- History page (§6.3) with Run again.
-- A plain textarea version of Directions for `glowup` (the bot comes in Phase 2)
-  so the batch always records a direction version.
-- Library page (§6.6) read-only over `glowup_image_bank`.
-- Audit log entries for approve, render, discard.
-- Tests: prompt builders, gate scoring and compliance regex, manifest builder,
-  `carousel_id` numbering, materialise mapping. CI stays green.
-- Sidebar item goes live.
+Garreth's instruction, 2026-09-14: nothing is developed until the flows and
+designs are final.
 
-**Done when:** a batch of 20 Glow Up decks generated from the dashboard appears
-in `v_scheduler_pool`, the Smart Scheduler assigns them, and the Posting Agent
-posts one, confirmed live.
+- **Flows.** One document, `docs/CAROUSEL-GENERATOR-FLOWS.md`, with every user
+  journey step by step: recreate from a reference, create from scratch, edit
+  a template, generate a batch, review and approve, render, wire a new type,
+  resume a stopped batch, rerun a batch, analyse a digest, accept a rule,
+  manage a folder. Each flow names its screens, its one accent action, its
+  destructive steps, its empty states and its failure states.
+- **Screens.** Every page in §6 designed with the dashboard's own components,
+  dark mode first, at desktop and phone widths, including the studio canvas
+  and inspector. Where to design them is Garreth's call (§10, item 13): the
+  Claude Design project already holds the tokens and twenty components; the
+  design-system HTML page in `docs/` can host static mocks under a parity
+  test; Figma is frozen.
+- **The template model, written down.** The JSON shape of §4.6 with the two
+  imported lanes expressed in it, reviewed against the port spec, so the
+  painter and the studio are built to the same contract.
+- **The wiring decision verified.** Option A or B of §4.8, checked against
+  `inventory_check`, `v_scheduler_pool` and the Posting Agent by reading their
+  definitions, before any code depends on it.
+- **Review passes.** `ui-ux-pro-max` for the UX rules and
+  `emil-design-eng` for interaction and motion decisions during design;
+  `web-design-guidelines` as the accessibility and best-practice review on
+  every screen before sign-off.
+- **Done when:** Garreth has signed off every flow and every screen, and the
+  template JSON for Glow Up and Covered Eye reproduces the port spec.
 
-### Phase 2 — Covered Eye, and the Directions bot
+### Phase 2 — the middle: templates, generic painter, batch generation
 
-- Covered Eye copy (five-beat arc), image assignment by pool (seeded by
-  `carousel_id` as today), caption-on-image painter for 1080×1920 per the port
-  spec §B.1: slide-5 bottom placement at 0.9 scale, the blurred shadow layer,
-  quotes on Jealous Friend hooks only. Inter Bold replaces SF Pro and Noto
-  Color Emoji replaces Apple Color Emoji, which is a visible change Garreth
-  signs off on a side-by-side. Always upload the captioned render and point
-  `slide_N_url` at it (the Aug 13 batch did not, port spec §C.6).
-- Directions page with the conversation panel, versions, and knowledge-rule
-  citations (§6.4).
-- Library reads `covered_eye_image_bank` too.
+- Migrations: the brief columns and status additions (§5.1),
+  `carousel_templates` (§5.4), `carousel_lane_directions`, `image_folders`,
+  `v_image_assets`; the two imported templates inserted from the port spec.
+- The generic painter (§4.6): SVG text layer with stroke, sharp composition,
+  bundled fonts (Liberation Sans Bold, Inter Bold, Noto Color Emoji), atomic
+  row claims (port spec §C.3), upload retries, a vision QA pass before Ready.
+- Lanes and content-type pages (§6.1, §6.7), Generate and batch review
+  (§6.2), History with Run again and Continue (§6.3), Library read-only over
+  the two banks (§6.8), the standing direction as a plain editor.
+- Glow Up first, Covered Eye second (§3), each ending with a batch that the
+  Smart Scheduler assigns and the Posting Agent posts, confirmed live.
+- Ten decks per lane rendered side by side against their Python originals
+  before the in-app painter is trusted.
 
-**Done when:** Character 3's GLP pool is non-zero from dashboard-made decks and
-one has posted.
+### Phase 3 — the front: the studio
 
-### Phase 3 — Trends and the knowledge base
+- Studio canvas and inspector (§4.7, §6.6): select, drag, style, sample copy,
+  Render preview, versions.
+- AI template drafting from scratch and from a reference (vision pass over
+  the reference's slides, plus its beats and visual notes from the library).
+- Directions conversation with versions and knowledge-rule citations (§6.4),
+  now inside the content-type page.
+- Save as content type, appearing on Lanes as "not wired"; a first batch can
+  be generated and reviewed before wiring.
+
+### Phase 4 — the back: wiring, and AI images
+
+- The wiring flow (§4.8): preview, hold to run, audit log, self-verification
+  against `unified_posts` and `v_scheduler_pool`, links to the cadence editor
+  and the n8n MEDIA step.
+- Caption and music in the batch pass for studio-made types, identical to the
+  imported lanes.
+- AI image generation into a folder from the studio's image directions (the
+  fal.ai prompt-maker scripts are the reference for how the banks were built),
+  plus upload, tagging and retiring in the Library (§6.8).
+
+### Phase 5 — learning, and the rest
 
 - `study_digests` table; one insert node added to the n8n "Daily Study Digest
-  Email" workflow (remember: `update_workflow` saves a draft, `publish_workflow`
-  makes it live).
-- Trends page (§6.5): read digests, Analyse, propose rules, accept into
-  `content_knowledge_base` with provenance.
-- Directions bot reads accepted rules.
-
-**Done when:** a rule proposed from a digest is cited by a saved direction
-version, and a batch records that version.
-
-### Phase 4 — Library management
-
-- Upload into a folder, tag, mark cover, retire. Folder-to-lane assignment.
-- Generation reads folders through `v_image_assets` only.
-
-### Phase 5 — The remaining lanes
-
-- Char2 Slideshow: **out of scope** (Garreth, 2026-09-14). Nobody knows where
-  its copy is written. Revisit only if someone claims the lane.
-- Rich Life, BWC, Strong Informational: only if reactivated. Their renderer is
-  the Vercel function; either lift it into the app or call it.
-- BA Evidence: a compositing step, not a writer; low priority.
-
----
+  Email" workflow (remember: `update_workflow` saves a draft,
+  `publish_workflow` makes it live); the Trends page with Analyse, proposed
+  rules and Recreate this (§6.5); accepted rules read by the directions
+  conversation.
+- Remaining lanes: Rich Life, BWC and Strong Informational only if
+  reactivated, as imported templates of the Vercel renderer's layout; BA
+  Evidence as a compositing template. Char2 Slideshow is out of scope
+  (Garreth, 2026-09-14).
 
 ## 10. Decisions and open questions
 
@@ -852,13 +1067,10 @@ Still open:
    Garreth's own Mac, by hand (§2.4). The in-app painter replaces them; the
    race guard in the port spec §C.3 covers the case where someone runs the old
    script anyway.
-1b. **Should the 60 Covered Eye decks from Aug 13 (CE-181 to CE-240) be
-   repaired?** Their `slide_N_url` columns point at raw bank photos without
-   captions, and 59 of them are marked Posted. One spot-check of a posted
-   TikTok settles whether they went out captionless. The captioned renders for
-   all of them are in the zip's `out/` folder, now on Czed's Mac, so repointing
-   the rows is an upload, not a re-render. Garreth's call; not part of the
-   generator build.
+1b. **The 60 Covered Eye decks from Aug 13 (CE-181 to CE-240)** point at raw
+   bank photos without captions, and 59 are marked Posted. **Parked by
+   Garreth, 2026-09-14: not to be dealt with now.** The captioned renders are
+   in the zip's `out/` folder if it is ever picked up.
 1c. **Music for Glow Up.** The Python painter picked music with a local
    heuristic over `music_library` (prefer Sade-tagged tracks for emotionally
    loaded hooks), not the n8n Music Recommender the plan assumed. Confirm the
@@ -875,6 +1087,24 @@ Still open:
    into n8n credentials and rotate them (§2.6).
 5. **Czedrick's sign-in email** for `ALLOWED_EMAILS`. The address the n8n
    digests go to is the likely one; confirm before adding.
+
+Added 2026-09-14 with the widened scope:
+
+11. **Build order.** The plan builds the middle (batch generation for the two
+    live lanes) before the front (the studio), so stock is refilled while the
+    studio is designed. Confirm, or ask for the studio first.
+12. **One table per content type, or one shared table** for studio-made
+    types (§4.8). The plan recommends the shared table, pending the Phase 1
+    check of `inventory_check`, `v_scheduler_pool` and the Posting Agent.
+13. **Where the Phase 1 screens are designed.** Claude Design (has the tokens
+    and components), static mocks on the design-system page in the repo, or
+    another canvas. Figma is frozen.
+14. **AI image generation provider** for the studio's image directions. The
+    existing banks were built with fal.ai `gpt-image-2`; the dashboard has
+    Higgsfield connected. One provider for the first version.
+15. **Studio fidelity.** Is a rendered preview per slide (a few seconds each)
+    acceptable as the sign-off surface, with the live HTML canvas for
+    editing, as §4.7 proposes?
 
 ---
 
