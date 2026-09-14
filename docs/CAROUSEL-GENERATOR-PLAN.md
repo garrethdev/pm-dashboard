@@ -1026,8 +1026,8 @@ designs are final.
 - Only for lanes that are healthy, performing and frequently used (Garreth,
   2026-09-14). Glow Up qualifies outright. Covered Eye is frequently used and
   the healthiest lane in the system but not a performer; it stays in this
-  phase because it is Character 3's only carousel lane and that pool is zero,
-  **pending Garreth's confirmation (§10, item 16)**. Each lane ends with a
+  phase because it is Character 3's only carousel lane and that pool is zero;
+  **Garreth confirmed it qualifies, 2026-09-14.** Each lane ends with a
   batch that the Smart Scheduler assigns and the Posting Agent posts,
   confirmed live.
 - Ten decks per lane rendered side by side against their Python originals
@@ -1121,11 +1121,9 @@ Decided by Garreth on 2026-09-14:
 | 14 | AI image provider | **Higgsfield** (§4.7). |
 | 15 | Studio fidelity | **Yes**: live HTML canvas for editing, rendered preview per slide for sign-off. |
 
-Still open:
+| 16 | Does Covered Eye qualify for Phase 2? | **Yes** (Garreth, 2026-09-14). |
 
-16. **Does Covered Eye qualify for Phase 2?** It is frequently used and the
-    healthiest lane but not a performer. The plan keeps it because Character 3
-    has no other carousel lane and a pool of zero. Confirm or drop.
+Nothing else is open before Phase 1 starts.
 
 ---
 
