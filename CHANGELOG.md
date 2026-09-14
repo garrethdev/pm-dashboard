@@ -40,6 +40,17 @@ one. Every Generate button is the same cyan button, at the size of
 the grey buttons, with none singled out. The plan, the flows, the design
 tickets and the development tickets (DEV-14) say the same.
 
+Garreth approved the dark-mode design the same day, so the D1 ticket is marked
+done for dark mode. Light mode was then designed on its own Light page of the
+same canvas, using the app's light colours, and the menu's theme switch now
+flips any screen between the two. Light mode is awaiting Garreth's review.
+
+Also new: `docs/designs/README.md`, the steps for designing the next tickets
+the same way from any Claude Code session: which skills to load, the
+sample-data and dark-then-light rules, starting from the D1 build script so
+every screen shares the same menu and top bar, and where each canvas link is
+recorded.
+
 Nothing in the app changed.
 
 ## 2026-09-14 — Carousel Generator: the development tickets

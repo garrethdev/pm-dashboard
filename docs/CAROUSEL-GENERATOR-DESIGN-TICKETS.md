@@ -63,14 +63,18 @@ the edges are tested, not just the happy middle.
 
 ## D1. Carousel types — the landing screen
 
+- **Status:** dark mode **done**, approved by Garreth on 2026-09-14, desktop,
+  phone and first run. Canvas:
+  https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8, built
+  by `docs/designs/carousel-generator/d1-carousel-types.build.mjs`.
+  **Light mode: designed 2026-09-14, awaiting review** (the canvas's Light
+  page; the menu's theme switch also flips any screen).
 - **You get here from:** the dashboard's Generate page, Carousel card.
 - **Flows:** F1 steps 1–2; entry point for F8.
 - **Design:**
   - The generator's own left menu with every item: **← Dashboard**,
     Carousel types (active), History, Image libraries, Studio, Trends.
-  - One card per carousel type: name, character, posts left, days of cover,
-    last batch date, median views, and a **Generate** button.
-  - **New carousel type** (secondary).
+  - **New carousel type** (secondary), opening the Studio.
   - Card layout (Garreth, 2026-09-14): the name; below it, neutral pills for
     the character and the template's slide count; a **View details** row with
     an arrow on the right, set between thin grey lines, that opens posts left,

@@ -5,9 +5,10 @@
  * Design step only (docs/CAROUSEL-GENERATOR-DESIGN-TICKETS.md, D1). Nothing
  * here is app code. It writes three clickable artboards plus the canvas layout:
  *
- *   Main.dc.html      desktop 1440×900, populated
- *   Phone.dc.html     phone 390×844, populated, menu as a drawer
- *   FirstRun.dc.html  desktop 1440×900, no carousel types yet
+ *   Main.dc.html           desktop 1440×900, populated          (Dark page)
+ *   Phone.dc.html          phone 390×844, menu as a drawer      (Dark page)
+ *   FirstRun.dc.html       desktop 1440×900, no carousel types  (Dark page)
+ *   MainLight / PhoneLight / FirstRunLight .dc.html             (Light page)
  *   canvas.json
  *
  * Every visual value is read from the app rather than retyped: the font file,
@@ -63,6 +64,7 @@ const I = {
   plus: icon("Plus", 12, "bold"),
   caret: icon("CaretRight", 14, "bold"),
   caretDown: icon("CaretDown", 14, "bold"),
+  sun: icon("Sun"),
 };
 
 // src/components/ui/sidebar-toggle-icon.tsx, verbatim.
@@ -114,6 +116,21 @@ function css(phone) {
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 }
+/* Light mode: the same token names at globals.css's light values. Flat by the
+   app's own decision (2026-09-07): no glow, no blur, no shadows. Scoped to .app
+   so the prototype's theme switch can flip it. */
+.app.is-light {
+  color-scheme: light;
+  --bg: #eef0f2; --card: #f7f7f8; --card-sunken: #f2f2f3; --card-raised: #eeeef0;
+  --border: #e4e4e6; --text-primary: #1b1d21; --text-muted: #515c6b;
+  --overlay-veil: var(--card); --overlay-blur: none; --overlay-rim: none;
+  --scrim: rgba(27, 29, 33, 0.32); --scrim-blur: none;
+  --glow-a: transparent; --glow-b: transparent; --glow-blur: 0px; --glow-rail: none; --glow-rail-bottom: none;
+  --glass: var(--card); --glass-border: var(--border); --glass-highlight: 0 0 #0000; --glass-blur: none;
+  --accent: #0e7490; --accent-deep: #155e75; --accent-soft: rgba(14, 116, 144, 0.12);
+  --danger: #b91c1c; --pill-bg: #e4e8ed;
+  --sh-card: none; --sb-shadow: 0 0 #0000;
+}
 * { box-sizing: border-box; scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }
 html, body { margin: 0; background: var(--bg); color: var(--text-primary); }
@@ -126,7 +143,9 @@ svg { display: block; flex-shrink: 0; }
 h1 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; }
 
 /* Shell */
-.app { position: relative; display: flex; overflow: hidden; background: var(--bg); width: ${phone ? 390 : 1440}px; height: ${phone ? 844 : 900}px; }
+/* Colour set here, not only on body: body sits outside the theme scope, so text that
+   inherits would stay the dark theme's near-white on the light page. */
+.app { position: relative; display: flex; overflow: hidden; background: var(--bg); color: var(--text-primary); width: ${phone ? 390 : 1440}px; height: ${phone ? 844 : 900}px; }
 .rail { display: flex; flex-direction: column; flex-shrink: 0; width: 240px; height: 100%; padding: 20px 12px; border-right: 1px solid var(--border);
   background-image: var(--glow-rail), var(--glow-rail-bottom); background-repeat: no-repeat; background-size: 100% 420px, 100% 100%; background-position: top, bottom;
   transition: width 150ms var(--ease); }
@@ -162,8 +181,8 @@ h1 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spa
 .foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; border-top: 1px solid var(--border); padding-top: 12px; }
 .theme { display: flex; align-items: center; justify-content: space-between; border-radius: 16px; padding: 6px 8px; font-size: 14px; line-height: 20px; color: var(--text-muted); }
 .theme-l { display: flex; align-items: center; gap: 10px; }
-.switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; border-radius: 999px; background: var(--card-raised); }
-.knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px; background: var(--text-primary); }
+.switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; border-radius: 999px; background: var(--card-raised); transition: background-color 150ms var(--ease); }
+.knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px; background: var(--text-primary); transition: left 150ms var(--ease), background-color 150ms var(--ease); }
 .theme-c { display: none; width: 40px; height: 40px; align-self: center; }
 .rail--c .theme { display: none; }
 .rail--c .theme-c { display: flex; }
@@ -173,7 +192,7 @@ h1 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spa
 .glow { position: absolute; top: 0; left: 0; right: 0; height: ${phone ? 844 : 900}px; overflow: hidden; pointer-events: none; z-index: 60; }
 .glow span { position: absolute; display: block; border-radius: 50%; filter: blur(var(--glow-blur)); }
 .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: ${phone ? 12 : 16}px; border-bottom: 1px solid var(--border);
-  background: rgba(11, 11, 12, 0.4); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); padding: 12px ${phone ? 16 : 24}px; }
+  background: color-mix(in srgb, var(--bg) 40%, transparent); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); padding: 12px ${phone ? 16 : 24}px; }
 .crumb { display: flex; min-width: 0; flex-shrink: 1; align-items: baseline; gap: 6px; font-size: 14px; line-height: 20px; }
 .crumb .m { color: var(--text-muted); }
 .crumb .s { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -274,6 +293,17 @@ ${
 `
     : ""
 }
+/* Light-mode specifics the tokens do not cover, each copied from the app:
+   the CTA's white label (components.css), the switch's on state
+   (theme-toggle.tsx), and a border on the note, since the flat veil has no rim. */
+.is-light .cta { color: #ffffff; }
+.is-light .switch { background: var(--accent); }
+.is-light .knob { left: 18px; background: var(--card); }
+.is-light .note { border: 1px solid var(--border); }
+.moon, .sun { display: flex; }
+.sun { display: none; }
+.is-light .sun { display: flex; }
+.is-light .moon { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .rail, .navpill, .rbody, .chev, .cchev, .cdetails, .btn2, .cta { transition: none; }
   .note { transform: translate(-50%, 0); transition: opacity 150ms linear; }
@@ -319,10 +349,10 @@ function sidebar(phone) {
       </div>
       <div class="foot">
         <div class="theme">
-          <span class="theme-l"><span class="nbadge">${I.moon}</span>Dark mode</span>
-          <button type="button" class="switch" role="switch" aria-checked="false" aria-label="Toggle light / dark mode" onClick="{{theme}}"><span class="knob"></span></button>
+          <span class="theme-l"><span class="nbadge"><span class="moon">${I.moon}</span><span class="sun">${I.sun}</span></span>{{themeLabel}}</span>
+          <button type="button" class="switch" role="switch" aria-checked="{{themeChecked}}" aria-label="Toggle light / dark mode" onClick="{{theme}}"><span class="knob"></span></button>
         </div>
-        <button type="button" class="icon-btn theme-c" title="Dark mode" aria-label="Dark mode" onClick="{{theme}}">${I.moon}</button>
+        <button type="button" class="icon-btn theme-c" title="{{themeLabel}}" aria-label="{{themeLabel}}" onClick="{{theme}}"><span class="moon">${I.moon}</span><span class="sun">${I.sun}</span></button>
         <button type="button" class="navrow" title="{{settingsTitle}}" onClick="{{settings}}"><span class="nbadge">${I.gear}</span><span class="nlabel">Settings</span></button>
         <button type="button" class="navrow" title="{{logoutTitle}}" onClick="{{logout}}"><span class="nbadge">${I.signOut}</span><span class="nlabel">Logout</span></button>
       </div>
@@ -436,7 +466,7 @@ function page() {
 
 /* ── Behaviour ─────────────────────────────────────────────────────────── */
 
-function logic({ phone, firstRun }) {
+function logic({ phone, firstRun, light }) {
   return `
 class Component extends DCLogic {
   componentDidMount() { this.placePill(); }
@@ -468,8 +498,9 @@ class Component extends DCLogic {
   renderVals() {
     var PHONE = ${phone};
     var FIRST_RUN = ${firstRun};
+    var LIGHT = ${light};
     var self = this;
-    var s = Object.assign({ active: "types", collapsed: false, retiredOpen: false, note: "", noteOn: false, spinning: false, drawer: false, openCards: {} }, this.state || {});
+    var s = Object.assign({ active: "types", collapsed: false, retiredOpen: false, note: "", noteOn: false, spinning: false, drawer: false, openCards: {}, light: LIGHT }, this.state || {});
 
     var NAV = [
       ["types", "Carousel types", ""],
@@ -547,6 +578,9 @@ class Component extends DCLogic {
 
     return {
       railCls: (s.collapsed && !PHONE ? "rail--c" : "") + (PHONE && s.drawer ? " open" : ""),
+      themeCls: s.light ? "is-light" : "",
+      themeLabel: s.light ? "Light mode" : "Dark mode",
+      themeChecked: s.light ? "true" : "false",
       scrimCls: s.drawer ? "on" : "",
       drawerExpanded: s.drawer ? "true" : "false",
       navCls: navCls, navCurrent: navCurrent, navTitle: navTitle, go: go,
@@ -585,7 +619,7 @@ class Component extends DCLogic {
       back: function () { self.setState({ drawer: false }); self.note("Back to the dashboard's Generate page"); },
       settings: function () { self.note("Opens dashboard Settings"); },
       logout: function () { self.note("Signs out"); },
-      theme: function () { self.note("Light mode is designed once dark is approved"); },
+      theme: function () { self.setState({ light: !s.light }); },
       bell: function () { self.note("Opens notifications"); },
       newType: function () { self.setState({ drawer: false }); self.note("Opens the Studio to create a carousel type · D6"); }
     };
@@ -593,7 +627,7 @@ class Component extends DCLogic {
 }`;
 }
 
-function artboard({ phone, firstRun }) {
+function artboard({ phone, firstRun, light = false }) {
   const w = phone ? 390 : 1440;
   const h = phone ? 844 : 900;
   return `<!doctype html>
@@ -607,7 +641,7 @@ function artboard({ phone, firstRun }) {
 <helmet>
   <style>${css(phone)}</style>
 </helmet>
-<div class="app">
+<div class="app {{themeCls}}">
   ${sidebar(phone)}
   ${phone ? `<div class="scrim {{scrimCls}}" aria-hidden="true" onClick="{{closeDrawer}}"></div>` : ""}
   <div class="colwrap">
@@ -624,7 +658,7 @@ function artboard({ phone, firstRun }) {
 </div>
 </x-dc>
 <script data-dc-script data-props='{"$preview":{"width":${w},"height":${h}}}'>
-${logic({ phone, firstRun })}
+${logic({ phone, firstRun, light })}
 </script>
 </body>
 </html>
@@ -632,29 +666,44 @@ ${logic({ phone, firstRun })}
 }
 
 fs.mkdirSync(OUT, { recursive: true });
-fs.writeFileSync(path.join(OUT, "Main.dc.html"), artboard({ phone: false, firstRun: false }));
-fs.writeFileSync(path.join(OUT, "Phone.dc.html"), artboard({ phone: true, firstRun: false }));
-fs.writeFileSync(path.join(OUT, "FirstRun.dc.html"), artboard({ phone: false, firstRun: true }));
+const BOARDS = [
+  { file: "Main.dc.html", phone: false, firstRun: false, title: "D1 · Carousel types · Desktop", x: 0, y: 0 },
+  { file: "Phone.dc.html", phone: true, firstRun: false, title: "D1 · Carousel types · Phone", x: 1540, y: 0 },
+  { file: "FirstRun.dc.html", phone: false, firstRun: true, title: "D1 · First run · Desktop", x: 0, y: 1040 },
+];
+const artboards = [];
+for (const light of [false, true]) {
+  for (const b of BOARDS) {
+    const file = light ? b.file.replace(".dc.html", "Light.dc.html") : b.file;
+    fs.writeFileSync(path.join(OUT, file), artboard({ phone: b.phone, firstRun: b.firstRun, light }));
+    artboards.push({
+      file,
+      title: light ? `${b.title} · Light` : b.title,
+      page: light ? "light" : "dark",
+      x: b.x,
+      y: b.y,
+      w: b.phone ? 390 : 1440,
+      h: b.phone ? 844 : 900,
+      is_interactive: true,
+    });
+  }
+}
+const tryNote =
+  "Clickable. Try the menu (the highlight glides), the collapse button beside the logo, View details on a card, Retired, refresh, the Dark mode switch, a type's name, and Generate, Open running batch or New carousel type.\n\nScreens not designed yet show a Prototype note naming their ticket.\n\nOn the phone, the menu button opens the drawer.";
 fs.writeFileSync(
   path.join(OUT, "canvas.json"),
   JSON.stringify(
     {
-      artboards: [
-        { file: "Main.dc.html", title: "D1 · Carousel types · Desktop", x: 0, y: 0, w: 1440, h: 900, is_interactive: true },
-        { file: "Phone.dc.html", title: "D1 · Carousel types · Phone", x: 1540, y: 0, w: 390, h: 844, is_interactive: true },
-        { file: "FirstRun.dc.html", title: "D1 · First run · Desktop", x: 0, y: 1040, w: 1440, h: 900, is_interactive: true },
+      pages: [
+        { id: "dark", name: "Dark" },
+        { id: "light", name: "Light" },
       ],
+      artboards,
       annotations: [
-        {
-          id: "d1-try",
-          x: 1540,
-          y: 940,
-          w: 390,
-          text:
-            "Clickable. Try the menu (the highlight glides), the collapse button beside the logo, Retired, refresh, a type's name, and Generate, Open running batch or New carousel type.\n\nScreens not designed yet show a Prototype note naming their ticket.\n\nOn the phone, the menu button opens the drawer.",
-        },
+        { id: "d1-try", page: "dark", x: 1540, y: 940, w: 390, text: tryNote },
+        { id: "d1-try-light", page: "light", x: 1540, y: 940, w: 390, text: tryNote },
       ],
-      launch: { view: "canvas" },
+      launch: { view: "canvas", page: "light" },
     },
     null,
     2,
