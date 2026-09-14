@@ -118,6 +118,9 @@ width.
      **Proposed:** a repoint is saved to the content type as a new template
      version with only the library changed, so later batches use the new
      library too. Batches already made keep the library they recorded.
+     **Undo** beside Change puts the previous library back. On a phone,
+     Generate sits in a bottom bar with the reason it is unavailable beside it
+     (D2, approved by Garreth 2026-09-14).
   4. Press Generate. The app creates the brief, the `content_batches` row
      and one empty deck card per requested deck, then opens Batch.
   5. Batch requests decks one at a time. Each card fills in as its copy

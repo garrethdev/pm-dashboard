@@ -9,6 +9,10 @@ language. Started 2026-09-10 with the first external code review.
 entry in the same pass — a change that is not in the changelog did not happen as
 far as the next person is concerned.
 
+**Development work only.** Design tickets (the Carousel Generator design
+screens under `docs/designs/`) get no changelog entry; their record is the
+ticket's Status line (Garreth, 2026-09-14).
+
 Three rules it is easy to get wrong:
 
 - **Say where the change came from.** A review finding, a bug seen in

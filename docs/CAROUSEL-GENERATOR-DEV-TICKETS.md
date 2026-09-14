@@ -543,6 +543,11 @@ promises.
     hard-coded per lane.
   - Generate is unavailable with no library, or while a group the template
     needs is empty, and the empty groups are named (DEV-06).
+  - From the approved D2 (Garreth, 2026-09-14): **Undo** beside Change puts
+    the previous library back after a repoint; the library picker lists each
+    library's cover, name and image count, and opens as a centred modal on a
+    phone; the datestamp is a month-and-year picker; on a phone, Generate sits
+    in a bottom bar with the reason it is unavailable beside it.
   - Submit calls `POST batches` and opens the batch page.
 - **Done when:** a batch can be started for each lane from the form, and a
   repoint shows up as a new template version by query.

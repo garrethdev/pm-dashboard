@@ -51,7 +51,7 @@ layout:
 | Characters | "Character 2", "Character 3", "Character 4" (Garreth, 2026-09-14) | Account handles |
 | Numbers | Plausible made-up values: 14 posts left, 6 days of cover, 24.3k median views, "7 of 20 written" | Live figures from the database |
 | Slide copy and captions | Short invented hooks and lines of realistic length, including one long line to test wrapping | Copy from real posts |
-| Images | Neutral placeholder photos or tinted blocks | Real account renders or bank images |
+| Images | Neutral placeholder photos or tinted blocks. Image library covers may use photos from the Supabase image store as placeholders (Garreth, 2026-09-14) | Real account renders or bank images anywhere else |
 | Music | "Artist Name – Song Title" | Real tracks from the music library |
 | People | "Alex", "Sam" for "who ran it" and reviewers | Real team emails |
 | Dates | Relative and plausible: "2 days ago", "Sep 12" | |
@@ -64,11 +64,14 @@ the edges are tested, not just the happy middle.
 ## D1. Carousel types — the landing screen
 
 - **Status:** dark mode **done**, approved by Garreth on 2026-09-14, desktop,
-  phone and first run. Canvas:
-  https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8, built
-  by `docs/designs/carousel-generator/d1-carousel-types.build.mjs`.
-  **Light mode: designed 2026-09-14, awaiting review** (the canvas's Light
-  page; the menu's theme switch also flips any screen).
+  phone and first run. On the Carousel Generator Designs canvas
+  (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
+  pages **D1 · Dark** and **D1 · Light**, built by
+  `docs/designs/carousel-generator/d1-carousel-types.build.mjs`.
+  **Light mode: designed 2026-09-14, awaiting review** (the D1 · Light page;
+  the menu's theme switch also flips any screen). The menu's back button uses
+  the outline "<" (the app's ChevronLeft), like every back button in the
+  generator (Garreth, 2026-09-14).
 - **You get here from:** the dashboard's Generate page, Carousel card.
 - **Flows:** F1 steps 1–2; entry point for F8.
 - **Design:**
@@ -95,6 +98,26 @@ the edges are tested, not just the happy middle.
 
 ## D2. Generate form
 
+- **Status:** dark mode **approved by Garreth on 2026-09-14**: desktop,
+  phone, the library picker at both sizes, the
+  empty-groups state and the no-library state. On the Carousel Generator
+  Designs canvas
+  (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
+  pages **D2 · Dark** and **D2 · Light**, built by
+  `docs/designs/carousel-generator/d2-generate-form.build.mjs`.
+  **Added beyond the ticket, approved with it and now in F1 and DEV-15**: on
+  the phone, Generate sits in a bottom bar with the reason
+  it is unavailable beside it; changing the library offers **Undo**; the
+  datestamp is a month-and-year picker.
+  **First review** (Garreth, 2026-09-14): the form fills the page width; the
+  character and slide pills sit opposite the type name; library covers are
+  placeholder photos; the desktop picker hangs just under **Change**; the
+  phone picker is a centred modal; the picker no longer warns about empty
+  groups; the note field is the same full-width box as the fixed opening
+  line; both back buttons (the menu's and "Carousel types") use the outline
+  "<".
+  **Light mode: designed 2026-09-14 at Garreth's request, awaiting review**,
+  all six screens on the D2 · Light page.
 - **You get here from:** Generate on a card in D1.
 - **Flows:** F1 step 3.
 - **Design:**

@@ -48,7 +48,8 @@ function icon(name, size = 16, weight = "fill") {
 
 const I = {
   house: icon("House"),
-  arrowLeft: icon("ArrowLeft"),
+  // Every back button is the outline "<": icons.tsx's ChevronLeft (CaretLeft, bold) (Garreth, 2026-09-14).
+  arrowLeft: icon("CaretLeft", 16, "bold"),
   cards: icon("Cards"),
   history: icon("ClockCounterClockwise"),
   images: icon("Images"),
