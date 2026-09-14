@@ -20,7 +20,23 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## 2026-09-14 (latest) — Carousel Generator: the flows, the template, and the Phase 0 checks
+## 2026-09-14 (latest) — Carousel Generator: the screens get light mode too
+
+**Garreth's decision, 2026-09-14, while reviewing the flow diagrams:** the
+generator lives inside the dashboard, so its screens work in dark and light
+mode like every other page, not in dark only.
+
+**Changed:**
+
+- `docs/CAROUSEL-GENERATOR-FLOWS.md` said "dark first", which could be read as
+  "dark only". It now says every screen works in both modes, with dark
+  designed first and light using the same colour names.
+- `docs/CAROUSEL-GENERATOR-PLAN.md`: the screens deliverable now asks for both
+  modes to be designed.
+
+Nothing the dashboard does has changed. No generator screen exists yet.
+
+## 2026-09-14 — Carousel Generator: the flows, the template, and the Phase 0 checks
 
 **Garreth's request, 2026-09-14: get the Phase 0 and Phase 1 items of the
 generator plan done.** Phase 1 is design only, by Garreth's rule, so nothing

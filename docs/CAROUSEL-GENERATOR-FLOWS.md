@@ -63,7 +63,9 @@ is finished.
 | Studio | `/carousel-generator/studio`, `/studio/[template]` | 3 | Save as content type, or Save version | Discard draft |
 | Trends | `/carousel-generator/trends` | 5 | Analyse, on the newest unanalysed digest | — |
 
-All screens: dark first, same shell, Topbar breadcrumb. At phone width the
+All screens work in dark and light mode, like every other page of the
+dashboard (Garreth, 2026-09-14). Dark is designed first; light uses the same
+token names. Same shell, Topbar breadcrumb. At phone width the
 deck grid is one column, batch actions become a bottom bar, and nothing
 scrolls sideways.
 

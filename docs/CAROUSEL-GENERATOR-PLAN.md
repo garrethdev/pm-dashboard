@@ -1037,7 +1037,8 @@ designs are final.
   manage a folder. Each flow names its screens, its one accent action, its
   destructive steps, its empty states and its failure states.
 - **Screens.** Every page in §6 designed with the dashboard's own components,
-  dark mode first, at desktop and phone widths, including the studio canvas
+  in dark and light mode (dark designed first, light from the same tokens;
+  Garreth, 2026-09-14), at desktop and phone widths, including the studio canvas
   and inspector. **Designed in Claude Design** (Garreth's decision,
   2026-09-14), whose project already holds the tokens and twenty components,
   with the round trip kept open: a screen can be captured into a **new**
