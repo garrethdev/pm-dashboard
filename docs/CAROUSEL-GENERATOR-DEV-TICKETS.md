@@ -504,17 +504,23 @@ promises.
 - **Depends on:** DEV-01, approved D1.
 - **Designs:** D1. **Flows:** F1 steps 1 and 2.
 - **Build:** replace the `SectionStub` at `/carousel-generator`.
-  - One card per carousel type. Folded by default (Garreth, 2026-09-14): an
-    arrow to open the details, the name, the character on the right, the status
-    pill on the left of the bottom row and the button on the right.
-  - The details, behind the arrow: postable count and days of cover (from
+  - One card per carousel type (Garreth, 2026-09-14): the name; neutral
+    `StatusPill`s for the character and the template's slide count; a **View
+    details** row with a caret on the right, between `border-border` rules,
+    folded by default; then the button on the right and, opposite it, the last
+    batch date ("Last batch Sep 8"), replaced by the status pill when the type
+    has a status.
+  - The details, behind View details: postable count and days of cover (from
     `v_scheduler_pool` and the lane's cadence), 28-day median views (the same
-    join as the Analytics page, plan §11), last batch date (from
-    `carousel_briefs`, then `content_batches`).
+    join as the Analytics page, plan §11). The last batch date opposite the
+    button comes from `carousel_briefs`, then `content_batches`, and is not
+    repeated in the details.
   - Live types first, retired ones in a collapsed group.
-  - Every Generate is the same secondary button; none is the accent (Garreth,
-    2026-09-14). A type with a running batch shows **Open running batch**
-    instead, with its progress as the status pill.
+  - Every Generate is the same accent button at the secondary button's size.
+    Not `CtaButton`: each of those runs its own WebGL context and animation
+    loop and its own comment rules it out of anything that repeats, so the
+    cards use a plain accent pill. A type with a running batch shows **Open
+    running batch** (secondary) instead, with its progress as the status pill.
   - Not wired: the pill and no Generate button.
   - Read through the existing cached-fetcher pattern (`src/lib/data/cache.ts`)
     with its own tag, refreshed when a batch finishes.

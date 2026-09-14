@@ -62,6 +62,7 @@ const I = {
   x: icon("X", 18, "regular"),
   plus: icon("Plus", 12, "bold"),
   caret: icon("CaretRight", 14, "bold"),
+  caretDown: icon("CaretDown", 14, "bold"),
 };
 
 // src/components/ui/sidebar-toggle-icon.tsx, verbatim.
@@ -208,24 +209,26 @@ h1 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spa
 .grid { display: grid; grid-template-columns: repeat(${phone ? 1 : 3}, minmax(0, 1fr)); gap: 12px; align-items: start; }
 .card { display: flex; flex-direction: column; min-width: 0; border-radius: 24px; padding: 20px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--sh-card); }
 .card.is-retired { background: var(--card-sunken); }
-.chead { display: flex; align-items: center; gap: 4px; min-width: 0; }
-.cexpand { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: -6px; flex-shrink: 0; border-radius: 999px; color: var(--text-muted);
-  transition: color 150ms var(--ease), background-color 150ms var(--ease); }
-.cexpand:hover { background: var(--card-raised); color: var(--text-primary); }
-.cchev { display: flex; transition: transform 200ms var(--ease-out-strong); }
-.card.open .cchev { transform: rotate(90deg); }
-.cname { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em;
+.cname { display: block; align-self: flex-start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em;
   color: var(--text-primary); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: text-decoration-color 150ms var(--ease); }
 .cname:hover { text-decoration-color: var(--text-muted); }
 .is-retired .cname { color: var(--text-muted); }
-.cchar { margin-left: auto; flex-shrink: 0; padding-left: 12px; font-size: 12px; line-height: 16px; color: var(--text-muted); white-space: nowrap; }
+/* Character and slide count: neutral pills only (Garreth, 2026-09-14). */
+.cmeta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .pill { display: inline-flex; align-items: center; flex-shrink: 0; border-radius: 999px; padding: 2px 10px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; background: var(--pill-bg); color: var(--text-muted); }
 .pill--accent { color: var(--accent); }
+/* View details sits between two thin rules, so it reads as its own band of the card. */
+.cview { margin-top: 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.cview-btn { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; font-size: 13px; line-height: 20px; font-weight: 500; color: var(--text-muted);
+  transition: color 150ms var(--ease); }
+.cview-btn:hover { color: var(--text-primary); }
+.cchev { display: flex; transition: transform 200ms var(--ease-out-strong); }
+.card.open .cchev { transform: rotate(180deg); }
 .cdetails { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 220ms var(--ease-out-strong); }
 .card.open .cdetails { grid-template-rows: 1fr; }
 .cd-in { min-height: 0; overflow: hidden; }
 .card:not(.open) .cd-in { visibility: hidden; transition: visibility 0s 220ms; }
-.stats { display: grid; grid-template-columns: repeat(${phone ? 2 : 4}, minmax(0, 1fr)); gap: 12px; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 2px 0 14px; }
 .sv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-primary); }
 .sv.danger { color: var(--danger); }
 .is-retired .sv { color: var(--text-muted); }
@@ -234,6 +237,7 @@ h1 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spa
 /* The button sits right whether or not a status sits left of it. On the button
    itself rather than as a child selector, since it renders inside a sc-if. */
 .cfoot .cta, .cfoot .btn2 { margin-left: auto; }
+.last { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 16px; color: var(--text-muted); }
 
 .retired { display: flex; flex-direction: column; gap: 12px; }
 .rtoggle { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; border-radius: 999px; padding: 6px 12px 6px 8px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-muted);
@@ -271,7 +275,7 @@ ${
     : ""
 }
 @media (prefers-reduced-motion: reduce) {
-  .rail, .navpill, .rbody, .chev, .btn2, .cta { transition: none; }
+  .rail, .navpill, .rbody, .chev, .cchev, .cdetails, .btn2, .cta { transition: none; }
   .note { transform: translate(-50%, 0); transition: opacity 150ms linear; }
   .spin.on { animation: none; }
 }
@@ -345,22 +349,25 @@ function topbar(phone) {
 
 const typeCard = (varName, retired) => `
             <article class="card${retired ? " is-retired" : ""} {{${varName}.openCls}}">
-              <div class="chead">
-                <button type="button" class="cexpand" aria-expanded="{{${varName}.expanded}}" aria-label="{{${varName}.expandLabel}}" title="{{${varName}.expandLabel}}" onClick="{{${varName}.toggle}}"><span class="cchev">${I.caret}</span></button>
-                <button type="button" class="cname" title="{{${varName}.name}}" onClick="{{${varName}.openType}}">{{${varName}.name}}</button>
-                <span class="cchar">{{${varName}.character}}</span>
+              <button type="button" class="cname" title="{{${varName}.name}}" onClick="{{${varName}.openType}}">{{${varName}.name}}</button>
+              <div class="cmeta">
+                <span class="pill">{{${varName}.character}}</span>
+                <span class="pill tnum">{{${varName}.slides}}</span>
               </div>
-              <div class="cdetails">
-                <div class="cd-in">
-                  <div class="stats">
-                    <div><div class="sv tnum">{{${varName}.postsLeft}}</div><div class="sl">Posts left</div></div>
-                    <div><div class="sv tnum {{${varName}.coverCls}}">{{${varName}.cover}}</div><div class="sl">Days of cover</div></div>
-                    <div><div class="sv tnum">{{${varName}.median}}</div><div class="sl">Median views</div></div>
-                    <div><div class="sv tnum">{{${varName}.last}}</div><div class="sl">Last batch</div></div>
+              <div class="cview">
+                <button type="button" class="cview-btn" aria-expanded="{{${varName}.expanded}}" onClick="{{${varName}.toggle}}"><span>View details</span><span class="cchev">${I.caretDown}</span></button>
+                <div class="cdetails">
+                  <div class="cd-in">
+                    <div class="stats">
+                      <div><div class="sv tnum">{{${varName}.postsLeft}}</div><div class="sl">Posts left</div></div>
+                      <div><div class="sv tnum {{${varName}.coverCls}}">{{${varName}.cover}}</div><div class="sl">Days of cover</div></div>
+                      <div><div class="sv tnum">{{${varName}.median}}</div><div class="sl">Median views</div></div>
+                    </div>
                   </div>
                 </div>
               </div>
               <div class="cfoot">
+                <sc-if value="{{${varName}.showLast}}" hint-placeholder-val="{{ true }}"><span class="last tnum">{{${varName}.lastText}}</span></sc-if>
                 <sc-if value="{{${varName}.hasPill}}" hint-placeholder-val="{{ false }}">
                   <span class="pill {{${varName}.pillCls}} tnum">{{${varName}.pill}}</span>
                 </sc-if>
@@ -487,14 +494,14 @@ class Component extends DCLogic {
 
     /* Sample content only — invented names and numbers, per the design step. */
     var TYPES = [
-      { id: "five-things", name: "Five Things I Stopped Doing After Thirty", character: "Character B", posts: 0, cover: 0, median: 1240000, last: "Aug 29", status: "live" },
-      { id: "morning", name: "Morning Routine", character: "Character A", posts: 2, cover: 1, median: 18200, last: "Sep 8", status: "live" },
-      { id: "myth", name: "Myth vs Fact", character: "Character B", posts: 5, cover: 2, median: 24300, last: "Sep 12", status: "live", running: "Writing 7 of 20" },
-      { id: "before-after", name: "Before & After", character: "Character A", posts: 14, cover: 6, median: 31700, last: "Sep 11", status: "live" },
-      { id: "day-life", name: "Day in the Life", character: "Character C", posts: 22, cover: 11, median: 9800, last: "Sep 13", status: "live" },
-      { id: "quiet-luxury", name: "Quiet Luxury Picks", character: "Character C", status: "unwired" },
-      { id: "weekly-wins", name: "Weekly Wins", character: "Character A", posts: 0, cover: 0, median: 12400, last: "Jul 2", status: "retired" },
-      { id: "ama", name: "Ask Me Anything", character: "Character B", posts: 0, cover: 0, median: 6100, last: "Jun 18", status: "retired" }
+      { id: "five-things", slides: 7, name: "Five Things I Stopped Doing After Thirty", character: "Character 3", posts: 0, cover: 0, median: 1240000, last: "Aug 29", status: "live" },
+      { id: "morning", slides: 6, name: "Morning Routine", character: "Character 2", posts: 2, cover: 1, median: 18200, last: "Sep 8", status: "live" },
+      { id: "myth", slides: 8, name: "Myth vs Fact", character: "Character 3", posts: 5, cover: 2, median: 24300, last: "Sep 12", status: "live", running: "Writing 7 of 20" },
+      { id: "before-after", slides: 7, name: "Before & After", character: "Character 2", posts: 14, cover: 6, median: 31700, last: "Sep 11", status: "live" },
+      { id: "day-life", slides: 10, name: "Day in the Life", character: "Character 4", posts: 22, cover: 11, median: 9800, last: "Sep 13", status: "live" },
+      { id: "quiet-luxury", slides: 5, name: "Quiet Luxury Picks", character: "Character 4", status: "unwired" },
+      { id: "weekly-wins", slides: 6, name: "Weekly Wins", character: "Character 2", posts: 0, cover: 0, median: 12400, last: "Jul 2", status: "retired" },
+      { id: "ama", slides: 4, name: "Ask Me Anything", character: "Character 3", posts: 0, cover: 0, median: 6100, last: "Jun 18", status: "retired" }
     ];
 
     var wired = TYPES.filter(function (t) { return t.status === "live"; }).sort(function (a, b) { return a.cover - b.cover; });
@@ -506,10 +513,10 @@ class Component extends DCLogic {
       return {
         name: t.name,
         character: t.character,
-        /* Details start folded: the card is name, character, status and Generate (Garreth, 2026-09-14). */
+        slides: t.slides + " slides",
+        /* Details start folded behind View details (Garreth, 2026-09-14). */
         openCls: open ? "open" : "",
         expanded: open ? "true" : "false",
-        expandLabel: (open ? "Hide details for " : "Show details for ") + t.name,
         toggle: function () {
           var next = Object.assign({}, s.openCards);
           next[t.id] = !open;
@@ -519,13 +526,15 @@ class Component extends DCLogic {
         cover: isLive ? days(t.cover) : "—",
         coverCls: isLive && t.cover <= 1 ? "danger" : "",
         median: t.median != null ? compact(t.median) : "—",
-        last: t.last || "—",
+        /* Opposite Generate: the last batch date, or the status in its place when there is one (Garreth, 2026-09-14). */
+        showLast: !(t.running || t.status === "unwired" || t.status === "retired"),
+        lastText: t.last ? "Last batch " + t.last : "No batches yet",
         hasPill: !!t.running || t.status === "unwired" || t.status === "retired",
         pill: t.running ? t.running : t.status === "unwired" ? "Not wired" : "Retired",
         pillCls: t.running ? "pill--accent" : "",
-        /* Every Generate is the same button; none is singled out (Garreth, 2026-09-14). */
-        isAccent: false,
-        isSecondary: isLive && !t.running,
+        /* Every Generate is the same accent button (Garreth, 2026-09-14). */
+        isAccent: isLive && !t.running,
+        isSecondary: false,
         isRunning: isLive && !!t.running,
         openType: function () { self.note("Opens the page for " + t.name + " · D7"); },
         generate: function () { self.note("Opens the Generate form for " + t.name + " · D2"); },

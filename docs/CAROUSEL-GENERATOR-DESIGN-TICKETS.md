@@ -48,7 +48,7 @@ layout:
 | Thing | Use | Not |
 |---|---|---|
 | Carousel types | Invented names such as "Morning Routine", "Before & After", "Myth vs Fact", "Day in the Life" | Real lane names (Glow Up, Covered Eye) |
-| Characters | "Character A", "Character B" | Real character names or account handles |
+| Characters | "Character 2", "Character 3", "Character 4" (Garreth, 2026-09-14) | Account handles |
 | Numbers | Plausible made-up values: 14 posts left, 6 days of cover, 24.3k median views, "7 of 20 written" | Live figures from the database |
 | Slide copy and captions | Short invented hooks and lines of realistic length, including one long line to test wrapping | Copy from real posts |
 | Images | Neutral placeholder photos or tinted blocks | Real account renders or bank images |
@@ -71,8 +71,14 @@ the edges are tested, not just the happy middle.
   - One card per carousel type: name, character, posts left, days of cover,
     last batch date, median views, and a **Generate** button.
   - **New carousel type** (secondary).
-  - Every Generate button is the same secondary button; none is highlighted
-    (Garreth, 2026-09-14).
+  - Card layout (Garreth, 2026-09-14): the name; below it, neutral pills for
+    the character and the template's slide count; a **View details** row with
+    an arrow on the right, set between thin grey lines, that opens posts left,
+    days of cover and median views; then **Generate** on the
+    right with the last batch date opposite it, or the status in the date's
+    place when the type has one.
+  - Every Generate button is the same accent button, at the secondary
+    button's size.
 - **States:**
   - A type with a batch already running: its button becomes **Open running
     batch**.

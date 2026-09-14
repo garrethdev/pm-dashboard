@@ -53,7 +53,7 @@ is finished.
 | Screen | Route | Phase | Accent action | Hold |
 |---|---|---|---|---|
 | Generate hub | `/generate` | built 2026-09-14 | none; each card opens its generator | — |
-| Carousel types | `/carousel-generator` | 2 | none; every card's Generate is the same secondary button | — |
+| Carousel types | `/carousel-generator` | 2 | Generate on every card, all the same accent button | — |
 | Generate | `/carousel-generator/generate?lane=` | 2 | Generate | — |
 | Batch | `/carousel-generator/batches/[id]` | 2 | Render approved, once anything is approved | Discard deck; Withdraw approval |
 | History | `/carousel-generator/history` | 2 | Only in the first-run empty state: Generate | — |

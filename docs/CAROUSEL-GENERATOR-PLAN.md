@@ -851,7 +851,10 @@ cover (from `v_scheduler_pool` and cadence), last batch date, 28-day median
 views, a **Generate** button. Lanes without a renderer or copy schema (Char2
 Slideshow) show the card with the button absent and the pill "Not wired",
 never a disabled button with no explanation. Every card's Generate is the same
-secondary button; none is singled out as the accent (Garreth, 2026-09-14).
+accent button, none singled out (Garreth, 2026-09-14). The card itself is the
+name, neutral pills for the character and slide count, a folded **View
+details** section, then Generate with the last batch date opposite it, or the
+status in the date's place when there is one.
 
 ### 6.2 Generate — `/carousel-generator/generate?lane=glowup`, then `/carousel-generator/batches/[id]`
 

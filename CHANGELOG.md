@@ -31,12 +31,14 @@ Claude Design canvas. It reads the app's own font, logo and icons, so the
 design cannot drift from them, and it fills the screens with made-up sample
 content. Running it again rebuilds the screens after a change.
 
-Revised the same day after Garreth's first review: each card now shows only
-the name, the character (to its right), an arrow that opens the details
-(posts left, days of cover, median views, last batch), the status on the left
-and Generate on the right. Every Generate button is now the same grey button;
-none is highlighted for the type with the least cover. The plan, the flows,
-the design tickets and the development tickets (DEV-14) say the same.
+Revised the same day after Garreth's reviews. Each card now shows the name;
+under it, grey pills for the character and how many slides the template has;
+a "View details" row between thin grey lines that opens posts left, days of
+cover and median views; then Generate on the right with the last
+batch date opposite it, or the status in the date's place when the type has
+one. Every Generate button is the same cyan button, at the size of
+the grey buttons, with none singled out. The plan, the flows, the design
+tickets and the development tickets (DEV-14) say the same.
 
 Nothing in the app changed.
 
