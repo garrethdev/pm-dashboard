@@ -35,8 +35,8 @@ Revised the same day after Garreth's first review: each card now shows only
 the name, the character (to its right), an arrow that opens the details
 (posts left, days of cover, median views, last batch), the status on the left
 and Generate on the right. Every Generate button is now the same grey button;
-none is highlighted for the type with the least cover. The plan, the flows and
-the design tickets say the same.
+none is highlighted for the type with the least cover. The plan, the flows,
+the design tickets and the development tickets (DEV-14) say the same.
 
 Nothing in the app changed.
 
