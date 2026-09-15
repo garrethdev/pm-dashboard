@@ -33,18 +33,20 @@ Words used on screen for a deck's state, and their existing Pill tones:
 |---|---|---|
 | Writing | `accent` | The model call for this deck is in flight |
 | Written | `neutral` | Every copy role, the caption and music exist |
-| Flagged | `warn` | Score below 6.0, a compliance hit, or its track could not be found on TikTok or Instagram. Still approvable; a deck whose track is not found is not handed off. |
+| Flagged | `warn` | Score below 6.0, a compliance hit, a Content Risk Gate rejection (with the gate's reason), a vision-check hit after rendering, or its track could not be found on TikTok or Instagram. Never rendered while flagged; never released. |
 | Approved | `ok` | A person accepted the copy |
 | Rendering | `accent` | The painter has claimed the row |
 | Rendered | `ok` | Every slide uploaded and on the lane row |
-| Generated | `ok` | Lane row complete, waiting at gatekeeping outside the app |
+| Approved | `ok` | Approved on the finished batch by Approve (n) decks; in the scheduler's pool (Garreth, 2026-09-15) |
 | Failed | `danger` | The last attempt errored; Retry is on the card |
 
-**Decided (Garreth, 2026-09-14): the last state is "Generated".** The plan
+**Decided (Garreth, 2026-09-14): the last state was "Generated".** The plan
 first called it "Ready", which clashes with `posting_status = 'Ready'`
-(*scheduled for today*) everywhere else in the dashboard. The copy stage says
-Writing and Written, so on a card "Generated" only ever means the whole deck
-is finished.
+(*scheduled for today*) everywhere else in the dashboard. **Revised
+2026-09-15 (Garreth):** with the text gate running inside writing and the
+sign-off happening on the finished batch, a rendered deck simply waits as
+Rendered until Approve, and the last state is **Approved**. "Generated" is
+no longer used on a card.
 
 ---
 
@@ -127,6 +129,11 @@ width.
   5. Batch requests decks one at a time. Each card fills in as its copy
      arrives. The progress line reads "7 of 20 written" and is announced
      politely to screen readers.
+  6. As each deck's copy lands, the app scores it and sends its hook, slide
+     copy and caption to the **Content Risk Gate** webhook (the same gate n8n
+     runs nightly for the other lanes; Garreth, 2026-09-15). A rejection
+     flags the deck with the gate's reason and pre-fills its suggested fix in
+     the Regenerate box. A flagged deck is never rendered.
 - **Accent action:** Generate (Carousel types and Generate).
 - **Hold:** none.
 - **Empty:** Carousel types has no first-run state, because lanes always exist. A lane
@@ -193,38 +200,54 @@ width.
   `covered_eye_carousel` with `status = 'scripted'`, both with
   `gatekeep_status = 'pending'`, `approved = false`, `scheduler_ready = false`).
 
-### F3. Render
+### F3. Render and approve
 
-- **When:** at least one deck is approved. Phase 2.
+- **When:** every deck is written. Phase 2. Rewritten 2026-09-15 for
+  Garreth's decision that the text gate runs at writing (F1 step 6) and the
+  sign-off is Approve on the finished batch.
 - **Screens:** Batch.
 - **Steps:**
-  1. Press **Render approved**. The page requests one deck at a time.
+  1. Press **Render**. It takes every written deck that is not flagged; the
+     page requests one deck at a time.
   2. For each deck the painter claims its lane row (one conditional update;
      port spec §C.3), picks and persists images, paints every slide, uploads,
-     and writes the URLs, `rendered_at` and the rendered state.
+     and writes the URLs, `rendered_at` and the rendered state. The lane row
+     carries the gate's verdict from F1 step 6, never `'pending'`.
   3. Slide thumbnails fill in on the card as they land. The progress line
-     reads "4 of 12 rendered".
+     reads "4 of 12 rendered". A thumbnail opens the full-size preview.
   4. A vision check reads each rendered slide for cut-off text, overflow past
      65% of the height, poor contrast and missing glyphs. A hit Flags the
      card with the reason and a thumbnail outline on the slide.
-  5. When every approved deck is Generated, the progress line says how many
-     went into the pool and links to Inventory.
-- **Accent action:** Render approved.
+  5. When every unflagged deck is rendered, the progress line counts rendered
+     and flagged decks, and two actions appear: **Approve (n) decks**, the
+     accent, for every rendered deck the checks passed; **Regenerate (n)
+     decks**, secondary, for every flagged one (with the gate's suggestions
+     pre-filled). Approve works while flagged decks remain.
+  6. **Approve** sets `scheduler_ready = true` and `approved = true` on those
+     lane rows. From that moment the Smart Scheduler, the Posting Agent and
+     Inventory see them; they post on the scheduler's timetable, not now.
+     Approved decks say Approved and can no longer be regenerated here.
+  7. Regenerated decks rewrite (F1 step 6 runs again), render again, and
+     rejoin the finished line, where Approve offers them next.
+- **Accent action:** Render, then Approve (n) decks.
 - **Hold:** none.
-- **Empty:** all clear once everything approved is Generated.
+- **Empty:** all clear once every deck is approved or discarded.
 - **Fails:**
   - The claim returns nothing: the card reads "Rendering elsewhere" and
     refreshes when that finishes. Someone ran the old Python painter, or a
     second tab.
-  - An image fails to download, or a library group is empty: the card is Failed with
-    the slide number and Retry. Other decks continue.
+  - An image fails to download, or a library group is empty: the card is
+    Failed with the slide number and Retry. Other decks continue.
   - An upload fails three times: Failed, Retry.
   - A row stuck in Rendering for more than ten minutes: **Proposed:** the
     sweeper runs when a batch page loads and when Render is pressed, not on a
     timer, and returns that lane's stuck rows to queued.
+  - Approve fails part-way: the decks that did flip say Approved, the rest
+    keep the button; pressing it again approves only what is left.
 - **Writes:** lane table (`slide_N_url`, `rendered_at`, render state, the
-  persisted manifest), Storage buckets `glowup-renders` and
-  `covered-eye-images/renders`.
+  persisted manifest; on Approve `scheduler_ready`, `approved`), Storage
+  buckets `glowup-renders` and `covered-eye-images/renders`; every Approve
+  is audit-logged with who pressed it.
 
 ### F4. Resume a stopped batch
 
@@ -605,8 +628,10 @@ width.
   reduced motion is respected.
 - Every icon-only control has a label, focus rings stay, tab order matches
   visual order.
-- The generator never writes `approved = true`, `gatekeep_status = 'approved'`
-  or `scheduler_ready = true` on a lane row.
+- The generator writes `gatekeep_status` only as the Content Risk Gate's
+  verdict, never `'pending'` (the nightly gate ignores `'pending'` rows
+  forever). `approved = true` and `scheduler_ready = true` are written only
+  by Approve (n) decks on the finished batch (Garreth, 2026-09-15).
 
 ---
 
@@ -614,7 +639,9 @@ width.
 
 **Decided (Garreth, 2026-09-14)**
 
-1. A finished deck waiting at gatekeeping is **Generated**.
+1. A finished deck waiting at gatekeeping is **Generated**. *(Revised
+   2026-09-15: the gate runs at writing; a rendered deck waits as Rendered
+   and becomes **Approved** on Approve (n) decks. See F3.)*
 2. Glow Up's closing line is always the fixed one.
 3. Covered Eye's slide 1 is the hook, so `hook_text` always holds it.
 4. The writer may choose any track on TikTok or Instagram. A track missing

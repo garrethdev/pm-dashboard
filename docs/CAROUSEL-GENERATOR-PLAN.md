@@ -193,8 +193,12 @@ truth, confession, discovery with the brand named once, resolution), and sets
 `status = 'scripted'`, `gatekeep_status = 'pending'`. A Python renderer on a
 Mac picks images from the bank by pool (slide 1 mirror selfie, slides 2 to 4
 food, 5 product, 6 body), burns the captions on, uploads to
-`covered-eye-images/renders`. Nothing in n8n advances `gatekeep_status`; that
-is done by hand. Also zero runs on record.
+`covered-eye-images/renders`. Nothing advances `gatekeep_status` from
+`'pending'`: the nightly n8n Pre-Publish Gate (`[Content Audit] Daily
+Scheduler` → `[Content Audit] Pre-Publish Gate` → `Content Risk Gate`) audits
+only rows whose `gatekeep_status` is NULL, so `'pending'` rows are invisible to
+it forever (73 of them on 2026-09-15, plus 48 marked `'pass'`, which the
+scheduler does not read either). Also zero runs on record.
 
 **Rich Life, BWC, Strong Informational (retired).** Three near-identical n8n
 workflows: an Opus "hookmaker" writes 15 hooks from 12 seeds, a Haiku
@@ -386,9 +390,9 @@ of history. It comes back in Phase 5 with a schema change.
                                                               │
         ┌─────────────────────────────────────────────────────┘
         ▼
- WIRE (first batch of a new type only)          HAND-OFF
- lane table, registry row, unified_posts   ──►  gatekeeping outside the app,
- and v_scheduler_pool blocks, character          then Smart Scheduler, Posting
+ WIRE (first batch of a new type only)          APPROVE
+ lane table, registry row, unified_posts   ──►  Approve (n) decks on the finished
+ and v_scheduler_pool blocks, character          batch, then Smart Scheduler, Posting
  allow-list, n8n media entry, cadence            Agent and Inventory see it
 ```
 
@@ -464,20 +468,41 @@ Each deck passes through, and each is visible as a pill on its card:
 1. **Written.** Copy exists for every slide, caption and music suggestion
    included. A deck without a caption never becomes postable, so the caption is
    generated in the same pass, not later.
-2. **Scored.** The quality-gate rubric (hook quality, content quality, 1 to 10)
-   plus the regex compliance backstop (brand names, molecules, price, cure
-   claims). Below 6.0 or any compliance hit shows as **Flagged**, never
-   auto-rejected. A human still sees it and may Redo.
+2. **Scored and gated.** The quality-gate rubric (hook quality, content
+   quality, 1 to 10), the regex compliance backstop (brand names, molecules,
+   price, cure claims), and (Garreth, 2026-09-15) the same **Content Risk
+   Gate** n8n runs nightly, called by webhook as soon as the deck's copy
+   exists, with the hook, every slide's copy and the caption. Below 6.0, any
+   compliance hit or a gate rejection shows as **Flagged** with the gate's
+   own reason, and its suggested fix pre-filled in the Regenerate box; never
+   auto-rejected. A flagged deck is never rendered. The gate reads text only,
+   which is why it runs at writing, not after rendering.
 3. **Approved.** A human clicks Approve on the card, or Approve all on the
    unflagged ones. Recorded with the email from the session; never a client
    field. **Approve means the generated copy is accepted, nothing more.**
 4. **Rendered.** The painter has produced every slide and the URLs are on the
    lane row.
-5. **Generated.** (Named by Garreth, 2026-09-14; first called Handed off.) The lane row exists with art, caption and music, with
-   `gatekeep_status = 'pending'` and `scheduler_ready = false`. Gatekeeping
-   and everything after it happen outside this app, exactly as today
-   (Garreth's decision, 2026-09-14). The generator never writes
-   `gatekeep_status = 'approved'` or `scheduler_ready = true`.
+5. **Rendered, waiting for Approve.** The lane row exists with art, caption
+   and music, `gatekeep_status` carrying the gate's verdict from step 2
+   (`'approved'`, with its notes and review time) and `scheduler_ready =
+   false`. **Never `'pending'`:** the nightly gate audits only NULL rows and
+   ignores `'pending'` forever (§2.4), which is what stranded Covered Eye.
+   Because the row already carries a verdict, the nightly gate leaves it
+   alone. (This state was "Generated" under the 2026-09-14 decision that
+   gatekeeping stays outside the app; that decision is replaced by step 6.)
+6. **Approved.** (Garreth, 2026-09-15.) **Approve (n) decks** on the finished
+   batch sets `scheduler_ready = true` and `approved = true` on every
+   rendered, unflagged deck; the Smart Scheduler, the Posting Agent and
+   Inventory see them from that moment. **Regenerate (n) decks** sends the
+   flagged ones back with feedback. Approve works while flagged decks remain,
+   so one stubborn deck never holds the rest. Pressing Approve is the human
+   sign-off, batch by batch, with the full-size preview for the close look.
+   It is the only Approve in the generator: the per-deck Approve on the review
+   page was dropped on 2026-09-14, so there is one sign-off, here, on
+   finished work. (Named Approve by Garreth, 2026-09-15; "Release" read as
+   discarding.)
+   Nothing in the pipeline signs off by hand any more; the nightly gate keeps
+   running for the other content types, which still rely on it.
 
 The Carousel types page still shows the postable count from `v_scheduler_pool`, so the
 team can see decks waiting at the gate as a separate number from decks
@@ -703,15 +728,16 @@ mapping is `lane` and `copy_contract` in `docs/carousel-templates/glowup.v1.json
 `render_manifest`, `render_status = 'queued'` (**not** `'ready'`: the Mac
 painter selects `'ready'`, and `'queued'` is a value no Python script reads,
 see the port spec §C.3), `quality_score`, `quality_status`,
-`gatekeep_status = 'pending'`, `approved = false`, `scheduler_ready = false`.
-The generator's own approval lives on `carousel_drafts.human_approved`; the
-lane row's `approved` and `gatekeep_status` belong to the gatekeeping step
-outside the app.
+`gatekeep_status` = the Content Risk Gate's verdict with `gatekeep_notes`
+and `gatekeep_reviewed_at` (never `'pending'`, §4.4 step 5), `approved =
+false`, `scheduler_ready = false`. The lane row's `approved` and
+`scheduler_ready` flip together, only at Approve (§4.4 step 6).
 
 Covered Eye row: `carousel_id`, `hook_text`, `hook_type`, `peptide_angle`,
 `slide_1..6`, `caption`, `music`, `pillar`, `batch`, `render_set`, `status =
-'scripted'`, `quality_score`, `quality_status`, `gatekeep_status = 'pending'`,
-`approved = false`, `scheduler_ready = false`.
+'scripted'`, `quality_score`, `quality_status`, `gatekeep_status` = the
+gate's verdict (never `'pending'`), `approved = false`, `scheduler_ready =
+false`.
 
 Rendering claims the row first with one conditional update (`queued` to
 `rendering`, or for Covered Eye `scripted` to `rendering` while `rendered_at`
@@ -879,10 +905,13 @@ version stays reachable), and Redo on a single slide (regenerates that slide
 with the rest as context). Approve and Redo are pressed dozens of times per
 batch, so they do not animate. Discard is a `HoldButton`.
 
-**Batch actions:** Approve all unflagged, Render approved. Render is the CTA
-once anything is approved. Rendering fills in slide thumbnails on the card
-as they land. When every approved deck is Generated, the page says how many
-pieces went into the pool and links to Inventory.
+**Batch actions:** Regenerate batch, Render. Render is the CTA and takes
+every written, unflagged deck. Rendering fills in slide thumbnails on the
+card as they land. When every unflagged deck is rendered, the finished line
+counts rendered and flagged decks and offers **Approve (n) decks** (the
+accent) and **Regenerate (n) decks** (Garreth, 2026-09-15; §4.4 step 6).
+There is no link to Inventory: until Approve, Inventory would not count
+these decks.
 
 **Empty and failed:** the three empty states from the design system (first
 run, no results, all clear) apply as documented. A deck whose model call
@@ -1161,7 +1190,7 @@ Answered by Garreth on 2026-09-14, and applied above:
 
 | # | Question | Decision |
 |---|---|---|
-| 2 | Is Approve the final human check? | **No.** Approve accepts the generated copy. Gatekeeping and everything after stay outside the app (§4.4). |
+| 2 | Is Approve the final human check? | **No** (2026-09-14): Approve accepts the generated copy; gatekeeping stays outside the app. **Revised 2026-09-15:** the text gate runs inside writing and **Approve (n) decks** on the finished batch is the human sign-off (§4.4 steps 2 and 6). |
 | 3 | Batch size | User types the count; **cap 50** per batch (§6.2). |
 | 4 | Daily spend ceiling | **None for now.** |
 | 5 | Who can generate | **Anyone with dashboard access.** Add Czedrick to `ALLOWED_EMAILS` (§1.F, Phase 0). |

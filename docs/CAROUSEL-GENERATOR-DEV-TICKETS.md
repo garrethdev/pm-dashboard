@@ -70,8 +70,11 @@ promises.
   already uses. PostgREST cannot hold a transaction across calls.
 - Model output, reference text and slide copy render as **plain text**, never
   as HTML.
-- The generator **never** writes `approved = true`,
-  `gatekeep_status = 'approved'` or `scheduler_ready = true` on a lane row.
+- The generator writes `gatekeep_status` **only as the Content Risk Gate's
+  verdict**, never `'pending'` (the nightly n8n gate audits NULL rows only and
+  ignores `'pending'` forever; plan §2.4). `approved = true` and
+  `scheduler_ready = true` are written only by Approve (n) decks (DEV-18), never by
+  writing or rendering (Garreth, 2026-09-15).
 - Migrations go in `supabase/migrations/` with a timestamped name, and are
   checked afterwards with the Supabase advisors.
 
@@ -366,9 +369,19 @@ promises.
     claims. It runs even when the model call fails.
   - A variation check within the batch: a deck whose hook is too close to
     another deck's in the same batch is Flagged "Too similar to deck 4".
-  - Below 6.0 or any compliance hit: **Flagged** with the reason in words
-    ("Score 5.2", "Compliance: brand name"). Never rejected automatically.
-  - The gate call failing: Flagged "Not scored", still approvable.
+  - Call the **Content Risk Gate** webhook (n8n `Content Risk Gate
+    (Pre-Publish)`, `w3YwEhm5CZtHts0P`, `POST /webhook/content-risk-gate`)
+    with `items: [{content_id, type, text_hook, caption, on_screen_text}]`,
+    the way `[Content Audit] Pre-Publish Gate` does, on every written
+    version. `risk_level = high` or `action = delete` is a rejection; keep
+    the `violations`, `llm_reasons` and `suggestions` it returns. Record the
+    verdict on the draft so the lane row can carry it (DEV-11).
+  - Below 6.0, any compliance hit or a gate rejection: **Flagged** with the
+    reason in words ("Score 5.2", "Compliance: brand name", the gate's own
+    violation), the gate's suggestions pre-filled in the Regenerate box.
+    Never rejected automatically; never rendered while flagged.
+  - The gate or scorer call failing: Flagged "Not gated" / "Not scored", with
+    Retry; a deck with no verdict cannot be rendered.
 - **Tests:** every compliance pattern against a hit and a near miss; the
   flag reasons; the similarity threshold on fixed pairs.
 - **Done when:** the tests pass and the gate runs as the last step of every
@@ -448,7 +461,9 @@ promises.
   to materialised rows.
 - **Done when:** a three-deck Glow Up batch runs end to end through the routes
   (no page yet) and the lane rows read back with `render_status = 'queued'`,
-  `gatekeep_status = 'pending'`, `approved = false`, `scheduler_ready = false`.
+  `gatekeep_status = 'approved'` (the gate's verdict, with `gatekeep_notes`
+  and `gatekeep_reviewed_at`; never `'pending'`), `approved = false`,
+  `scheduler_ready = false`.
 
 ### DEV-12. Render service and vision check
 
@@ -464,14 +479,15 @@ promises.
     rubric from `carousel-vision-qa.mjs`: text cut off, text past 65% of the
     height, poor contrast, missing glyphs. A hit Flags the card with the
     reason and the slide number to outline. It does not undo the render.
-  - Generated: the lane row is complete with art, caption and music.
+  - Rendered: the lane row is complete with art, caption and music, still
+    `scheduler_ready = false` until Approve (DEV-18).
   - `POST /api/carousel-generator/batches/[id]/render` returns the next deck
     to render, so the page asks for one at a time.
 - **Tests:** unit tests for the flag reasons; a branch run rendering the
   DEV-11 batch.
 - **Done when:** three Glow Up decks render in the deployed preview, their
-  URLs open, and a query shows them Generated with nothing written past
-  `gatekeep_status = 'pending'`.
+  URLs open, and a query shows them rendered with the gate's verdict on
+  `gatekeep_status` and `scheduler_ready` still false.
 
 ### DEV-13. Generator components
 
@@ -594,9 +610,16 @@ promises.
 - **Depends on:** DEV-12, DEV-17, approved D5.
 - **Designs:** D5. **Flows:** F3.
 - **Build:** "4 of 12 rendered", thumbnails filling in, flagged slides
-  outlined, Rendering elsewhere, Failed with Retry, and the finished line
-  saying how many went into the pool with a link to Inventory. Batch actions
-  in the bottom bar on phones.
+  outlined, the full-size preview, the Grid / Rows view switch, Rendering
+  elsewhere, Failed with Retry, and the finished line counting rendered and
+  flagged decks with **Approve (n) decks** (accent) and **Regenerate (n)
+  decks** (Garreth, 2026-09-15). `POST /api/carousel-generator/batches/[id]/approve`
+  sets `scheduler_ready = true` and `approved = true` on every rendered,
+  unflagged lane row of the batch in one database function, audit-logged
+  with who pressed it; a partial failure leaves the rest approvable.
+  Regenerate (n) sends every flagged deck back through DEV-09 with the gate's
+  suggestions as feedback. Approve works while flagged decks remain. On
+  phones Approve sits in the bottom bar and Regenerate (n) under the title.
 - **Done when:** a batch renders from the page, and running the old Python
   painter against the same rows at the same time picks none of them up.
 
@@ -635,10 +658,11 @@ libraries to the menu.
 - **Depends on:** everything above, and DEV-07's sign-off.
 - **Plan:** §9 Phase 2.
 - **Build:** nothing new. Run one real batch per lane from the deployed app,
-  review it, render it, and hand it to gatekeeping outside the app as today.
+  review it, render it, and press Approve (n) decks.
 - **Watch:** posting is paused fleet-wide for the Geelark exit (2026-09-14),
   so "posted live" waits for Garreth to resume the accounts. Until then, the
-  proof stops at the rows showing in `v_scheduler_pool` once gatekept.
+  proof stops at the approved rows showing in `v_scheduler_pool`, and the
+  nightly Pre-Publish Gate leaving them untouched the next morning.
 - **Done when:** for each lane, the Smart Scheduler has assigned at least one
   generator-made deck and the Posting Agent has posted it, confirmed by query
   against `unified_posts` and the post record. Only then does Phase 3 start.

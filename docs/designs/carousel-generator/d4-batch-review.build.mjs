@@ -872,7 +872,14 @@ function vals({ auto, init }) {
       rvRenderOff: ready === 0,
       rvRenderText: ready ? "Render " + ready + (ready === 1 ? " deck" : " decks") : "Render",
       rvRenderShort: ready ? "Render " + ready : "Render",
-      rvRender: function () { ctx.open("render", { count: ready }, "Renders " + ready + (ready === 1 ? " deck" : " decks") + " · D5"); },
+      rvRender: function () {
+        ctx.open("render", {
+          total: decks.length,
+          flagged: flagged.map(function (d) { return d.n; }),
+          discarded: decks.filter(function (d) { return d.st === "discarded"; }).map(function (d) { return d.n; }),
+          name: NAME, character: P.character, slides: P.slides
+        }, "Renders " + ready + (ready === 1 ? " deck" : " decks") + " · D5");
+      },
 
       rvBatchOpen: !RO && !!s.d4batch,
       rvBatchExp: s.d4batch ? "true" : "false",

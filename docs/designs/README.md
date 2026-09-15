@@ -8,13 +8,19 @@ done, or the one Garreth names.
 
 ## Where the designs live
 
-- **Carousel Generator Designs**, the review canvas:
+- **Carousel Generator Designs**, the dark-mode review canvas:
   https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8.
-  One page per ticket and theme (`D1 · Dark`, `D1 · Light`, `D2 · Dark` …).
-  Every ticket's screens go here.
+  One page per ticket (`D1 · Dark`, `D2 · Dark` …).
+- **Carousel Generator Designs · Light**, the light-mode review canvas:
+  https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4. One page per ticket
+  (`D1 · Light`, `D2 · Light` …). Split off the dark canvas on 2026-09-15
+  (Garreth), because one canvas holding both themes was nearing the 16 MB
+  limit by D5. A ticket's screens go to whichever canvas matches the theme;
+  the build script still writes both themes into one folder, and
+  `place-ticket.mjs --theme` picks the page for the canvas being saved.
 - **Carousel Generator Prototype**, the click-through of every approved screen:
   https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175.
-  A desktop artboard and a phone artboard; holds D1 to D4 (2026-09-15). It
+  A desktop artboard and a phone artboard; holds D1 to D5 (2026-09-15). It
   is built only from `main`, by one session, after a ticket is approved.
   Ticket sessions never save it.
 - The separate D2 canvas (`815e3cc0-…`) is retired and no longer updated.
@@ -54,11 +60,11 @@ other's way:
 
 - **A ticket owns only its own things:** its build script
   `carousel-generator/dN-<name>.build.mjs`, its Status line in the tickets
-  doc, and on the canvas the pages whose id starts `dN-` and the artboards
+  doc, and on each canvas the page whose id starts `dN-` and the artboards
   named `DN-*.dc.html`. Touch nothing else.
-- **Never rebuild the whole canvas.** Your branch only holds your own ticket,
+- **Never rebuild a whole canvas.** Your branch only holds your own ticket,
   so a full rebuild would wipe every other ticket's pages. Load the saved
-  canvas and swap in your own pages (steps 3–6 below).
+  canvas and swap in your own page (steps 3–6 below), once per theme.
 - **The shared shell stays put.** The menu, top bar, glow and theme live in
   `generator-kit.mjs`. Changes to it happen only on `main`, as their own task,
   followed by re-placing every ticket and rebuilding the prototype.
@@ -85,26 +91,30 @@ other's way:
    "Dark" }]`, adding `light` when light mode is designed).
 2. **Build the artboards** into a scratch folder:
    `node docs/designs/carousel-generator/dN-<name>.build.mjs <scratch>/dN`
-3. **Load the saved canvas.** Read the Designs canvas with the Artifact tool
-   (`action: "read"`, the link above); the result names a saved file. Unpack
-   it into a fresh, empty folder:
+3. **Load the saved canvas** for the theme you are placing (dark first;
+   light once dark is approved). Read it with the Artifact tool
+   (`action: "read"`, the Dark or Light link above); the result names a saved
+   file. Unpack it into a fresh, empty folder:
    `node <design>/seed-canvas.mjs --extract <saved file> --to <scratch>/live`
-4. **Swap in this ticket's pages:**
-   `node docs/designs/carousel-generator/place-ticket.mjs --ticket DN --from <scratch>/dN --canvas <scratch>/live --out <scratch>/merged`
-   It replaces only this ticket's pages and prints the `--artboard` and
-   `--image` list for the next step. Images a ticket uses live in
-   `carousel-generator/assets/`, named `dN-<name>`, and are downsampled to a
-   few KB.
-5. **Package and check it**, from inside `<scratch>/merged`:
-   `node <design>/seed-canvas.mjs --template <design>/payload.template.html --out ../carousel-generator-designs.html --title "Carousel Generator Designs" <that list> --canvas canvas.json`,
-   then `node <design>/seed-canvas.mjs --check ../carousel-generator-designs.html`.
-   The warning that there is no `Main.dc.html` is expected.
-6. **Save it** with the Artifact tool: publish that file with `url` set to the
-   Designs link, `contract: "0.1.31"`, `favicon: "🎠"`, and no
-   `capabilities`. If the save is refused because someone else saved in the
-   meantime, go back to step 3 and redo steps 3–6. Never force it.
+4. **Swap in this ticket's page:**
+   `node docs/designs/carousel-generator/place-ticket.mjs --ticket DN --theme dark --from <scratch>/dN --canvas <scratch>/live --out <scratch>/merged`
+   (`--theme light` for the Light canvas). It replaces only this ticket's
+   page for that theme and prints the `--artboard` and `--image` list for
+   the next step. Images a ticket uses live in `carousel-generator/assets/`,
+   named `dN-<name>`, and are downsampled to a few tens of KB.
+5. **Package and check it**, from inside `<scratch>/merged`. Dark:
+   `node <design>/seed-canvas.mjs --template <design>/payload.template.html --out ../carousel-generator-designs.html --title "Carousel Generator Designs" <that list> --canvas canvas.json`;
+   light: the same with `--out ../carousel-generator-designs-light.html --title "Carousel Generator Designs · Light"`.
+   Then `node <design>/seed-canvas.mjs --check <that file>`. The warning that
+   there is no `Main.dc.html` is expected.
+6. **Save it** with the Artifact tool: publish that file with `url` set to
+   that theme's link, `contract: "0.1.31"`, the canvas's own `favicon`
+   (`"🎠"` dark, `"🎠☀️"` light), and no `capabilities`. If the save is refused
+   because someone else saved in the meantime, go back to step 3 and redo
+   steps 3–6. Never force it.
 7. **Look at it** on the saved canvas, open to your ticket's page, before
-   handing over.
+   handing over. Light mode, once designed, repeats steps 3–7 against the
+   Light canvas.
 8. **Update the ticket's Status line** with its page names, then stop for
    review.
 

@@ -4,6 +4,12 @@
 Each ticket is a set of screens to design in the **Peptide Miracles Dashboard**
 project in Claude Design. The app is not changed during this step.
 
+**Two review canvases since 2026-09-15** (Garreth): dark pages stay on the
+Carousel Generator Designs canvas
+(https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8) and
+every `DN · Light` page named below now lives on Carousel Generator Designs ·
+Light (https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4). The `docs/designs/README.md` how-to has the steps.
+
 Companion documents: `CAROUSEL-GENERATOR-FLOWS.md` (what each screen does,
 step by step; the flow numbers F1 to F14 below point there) and
 `CAROUSEL-GENERATOR-PLAN.md` (why).
@@ -51,7 +57,7 @@ layout:
 | Characters | "Character 2", "Character 3", "Character 4" (Garreth, 2026-09-14) | Account handles |
 | Numbers | Plausible made-up values: 14 posts left, 6 days of cover, 24.3k median views, "7 of 20 written" | Live figures from the database |
 | Slide copy and captions | Short invented hooks and lines of realistic length, including one long line to test wrapping | Copy from real posts |
-| Images | Neutral placeholder photos or tinted blocks. Image library covers may use photos from the Supabase image store as placeholders (Garreth, 2026-09-14) | Real account renders or bank images anywhere else |
+| Images | Neutral placeholder photos or tinted blocks. Image library covers (Garreth, 2026-09-14) and the rendered slides on D5 (Garreth, 2026-09-15) use photos from the Supabase image store, downsampled | Real account renders anywhere |
 | Music | "Artist Name – Song Title" | Real tracks from the music library |
 | People | "Alex", "Sam" for "who ran it" and reviewers | Real team emails |
 | Dates | Relative and plausible: "2 days ago", "Sep 12" | |
@@ -189,6 +195,10 @@ the edges are tested, not just the happy middle.
   - A grid of empty deck cards, one per requested deck, filling in as each
     deck's copy arrives.
   - The progress line: "7 of 20 written".
+  - The Content Risk Gate runs on each deck as its copy lands (Garreth,
+    2026-09-15); a rejection is the Flagged pill's reason, and its suggested
+    fix is pre-filled in the Regenerate box. No new screen: the flag already
+    designed carries it.
 - **States:**
   - Stalled: the progress line turns amber and names the stuck deck and when
     it last moved.
@@ -282,6 +292,72 @@ the edges are tested, not just the happy middle.
 
 ## D5. Batch — render and finish
 
+- **Status:** dark mode **designed 2026-09-15 and reviewed with Garreth
+  the same day** (real photos on the slides, the Grid / Rows switch, the
+  uncut flag rings, and the Approve / Regenerate finish all came from that
+  review); **light mode designed and D5 added to the Carousel Generator
+  Prototype** (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
+  on 2026-09-15, where D4's Render hands over the batch with its flagged and
+  discarded decks. Pictures, one screen per state, on the Carousel Generator
+  Designs canvas (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
+  page **D5 · Dark**, and the same on the Light canvas
+  (https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4), page **D5 · Light**,
+  built by `docs/designs/carousel-generator/d5-batch-render.build.mjs`: every card
+  state on one desktop board, keyed by a note beside it; rendering (desktop,
+  phone, phone scrolled to the deck being rendered); the full-size preview
+  (desktop on a clean slide and on a flagged one; phone on a flagged slide
+  and on a slide not rendered yet); rendering elsewhere and one deck failed
+  (desktop and phone); finished (desktop and phone); after Approve
+  (desktop); the Rows view (desktop and phone).
+  **Added by Garreth, 2026-09-15:** a view switch opposite the title, Grid
+  or Rows. Grid is the card grid. Rows puts one deck per row: the deck's
+  number and pills, caption, music, feedback box and Regenerate in a column
+  on the left (28% of the width, never under 240px), and the slides larger
+  on the right in a strip that scrolls sideways when the type has more
+  slides than fit, a fade on its right edge as the cue. On the phone the row
+  stacks, the left block above the strip. The view chosen stays while the
+  batch is open.
+  **Proposed in this design, for review:**
+  - The card is D4's card (D4's styles imported, not copied). Once a deck
+    starts rendering, its copy box becomes a grid of slide slots at the
+    slide's 3:4 shape, one per slide, empty until that slide lands. The copy
+    is on the slides themselves and in the preview, so the card keeps its
+    height; caption and music stay under the grid.
+  - Rendered slides are bank photos from the Supabase image store with the
+    deck's own copy over them (Garreth, 2026-09-15: real images, not tinted
+    blocks), never real renders. Twelve photos, cropped to 3:4 and kept
+    small, in `carousel-generator/assets/d5-slide-*.jpg`.
+  - The check's hit is a red outline on that thumbnail; the card takes D3's
+    flagged outline and a red pill names it ("Slide 4: cut-off text"). Decks
+    flagged in the review keep their copy and outline and are skipped. Both
+    kinds count in "flagged" (which jumps between them) and ring the bell.
+  - Regenerate stays the full-width button at the bottom of every card (D4's
+    rule), unavailable while the deck is queued or rendering. It opens D4's
+    feedback box with the flagged slide already picked; a deck sent back says
+    Rewriting with its slots emptied, and renders again after.
+  - Failed: "Failed on slide 5" in the pill, that slot outlined with a
+    warning, Retry at the bottom; the rest of the batch carries on.
+  - The preview is a centred lightbox over the whole app: "Deck 2" and
+    "3 of 7" above the slide, round arrows either side on the desktop (the
+    arrow keys too), a swipe on the phone, the check's reason in a red pill
+    under a flagged slide, an empty numbered shape for a slide not rendered
+    yet. Escape or the X closes it.
+  - The progress line reads "4 of 12 rendered" over D3's track, 12 being the
+    decks D4 sent. **Finished (Garreth, 2026-09-15, replacing the Inventory
+    link):** the line counts rendered and flagged decks, and two actions
+    appear: **Approve (n) decks**, the accent, for every rendered deck the
+    checks passed; **Regenerate (n) decks**, secondary, for the flagged ones.
+    Approve works while flagged decks remain. Approved decks show a green
+    Approved pill and lose their Regenerate button; the line then says "10
+    approved". (Named Approve by Garreth, 2026-09-15; "Release" read as
+    discarding.)
+    On the phone the count and track stay under the top bar as on D3,
+    Approve sits in the bottom bar and Regenerate (n) under the title; while
+    it renders there is no bar, since there is nothing to press (no stop, as
+    decided for D3). Pictures: finished (desktop and phone) and approved
+    (desktop).
+  - Not wired yet: D4's Render passes only a count, so which decks were
+    flagged reaches D5 only once D5 joins the prototype on `main`.
 - **You get here from:** Render in D4.
 - **Flows:** F3.
 - **Design:**
@@ -291,6 +367,10 @@ the edges are tested, not just the happy middle.
   - The progress line: "4 of 12 rendered".
   - The automatic check flagging a slide (cut-off text, text too long, poor
     contrast), with an outline on that thumbnail.
+  - **View switch** (Garreth, 2026-09-15): Grid or Rows, opposite the
+    title. Rows shows one deck per row, caption, music and Regenerate on the
+    left at about a quarter of the width, the slides larger on the right and
+    scrolling sideways when they do not fit.
   - **Full-size preview** (Garreth, 2026-09-14): pressing a thumbnail opens
     the rendered deck at real slide shape, one slide at a time, on the slide
     that was pressed. Next and previous (arrow keys; swipe on the phone), the
@@ -299,7 +379,9 @@ the edges are tested, not just the happy middle.
 - **States:**
   - **Rendering elsewhere** on a card.
   - **Failed** with the slide number and **Retry**.
-  - Finished: how many went into the pool, with a link to Inventory.
+  - Finished (Garreth, 2026-09-15): **Approve (n) decks** as the accent and
+    **Regenerate (n) decks** for the flagged ones; Approve works while
+    flagged decks remain. Approved decks say Approved.
   - Phone: batch actions in a bottom bar.
 - **Done when:** approved in dark at both sizes.
 
