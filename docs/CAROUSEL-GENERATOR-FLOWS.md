@@ -394,7 +394,9 @@ width.
      version 1 pointing at the chosen library, creates the standing
      direction, and the type appears on Carousel types as Not wired.
 - **Accent action:** Save as content type.
-- **Hold:** Discard draft.
+- **Hold:** Discard draft. **Decided (Garreth, 2026-09-15):** Back keeps an
+  unsaved draft and the Studio reopens on it next time; Discard draft is the
+  only way to drop one.
 - **Empty:** first run: the library choice is the only thing on the canvas.
 - **Fails:**
   - The draft call fails: the error in the conversation, with Retry.
@@ -415,9 +417,10 @@ width.
   1. Studio opens with the reference's slides in a strip above the canvas.
   2. **Image library** (Garreth, 2026-09-14): a reference comes with none, so
      one is chosen, as in F8 step 1.
-  3. The AI reads the reference's beats and visual notes from the reference
-     library,
-     runs a vision pass over its slides, and drafts a template with the same
+  3. The reference's slides sit first on the canvas inside a dashed frame,
+     read-only, with a light sweeping down each while the AI works
+     (Garreth, 2026-09-15). The AI reads the reference's beats and visual
+     notes from the reference library, runs a vision pass over its slides, and drafts a template with the same
      slide count, layouts and text placement, image cells drawing from groups
      in the chosen library, plus a direction note describing the
      construction.

@@ -252,7 +252,7 @@ function vals(firstRun) {
       retiredCls: s.retiredOpen ? "open" : "",
       retiredExpanded: s.retiredOpen ? "true" : "false",
       toggleRetired: function () { self.setState({ retiredOpen: !s.retiredOpen }); },
-      newType: function () { self.setState({ drawer: false }); self.note("Opens the Studio to create a carousel type · D6"); }
+      newType: function () { ctx.open("studio", null, "Opens the Studio to create a carousel type · D6"); }
     };`;
 }
 

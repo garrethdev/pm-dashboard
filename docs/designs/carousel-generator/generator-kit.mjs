@@ -354,9 +354,13 @@ function logic({ phone, light, screens, start, navMode }) {
   const navOf = Object.fromEntries(screens.map((sc) => [sc.id, sc.nav]));
   const enter = Object.fromEntries(screens.map((sc) => [sc.id, sc.enter || {}]));
   const nav = NAV.map(({ id, label, ticket }) => [id, label, ticket]);
+  /* A menu item whose screen is in the prototype opens that screen (the Studio, from 2026-09-15); the rest select
+     themselves and show D1's placeholder page. */
+  const navScreen = {};
+  for (const sc of screens) if (sc.nav !== "types" && !navScreen[sc.nav]) navScreen[sc.nav] = sc.id;
   const goHandler =
     navMode === "page"
-      ? `function () { self.setState({ active: n[0], screen: has("types") ? "types" : s.screen, drawer: false }); }`
+      ? `function () { var target = NAV_SCREEN[n[0]]; if (target && has(target)) { ctx.open(target); return; } self.setState({ active: n[0], screen: has("types") ? "types" : s.screen, drawer: false }); }`
       : `function () { self.setState({ drawer: false }); self.note(n[0] === "types" ? "Back to Carousel types · D1" : "Opens " + n[1] + " · " + n[2]); }`;
   return `
 class Component extends DCLogic {
@@ -402,6 +406,7 @@ ${screens.map((sc) => sc.didUpdate || "").join("\n")}
     var NAV_OF = ${JSON.stringify(navOf)};
     var ENTER = ${JSON.stringify(enter)};
     var NAV = ${JSON.stringify(nav)};
+    var NAV_SCREEN = ${JSON.stringify(navScreen)};
     var self = this;
     var s = Object.assign(${JSON.stringify(state)}, this.state || {});
     var has = function (id) { return SCREENS.indexOf(id) >= 0; };

@@ -4,11 +4,15 @@
 Each ticket is a set of screens to design in the **Peptide Miracles Dashboard**
 project in Claude Design. The app is not changed during this step.
 
-**Two review canvases since 2026-09-15** (Garreth): dark pages stay on the
-Carousel Generator Designs canvas
-(https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8) and
-every `DN · Light` page named below now lives on Carousel Generator Designs ·
-Light (https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4). The `docs/designs/README.md` how-to has the steps.
+**Three review canvases since 2026-09-15** (Garreth), each named for what
+it holds: dark pages of D1 to D5 stay on **Carousel Generator Designs -
+Dark (D1 to D5)**
+(https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
+every `DN · Light` page named below lives on **Carousel Generator Designs -
+Light (D1 to D5)** (https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4), and
+D6, a heavy ticket, has both its pages on **Carousel Generator Designs -
+(D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p). The
+`docs/designs/README.md` how-to has the steps.
 
 Companion documents: `CAROUSEL-GENERATOR-FLOWS.md` (what each screen does,
 step by step; the flow numbers F1 to F14 below point there) and
@@ -387,6 +391,163 @@ the edges are tested, not just the happy middle.
 
 ## D6. Studio — create a new carousel type
 
+- **Status:** **approved in dark by Garreth on 2026-09-15 after seven
+  review rounds the same day; light mode designed and D6 added to the
+  Carousel Generator Prototype
+  (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
+  the same day**, where New carousel type on D1 and the Studio menu item
+  open it, and a draft in progress survives leaving and coming back. Pictures,
+  one screen per state, on D6's own canvas, **Carousel Generator Designs -
+  (D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p), pages
+  **D6 · Dark** and **D6 · Light** (Garreth, 2026-09-15: D6 is heavy, so it
+  left the shared Designs canvas, which is back to 10.9 MB), built by
+  `docs/designs/carousel-generator/d6-studio.build.mjs`: just opened, the
+  two cards; the image library choice; saved reference decks; Discuss your
+  idea, the chat box alone; the first draft arriving; the draft call
+  failed; the slides on the canvas with the hook selected; both panels
+  open; both panels folded; the adjustments folded with the conversation
+  open; asking the AI for an image the library lacks; renaming the type
+  from its title; an image cell selected; a group with no images; a new library
+  with Upload images and Generate with AI; slide 1 rendered; the render
+  failed; the Save as carousel type dialog with the short name taken;
+  Discard draft being held; editing an existing type with the versions
+  list open; Regenerate sample with the new copy arriving; a slide while
+  it renders; from a reference deck, its slides being analysed, then the
+  draft beside the reference; and three phone boards: the simplified
+  view, the adjustments sheet open, and the conversation sheet open.
+  **Decided by Garreth, 2026-09-15 (seventh review):**
+  - **From a reference deck:** once a saved deck is picked, at least three
+    of its slides appear first on the canvas inside a dark grey dashed
+    frame, read-only and a little muted, with a light sweeping down each
+    one while the AI analyses them (the vision pass); the conversation
+    says what it is reading. When it is done, the draft's slides appear
+    beside the frame, made from the library's images and copy in the
+    reference's construction. The frame stays as the thing being copied
+    and can never be selected or edited. A deck Trends had not analysed
+    says "Not analysed in Trends" on the frame; the draft then comes from
+    the vision pass alone. Feasible on the backend: Trends stores the
+    slide images, and the two states are the two calls, vision then draft.
+  - **Regenerate sample** shows the text boxes as pulsing bars with
+    "Rewriting sample" in the top strip until the new copy lands.
+  - **Back keeps an unsaved draft**, and the Studio reopens on it next
+    time. Discard draft is the only way to drop one.
+  **Decided by Garreth, 2026-09-15 (third review):**
+  - The title sits in the exact middle of the toolbar, whatever the back
+    button and the actions measure.
+  - No separate rendered preview. The canvas is infinite and pannable, like
+    Figma: every slide in a row at true shape on the dotted grid, which
+    pans with them (drag the ground, or scroll). Render preview marks the
+    selected slide **Rendered** in its caption, or **Render failed** with
+    Retry.
+  - The side panels are fixed, not floating, the way an editor's side bars
+    are, and each folds to a thin rail of icons. Left: the adjustments for
+    whatever is selected and, in the same panel, the library's images (or
+    Upload images and Generate with AI for a new library). Right: the
+    conversation.
+  **Decided by Garreth, 2026-09-15 (fourth review):**
+  - Folding and unfolding a panel uses the dashboard's own sidebar toggle
+    button, the one beside the logo in the main menu. Folded, the
+    conversation leaves no rail: that same button floats at the canvas's
+    upper right to bring it back, with a dot when the AI answered while it
+    was folded. The adjustments keep their rail (the toggle above the two
+    section icons).
+  - The versions list is a solid surface, not glass: as a veil, the text of
+    the strips behind it showed through.
+  - Every library in the Studio's panel, new or existing, carries **Upload
+    images** and **Generate with AI** under its header. Both open the
+    library's own flows (F7, designed in D8): Upload puts files into a
+    group; Generate with AI takes a prompt, what it shows, the group, how
+    many, the shape and the likeness images, and what comes back waits for
+    Keep before it joins the group and appears in the panel. Nothing is
+    made inside the Studio itself.
+  - **Asking the AI for an image the library lacks** (Garreth's question,
+    2026-09-15): the AI never makes an image on its own, since that spends
+    Higgsfield credits and fills a library other types may share. It says
+    what it could not find and offers the same two doors in its reply,
+    Generate with AI (the form filled in from the conversation: the prompt,
+    what it shows, the group, how many, the shape) and Upload images. What
+    comes back waits for Keep; once kept, the AI puts the image on the slide
+    it was asked about and says so.
+  - The pointer, text and image tools float at the bottom centre of the
+    screen and the slide count with Render preview and Regenerate sample at
+    the top centre. Both are anchored to the whole sandbox, not to the
+    canvas area between the panels, so a panel opening or folding never
+    moves them (Garreth, 2026-09-15, fifth review).
+  **Decided by Garreth, 2026-09-15 (second review):**
+  - Whatever comes before the draft (the two cards, the library, the saved
+    decks, the chat box) sits in the middle of the sandbox, not near the
+    top.
+  - The title is the type's name: press it to rename (a pencil shows on
+    hover; Enter or leaving the field keeps the name, Escape drops it). The
+    Save dialog's Name starts from it.
+  - The adjustments (the selected item's settings, then the library's
+    images) take the left where the menu was, at the sandbox's full height;
+    the conversation takes the right. (Refined in the third review: fixed
+    panels that fold to rails, and the filmstrip is gone since every slide
+    is on the canvas.)
+  - **Phone with the adjustments open:** a sheet from the bottom, opened by
+    the sliders button in the bar or by selecting a box or cell on the
+    slide, holding the same settings and library, scrolling.
+  **Decided by Garreth, 2026-09-15 (first review):**
+  - The Studio takes the whole screen: no menu and no top bar. A toolbar
+    stands in their place with a back button in the menu's own back-row
+    shape (to Carousel types, or to the type's page in edit mode), the
+    title and its pills in the middle, and the actions on the right.
+  - The backdrop below the toolbar carries a subtle dotted grid, so the
+    Studio reads as a sandbox.
+  - It opens on two portrait cards: **Start from a reference deck** (a
+    saved deck from Trends) or **Discuss your idea**. Either leads to the
+    image library: an existing one, or a new one by name. A new library
+    puts **Upload images** and **Generate with AI** in the tools panel; an
+    existing one puts its images there, by group, each draggable onto a
+    cell of the open slide (a click puts it in the selected cell), and the
+    AI picks from the same images.
+  - Discuss your idea opens a chat box in the reviewed shape: a rounded box
+    with a leading icon tile, a placeholder that cycles through sample
+    ideas, an attach button and a square send button that shows the return
+    glyph until there is text. Only the parts this Studio needs: no tabs,
+    no model badge.
+  - Discard draft is a plain outlined button, not red. It is still a press
+    and hold; the fill that sweeps across while it is held is neutral.
+  - The conversation is a floating panel at the bottom right. Folded, it is
+    a round button carrying the Peptide Miracles mark, with a dot when the
+    AI answered while it was folded. The same chat box sits at the panel's
+    foot.
+  **Kept from the first version, for review:**
+  - While the draft is being written the six slides on the canvas are
+    pulsing skeletons and the conversation shows "Drafting six slides".
+  - A selected text box shows its role as a small tag and eight handles;
+    the adjustments edit Font, Weight, Size, Stroke (colour and width),
+    Shadow (Off, Hard, Soft, with offset and blur), Alignment and Wrap
+    width, each change visible on the canvas at once. A selected image cell
+    shows the library it draws from and its groups as a ticked list; a
+    group with no images says "No images" in the list and on the cell.
+  - Save as carousel type is a centred dialog: Name, Character, Short name.
+    A short name already in use says "Taken" inside the field and Save
+    waits. Save itself waits until a library is chosen and a draft exists.
+  - Edit mode (from D7): the type's name in the title with its character
+    and library pills, "Version 4" as a button that lists every version
+    with its date, Active on the current one and Make active on the rest;
+    Save version is the accent and Discard changes the hold. The library
+    has no Change here (it is changed on the Generate form, F10).
+  - The draft call failing puts the error in the conversation as the AI's
+    reply, with Retry beside it.
+  **Proposed, for review:**
+  - The tool strip's Text box and Image cell tools add a box or a cell to
+    the slide; that is not in the flows yet, so it is a proposal.
+  - **Phone** (Garreth's sixth review, 2026-09-15): the slides pan
+    sideways at the phone's width; the back button is its badge alone so
+    the type's name and the library pill share one line; the slide count
+    sits as plain text above the pill holding Render preview and
+    Regenerate sample; the bar holds the sliders button, **Discard** (the
+    short label) and Save as carousel type. Both panels open as sheets from
+    the bottom: the adjustments from the sliders button or by selecting
+    something on the slide, each section a card inset from the edges; the
+    conversation from the round button carrying the mark, at the sheet's
+    full height with the chat box at its foot. No dragging on a phone.
+  - Not wired yet: Save opens D7, which is not designed, and a saved
+    reference deck comes from Trends (D10), so the saved-decks list here is
+    sample content.
 - **You get here from:** New carousel type in D1, or Studio in the menu.
 - **Flows:** F8, F10.
 - **Design:**
