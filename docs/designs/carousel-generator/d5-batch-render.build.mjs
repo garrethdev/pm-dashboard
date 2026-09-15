@@ -16,7 +16,7 @@
  * are imported and re-scoped to this screen rather than copied, so the three
  * cannot drift. Proposed here, for review:
  *   - Once a deck starts rendering, its copy box becomes the slide grid: one
- *     3:4 slot per slide, empty until that slide lands. The copy is on the
+ *     slot per slide at the type's slide size (4:5 or 9:16, D11), empty until that slide lands. The copy is on the
  *     slides themselves and in the full-size preview, so the card does not
  *     grow. Caption and music stay under the grid.
  *   - The check's hit is a red outline on that thumbnail, and the card takes
@@ -29,7 +29,7 @@
  *   - Failed: "Failed on slide 5" in the pill, that slot outlined with a
  *     warning, Retry at the bottom; the rest of the batch carries on.
  *   - Pressing a thumbnail opens the full-size preview: the slide at real
- *     3:4 shape with "3 of 7", arrows on the desktop (also the arrow keys), a
+ *     slide size with "3 of 7", arrows on the desktop (also the arrow keys), a
  *     swipe on the phone, the check's reason under a flagged slide, and an
  *     empty shape for a slide not rendered yet. Escape or the X closes it.
  *   - Finished (Garreth, 2026-09-15): "12 of 12 rendered · 5 flagged" with
@@ -62,7 +62,9 @@
  *   Finished            desktop, every deck rendered: Approve 10, Regenerate 5
  *   PhoneFinished       phone, the same, Approve in the bottom bar
  *   Approved            desktop, after Approve: 10 approved, 5 still flagged
- *   ApprovedNotWired    desktop, the same on a type not wired yet: the decks wait for wiring
+ *   ApprovedNotWired    desktop, the same on a 9:16 type not wired yet: the decks wait for wiring
+ *   PreviewTall         desktop, the full-size preview on that 9:16 type
+ *   PhonePreviewTall    phone, the same
  *   Rows                desktop, the same batch as Main in the Rows view
  *   PhoneRows           phone, the Rows view, stacked
  * Imported, `renderScreen({ auto: true })` is the screen the prototype opens.
@@ -129,7 +131,7 @@ const CAPTIONS = [
   "Not a transformation, just a habit that stuck. What's yours?",
   "Same light, same mirror, four months apart. Would you have noticed?",
 ];
-/* Slide backgrounds: bank photos from the Supabase image store, cropped to the slide's 3:4 shape and downsampled
+/* Slide backgrounds: bank photos from the Supabase image store, cropped to 3:4 (560×747, which covers 4:5 and 9:16) and downsampled
    (Garreth, 2026-09-15). Ten neutral lifestyle shots plus one before and one after, so a deck reads as a real one. */
 const SLIDE_IMAGES = ["mug", "journal", "vanity", "shoes", "yoga", "dock", "serum", "oats", "bath", "shower", "before", "after"];
 export function copySlides(OUT) {
@@ -149,7 +151,8 @@ const BASE = { st: "queued", done: 0, check: null, failSlide: 0, flag: "", fresh
 
 /* ── Styles ────────────────────────────────────────────────────────────── */
 
-const PV_W = { desk: 480, phone: 342 };
+/* The preview's slide width per size: 4:5 at 480 (600 tall) on the desktop, 9:16 at 400 (711 tall). */
+const PV_W = { desk: 480, phone: 342, deskTall: 400, phoneTall: 320 };
 
 function css(phone, { tall }) {
   const S = ".screen-render";
@@ -165,8 +168,24 @@ function css(phone, { tall }) {
 /* The slide grid takes the copy box's place once a deck starts rendering: the same fixed height, so the caption's
    rule and the footer still line up with a card that shows copy. No fade: thumbnails are not text that runs on. */
 ${S} .dcopy.slides { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; align-content: start; padding: 4px; margin: -4px; -webkit-mask-image: none; mask-image: none; }
-${S} .th { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 8px; background: var(--card-raised); container-type: inline-size;
+/* The slots take the type's slide size (D11, Garreth 2026-09-15): 4:5 (1080×1350) four across, 9:16 (1080×1920)
+   five across, so two rows of either still fit the copy box's height. */
+${S} .grid.is-916 .dcopy.slides { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+/* Garreth's reviews (2026-09-15): two rows of 9:16 slots ran past the fixed-height box, so a 9:16 card grows with its
+   slides, never shorter than a 4:5 card. Growing alone left no room under the second row (the box's 4px padding is
+   cancelled by its -4px margin), so the space under the slides is worked out from the card body's own width W to match
+   a 4:5 card's. A 4:5 box of height H (4px padding, two rows of slots (W - 18) / 4 wide and 1.25× as tall, 6px apart)
+   leaves H - 10 - 0.625 × (W - 18) under its rows, less the 4px margin; the 9:16 box's bottom padding is that same
+   space plus the 4px back, H + 1.25 - 0.625 × W. The Rows view already sizes to its strip. */
+${
+  phone
+    ? ""
+    : `${S} .grid.is-916:not(.is-rows) .dbody { container-type: inline-size; }
+${S} .grid.is-916:not(.is-rows) .dcopy.slides { height: auto; min-height: 224px; overflow: visible; padding-bottom: calc(225.25px - 62.5cqw); }`
+}
+${S} .th { position: relative; display: block; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 8px; background: var(--card-raised); container-type: inline-size;
   transition: transform 160ms var(--ease-out-strong); }
+${S} .grid.is-916 .th { aspect-ratio: 9 / 16; }
 ${S} .th:active { transform: scale(0.97); }
 ${S} .th:focus-visible { outline-offset: 2px; }
 ${S} .th.is-still { cursor: default; }
@@ -221,6 +240,8 @@ ${S} .is-rows .dcap { height: auto; max-height: 92px; }
 ${S} .is-rows .dcopy.slides { display: flex; height: auto; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 4px 24px 4px 4px; margin: -4px;
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
 ${S} .is-rows .th { width: 168px; flex: 0 0 168px; scroll-snap-align: start; }
+/* A 9:16 slide in the strip is narrower, so a row stays about as tall as a 4:5 one. */
+${S} .is-rows.is-916 .th { width: 132px; flex-basis: 132px; }
 /* A deck the review flagged keeps its copy: on the right, at a readable measure, no fixed height. */
 ${S} .is-rows .dcopy:not(.slides) { max-width: 560px; height: auto; max-height: 300px; }
 
@@ -241,8 +262,11 @@ ${S} .pvhead { display: flex; align-items: center; gap: 12px; width: ${w}px; }
 ${S} .pvtitle { font-size: 14px; line-height: 20px; font-weight: 600; }
 ${S} .pvcount { margin-left: auto; font-size: 13px; line-height: 20px; color: var(--text-muted); }
 ${S} .pvrow { display: flex; align-items: center; gap: 16px; }
-${S} .pvslide { position: relative; width: ${w}px; aspect-ratio: 3 / 4; flex-shrink: 0; overflow: hidden; border-radius: 16px; background: var(--card-raised); container-type: inline-size; box-shadow: var(--sb-shadow);
+/* A 9:16 slide is drawn narrower, so the tall slide with its header and footer still fits the screen. */
+${S} .pv.is-916 .pvhead, ${S} .pv.is-916 .pvslide, ${S} .pv.is-916 .pvfoot { width: ${phone ? PV_W.phoneTall : PV_W.deskTall}px; }
+${S} .pvslide { position: relative; width: ${w}px; aspect-ratio: 4 / 5; flex-shrink: 0; overflow: hidden; border-radius: 16px; background: var(--card-raised); container-type: inline-size; box-shadow: var(--sb-shadow);
   touch-action: pan-y; transition: transform 220ms var(--ease-out-strong), opacity 220ms var(--ease-out-strong); }
+${S} .pv.is-916 .pvslide { aspect-ratio: 9 / 16; }
 ${S} .pvslide.is-drag { transition: none; }
 ${S} .pvslide .tn { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 28px; font-weight: 500; color: var(--text-muted); opacity: 0.6; }
 ${S} .pvslide .tw { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--danger); }
@@ -267,6 +291,11 @@ ${
    there is one (Open Inventory), like Continue on D3. Swipe moves between slides in the preview. */
 ${S} .prog { display: block; }
 ${S} .pacts { display: none; }
+/* Garreth's third review (2026-09-15): the phone's one-column cards have no neighbours to line up with, and D3's 240px
+   box left 4:5 cards with a gap under their slides. On the phone the slide grid hugs its slots, at either size, with the
+   desktop 4:5 card's 12.5px above the rule (the 16.5px padding less the box's -4px margin). A card that keeps its copy
+   (flagged in the review) keeps D3's box. */
+${S} .grid:not(.is-rows) .dcopy.slides { height: auto; min-height: 0; overflow: visible; padding-bottom: 16.5px; }
 ${S} .pvnav { display: none; }
 ${S} .pv { padding: 16px; }
 ${S} .pvclose::after, ${S} .th::after { content: ""; position: absolute; inset: -6px; }
@@ -275,6 +304,7 @@ ${S} .th::after { inset: -3px; }
 ${S} .is-rows .deck { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto auto auto; grid-template-areas: "top" "body" "meta" "fb" "act"; row-gap: 0; }
 ${S} .is-rows .dbody { margin-bottom: 12px; }
 ${S} .is-rows .th { width: 150px; flex-basis: 150px; }
+${S} .is-rows.is-916 .th { width: 118px; flex-basis: 118px; }
 ${S} .view button::after { content: ""; position: absolute; inset: -10px 0; }
 `
     : ""
@@ -407,7 +437,7 @@ function page(phone) {
             </div>
             <div class="track" aria-hidden="true"><i style="width: {{rnTrackW}}%"></i></div>
           </div>
-          <div class="grid {{rnLayoutCls}}" onKeyDown="{{rnGridKey}}">
+          <div class="grid {{rnLayoutCls}} {{rnSizeCls}}" onKeyDown="{{rnGridKey}}">
             <sc-for list="{{rnDecks}}" as="c" hint-placeholder-count="9">${deckCard()}
             </sc-for>
           </div>
@@ -418,7 +448,7 @@ function page(phone) {
 /* The full-size preview, over the whole app. */
 const appOverlay = (phone) => `
     <sc-if value="{{pvOpen}}" hint-placeholder-val="{{ false }}">
-      <div class="pv">
+      <div class="pv {{rnSizeCls}}">
         <div class="pvscrim" aria-hidden="true" onClick="{{pvClose}}"></div>
         <div class="pvbody" id="pv-dialog" role="dialog" aria-modal="true" aria-label="{{pvLabel}}" tabindex="-1" onKeyDown="{{pvKey}}">
           <div class="pvhead">
@@ -496,6 +526,8 @@ function vals({ auto, init }) {
     var NAME = P.name || ${JSON.stringify(init.name || "Before & After")};
     /* A type not wired yet (Garreth, 2026-09-15): Approve holds its decks until Wire on the type's page writes them in. */
     var UNWIRED = ${!!init.unwired} || !!P.unwired;
+    /* The type's slide size, 4:5 or 9:16 (D11): the slots and the preview take its shape. */
+    var TALL = (P.size || ${JSON.stringify(init.size || "4:5")}) === "9:16";
     var SONG = "Artist Name – Song Title";
     var PHONE = ctx.PHONE;
 
@@ -713,6 +745,7 @@ function vals({ auto, init }) {
       rnBack: function () { ctx.open("types", null, "Back to Carousel types · D1"); },
       /* Grid or Rows: no motion on the switch, the cards simply take their other shape. */
       rnLayoutCls: rows ? "is-rows" : "",
+      rnSizeCls: TALL ? "is-916" : "",
       rnGridCls: rows ? "" : "is-on",
       rnRowsCls: rows ? "is-on" : "",
       rnGridOn: rows ? "false" : "true",
@@ -887,7 +920,9 @@ const MOMENTS = {
   finished: { decks: decks(FINISHED) },
   rows: { decks: decks(MAIN), view: "rows" },
   approved: { decks: decks(APPROVED) },
-  approvedNotWired: { decks: decks(APPROVED), unwired: true, name: "Quiet Luxury Picks" },
+  /* Quiet Luxury Picks is D11's 9:16 type, so its boards show the tall size; the Before & After batch is 4:5. */
+  approvedNotWired: { decks: decks(APPROVED), unwired: true, name: "Quiet Luxury Picks", size: "9:16" },
+  previewTall: { decks: decks(APPROVED), pv: { n: 2, k: 3 }, unwired: true, name: "Quiet Luxury Picks", size: "9:16" },
 };
 
 const DESK_H = 1700;
@@ -914,7 +949,9 @@ function build(OUT) {
     { name: "Rows", phone: false, m: "rows", title: "D5 · Rows view · Desktop", x: 0, y: R1 + ROW * 3 + 1040 },
     { name: "PhoneRows", phone: true, m: "rows", scrollTo: 4, title: "D5 · Rows view, scrolled to decks 4 and 5 · Phone", x: 1540, y: R1 + ROW * 3 + 1040 },
     { name: "Approved", phone: false, m: "approved", title: "D5 · After Approve · Desktop", x: 0, y: R1 + ROW * 4 + 1040 },
-    { name: "ApprovedNotWired", phone: false, m: "approvedNotWired", title: "D5 · After Approve, type not wired yet · Desktop", x: 1540, y: R1 + ROW * 4 + 1040 },
+    { name: "ApprovedNotWired", phone: false, h: DESK_H + 300, m: "approvedNotWired", title: "D5 · After Approve, a 9:16 type not wired yet · Desktop", x: 1540, y: R1 + ROW * 4 + 1040 },
+    { name: "PreviewTall", phone: false, h: 900, m: "previewTall", title: "D5 · Full-size preview, a 9:16 type · Desktop", x: 3080, y: R1 + ROW * 4 + 1040 },
+    { name: "PhonePreviewTall", phone: true, m: "previewTall", title: "D5 · Full-size preview, a 9:16 type · Phone", x: 4620, y: R1 + ROW * 4 + 1040 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
