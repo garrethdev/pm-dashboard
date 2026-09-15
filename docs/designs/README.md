@@ -41,11 +41,22 @@ done, or the one Garreth names.
   `--title "Carousel Generator Designs - (D7 to D10)"`. D7 in both themes
   is 7.6 MB (16 boards a theme), so D8 to D10 will not all fit beside it in
   the 16 MB limit: expect a second canvas before D10.
+- **Carousel Generator Designs - (D6 pt. 2 Studio)**, D11's own canvas (the
+  Studio's second round), named by Garreth on 2026-09-15:
+  https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5. Pages `D11 · Dark` and
+  `D11 · Light`. Its favicon is `"🎠🧩"`. Built by
+  `d11-studio-round-two.build.mjs`, which imports D6's screen and extends it,
+  so D6's own file and canvas stay as approved. Steps 3–6 read and save this
+  canvas; step 4 runs `place-ticket.mjs --ticket D11` without `--theme`;
+  step 5 packages it with `--title "Carousel Generator Designs - (D6 pt. 2 Studio)"`.
+  13 desktop boards a theme, both themes 10.7 MB.
 - **Carousel Generator Prototype**, the click-through of every approved screen:
   https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175.
-  A desktop artboard and a phone artboard; holds D1 to D7 (2026-09-15). It
-  is built only from `main`, by one session, after a ticket is approved.
-  Ticket sessions never save it.
+  A desktop artboard and a phone artboard; holds D1 to D7, with D11's
+  Studio in place of D6's (2026-09-15). It is built only from `main`, by one
+  session, after a ticket is approved. Ticket sessions never save it (D11's
+  switch was the exception, saved from its branch at Garreth's request on
+  2026-09-15, since the branch was `main` plus D11).
 - The separate D2 canvas (`815e3cc0-…`) is retired and no longer updated.
 
 ## The rules

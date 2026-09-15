@@ -409,7 +409,39 @@ the edges are tested, not just the happy middle.
 ## D6. Studio — create a new carousel type
 
 - **Round two:** D11 (slide sizes, layered templates, starting from a Figma
-  link), added 2026-09-15 during D7's review.
+  link), added 2026-09-15 during D7's review and approved in dark the same
+  day. The prototype's Studio is already D11's (2026-09-15). **Still to
+  bring into D6's own build and canvas** (`d6-studio.build.mjs`, pages
+  D6 · Dark and D6 · Light), as decided by Garreth across D11's reviews:
+  - **Slide size** first in the adjustments: 4:5 (1080×1350) or 9:16
+    (1080×1920), each option drawn to scale with its pixels. 3:4 goes, so
+    the slides, the reference deck's slides on the canvas and the library's
+    image tiles take the type's size.
+  - **The canvas pans in every direction and zooms**, not only sideways:
+    drag the dotted ground or scroll to pan; Ctrl or Cmd with the wheel, or
+    a pinch, zooms around the pointer from 25% to 200%; the tool strip ends
+    with Zoom out, the zoom level (press it to fit every slide) and Zoom in;
+    the dotted ground moves and scales with the slides. The phone keeps its
+    sideways scroll.
+  - **A third start card, Start from a Figma link.** The link attaches to
+    the chat box as a chip above the prompt (file name, frame count, a
+    remove button; No access in red holds Send), and both are sent
+    together. The conversation then keeps a small chip for the file above
+    its chat box, and the file's frames sit in the dashed reference frame
+    while the AI reads them.
+  - **The chat box grows with the prompt**, up to eight lines before it
+    scrolls; Shift+Enter starts a new line, Enter sends.
+  - **Layered templates:** the Layers list (front first, each marked AI, Set
+    or Fixed, with Bring forward and Send back), cut-outs placed freely,
+    text on a box, shaped frames with a border, fixed images, labels filled
+    from a set's facts, the library shown as sets, and the AI proposing the
+    groups and facts a template lacks, whichever way the Studio started.
+  - **The phone:** D11 has no phone boards, so the size choice, the Figma
+    chip and the Layers list in the phone's sheets are designed in this
+    pass.
+  Outside D6, in the same pass: D5's thumbnails and full-size preview take
+  the type's size, the imported Glow Up template is refitted to 4:5, and
+  `CAROUSEL-TEMPLATE-MODEL.md` and flows F8 to F10 gain sizes and layers.
 - **Status:** **approved in dark by Garreth on 2026-09-15 after seven
   review rounds the same day; light mode designed and D6 added to the
   Carousel Generator Prototype
@@ -772,11 +804,73 @@ the edges are tested, not just the happy middle.
 
 ## D11. Studio, round two — slide sizes, layered templates, Figma
 
-- **Status:** to design. Added by Garreth on 2026-09-15, during D7's review,
-  for another session to pick up. It extends D6, whose canvas is close to its
-  16 MB limit, so it takes a canvas of its own with both themes, the way D6
-  did. The template model (`CAROUSEL-TEMPLATE-MODEL.md`) changes with it once
-  the design is approved.
+- **Status:** **approved in dark by Garreth on 2026-09-15 after three review
+  rounds; light mode designed and the Carousel Generator Prototype's Studio
+  switched to D11's the same day.** No phone boards: the phone is designed
+  when D11 is brought into D6 (the list is under D6's Round two). Added by
+  Garreth the same day, during D7's review. It extends
+  D6, whose canvas is close to its 16 MB limit, so it takes a canvas of its
+  own with both themes, the way D6 did: **Carousel Generator Designs - (D6
+  pt. 2 Studio)** (https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5,
+  Garreth, 2026-09-15), pages **D11 · Dark** and **D11 · Light**. Pictures,
+  one screen per state:
+  just opened with the third card; a Figma link attached to the chat box
+  with a prompt; the attached link failing with No access; the file's five
+  frames being read; the draft beside the
+  frames with the AI proposing the group and facts the library lacks; the
+  layers list with the masthead behind the cut-out; a cut-out placed
+  freely; the hook on its box; a photo in the wavy frame; a label filled
+  from the set; a fixed image; Quiet Luxury Picks at 9:16 from D7's Edit
+  template; and Before & After switched to 9:16, saving a new version.
+  **First review** (Garreth, 2026-09-15), the page re-saved:
+  - Real photos in the template, not drawn silhouettes: bank photos from
+    the image store (the glow-up bank's before and after shots), and the
+    cover's cut-out is one of them with its background removed.
+  - **Start from a Figma link** uses the chat box, the way AI tools take an
+    attachment: the link sits as a chip above the prompt, and both are sent
+    together. Once sent, the conversation opens and the link stays as a
+    small chip above its chat box.
+  - **Slide size** (4:5 or 9:16) is in the adjustments on the left, first,
+    not in the strip above the canvas.
+  **Second review** (Garreth, 2026-09-15), the page re-saved:
+  - The chat box grows with the prompt as it is typed, so the whole prompt
+    stays in view, up to eight lines before it scrolls. Shift+Enter starts a
+    new line; Enter sends. The picture with the Figma link attached carries a
+    four-line prompt to show it.
+  **Third review** (Garreth, 2026-09-15), the page re-saved:
+  - The canvas pans in every direction and zooms, like Figma, not only
+    sideways. Dragging the dotted ground or scrolling pans; Ctrl or Cmd with
+    the scroll wheel, or a trackpad pinch, zooms around the pointer, from 25%
+    to 200%. The tool strip ends with Zoom out, the zoom level and Zoom in;
+    pressing the zoom level fits every slide on screen. The dotted ground
+    moves and scales with the slides.
+  Built by
+  `docs/designs/carousel-generator/d11-studio-round-two.build.mjs`. The
+  template model (`CAROUSEL-TEMPLATE-MODEL.md`) changes with it once the
+  design is approved.
+  **Decided by Garreth, 2026-09-15 (before design):**
+  - **Two sizes only, 4:5 and 9:16.** 3:4 goes; the imported Glow Up
+    template is refitted.
+  - **D5 and D6 are refitted after D11 is approved**, not alongside it: the
+    Studio's slides, D6's reference covers and library tiles, and D5's
+    thumbnails and full-size preview still draw 3:4 and take the type's size
+    then. The same pass carries whatever of D11 is approved back into D6's
+    own build (`d6-studio.build.mjs`), and both D6 canvas pages (listed under D6's Round
+    two; the prototype already has D11's Studio), starting with the third card on the Studio's first screen,
+    **Start from a Figma link**, with the link as a chip in the chat box, the
+    chat box that grows with the prompt, the **Slide size** choice at the
+    top of the adjustments, and the canvas that pans in every direction and
+    zooms (Garreth, 2026-09-15: the size selector goes into D6 once D11 is
+    done).
+  - **The celebrity lane uses real celebrities' photos edited by AI**, not
+    look-alike personas. The designs still show invented sample content.
+  - The lane renders today from
+    `github.com/garrethdev/celebrity-peptide-renderer` (Pillow on plates
+    exported from Figma): its slide 1 puts a cut-out portrait above the
+    masthead and the hook in a black pill, slides 2 and 3 put the photo
+    under a wavy border with a stroked line and a label filled from the row,
+    and slides 4 and 5 are fixed images. D11's layered template is drawn to
+    describe exactly that.
 - **Why:** templates like the Celebrity Peptide Gone Wrong lane (designed in
   Figma at 1080×1350) cannot be described by today's template. A slide has
   one fixed shape, images always fill a rectangle underneath, and every text
@@ -787,8 +881,8 @@ the edges are tested, not just the happy middle.
 - **Design:**
   - **Slide size: 4:5 (1080×1350) or 9:16 (1080×1920)**, picked when the type
     is made and shown on the canvas. Changing it later saves a new template
-    version. The imported Glow Up template is 3:4 (1080×1440): decide whether
-    3:4 stays as a third size or Glow Up is refitted.
+    version. The imported Glow Up template is 3:4 (1080×1440) and is refitted
+    (decided above).
   - **Layers in an order the person can change** (bring forward, send back),
     so text can sit behind a cut-out and a box in front of it. A layers list
     in the adjustments panel.
@@ -813,9 +907,10 @@ the edges are tested, not just the happy middle.
 - **Also affected:** the slide slots on D3 to D5's deck cards and the
   full-size preview take the type's size. D7's template strip already does
   (2026-09-15).
-- **Open decision (Garreth):** real celebrities' photos edited by AI (the
-  gaunt cover) or AI-made look-alike personas. It decides how the sets are
-  built. The lane's caption safety rules
+- **Settled (Garreth, 2026-09-15):** real celebrities' photos edited by AI
+  (the gaunt cover), not AI-made look-alike personas, so a set is one real
+  person's cut-out, before and after photos and facts. The lane's caption
+  safety rules
   (`~/Desktop/en-doc/Caption_Safety_Rules_for_Celebrity_Lane.md`, outside the
   repo) also ban "the shot" in body copy, which the sample cover hook uses.
 - **Done when:** approved in dark at desktop, with the phone view agreed in
