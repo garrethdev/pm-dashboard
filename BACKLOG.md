@@ -119,9 +119,10 @@ sources. Deferred with the carousel generator that will consume them.
 **Decided 2026-09-16 (Garreth).** Accounts are being restricted and banned on
 Geelark cloud phones, so the fleet moves to real iPhones that a person
 (Yurie) warms up and posts from, with warmup scripted later from a MacBook Air
-beside the phones. Posting stays human throughout. The plan of record is the
-Real Phone Masterplan artifact (https://claude.ai/artifact/GAW1snVjyEYEBenTJyNZbo)
-and the task sheet is `~/Documents/Geelark Exit Plan.xlsx` (outside the repo).
+beside the phones. Posting stays human throughout. The plan of record is
+`docs/REAL-PHONE-MASTERPLAN.md` (mirrored as the Real Phone Masterplan artifact,
+https://claude.ai/artifact/GAW1snVjyEYEBenTJyNZbo) and the task sheet is
+`~/Documents/Geelark Exit Plan.xlsx` (outside the repo).
 Czedrick owns everything below.
 
 **What Geelark is, and is not, in this codebase.** Only the hands. The
