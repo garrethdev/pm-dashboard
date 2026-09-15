@@ -7,7 +7,10 @@
  * prototype note) comes from generator-kit.mjs; this file is the screen. Dark
  * approved by Garreth 2026-09-14; light designed the same day. All content is
  * made-up sample data; the library covers are placeholder photos from the
- * Supabase image store (Garreth, 2026-09-14).
+ * Supabase image store (Garreth, 2026-09-14). When the library has no images
+ * in a group the template needs, Generate with AI opens that library's own
+ * Generate images form for those groups (D8) and comes back (Garreth,
+ * 2026-09-15).
  *
  * Run directly, it writes D2's review artboards and canvas.json, each screen
  * twice (Dark page, Light page):
@@ -24,9 +27,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { I, artboard, isMain } from "./generator-kit.mjs";
+import { I, icon, artboard, isMain } from "./generator-kit.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+const D2I = { spark: icon("Sparkle", 12) };
 
 /** Library covers, stored in carousel-generator/assets and referenced by name from the CSS. */
 export function copyCovers(OUT) {
@@ -91,6 +95,8 @@ function css(phone) {
 .tbtn { position: relative; border-radius: 8px; padding: 2px 4px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-muted); transition: color 150ms var(--ease); }
 .tbtn:hover { color: var(--text-primary); }
 .groups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* The empty groups' way out without leaving the form (Garreth, 2026-09-15). Nothing joins the library until Keep. */
+.libai { margin-top: 12px; }
 
 /* Direction — read-only: sunken, no field border, so it never reads as editable. */
 .dir { border-radius: 16px; background: var(--card-sunken); border: 1px solid var(--border); padding: 10px 14px 12px; }
@@ -255,6 +261,7 @@ function page(phone) {
                   <div class="groups">
                     <sc-for list="{{lib.groups}}" as="g" hint-placeholder-count="4"><span class="pill tnum {{g.cls}}">{{g.name}} <b>{{g.count}}</b></span></sc-for>
                   </div>
+                  <sc-if value="{{showAiGen}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2 libai" onClick="{{aiGen}}">${D2I.spark}Generate with AI</button></sc-if>
                 </sc-if>
               </div>
             </div>
@@ -399,6 +406,8 @@ function vals(init) {
         };
       }),
       openLibraries: function () { closeAll(false); self.note("Opens Image libraries · D8"); },
+      showAiGen: !!cur && empty.length > 0,
+      aiGen: function () { closeAll(false); self.note("Opens " + (cur ? cur.name : "the library") + "'s Generate images form for " + list(empty) + ", then back here · D8"); },
       popKey: function (e) { if (e.key === "Escape") { e.stopPropagation(); closeAll(true); } },
       catchCls: (s.libOpen ? "on" : "") + (PHONE && s.libOpen ? " modal" : ""),
       closePops: function () { closeAll(false); },
@@ -408,7 +417,7 @@ function vals(init) {
       dirExpanded: s.dirOpen ? "true" : "false",
       dirToggle: s.dirOpen ? "Less" : "More",
       toggleDir: function () { self.setState({ dirOpen: !s.dirOpen }); },
-      editDirection: function () { self.note("Opens the Direction tab for " + NAME + " · D7"); },
+      editDirection: function () { ctx.open("type", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", tab: "direction" }, "Opens the Direction tab for " + NAME + " · D7"); },
 
       noteVal: s.noteVal,
       typeNote: function (e) { self.setState({ noteVal: e.target.value }); },

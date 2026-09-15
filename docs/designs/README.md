@@ -31,9 +31,19 @@ done, or the one Garreth names.
   dropping one, or a second D6 canvas.
   A ticket that grows past a dozen boards should take the same route
   rather than push a shared canvas toward the limit.
+- **Carousel Generator Designs - (D7 to D10)**, the canvas for the remaining
+  tickets, dark and light pages together:
+  https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH. Started 2026-09-15 at
+  Garreth's request, so D7 to D10 stay off the full shared canvases. Pages
+  `D7 · Dark`, then `D7 · Light` and D8 to D10's as they are designed. Its
+  favicon is `"🎠📑"`. Steps 3–6 read and save this canvas; step 4 runs
+  `place-ticket.mjs` without `--theme`; step 5 packages it with
+  `--title "Carousel Generator Designs - (D7 to D10)"`. D7 in both themes
+  is 7.6 MB (16 boards a theme), so D8 to D10 will not all fit beside it in
+  the 16 MB limit: expect a second canvas before D10.
 - **Carousel Generator Prototype**, the click-through of every approved screen:
   https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175.
-  A desktop artboard and a phone artboard; holds D1 to D6 (2026-09-15). It
+  A desktop artboard and a phone artboard; holds D1 to D7 (2026-09-15). It
   is built only from `main`, by one session, after a ticket is approved.
   Ticket sessions never save it.
 - The separate D2 canvas (`815e3cc0-…`) is retired and no longer updated.

@@ -225,11 +225,16 @@ function vals(firstRun) {
         hasPill: !!t.running || t.status === "unwired" || t.status === "retired",
         pill: t.running ? t.running : t.status === "unwired" ? "Not wired" : "Retired",
         pillCls: t.running ? "pill--accent" : "",
-        /* Every Generate is the same accent button (Garreth, 2026-09-14). */
-        isAccent: isLive && !t.running,
+        /* Every Generate is the same accent button (Garreth, 2026-09-14). A type not wired yet has one too, so its first
+           batch can be made and judged before wiring; its approved decks wait for Wire (Garreth, 2026-09-15). */
+        isAccent: (isLive || t.status === "unwired") && !t.running,
         isSecondary: false,
         isRunning: isLive && !!t.running,
-        openType: function () { self.note("Opens the page for " + t.name + " · D7"); },
+        /* The prototype holds one sample type page (D7); a type not wired yet shows its own page on the D7 canvas. */
+        openType: function () {
+          if (t.status === "unwired") { self.note("Opens " + t.name + "'s page on its Wiring tab · D7"); return; }
+          ctx.open("type", { name: t.name, character: t.character, slides: t.slides + " slides" }, "Opens the page for " + t.name + " · D7");
+        },
         generate: function () { ctx.open("generate", { name: t.name, character: t.character, slides: t.slides + " slides" }, "Opens the Generate form for " + t.name + " · D2"); },
         openBatch: function () { ctx.open("batch", { name: t.name, character: t.character, slides: t.slides + " slides", count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); }
       };

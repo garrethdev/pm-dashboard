@@ -11,8 +11,10 @@ Dark (D1 to D5)**
 every `DN · Light` page named below lives on **Carousel Generator Designs -
 Light (D1 to D5)** (https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4), and
 D6, a heavy ticket, has both its pages on **Carousel Generator Designs -
-(D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p). The
-`docs/designs/README.md` how-to has the steps.
+(D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p). D7 to
+D10 go on a fourth, **Carousel Generator Designs - (D7 to D10)**
+(https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH), both themes (Garreth,
+2026-09-15). The `docs/designs/README.md` how-to has the steps.
 
 Companion documents: `CAROUSEL-GENERATOR-FLOWS.md` (what each screen does,
 step by step; the flow numbers F1 to F14 below point there) and
@@ -82,6 +84,9 @@ the edges are tested, not just the happy middle.
   the menu's theme switch also flips any screen). The menu's back button uses
   the outline "<" (the app's ChevronLeft), like every back button in the
   generator (Garreth, 2026-09-14).
+  **Reopened during D7's review** (Garreth, 2026-09-15), both pages re-saved:
+  a type not wired yet has Generate beside its Not wired pill, so its first
+  batch can be made and judged before wiring.
 - **You get here from:** the dashboard's Generate page, Carousel card.
 - **Flows:** F1 steps 1–2; entry point for F8.
 - **Design:**
@@ -99,7 +104,9 @@ the edges are tested, not just the happy middle.
 - **States:**
   - A type with a batch already running: its button becomes **Open running
     batch**.
-  - A type that is not wired yet: "Not wired" pill, no Generate button.
+  - A type that is not wired yet: "Not wired" pill and Generate (Garreth,
+    2026-09-15, replacing "no Generate button"): its approved decks wait for
+    Wire on the type's page (D5, D7).
   - Retired types folded into a collapsed group.
   - First run: no carousel types at all.
   - Phone: the menu as a slide-out drawer, cards in one column.
@@ -128,6 +135,11 @@ the edges are tested, not just the happy middle.
   **Light mode: designed 2026-09-14 at Garreth's request, awaiting review**,
   all six screens on the D2 · Light page. **Datestamp removed** from the form
   after approval (Garreth, 2026-09-14).
+  **Reopened during D7's review** (Garreth, 2026-09-15), both pages re-saved:
+  when the library has no images in a group the template needs, **Generate
+  with AI** under the groups opens that library's Generate images form (D8)
+  for those groups. What comes back joins the library only on Keep, and the
+  form is then ready to generate.
 - **You get here from:** Generate on a card in D1.
 - **Flows:** F1 step 3.
 - **Design:**
@@ -362,6 +374,11 @@ the edges are tested, not just the happy middle.
     (desktop).
   - Not wired yet: D4's Render passes only a count, so which decks were
     flagged reaches D5 only once D5 joins the prototype on `main`.
+  - **Reopened during D7's review** (Garreth, 2026-09-15), both pages
+    re-saved: on a type not wired yet, Approve holds the decks for wiring
+    (there is no table to post from yet). The progress line says "10
+    approved, waiting for wiring", and Wire on the type's page (D7) writes
+    them in. New picture: after Approve on a type not wired yet (desktop).
 - **You get here from:** Render in D4.
 - **Flows:** F3.
 - **Design:**
@@ -391,6 +408,8 @@ the edges are tested, not just the happy middle.
 
 ## D6. Studio — create a new carousel type
 
+- **Round two:** D11 (slide sizes, layered templates, starting from a Figma
+  link), added 2026-09-15 during D7's review.
 - **Status:** **approved in dark by Garreth on 2026-09-15 after seven
   review rounds the same day; light mode designed and D6 added to the
   Carousel Generator Prototype
@@ -572,7 +591,93 @@ the edges are tested, not just the happy middle.
 
 ## D7. A carousel type's own page
 
-- **You get here from:** a card in D1, or after saving in D6.
+- **Status:** **done.** Dark mode approved by Garreth on 2026-09-15 after
+  five review rounds; light mode designed the same day and D7 added to the
+  Carousel Generator Prototype
+  (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175),
+  where a type's name on D1 and Edit beside D2's direction open it (the
+  prototype holds one sample type page, Before & After; a type not wired yet
+  is seen on the D7 canvas). On a new canvas for the rest of the tickets,
+  **Carousel Generator Designs - (D7 to D10)**
+  (https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH, Garreth 2026-09-15),
+  pages **D7 · Dark** and **D7 · Light**, built by
+  `docs/designs/carousel-generator/d7-type-page.build.mjs`. Pictures, one
+  screen per state; only the tabs, the direction text and Preview's dialog
+  respond. Overview (desktop and phone); Direction with a suggested change
+  (desktop and phone) and with the reply failed (desktop); Wiring for a type
+  just saved (desktop and phone), the cadence not adding up, Wire running, a
+  check failed and rolled back, the media entry missing, every item ticked,
+  and Preview open (desktop); and, from the first review, Overview with a
+  template version being picked (desktop). The Overview boards are taller
+  than a screen so the whole page shows.
+  **First review** (Garreth, 2026-09-15), all three pages re-saved:
+  - The template's slides are the main thing on Overview, across the full
+    width, drawn as the painter draws them. One version shows at a time,
+    picked from a dropdown; Make active sits beside it when the version
+    showing is not the active one (it says Active when it is). The list of
+    every version is gone.
+  - Posts left, days of cover, median views and weekly cap are four tiles
+    under the template, the details to their right, both the same height;
+    the batches below, full width.
+  - The batch table is left-aligned and has no Ran by column. A whole row
+    opens that batch: a finished one opens its decks (D5, rendered, with any
+    flagged or failed), the running one D3, a stopped one D3 with Continue.
+    A finished row with flagged decks says how many.
+  - Sections side by side are the same height and fill the screen: Direction's
+    editor column and conversation, Wiring's set-up card and checklist.
+  **Second review** (Garreth, 2026-09-15), the page re-saved:
+  - The four stat tiles are narrower and the details card wider. Each tile
+    is the analytics page's stat tile (`analytics-charts.tsx`): the raised
+    surface and the dotted texture fading out of its top-right corner, with
+    no line graph.
+  - In the template's version dropdown the version showing sits in a soft
+    accent tint; there is no tick.
+  - Preview on the phone, a new picture: a sheet from the bottom, like D6's
+    sheets, with each block of what Wire will run scrolling inside it.
+  - Answered, no change: History above the batches opens History (D9)
+    filtered to this type.
+  **Third review** (Garreth, 2026-09-15), the page re-saved:
+  - Direction's versions use the template's dropdown: the version picked is
+    the one in the editor, tinted in the list, with Make active beside it
+    when it is not the active one (Active when it is). The Versions card is
+    gone. New picture: Direction with a version being picked (desktop).
+  **Fourth review** (Garreth, 2026-09-15), the page re-saved:
+  - A type not wired yet has Generate, like any other type (D1's card and
+    this page's header), so its first batch is made and judged before
+    wiring. Its approved decks wait (D5); Wire writes them into the new
+    table, which is a new checklist item, **Approved decks**.
+  **Fifth review** (Garreth, 2026-09-15), the page re-saved:
+  - A carousel type's slides are **4:5 or 9:16**, chosen when the type is
+    made (designed in D11). Details names the size, and the template's slides
+    on Overview take that shape.
+  **Proposed in this design, for review:**
+  - The title keeps D2's shape (Carousel types above the name, the character
+    and slide pills beside it, "Not wired" or "Media map missing" when it
+    applies); underline tabs under it, the app's own
+    (`account-detail-tabs.tsx`). Generate sits opposite the title on every
+    tab of a wired type; on Direction it steps back to secondary so Save
+    version is that tab's one accent.
+  - Overview: the pool's numbers (posts left, days of cover, median views, a
+    week), the batches as a small table with Open running batch or Continue
+    on the rows that need them, and beside them the template (the active
+    version's slides, every version with Active or Make active, Edit
+    template) and the details.
+  - Direction: the suggestion shows inside the direction itself, removed
+    words struck through and added words underlined; the conversation sits
+    beside it with D6's messages and chat box, citing the knowledge rule it
+    used and saying plainly what direction cannot change (a font size is the
+    template's). Versions listed under the text. On the phone the
+    conversation folds to D6's round button and Save version sits in the
+    bottom bar.
+  - Wiring: the cadence rebalance follows the cadence editor's rule (this
+    character's types add up to its weekly number), with its running total
+    pill and "3 too many" wording; Wire is unavailable until it adds up. Wire
+    is the hold in its amber tone, since it changes the database but deletes
+    nothing. The checklist ticks as Wire runs, names the failing check after
+    a rollback, and carries the n8n media line with Copy, then Check again
+    once the type is wired.
+  - **Settled** (Garreth, 2026-09-15): a type not wired yet has Generate; see
+    the fourth review.
 - **Flows:** F6, F10, F11.
 - **Design:**
   - **Overview:** the type's details, template versions, its batches, **Edit
@@ -605,6 +710,21 @@ the edges are tested, not just the happy middle.
     character.
   - Generating tiles, then the review row with **Keep** and **Discard**.
   - **Retire image** (hold).
+  - Opened from D2's **Generate with AI** (Garreth, 2026-09-15): the Generate
+    images form with the empty group already picked, and back to the
+    Generate form once the images are kept.
+  - **Groups are the library's folders** (Garreth, 2026-09-15): made by a
+    person, or proposed by the AI when the Studio drafts a template that
+    needs them (for a layered template: Subjects, Backgrounds, Before,
+    After). A template cell names the group it draws from, and the AI looks
+    only there.
+  - **Sets**, for templates whose slides must show the same subject
+    (Celebrity Peptide Gone Wrong: cover cut-out, before, after). One set per
+    subject: its images plus the facts the copy quotes (weights, years),
+    entered by a person and never written by the AI.
+  - **Preparing an image** inside the library: background removal and black
+    and white as automatic steps, and an AI edit of an uploaded photo (a
+    pose, a look) that waits for Keep like any generated image.
 - **States:**
   - An empty new library.
   - A group filter with no results.
@@ -647,3 +767,56 @@ the edges are tested, not just the happy middle.
 - **States:** no digests yet; every digest analysed; nothing pending; an
   analysis failing (Retry).
 - **Done when:** approved in dark at both sizes.
+
+---
+
+## D11. Studio, round two — slide sizes, layered templates, Figma
+
+- **Status:** to design. Added by Garreth on 2026-09-15, during D7's review,
+  for another session to pick up. It extends D6, whose canvas is close to its
+  16 MB limit, so it takes a canvas of its own with both themes, the way D6
+  did. The template model (`CAROUSEL-TEMPLATE-MODEL.md`) changes with it once
+  the design is approved.
+- **Why:** templates like the Celebrity Peptide Gone Wrong lane (designed in
+  Figma at 1080×1350) cannot be described by today's template. A slide has
+  one fixed shape, images always fill a rectangle underneath, and every text
+  box sits on top.
+- **You get here from:** the Studio (D6): New carousel type, Studio in the
+  menu, Edit template on D7.
+- **Flows:** F8, F9, F10, all to be extended.
+- **Design:**
+  - **Slide size: 4:5 (1080×1350) or 9:16 (1080×1920)**, picked when the type
+    is made and shown on the canvas. Changing it later saves a new template
+    version. The imported Glow Up template is 3:4 (1080×1440): decide whether
+    3:4 stays as a third size or Glow Up is refitted.
+  - **Layers in an order the person can change** (bring forward, send back),
+    so text can sit behind a cut-out and a box in front of it. A layers list
+    in the adjustments panel.
+  - **Image layers placed freely**, not only filling a cell: a cut-out
+    subject, background removed, sized and positioned over another image.
+  - **Fixed images** that appear on every deck (a grunge paper background, a
+    closing product slide), uploaded to the template instead of picked from a
+    group.
+  - **Text on a box:** a solid container behind a text box, with its colour
+    and padding, as a text style option.
+  - **Shaped frames:** an image clipped to a shape (the wavy frame) with a
+    border.
+  - **Slides that share a subject:** cells marked as drawing from one set
+    (D8), and text boxes filled from that set's facts instead of by the AI.
+  - **A third way to start: from a Figma link**, beside Start from a
+    reference deck and Discuss your idea. The AI reads the frames and their
+    layers, drafts the template, and proposes the library groups it needs.
+    The app has no Figma access today (a token or connection), so this starts
+    with a spike.
+  - The AI proposes the library groups a new template needs, whichever way
+    the Studio was started.
+- **Also affected:** the slide slots on D3 to D5's deck cards and the
+  full-size preview take the type's size. D7's template strip already does
+  (2026-09-15).
+- **Open decision (Garreth):** real celebrities' photos edited by AI (the
+  gaunt cover) or AI-made look-alike personas. It decides how the sets are
+  built. The lane's caption safety rules
+  (`~/Desktop/en-doc/Caption_Safety_Rules_for_Celebrity_Lane.md`, outside the
+  repo) also ban "the shot" in body copy, which the sample cover hook uses.
+- **Done when:** approved in dark at desktop, with the phone view agreed in
+  review.

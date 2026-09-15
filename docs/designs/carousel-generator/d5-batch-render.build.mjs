@@ -62,6 +62,7 @@
  *   Finished            desktop, every deck rendered: Approve 10, Regenerate 5
  *   PhoneFinished       phone, the same, Approve in the bottom bar
  *   Approved            desktop, after Approve: 10 approved, 5 still flagged
+ *   ApprovedNotWired    desktop, the same on a type not wired yet: the decks wait for wiring
  *   Rows                desktop, the same batch as Main in the Rows view
  *   PhoneRows           phone, the Rows view, stacked
  * Imported, `renderScreen({ auto: true })` is the screen the prototype opens.
@@ -492,7 +493,9 @@ function vals({ auto, init }) {
     var BASE = ${JSON.stringify(BASE)};
     var INIT_SCROLL = ${init.scrollTo || 0};
     var SLIDES = parseInt(P.slides, 10) || 7;
-    var NAME = P.name || "Before & After";
+    var NAME = P.name || ${JSON.stringify(init.name || "Before & After")};
+    /* A type not wired yet (Garreth, 2026-09-15): Approve holds its decks until Wire on the type's page writes them in. */
+    var UNWIRED = ${!!init.unwired} || !!P.unwired;
     var SONG = "Artist Name – Song Title";
     var PHONE = ctx.PHONE;
 
@@ -721,7 +724,7 @@ function vals({ auto, init }) {
 
       rnCount: rendered.length + " of " + toRender.length + " rendered",
       rnShowApproved: approved.length > 0,
-      rnApprovedText: approved.length + " approved",
+      rnApprovedText: approved.length + " approved" + (UNWIRED ? ", waiting for wiring" : ""),
       rnShowFlagged: flagged.length > 0,
       rnFlaggedText: flagged.length + " flagged",
       rnJumpFlag: function () {
@@ -736,7 +739,7 @@ function vals({ auto, init }) {
       rnTrackW: toRender.length ? Math.round((rendered.length / toRender.length) * 100) : 0,
       rnDone: done,
       rnShowBar: done && (approvable.length > 0 || approved.length > 0),
-      rnBarSub: approved.length ? approved.length + " approved" : flagged.length ? flagged.length + " flagged" : "",
+      rnBarSub: approved.length ? approved.length + (UNWIRED ? " approved, waiting for wiring" : " approved") : flagged.length ? flagged.length + " flagged" : "",
       /* Regenerate (n) decks: every flagged deck goes back to be rewritten (the gate runs again), then renders again. */
       rnShowRegenAll: done && flagged.length > 0,
       rnRegenAllText: "Regenerate " + flagged.length + plural(flagged.length),
@@ -752,7 +755,7 @@ function vals({ auto, init }) {
         var n = approvable.length;
         var next = current().map(function (d) { return d.st === "rendered" && !d.check ? Object.assign({}, d, { st: "approved", fb: false }) : d; });
         self.setState({ d5decks: next });
-        self.note("Approved " + n + plural(n) + ": the Smart Scheduler will post them");
+        self.note("Approved " + n + plural(n) + (UNWIRED ? ": they wait for Wire on the type's page · D7" : ": the Smart Scheduler will post them"));
       },
 
       pvOpen: !!pv,
@@ -884,6 +887,7 @@ const MOMENTS = {
   finished: { decks: decks(FINISHED) },
   rows: { decks: decks(MAIN), view: "rows" },
   approved: { decks: decks(APPROVED) },
+  approvedNotWired: { decks: decks(APPROVED), unwired: true, name: "Quiet Luxury Picks" },
 };
 
 const DESK_H = 1700;
@@ -910,6 +914,7 @@ function build(OUT) {
     { name: "Rows", phone: false, m: "rows", title: "D5 · Rows view · Desktop", x: 0, y: R1 + ROW * 3 + 1040 },
     { name: "PhoneRows", phone: true, m: "rows", scrollTo: 4, title: "D5 · Rows view, scrolled to decks 4 and 5 · Phone", x: 1540, y: R1 + ROW * 3 + 1040 },
     { name: "Approved", phone: false, m: "approved", title: "D5 · After Approve · Desktop", x: 0, y: R1 + ROW * 4 + 1040 },
+    { name: "ApprovedNotWired", phone: false, m: "approvedNotWired", title: "D5 · After Approve, type not wired yet · Desktop", x: 1540, y: R1 + ROW * 4 + 1040 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
