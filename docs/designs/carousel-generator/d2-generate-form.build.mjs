@@ -417,7 +417,7 @@ function vals(init) {
       dirExpanded: s.dirOpen ? "true" : "false",
       dirToggle: s.dirOpen ? "Less" : "More",
       toggleDir: function () { self.setState({ dirOpen: !s.dirOpen }); },
-      editDirection: function () { ctx.open("type", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", tab: "direction" }, "Opens the Direction tab for " + NAME + " · D7"); },
+      editDirection: function () { ctx.open("type", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", size: P.size || "4:5", tab: "direction" }, "Opens the Direction tab for " + NAME + " · D7"); },
 
       noteVal: s.noteVal,
       typeNote: function (e) { self.setState({ noteVal: e.target.value }); },
@@ -442,7 +442,7 @@ function vals(init) {
         clearTimeout(self.busyTimer);
         self.busyTimer = setTimeout(function () {
           self.setState({ busy: false });
-          ctx.open("batch", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", count: s.count }, "Opens the batch: " + s.count + " decks of " + NAME + " · D3");
+          ctx.open("batch", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", size: P.size || "4:5", count: s.count }, "Opens the batch: " + s.count + " decks of " + NAME + " · D3");
         }, 900);
       },
       submit: function (e) { e.preventDefault(); }

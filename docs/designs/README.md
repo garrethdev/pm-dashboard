@@ -59,8 +59,10 @@ done, or the one Garreth names.
   13 desktop boards a theme, both themes 11.2 MB.
 - **Carousel Generator Prototype**, the click-through of every approved screen:
   https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175.
-  A desktop artboard and a phone artboard; holds D1 to D7, with D11's
-  Studio in place of D6's (2026-09-15). It is built only from `main`, by one
+  A desktop artboard and a phone artboard; holds D1 to D7. Its Studio is
+  D6's own build with round two included, and a type's slide size travels
+  from Carousel types through Generate, the batch and review to D5, so
+  Quiet Luxury Picks renders at 9:16 (2026-09-15). It is built only from `main`, by one
   session, after a ticket is approved. Ticket sessions never save it (D11's
   switch was the exception, saved from its branch at Garreth's request on
   2026-09-15, since the branch was `main` plus D11).

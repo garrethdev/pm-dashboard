@@ -20,7 +20,7 @@ import { generateScreen, copyCovers } from "./d2-generate-form.build.mjs";
 import { batchScreen } from "./d3-batch-writing.build.mjs";
 import { reviewScreen } from "./d4-batch-review.build.mjs";
 import { renderScreen, copySlides } from "./d5-batch-render.build.mjs";
-import { studioRoundTwoScreen, copyStudioRoundTwoImages } from "./d11-studio-round-two.build.mjs";
+import { studioScreen, copyStudioImages } from "./d6-studio.build.mjs";
 import { typeScreen, copyTypeImages } from "./d7-type-page.build.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -30,10 +30,11 @@ const OUT = path.resolve(process.argv[2] ?? path.join(HERE, "out-prototype"));
    D1 Carousel types, D2 Generate form, D3 Batch while writing (approved 2026-09-14, reopened and approved again
    2026-09-15), D4 Batch review (approved 2026-09-15), D5 Batch render and finish (2026-09-15), D6 Studio (approved
    2026-09-15 after seven review rounds; New carousel type on D1 and the Studio menu item open it). The Studio is
-   D11's, D6 with its second round (approved in dark 2026-09-15 after three review rounds): slide sizes, the
-   canvas that pans and zooms, layered templates and starting from a Figma link. */
+   D6's own build with its second round brought in (approved 2026-09-15): slide sizes, the canvas that pans and
+   zooms, layered templates and starting from a Figma link. Every hand-off from a type to its batch carries the
+   type's slide size, so D5 draws a 9:16 type's slides at 9:16. */
 const SCREENS = () => [
-  typesScreen(), generateScreen(), batchScreen({ auto: true }), reviewScreen({ auto: true }), renderScreen({ auto: true }), studioRoundTwoScreen(),
+  typesScreen(), generateScreen(), batchScreen({ auto: true }), reviewScreen({ auto: true }), renderScreen({ auto: true }), studioScreen(),
   /* D7 A carousel type's page (approved 2026-09-15 after five review rounds): a type's name on D1 and Edit on D2's
      direction open it. */
   typeScreen(),
@@ -42,7 +43,7 @@ const SCREENS = () => [
 fs.mkdirSync(OUT, { recursive: true });
 copyCovers(OUT);
 copySlides(OUT);
-copyStudioRoundTwoImages(OUT);
+copyStudioImages(OUT);
 copyTypeImages(OUT);
 
 const BOARDS = [

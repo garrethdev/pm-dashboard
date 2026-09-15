@@ -877,7 +877,7 @@ function vals({ auto, init }) {
           total: decks.length,
           flagged: flagged.map(function (d) { return d.n; }),
           discarded: decks.filter(function (d) { return d.st === "discarded"; }).map(function (d) { return d.n; }),
-          name: NAME, character: P.character, slides: P.slides
+          name: NAME, character: P.character, slides: P.slides, size: P.size || "4:5"
         }, "Renders " + ready + (ready === 1 ? " deck" : " decks") + " · D5");
       },
 
@@ -895,7 +895,7 @@ function vals({ auto, init }) {
       rvBatchKey: function (e) { if (e.key === "Escape") self.setState({ d4batch: false }); },
       rvBatchSubmit: function () {
         self.setState({ d4batch: false });
-        ctx.open("batch", { count: live.length, name: NAME, character: P.character, slides: P.slides }, "Every deck rewrites with the feedback · D3");
+        ctx.open("batch", { count: live.length, name: NAME, character: P.character, slides: P.slides, size: P.size || "4:5" }, "Every deck rewrites with the feedback · D3");
       },
 
       rvBellDot: flagged.length > 0,

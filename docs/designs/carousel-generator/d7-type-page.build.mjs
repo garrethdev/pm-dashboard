@@ -805,7 +805,7 @@ function vals(T, init) {
       d7go[t] = function () { self.setState({ d7tab: t, d7tabSet: true, d7tvOpen: false, d7dvOpen: false }); };
     });
     var say = function (text) { return function () { self.note(text); }; };
-    var params = { name: NAME, character: P.character || ${JSON.stringify(T.character)}, slides: P.slides || ${JSON.stringify(`${T.slides} slides`)} };
+    var params = { name: NAME, character: P.character || ${JSON.stringify(T.character)}, slides: P.slides || ${JSON.stringify(`${T.slides} slides`)}, size: P.size || ${JSON.stringify(T.size || "4:5")} };
     var cur = TPL[s.d7tv] || TPL[0];
     var dv = DIRS[s.d7dv] || DIRS[0];
     return {
@@ -843,9 +843,9 @@ function vals(T, init) {
       }),
 
       /* A batch row opens that batch: its decks, rendered and any flagged, or the batch still writing (Garreth, 2026-09-15). */
-      d7openBatch: function () { ctx.open("render", { name: NAME, character: params.character, slides: params.slides, count: 20 }, "Opens that batch's decks: rendered, and any flagged or failed · D5"); },
-      d7openRunning: function () { ctx.open("batch", { name: NAME, character: params.character, slides: params.slides, count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); },
-      d7openStopped: function () { ctx.open("batch", { name: NAME, character: params.character, slides: params.slides, count: 50, writtenUpTo: 12 }, "Opens the stopped batch, with Continue · D3"); },
+      d7openBatch: function () { ctx.open("render", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: 20 }, "Opens that batch's decks: rendered, and any flagged or failed · D5"); },
+      d7openRunning: function () { ctx.open("batch", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); },
+      d7openStopped: function () { ctx.open("batch", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: 50, writtenUpTo: 12 }, "Opens the stopped batch, with Continue · D3"); },
 
       /* The direction's versions: the same dropdown as the template's (Garreth, 2026-09-15, third review). */
       d7dvName: dv.name,

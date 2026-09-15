@@ -192,7 +192,7 @@ function vals(firstRun) {
       { id: "myth", slides: 8, name: "Myth vs Fact", character: "Character 3", posts: 5, cover: 2, median: 24300, last: "Sep 12", status: "live", running: "Writing 7 of 20" },
       { id: "before-after", slides: 7, name: "Before & After", character: "Character 2", posts: 14, cover: 6, median: 31700, last: "Sep 11", status: "live" },
       { id: "day-life", slides: 10, name: "Day in the Life", character: "Character 4", posts: 22, cover: 11, median: 9800, last: "Sep 13", status: "live" },
-      { id: "quiet-luxury", slides: 5, name: "Quiet Luxury Picks", character: "Character 4", status: "unwired" },
+      { id: "quiet-luxury", slides: 5, size: "9:16", name: "Quiet Luxury Picks", character: "Character 4", status: "unwired" },
       { id: "weekly-wins", slides: 6, name: "Weekly Wins", character: "Character 2", posts: 0, cover: 0, median: 12400, last: "Jul 2", status: "retired" },
       { id: "ama", slides: 4, name: "Ask Me Anything", character: "Character 3", posts: 0, cover: 0, median: 6100, last: "Jun 18", status: "retired" }
     ];
@@ -233,10 +233,10 @@ function vals(firstRun) {
         /* The prototype holds one sample type page (D7); a type not wired yet shows its own page on the D7 canvas. */
         openType: function () {
           if (t.status === "unwired") { self.note("Opens " + t.name + "'s page on its Wiring tab · D7"); return; }
-          ctx.open("type", { name: t.name, character: t.character, slides: t.slides + " slides" }, "Opens the page for " + t.name + " · D7");
+          ctx.open("type", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5" }, "Opens the page for " + t.name + " · D7");
         },
-        generate: function () { ctx.open("generate", { name: t.name, character: t.character, slides: t.slides + " slides" }, "Opens the Generate form for " + t.name + " · D2"); },
-        openBatch: function () { ctx.open("batch", { name: t.name, character: t.character, slides: t.slides + " slides", count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); }
+        generate: function () { ctx.open("generate", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5" }, "Opens the Generate form for " + t.name + " · D2"); },
+        openBatch: function () { ctx.open("batch", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); }
       };
     };
 
