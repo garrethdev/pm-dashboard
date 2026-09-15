@@ -381,6 +381,23 @@ the edges are tested, not just the happy middle.
     (there is no table to post from yet). The progress line says "10
     approved, waiting for wiring", and Wire on the type's page (D7) writes
     them in. New picture: after Approve on a type not wired yet (desktop).
+  - **Refit (round two), 2026-09-15, approved by Garreth on 2026-09-15 after
+    three review rounds; D5 · Light re-placed on the Light (D1 to D5) canvas
+    the same day:**
+    the slide slots on the card, the Rows strip and the full-size preview
+    stop drawing 3:4 and take the type's slide size from D11. The Before &
+    After batch is 4:5 (four slots across); Quiet Luxury Picks, D11's 9:16
+    type, is 9:16 (five slots across, so two rows still fit the card, and a
+    narrower preview so the tall slide fits the screen). After Approve on a
+    type not wired yet now shows Quiet Luxury Picks at 9:16, and two new
+    pictures show its full-size preview (desktop and phone). Page **D5 ·
+    Dark** re-saved on the Dark (D1 to D5) canvas and **D5 · Light** on the
+    Light (D1 to D5) canvas, from the same build. The imported Glow Up template
+    (`docs/carousel-templates/glowup.v1.json`, 1080×1440) is not refitted
+    here: that is a template change, not a design.
+    First review (Garreth, 2026-09-15): 9:16 deck cards made taller so their second row stays inside the card.
+    Second review (Garreth, 2026-09-15): 9:16 cards grow with their slides, so the second row clears the divider above the caption.
+    Third review (Garreth, 2026-09-15): the 9:16 cards approved; phone deck cards hug their slides, so two-row 4:5 cards lose the empty space at the bottom.
 - **You get here from:** Render in D4.
 - **Flows:** F3.
 - **Design:**
