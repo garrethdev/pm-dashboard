@@ -114,6 +114,126 @@ sources. Deferred with the carousel generator that will consume them.
 
 # V1 — open work
 
+## Move accounts off Geelark onto real iPhones
+
+**Decided 2026-09-16 (Garreth).** Accounts are being restricted and banned on
+Geelark cloud phones, so the fleet moves to real iPhones that a person
+(Yurie) warms up and posts from, with warmup scripted later from a MacBook Air
+beside the phones. Posting stays human throughout. The plan of record is the
+Real Phone Masterplan artifact (https://claude.ai/artifact/GAW1snVjyEYEBenTJyNZbo)
+and the task sheet is `~/Documents/Geelark Exit Plan.xlsx` (outside the repo).
+Czedrick owns everything below.
+
+**What Geelark is, and is not, in this codebase.** Only the hands. The
+Posting Agent (`lioNzkWRocyDvZS5`) is the one workflow that sends a post to a
+phone, the warmup workflows (`QDUtABHSG4FMTrQX`, `3AsUAUOwUgXa60cy`) are the
+only ones that warm one, and `geelark_tasks` is the only proof today that either
+happened. The Smart Scheduler, the age ramp, the content gates, the caption
+matching into `tt_post_performance`, and Inventory never touch it. So the work
+is a fork at the hand-off point, not a rewrite. All 32 accounts are already
+`posting_paused` (2026-09-14) and Geelark warmups keep running for every account
+until the day it moves.
+
+**The one column the whole thing hangs on:** `accounts.delivery_mode`, `geelark`
+or `manual`, default `geelark`. Every change below branches on it, so accounts
+still on Geelark keep working untouched and accounts move one at a time.
+
+### Immediate — needed before the phones arrive (by 2026-09-19)
+
+Needed on move day, in this order:
+
+- **`accounts.delivery_mode`** as above. Shown as a pill on the Accounts table,
+  editable on the account page, audit-logged like the pause toggle.
+  *Done when:* an account can be flipped from the app and the row in
+  `dashboard_audit_log` says who and when.
+- **`devices` table + Devices page + `accounts.device_id`.** One row per
+  physical phone: name, model, iOS version, proxy, timezone, whoer.net proof
+  screenshot, `is_active`, notes. Rule enforced in the app: at most three
+  accounts per device. `geelark_profile` stays as-is for the old fleet.
+  *Done when:* Yurie can register a phone with its proof screenshot and see
+  which accounts it holds.
+- **"Move to phone" on the account page.** Picks a device, sets
+  `delivery_mode = manual`, records `moved_to_device_at`, writes an audit row.
+  That date is what the comparison view splits on. Does **not** unpause.
+  *Done when:* one click does all four and the account shows its phone.
+- **`warmup_sessions` table + quick log form.** `device_id`, `account_id`,
+  `started_at`, `minutes`, `mode` (`manual` | `script`), `note`. Point
+  `v_account_warmup_health` at the union of Geelark type-42/90 tasks and these
+  rows so the green/yellow/red dot means the same thing for both fleets.
+  *Done when:* a logged session turns a moved account's dot green.
+
+Needed for the first post, by end of week 1 (2026-09-26):
+
+- **`post_deliveries` table.** One row per post handed to a person: content
+  row (source table + id, same shape `content_type_registry` uses), account,
+  device, `status` (`queued` | `posted` | `failed` | `skipped`), `post_url`,
+  `note`, `done_by`, `done_at`. This becomes the "actually posted" signal that
+  `geelark_tasks.status = 3` is today.
+- **Posting Agent fork (n8n).** For `delivery_mode = manual`: write a `queued`
+  delivery row and leave the content row `Ready`; do not call Geelark. Geelark
+  accounts follow the existing path unchanged. Save, compare `versionId` vs
+  `activeVersionId`, **publish** — an unpublished draft is the classic miss.
+  *Done when:* a manual-mode test account gets a queued row and no Geelark task.
+- **Posting To-Do page, built for a phone screen.** Per account: today's queued
+  items with a video download button, a caption copy button, **Posted** (asks
+  for the post link) and **Failed** (asks why). Posted flips `posting_status`
+  and stores the link — which also closes the long-open gap that post URLs were
+  never captured from Geelark (ticket #227).
+  *Done when:* Yurie can complete a delivery from the iPhone's browser.
+- **Facebook as a platform.** `accounts.platform` and the registry know only
+  `tiktok` and `instagram`; each phone carries one character's Instagram +
+  Facebook, so Facebook rows need to exist and show on the Accounts table.
+  Performance ingest for Facebook is a separate, later question.
+
+### Intermediate — weeks 1 to 2 (2026-09-20 to 2026-10-03)
+
+- **Health detector and Incidents read both delivery sources.** The
+  delivery-failure guard in `v_account_health_v3` and the failed-deliveries
+  source in `src/lib/data/incidents.ts` read `geelark_tasks` only; add
+  `post_deliveries` beside it so a manual account is judged by the same rules
+  and never looks silent. Same "quieter than it is" failure mode as the poller
+  blind spot — see the memory note.
+- **Comparison view.** Each moved account before and after
+  `moved_to_device_at` (views per post, share under 10 views, warmup dot,
+  restrictions and bans), plus the Geelark cohort of the same character. This is
+  what the week-6 review reads.
+- **Post-ban branch for manual accounts.** `[Ops] Post-Ban System` deletes a
+  Geelark phone; for `delivery_mode = manual` skip that and surface a checklist
+  instead — sign out on the device, release queued content, retire proxy and
+  number. Same audit trail.
+- **Morning reminder + stale-item alert (n8n).** The day's queued deliveries per
+  device each morning; an alert when a delivery sits `queued` past 24 h. A human
+  queue strands more easily than a robot, and stranded `Ready` rows have bitten
+  this pipeline before.
+- **Operational, not code:** stopping a moved account's Geelark warmups on move
+  day (the warmup scheduler reads `is_active`, so this is a per-account
+  exclusion, not a workflow change), and unpausing only the moved accounts after
+  their 3–5 day re-warm. Both go through existing toggles.
+
+### Long term — from the end of week 2
+
+- **Scripted warmup writes to `warmup_sessions`.** The script lives on the
+  Air, outside this repo; it needs a write path (service-role insert or a small
+  authenticated endpoint) and `mode = 'script'`. Nothing else in the app
+  changes.
+- **Batch flips.** "Move to phone" one account at a time is enough for the
+  pilot; a multi-select flip by character is a nicety once phones arrive in
+  batches.
+- **Retire Geelark, in order:** unpublish Warmup Scheduler, GPS drift, the
+  Geelark branch of the Posting Agent, Task Detail Poller, Wallet Guard
+  (unpublish, do not delete; keep `geelark_tasks` read-only for forensics).
+  Then remove from the app: `src/lib/data/geelark.ts` phone list,
+  `wallet.ts`, `geelark-writes.ts`, `/api/proxies/replace`, the Geelark probe
+  in `/api/health`, the phones card on the homepage. Then rotate the Geelark
+  key and the inline Supabase keys (see the n8n credentials note — plaintext
+  keys block rotation until moved).
+
+**Supersedes:** the V3 line "All GeeLark device provisioning and warmup should
+stay in n8n regardless" (2026-09-09) — provisioning through Geelark ends with
+this; and the V2 "Set up new accounts from inside the dashboard" entry is
+partly absorbed by Move to phone, since a real-phone account has no Geelark
+profile to create.
+
 ## Verify Character 5's first scheduled run
 
 **Un-paused 2026-09-10 at ~07:31 ET — an hour after that day's 06:30 run had
@@ -1007,6 +1127,10 @@ proxy-cheap has no paid extend endpoint at all — `/proxies/{id}/extend` 404s.
 
 ## Set up new accounts from inside the dashboard
 
+*2026-09-16: partly absorbed by "Move to phone" in the V1 Geelark-exit entry —
+a real-phone account has no Geelark profile to create, so the provisioning chain
+below only applies while accounts are still created on Geelark.*
+
 **Deferred at plan time, 2026-08-28 (Garreth)** — recorded in
 `PM_DASHBOARD_V1_PLAN.md` §12, the v2 parking lot, under the heading "recorded
 per Garreth's instruction — do not build". Moved here 2026-09-09 so the
@@ -1131,8 +1255,10 @@ with unrelated projects (Hamming, YC GTM Hunter, Healtsy, Cleora, Virlo,
 LinkedIn), so the Peptide Miracles share is roughly 40-60 live workflows — still
 far too many to rewrite, which is the whole reason this list is a shortlist.
 
-**What should stay in n8n regardless.** All GeeLark device provisioning and
-warmup. Long-running, heavy external-API glue, and genuinely human-in-the-loop
+**What should stay in n8n regardless.** ~~All GeeLark device provisioning and
+warmup.~~ *Superseded 2026-09-16 — see "Move accounts off Geelark onto real
+iPhones" in V1; Geelark is being retired.* All GeeLark device provisioning and
+warmup, for as long as Geelark is in use. Long-running, heavy external-API glue, and genuinely human-in-the-loop
 (the Google login and the TikTok signup itself). Maximum effort, minimum gain.
 
 ## Extract the Smart Scheduler's logic into version-controlled code
