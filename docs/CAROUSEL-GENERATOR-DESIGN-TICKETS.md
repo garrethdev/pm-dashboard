@@ -1,6 +1,10 @@
 # Carousel Generator — design tickets
 
 **Status:** design step, 2026-09-14. Nothing here is built from these tickets.
+
+**Where it stands (Garreth, 2026-09-15):** D1 to D7 are done, and D11, the
+Studio's second round, is approved and carried into D6. **The next ticket is
+D8, Image libraries.**
 Each ticket is a set of screens to design in the **Peptide Miracles Dashboard**
 project in Claude Design. The app is not changed during this step.
 
@@ -77,7 +81,7 @@ the edges are tested, not just the happy middle.
 
 ## D1. Carousel types — the landing screen
 
-- **Status:** dark mode **done**, approved by Garreth on 2026-09-14, desktop,
+- **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). dark mode **done**, approved by Garreth on 2026-09-14, desktop,
   phone and first run. On the Carousel Generator Designs canvas
   (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
   pages **D1 · Dark** and **D1 · Light**, built by
@@ -117,7 +121,7 @@ the edges are tested, not just the happy middle.
 
 ## D2. Generate form
 
-- **Status:** dark mode **approved by Garreth on 2026-09-14**: desktop,
+- **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). dark mode **approved by Garreth on 2026-09-14**: desktop,
   phone, the library picker at both sizes, the
   empty-groups state and the no-library state. On the Carousel Generator
   Designs canvas
@@ -163,7 +167,7 @@ the edges are tested, not just the happy middle.
 
 ## D3. Batch — while writing
 
-- **Status:** **done.** Approved by Garreth on 2026-09-14; light mode
+- **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). **done.** Approved by Garreth on 2026-09-14; light mode
   designed and D3 added to the Carousel Generator Prototype
   (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
   the same day. Pictures, one screen per state, in both themes: writing (desktop, phone, phone
@@ -228,7 +232,7 @@ the edges are tested, not just the happy middle.
 
 ## D4. Batch — finished writing, review (includes the deck card)
 
-- **Status:** **done.** Dark mode approved by Garreth on 2026-09-15; light
+- **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). **done.** Dark mode approved by Garreth on 2026-09-15; light
   mode designed the same day and D4 added to the Carousel Generator Prototype
   (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175),
   where D3 hands over to it once every deck is written. Pictures,
@@ -310,7 +314,7 @@ the edges are tested, not just the happy middle.
 
 ## D5. Batch — render and finish
 
-- **Status:** dark mode **designed 2026-09-15 and reviewed with Garreth
+- **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). dark mode **designed 2026-09-15 and reviewed with Garreth
   the same day** (real photos on the slides, the Grid / Rows switch, the
   uncut flag rings, and the Approve / Regenerate finish all came from that
   review); **light mode designed and D5 added to the Carousel Generator
@@ -476,7 +480,7 @@ the edges are tested, not just the happy middle.
   sheet, and the Layers list in the adjustments sheet; the adjustments sheet
   board now opens on Slide size. The phone keeps its sideways scroll, with
   no zoom. The layered desktop screens stay on D11's canvas.
-- **Status:** **approved in dark by Garreth on 2026-09-15 after seven
+- **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). **approved in dark by Garreth on 2026-09-15 after seven
   review rounds the same day; light mode designed and D6 added to the
   Carousel Generator Prototype
   (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
@@ -660,7 +664,7 @@ the edges are tested, not just the happy middle.
 
 ## D7. A carousel type's own page
 
-- **Status:** **done.** Dark mode approved by Garreth on 2026-09-15 after
+- **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). **done.** Dark mode approved by Garreth on 2026-09-15 after
   five review rounds; light mode designed the same day and D7 added to the
   Carousel Generator Prototype
   (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175),
