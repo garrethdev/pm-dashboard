@@ -368,27 +368,49 @@ width.
 - **When:** Garreth has an idea for a new carousel. Phase 3.
 - **Screens:** Carousel types ("New from idea", secondary), then Studio.
 - **Steps:**
-  1. Studio opens empty and first asks for the **Image library** (Garreth,
-     2026-09-14): an existing library, or **New library** with a name.
-     **Proposed:** it is asked first so the draft and Render preview use real
-     images; it can be changed at any point before saving. New library
+  1. Studio opens on three cards (Garreth, 2026-09-15): **Start from a
+     reference deck** (F9), **Discuss your idea**, or **Start from a Figma
+     link**. Whichever is picked, it first asks for the **Image library**
+     (Garreth, 2026-09-14): an existing library, or **New library** with a
+     name. **Proposed:** it is asked first so the draft and Render preview use
+     real images; it can be changed at any point before saving. New library
      arrives in Phase 4 with upload and generation, so in Phase 3 only an
      existing library can be chosen.
-  2. The conversation opens. Describe the idea.
-  3. The AI drafts a template: slide count, layouts, text boxes, style guess,
-     image cells each drawing from a group in the chosen library, and a
-     direction note. It asks at most one question.
-  4. The canvas shows slide 1 at true aspect ratio; the filmstrip shows the
-     rest. Sample copy fills the text boxes.
-  5. Select a text box to edit its font, weight, size, stroke, shadow,
-     alignment and wrap width in the inspector; drag it to move it. Select an
-     image cell to choose which group of the library it draws from. A cell
-     whose group has no images shows "No images". New images are made in the
-     library (F7), not here.
+  2. The conversation opens. Describe the idea. The chat box grows with the
+     prompt, up to eight lines before it scrolls; Shift+Enter starts a new
+     line and Enter sends (Garreth, 2026-09-15).
+     **From a Figma link** (D11, 2026-09-15): the link attaches to the chat
+     box as a chip (the file's name and frame count, with a remove button)
+     and is sent together with the prompt. The conversation then keeps a small
+     chip for the file above its chat box, and the file's frames sit read-only
+     in a dashed frame on the canvas while the AI reads the frames and their
+     layers. The app has no Figma access today, so this starts with a spike.
+  3. The AI drafts a template: slide size, slide count, layouts, text boxes or
+     layers, style guess, image cells each drawing from a group in the chosen
+     library, and a direction note. It asks at most one question. When the
+     template needs a group or a set fact the library lacks, it proposes them,
+     and nothing is added until Add is pressed.
+  4. Every slide sits in a row on an infinite canvas at its true shape: **4:5
+     (1080 × 1350) or 9:16 (1080 × 1920)**, the only two sizes (Garreth,
+     2026-09-15). The canvas pans in every direction and zooms from 25% to
+     200%; pressing the zoom level fits every slide. Sample copy fills the
+     text boxes.
+  5. **Slide size** comes first in the adjustments. Select a text box to edit
+     its font, weight, size, stroke, shadow, alignment and wrap width; drag it
+     to move it. Select an image cell to choose which group of the library it
+     draws from. A cell whose group has no images shows "No images". New
+     images are made in the library (F7), not here.
+     On a **layered slide** (`CAROUSEL-TEMPLATE-MODEL.md` §7) the Layers list,
+     front first, selects a layer, and Bring forward and Send back change its
+     place. A text layer can sit on a box and be written by the AI or filled
+     from a set's fact; a cut-out is sized and placed freely; a shaped frame
+     takes a shape, a border, Fill or Fit and a crop; a fixed image is
+     replaced by uploading another.
   6. **Regenerate sample** asks for new sample copy under the current
      direction.
-  7. **Render preview** runs the real painter on the current slide and shows
-     the exact output beside the canvas. Sign-off happens on this, not on the
+  7. **Render preview** runs the real painter on the selected slide and marks
+     it **Rendered** in its caption (Garreth, 2026-09-15: no separate preview
+     beside the canvas). Sign-off happens on the rendered slide, not on the
      HTML canvas.
   8. **Save as content type** asks for a name, a character and a slug, saves
      version 1 pointing at the chosen library, creates the standing
@@ -397,11 +419,13 @@ width.
 - **Hold:** Discard draft. **Decided (Garreth, 2026-09-15):** Back keeps an
   unsaved draft and the Studio reopens on it next time; Discard draft is the
   only way to drop one.
-- **Empty:** first run: the library choice is the only thing on the canvas.
+- **Empty:** first run: the three cards are the only thing on the canvas.
 - **Fails:**
   - The draft call fails: the error in the conversation, with Retry.
-  - Render preview fails: the error in place of the preview, with Retry; the
-    canvas is untouched.
+  - Render preview fails: **Render failed** in the slide's caption, with
+    Retry; the canvas is untouched.
+  - The Figma link cannot be opened: its chip says "No access" and Send
+    waits until the link is removed or replaced.
   - The slug is taken: the field says "Taken".
   - No library chosen: Save as content type is unavailable.
 - **Writes:** `carousel_templates` (including `image_library_id`),
@@ -414,7 +438,7 @@ width.
   Phase 3 from a reference id; Phase 5 adds the Trends entry.
 - **Screens:** Trends ("Recreate this") or a reference id, then Studio.
 - **Steps:**
-  1. Studio opens with the reference's slides in a strip above the canvas.
+  1. Studio opens on **Start from a reference deck**, then the saved decks.
   2. **Image library** (Garreth, 2026-09-14): a reference comes with none, so
      one is chosen, as in F8 step 1.
   3. The reference's slides sit first on the canvas inside a dashed frame,
@@ -429,8 +453,8 @@ width.
 - **Accent action:** Save as content type.
 - **Hold:** Discard draft.
 - **Empty:** not applicable.
-- **Fails:** the reference has no analysis yet: the strip shows the slides
-  and "Not analysed", and the draft is made from the vision pass alone.
+- **Fails:** the reference has no analysis yet: its dashed frame says "Not
+  analysed in Trends", and the draft is made from the vision pass alone.
 - **Writes:** as F8.
 
 ### F10. Edit a template
@@ -441,7 +465,9 @@ width.
   1. Studio opens the active version, with sample copy from the lane's most
      recent approved deck, drawing images from the library the content type
      points at. The library is changed on the Generate form (F1), not here.
-  2. Edit as in F8 steps 5 to 7.
+  2. Edit as in F8 steps 5 to 7. Changing the **slide size** (4:5 or 9:16)
+     is saved like any other change, as a new version; decks already made keep
+     the size they were painted at (D11, 2026-09-15).
   3. **Save version** saves version N+1 and makes it active. Batches already
      generated keep the version they recorded; new batches use the new one.
   4. Past versions are listed, each with **Make active**.

@@ -18,17 +18,22 @@ done, or the one Garreth names.
   limit by D5. A ticket's screens go to whichever canvas matches the theme;
   the build script still writes both themes into one folder, and
   `place-ticket.mjs --theme` picks the page for the canvas being saved.
-- **Carousel Generator Designs - (D6 Studio)**, D6's own canvas, dark and light pages together:
-  https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p. The Studio is a heavy
-  ticket (27 boards a theme, and the shared dark canvas had reached 15.7 MB
-  of its 16 MB with it), so Garreth moved it off the shared canvases on
-  2026-09-15. Both of its pages are here, `D6 · Dark` and `D6 · Light`;
-  nothing else is placed on it. Its favicon is `"🎠🎨"`. Step 3 below reads
-  this canvas instead of the shared one; step 4 runs `place-ticket.mjs`
-  without `--theme`, so both pages are placed at once; and step 5 packages
-  it with `--title "Carousel Generator Designs - (D6 Studio)"`. At 15 MB
-  with both themes it is close to the limit: a further D6 board means
-  dropping one, or a second D6 canvas.
+- **Carousel Generator Designs - Dark (D6 Studio)**, D6's dark canvas:
+  https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p, page `D6 · Dark`, favicon
+  `"🎠🎨"`.
+- **Carousel Generator Designs - Light (D6 Studio)**, D6's light canvas:
+  https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p, page `D6 · Light`, favicon
+  `"🎨☀️"`.
+  The Studio is a heavy ticket (27 boards a theme, and the shared dark canvas
+  had reached 15.7 MB of its 16 MB with it), so Garreth moved it off the
+  shared canvases on 2026-09-15. Both themes on one canvas came to 14.3 MB,
+  too close to the limit for D6's round two, so on 2026-09-15 Garreth had
+  light mode split onto its own canvas, the way D1 to D5 are split; each
+  came to 8.9 MB, and each is 12.2 MB with round two. Nothing else is placed on either. Steps 3–6 read and save
+  the canvas for the theme being placed; step 4 runs `place-ticket.mjs` with
+  `--theme dark` or `--theme light`; and step 5 packages it with
+  `--title "Carousel Generator Designs - Dark (D6 Studio)"` or
+  `--title "Carousel Generator Designs - Light (D6 Studio)"`.
   A ticket that grows past a dozen boards should take the same route
   rather than push a shared canvas toward the limit.
 - **Carousel Generator Designs - (D7 to D10)**, the canvas for the remaining
@@ -45,11 +50,13 @@ done, or the one Garreth names.
   Studio's second round), named by Garreth on 2026-09-15:
   https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5. Pages `D11 · Dark` and
   `D11 · Light`. Its favicon is `"🎠🧩"`. Built by
-  `d11-studio-round-two.build.mjs`, which imports D6's screen and extends it,
-  so D6's own file and canvas stay as approved. Steps 3–6 read and save this
+  `d11-studio-round-two.build.mjs`, which draws D11's pictures from D6's
+  Studio: round two was brought into `d6-studio.build.mjs` on 2026-09-15, so
+  that file now holds the whole screen, and D11's file keeps only its own
+  review moments and image names. Steps 3–6 read and save this
   canvas; step 4 runs `place-ticket.mjs --ticket D11` without `--theme`;
   step 5 packages it with `--title "Carousel Generator Designs - (D6 pt. 2 Studio)"`.
-  13 desktop boards a theme, both themes 10.7 MB.
+  13 desktop boards a theme, both themes 11.2 MB.
 - **Carousel Generator Prototype**, the click-through of every approved screen:
   https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175.
   A desktop artboard and a phone artboard; holds D1 to D7, with D11's

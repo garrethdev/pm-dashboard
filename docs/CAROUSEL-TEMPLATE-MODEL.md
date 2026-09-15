@@ -25,14 +25,14 @@ the brain's decision, the painter paints the manifest literally.
 |---|---|
 | `schema`, `slug`, `version`, `status` | Identity. `schema` is `pm.carousel-template/1`. One file per version. |
 | `name`, `character`, `content_type` | `character` uses the registry spelling (`Character 2`). `content_type` is null until the type is saved. |
-| `canvas` | Width, height, and the background colour behind cells (Glow Up's collage ground). |
+| `canvas` | Width, height, and the background colour behind cells (Glow Up's collage ground). From the Studio's second round a template is 4:5 or 9:16 only; see §7. |
 | `output` | File format, JPEG quality, bucket and path pattern. |
 | `fit` | How an image fills a cell: cover, centred, the resampling filter, whether EXIF rotation is applied. |
 | `text_origin` | Always `ascender` for the imported templates. See §2, rule 1. |
 | `fonts` | Named font files, each recording the macOS font it stands in for. |
 | `text_styles` | Named styles: fill, stroke, shadow, line height, wrap, alignment, emoji handling. |
 | `image_sources` | Where images come from (today, the two bank tables). From Phase 2 this is the image library the content type points at, and the pools are its groups (`CAROUSEL-GENERATOR-PLAN.md` §5.3). |
-| `slides[]` | `n`, a `layout` label, `cells[]` as pixel rectangles, an `images` rule, and `text[]` boxes. A text box names a `role`, a `style`, a `size` and an `anchor`, and may override any field of its style. |
+| `slides[]` | `n`, a `layout` label, `cells[]` as pixel rectangles, an `images` rule, and `text[]` boxes. A text box names a `role`, a `style`, a `size` and an `anchor`, and may override any field of its style. A layered slide lists its layers in paint order instead; see §7. |
 | `image_rules` | What each `images.rule` means, in words the painter's author implements. |
 | `copy_contract[]` | Every role the writer fills: which lane columns it lands in, who writes it (`ai`, `fixed`, `per_batch`), and a length limit. |
 | `not_painted` | Columns that exist on the lane table and are deliberately not drawn. |
@@ -222,3 +222,60 @@ Plan §5.4 gives `carousel_templates` three jsonb columns. The mapping:
 `lane` has no home in §5.4. **Proposed:** add a nullable `lane jsonb` column,
 so a studio-made type's template is complete before it is wired and becomes
 wired by filling one column.
+
+---
+
+## 7. Slide sizes and layered slides
+
+Designed in the Studio's second round (design tickets D11 and D6) and approved
+by Garreth on 2026-09-15. **Not in the files yet:** the two imported templates
+and `verify.mjs` still describe what the Python painters draw today.
+
+### 7.1 Slide sizes
+
+A template is **4:5 (1080 × 1350) or 9:16 (1080 × 1920)**, nothing else
+(Garreth, 2026-09-15). `canvas` records which. The size is picked when the
+type is made; changing it later saves a new version, so decks already made
+keep the size they were painted at.
+
+- **Covered Eye** is already 1080 × 1920 and needs no change.
+- **Glow Up** is 1080 × 1440 (3:4) and is refitted to 4:5 (decided). That
+  means re-laying its quad cells (540 × 720 today) and its text positions for
+  the shorter slide, updating `verify.mjs`, which checks it against the
+  Python painter at 1440 tall, and deciding whether that painter changes too
+  or the template stops copying it. Development work, not done yet.
+- Every screen that draws a slide takes the template's size: the Studio's
+  canvas, the deck cards and full-size preview (D3 to D5), and the type's own
+  page (D7).
+
+### 7.2 Layers
+
+Today a slide is image cells underneath and text boxes on top (§1,
+`slides[]`). A **layered slide** lists its layers in paint order instead, and
+the order can be changed (Bring forward, Send back), so text can sit behind a
+cut-out and a box in front of it. Every layer says where its content comes
+from: written by the **AI**, filled from a **Set**, or **Fixed** to the
+template.
+
+| Layer | What it is | Content from |
+|---|---|---|
+| Text | A text box as today, optionally on a box: a solid container with its colour, padding and corner radius | AI, or a fact from the set |
+| Image cell | A rectangle filled cover-style, as today | A group in the library |
+| Cut-out | A subject with its background removed, sized and placed freely over other layers | A group in the set (for example Cover cut-out) |
+| Shaped frame | An image clipped to a shape (rectangle, oval or wave) with a border colour and width, Fill or Fit, and a crop of top, centre or bottom | A group in the set |
+| Fixed image | The same image on every deck (a paper background, a closing product slide), uploaded to the template | The template itself |
+
+### 7.3 Sets
+
+Slides that follow one subject draw from **one set** in the library: that
+subject's photos by group (cut-out, before, after) and its facts (for example
+name, before year, after year). A text layer filled from the set shows a fact
+instead of AI copy. When a template needs a group or a fact its library
+lacks, the AI proposes them, whichever way the Studio was started, and
+nothing is added until the person presses Add.
+
+**Proposed, for Phase 2:** §2's rules still apply to text and cells. Cut-outs,
+shaped frames and paint order need rules of their own; the reference
+implementation for all three is `github.com/garrethdev/celebrity-peptide-renderer`
+(Pillow on plates exported from Figma), which anchors a cut-out at the bottom
+of its box and draws a frame's border on the same shape it clips to.

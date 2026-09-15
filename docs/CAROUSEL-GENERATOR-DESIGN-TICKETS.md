@@ -10,9 +10,11 @@ Dark (D1 to D5)**
 (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
 every `DN · Light` page named below lives on **Carousel Generator Designs -
 Light (D1 to D5)** (https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4), and
-D6, a heavy ticket, has both its pages on **Carousel Generator Designs -
-(D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p). D7 to
-D10 go on a fourth, **Carousel Generator Designs - (D7 to D10)**
+D6, a heavy ticket, has a canvas per theme: **Carousel Generator Designs -
+Dark (D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p) and
+**Carousel Generator Designs - Light (D6 Studio)**
+(https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p). D7 to D10 go on
+another, **Carousel Generator Designs - (D7 to D10)**
 (https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH), both themes (Garreth,
 2026-09-15). The `docs/designs/README.md` how-to has the steps.
 
@@ -442,16 +444,34 @@ the edges are tested, not just the happy middle.
   Outside D6, in the same pass: D5's thumbnails and full-size preview take
   the type's size, the imported Glow Up template is refitted to 4:5, and
   `CAROUSEL-TEMPLATE-MODEL.md` and flows F8 to F10 gain sizes and layers.
+  **Brought into D6 and approved by Garreth, 2026-09-15; light mode placed
+  the same day** on the Light (D6 Studio) canvas, both D6 canvases now
+  12.2 MB. D11's canvas was re-saved so its library tiles take 4:5 too, and
+  `CAROUSEL-TEMPLATE-MODEL.md` §7 and flows F8 to F10 gained sizes and
+  layers. What was done:
+  round two now lives in `d6-studio.build.mjs` (D11's build draws its
+  pictures from it; they come out the same apart from the tile shapes), and
+  D6 · Dark was re-placed. Every Studio board takes 4:5: the slides, the
+  reference's slides, the saved decks' covers and the library's tiles. The
+  first screen has the third card, the adjustments open with Slide size, the
+  chat box grows with the prompt and the tool strip ends with the zoom
+  controls. Two new phone boards: the Figma file's chip in the conversation
+  sheet, and the Layers list in the adjustments sheet; the adjustments sheet
+  board now opens on Slide size. The phone keeps its sideways scroll, with
+  no zoom. The layered desktop screens stay on D11's canvas.
 - **Status:** **approved in dark by Garreth on 2026-09-15 after seven
   review rounds the same day; light mode designed and D6 added to the
   Carousel Generator Prototype
   (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
   the same day**, where New carousel type on D1 and the Studio menu item
   open it, and a draft in progress survives leaving and coming back. Pictures,
-  one screen per state, on D6's own canvas, **Carousel Generator Designs -
-  (D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p), pages
-  **D6 · Dark** and **D6 · Light** (Garreth, 2026-09-15: D6 is heavy, so it
-  left the shared Designs canvas, which is back to 10.9 MB), built by
+  one screen per state, on D6's own canvases, **Carousel Generator Designs -
+  Dark (D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p),
+  page **D6 · Dark**, and **Carousel Generator Designs - Light (D6 Studio)**
+  (https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p), page **D6 · Light**
+  (Garreth, 2026-09-15: D6 is heavy, so it left the shared Designs canvas,
+  which is back to 10.9 MB; later that day its light mode was split onto
+  a canvas of its own to make room for round two), built by
   `docs/designs/carousel-generator/d6-studio.build.mjs`: just opened, the
   two cards; the image library choice; saved reference decks; Discuss your
   idea, the chat box alone; the first draft arriving; the draft call
