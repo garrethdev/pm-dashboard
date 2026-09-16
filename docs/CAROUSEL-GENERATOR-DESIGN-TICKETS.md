@@ -2,9 +2,10 @@
 
 **Status:** design step, 2026-09-14. Nothing here is built from these tickets.
 
-**Where it stands (Garreth, 2026-09-15):** D1 to D7 are done, and D11, the
+**Where it stands (Garreth, 2026-09-16):** D1 to D8 are done, and D11, the
 Studio's second round, is approved and carried into D6. **The next ticket is
-D8, Image libraries.**
+D9, History.** The (D7 to D10) canvas is at 13.8 MB of its 16 MB with D8's
+two themes on it, so D9 will fit but **D10 needs a canvas of its own.**
 Each ticket is a set of screens to design in the **Peptide Miracles Dashboard**
 project in Claude Design. The app is not changed during this step.
 
@@ -771,37 +772,104 @@ the edges are tested, not just the happy middle.
 
 ## D8. Image libraries
 
+- **Status:** **Done.** Dark mode **approved by Garreth on 2026-09-16** after
+  three passes — his feedback made folders optional and shown as folders
+  rather than filter pills, took the folder out of the Generate form, added a
+  base image to it, settled that nothing is read automatically, and pointed
+  the detail headings at the live `carousel_images` table. **Light mode
+  designed the same day**, and the library cards' thumbnails redrawn as four
+  of the library's own images. Pictures, one screen per state, on the Carousel
+  Generator Designs - (D7 to D10) canvas
+  (https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH), pages **D8 · Dark** and
+  **D8 · Light**, built by
+  `docs/designs/carousel-generator/d8-image-libraries.build.mjs`.
+  Twenty boards a theme: the grid of libraries; a library with no folders, which is
+  the default; a library whose images are in folders; inside a folder that
+  holds folders of its own; the Generate images form; the images arriving;
+  the review row waiting for Keep; one image failed with no credits left; one
+  image and what was read off it, hold armed; an image with nothing read off
+  it; what Tag with AI will do; AI vision reading the images; naming a new
+  folder; the form as D2's Generate with AI opens it; a library with nothing
+  in it; a folder with nothing in it; and the grid, a library, the Generate
+  form and the image modal on the phone — each of them in both themes.
+- **Fixed after Garreth's look, 2026-09-16:** the grid of libraries counted
+  five but drew none, on desktop and phone. The list of libraries was worked
+  out but never handed to the template — the header's count was, which is why
+  the number showed and the cards did not. The build now checks, on every
+  board, that everything the markup asks for is actually handed over, so this
+  particular kind of silence cannot happen again unnoticed. (A first attempt
+  blamed the card's markup — a `<button>` wrapping an `<h2>`, which is not
+  legal HTML — and rebuilt it as an `<article>` with one stretched button over
+  it, the way D1's type cards are built. That was worth doing but was not the
+  cause.) The empty states — a library with nothing in it, a folder with
+  nothing in it — now stretch to the bottom of the window instead of leaving
+  dead space under them, and the lone New folder card no longer sits above an
+  empty state.
+- **Wording to confirm:** these are called **folders** on screen. Garreth has
+  called them sets and folders on different days, and the database calls the
+  two levels `pool` and `category`; the screens use one word throughout, and
+  it is a one-word change if he wants a different one.
+- **D2 still says "groups"** for what is now a set, on its Generate form and
+  in its build script — and D2's premise that a library can be missing images
+  "in a group the template needs" no longer holds the same way, since sets
+  are optional. That needs a pass on `main` once D8 is approved; it was not
+  changed here because a ticket owns only its own files.
+
 - **You get here from:** the menu, or Change in D2 and D6.
 - **Flows:** F7.
 - **Design:**
-  - The grid of libraries: cover image, image count, groups, and the carousel
-    types pointing at each.
-  - One library: images by group, covers marked.
-  - **New library**, **Upload**.
-  - **Generate images** form: prompt, shows (Character, Place or Other),
-    group, how many (up to 8), shape, and likeness images when it shows a
-    character.
+  - The grid of libraries: cover image, image count, how many folders, how
+    many images nothing has been read off, and the carousel types pointing at
+    each.
+  - One library: its folders as folder cards, each showing a few of its
+    images, its name and its count; then the images in no folder under **Not
+    in a folder**. Opening a folder goes a level down, with a breadcrumb back.
+    Covers marked.
+  - **New library**, **New folder**, **Upload**, **Tag with AI**.
+  - **Generate images** form: prompt, base image (picked from the library or
+    uploaded), how many (up to 8), shape. It never picks a folder — what it
+    makes lands in the library (Garreth, 2026-09-16).
   - Generating tiles, then the review row with **Keep** and **Discard**.
   - **Retire image** (hold).
   - Opened from D2's **Generate with AI** (Garreth, 2026-09-15): the Generate
-    images form with the empty group already picked, and back to the
+    images form with the empty set already picked, and back to the
     Generate form once the images are kept.
-  - **Groups are the library's folders** (Garreth, 2026-09-15): made by a
-    person, or proposed by the AI when the Studio drafts a template that
-    needs them (for a layered template: Subjects, Backgrounds, Before,
-    After). A template cell names the group it draws from, and the AI looks
-    only there.
-  - **Sets**, for templates whose slides must show the same subject
-    (Celebrity Peptide Gone Wrong: cover cut-out, before, after). One set per
-    subject: its images plus the facts the copy quotes (weights, years),
-    entered by a person and never written by the AI.
+  - **Folders, shown and opened as folders** (Garreth, 2026-09-16, replacing
+    the groups-and-sets split of 2026-09-15 and the filter pills of earlier
+    the same day). A library starts with **no folders at all**, and images in
+    no folder are ordinary, not a backlog. Folders appear only when a person
+    makes one, or asks the AI to file the images into them. A folder belongs
+    to nothing in particular: a Cover folder may hold a dozen different
+    people. **Folders nest one level**, which is what the live banks already
+    do — `glowup_image_bank` and `covered_eye_image_bank` are organised
+    `pool` then `category`, so `cover` holds `taraji`, `gabrielle_union` and
+    the rest. A template cell names the folder it draws from.
+  - **Every image carries details an AI reads** (Garreth, 2026-09-16). The
+    headings are the dashboard's own `carousel_images` columns, read from
+    Supabase on 2026-09-16 rather than invented: **content** (a written
+    description of the picture), **emotion**, **subject**, **setting**,
+    **framing**, **color_palette**, **image_type**, **arc_roles** (a list —
+    Hook, Before, After, Stack, Reveal, Payoff, Confession), **pillar**,
+    **tags**, **quality_score** (6 to 9 in the live data) and
+    **has_subject**. AI vision writes them from the picture, one image at a
+    time or across a library from **Tag with AI**. The renderer reads them
+    back when it is choosing which image belongs on which slide.
+  - **Nothing is read automatically** (Garreth, 2026-09-16). A generated
+    image arrives untagged and stays that way; only images a person has kept
+    and decided to use get read. Images with nothing read off them carry a
+    small amber dot on their tile.
+  - Clicking any image opens it as a modal: the picture and what can be done
+    to it on the left, what was read off it on the right as metadata, and the
+    hold to retire it in the footer.
   - **Preparing an image** inside the library: background removal and black
     and white as automatic steps, and an AI edit of an uploaded photo (a
     pose, a look) that waits for Keep like any generated image.
 - **States:**
   - An empty new library.
-  - A group filter with no results.
-  - A thin group with a single image.
+  - A library with no folders at all — the ordinary case.
+  - A folder with nothing in it.
+  - A thin folder with a single image.
+  - An image nothing has been read off yet.
   - One generated image failed (Retry); Higgsfield out of credits.
   - Review row all clear.
 - **Done when:** approved in dark at both sizes.
