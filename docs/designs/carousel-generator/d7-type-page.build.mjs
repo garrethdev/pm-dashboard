@@ -820,7 +820,7 @@ function vals(T, init) {
       d7back: function () { ctx.open("types", null, "Back to Carousel types · D1"); },
       d7generate: function () { ctx.open("generate", params, "Opens the Generate form for " + NAME + " · D2"); },
       d7editTemplate: function () { ctx.open("studio", null, "Opens the Studio on " + NAME + "'s active version · D6"); },
-      d7history: say("Opens History, filtered to " + NAME + " · D9"),
+      d7history: function () { ctx.open("history", { type: NAME }, "Opens History, filtered to " + NAME + " · D9"); },
 
       /* The template: one version at a time, from the dropdown (Garreth, 2026-09-15). */
       d7tvName: cur.name,

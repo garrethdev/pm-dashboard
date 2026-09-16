@@ -81,14 +81,18 @@ const D9I = {
 
 /* The same carousel types as D1, so a person moving between the two screens
    sees the same names. The long one is here to test what a table does with a
-   name that will not fit. */
+   name that will not fit.
+
+   Each one carries its character and slide size as well, so that opening a
+   batch from here hands the batch screens the same thing D1 and D7 hand them,
+   and Quiet Luxury Picks still renders at 9:16 in the prototype. */
 const TYPES = [
-  { id: "morning", name: "Morning Routine" },
-  { id: "myth", name: "Myth vs Fact" },
-  { id: "before", name: "Before & After" },
-  { id: "day", name: "Day in the Life" },
-  { id: "quiet", name: "Quiet Luxury Picks" },
-  { id: "five", name: "Five Things I Stopped Doing After Thirty" },
+  { id: "morning", name: "Morning Routine", character: "Character 2", slides: 6 },
+  { id: "myth", name: "Myth vs Fact", character: "Character 3", slides: 8 },
+  { id: "before", name: "Before & After", character: "Character 2", slides: 7 },
+  { id: "day", name: "Day in the Life", character: "Character 4", slides: 10 },
+  { id: "quiet", name: "Quiet Luxury Picks", character: "Character 4", slides: 5, size: "9:16" },
+  { id: "five", name: "Five Things I Stopped Doing After Thirty", character: "Character 3", slides: 7 },
 ];
 
 /*
@@ -353,12 +357,16 @@ function vals(init) {
     var RANGES = ${JSON.stringify(RANGES)};
     /* Opened from a type's own page, History arrives already filtered to it
        (D7's "History ›"); pressing a pill takes over from there. */
-    var TYPE = s.h9type || P.type || "all";
+    var TYPE = s.h9type || idOfName[P.type] || P.type || "all";
 
-    var nameOf = function (id) {
-      for (var i = 0; i < TYPES.length; i++) if (TYPES[i].id === id) return TYPES[i].name;
-      return id;
+    var typeOf = function (id) {
+      for (var i = 0; i < TYPES.length; i++) if (TYPES[i].id === id) return TYPES[i];
+      return null;
     };
+    var nameOf = function (id) { var t = typeOf(id); return t ? t.name : id; };
+    /* A type's page hands History the type's NAME, not its id (D7's History ›). */
+    var idOfName = {};
+    TYPES.forEach(function (t) { idOfName[t.name] = t.id; });
     var batchOf = function (id) {
       for (var i = 0; i < BATCHES.length; i++) if (BATCHES[i].id === id) return BATCHES[i];
       return null;
@@ -380,7 +388,10 @@ function vals(init) {
     var numCls = function (v) { return v == null ? "dim9" : "hnum"; };
 
     var rows = shown.map(function (b) {
+      var t = typeOf(b.type) || {};
       var name = nameOf(b.type);
+      /* What D1 and D7 hand the batch screens, so the slide size travels. */
+      var handover = { name: name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", count: b.req };
       var mate = b.rerunOf || rerunBy[b.id] || null;
       var mateB = mate ? batchOf(mate) : null;
       var run = running[b.type];
@@ -402,16 +413,21 @@ function vals(init) {
         hasRerun: !!mateB,
         rerunText: !mateB ? "" : b.rerunOf ? "Re-run of " + mateB.date : "Re-run on " + mateB.date,
         open: function () {
-          if (b.state === "stopped") ctx.open("batch", { name: name, count: b.req, writtenUpTo: b.written }, "Opens the stopped batch, with Continue · D3");
-          else if (b.state === "running") ctx.open("batch", { name: name, count: b.req, writtenUpTo: b.written }, "Opens the running batch · D3");
-          else ctx.open("render", { name: name, count: b.req }, "Opens that batch's decks, rendered and approved · D5");
+          if (b.state === "stopped") ctx.open("batch", Object.assign({ writtenUpTo: b.written }, handover), "Opens the stopped batch, with Continue · D3");
+          else if (b.state === "running") ctx.open("batch", Object.assign({ writtenUpTo: b.written }, handover), "Opens the running batch · D3");
+          else ctx.open("render", handover, "Opens that batch's decks, rendered and approved · D5");
         },
         actLabel: b.state === "running" ? "Open batch" : b.state === "stopped" ? "Continue" : "Run again",
         act: function () {
-          if (b.state === "running") ctx.open("batch", { name: name, count: b.req, writtenUpTo: b.written }, "Opens the running batch · D3");
-          else if (b.state === "stopped") ctx.open("batch", { name: name, count: b.req, writtenUpTo: b.written }, "Continues the batch where it stopped · D3");
-          else if (run) ctx.note(name + " is already writing a batch — opens that one instead · D3");
-          else ctx.open("batch", { name: name, count: b.req }, "Runs " + name + " again: same count, same note · D3");
+          if (b.state === "running") ctx.open("batch", Object.assign({ writtenUpTo: b.written }, handover), "Opens the running batch · D3");
+          else if (b.state === "stopped") ctx.open("batch", Object.assign({ writtenUpTo: b.written }, handover), "Continues the batch where it stopped · D3");
+          /* A type already writing a batch: Run again opens that one (F5). */
+          else if (run) {
+            var rt = typeOf(run.type) || {};
+            ctx.open("batch", { name: name, character: rt.character, slides: rt.slides + " slides", size: rt.size || "4:5", count: run.req, writtenUpTo: run.written },
+              name + " is already writing a batch — opens that one instead · D3");
+          }
+          else ctx.open("batch", handover, "Runs " + name + " again: same count, same note · D3");
         }
       };
     });

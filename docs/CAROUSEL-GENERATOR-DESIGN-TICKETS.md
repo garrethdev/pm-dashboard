@@ -971,9 +971,12 @@ the edges are tested, not just the happy middle.
   was replaced on 2026-09-15. Two other documents still carry the old list and
   needed the same correction, and got it on approval: the plan's §6.3, F4 and
   F5 in the flows, and **DEV-19a**.
-  **Not yet done:** D9 is not in the Carousel Generator Prototype. That is
-  built from `main` by one session, following the how-to in
-  `docs/designs/README.md`.
+  **In the prototype** (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
+  since 2026-09-16: the History menu item opens it, and so does **History ›**
+  on a type's page, which arrives already filtered to that type. A row, or its
+  action, opens that batch — a finished one at D5, a running or stopped one at
+  D3 — carrying the type's slide size like every other hand-off, so Quiet
+  Luxury Picks still renders at 9:16.
 - **You get here from:** the menu.
 - **Flows:** F4, F5.
 - **Design:**
