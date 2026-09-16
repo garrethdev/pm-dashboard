@@ -1002,6 +1002,63 @@ the edges are tested, not just the happy middle.
 
 ## D10. Trends
 
+- **Status:** **designed in dark and light, awaiting review** (2026-09-16).
+  Desktop: the newest digest with nothing run on it, Analyse running, an
+  analysed digest, links still queued, a failed analysis, no digests yet, the
+  knowledge base with Accept and Reject, the confidence filter open, nothing
+  pending, and the Studio that Recreate this opens. Phone: the digests, an
+  analysed digest, the knowledge base and first run. On
+  **Carousel Generator Designs - (D9 and D10)**
+  (https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1), pages **D10 · Dark** and
+  **D10 · Light**, built by
+  `docs/designs/carousel-generator/d10-trends.build.mjs`.
+  **Two panes, as two tabs** in the app's own underline-tab shape (D7's), with
+  a narrow column of digest dates inside Digests and the open digest beside it
+  (chosen with Garreth, 2026-09-16, over one list that expands in place and
+  over both panes side by side: an analysis result is a body, three rules with
+  their evidence and three posts with their slides, and a list that expands to
+  hold all that pushes every other digest off the screen).
+  Decisions the screen makes, for review:
+  - **Accepting and rejecting are on the Knowledge base tab only.** A rule
+    shown under its digest carries a Pending pill and nothing to press, so
+    reading what was proposed and deciding on it stay two jobs. The ticket and
+    F13 both put the actions there.
+  - **Analyse is the only accent, and only on the newest digest nothing has
+    been run on.** Analyse again, Retry, Recreate this, Accept and Reject are
+    all secondary.
+  - **A state is words before it is a colour:** a digest's second line reads
+    "11 links · not analysed", "2 still queued" or "Analysis failed", and the
+    colour only agrees with it — red for a fault (D9's rule), amber for waiting
+    on the outside worker.
+  - **The empty state fills the screen only when it is the only thing on it.**
+    "No digests yet" fills it; "Nothing pending" does not, because the rules
+    already accepted sit below it.
+  - **Videos are filtered out of a digest** (Garreth, 2026-09-16): this app
+    makes carousels, so a digest's video links are ignored rather than shown.
+    The question came up because the library is mostly video — read that day it
+    held **1,179 TikTok carousels against 2,682 videos and 264 short videos** —
+    and the first answer drawn was a second shape for a video (one thumbnail
+    that opened the post on TikTok or Instagram). Garreth replaced it with
+    filtering, which is simpler and truer to what the app does.
+    Two knock-on decisions: the section is headed **Carousels it read**, and a
+    digest is counted in **carousels, not links** ("3 carousels · not
+    analysed"), because counting links would promise posts the screen never
+    shows. The body still carries the video links, because the body is the
+    email that arrived.
+    The board **"The carousels a digest read"** is taller than a screen, the
+    way D7's Overview is, so the whole reading pane shows at once.
+  - **An icon is written into the template, never handed over as a value.**
+    Garreth found the posts section showing its own SVG source on 2026-09-16:
+    a `{{hole}}` renders as text, so an icon passed through one prints its
+    markup. Three did it — the two platform marks and the Analyse button's.
+    The build script's own check now fails on it, so it cannot come back.
+  - **The Studio that Recreate this opens is D6's own screen**, already
+    approved, down to the "Not analysed in Trends" pill on its dashed frame.
+    One board of it sits on this canvas so the hand-off can be seen without
+    opening D6's. **The ticket's wording is out of date here:** it asks for the
+    reference's slides "in a strip above the canvas", which Garreth replaced on
+    2026-09-15 with a dashed frame sitting first on the canvas itself, and D6
+    was built that way.
 - **You get here from:** the menu.
 - **Flows:** F12, F13, F9.
 - **Design:**
