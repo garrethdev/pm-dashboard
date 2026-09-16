@@ -798,6 +798,14 @@ carries links. When a digest lands, the Trends page's Analyse step:
    posts, not over the text alone, and stores the result in
    `study_digests.analysis` with the reference ids it drew on.
 
+Only the **carousels** among them reach the Trends page (§6.5, D10 approved
+2026-09-16); videos are ignored. The filter is on `references_unified.format`,
+not on the address, because a TikTok carousel and a TikTok video share the
+`/video/<id>` shape — so a link already in the library is kept or dropped at
+once, and a new one is queued and only joins the digest's carousels if it turns
+out to be one. The pattern pass still reads whatever analyses exist, video
+included: a video can support a rule without being shown.
+
 So the digest, the posts it cites, and the rules proposed from them are all
 linked and re-readable. Long-form video (transcript plus frame sampling with a
 vision model) is not in the library worker today; it is a Phase 3 add on the
@@ -955,16 +963,30 @@ can answer "which instruction produced this".
 
 ### 6.5 Trends — `/carousel-generator/trends`
 
-Two panes. **Digests:** the `study_digests` list, newest first, with the body
-readable in place and an **Analyse** action per digest (or for the last N).
-Every reference the analysis links to shows its slides and carries a
-**Recreate this** action that opens the Studio with that reference (§6.6).
-Analysis extracts candidate patterns: a proposed rule, the evidence lines from
-the digest, a confidence, and which lanes it applies to. **Knowledge base:**
-`content_knowledge_base` browsable by lane and confidence, with proposed rules
-shown as pending until accepted. Accepting appends the rule with
-`source_digest_id` and the session email. Rejecting records nothing.
-The Directions bot reads accepted rules; it never reads raw digests.
+Two panes, as two tabs in the app's own underline-tab shape (D10, approved
+2026-09-16). **Digests:** the `study_digests` list newest first down a narrow
+column, the open one beside it — its body readable in place, then the rules the
+analysis proposed (the rule, the evidence lines from the digest, a confidence,
+and the carousel types it applies to), then the carousels it read, each with
+its slides and a **Recreate this** that opens the Studio with that reference
+(§6.6). **Analyse** is the page's one accent action and sits only on the newest
+digest nothing has been run on. **Knowledge base:** `content_knowledge_base`
+browsable by lane and confidence, with proposed rules shown as pending until
+accepted. Accepting appends the rule with `source_digest_id` and the session
+email. Rejecting records nothing. The Directions bot reads accepted rules; it
+never reads raw digests.
+
+**Videos are filtered out** (Garreth, 2026-09-16). This app makes carousels,
+and the library is mostly not: read on that day it held 1,179 TikTok carousels
+against 2,682 videos and 264 short videos. So a digest's video links are
+ignored rather than shown, and a digest is counted in **carousels, not links**
+— counting links would promise posts the page never shows. The body still
+carries the video links, because the body is the email that arrived, which is
+also how a person sees why four links became three carousels.
+
+**Accepting and rejecting live on the Knowledge base tab only.** A rule shown
+under its digest carries a Pending pill and nothing to press: reading what was
+proposed and deciding on it are two different jobs.
 
 ### 6.6 Studio — `/carousel-generator/studio` and `/carousel-generator/studio/[template]`
 

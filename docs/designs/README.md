@@ -6,6 +6,10 @@ its own branch. The tickets themselves are in
 `docs/CAROUSEL-GENERATOR-DESIGN-TICKETS.md`; take the lowest one not marked
 done, or the one Garreth names.
 
+**The design step is closed (2026-09-16).** D1 to D11 are all approved and in
+the prototype, and the work moved to `CAROUSEL-GENERATOR-DEV-TICKETS.md`. This
+page stays as the how-to for any screen Garreth reopens or adds.
+
 ## Where the designs live
 
 - **Carousel Generator Designs - Dark (D1 to D5)**, the dark-mode review canvas:
@@ -55,8 +59,8 @@ done, or the one Garreth names.
   `"🎠🕰️"`. Steps 3–6 read and save this canvas; step 4 runs
   `place-ticket.mjs` without `--theme`; step 5 packages it with
   `--title "Carousel Generator Designs - (D9 and D10)"`. D9 is 8 boards a
-  theme and D10 is 14, both themes 8.5 MB of the 16 MB limit, so there is
-  room for D10's review rounds and nothing else should be added here.
+  theme and D10 is 15, both themes 8.9 MB of the 16 MB limit. Both tickets are
+  approved; nothing else should be added here.
 - **Carousel Generator Designs - (D6 pt. 2 Studio)**, D11's own canvas (the
   Studio's second round), named by Garreth on 2026-09-15:
   https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5. Pages `D11 · Dark` and
@@ -69,8 +73,9 @@ done, or the one Garreth names.
   step 5 packages it with `--title "Carousel Generator Designs - (D6 pt. 2 Studio)"`.
   13 desktop boards a theme, both themes 11.2 MB.
 - **Carousel Generator Prototype**, the click-through of every approved screen:
-  https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175.
-  A desktop artboard and a phone artboard; holds D1 to D8. Its Studio is
+  https://claude.ai/artifact/KNxf22ERryEbTmr2tRuzF6 (the same artifact as the
+  older `claude.ai/code/artifact/94d569f8-…` form; both open it).
+  A desktop artboard and a phone artboard; holds D1 to D10. Its Studio is
   D6's own build with round two included, and a type's slide size travels
   from Carousel types through Generate, the batch and review to D5, so
   Quiet Luxury Picks renders at 9:16 (2026-09-15). It is built only from `main`, by one

@@ -2,9 +2,11 @@
 
 **Status:** design step, 2026-09-14. Nothing here is built from these tickets.
 
-**Where it stands (Garreth, 2026-09-16):** D1 to D9 are done, and D11, the
-Studio's second round, is approved and carried into D6. **The next ticket is
-D10, Trends**, which goes on the canvas D9 made.
+**Where it stands (Garreth, 2026-09-16):** **every design ticket is done.**
+D1 to D10 are approved, and D11, the Studio's second round, is approved and
+carried into D6. D10, Trends, was the last, approved on 2026-09-16 on the
+canvas D9 made. The design step is closed; what follows is development,
+against `CAROUSEL-GENERATOR-DEV-TICKETS.md`.
 The canvas D7 and D8 share is full — 14 MB of its 16 MB with both tickets on
 it in both themes — so it was **renamed from "(D7 to D10)" to "(D7 and D8)" on
 2026-09-16** (Garreth), because it is never going to hold the other two. D9
@@ -1002,7 +1004,8 @@ the edges are tested, not just the happy middle.
 
 ## D10. Trends
 
-- **Status:** **designed in dark and light, awaiting review** (2026-09-16).
+- **Status:** **Done** — **approved by Garreth on 2026-09-16**, in dark and
+  light, after two rounds of review whose every change is made and saved.
   Desktop: the newest digest with nothing run on it, Analyse running, an
   analysed digest, links still queued, a failed analysis, no digests yet, the
   knowledge base with Accept and Reject, the confidence filter open, nothing
@@ -1074,7 +1077,12 @@ the edges are tested, not just the happy middle.
     strip above the canvas, "Not analysed" when there is no analysis yet.
 - **States:** no digests yet; every digest analysed; nothing pending; an
   analysis failing (Retry).
-- **Done when:** approved in dark at both sizes.
+- **Done when:** approved in dark at both sizes. **Met 2026-09-16.**
+  **In the prototype** (https://claude.ai/artifact/KNxf22ERryEbTmr2tRuzF6)
+  since 2026-09-16: the Trends menu item opens it. One link is not aimed yet —
+  **Recreate this** opens the Studio, but not on the deck picked, because the
+  Studio takes a type's name and character today rather than a reference.
+  Aiming it is DEV-35, and it needs DEV-23's reference variant.
 
 ---
 

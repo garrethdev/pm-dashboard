@@ -962,6 +962,14 @@ Numbered out of sequence because it was added after D8 was approved
   lines, confidence, the types it applies to) and the reference ids in
   `study_digests.analysis`. Links not yet analysed are stored as Queued with
   the time.
+  **Only carousels are kept for the page** (D10, approved 2026-09-16): filter
+  on `references_unified.format`, not on the address — a TikTok carousel and a
+  TikTok video share the `/video/<id>` shape, so the format is the only thing
+  that tells them apart. A link already in the library is kept or dropped at
+  once; a new one is queued and joins the digest's carousels only if it turns
+  out to be one. The pattern pass still reads a video's analysis where one
+  exists: a video can support a rule without being shown. Store the digest's
+  **carousel count** as well, since that is what the page shows.
 - **Watch:** analysis of new links depends on the external worker whose owner
   is still unknown (plan §10, item 3). If it is down, links stay Queued, which
   the page shows; the ticket is not blocked by it.
@@ -973,16 +981,27 @@ Numbered out of sequence because it was added after D8 was approved
 ### DEV-34. Trends page and the knowledge base
 
 - **Size:** M.
-- **Depends on:** DEV-33, approved D10.
+- **Depends on:** DEV-33. D10 approved 2026-09-16.
 - **Designs:** D10. **Flows:** F12, F13.
-- **Build:** `/carousel-generator/trends`. Digests newest first, readable in
-  place, **Analyse** as the accent on the newest unanalysed one. The result
-  with rules, evidence, confidence and types, and the referenced posts with
-  their slides. Queued links with when they were queued. The Knowledge base
-  pane: pending rules filterable by type and confidence, **Accept** (appends to
-  `content_knowledge_base` with the digest id and session email) and
-  **Reject** (marks the rule dismissed; see *Proposed defaults*, item 4). Adds
-  Trends to the menu.
+- **Build:** `/carousel-generator/trends`, as D10 draws it (approved
+  2026-09-16). Two tabs in the app's own underline-tab shape, **Digests** and
+  **Knowledge base**.
+  Digests: a narrow column of dates newest first, the open one beside it — its
+  body readable in place, the rules it proposed (rule, evidence lines,
+  confidence, types), then the **carousels** it read with their slides and
+  **Recreate this**. Queued links show when they were queued. **Analyse** is
+  the page's only accent and sits only on the newest digest nothing has been
+  run on; Analyse again, Retry and Recreate this are secondary.
+  A digest is counted in **carousels, not links** (DEV-33 stores that count),
+  and a rule shown under its digest carries a Pending pill and nothing to
+  press — deciding on it is the other tab's job.
+  Knowledge base: pending rules first, filterable by type and confidence, with
+  **Accept** (appends to `content_knowledge_base` with the digest id and
+  session email) and **Reject** (marks the rule dismissed; see *Proposed
+  defaults*, item 4), then the rules already accepted. Adds Trends to the menu.
+- **Watch:** the design's own build script proved that an icon handed over as a
+  template value renders as escaped text. Whatever the React port does, icons
+  belong in the markup.
 - **Done when:** a rule accepted on the page is cited by the Direction
   conversation (DEV-25).
 
@@ -991,8 +1010,12 @@ Numbered out of sequence because it was added after D8 was approved
 - **Size:** S.
 - **Depends on:** DEV-23, DEV-34.
 - **Flows:** F9 from Trends.
-- **Build:** **Recreate this** on a referenced post opens the Studio's
-  reference variant (DEV-23) with that reference id.
+- **Build:** **Recreate this** on a carousel the digest read opens the Studio's
+  reference variant (DEV-23) with that reference id. This is where the link
+  gets aimed: in the design prototype it opens the Studio but not on the deck
+  picked, because the Studio takes a type's name and character today rather
+  than a reference (D10, 2026-09-16). Only carousels carry it — videos never
+  reach the page, and the Studio drafts a template from slides.
 - **Done when:** a Trends result opens in the Studio and saves as a type with
   `source_reference_id` set.
 

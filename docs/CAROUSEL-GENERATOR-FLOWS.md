@@ -591,20 +591,33 @@ width.
 - **When:** a daily study digest has arrived. Phase 5.
 - **Screens:** Trends, Digests pane.
 - **Steps:**
-  1. Digests are listed newest first, each readable in place.
+  1. Digests are listed newest first down a narrow column, the open one
+     readable in place beside them (D10, approved 2026-09-16). Each is counted
+     in **carousels, not links**.
   2. **Analyse** on a digest: the app extracts every TikTok and Instagram
      link, matches each against the reference library, queues the new ones
      for analysis, and runs the pattern pass over the digest plus the
      analyses of its linked posts.
   3. The result lists proposed rules (the rule, the evidence lines, a
-     confidence, the lanes it applies to) and the referenced posts, each with
-     its slides and **Recreate this** (F9).
-  4. Links still waiting for analysis show "Queued", and the digest can be
-     analysed again once they land.
-- **Accent action:** Analyse, on the newest unanalysed digest.
+     confidence, the carousel types it applies to) and the **carousels** it
+     read, each with its slides and **Recreate this** (F9). A rule here shows
+     a Pending pill and nothing to press: accepting and rejecting are F13's
+     job, on the Knowledge base tab.
+  4. Links still waiting for analysis show "Queued" with the time they were
+     queued, and the digest can be analysed again once they land.
+  5. **Videos are ignored** (Garreth, 2026-09-16): this app makes carousels.
+     The filter is on the reference's `format`, not on the address, since a
+     TikTok carousel and a TikTok video share the same URL shape — so a queued
+     link only joins the digest's carousels if it turns out to be one. The
+     body still shows every link, because the body is the email that arrived.
+     The pattern pass still reads a video's analysis where one exists: a video
+     can support a rule without being shown.
+- **Accent action:** Analyse, on the newest unanalysed digest — the page's
+  only accent. Analyse again, Retry and Recreate this are all secondary.
 - **Hold:** none.
-- **Empty:** first run: no digests yet, no action (they arrive on their own).
-  All clear: every digest analysed.
+- **Empty:** first run: no digests yet, no action (they arrive on their own),
+  and the block fills the screen. All clear: every digest analysed, which reads
+  as the accent simply leaving the screen.
 - **Fails:** the analysis call fails: the error on that digest, Retry. The
   external analysis worker is down: links stay Queued with the time they were
   queued, so a stall is visible.
@@ -615,13 +628,15 @@ width.
 - **When:** an analysed digest proposed rules. Phase 5.
 - **Screens:** Trends, Knowledge base pane.
 - **Steps:**
-  1. Proposed rules appear as pending, filterable by lane and confidence.
+  1. Proposed rules appear as pending on the **Knowledge base** tab,
+     filterable by lane and confidence, above the rules already accepted.
   2. **Accept** appends the rule with the digest it came from and the session
      email. The Direction conversation can now cite it.
   3. **Reject** removes it from the pending list and records nothing.
 - **Accent action:** none (Accept and Reject are per rule, secondary).
 - **Hold:** none; rejecting records nothing and accepting overwrites nothing.
-- **Empty:** all clear: nothing pending.
+- **Empty:** all clear: nothing pending. The block says so and stops rather
+  than filling the screen, because the accepted rules sit below it (D10).
 - **Fails:** the write fails: the rule stays pending with Retry.
 - **Writes:** `content_knowledge_base`.
 
