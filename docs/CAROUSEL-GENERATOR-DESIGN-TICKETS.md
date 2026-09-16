@@ -4,8 +4,10 @@
 
 **Where it stands (Garreth, 2026-09-16):** D1 to D8 are done, and D11, the
 Studio's second round, is approved and carried into D6. **The next ticket is
-D9, History.** The (D7 to D10) canvas is at 13.8 MB of its 16 MB with D8's
-two themes on it, so D9 will fit but **D10 needs a canvas of its own.**
+D9, History.** The canvas D7 and D8 share is full — 14 MB of its 16 MB with
+both tickets on it in both themes — so it was **renamed from "(D7 to D10)" to
+"(D7 and D8)" on 2026-09-16** (Garreth), because it is never going to hold the
+other two. **D9 and D10 need a new canvas**, and should share one.
 Each ticket is a set of screens to design in the **Peptide Miracles Dashboard**
 project in Claude Design. The app is not changed during this step.
 
@@ -18,8 +20,8 @@ Light (D1 to D5)** (https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4), and
 D6, a heavy ticket, has a canvas per theme: **Carousel Generator Designs -
 Dark (D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p) and
 **Carousel Generator Designs - Light (D6 Studio)**
-(https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p). D7 to D10 go on
-another, **Carousel Generator Designs - (D7 to D10)**
+(https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p). D7 and D8 go on
+another, **Carousel Generator Designs - (D7 and D8)**
 (https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH), both themes (Garreth,
 2026-09-15). The `docs/designs/README.md` how-to has the steps.
 
@@ -676,8 +678,9 @@ the edges are tested, not just the happy middle.
   where a type's name on D1 and Edit beside D2's direction open it (the
   prototype holds one sample type page, Before & After; a type not wired yet
   is seen on the D7 canvas). On a new canvas for the rest of the tickets,
-  **Carousel Generator Designs - (D7 to D10)**
-  (https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH, Garreth 2026-09-15),
+  **Carousel Generator Designs - (D7 and D8)**
+  (https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH, Garreth 2026-09-15;
+  named "(D7 to D10)" until 2026-09-16),
   pages **D7 · Dark** and **D7 · Light**, built by
   `docs/designs/carousel-generator/d7-type-page.build.mjs`. Pictures, one
   screen per state; only the tabs, the direction text and Preview's dialog
@@ -783,7 +786,7 @@ the edges are tested, not just the happy middle.
   nothing is read automatically, pointed the detail headings at the live
   `carousel_images` table, and redrew the library grid as Pinterest-style
   boards. Pictures, one screen per state, on the Carousel
-  Generator Designs - (D7 to D10) canvas
+  Generator Designs - (D7 and D8) canvas
   (https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH), pages **D8 · Dark** and
   **D8 · Light**, built by
   `docs/designs/carousel-generator/d8-image-libraries.build.mjs`.
@@ -821,7 +824,31 @@ the edges are tested, not just the happy middle.
   her cut-out, before and after, and the facts her labels quote hang off that
   set. The Celebrity Peptide template keeps its one-person guarantee and its
   years, and the Studio now says "set" for one thing only. **D8 will need a
-  small facts panel on a set** to match; it is not designed yet.
+  small facts panel on a set** to match. **It was designed and rejected on
+  2026-09-16**, see below.
+- **No facts panel: designed and rejected the same day** (Garreth,
+  2026-09-16). A band of a set's facts was drawn on a set page, with a dialog
+  that added or removed a fact for every set in the library at once. Garreth
+  turned it down, and the reason matters more than the screen: **a fact is not
+  a property of a folder of pictures.** It is a column on a row in the content
+  type's own data set — `celebrity_verdict.before_year` is the year that
+  "2022. Struggling before any of this started." quotes. Only Celebrity
+  Peptide would have used the panel, and it would have shown three empty
+  fields on every set of every library that had facts, including sets that are
+  not people. **D8 stays what it was: libraries, holding images in sets, each
+  image carrying the details AI vision read off it.** The screens were taken
+  back off the canvas the same day; nothing on the (D7 and D8) canvas shows
+  them. What a carousel is *about* is a bigger question, parked in
+  `BACKLOG.md` under "The generator has no idea what a carousel is about",
+  which also lists the five places that still assert the old decision.
+- **Two build fixes came out of it**, and stayed. Two of D8's boards had been
+  sitting on top of each other on the canvas (Waiting for Keep ran under An
+  image with nothing read off it) because a board that grew had to be moved by
+  hand and was not; boards now say which row and column they are in and the
+  build works out the spacing. And the build now does what the entry above
+  already claimed it did — check, on every board, that everything the markup
+  asks for is actually handed over. That check had never been written. It is
+  now, and it was confirmed to catch the case that caused the bug.
 - **The companion documents were brought across on 2026-09-16**, now that D8
   is approved and the how-to allows it: F7 rewritten for optional nesting
   sets, image details and Tag with AI; F1, F3, F8, F9 and F14's passing

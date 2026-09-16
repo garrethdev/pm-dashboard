@@ -941,6 +941,114 @@ Each of these is deliberately parked, not unfinished. Every one records why it
 was deferred and what is already confirmed, so it can start from evidence rather
 than from a fresh investigation.
 
+## The generator has no idea what a carousel is about
+
+**Deferred by Garreth on 2026-09-16**, during D8's review, to be picked up when
+the Carousel Generator's own build starts. Nothing is broken; the generator is
+not built yet. This is the shape it has to be built in.
+
+### What is missing
+
+The generator can reach two shelves today: the **pictures** (D8's image
+libraries, 127 to 1,200-odd images a library, each tagged by AI) and the
+**examples** (`carousel_search_documents`, 23,572 posts from around the
+internet that teach it what a good hook sounds like).
+
+There is no third shelf: **the subjects**. The actual material a content type
+writes about. Without it, "generate 20 carousels" has a house style and a
+pile of photographs but nothing to be about.
+
+Every scriptwriter that runs today already starts from that shelf. Confirmed in
+n8n on 2026-09-16:
+
+| Workflow | Reads | Writes |
+|---|---|---|
+| `[Cleora ASMR] Scriptwriter` | `cleora_story_candidates` (319) | `cleora_asmr` |
+| `Divorce Scriptwriter` | `hook_stories` (101) | `divorce_story_content` |
+| `[Embarrassed Angle] Scriptwriter` | `embarrassed_angle_sources` (72) + `machine_hooks` (2,831) | `embarrassed_angle_content` |
+| `Covered Eye — Scriptwriter` | `covered_eye_carousel` rows with `slide_2` empty | the same rows, slides 2 to 6 |
+| `[Celeb Verdict] Text Hook Writer` | `celebrity_verdict` (105) | `text_hook`, `before_line`, `after_line` on the same row |
+| `Celebrity Script Personalizer` | `celebrity_verdict` | `char_script` |
+
+### What generalises, and what does not
+
+Six source tables were read side by side on 2026-09-16. **Five things every one
+of them has**, whatever the content type: one row per subject; a title you can
+read in a list; where it came from (`source_url`, `origin`, `primary_doc`,
+`curation_source`); a go/no-go state (`vet_status`, `status`, `usable_seed`,
+`locked`, `record_status`); and a measure of how good it is (`excitement`,
+`excitement_score`, `quality`, `tier`, `verdict_confidence`). Those five carry
+the list screen, the filters and "give me the next 20 that are ready".
+
+**The researched fields themselves share nothing at all, and should not.**
+Cleora's stories carry `the_thing`, `the_fear`, `mechanism`, `burial`; Cooking
+carries `story_body` and `seam_line`; Embarrassed Angle carries
+`embarrassment_type` and `physical_intensity`; Celebrity carries
+`peptide_named` and `went_badly`. So the app must never name one of those
+columns in its own code. It shows whatever columns a table has, and the type
+declares which column is the title, the status and the score — exactly the way
+`content_type_registry` already tells the Posting Agent and the Smart Scheduler
+which column holds the date, the time, the profile and the id for all 25 types.
+
+**Two things that are easy to get wrong:**
+
+- **A type can draw on more than one source, and a source can be shared.**
+  Embarrassed Angle reads its own clips *and* the shared hook pool; Cooking
+  joins its stories to hand-written openers. One-source-per-type is too narrow.
+- **`celebrity_verdict` is the outlier, not the model.** 137 columns holding
+  research, written copy, rendered slide URLs and posting status in one row.
+  Every other type keeps research and finished content in separate tables. It
+  is the type that proves the shelf is needed; it is not the shape to copy.
+
+### Where it belongs: the Studio's AI conversation (Garreth, 2026-09-16)
+
+Not a screen of its own. **Creating a content type through the Studio's
+conversation is the step that should create its data set**, because that is the
+only moment when what the type is about is being decided. The AI should:
+research the subject matter, propose and create the type's data-set table, and
+from that hand over the instructions for building the template — so the
+template's text layers and the columns they quote are designed together rather
+than one being retrofitted to the other.
+
+This extends D6 and D11, which today create the lane table and the template but
+nothing to write from.
+
+### Four pieces, when it starts
+
+1. The registry says where a type's material lives, alongside the
+   `source_table` it already records.
+2. A type's page (D7) gains a tab listing that material and its state.
+3. Generate (D2) asks *which rows*, not only *how many*. A type with no data
+   set keeps today's form.
+4. A Studio text layer can be filled **from the row**, so a printed year is the
+   researched year rather than one the AI invented.
+
+**Do not build the fact-level editing as the standard.** Correcting a single
+researched value before the writer quotes it matters for Celebrity Peptide,
+where copy quotes research word for word (`before_year: 2022` becomes "2022.
+Struggling before any of this started."). Cleora's writer paraphrases a whole
+story; there is nothing equivalent to correct. The general behaviour is
+reviewing a row and marking it good or not, which every one of those tables
+already has a column for.
+
+### Left behind in the documents — clean up before building
+
+A facts panel on an image set was designed on 2026-09-16 and **rejected by
+Garreth the same day**: facts are columns on a data-set row, not a property of
+a folder of pictures. The design was taken back off the canvas, but the
+decision it was built on is still asserted in five places, and a later session
+reading any of them would build the wrong thing:
+
+- `CAROUSEL-TEMPLATE-MODEL.md` — the layer table's "AI, or a fact from the
+  set", and §7.3 Sets.
+- `CAROUSEL-GENERATOR-FLOWS.md` — F7's "the facts a template's labels quote
+  hang off that set", and F8's two mentions.
+- `CAROUSEL-GENERATOR-DESIGN-TICKETS.md` — D6's and D11's notes, and D8's "will
+  need a small facts panel on a set".
+- **The approved D11 screens themselves** show the AI proposing "Name", "Before
+  year", "After year" as Facts to add to a library. Those boards are on the
+  (D6 pt. 2 Studio) canvas and say the wrong thing now.
+
 ## Music postability — show when a song will silently stop a post
 
 **Deferred 2026-09-12 (Garreth): "Remove the music postability for now."**

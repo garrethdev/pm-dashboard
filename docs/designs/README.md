@@ -36,16 +36,18 @@ done, or the one Garreth names.
   `--title "Carousel Generator Designs - Light (D6 Studio)"`.
   A ticket that grows past a dozen boards should take the same route
   rather than push a shared canvas toward the limit.
-- **Carousel Generator Designs - (D7 to D10)**, the canvas for the remaining
-  tickets, dark and light pages together:
-  https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH. Started 2026-09-15 at
-  Garreth's request, so D7 to D10 stay off the full shared canvases. Pages
-  `D7 · Dark`, then `D7 · Light` and D8 to D10's as they are designed. Its
+- **Carousel Generator Designs - (D7 and D8)**, dark and light pages
+  together: https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH. Started
+  2026-09-15 at Garreth's request, so these tickets stay off the full shared
+  canvases. Pages `D7 · Dark`, `D7 · Light`, `D8 · Dark`, `D8 · Light`. Its
   favicon is `"🎠📑"`. Steps 3–6 read and save this canvas; step 4 runs
   `place-ticket.mjs` without `--theme`; step 5 packages it with
-  `--title "Carousel Generator Designs - (D7 to D10)"`. D7 in both themes
-  is 7.6 MB (16 boards a theme), so D8 to D10 will not all fit beside it in
-  the 16 MB limit: expect a second canvas before D10.
+  `--title "Carousel Generator Designs - (D7 and D8)"`.
+  **It is full and closed to new tickets.** It was called "(D7 to D10)" until
+  2026-09-16, when the two tickets on it reached 14 MB of the 16 MB limit and
+  Garreth renamed it for what it actually holds. D9 and D10 need a new canvas
+  of their own, and the first of them to be designed makes it: give it a name
+  that says what it holds, its own favicon, and a bullet here.
 - **Carousel Generator Designs - (D6 pt. 2 Studio)**, D11's own canvas (the
   Studio's second round), named by Garreth on 2026-09-15:
   https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5. Pages `D11 · Dark` and

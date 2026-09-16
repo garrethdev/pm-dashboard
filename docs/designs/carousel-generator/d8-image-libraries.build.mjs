@@ -1118,162 +1118,217 @@ export function librariesScreen({ init = {} } = {}) {
 
 /* ── Review artboards ──────────────────────────────────────────────────── */
 
+/*
+ * Every {{name}} the markup asks for has to be handed over by something.
+ * The grid of libraries once counted five and drew none because the list was
+ * worked out and never returned (Garreth, 2026-09-16): the page went quiet
+ * rather than failing. This is the net under that, run on every board.
+ *
+ * It is deliberately generous about what counts as handed over — a name that
+ * appears as a key anywhere in the board's script passes — so it never stops
+ * a build that is fine. It catches the case that bit: a name nothing supplies.
+ */
+const KEYWORDS = new Set(["true", "false", "null", "undefined"]);
+
+function checkBindings(file, html) {
+  const at = html.indexOf("<script data-dc-script");
+  const markup = html.slice(0, at);
+  const script = html.slice(at);
+  const aliases = new Set([...markup.matchAll(/\bas="([^"]+)"/g)].map((m) => m[1]));
+  const handed = new Set([...script.matchAll(/(?:^|[,{])\s*([A-Za-z_$][\w$]*)\s*:/gm)].map((m) => m[1]));
+  const missing = new Set();
+  for (const m of markup.matchAll(/\{\{\s*([A-Za-z_$][\w$]*)/g)) {
+    const root = m[1];
+    if (!KEYWORDS.has(root) && !aliases.has(root) && !handed.has(root)) missing.add(root);
+  }
+  if (missing.size) {
+    const names = [...missing].join(", ");
+    throw new Error(`${file}: the markup asks for ${names}, and nothing hands ${missing.size > 1 ? "them" : "it"} over`);
+  }
+}
+
 function build(OUT) {
   fs.mkdirSync(OUT, { recursive: true });
   copyLibraryImages(OUT);
 
   const BOARDS = [
-    { file: "Main.dc.html", title: "D8 · Image libraries · Desktop", init: { view: "grid" }, x: 0, y: 0 },
+    { file: "Main.dc.html", title: "D8 · Image libraries · Desktop", init: { view: "grid" }, row: 0, col: 0 },
     {
       file: "Library.dc.html",
       title: "D8 · A library with no sets, the default · Desktop",
       init: { view: "library", libId: "window", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 60 },
-      x: 1540,
-      y: 0,
+      row: 0,
+      col: 1,
     },
     {
       file: "Sets.dc.html",
       title: "D8 · A library whose images are in sets · Desktop",
       init: { view: "library", libId: "mirror", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 60 },
-      x: 3080,
-      y: 0,
+      row: 0,
+      col: 2,
     },
     {
       file: "InSet.dc.html",
       title: "D8 · Inside a set that holds sets · Desktop",
       init: { view: "library", libId: "mirror", set: "Cover", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 60 },
-      x: 0,
-      y: 1300,
+      row: 1,
+      col: 0,
     },
     {
       file: "Generate.dc.html",
       title: "D8 · Generate images · Desktop",
       init: { view: "library", libId: "window", dialog: "generate", bases: [1], tall: 900 },
-      x: 1540,
-      y: 1300,
+      row: 1,
+      col: 1,
     },
     {
       file: "Generating.dc.html",
       title: "D8 · The images arriving · Desktop",
       init: { view: "library", libId: "window", run: "generating", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 400 },
-      x: 3080,
-      y: 1300,
+      row: 1,
+      col: 2,
     },
     {
       file: "Review.dc.html",
       title: "D8 · Waiting for Keep, all clear · Desktop",
       init: { view: "library", libId: "window", run: "review", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 440 },
-      x: 0,
-      y: 2600,
+      row: 2,
+      col: 0,
     },
     {
       file: "Failed.dc.html",
       title: "D8 · One image failed, and no credits left · Desktop",
       init: { view: "library", libId: "window", run: "failed", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 500 },
-      x: 1540,
-      y: 2600,
+      row: 2,
+      col: 1,
     },
     {
       file: "Image.dc.html",
       title: "D8 · One image and what was read off it · Desktop",
       init: { view: "library", libId: "mirror", set: "Before", dialog: "image", imgPhoto: "vanity", imgWhere: "Before", tagged: true, armed: true, tall: 940 },
-      x: 3080,
-      y: 2600,
+      row: 2,
+      col: 2,
     },
     {
       file: "ImageNew.dc.html",
       title: "D8 · An image with nothing read off it yet · Desktop",
       init: { view: "library", libId: "window", dialog: "image", imgPhoto: "shower", imgRaw: true, tall: 940 },
-      x: 0,
-      y: 3900,
+      row: 3,
+      col: 0,
     },
     {
       file: "TagAsk.dc.html",
       title: "D8 · What Tag with AI will do · Desktop",
       init: { view: "library", libId: "window", dialog: "tag", tall: 900 },
-      x: 1540,
-      y: 3900,
+      row: 3,
+      col: 1,
     },
     {
       file: "Tagging.dc.html",
       title: "D8 · AI vision reading the images · Desktop",
       init: { view: "library", libId: "window", tagging: true, tall: HEAD_H + FOLDER_H + 3 * ROW_H + 220 },
-      x: 3080,
-      y: 3900,
+      row: 3,
+      col: 2,
     },
     {
       file: "NewSet.dc.html",
       title: "D8 · Naming a new set · Desktop",
       init: { view: "library", libId: "mirror", dialog: "newset", tall: 900 },
-      x: 0,
-      y: 5200,
+      row: 4,
+      col: 0,
     },
     {
       file: "FromD2.dc.html",
       title: "D8 · Opened by D2's Generate with AI · Desktop",
       init: { view: "library", libId: "kitchen", dialog: "generate", fromD2: true, tall: 900 },
-      x: 1540,
-      y: 5200,
+      row: 4,
+      col: 1,
     },
     {
       file: "Empty.dc.html",
       title: "D8 · A library with nothing in it · Desktop",
       init: { view: "library", libId: "backdrops", tall: 900 },
-      x: 3080,
-      y: 5200,
+      row: 4,
+      col: 2,
     },
     {
       file: "EmptySet.dc.html",
       title: "D8 · A set with nothing in it · Desktop",
       init: { view: "library", libId: "kitchen", set: "After", tall: 900 },
-      x: 0,
-      y: 6300,
+      row: 5,
+      col: 0,
     },
-    { file: "Phone.dc.html", title: "D8 · Image libraries · Phone", phone: true, init: { view: "grid", phone: true }, x: 4620, y: 0 },
+    { file: "Phone.dc.html", title: "D8 · Image libraries · Phone", phone: true, init: { view: "grid", phone: true }, row: 0, col: 3 },
     {
       file: "PhoneLibrary.dc.html",
       title: "D8 · One library and its sets · Phone",
       phone: true,
       init: { view: "library", libId: "mirror", phone: true, tall: 1500 },
-      x: 5090,
-      y: 0,
+      row: 0,
+      col: 4,
     },
     {
       file: "PhoneGenerate.dc.html",
       title: "D8 · Generate images · Phone",
       phone: true,
       init: { view: "library", libId: "window", dialog: "generate", phone: true, bases: [1] },
-      x: 5560,
-      y: 0,
+      row: 0,
+      col: 5,
     },
     {
       file: "PhoneImage.dc.html",
       title: "D8 · One image and what was read off it · Phone",
       phone: true,
       init: { view: "library", libId: "mirror", set: "Before", dialog: "image", imgPhoto: "vanity", imgWhere: "Before", tagged: true, phone: true },
-      x: 6030,
-      y: 0,
+      row: 0,
+      col: 6,
     },
   ];
 
   /* Each board twice: the Dark page, then the Light page (Garreth approved
      dark on 2026-09-16). The light values are globals.css's own, carried by
      the kit's tokens, so nothing here is retyped per theme. */
+  /*
+   * Boards are given a row and a column, not a spot on the canvas. A board
+   * that grows used to have to be moved by hand, and when one was not, two of
+   * them ended up on top of each other (Waiting for Keep ran under An image
+   * with nothing read off it). Rows are laid out from the tallest board in
+   * each one, so a board that grows cannot land on its neighbour.
+   */
+  const GAP_X = 100;
+  const GAP_Y = 120;
+  const height = (b) => b.init.tall || (b.phone ? 844 : 900);
+  const rowTop = [];
+  for (let r = 0, y = 0; ; r += 1) {
+    const inRow = BOARDS.filter((b) => b.row === r);
+    if (!inRow.length) break;
+    rowTop[r] = y;
+    y += Math.max(...inRow.map(height)) + GAP_Y;
+  }
+  const colLeft = [];
+  for (let c = 0, x = 0; ; c += 1) {
+    const inCol = BOARDS.filter((b) => b.col === c);
+    if (!inCol.length) break;
+    colLeft[c] = x;
+    x += Math.max(...inCol.map((b) => (b.phone ? 390 : 1440))) + GAP_X;
+  }
+  /* The note sits past the last column. */
+  const noteX = colLeft[colLeft.length - 1] + 390 + GAP_X * 2;
+
   const artboards = [];
   for (const light of [false, true]) {
     for (const b of BOARDS) {
       const phone = !!b.phone;
       const file = light ? b.file.replace(".dc.html", "Light.dc.html") : b.file;
-      fs.writeFileSync(
-        path.join(OUT, file),
-        artboard({ phone, light, screens: [librariesScreen({ init: { ...b.init, phone } })], navMode: "note" }),
-      );
+      const html = artboard({ phone, light, screens: [librariesScreen({ init: { ...b.init, phone } })], navMode: "note" });
+      checkBindings(file, html);
+      fs.writeFileSync(path.join(OUT, file), html);
       artboards.push({
         file,
         title: light ? `${b.title} · Light` : b.title,
         page: light ? "light" : "dark",
-        x: b.x,
-        y: b.y,
+        x: colLeft[b.col],
+        y: rowTop[b.row],
         w: phone ? 390 : 1440,
         h: b.init.tall || (phone ? 844 : 900),
         is_interactive: true,
@@ -1293,8 +1348,8 @@ function build(OUT) {
         ],
         artboards,
         annotations: [
-          { id: "d8-try", page: "dark", x: 6500, y: 0, w: 390, text: tryNote },
-          { id: "d8-try-light", page: "light", x: 6500, y: 0, w: 390, text: tryNote },
+          { id: "d8-try", page: "dark", x: noteX, y: 0, w: 390, text: tryNote },
+          { id: "d8-try-light", page: "light", x: noteX, y: 0, w: 390, text: tryNote },
         ],
         launch: { view: "canvas", page: "light" },
       },
