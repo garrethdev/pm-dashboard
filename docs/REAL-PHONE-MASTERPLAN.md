@@ -98,10 +98,12 @@ Posted with the link or Failed with the reason.
 
 **Czedrick during weeks 1 to 2.** The health check reads the new record, the
 comparison page, the morning reminder and the stuck-post alert, the ban cleanup
-for real-phone accounts. On the Air:
-[Xcode](https://apps.apple.com/us/app/xcode/id497799835) and Apple's testing
-agent ([WebDriverAgent](https://github.com/appium/WebDriverAgent)) installed on
-both phones, ready for the scripts. Until the wake schedule exists, Yurie and
+for real-phone accounts. On the Air: Yurie installs
+[Xcode](https://apps.apple.com/us/app/xcode/id497799835) and signs in the
+company's developer Apple ID, switches on Developer Mode on each iPhone and taps
+Trust; Czedrick then installs Apple's testing agent
+([WebDriverAgent](https://github.com/appium/WebDriverAgent)) on both phones
+remotely, ready for the scripts. Until the wake schedule exists, Yurie and
 Czedrick agree on when the Air needs to be on.
 
 > **whoer.net** is a free website that shows what the internet sees when the
@@ -129,9 +131,10 @@ stay paused on idle cloud phones until they move or are dropped.
   phones of moved accounts, stop wallet top-ups, cancel the subscription once
   nothing depends on it, remove the Geelark parts of the dashboard, rotate the
   keys.
-- Free Apple account chore: the testing agent expires every 7 days, so
-  reinstall it weekly from the Air, until the Developer Program is bought at
-  three or more phones.
+- Live view of every phone: WebDriverAgent already streams each screen as
+  video. Build a small page served from the Air that shows all connected phones
+  live, with tap and swipe passed back, reachable over Tailscale and linked from
+  the dashboard.
 
 **Yurie**
 
@@ -163,6 +166,7 @@ is turning the Air on and plugging the phones in.
 | The Air and Czedrick's Mac | [Tailscale](https://tailscale.com/download) + macOS Screen Sharing | Lets Czedrick see and control the Air from his own Mac. Install on both, sign in with the same account | free |
 | The Air | [Xcode](https://apps.apple.com/us/app/xcode/id497799835) | Apple's developer tool, about 10 GB. Needed once to put the testing agent on each phone | free |
 | The Air, from week 2 | [WebDriverAgent](https://github.com/appium/WebDriverAgent) | Apple's testing agent, packaged by the Appium project. What actually taps and swipes on a real iPhone over USB, no jailbreak. Built once in Xcode, installed on each phone | free |
+| The Air, long term | Live view page | Shows every connected phone's screen live in a browser with remote tap and swipe, using the video WebDriverAgent already streams. Reached over Tailscale, linked from the dashboard | ours |
 | The Air, from week 2 | The warmup script | Written by Czedrick. Tells WebDriverAgent what to do, takes screenshots, asks Claude whether the content fits, writes to the warmup log | ours, plus a few dollars of Claude usage |
 
 Deliberately not used: iMouse and the OTG board, the iOS Farm product, and any
@@ -175,11 +179,11 @@ done, with nothing plugged into the phone that TikTok can notice.
 |---|---|---|---|
 | Powered USB hub with charging on every port | 1 | ₱1,500 – ₱3,000 | The Air has two ports, needed from the second phone |
 | Lightning cables, data-capable | 2 | ₱300 each | Charging-only cables will not talk to the Mac |
-| [US Apple gift cards](https://www.mtcgame.com/itunes/gift-card-us/itunes-gift-card-us-10) | 2 | $10 each | MTC Game, US$10 code by email. Covers ShadowRocket plus tax |
+| [US Apple gift cards](https://dundle.com/itunes/) | 2 | $5 each | Dundle, US$5 code by email. Covers ShadowRocket plus tax in any state. Does not expire, so buy now and redeem when the phones arrive |
 | [ShadowRocket](https://apps.apple.com/us/app/shadowrocket/id932747118) | 2 | $2.99 each | US App Store, paid from the gift card balance |
 | Anthropic API key | 1 | a few dollars a month | Needed by end of week 2, so the script can judge screenshots |
 | Dolphin Anty, Fake XY, Tailscale, Xcode | — | free | |
-| Apple Developer Program | 1 | $99 per year | Not yet. Buy at three or more phones, or when the weekly reinstall gets annoying |
+| [Apple Developer Program](https://developer.apple.com/programs/enroll/) | 1 | $99 per year | Buy now, approval takes a day or two. One membership signs the testing agent for every phone for a year instead of 7 days. Enrol as an individual under a company-controlled Apple ID, not a phone account |
 
 ## Background: why this shape
 

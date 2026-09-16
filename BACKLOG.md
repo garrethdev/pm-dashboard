@@ -1,6 +1,6 @@
 # Backlog
 
-Four lists. Check which one you are in before picking something up — they have
+Five lists. Check which one you are in before picking something up — they have
 different bars for "done".
 
 - **[From the 2026-09-09 code review](#from-the-2026-09-09-external-code-review)**
@@ -9,6 +9,10 @@ different bars for "done".
   only the anon-key hardening and the unmonitored Virlo pipeline remain. Grouped by where it came from rather than by tier, because it
   shares one set of caveats about how far to trust it. Each entry says which
   tier it would otherwise sit in.
+- **[Phone farm — dashboard tickets](#phone-farm--dashboard-tickets)** is
+  the move off Geelark onto real iPhones, as numbered tickets PF-01 to PF-16,
+  each marked ready now or blocked by what. Czedrick's list; build order is
+  the table order.
 - **[V1 — open work](#v1--open-work)** is the shipping product. Bugs, unverified
   fixes and decisions still owed. These block or degrade what is live now — with
   one deliberate exception at the end of the list, the anon-key security
@@ -112,128 +116,214 @@ sources. Deferred with the carousel generator that will consume them.
 
 ---
 
+# Phone farm — dashboard tickets
+
+**Decided 2026-09-16 (Garreth); ticketed 2026-09-17 at his request.** Accounts
+are being restricted and banned on Geelark cloud phones, so the fleet moves to
+real iPhones that Yurie warms up and posts from, with warmup scripted later
+from a MacBook Air beside the phones. Posting stays human. Czedrick owns every
+ticket here. Plan of record: `docs/REAL-PHONE-MASTERPLAN.md`; what is borrowed
+from iOS Farm and Kevs-IOS-Agents: `docs/PHONE-FARM-TOOLING.md`; the sheet
+Yurie and Czedrick tick: `~/Documents/Geelark Exit Plan.xlsx` (outside the repo).
+
+**Two facts before touching anything.** Geelark is only the hands in this
+codebase: the Posting Agent (`lioNzkWRocyDvZS5`) is the one workflow that sends
+a post to a phone, the warmup workflows (`QDUtABHSG4FMTrQX`, `3AsUAUOwUgXa60cy`)
+are the only ones that warm one, and `geelark_tasks` is the only proof today
+that either happened. The Smart Scheduler, the age ramp, the content gates, the
+caption matching into `tt_post_performance` and Inventory never touch it. And
+the whole migration hangs on one new column, `accounts.delivery_mode`, so
+accounts still on Geelark keep working untouched and move one at a time. All 32
+accounts are already `posting_paused` (2026-09-14).
+
+**Status key.** *Ready now* = nothing in the way, start today. *Blocked by
+PF-xx* = needs that ticket merged first. *Blocked by hardware* = needs the
+phones or the Air in Yurie's hands. Order within the list is build order.
+
+| # | Ticket | Phase | Status |
+|---|---|---|---|
+| PF-01 | `accounts.delivery_mode` switch | Immediate | Ready now |
+| PF-02 | `devices` table + Devices page | Immediate | Ready now |
+| PF-08 | Facebook as a platform | Immediate | Ready now |
+| PF-03 | Move to phone button | Immediate | Blocked by PF-01, PF-02 |
+| PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | Blocked by PF-02 |
+| PF-05 | `post_deliveries` table | Immediate | Blocked by PF-01, PF-02 |
+| PF-06 | Posting Agent fork (n8n) | Immediate | Blocked by PF-05 |
+| PF-07 | Posting To-Do page | Immediate | Blocked by PF-05 |
+| PF-11 | Post-ban branch for manual accounts | Intermediate | Blocked by PF-01 |
+| PF-09 | Health detector + Incidents read both delivery sources | Intermediate | Blocked by PF-05 |
+| PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | Blocked by PF-05, PF-07 |
+| PF-10 | Comparison view | Intermediate | Blocked by PF-03, PF-04, PF-05 |
+| PF-13 | Write path for the warmup script | Long term | Blocked by PF-04 |
+| PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
+| PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional |
+| PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
+
+## PF-01 · `accounts.delivery_mode` — Ready now
+
+`geelark` or `manual`, default `geelark`. Shown as a pill on the Accounts table,
+editable on the account page, audit-logged like the pause toggle.
+*Done when:* an account can be flipped from the app and the row in
+`dashboard_audit_log` says who and when.
+
+## PF-02 · `devices` table + Devices page — Ready now
+
+One row per physical phone: name, model, iOS version, proxy, timezone,
+whoer.net proof screenshot, `is_active`, notes. `accounts.device_id` nullable
+FK. Rule enforced in the app: at most three accounts per device.
+`geelark_profile` stays as-is for the old fleet.
+*Done when:* Yurie can register a phone with its proof screenshot and see
+which accounts it holds.
+
+## PF-08 · Facebook as a platform — Ready now
+
+`accounts.platform` and `content_type_registry` know only `tiktok` and
+`instagram`; each phone carries one character's Instagram + Facebook, so
+Facebook rows need to exist and show on the Accounts table, the Posting To-Do
+page (PF-07) and the warmup log (PF-04). Performance ingest for Facebook is a
+separate, later question and not part of this ticket.
+*Done when:* a Facebook account row can be created, filtered and moved to a
+phone like any other.
+
+## PF-03 · Move to phone — Blocked by PF-01, PF-02
+
+Button on the account page: pick a device, set `delivery_mode = manual`, record
+`moved_to_device_at`, write an audit row. Does **not** unpause. That date is
+what the comparison view (PF-10) splits on.
+*Done when:* one click does all four and the account shows its phone.
+
+## PF-04 · `warmup_sessions` + log form — Blocked by PF-02
+
+Columns: `device_id`, `account_id`, `started_at`, `minutes`, `mode`
+(`manual` | `script`), `note`. A quick log form on the device page and on the
+account page. Point `v_account_warmup_health` at the union of Geelark
+type-42/90 tasks and these rows so the green/yellow/red dot means the same
+thing for both fleets.
+*Done when:* a logged session turns a moved account's dot green.
+
+## PF-05 · `post_deliveries` — Blocked by PF-01, PF-02
+
+One row per post handed to a person: content row (source table + id, same
+shape `content_type_registry` uses), `account_id`, `device_id`, `status`
+(`queued` | `posted` | `failed` | `skipped`), `post_url`, `note`, `done_by`,
+`done_at`. This becomes the "actually posted" signal that
+`geelark_tasks.status = 3` is today.
+*Done when:* the table exists with RLS matching the other app-written tables
+and a row can be inserted and flipped from the app.
+
+## PF-06 · Posting Agent fork — Blocked by PF-05
+
+In `[Unified] Posting Agent` (`lioNzkWRocyDvZS5`): for
+`delivery_mode = manual`, write a `queued` delivery row and leave the content
+row `Ready`; do not call Geelark. Geelark accounts follow the existing path
+unchanged. Save, compare `versionId` vs `activeVersionId`, **publish** — an
+unpublished draft is the classic miss.
+*Done when:* a manual-mode test account gets a queued row and no Geelark task,
+on a real 10:00 ET run.
+
+## PF-07 · Posting To-Do page — Blocked by PF-05
+
+Built for a phone screen. Per account: today's queued items with a video
+download button, a caption copy button, **Posted** (asks for the post link) and
+**Failed** (asks why). Posted flips `posting_status` and stores the link, which
+also closes the long-open gap that post URLs were never captured (ticket #227).
+*Done when:* Yurie can complete a delivery from the iPhone's browser.
+
+## PF-11 · Post-ban branch for manual accounts — Blocked by PF-01
+
+`[Ops] Post-Ban System` (`WmichajTDXL0pT1z`) deletes a Geelark phone; for
+`delivery_mode = manual` skip that and surface a checklist instead: sign out
+on the device, release queued content, retire proxy and number. Same audit
+trail.
+*Done when:* dry-run on a manual account shows the checklist and touches no
+Geelark endpoint.
+
+## PF-09 · Health detector + Incidents read both sources — Blocked by PF-05
+
+The delivery-failure guard in `v_account_health_v3` and the failed-deliveries
+source in `src/lib/data/incidents.ts` read `geelark_tasks` only; add
+`post_deliveries` beside it so a manual account is judged by the same rules and
+never looks silent. Same "quieter than it is" failure mode as the poller blind
+spot.
+*Done when:* a manual account with two failed deliveries in 7 days shows the
+same delivery-failure reason a Geelark account would.
+
+## PF-12 · Morning reminder + stale-item alert — Blocked by PF-05, PF-07
+
+n8n: the day's queued deliveries per device each morning; an alert when a
+delivery sits `queued` past 24 h. A human queue strands more easily than a
+robot.
+*Done when:* one morning email received and one stale alert fired on a test
+row.
+
+## PF-10 · Comparison view — Blocked by PF-03, PF-04, PF-05
+
+Each moved account before and after `moved_to_device_at`: views per post,
+share under 10 views, warmup dot, restrictions and bans; plus the Geelark
+cohort of the same character. This is what the week-6 review reads.
+*Done when:* Garreth and Yurie can read one moved account's before/after on
+one screen.
+
+## PF-13 · Write path for the warmup script — Blocked by PF-04
+
+The script lives on the Air, outside this repo. It needs a way to insert
+`warmup_sessions` rows with `mode = 'script'`: a service-role key kept on the
+Air, or a small authenticated endpoint. Nothing else in the app changes.
+*Done when:* a row inserted from the Air shows on the dashboard within a
+minute.
+
+## PF-14 · Live view page — Blocked by hardware
+
+Garreth, 2026-09-17: required, not optional. WebDriverAgent serves each phone's
+screen as an MJPEG stream on its own port. A small page served from the Air
+tiles every connected phone's live screen and passes tap/swipe back. Reachable
+over Tailscale only (the Air sits on home Wi-Fi), so the dashboard links to it
+rather than embedding it. Reference: iOS Farm's live-view panel
+(github.com/Git-Agni/prod-FARM-IOS-Core, Apache-2.0); borrow the stream
+handling, not the app. Blocked until the Air has Xcode signed in and the agent
+installed on at least one phone.
+*Done when:* Czedrick sees both phones live from his own Mac and can tap one.
+
+## PF-15 · Batch flips — Blocked by PF-03; optional
+
+Multi-select Move to phone by character, for when phones arrive in batches.
+Not needed for the pilot.
+
+## PF-16 · Retire Geelark — Blocked by the last account moving
+
+In order: unpublish Warmup Scheduler, GPS drift, the Geelark branch of the
+Posting Agent, Task Detail Poller, Wallet Guard (unpublish, do not delete; keep
+`geelark_tasks` read-only for forensics). Then remove from the app:
+`src/lib/data/geelark.ts` phone list, `wallet.ts`, `geelark-writes.ts`,
+`/api/proxies/replace`, the Geelark probe in `/api/health`, the phones card on
+the homepage. Then rotate the Geelark key and the inline Supabase keys. The
+key rotation is also blocked by the plaintext keys in the Posting Agent, Smart
+Scheduler and Virlo bridge — move those to n8n credentials first (see the n8n
+credentials note in memory).
+*Done when:* no live workflow or app route calls Geelark and the old key is
+dead.
+
+**Not tickets, but on the sheet:** Tailscale + Screen Sharing on the Air,
+installing Xcode and the developer Apple ID (Yurie), installing WebDriverAgent
+on the phones (Czedrick, remote), stopping a moved account's Geelark warmups on
+move day, unpausing after the re-warm, and the warmup scripts themselves.
+
+**Supersedes:** the V3 line "All GeeLark device provisioning and warmup should
+stay in n8n regardless" (2026-09-09), and partly the V2 "Set up new accounts
+from inside the dashboard" entry, since a real-phone account has no Geelark
+profile to create.
+
+---
+
 # V1 — open work
 
 ## Move accounts off Geelark onto real iPhones
 
-**Decided 2026-09-16 (Garreth).** Accounts are being restricted and banned on
-Geelark cloud phones, so the fleet moves to real iPhones that a person
-(Yurie) warms up and posts from, with warmup scripted later from a MacBook Air
-beside the phones. Posting stays human throughout. The plan of record is
-`docs/REAL-PHONE-MASTERPLAN.md` (mirrored as the Real Phone Masterplan artifact,
-https://claude.ai/artifact/GAW1snVjyEYEBenTJyNZbo) and the task sheet is
-`~/Documents/Geelark Exit Plan.xlsx` (outside the repo).
-Czedrick owns everything below.
-
-**What Geelark is, and is not, in this codebase.** Only the hands. The
-Posting Agent (`lioNzkWRocyDvZS5`) is the one workflow that sends a post to a
-phone, the warmup workflows (`QDUtABHSG4FMTrQX`, `3AsUAUOwUgXa60cy`) are the
-only ones that warm one, and `geelark_tasks` is the only proof today that either
-happened. The Smart Scheduler, the age ramp, the content gates, the caption
-matching into `tt_post_performance`, and Inventory never touch it. So the work
-is a fork at the hand-off point, not a rewrite. All 32 accounts are already
-`posting_paused` (2026-09-14) and Geelark warmups keep running for every account
-until the day it moves.
-
-**The one column the whole thing hangs on:** `accounts.delivery_mode`, `geelark`
-or `manual`, default `geelark`. Every change below branches on it, so accounts
-still on Geelark keep working untouched and accounts move one at a time.
-
-### Immediate — needed before the phones arrive (by 2026-09-19)
-
-Needed on move day, in this order:
-
-- **`accounts.delivery_mode`** as above. Shown as a pill on the Accounts table,
-  editable on the account page, audit-logged like the pause toggle.
-  *Done when:* an account can be flipped from the app and the row in
-  `dashboard_audit_log` says who and when.
-- **`devices` table + Devices page + `accounts.device_id`.** One row per
-  physical phone: name, model, iOS version, proxy, timezone, whoer.net proof
-  screenshot, `is_active`, notes. Rule enforced in the app: at most three
-  accounts per device. `geelark_profile` stays as-is for the old fleet.
-  *Done when:* Yurie can register a phone with its proof screenshot and see
-  which accounts it holds.
-- **"Move to phone" on the account page.** Picks a device, sets
-  `delivery_mode = manual`, records `moved_to_device_at`, writes an audit row.
-  That date is what the comparison view splits on. Does **not** unpause.
-  *Done when:* one click does all four and the account shows its phone.
-- **`warmup_sessions` table + quick log form.** `device_id`, `account_id`,
-  `started_at`, `minutes`, `mode` (`manual` | `script`), `note`. Point
-  `v_account_warmup_health` at the union of Geelark type-42/90 tasks and these
-  rows so the green/yellow/red dot means the same thing for both fleets.
-  *Done when:* a logged session turns a moved account's dot green.
-
-Needed for the first post, by end of week 1 (2026-09-26):
-
-- **`post_deliveries` table.** One row per post handed to a person: content
-  row (source table + id, same shape `content_type_registry` uses), account,
-  device, `status` (`queued` | `posted` | `failed` | `skipped`), `post_url`,
-  `note`, `done_by`, `done_at`. This becomes the "actually posted" signal that
-  `geelark_tasks.status = 3` is today.
-- **Posting Agent fork (n8n).** For `delivery_mode = manual`: write a `queued`
-  delivery row and leave the content row `Ready`; do not call Geelark. Geelark
-  accounts follow the existing path unchanged. Save, compare `versionId` vs
-  `activeVersionId`, **publish** — an unpublished draft is the classic miss.
-  *Done when:* a manual-mode test account gets a queued row and no Geelark task.
-- **Posting To-Do page, built for a phone screen.** Per account: today's queued
-  items with a video download button, a caption copy button, **Posted** (asks
-  for the post link) and **Failed** (asks why). Posted flips `posting_status`
-  and stores the link — which also closes the long-open gap that post URLs were
-  never captured from Geelark (ticket #227).
-  *Done when:* Yurie can complete a delivery from the iPhone's browser.
-- **Facebook as a platform.** `accounts.platform` and the registry know only
-  `tiktok` and `instagram`; each phone carries one character's Instagram +
-  Facebook, so Facebook rows need to exist and show on the Accounts table.
-  Performance ingest for Facebook is a separate, later question.
-
-### Intermediate — weeks 1 to 2 (2026-09-20 to 2026-10-03)
-
-- **Health detector and Incidents read both delivery sources.** The
-  delivery-failure guard in `v_account_health_v3` and the failed-deliveries
-  source in `src/lib/data/incidents.ts` read `geelark_tasks` only; add
-  `post_deliveries` beside it so a manual account is judged by the same rules
-  and never looks silent. Same "quieter than it is" failure mode as the poller
-  blind spot — see the memory note.
-- **Comparison view.** Each moved account before and after
-  `moved_to_device_at` (views per post, share under 10 views, warmup dot,
-  restrictions and bans), plus the Geelark cohort of the same character. This is
-  what the week-6 review reads.
-- **Post-ban branch for manual accounts.** `[Ops] Post-Ban System` deletes a
-  Geelark phone; for `delivery_mode = manual` skip that and surface a checklist
-  instead — sign out on the device, release queued content, retire proxy and
-  number. Same audit trail.
-- **Morning reminder + stale-item alert (n8n).** The day's queued deliveries per
-  device each morning; an alert when a delivery sits `queued` past 24 h. A human
-  queue strands more easily than a robot, and stranded `Ready` rows have bitten
-  this pipeline before.
-- **Operational, not code:** stopping a moved account's Geelark warmups on move
-  day (the warmup scheduler reads `is_active`, so this is a per-account
-  exclusion, not a workflow change), and unpausing only the moved accounts after
-  their 3–5 day re-warm. Both go through existing toggles.
-
-### Long term — from the end of week 2
-
-- **Scripted warmup writes to `warmup_sessions`.** The script lives on the
-  Air, outside this repo; it needs a write path (service-role insert or a small
-  authenticated endpoint) and `mode = 'script'`. Nothing else in the app
-  changes.
-- **Batch flips.** "Move to phone" one account at a time is enough for the
-  pilot; a multi-select flip by character is a nicety once phones arrive in
-  batches.
-- **Retire Geelark, in order:** unpublish Warmup Scheduler, GPS drift, the
-  Geelark branch of the Posting Agent, Task Detail Poller, Wallet Guard
-  (unpublish, do not delete; keep `geelark_tasks` read-only for forensics).
-  Then remove from the app: `src/lib/data/geelark.ts` phone list,
-  `wallet.ts`, `geelark-writes.ts`, `/api/proxies/replace`, the Geelark probe
-  in `/api/health`, the phones card on the homepage. Then rotate the Geelark
-  key and the inline Supabase keys (see the n8n credentials note — plaintext
-  keys block rotation until moved).
-
-**Supersedes:** the V3 line "All GeeLark device provisioning and warmup should
-stay in n8n regardless" (2026-09-09) — provisioning through Geelark ends with
-this; and the V2 "Set up new accounts from inside the dashboard" entry is
-partly absorbed by Move to phone, since a real-phone account has no Geelark
-profile to create.
+**Ticketed separately — see [Phone farm — dashboard tickets](#phone-farm--dashboard-tickets)
+above.** Decided 2026-09-16 (Garreth); tickets PF-01 to PF-16 carry the
+scope, the blockers and the done-whens. Plan of record:
+`docs/REAL-PHONE-MASTERPLAN.md`; tooling decisions: `docs/PHONE-FARM-TOOLING.md`;
+task sheet for Yurie and Czedrick: `~/Documents/Geelark Exit Plan.xlsx`.
 
 ## Verify Character 5's first scheduled run
 
