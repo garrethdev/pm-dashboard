@@ -124,7 +124,7 @@ the edges are tested, not just the happy middle.
 
 - **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). dark mode **approved by Garreth on 2026-09-14**: desktop,
   phone, the library picker at both sizes, the
-  empty-groups state and the no-library state. On the Carousel Generator
+  empty-sets state and the no-library state. On the Carousel Generator
   Designs canvas
   (https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
   pages **D2 · Dark** and **D2 · Light**, built by
@@ -136,16 +136,16 @@ the edges are tested, not just the happy middle.
   character and slide pills sit opposite the type name; library covers are
   placeholder photos; the desktop picker hangs just under **Change**; the
   phone picker is a centred modal; the picker no longer warns about empty
-  groups; the note field is the same full-width box as the fixed opening
+  sets; the note field is the same full-width box as the fixed opening
   line; both back buttons (the menu's and "Carousel types") use the outline
   "<".
   **Light mode: designed 2026-09-14 at Garreth's request, awaiting review**,
   all six screens on the D2 · Light page. **Datestamp removed** from the form
   after approval (Garreth, 2026-09-14).
   **Reopened during D7's review** (Garreth, 2026-09-15), both pages re-saved:
-  when the library has no images in a group the template needs, **Generate
-  with AI** under the groups opens that library's Generate images form (D8)
-  for those groups. What comes back joins the library only on Keep, and the
+  when the library has no images in a set the template needs, **Generate
+  with AI** under the sets opens that library's Generate images form (D8)
+  for those sets. What comes back joins the library only on Keep, and the
   form is then ready to generate.
 - **You get here from:** Generate on a card in D1.
 - **Flows:** F1 step 3.
@@ -161,9 +161,13 @@ the edges are tested, not just the happy middle.
   - **Generate** as the accent.
 - **States:**
   - No library chosen: Generate unavailable until one is picked.
-  - The chosen library has no images in a group the template needs:
-    Generate unavailable, the empty groups named.
+  - The chosen library has no images in a set the template needs:
+    Generate unavailable, the empty sets named.
   - Count typed above 50: the field stops at 50.
+- **Renamed to sets** (Garreth, 2026-09-16): what this form called groups is
+  what D8 calls sets, and both now say sets. The screens themselves never
+  showed the word, so only the code, the comments and one board title
+  changed; both D2 pages were re-saved on 2026-09-16.
 - **Done when:** approved in dark at both sizes.
 
 ## D3. Batch — while writing
@@ -772,25 +776,25 @@ the edges are tested, not just the happy middle.
 
 ## D8. Image libraries
 
-- **Status:** **Done.** Dark mode **approved by Garreth on 2026-09-16** after
-  three passes — his feedback made folders optional and shown as folders
-  rather than filter pills, took the folder out of the Generate form, added a
-  base image to it, settled that nothing is read automatically, and pointed
-  the detail headings at the live `carousel_images` table. **Light mode
-  designed the same day**, and the library cards' thumbnails redrawn as four
-  of the library's own images. Pictures, one screen per state, on the Carousel
+- **Status:** **Done. Dark and light both approved by Garreth on 2026-09-16**,
+  after three review passes. His feedback along the way made sets optional
+  and shown as folders you open rather than filter pills, took the set out of
+  the Generate form, added a base image you pick or upload, settled that
+  nothing is read automatically, pointed the detail headings at the live
+  `carousel_images` table, and redrew the library grid as Pinterest-style
+  boards. Pictures, one screen per state, on the Carousel
   Generator Designs - (D7 to D10) canvas
   (https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH), pages **D8 · Dark** and
   **D8 · Light**, built by
   `docs/designs/carousel-generator/d8-image-libraries.build.mjs`.
-  Twenty boards a theme: the grid of libraries; a library with no folders, which is
-  the default; a library whose images are in folders; inside a folder that
-  holds folders of its own; the Generate images form; the images arriving;
+  Twenty boards a theme: the grid of libraries; a library with no sets, which is
+  the default; a library whose images are in sets; inside a set that
+  holds sets of its own; the Generate images form; the images arriving;
   the review row waiting for Keep; one image failed with no credits left; one
   image and what was read off it, hold armed; an image with nothing read off
   it; what Tag with AI will do; AI vision reading the images; naming a new
-  folder; the form as D2's Generate with AI opens it; a library with nothing
-  in it; a folder with nothing in it; and the grid, a library, the Generate
+  set; the form as D2's Generate with AI opens it; a library with nothing
+  in it; a set with nothing in it; and the grid, a library, the Generate
   form and the image modal on the phone — each of them in both themes.
 - **Fixed after Garreth's look, 2026-09-16:** the grid of libraries counted
   five but drew none, on desktop and phone. The list of libraries was worked
@@ -801,19 +805,18 @@ the edges are tested, not just the happy middle.
   blamed the card's markup — a `<button>` wrapping an `<h2>`, which is not
   legal HTML — and rebuilt it as an `<article>` with one stretched button over
   it, the way D1's type cards are built. That was worth doing but was not the
-  cause.) The empty states — a library with nothing in it, a folder with
+  cause.) The empty states — a library with nothing in it, a set with
   nothing in it — now stretch to the bottom of the window instead of leaving
-  dead space under them, and the lone New folder card no longer sits above an
+  dead space under them, and the lone New set card no longer sits above an
   empty state.
-- **Wording to confirm:** these are called **folders** on screen. Garreth has
-  called them sets and folders on different days, and the database calls the
-  two levels `pool` and `category`; the screens use one word throughout, and
-  it is a one-word change if he wants a different one.
-- **D2 still says "groups"** for what is now a set, on its Generate form and
-  in its build script — and D2's premise that a library can be missing images
-  "in a group the template needs" no longer holds the same way, since sets
-  are optional. That needs a pass on `main` once D8 is approved; it was not
-  changed here because a ticket owns only its own files.
+- **The word is "sets"** (Garreth, 2026-09-16), settled after the screens had
+  tried both. D2 was renamed to match on the same day, so the generator says
+  sets throughout. The database still calls the two levels `pool` and
+  `category`, which is a naming question for the dev tickets, not the screens.
+- **D6's Studio still says "groups"** for the same thing, in its ticket and
+  its build script. It is a finished ticket with its own two canvases, so it
+  was left alone rather than swept up here; it needs its own small pass
+  before the Studio's dev tickets are written.
 
 - **You get here from:** the menu, or Change in D2 and D6.
 - **Flows:** F7.
@@ -822,32 +825,32 @@ the edges are tested, not just the happy middle.
     2026-09-16): a mosaic of three of the library's own images — one large,
     two stacked beside it — with the name and the image count plain
     underneath, and no card drawn round either. Nothing else rides on a
-    board: how many folders, how many images are unread and which carousel
+    board: how many sets, how many images are unread and which carousel
     types point at the library all came off. **New library** is a tile at the
     end of the grid rather than a button in the header.
-  - One library: its folders as folder cards, each showing a few of its
-    images, its name and its count; then the images in no folder under **Not
-    in a folder**. Opening a folder goes a level down, with a breadcrumb back.
+  - One library: its sets as set cards, each showing a few of its
+    images, its name and its count; then the images in no set under **Not
+    in a set**. Opening a set goes a level down, with a breadcrumb back.
     Covers marked.
-  - **New library**, **New folder**, **Upload**, **Tag with AI**.
+  - **New library**, **New set**, **Upload**, **Tag with AI**.
   - **Generate images** form: prompt, base image (picked from the library or
-    uploaded), how many (up to 8), shape. It never picks a folder — what it
+    uploaded), how many (up to 8), shape. It never picks a set — what it
     makes lands in the library (Garreth, 2026-09-16).
   - Generating tiles, then the review row with **Keep** and **Discard**.
   - **Retire image** (hold).
   - Opened from D2's **Generate with AI** (Garreth, 2026-09-15): the Generate
     images form with the empty set already picked, and back to the
     Generate form once the images are kept.
-  - **Folders, shown and opened as folders** (Garreth, 2026-09-16, replacing
+  - **Sets, shown and opened as sets** (Garreth, 2026-09-16, replacing
     the groups-and-sets split of 2026-09-15 and the filter pills of earlier
-    the same day). A library starts with **no folders at all**, and images in
-    no folder are ordinary, not a backlog. Folders appear only when a person
-    makes one, or asks the AI to file the images into them. A folder belongs
-    to nothing in particular: a Cover folder may hold a dozen different
-    people. **Folders nest one level**, which is what the live banks already
+    the same day). A library starts with **no sets at all**, and images in
+    no set are ordinary, not a backlog. Sets appear only when a person
+    makes one, or asks the AI to file the images into them. A set belongs
+    to nothing in particular: a Cover set may hold a dozen different
+    people. **Sets nest one level**, which is what the live banks already
     do — `glowup_image_bank` and `covered_eye_image_bank` are organised
     `pool` then `category`, so `cover` holds `taraji`, `gabrielle_union` and
-    the rest. A template cell names the folder it draws from.
+    the rest. A template cell names the set it draws from.
   - **Every image carries details an AI reads** (Garreth, 2026-09-16). The
     headings are the dashboard's own `carousel_images` columns, read from
     Supabase on 2026-09-16 rather than invented: **content** (a written
@@ -870,9 +873,9 @@ the edges are tested, not just the happy middle.
     pose, a look) that waits for Keep like any generated image.
 - **States:**
   - An empty new library.
-  - A library with no folders at all — the ordinary case.
-  - A folder with nothing in it.
-  - A thin folder with a single image.
+  - A library with no sets at all — the ordinary case.
+  - A set with nothing in it.
+  - A thin set with a single image.
   - An image nothing has been read off yet.
   - One generated image failed (Retry); Higgsfield out of credits.
   - Review row all clear.

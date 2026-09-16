@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * D8 · Image libraries — the grid of libraries, the folders inside one, and
+ * D8 · Image libraries — the grid of libraries, the sets inside one, and
  * the ways images get there: upload, generate, tag, prepare, retire.
  *
  * Design step only (docs/CAROUSEL-GENERATOR-DESIGN-TICKETS.md, D8). Nothing
@@ -8,12 +8,12 @@
  * prototype note) comes from generator-kit.mjs; this file is the screen.
  *
  * Decisions from Garreth, 2026-09-16:
- *  - A library holds FOLDERS, shown and opened as folders — not filter pills.
- *    A library starts with none, and images in no folder are ordinary. A
- *    folder belongs to nothing in particular: a Cover folder may hold a
- *    dozen different people, and folders nest one level, which is what the
+ *  - A library holds FOLDERS, shown and opened as sets — not filter pills.
+ *    A library starts with none, and images in no set are ordinary. A
+ *    set belongs to nothing in particular: a Cover set may hold a
+ *    dozen different people, and sets nest one level, which is what the
  *    live banks already do.
- *  - Generate images never picks a folder. It takes a prompt and, when you
+ *  - Generate images never picks a set. It takes a prompt and, when you
  *    want one, a base image — chosen from the library or uploaded.
  *  - A generated image is NEVER read automatically. Only images a person has
  *    kept and decided to use get tagged, by them or by Tag with AI.
@@ -26,16 +26,16 @@
  * Stack, Reveal, Payoff, Confession, and quality really does run 6 to 9.
  * The two live banks (glowup_image_bank, covered_eye_image_bank) organise by
  * pool then category — cover → taraji, gabrielle_union — which is why the
- * folders here nest.
+ * sets here nest.
  *
- * Sample content only: invented library, folder and person names, invented
+ * Sample content only: invented library, set and person names, invented
  * descriptions, placeholder photos.
  *
  * Run directly, it writes D8's review artboards and canvas.json:
  *   Main.dc.html          desktop 1440×900, the grid of libraries
- *   Library.dc.html       desktop, a library with no folders — the default
- *   Folders.dc.html       desktop, a library whose images are in folders
- *   InFolder.dc.html      desktop, inside a folder that holds folders
+ *   Library.dc.html       desktop, a library with no sets — the default
+ *   Sets.dc.html       desktop, a library whose images are in sets
+ *   InSet.dc.html      desktop, inside a set that holds sets
  *   Generate.dc.html      desktop, the Generate images form
  *   Generating.dc.html    desktop, the requested images arriving
  *   Review.dc.html        desktop, the review row, all clear
@@ -44,12 +44,12 @@
  *   ImageNew.dc.html      desktop, an image with nothing read yet
  *   TagAsk.dc.html        desktop, what Tag with AI is about to do
  *   Tagging.dc.html       desktop, AI vision reading the images
- *   NewFolder.dc.html     desktop, naming a new folder
+ *   NewSet.dc.html     desktop, naming a new set
  *   FromD2.dc.html        desktop, opened by D2's Generate with AI
  *   Empty.dc.html         desktop, a library just made, with nothing in it
- *   EmptyFolder.dc.html   desktop, a folder with nothing in it
+ *   EmptySet.dc.html   desktop, a set with nothing in it
  *   Phone.dc.html         phone 390×844, the grid
- *   PhoneLibrary.dc.html  phone, one library and its folders
+ *   PhoneLibrary.dc.html  phone, one library and its sets
  *   PhoneGenerate.dc.html phone, the Generate images sheet
  *   PhoneImage.dc.html    phone, one image and its details
  * Imported, `librariesScreen()` is the screen prototype.build.mjs opens.
@@ -82,7 +82,7 @@ const D8I = {
   minusSm: icon("Minus", 12, "bold"),
   checkSm: icon("Check", 12, "bold"),
   imagesLg: icon("Images", 24),
-  folderLg: icon("FolderSimple", 24),
+  setLg: icon("FolderSimple", 24),
   slash: icon("CaretRight", 12, "bold"),
 };
 
@@ -109,17 +109,17 @@ export function copyLibraryImages(OUT) {
 /* ── Sample content ────────────────────────────────────────────────────── */
 
 /*
- * `folders` is what a person (or Tag with AI) has made so far — most
- * libraries have none. `loose` is how many images sit in no folder at all,
- * which is ordinary. A folder may hold folders, one level down, the way the
+ * `sets` is what a person (or Tag with AI) has made so far — most
+ * libraries have none. `loose` is how many images sit in no set at all,
+ * which is ordinary. A set may hold sets, one level down, the way the
  * live banks hold a pool's categories.
  */
 const LIBS = [
-  { id: "window", name: "Soft Window Light", folders: [], loose: 127, types: ["Before & After"] },
+  { id: "window", name: "Soft Window Light", sets: [], loose: 127, types: ["Before & After"] },
   {
     id: "mirror",
     name: "Bathroom Mirror Mornings, Natural Light Series",
-    folders: [
+    sets: [
       { name: "Cover", count: 96, subs: [["Maya R.", 34], ["Dana K.", 28], ["Priya S.", 22], ["Aspirational", 12]] },
       { name: "Before", count: 402, subs: [] },
       { name: "After", count: 511, subs: [] },
@@ -129,16 +129,16 @@ const LIBS = [
     loose: 63,
     types: ["Morning Routine", "Day in the Life"],
   },
-  { id: "outdoor", name: "Outdoor Walks", folders: [], loose: 212, types: ["Quiet Luxury Picks"] },
+  { id: "outdoor", name: "Outdoor Walks", sets: [], loose: 212, types: ["Quiet Luxury Picks"] },
   {
     id: "kitchen",
     name: "Kitchen Counter Shots",
-    folders: [{ name: "Cover", count: 12, subs: [] }, { name: "Before", count: 46, subs: [] }, { name: "After", count: 0, subs: [] }],
+    sets: [{ name: "Cover", count: 12, subs: [] }, { name: "Before", count: 46, subs: [] }, { name: "After", count: 0, subs: [] }],
     loose: 0,
     types: [],
   },
   /* Made by New library on the grid, and still empty. */
-  { id: "backdrops", name: "Studio Backdrops", folders: [], loose: 0, types: [], fresh: true },
+  { id: "backdrops", name: "Studio Backdrops", sets: [], loose: 0, types: [], fresh: true },
 ];
 
 /* Which photo fills which tile, so a row is not the same shot repeated. */
@@ -194,7 +194,7 @@ ${init.tall ? `.app${S} { height: ${init.tall}px; }` : ""}
 ${S} .page { gap: ${P ? 20 : 24}px; }
 ${S} .l8head { display: flex; flex-direction: column; align-items: flex-start; }
 /* The breadcrumb above the name, as on D2 and D7, but a chain once you are
-   inside a folder: Image libraries › Library › Folder. */
+   inside a set: Image libraries › Library › Set. */
 ${S} .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 0 0 4px -2px; font-size: 13px; line-height: 20px; }
 ${S} .up8 { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px; border-radius: 8px; font-weight: 500; color: var(--text-muted); transition: color 150ms var(--ease); }
 ${S} .up8:hover { color: var(--text-primary); }
@@ -214,7 +214,7 @@ ${S} .pill--quiet { background: none; box-shadow: inset 0 0 0 1px var(--border);
  * Boards, the way Pinterest shows them (Garreth, 2026-09-16): a mosaic of the
  * library's own images — one large, two stacked beside it — with the name and
  * the count plain underneath. No card around any of it; the pictures are the
- * card. Nothing else is on them: how many folders, how many are unread and
+ * card. Nothing else is on them: how many sets, how many are unread and
  * which types point at the library all came off.
  *
  * The card is an <article> with one stretched button over it, the way D1's
@@ -245,8 +245,8 @@ ${S} .lnew span { display: inline-flex; align-items: center; gap: 6px; border-ra
   font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-primary); transition: transform 150ms var(--ease); }
 ${S} .lnew:active span { transform: scale(0.97); }
 
-/* ── Folders ── */
-/* A folder is a folder: a few of its images stacked on its face, its name and
+/* ── Sets ── */
+/* A set is a set: a few of its images stacked on its face, its name and
    its count under them, and it opens when you click it (Garreth, 2026-09-16). */
 ${S} .fgrid { display: grid; grid-template-columns: repeat(${P ? 2 : 5}, minmax(0, 1fr)); gap: ${P ? 10 : 14}px; }
 ${S} .fcard { display: flex; flex-direction: column; gap: 8px; border-radius: 18px; border: 1px solid var(--border); background: var(--card); box-shadow: var(--sh-card); padding: 10px 10px 12px;
@@ -260,7 +260,7 @@ ${S} .fname { display: flex; align-items: baseline; justify-content: space-betwe
 ${S} .fname b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 18px; font-weight: 600; }
 ${S} .fname .fc { flex-shrink: 0; font-size: 12px; line-height: 16px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 ${S} .fsubs { padding: 0 2px; font-size: 11px; line-height: 16px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* New folder, drawn as an opening rather than a thing that already holds images. */
+/* New set, drawn as an opening rather than a thing that already holds images. */
 ${S} .fnew { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: ${P ? 140 : 160}px; border-radius: 18px; border: 1px dashed var(--border); background: none;
   font-size: 13px; line-height: 18px; font-weight: 500; color: var(--text-muted); transition: border-color 150ms var(--ease), color 150ms var(--ease); }
 ${S} .fnew:hover { border-color: color-mix(in srgb, var(--text-muted) 50%, var(--border)); color: var(--text-primary); }
@@ -284,7 +284,7 @@ ${S} .is-light .icover { border: 1px solid var(--border); }
 ${S} .iraw { position: absolute; right: 6px; bottom: 6px; width: 6px; height: 6px; border-radius: 999px; background: var(--warn); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35); }
 ${S} .is-light .iraw { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7); }
 
-/* Nothing here: a new library, or a folder with nothing in it. It fills the
+/* Nothing here: a new library, or a set with nothing in it. It fills the
    rest of the page rather than leaving dead space under it (Garreth,
    2026-09-16), so the page ends where the window does. */
 ${S} .main:has(> .page.is-fill) { display: flex; flex-direction: column; }
@@ -463,11 +463,11 @@ function grid() {
           </div>`;
 }
 
-/* The folders at this level, then a way to make another. */
-const folderGrid = `
-            <sc-if value="{{showFolders}}" hint-placeholder-val="{{ false }}">
+/* The sets at this level, then a way to make another. */
+const setGrid = `
+            <sc-if value="{{showSets}}" hint-placeholder-val="{{ false }}">
               <div class="fgrid">
-                <sc-for list="{{folders}}" as="f" hint-placeholder-count="5">
+                <sc-for list="{{sets}}" as="f" hint-placeholder-count="5">
                   <button type="button" class="fcard" onClick="{{f.open}}">
                     <span class="fpeek" aria-hidden="true">
                       <sc-for list="{{f.peek}}" as="p" hint-placeholder-count="4"><span class="{{p.cls}}"></span></sc-for>
@@ -476,7 +476,7 @@ const folderGrid = `
                     <span class="fsubs">{{f.subText}}</span>
                   </button>
                 </sc-for>
-                <button type="button" class="fnew" onClick="{{openNewFolder}}">${D8I.folderLg}New folder</button>
+                <button type="button" class="fnew" onClick="{{openNewSet}}">${D8I.setLg}New set</button>
               </div>
             </sc-if>`;
 
@@ -547,19 +547,19 @@ const taggingRow = `
               </div>
             </sc-if>`;
 
-/* One library, or one folder inside it — the same page at a different depth. */
+/* One library, or one set inside it — the same page at a different depth. */
 function library(phone) {
   return `
           <div class="l8head">
             <div class="crumbs">
               <button type="button" class="up8" onClick="{{backToGrid}}">${I.backSm}Image libraries</button>
-              <sc-if value="{{inFolder}}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{inSet}}" hint-placeholder-val="{{ false }}">
                 <span class="sep">${D8I.slash}</span>
                 <button type="button" class="up8" onClick="{{backToLibrary}}">{{libShort}}</button>
               </sc-if>
               <sc-if value="{{inSub}}" hint-placeholder-val="{{ false }}">
                 <span class="sep">${D8I.slash}</span>
-                <button type="button" class="up8" onClick="{{backToFolder}}">{{folderName}}</button>
+                <button type="button" class="up8" onClick="{{backToSet}}">{{setName}}</button>
               </sc-if>
             </div>
             <div class="l8title">
@@ -579,7 +579,7 @@ function library(phone) {
 
           ${reviewRow}
           ${taggingRow}
-          ${folderGrid}
+          ${setGrid}
           ${imageRun}
 
           <sc-if value="{{showEmpty}}" hint-placeholder-val="{{ false }}">
@@ -587,7 +587,7 @@ function library(phone) {
               <span class="ic">${D8I.imagesLg}</span>
               <p>{{emptyText}}</p>
               <div class="acts">
-                <sc-if value="{{emptyCanFolder}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2" onClick="{{openNewFolder}}">${D8I.plusSm}New folder</button></sc-if>
+                <sc-if value="{{emptyCanSet}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2" onClick="{{openNewSet}}">${D8I.plusSm}New set</button></sc-if>
                 <button type="button" class="btn2" onClick="{{upload}}">${D8I.upload}Upload</button>
                 <button type="button" class="cta" onClick="{{openGenerate}}">Generate images</button>
               </div>
@@ -606,7 +606,7 @@ function page(phone, init) {
 }
 
 /* Generate images: a prompt, and when you want one a base image. It never
-   picks a folder — what it makes lands in the library (Garreth, 2026-09-16). */
+   picks a set — what it makes lands in the library (Garreth, 2026-09-16). */
 function generateDialog() {
   return `
     <div class="dlg8" role="dialog" aria-modal="true" aria-labelledby="d8-gen-title" onKeyDown="{{dialogKey}}">
@@ -704,7 +704,7 @@ function imageDialog() {
         </div>
       </div>
       <div class="dfoot">
-        <span class="status8"><button type="button" class="tbtn8" onClick="{{moveFolder}}">{{moveLabel}}${I.caretRightSm}</button></span>
+        <span class="status8"><button type="button" class="tbtn8" onClick="{{moveSet}}">{{moveLabel}}${I.caretRightSm}</button></span>
         <button type="button" class="hold8 {{holdCls}}"><i aria-hidden="true"></i><span>Retire image</span></button>
       </div>
     </div>`;
@@ -726,11 +726,11 @@ function tagDialog() {
           </div>
         </div>
         <div class="frow8">
-          <span class="flabel8">Folders</span>
+          <span class="flabel8">Sets</span>
           <div class="fctl8">
             <div class="sw">
-              <button type="button" class="swt" role="switch" aria-checked="{{sortOn}}" aria-label="Sort them into folders too" onClick="{{toggleSort}}"><span class="swk"></span></button>
-              <span>Sort them into folders too</span>
+              <button type="button" class="swt" role="switch" aria-checked="{{sortOn}}" aria-label="Sort them into sets too" onClick="{{toggleSort}}"><span class="swk"></span></button>
+              <span>Sort them into sets too</span>
             </div>
           </div>
         </div>
@@ -742,19 +742,19 @@ function tagDialog() {
     </div>`;
 }
 
-/* Naming a new folder. Nothing else is asked. */
-function newFolderDialog() {
+/* Naming a new set. Nothing else is asked. */
+function newSetDialog() {
   return `
     <div class="dlg8 dlg8--narrow" role="dialog" aria-modal="true" aria-labelledby="d8-fold-title" onKeyDown="{{dialogKey}}">
-      <div class="dh8"><h2 id="d8-fold-title">{{newFolderTitle}}</h2><button type="button" class="icon-btn" aria-label="Close" onClick="{{closeDialog}}">${D8I.x}</button></div>
+      <div class="dh8"><h2 id="d8-fold-title">{{newSetTitle}}</h2><button type="button" class="icon-btn" aria-label="Close" onClick="{{closeDialog}}">${D8I.x}</button></div>
       <div class="dbody">
         <div class="frow8">
-          <div class="fctl8"><div class="field8"><input id="d8-foldname" type="text" maxlength="40" placeholder="Covers, celebrities" value="{{newFolderName}}" onChange="{{typeFolderName}}" /></div></div>
+          <div class="fctl8"><div class="field8"><input id="d8-foldname" type="text" maxlength="40" placeholder="Covers, celebrities" value="{{newSetName}}" onChange="{{typeSetName}}" /></div></div>
         </div>
       </div>
       <div class="dfoot">
-        <span class="status8" role="status" aria-live="polite">{{newFolderStatus}}</span>
-        <button type="button" class="cta" onClick="{{createFolder}}">Create</button>
+        <span class="status8" role="status" aria-live="polite">{{newSetStatus}}</span>
+        <button type="button" class="cta" onClick="{{createSet}}">Create</button>
       </div>
     </div>`;
 }
@@ -765,7 +765,7 @@ function appOverlay() {
   <sc-if value="{{genOpen}}" hint-placeholder-val="{{ false }}">${generateDialog()}</sc-if>
   <sc-if value="{{imgOpen}}" hint-placeholder-val="{{ false }}">${imageDialog()}</sc-if>
   <sc-if value="{{tagOpen}}" hint-placeholder-val="{{ false }}">${tagDialog()}</sc-if>
-  <sc-if value="{{foldOpen}}" hint-placeholder-val="{{ false }}">${newFolderDialog()}</sc-if>`;
+  <sc-if value="{{foldOpen}}" hint-placeholder-val="{{ false }}">${newSetDialog()}</sc-if>`;
 }
 
 function colOverlay(phone) {
@@ -798,14 +798,14 @@ function vals(init) {
 
     var fmt = function (n) { return n.toLocaleString("en-US"); };
     var images = function (n) { return n === 1 ? "1 image" : fmt(n) + " images"; };
-    var inFolders = function (l) { return l.folders.reduce(function (sum, f) { return sum + f.count; }, 0); };
-    var total = function (l) { return inFolders(l) + l.loose; };
+    var inSets = function (l) { return l.sets.reduce(function (sum, f) { return sum + f.count; }, 0); };
+    var total = function (l) { return inSets(l) + l.loose; };
     var list = function (names) { return names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]; };
 
     var lib = LIBS.filter(function (l) { return l.id === s.libId; })[0] || LIBS[0];
     var libTotal = total(lib);
-    var folder = s.folder ? lib.folders.filter(function (f) { return f.name === s.folder; })[0] : null;
-    var subs = folder ? folder.subs || [] : [];
+    var set = s.set ? lib.sets.filter(function (f) { return f.name === s.set; })[0] : null;
+    var subs = set ? set.subs || [] : [];
     var sub = s.sub ? subs.filter(function (x) { return x[0] === s.sub; })[0] : null;
     var coverPhoto = ROW.All[0];
 
@@ -814,33 +814,33 @@ function vals(init) {
     };
 
     /* Where we are, and what sits here. */
-    var hereName, hereCount, hereFolders, hereImages, herePool, hereTitled, hereTitle, hereHeadCls;
+    var hereName, hereCount, hereSets, hereImages, herePool, hereTitled, hereTitle, hereHeadCls;
     if (sub) {
-      hereName = sub[0]; hereCount = images(sub[1]); hereFolders = [];
-      hereImages = sub[1]; herePool = folder.name; hereTitled = false; hereTitle = ""; hereHeadCls = "";
-    } else if (folder) {
-      hereName = folder.name;
-      hereCount = images(folder.count);
-      hereFolders = subs.map(function (x) { return { name: x[0], count: x[1], subs: [] }; });
-      /* A folder that holds folders also holds whatever was not filed into them. */
+      hereName = sub[0]; hereCount = images(sub[1]); hereSets = [];
+      hereImages = sub[1]; herePool = set.name; hereTitled = false; hereTitle = ""; hereHeadCls = "";
+    } else if (set) {
+      hereName = set.name;
+      hereCount = images(set.count);
+      hereSets = subs.map(function (x) { return { name: x[0], count: x[1], subs: [] }; });
+      /* A set that holds sets also holds whatever was not filed into them. */
       var inSubs = subs.reduce(function (sum, x) { return sum + x[1]; }, 0);
-      hereImages = folder.count - inSubs;
-      herePool = folder.name;
+      hereImages = set.count - inSubs;
+      herePool = set.name;
       hereTitled = subs.length > 0;
-      hereTitle = "Not in a folder";
+      hereTitle = "Not in a set";
       hereHeadCls = "is-loose";
     } else {
       hereName = lib.name;
       hereCount = libTotal === 0 ? "Nothing in it yet" : images(libTotal);
-      hereFolders = lib.folders;
+      hereSets = lib.sets;
       hereImages = lib.loose;
       herePool = "All";
-      hereTitled = lib.folders.length > 0;
-      hereTitle = "Not in a folder";
+      hereTitled = lib.sets.length > 0;
+      hereTitle = "Not in a set";
       hereHeadCls = "is-loose";
     }
 
-    var folders = hereFolders.map(function (f) {
+    var sets = hereSets.map(function (f) {
       var pool = ROW[f.name] || ROW.All;
       var peek = [];
       for (var i = 0; i < 4; i++) peek.push({ cls: "ph-" + pool[i % pool.length] });
@@ -848,10 +848,10 @@ function vals(init) {
       return {
         name: f.name,
         count: fmt(f.count),
-        subText: subNames.length ? subNames.length + " folders · " + list(subNames) : "",
+        subText: subNames.length ? subNames.length + " sets · " + list(subNames) : "",
         peek: f.count > 0 ? peek : [],
         open: (function (n) {
-          return function () { self.setState(folder ? { sub: n } : { folder: n, sub: null }); };
+          return function () { self.setState(set ? { sub: n } : { set: n, sub: null }); };
         })(f.name)
       };
     });
@@ -866,7 +866,7 @@ function vals(init) {
       tiles.push({
         cls: "ph-" + photo,
         label: hereName + " image " + (i + 1),
-        isCover: !folder && i === 0 && photo === coverPhoto,
+        isCover: !set && i === 0 && photo === coverPhoto,
         raw: raw,
         open: (function (p, r) { return function () { openImage(p, hereName, r); }; })(photo, raw)
       });
@@ -918,12 +918,12 @@ function vals(init) {
         name: l.name,
         count: t === 0 ? "Nothing in it yet" : images(t),
         peek: peek,
-        open: (function (id) { return function () { self.setState({ view: "library", libId: id, folder: null, sub: null }); }; })(l.id)
+        open: (function (id) { return function () { self.setState({ view: "library", libId: id, set: null, sub: null }); }; })(l.id)
       };
     });
 
     var closeDialog = function () { self.setState({ dialog: null }); };
-    var nothingHere = hereImages === 0 && folders.length === 0;
+    var nothingHere = hereImages === 0 && sets.length === 0;
 
     return {
       isGrid: s.view === "grid",
@@ -936,12 +936,12 @@ function vals(init) {
       hereName: hereName,
       hereCount: hereCount,
       libShort: lib.name,
-      folderName: folder ? folder.name : "",
-      inFolder: !!folder,
+      setName: set ? set.name : "",
+      inSet: !!set,
       inSub: !!sub,
-      backToGrid: function () { self.setState({ view: "grid", folder: null, sub: null, dialog: null }); },
-      backToLibrary: function () { self.setState({ folder: null, sub: null }); },
-      backToFolder: function () { self.setState({ sub: null }); },
+      backToGrid: function () { self.setState({ view: "grid", set: null, sub: null, dialog: null }); },
+      backToLibrary: function () { self.setState({ set: null, sub: null }); },
+      backToSet: function () { self.setState({ sub: null }); },
 
       /* The header's actions */
       showTagBtn: libTotal > 0,
@@ -951,11 +951,11 @@ function vals(init) {
       openGenerate: function () { self.setState({ dialog: "generate" }); },
       openTag: function () { self.setState({ dialog: "tag" }); },
 
-      /* Folders, then images. With nothing here at all the empty state carries
-         the actions instead, so the lone New folder card does not sit above it. */
-      showFolders: folders.length > 0 || hereImages > 0,
-      folders: folders,
-      openNewFolder: function () { self.setState({ dialog: "newfolder" }); },
+      /* Sets, then images. With nothing here at all the empty state carries
+         the actions instead, so the lone New set card does not sit above it. */
+      showSets: sets.length > 0 || hereImages > 0,
+      sets: sets,
+      openNewSet: function () { self.setState({ dialog: "newset" }); },
       showImages: hereImages > 0,
       tiles: tiles,
       imagesTitled: hereTitled && hereImages > 0,
@@ -964,8 +964,8 @@ function vals(init) {
       imagesCount: images(hereImages),
 
       showEmpty: nothingHere,
-      emptyText: folder ? "Nothing in " + hereName + " yet" : "Nothing in " + lib.name + " yet",
-      emptyCanFolder: true,
+      emptyText: set ? "Nothing in " + hereName + " yet" : "Nothing in " + lib.name + " yet",
+      emptyCanSet: true,
       /* The empty state is the whole page, so it stretches to the bottom. */
       pageCls: s.view === "library" && nothingHere && !runState && !s.tagging ? "is-fill" : "",
 
@@ -992,7 +992,7 @@ function vals(init) {
       genOpen: s.dialog === "generate",
       imgOpen: s.dialog === "image",
       tagOpen: s.dialog === "tag",
-      foldOpen: s.dialog === "newfolder",
+      foldOpen: s.dialog === "newset",
       closeDialog: closeDialog,
       dialogKey: function (e) { if (e.key === "Escape") { e.stopPropagation(); closeDialog(); } },
 
@@ -1006,12 +1006,12 @@ function vals(init) {
       tagStatus: s.tagWhich === "all" ? images(libTotal) : fmt(untagged) + " not read yet",
       startTagging: function () { self.setState({ dialog: null, tagging: true }); },
 
-      /* New folder */
-      newFolderTitle: folder ? "New folder in " + folder.name : "New folder",
-      newFolderName: s.newFolderName,
-      typeFolderName: function (e) { self.setState({ newFolderName: e.target.value }); },
-      newFolderStatus: folders.length ? folders.length + " folders here" : "The first folder here",
-      createFolder: function () { closeDialog(); self.note("Makes the folder, empty, ready for images"); },
+      /* New set */
+      newSetTitle: set ? "New set in " + set.name : "New set",
+      newSetName: s.newSetName,
+      typeSetName: function (e) { self.setState({ newSetName: e.target.value }); },
+      newSetStatus: sets.length ? sets.length + " sets here" : "The first set here",
+      createSet: function () { closeDialog(); self.note("Makes the set, empty, ready for images"); },
 
       /* Generate images */
       promptVal: s.prompt,
@@ -1035,11 +1035,11 @@ function vals(init) {
       /* One image, and what was read off it */
       imgTitle: (s.imgWhere || lib.name) + " image",
       imgCls: "ph-" + (s.imgPhoto || "mug"),
-      imgWhere: s.imgWhere && s.imgWhere !== lib.name ? s.imgWhere : "Not in a folder",
+      imgWhere: s.imgWhere && s.imgWhere !== lib.name ? s.imgWhere : "Not in a set",
       imgSize: "1024 × 1280",
       imgAdded: "Added Sep 12",
-      imgIsCover: s.imgPhoto === coverPhoto && !folder,
-      canMakeCover: !(s.imgPhoto === coverPhoto && !folder),
+      imgIsCover: s.imgPhoto === coverPhoto && !set,
+      canMakeCover: !(s.imgPhoto === coverPhoto && !set),
       hasDetails: !s.imgRaw,
       noDetails: !!s.imgRaw,
       description: DESCRIPTION,
@@ -1053,8 +1053,8 @@ function vals(init) {
       blackWhite: function () { self.note("Makes a black and white copy"); },
       aiEdit: function () { self.note("Describes a change; the edit waits for Keep"); },
       makeCover: function () { self.note("This image becomes the library's cover"); },
-      moveLabel: s.imgWhere && s.imgWhere !== lib.name ? "Move to another folder" : "Put it in a folder",
-      moveFolder: function () { self.note("Moves this image into a folder"); },
+      moveLabel: s.imgWhere && s.imgWhere !== lib.name ? "Move to another set" : "Put it in a set",
+      moveSet: function () { self.note("Moves this image into a set"); },
       holdCls: s.armed ? "is-armed" : "",
 
       showBar: PHONE && s.view === "library"
@@ -1063,13 +1063,13 @@ function vals(init) {
 
 /**
  * D8 as a screen. `init` says which view it opens on, which library, how deep
- * into its folders, and whether a dialog or a run is showing.
+ * into its sets, and whether a dialog or a run is showing.
  */
 export function librariesScreen({ init = {} } = {}) {
   const full = {
     view: "grid",
     libId: "window",
-    folder: null,
+    set: null,
     sub: null,
     dialog: null,
     run: null,
@@ -1093,7 +1093,7 @@ export function librariesScreen({ init = {} } = {}) {
     state: {
       view: full.view,
       libId: full.libId,
-      folder: full.folder,
+      set: full.set,
       sub: full.sub,
       dialog: full.dialog,
       run: full.run,
@@ -1103,7 +1103,7 @@ export function librariesScreen({ init = {} } = {}) {
       imgPhoto: full.imgPhoto || "mug",
       imgWhere: full.imgWhere || null,
       imgRaw: !!full.imgRaw,
-      newFolderName: "",
+      newSetName: "",
       prompt: "",
       bases: full.bases || [],
       many: 6,
@@ -1111,7 +1111,7 @@ export function librariesScreen({ init = {} } = {}) {
       tagWhich: "unread",
       sortToo: full.sortToo === undefined ? true : full.sortToo,
     },
-    enter: { view: "grid", folder: null, sub: null, dialog: null, run: null, tagging: false, armed: false },
+    enter: { view: "grid", set: null, sub: null, dialog: null, run: null, tagging: false, armed: false },
     vals: vals(full),
   };
 }
@@ -1126,22 +1126,22 @@ function build(OUT) {
     { file: "Main.dc.html", title: "D8 · Image libraries · Desktop", init: { view: "grid" }, x: 0, y: 0 },
     {
       file: "Library.dc.html",
-      title: "D8 · A library with no folders, the default · Desktop",
+      title: "D8 · A library with no sets, the default · Desktop",
       init: { view: "library", libId: "window", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 60 },
       x: 1540,
       y: 0,
     },
     {
-      file: "Folders.dc.html",
-      title: "D8 · A library whose images are in folders · Desktop",
+      file: "Sets.dc.html",
+      title: "D8 · A library whose images are in sets · Desktop",
       init: { view: "library", libId: "mirror", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 60 },
       x: 3080,
       y: 0,
     },
     {
-      file: "InFolder.dc.html",
-      title: "D8 · Inside a folder that holds folders · Desktop",
-      init: { view: "library", libId: "mirror", folder: "Cover", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 60 },
+      file: "InSet.dc.html",
+      title: "D8 · Inside a set that holds sets · Desktop",
+      init: { view: "library", libId: "mirror", set: "Cover", tall: HEAD_H + FOLDER_H + 3 * ROW_H + 60 },
       x: 0,
       y: 1300,
     },
@@ -1176,7 +1176,7 @@ function build(OUT) {
     {
       file: "Image.dc.html",
       title: "D8 · One image and what was read off it · Desktop",
-      init: { view: "library", libId: "mirror", folder: "Before", dialog: "image", imgPhoto: "vanity", imgWhere: "Before", tagged: true, armed: true, tall: 940 },
+      init: { view: "library", libId: "mirror", set: "Before", dialog: "image", imgPhoto: "vanity", imgWhere: "Before", tagged: true, armed: true, tall: 940 },
       x: 3080,
       y: 2600,
     },
@@ -1202,9 +1202,9 @@ function build(OUT) {
       y: 3900,
     },
     {
-      file: "NewFolder.dc.html",
-      title: "D8 · Naming a new folder · Desktop",
-      init: { view: "library", libId: "mirror", dialog: "newfolder", tall: 900 },
+      file: "NewSet.dc.html",
+      title: "D8 · Naming a new set · Desktop",
+      init: { view: "library", libId: "mirror", dialog: "newset", tall: 900 },
       x: 0,
       y: 5200,
     },
@@ -1223,16 +1223,16 @@ function build(OUT) {
       y: 5200,
     },
     {
-      file: "EmptyFolder.dc.html",
-      title: "D8 · A folder with nothing in it · Desktop",
-      init: { view: "library", libId: "kitchen", folder: "After", tall: 900 },
+      file: "EmptySet.dc.html",
+      title: "D8 · A set with nothing in it · Desktop",
+      init: { view: "library", libId: "kitchen", set: "After", tall: 900 },
       x: 0,
       y: 6300,
     },
     { file: "Phone.dc.html", title: "D8 · Image libraries · Phone", phone: true, init: { view: "grid", phone: true }, x: 4620, y: 0 },
     {
       file: "PhoneLibrary.dc.html",
-      title: "D8 · One library and its folders · Phone",
+      title: "D8 · One library and its sets · Phone",
       phone: true,
       init: { view: "library", libId: "mirror", phone: true, tall: 1500 },
       x: 5090,
@@ -1250,7 +1250,7 @@ function build(OUT) {
       file: "PhoneImage.dc.html",
       title: "D8 · One image and what was read off it · Phone",
       phone: true,
-      init: { view: "library", libId: "mirror", folder: "Before", dialog: "image", imgPhoto: "vanity", imgWhere: "Before", tagged: true, phone: true },
+      init: { view: "library", libId: "mirror", set: "Before", dialog: "image", imgPhoto: "vanity", imgWhere: "Before", tagged: true, phone: true },
       x: 6030,
       y: 0,
     },
@@ -1282,7 +1282,7 @@ function build(OUT) {
   }
 
   const tryNote =
-    "Clickable. Open a library, then open a folder — Cover holds folders of its own, so the breadcrumb goes three deep.\n\nClick any image to see what AI vision read off it. The headings are the live carousel_images columns.\n\nA small amber dot means nothing has been read off that image yet. Generated images always arrive that way.";
+    "Clickable. Open a library, then open a set — Cover holds sets of its own, so the breadcrumb goes three deep.\n\nClick any image to see what AI vision read off it. The headings are the live carousel_images columns.\n\nA small amber dot means nothing has been read off that image yet. Generated images always arrive that way.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

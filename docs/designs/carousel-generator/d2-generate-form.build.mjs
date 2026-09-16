@@ -8,8 +8,8 @@
  * approved by Garreth 2026-09-14; light designed the same day. All content is
  * made-up sample data; the library covers are placeholder photos from the
  * Supabase image store (Garreth, 2026-09-14). When the library has no images
- * in a group the template needs, Generate with AI opens that library's own
- * Generate images form for those groups (D8) and comes back (Garreth,
+ * in a set the template needs, Generate with AI opens that library's own
+ * Generate images form for those sets (D8) and comes back (Garreth,
  * 2026-09-15).
  *
  * Run directly, it writes D2's review artboards and canvas.json, each screen
@@ -18,7 +18,7 @@
  *   Phone.dc.html         phone 390×844, Generate in a bottom bar
  *   PhonePicker.dc.html   phone, the library picker open
  *   Picker.dc.html        desktop, the library picker open
- *   EmptyGroups.dc.html   desktop, the library has no images in two groups
+ *   EmptySets.dc.html     desktop, the library has no images in two sets
  *   NoLibrary.dc.html     desktop, the type points at no library
  * Imported, `generateScreen()` is the screen prototype.build.mjs opens from D1.
  *
@@ -90,12 +90,12 @@ function css(phone) {
 .libname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 500; }
 .libname.muted { color: var(--text-muted); }
 .libmeta { font-size: 12px; line-height: 16px; color: var(--text-muted); }
-/* Positioned, so the desktop picker hangs 8px under Change itself (dropdown.tsx's mt-2), not under the group pills. */
+/* Positioned, so the desktop picker hangs 8px under Change itself (dropdown.tsx's mt-2), not under the set pills. */
 .libact { position: relative; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .tbtn { position: relative; border-radius: 8px; padding: 2px 4px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-muted); transition: color 150ms var(--ease); }
 .tbtn:hover { color: var(--text-primary); }
-.groups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-/* The empty groups' way out without leaving the form (Garreth, 2026-09-15). Nothing joins the library until Keep. */
+.sets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* The empty sets' way out without leaving the form (Garreth, 2026-09-15). Nothing joins the library until Keep. */
 .libai { margin-top: 12px; }
 
 /* Direction — read-only: sunken, no field border, so it never reads as editable. */
@@ -258,8 +258,8 @@ function page(phone) {
                   </span>
                 </div>
                 <sc-if value="{{hasLib}}" hint-placeholder-val="{{ true }}">
-                  <div class="groups">
-                    <sc-for list="{{lib.groups}}" as="g" hint-placeholder-count="4"><span class="pill tnum {{g.cls}}">{{g.name}} <b>{{g.count}}</b></span></sc-for>
+                  <div class="sets">
+                    <sc-for list="{{lib.sets}}" as="g" hint-placeholder-count="4"><span class="pill tnum {{g.cls}}">{{g.name}} <b>{{g.count}}</b></span></sc-for>
                   </div>
                   <sc-if value="{{showAiGen}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2 libai" onClick="{{aiGen}}">${D2I.spark}Generate with AI</button></sc-if>
                 </sc-if>
@@ -339,7 +339,7 @@ function vals(init) {
     var P = s.params || {};
     var NAME = P.name || "Before & After";
 
-    /* Sample content only — invented libraries, groups and counts. */
+    /* Sample content only — invented libraries, sets and counts. */
     var GROUPS = ["Cover", "Before", "After", "Portrait"];
     var LIBS = [
       { id: "window", name: "Soft Window Light", hue: "#c8a27a", g: [18, 41, 44, 23] },
@@ -387,8 +387,8 @@ function vals(init) {
         tint: tint(cur.hue),
         imgCls: cur.hue ? "has-img img-" + cur.id : "",
         meta: images(sum(cur.g)),
-        groups: GROUPS.map(function (name, i) { return { name: name, count: fmt(cur.g[i]), cls: cur.g[i] === 0 ? "pill--danger" : "" }; })
-      } : { name: "", tint: "", imgCls: "", meta: "", groups: [] },
+        sets: GROUPS.map(function (name, i) { return { name: name, count: fmt(cur.g[i]), cls: cur.g[i] === 0 ? "pill--danger" : "" }; })
+      } : { name: "", tint: "", imgCls: "", meta: "", sets: [] },
       changeLabel: cur ? "Change" : "Choose",
       showUndo: !!OWN && s.libId !== OWN,
       undoLib: function () { self.setState({ libId: OWN, libOpen: false }); },
@@ -483,7 +483,7 @@ function build(OUT) {
     { file: "Phone.dc.html", phone: true, init: { libId: "window", libOpen: false }, title: "D2 · Generate form · Phone", x: 1540, y: 0 },
     { file: "PhonePicker.dc.html", phone: true, init: { libId: "window", libOpen: true }, title: "D2 · Library picker · Phone", x: 2010, y: 0 },
     { file: "Picker.dc.html", phone: false, init: { libId: "window", libOpen: true }, title: "D2 · Library picker · Desktop", x: 0, y: 1040 },
-    { file: "EmptyGroups.dc.html", phone: false, init: { libId: "kitchen", libOpen: false }, title: "D2 · Library with empty groups · Desktop", x: 1540, y: 1040 },
+    { file: "EmptySets.dc.html", phone: false, init: { libId: "kitchen", libOpen: false }, title: "D2 · Library with empty sets · Desktop", x: 1540, y: 1040 },
     { file: "NoLibrary.dc.html", phone: false, init: { libId: null, libOpen: false }, title: "D2 · No library chosen · Desktop", x: 0, y: 2080 },
   ];
   const artboards = [];
