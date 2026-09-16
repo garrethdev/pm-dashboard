@@ -405,7 +405,8 @@ function vals(init) {
           pick: function () { self.setState({ libId: l.id, libOpen: false, returnFocus: true }); }
         };
       }),
-      openLibraries: function () { closeAll(false); self.note("Opens Image libraries · D8"); },
+      /* D8 is approved, so this opens it for real in the prototype (2026-09-16). */
+      openLibraries: function () { closeAll(false); ctx.open("libraries", null, "Opens Image libraries · D8"); },
       showAiGen: !!cur && empty.length > 0,
       aiGen: function () { closeAll(false); self.note("Opens " + (cur ? cur.name : "the library") + "'s Generate images form for " + list(empty) + ", then back here · D8"); },
       popKey: function (e) { if (e.key === "Escape") { e.stopPropagation(); closeAll(true); } },
