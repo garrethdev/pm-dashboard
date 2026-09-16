@@ -210,24 +210,40 @@ ${S} .pill--accent { color: var(--accent); }
 ${S} .pill--quiet { background: none; box-shadow: inset 0 0 0 1px var(--border); }
 
 /* ── The grid of libraries ── */
-${S} .lg { display: grid; grid-template-columns: repeat(${P ? 1 : 3}, minmax(0, 1fr)); gap: ${P ? 12 : 16}px; }
-/* The card is an <article> with one stretched button over it, the way D1's
-   type cards are built: a <button> cannot legally hold the <h2>, and wrapping
-   one round the whole card is what stopped these rendering at all. */
-${S} .lcard { position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 24px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--sh-card);
-  text-align: left; transition: border-color 150ms var(--ease), transform 160ms var(--ease-out-strong); }
-${S} .lcard:hover { border-color: color-mix(in srgb, var(--text-muted) 40%, var(--border)); }
-${S} .lcard:has(.lopen:active) { transform: scale(0.995); }
-${S} .lopen { position: absolute; inset: 0; z-index: 1; border-radius: 24px; }
-/* Four of the library's own images across the top of its card. */
-${S} .lcover { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; height: ${P ? 132 : 148}px; background: var(--card-sunken); }
-${S} .lcover span { background-size: cover; background-position: center; background-color: var(--card-raised); }
-${S} .lcover--none { display: flex; align-items: center; justify-content: center; border-bottom: 1px dashed var(--border); background: var(--card-sunken); color: var(--text-muted); }
-${S} .lbody { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 14px ${P ? 16 : 18}px 16px; }
-${S} .lcard h2 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-${S} .lcount { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 12px; line-height: 16px; color: var(--text-muted); }
-${S} .lused { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; line-height: 18px; color: var(--text-muted); }
-${S} .lused b { font-weight: 500; color: var(--text-primary); }
+/*
+ * Boards, the way Pinterest shows them (Garreth, 2026-09-16): a mosaic of the
+ * library's own images — one large, two stacked beside it — with the name and
+ * the count plain underneath. No card around any of it; the pictures are the
+ * card. Nothing else is on them: how many folders, how many are unread and
+ * which types point at the library all came off.
+ *
+ * The card is an <article> with one stretched button over it, the way D1's
+ * type cards are built — a <button> cannot legally hold the <h2>.
+ */
+${S} .lg { display: grid; grid-template-columns: repeat(${P ? 2 : 4}, minmax(0, 1fr)); gap: ${P ? 18 : 26}px ${P ? 12 : 16}px; }
+${S} .lcard { position: relative; display: flex; flex-direction: column; gap: 10px; text-align: left; transition: transform 160ms var(--ease-out-strong); }
+${S} .lcard:has(.lopen:active) { transform: scale(0.99); }
+${S} .lopen { position: absolute; inset: 0; z-index: 1; border-radius: 18px; }
+/* The mosaic: large left, two stacked right, hairline gaps, one rounded frame. */
+${S} .lmos { position: relative; display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; aspect-ratio: 3 / 2; overflow: hidden; border-radius: 18px; background: var(--card-sunken); }
+${S} .lmos i { display: block; background-size: cover; background-position: center; background-color: var(--card-raised); }
+${S} .lmos i:first-child { grid-row: 1 / 3; }
+/* A slot with no picture in it stays a panel, so a thin library reads as thin. */
+${S} .lmos i.is-blank { background-color: var(--card-sunken); box-shadow: inset 0 0 0 1px var(--border); }
+${S} .lmos::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.16); opacity: 0; transition: opacity 150ms var(--ease); pointer-events: none; }
+${S} .is-light .lmos::after { background: rgba(255, 255, 255, 0.28); }
+${S} .lcard:has(.lopen:hover) .lmos::after { opacity: 1; }
+${S} .lmeta { display: flex; flex-direction: column; gap: 1px; padding: 0 2px; }
+/* The name at D1's card-name size, so the two grids read as the same family. */
+${S} .lcard h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+${S} .lcount { font-size: 13px; line-height: 20px; color: var(--text-muted); }
+/* New library sits in the grid as its own tile, the way Pinterest's Create does. */
+${S} .lnew { display: flex; align-items: center; justify-content: center; aspect-ratio: 3 / 2; border-radius: 18px; background: var(--card-sunken); box-shadow: inset 0 0 0 1px var(--border);
+  transition: background-color 150ms var(--ease); }
+${S} .lnew:hover { background: var(--card-raised); }
+${S} .lnew span { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; background: var(--card); box-shadow: inset 0 0 0 1px var(--border), var(--sb-shadow); padding: 10px 20px;
+  font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-primary); transition: transform 150ms var(--ease); }
+${S} .lnew:active span { transform: scale(0.97); }
 
 /* ── Folders ── */
 /* A folder is a folder: a few of its images stacked on its face, its name and
@@ -428,31 +444,22 @@ function grid() {
           <div class="l8head">
             <div class="l8title">
               <div class="l8name"><h1>Image libraries</h1><span class="l8sub tnum">{{gCount}}</span></div>
-              <div class="l8act">
-                <button type="button" class="btn2" onClick="{{newLibrary}}">${D8I.plusSm}New library</button>
-              </div>
             </div>
           </div>
           <div class="lg">
             <sc-for list="{{cards}}" as="c" hint-placeholder-count="5">
               <article class="lcard">
                 <button type="button" class="lopen" aria-label="{{c.name}}" onClick="{{c.open}}"></button>
-                <sc-if value="{{c.hasCover}}" hint-placeholder-val="{{ true }}">
-                  <div class="lcover" aria-hidden="true">
-                    <sc-for list="{{c.peek}}" as="p" hint-placeholder-count="4"><span class="{{p.cls}}"></span></sc-for>
-                  </div>
-                </sc-if>
-                <sc-if value="{{c.noCover}}" hint-placeholder-val="{{ false }}"><div class="lcover lcover--none" aria-hidden="true">${D8I.imagesLg}</div></sc-if>
-                <div class="lbody">
+                <div class="lmos" aria-hidden="true">
+                  <sc-for list="{{c.peek}}" as="p" hint-placeholder-count="3"><i class="{{p.cls}}"></i></sc-for>
+                </div>
+                <div class="lmeta">
                   <h2 title="{{c.name}}">{{c.name}}</h2>
-                  <div class="lcount tnum"><span>{{c.count}}</span><span>{{c.folderText}}</span><span>{{c.untagged}}</span></div>
-                  <div class="lused">
-                    <sc-if value="{{c.hasTypes}}" hint-placeholder-val="{{ true }}">Used by <b>{{c.usedBy}}</b></sc-if>
-                    <sc-if value="{{c.noTypes}}" hint-placeholder-val="{{ false }}">No carousel type points at it</sc-if>
-                  </div>
+                  <span class="lcount tnum">{{c.count}}</span>
                 </div>
               </article>
             </sc-for>
+            <button type="button" class="lnew" onClick="{{newLibrary}}"><span>New library</span></button>
           </div>`;
 }
 
@@ -900,20 +907,17 @@ function vals(init) {
 
     var untagged = Math.round(libTotal * 0.42);
 
+    /* The board's three slots: the library's first images, and a plain panel
+       wherever it has none. Nothing but the name and the count goes under it. */
     var cards = LIBS.map(function (l) {
       var t = total(l);
-      var un = Math.round(t * 0.42);
+      var pool = COVER_PEEK[l.id] || ROW.All;
+      var peek = [];
+      for (var k = 0; k < 3; k++) peek.push({ cls: k < t && pool[k] ? "ph-" + pool[k] : "is-blank" });
       return {
         name: l.name,
         count: t === 0 ? "Nothing in it yet" : images(t),
-        folderText: l.folders.length ? "· " + l.folders.length + " folders" : "",
-        untagged: t === 0 || l.id === "kitchen" ? "" : "· " + fmt(un) + " not read yet",
-        hasCover: !l.fresh,
-        noCover: !!l.fresh,
-        peek: (COVER_PEEK[l.id] || ROW.All.slice(0, 4)).map(function (p) { return { cls: "ph-" + p }; }),
-        hasTypes: l.types.length > 0,
-        noTypes: l.types.length === 0,
-        usedBy: list(l.types),
+        peek: peek,
         open: (function (id) { return function () { self.setState({ view: "library", libId: id, folder: null, sub: null }); }; })(l.id)
       };
     });

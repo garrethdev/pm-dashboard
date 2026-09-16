@@ -818,9 +818,13 @@ the edges are tested, not just the happy middle.
 - **You get here from:** the menu, or Change in D2 and D6.
 - **Flows:** F7.
 - **Design:**
-  - The grid of libraries: cover image, image count, how many folders, how
-    many images nothing has been read off, and the carousel types pointing at
-    each.
+  - The grid of libraries, as boards in the Pinterest sense (Garreth,
+    2026-09-16): a mosaic of three of the library's own images — one large,
+    two stacked beside it — with the name and the image count plain
+    underneath, and no card drawn round either. Nothing else rides on a
+    board: how many folders, how many images are unread and which carousel
+    types point at the library all came off. **New library** is a tile at the
+    end of the grid rather than a button in the header.
   - One library: its folders as folder cards, each showing a few of its
     images, its name and its count; then the images in no folder under **Not
     in a folder**. Opening a folder goes a level down, with a breadcrumb back.
