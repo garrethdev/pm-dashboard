@@ -2,12 +2,14 @@
 
 **Status:** design step, 2026-09-14. Nothing here is built from these tickets.
 
-**Where it stands (Garreth, 2026-09-16):** D1 to D8 are done, and D11, the
+**Where it stands (Garreth, 2026-09-16):** D1 to D9 are done, and D11, the
 Studio's second round, is approved and carried into D6. **The next ticket is
-D9, History.** The canvas D7 and D8 share is full — 14 MB of its 16 MB with
-both tickets on it in both themes — so it was **renamed from "(D7 to D10)" to
-"(D7 and D8)" on 2026-09-16** (Garreth), because it is never going to hold the
-other two. **D9 and D10 need a new canvas**, and should share one.
+D10, Trends**, which goes on the canvas D9 made.
+The canvas D7 and D8 share is full — 14 MB of its 16 MB with both tickets on
+it in both themes — so it was **renamed from "(D7 to D10)" to "(D7 and D8)" on
+2026-09-16** (Garreth), because it is never going to hold the other two. D9
+made the new canvas the two of them share, **(D9 and D10)**; the how-to lists
+it.
 Each ticket is a set of screens to design in the **Peptide Miracles Dashboard**
 project in Claude Design. The app is not changed during this step.
 
@@ -937,17 +939,61 @@ the edges are tested, not just the happy middle.
 
 ## D9. History
 
+- **Status:** **Done** — dark mode **approved by Garreth on 2026-09-16**,
+  after one round of review whose every change is made and saved. Desktop, the
+  date-range dropdown, a re-run beside the batch it copied, the no-results
+  state and first run, plus the phone at all three. On its own new canvas,
+  **Carousel Generator Designs - (D9 and D10)**
+  (https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1), pages **D9 · Dark** and
+  **D9 · Light**, built by
+  `docs/designs/carousel-generator/d9-history.build.mjs`. The light pages are
+  built from the same tokens and were approved alongside the dark ones.
+  A re-run is tied to the batch it copied by a marker in each row ("Re-run of
+  Sep 11", "Re-run on Sep 16"), rather than by pulling the older batch out of
+  date order.
+  Added beyond the ticket: on the phone the type pills scroll sideways inside
+  their own row the way the app's own filter pills do, rather than wrapping
+  over three lines.
+  **From the review (Garreth, 2026-09-16), all made and saved:** the
+  "Ran by" column is gone, because the app shows nobody's name anywhere, and
+  **Status** takes its place, with a status on every row — Done, Writing 7 of
+  20, Stopped, Not wired. Both empty states now fill the rest of
+  the screen. The paired rows are no longer highlighted in the accent colour:
+  the marker names the other batch by its date and that is all, so the jump
+  that lit both rows went with it, and filtering to that type brings the pair
+  together on its own. A status meaning something went wrong is
+  **red** (the app's
+  danger colour, as D7 marks flagged decks); Stopped is the only one so far —
+  Not wired is a type whose approved decks wait for Wire, not a fault, and a
+  batch nobody approved still reads Done.
+  **The four counts were corrected** to Requested / Written / Rendered /
+  Approved, because the ticket's original list came from the batch model that
+  was replaced on 2026-09-15. Two other documents still carry the old list and
+  needed the same correction, and got it on approval: the plan's §6.3, F4 and
+  F5 in the flows, and **DEV-19a**.
+  **Not yet done:** D9 is not in the Carousel Generator Prototype. That is
+  built from `main` by one session, following the how-to in
+  `docs/designs/README.md`.
 - **You get here from:** the menu.
 - **Flows:** F4, F5.
 - **Design:**
-  - A table of past batches: date, carousel type, requested, approved,
-    rendered, generated, who ran it.
+  - A table of past batches: date, carousel type, **Requested, Written,
+    Rendered, Approved**, and a **Status** column. The counts were "requested,
+    approved, rendered, generated" until 2026-09-16, which was the batch model
+    from before 2026-09-15 — copy approved first, rendered after. Since the
+    text gate moved into writing, the one sign-off is Approve (n) decks on the
+    finished batch (F3), so Approved is the last count and it is what the Smart
+    Scheduler can see (Garreth, 2026-09-16).
+    **No "who ran it"** (Garreth, 2026-09-16): the app shows nobody's name
+    anywhere, and Status takes that place — Done, Writing 7 of 20, Stopped,
+    Not wired. A status that means something went wrong is red.
   - Filter pills by type and a date-range dropdown.
-  - A stopped batch row ("12 of 20 written, 5 approved") that opens to
-    **Continue**.
+  - A stopped batch row that opens to **Continue**. It says plainly
+    **Stopped**; how far it got is the Written column (Garreth, 2026-09-16).
   - **Run again** per row, and a re-run shown paired with the batch it copied.
 - **States:** first run (no batches yet, with Generate); no results (the
-  filters echoed back, with Clear).
+  filters echoed back, with Clear). Both fill the rest of the screen rather
+  than sitting in a short box (Garreth, 2026-09-16).
 - **Phone:** the table as stacked rows.
 - **Done when:** approved in dark at both sizes.
 

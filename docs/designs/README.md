@@ -48,6 +48,14 @@ done, or the one Garreth names.
   Garreth renamed it for what it actually holds. D9 and D10 need a new canvas
   of their own, and the first of them to be designed makes it: give it a name
   that says what it holds, its own favicon, and a bullet here.
+- **Carousel Generator Designs - (D9 and D10)**, dark and light pages
+  together: https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1. Started
+  2026-09-16 with D9, because the D7 and D8 canvas was full. Pages `D9 · Dark`
+  and `D9 · Light`, with `D10 · Dark` and `D10 · Light` to come. Its favicon is
+  `"🎠🕰️"`. Steps 3–6 read and save this canvas; step 4 runs
+  `place-ticket.mjs` without `--theme`; step 5 packages it with
+  `--title "Carousel Generator Designs - (D9 and D10)"`. 8 boards a theme, both
+  themes 4.3 MB, so D10 has room.
 - **Carousel Generator Designs - (D6 pt. 2 Studio)**, D11's own canvas (the
   Studio's second round), named by Garreth on 2026-09-15:
   https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5. Pages `D11 · Dark` and

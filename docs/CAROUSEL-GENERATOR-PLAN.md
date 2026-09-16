@@ -926,11 +926,22 @@ decision, 2026-09-14).
 
 ### 6.3 History — `/carousel-generator/history`
 
-A table of briefs: date, lane, requested, approved, rendered, ready, who ran
-it, and a **Run again** action that clones the brief (same lane, count,
-note) under the current direction version and image library and opens the new batch page.
-Rows open the batch page in read mode. Filters are pills by lane and a
-Dropdown for date range, matching the accounts table.
+A table of briefs: date, carousel type, requested, written, rendered,
+approved, and a status, plus a **Run again** action that clones the brief
+(same type, count, note) under the current direction version and image library
+and opens the new batch page. Rows open the batch page in read mode. Filters
+are pills by type and a Dropdown for date range, matching the accounts table.
+
+The counts follow the batch as it runs, so **approved is the last of them**:
+since the text gate moved into writing (§4.2, F3), the one sign-off is Approve
+on the finished batch, and that count is what the Smart Scheduler can see.
+This column was called "ready" here until 2026-09-16, which clashed with
+`posting_status = 'Ready'` (*scheduled for today*) elsewhere in the dashboard,
+and "generated" in the tickets, which was retired with the model change.
+There is **no "who ran it"** column: the app shows nobody's name anywhere
+(Garreth, 2026-09-16, approving D9). The status takes that place — Done,
+Writing 7 of 20, Stopped, Not wired — and a status meaning something went
+wrong is red.
 
 ### 6.4 Directions — `/carousel-generator/directions`
 

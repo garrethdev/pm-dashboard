@@ -636,8 +636,10 @@ Three screens, each its own piece of work; grouped here because none blocks
 the others.
 
 **DEV-19a. History** · S · depends on DEV-11 and approved D9 · flows F4, F5.
-The table of briefs (date, type, requested, approved, rendered, generated, who
-ran it), filter pills by type, a date-range dropdown, stopped rows with
+The table of briefs (date, type, requested, written, rendered, approved, and a
+status — approved is last, being the sign-off on the finished batch; no "who
+ran it" column, the app names nobody), filter pills by type, a date-range
+dropdown, stopped rows with
 Continue, **Run again** (clones type, count, note and per-batch choices under
 the current direction and library, or opens the running batch instead), and a
 re-run shown paired with its original. First run and no-results states.

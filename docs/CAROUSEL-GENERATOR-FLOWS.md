@@ -255,8 +255,8 @@ width.
   Phase 2. Only batches the generator made (Garreth, 2026-09-14).
 - **Screens:** History, then Batch.
 - **Steps:**
-  1. History marks the batch's row as stopped, with what was done ("12 of 20
-     written, 5 approved").
+  1. History's row for that batch says **Stopped**, in red, and its Written
+     column says how far it got (Garreth, 2026-09-16, approving D9).
   2. Opening it shows Batch with everything already done, and **Continue**
      where the progress line was.
   3. Continue picks up the unwritten decks, or the unrendered approved ones,
@@ -272,8 +272,14 @@ width.
 - **When:** a past batch worked and the team wants another like it. Phase 2.
 - **Screens:** History, then Batch.
 - **Steps:**
-  1. History is a table: date, lane, requested, approved, rendered,
-     generated, who ran it. Filter pills by lane, a Dropdown for date range.
+  1. History is a table: date, carousel type, requested, written, rendered,
+     approved, and a status. Filter pills by type, a Dropdown for date range.
+     The counts follow the batch as it runs, so **approved is last** — it is
+     the sign-off on the finished batch (F3), and the count the Smart
+     Scheduler can see. There is no "who ran it": the app shows nobody's name
+     anywhere, and the status column takes that place — Done, Writing 7 of 20,
+     Stopped, Not wired, a status meaning something went wrong in red
+     (Garreth, 2026-09-16, approving D9).
   2. **Run again** on a row clones lane, count, note and per-batch
      copy choices under the **current** direction version and image library, and opens the new
      batch, generating.
@@ -281,7 +287,7 @@ width.
 - **Accent action:** none (Run again is per row, secondary).
 - **Hold:** none.
 - **Empty:** first run: Generate. No results: the filters echoed back, with
-  Clear.
+  Clear. Both fill the rest of the screen (Garreth, 2026-09-16).
 - **Fails:** the lane has a run in progress: Run again opens that batch
   instead.
 - **Writes:** as F1, plus `carousel_briefs.rerun_of`.
