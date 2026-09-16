@@ -464,8 +464,10 @@ the edges are tested, not just the happy middle.
   - **Layered templates:** the Layers list (front first, each marked AI, Set
     or Fixed, with Bring forward and Send back), cut-outs placed freely,
     text on a box, shaped frames with a border, fixed images, labels filled
-    from a set's facts, the library shown as sets, and the AI proposing the
-    sets and facts a template lacks, whichever way the Studio started.
+    from the row the deck is about, the library shown as sets, and the AI
+    proposing the sets a template lacks, whichever way the Studio started.
+    **The boards say "Set" where they should say the row** — see the note at
+    the end of D11.
   - **The phone:** D11 has no phone boards, so the size choice, the Figma
     chip and the Layers list in the phone's sheets are designed in this
     pass.
@@ -821,8 +823,9 @@ the edges are tested, not just the happy middle.
   per-person set with facts, so a plain rename would have left two meanings of
   one word on the same screen. Settled by making **a person just a set inside
   the library** — sets nest, so "Maya R." is a set in Red Carpet Sets holding
-  her cut-out, before and after, and the facts her labels quote hang off that
-  set. The Celebrity Peptide template keeps its one-person guarantee and its
+  her cut-out, before and after. **The second half of that decision — that the
+  facts her labels quote also hang off the set — was reversed the next day**;
+  see the entry below and D11's closing note. The Celebrity Peptide template keeps its one-person guarantee and its
   years, and the Studio now says "set" for one thing only. **D8 will need a
   small facts panel on a set** to match. **It was designed and rejected on
   2026-09-16**, see below.
@@ -984,7 +987,8 @@ the edges are tested, not just the happy middle.
   just opened with the third card; a Figma link attached to the chat box
   with a prompt; the attached link failing with No access; the file's five
   frames being read; the draft beside the
-  frames with the AI proposing the set and facts the library lacks; the
+  frames with the AI proposing the set and facts the library lacks (the facts
+  part is superseded — see the closing note); the
   layers list with the masthead behind the cut-out; a cut-out placed
   freely; the hook on its box; a photo in the wavy frame; a label filled
   from the set; a fixed image; Quiet Luxury Picks at 9:16 from D7's Edit
@@ -1063,7 +1067,8 @@ the edges are tested, not just the happy middle.
   - **Shaped frames:** an image clipped to a shape (the wavy frame) with a
     border.
   - **Slides that share a subject:** cells marked as drawing from one set
-    (D8), and text boxes filled from that set's facts instead of by the AI.
+    (D8), and text boxes filled from the row the deck is about instead of by
+    the AI (drawn as the set's facts — superseded, see the closing note).
   - **A third way to start: from a Figma link**, beside Start from a
     reference deck and Discuss your idea. The AI reads the frames and their
     layers, drafts the template, and proposes the library sets it needs.
@@ -1076,9 +1081,35 @@ the edges are tested, not just the happy middle.
   (2026-09-15).
 - **Settled (Garreth, 2026-09-15):** real celebrities' photos edited by AI
   (the gaunt cover), not AI-made look-alike personas, so a set is one real
-  person's cut-out, before and after photos and facts. The lane's caption
+  person's cut-out, before and after photos, and the row its labels quote.
+  The lane's caption
   safety rules
   (`~/Desktop/en-doc/Caption_Safety_Rules_for_Celebrity_Lane.md`, outside the
   repo) also ban "the shot" in body copy, which the sample cover hook uses.
 - **Done when:** approved in dark at desktop, with the phone view agreed in
   review.
+- **Superseded, 2026-09-16: labels are filled from the row, not from the set.**
+  D11 was designed and approved on 2026-09-15 on the understanding that a
+  subject's set carried both its photographs and the facts its labels quote.
+  The next day Garreth rejected that: **a set holds images and nothing else**,
+  and the values a label prints are columns on the row the deck is about, in
+  the content type's own data set — `celebrity_verdict.before_year` is the
+  1080×1350 slide's "2019". The prose above has been corrected;
+  `CAROUSEL-TEMPLATE-MODEL.md` §7.3 carries the full reasoning.
+
+  **The boards themselves have not been re-drawn**, and they are the thing to
+  be careful about. On the **(D6 pt. 2 Studio)** canvas
+  (https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5) the approved screens
+  still show a text layer whose source reads **Set** with a **Fact** beneath
+  it, and the AI offering to add "Name", "Before year" and "After year" to
+  Red Carpet Sets. The same wording is in `d6-studio.build.mjs`, which is the
+  Studio the Prototype runs, so it is on the click-through too.
+
+  **Re-drawing them is a design change, not a wording fix**, and it was left
+  alone deliberately: the replacement depends on where a data set comes from
+  and how the Studio shows a row's columns, which is not designed. That work
+  is parked in `BACKLOG.md` under "The generator has no idea what a carousel
+  is about", and Garreth's decision (2026-09-16) is that it belongs in the
+  Studio's own AI conversation, since creating a content type is the moment
+  its data set should be researched and created. **Do the boards with that
+  work, in one pass, rather than patching the word now.**

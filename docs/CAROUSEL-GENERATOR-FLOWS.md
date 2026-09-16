@@ -329,8 +329,12 @@ width.
   banks already do — `glowup_image_bank` and `covered_eye_image_bank` are
   organised `pool` then `category`, so `cover` holds `taraji`,
   `gabrielle_union` and the rest. A set organised by subject ("Maya R.")
-  is a set like any other, and the facts a template's labels quote hang off
-  that set (F8, D6's Studio).
+  is a set like any other. **A set holds images and nothing else** (Garreth,
+  2026-09-16): the values a template's labels quote are columns on the row the
+  deck is about, in the content type's own data set, not properties of the
+  folder the photographs sit in. A facts panel on a set was designed and
+  rejected the same day; see `CAROUSEL-TEMPLATE-MODEL.md` §7.3 and
+  `BACKLOG.md`.
 - **What an image carries (Garreth, 2026-09-16):** the details the renderer
   reads when it picks an image for a slide. The headings are
   `carousel_images`'s own columns, not invented: `content` (a written
@@ -426,8 +430,11 @@ width.
   3. The AI drafts a template: slide size, slide count, layouts, text boxes or
      layers, style guess, image cells each drawing from a set in the chosen
      library, and a direction note. It asks at most one question. When the
-     template needs a set, or a fact the set lacks, it proposes them,
-     and nothing is added until Add is pressed.
+     template needs a set the library lacks, it proposes it, and nothing is
+     added until Add is pressed. **What it should do when a template needs a
+     value the content type's data set has no column for is not designed**
+     (Garreth, 2026-09-16) — that question is parked in `BACKLOG.md`, and the
+     approved D11 screens still show the old answer.
   4. Every slide sits in a row on an infinite canvas at its true shape: **4:5
      (1080 × 1350) or 9:16 (1080 × 1920)**, the only two sizes (Garreth,
      2026-09-15). The canvas pans in every direction and zooms from 25% to
@@ -441,7 +448,8 @@ width.
      On a **layered slide** (`CAROUSEL-TEMPLATE-MODEL.md` §7) the Layers list,
      front first, selects a layer, and Bring forward and Send back change its
      place. A text layer can sit on a box and be written by the AI or filled
-     from a set's fact; a cut-out is sized and placed freely; a shaped frame
+     from the row the deck is about (`CAROUSEL-TEMPLATE-MODEL.md` §7.3, not
+     designed yet); a cut-out is sized and placed freely; a shaped frame
      takes a shape, a border, Fill or Fit and a crop; a fixed image is
      replaced by uploading another.
   6. **Regenerate sample** asks for new sample copy under the current

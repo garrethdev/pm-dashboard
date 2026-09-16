@@ -254,31 +254,47 @@ Today a slide is image cells underneath and text boxes on top (§1,
 `slides[]`). A **layered slide** lists its layers in paint order instead, and
 the order can be changed (Bring forward, Send back), so text can sit behind a
 cut-out and a box in front of it. Every layer says where its content comes
-from: written by the **AI**, filled from a **Set**, or **Fixed** to the
-template.
+from: written by the **AI**, filled from the **Row** the deck is about, taken
+from a **Set** of images, or **Fixed** to the template.
 
 | Layer | What it is | Content from |
 |---|---|---|
-| Text | A text box as today, optionally on a box: a solid container with its colour, padding and corner radius | AI, or a fact from the set |
+| Text | A text box as today, optionally on a box: a solid container with its colour, padding and corner radius | AI, or a value from the row |
 | Image cell | A rectangle filled cover-style, as today | A set in the library |
 | Cut-out | A subject with its background removed, sized and placed freely over other layers | A set inside the subject's set (for example Cover cut-out) |
 | Shaped frame | An image clipped to a shape (rectangle, oval or wave) with a border colour and width, Fill or Fit, and a crop of top, centre or bottom | A set inside the subject's set |
 | Fixed image | The same image on every deck (a paper background, a closing product slide), uploaded to the template | The template itself |
 
-### 7.3 Sets
+### 7.3 Sets, and where a label's value comes from
 
-Slides that follow one subject draw from **one set** in the library. Since
-sets nest one level (D8, Garreth 2026-09-16), a subject is simply a set —
-"Maya R." inside Red Carpet Sets — holding her photos in sets of its own
-(cut-out, before, after) and the facts her labels quote (for example name,
-before year, after year). A text layer filled from the set shows a fact
-instead of AI copy. When a template needs a set or a fact its library lacks,
-the AI proposes them, whichever way the Studio was started, and nothing is
-added until the person presses Add.
-
+**A set holds images and nothing else.** Slides that follow one subject draw
+their photographs from **one set** in the library, and since sets nest one
+level (D8, Garreth 2026-09-16) a subject can be a set — "Maya R." inside Red
+Carpet Sets — holding her cut-out, before and after shots in sets of its own.
 There is no separate kind of folder for subjects: a subject's set is a set
 like any other, which is why the same word covers both a Cover set holding a
 dozen different people and a set holding one.
+
+**The values a label quotes do not live on that set.** They are columns on the
+row the deck is about, in the content type's own data set. Slide 2 of the
+Celebrity Peptide lane prints "2019" because `celebrity_verdict.before_year`
+says 2019 for that celebrity — the same row the hook and the before and after
+lines were written from. §7.2's reference implementation describes this
+correctly already: a label **filled from the row**.
+
+This was decided the hard way. On 2026-09-16 a panel of a set's facts was
+designed onto D8's library screens and rejected the same day, because a fact
+is a property of a subject, not of a folder of pictures: only one content type
+would have used it, and it would have shown empty fields on every set of every
+library, including sets that are not people.
+
+**What is not designed yet:** where a data set comes from, how the Studio
+shows the row's columns when a text layer is bound to one, and what the AI
+should do when a template needs a value the data set has no column for. All of
+it is parked in `BACKLOG.md` under "The generator has no idea what a carousel
+is about", together with what was confirmed live about how the existing
+scriptwriters already work. Until that is designed, treat a **Row** layer as a
+named intention, not a screen.
 
 **Proposed, for Phase 2:** §2's rules still apply to text and cells. Cut-outs,
 shaped frames and paint order need rules of their own; the reference

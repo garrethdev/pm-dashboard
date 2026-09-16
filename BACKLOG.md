@@ -1031,23 +1031,30 @@ story; there is nothing equivalent to correct. The general behaviour is
 reviewing a row and marking it good or not, which every one of those tables
 already has a column for.
 
-### Left behind in the documents — clean up before building
+### Left behind in the designs — one job, and it is part of this work
 
 A facts panel on an image set was designed on 2026-09-16 and **rejected by
 Garreth the same day**: facts are columns on a data-set row, not a property of
-a folder of pictures. The design was taken back off the canvas, but the
-decision it was built on is still asserted in five places, and a later session
-reading any of them would build the wrong thing:
+a folder of pictures. The panel was taken back off the canvas at once.
 
-- `CAROUSEL-TEMPLATE-MODEL.md` — the layer table's "AI, or a fact from the
-  set", and §7.3 Sets.
-- `CAROUSEL-GENERATOR-FLOWS.md` — F7's "the facts a template's labels quote
-  hang off that set", and F8's two mentions.
-- `CAROUSEL-GENERATOR-DESIGN-TICKETS.md` — D6's and D11's notes, and D8's "will
-  need a small facts panel on a set".
-- **The approved D11 screens themselves** show the AI proposing "Name", "Before
-  year", "After year" as Facts to add to a library. Those boards are on the
-  (D6 pt. 2 Studio) canvas and say the wrong thing now.
+**The documents were corrected on 2026-09-16** — `CAROUSEL-TEMPLATE-MODEL.md`
+§7.3 and its layer table, `CAROUSEL-GENERATOR-FLOWS.md` F7 and F8, and D6's,
+D8's and D11's ticket entries. §7.3 now carries the reasoning, and every one of
+them points here.
+
+**What is still wrong is the artwork, and it is deliberately still wrong.** On
+the **(D6 pt. 2 Studio)** canvas
+(https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5) the approved D11 boards
+show a text layer whose source reads **Set** with a **Fact** under it, and the
+AI offering to add "Name", "Before year" and "After year" to Red Carpet Sets.
+The same wording is in `d6-studio.build.mjs`, which is the Studio the
+Prototype runs, so the click-through shows it too.
+
+Those boards were not patched, because the honest replacement — what a text
+layer bound to a row actually looks like, and what the AI proposes when the
+data set has no column for a value a template needs — *is this backlog item*.
+**Re-draw them as part of this work, in one pass.** Patching the word "Set" to
+"Row" beforehand would only move the fiction.
 
 ## Music postability — show when a song will silently stop a post
 
