@@ -543,7 +543,7 @@ A template holds:
 - **Canvas:** width and height (1080×1350, 1080×1440, 1080×1920 today).
 - **Slides:** an ordered list, each with a `layout` (`single`, `quad`,
   `quiz`, or a free layout of positioned cells), its **image slots** (each
-  with a role such as `cover`, `food`, `evidence:water`, and the group of
+  with a role such as `cover`, `food`, `evidence:water`, and the set of
   the content type's image library it draws from), and its **text
   boxes** (each with a `copy_role` such as `hook`, `beat_2`, `cta`, and a
   style: font family, weight, size, line height, wrap width, alignment,
@@ -563,7 +563,7 @@ first two templates, written down as data instead of Python: Glow Up is a
 Liberation Sans Bold, 3 px stroke and a 2/3 px offset shadow; Covered Eye is
 a 1080×1920 template of six slides with one text box per slide, 7 px stroke,
 a 19 px blurred shadow, and slide 5 pinned to the bottom at 0.9 scale. Their
-image-selection rules (pools, distinct groups, brightness matching, the
+image-selection rules (pools, distinct sets, brightness matching, the
 diagonal rule) become template settings on the image slots.
 
 The painter takes a template, one deck's copy and one deck's image
@@ -590,7 +590,7 @@ at once. Sample copy fills the boxes so the styles can be judged; a
 "Regenerate sample" action asks the AI for fresh sample copy under the
 current direction. The template points at one **image library** (§6.8),
 asked for when the Studio opens: an existing library or a new one. Each image
-slot draws from a group in that library, and the Generate form can repoint
+slot draws from a set in that library, and the Generate form can repoint
 it to another library (§6.2; Garreth, 2026-09-14). New images are not made in the
 Studio; they are uploaded or generated inside a library, independent of any
 content type. AI images are generated with **Higgsfield** (Garreth's decision, 2026-09-14),
@@ -816,7 +816,7 @@ content type (Garreth, 2026-09-14).
 |---|---|
 | `id`, `name` | one library |
 | `bucket`, `prefix` | where the files live in Storage |
-| `groups text[]` | the groups a template's image cells draw from, e.g. `cover`, `food`, `before`, `after` (today's pools) |
+| `sets text[]` | the sets a template's image cells draw from, e.g. `cover`, `food`, `before`, `after` (today's pools). Sets nest one level, so a cell may name a set inside a set |
 | `is_active`, `created_by`, `created_at` | |
 
 A content type points at one library through its template
@@ -824,11 +824,12 @@ A content type points at one library through its template
 version); several content types may point at the same library. Phase 2 seeds
 two libraries from the existing banks (`glowup_image_bank`,
 `covered_eye_image_bank`) as read-only, each pointed at by its content type,
-with the banks' pools as groups. Those images stay in the bank tables. Images
+with the banks' pools as sets. Those images stay in the bank tables. Images
 in new libraries go in `image_library_images`, the same bank shape (§2.5) plus
 `library_id` and, for generated images, the prompt, shape and likeness images.
 A view `v_image_assets` unions both into `{library_id, public_url, is_cover,
-group, category}`. New libraries, uploading and generating are Phase 4.
+set_name, subset_name}` — named that way because `SET` is a SQL keyword.
+New libraries, uploading, generating and tagging are Phase 4.
 
 ### 5.4 Templates
 
@@ -976,17 +977,20 @@ Carousel types page (§6.1) becomes the index of this page.
 ### 6.8 Library — `/carousel-generator/library`
 
 A grid of image libraries, each showing a cover image, the image count, its
-groups and the content types pointing at it. Opening a library shows its
-images by group with `is_cover` marked. A library belongs to no content type:
+sets and the content types pointing at it. Opening a library shows its sets
+as folders, with whatever is in no set below them and `is_cover` marked. A
+library starts with no sets at all, and images in no set are ordinary. A
+library belongs to no content type:
 it holds images of a character, a place and anything else a carousel needs,
 and any content type can be pointed at it (Garreth, 2026-09-14). Phase 2 is
 read-only over the existing banks. Phase 4 adds New library, upload into a
-group, retiring an image (a `HoldButton`, since a retired image may be
+set, retiring an image (a `HoldButton`, since a retired image may be
 referenced by an unrendered manifest), and **generating images with
 Higgsfield**, which depends on no content type: a prompt, what it shows
-(character, place or other), the group, a count, a shape, and for a character
+a base image to work from (optional), a count, a shape — and never a set
 the library's own images of that character as the likeness reference.
-Generated images wait for a person to keep them before they join a group.
+Generated images wait for a person to keep them before they join the
+library, and stay untagged until AI vision reads them.
 Flow F7 in `docs/CAROUSEL-GENERATOR-FLOWS.md`.
 ---
 

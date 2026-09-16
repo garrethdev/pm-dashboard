@@ -167,12 +167,16 @@ promises.
   - `image_libraries` and `image_library_images` as plan §5.3. The second
     table is created empty now so the view below does not change in Phase 4.
   - `v_image_assets`, the union of both banks and `image_library_images` into
-    `{library_id, image_id, public_url, is_cover, group, category, luminance,
-    status}`.
+    `{library_id, image_id, public_url, is_cover, set_name, subset_name,
+    luminance, status}`. **Named `set_name`/`subset_name`, not `set`**
+    (Garreth, 2026-09-16): sets nest one level, and `SET` is a SQL keyword
+    that would need quoting everywhere. They come straight from the banks'
+    `pool` and `category`.
   - RLS on with no policies for every new table.
 - **Seed, in the same migration or a second one:**
   - Two read-only libraries from `glowup_image_bank` and
-    `covered_eye_image_bank`, their pools as groups.
+    `covered_eye_image_bank`, their pools as sets and their categories as the
+    sets nested inside them.
   - The two templates from `docs/carousel-templates/*.v1.json`, as version 1,
     `active`, each pointed at its library, mapped to columns as template model
     §6 says.
@@ -289,8 +293,8 @@ promises.
 - **Build:** a picker in `src/lib/carousel/picking/` that reads a template's
   image rules and `v_image_assets` for the batch's library, and returns a
   manifest: which image goes in which cell of which slide.
-  - Covered Eye: cover-only with the fallback to the whole group, distinct
-    within the food group allowing a repeat if the group runs out.
+  - Covered Eye: cover-only with the fallback to the whole set, distinct
+    within the food set allowing a repeat if the set runs out.
   - Glow Up: the per-slide pools, four distinct covers on slide 1, the
     diagonal rule with brightness matching from the stored `luminance`
     (tolerance 40, nearest when none are in range, category variety as the
@@ -298,12 +302,15 @@ promises.
   - A deterministic random generator seeded from the deck's id. It does not
     need to match Python's; stability comes from saving the manifest on the
     lane row (Glow Up `render_manifest`) or the draft before painting.
-  - Thin groups (one image) are normal, not errors. An **empty** group the
-    template needs is an error naming the group, which DEV-15 also uses to
-    block Generate.
+  - Thin sets (one image) are normal, not errors. An **empty** set the
+    template needs is an error naming the set, which DEV-15 also uses to
+    block Generate. A set with nothing in it and **a library with no sets at
+    all** are different: the second is ordinary (D8), and a template that
+    names no set draws from the whole library.
 - **Tests:** seeded runs produce the same manifest twice; the diagonal rule
-  never puts a matching pair in one row; an empty group fails with its name;
-  a one-image group repeats.
+  never puts a matching pair in one row; an empty set fails with its name;
+  a one-image set repeats; a template naming no set draws from the whole
+  library.
 - **Done when:** the tests pass.
 
 ### DEV-07. Parity check against the Python painters
@@ -557,8 +564,8 @@ promises.
   - **Note**, one line.
   - The template's `per_batch` choices, rendered from the copy contract, not
     hard-coded per lane.
-  - Generate is unavailable with no library, or while a group the template
-    needs is empty, and the empty groups are named (DEV-06).
+  - Generate is unavailable with no library, or while a set the template
+    needs is empty, and the empty sets are named (DEV-06).
   - From the approved D2 (Garreth, 2026-09-14): **Undo** beside Change puts
     the previous library back after a repoint; the library picker lists each
     library's cover, name and image count, and opens as a centred modal on a
@@ -645,9 +652,12 @@ function so there is never zero or two active versions. **Edit template**
 arrives in Phase 3; the Wiring tab in Phase 4.
 
 **DEV-19c. Image libraries, read-only** · S · depends on DEV-01 and approved
-D8 · flow F7 steps 1 and 2. The grid (cover, count, groups, the types pointing
-at each) and one library's images by group with covers marked. Adds Image
-libraries to the menu.
+D8 · flow F7 steps 1 and 2. The grid as boards — a mosaic of three of the
+library's own images, its name and its image count, and nothing else — and one
+library showing its sets as folder cards with the images in no set under **Not
+in a set**, covers marked. Opening a set goes a level down with a breadcrumb
+back. Adds Image libraries to the menu. Read-only here: the image modal, Tag
+with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
 
 - **Done when:** each screen matches its design in both themes at both
   widths, with numbers that match a direct query.
@@ -682,14 +692,14 @@ libraries to the menu.
   - Filmstrip of slides; select a text box or an image cell; drag to move.
   - Inspector for a text box (font, weight, size, stroke, shadow, alignment,
     wrap width) with the change shown at once; for an image cell, which
-    library group it draws from, and "No images" when the group is empty.
+    library set it draws from, and "No images" when the set is empty.
   - Every change edits the template object and is saved as a draft template
     row (`status = 'draft'`) a moment after the last change, so a closed tab
     loses nothing.
   - Undo and redo for canvas edits.
   - The generator menu folds to icons while the Studio is open.
 - **Tests:** unit tests for the edit operations on the template object
-  (move, restyle, change group) and that the result still validates.
+  (move, restyle, change set) and that the result still validates.
 - **Done when:** the Glow Up template opens and edits in the Studio, and the
   canvas matches D6 at desktop.
 
@@ -715,7 +725,7 @@ libraries to the menu.
   - The library choice first (existing libraries only until Phase 4).
   - **From an idea:** a conversation that drafts a whole template (slide
     count, layouts, text boxes, a style guess, image cells drawing from the
-    library's groups, a direction note) as structured output, validated with
+    library's sets, a direction note) as structured output, validated with
     DEV-03 before it reaches the canvas. At most one clarifying question, in
     the manner of the recovered `direction-chat.js`.
   - **From a reference:** reads the reference's beats and visual notes from
@@ -837,9 +847,13 @@ libraries to the menu.
 - **Size:** M.
 - **Depends on:** DEV-19c, approved D8.
 - **Flows:** F7 steps 3, 4 and 7.
-- **Build:** **New library** with a name and an empty state; **Upload** into a
-  group (an existing one or a new one), with a Failed tile and Retry per
-  upload; **Retire image** as a hold. A retired image drops out of
+- **Build:** **New library** as a tile at the end of the grid, with a name
+  and an empty state that fills the page; **New set**, which makes a folder at
+  the level you are on and nests one deep; **Upload**, which lands images in
+  the library and into a set only if someone puts them there, with a Failed
+  tile and Retry per upload; the image modal, with background removal, black
+  and white, an AI edit that waits for Keep, Make cover and Move to another
+  set; **Retire image** as a hold. A retired image drops out of
   `v_image_assets` for new picks, while manifests already saved keep their
   URL. The two seeded bank libraries stay read-only.
 - **Done when:** a new library is filled by upload and a Studio template can
@@ -855,15 +869,53 @@ libraries to the menu.
   API the deployed app can call with its own key, that it supports the
   likeness reference the flow needs, and what a run costs. If not, stop and
   bring it to Garreth.
-- **Build:** the **Generate images** form (prompt; shows Character, Place or
-  Other; group; how many, up to 8; shape: portrait, tall or square; likeness
-  images from this library when it shows a character). Generating tiles, then
-  the review row with **Keep** and **Discard**. A kept image joins its group
-  with its prompt, shape, likeness images and who kept it recorded. One
-  failed image shows Retry; out of credits shows the reason on every waiting
-  tile.
+- **Build:** the **Generate images** form (prompt; base image, optional —
+  one or more of the library's own images or one uploaded; how many, up to 8;
+  shape: portrait, tall or square). **It never picks a set** (Garreth,
+  2026-09-16): what it makes lands in the library. Generating tiles, then the
+  review row with **Keep** and **Discard**. A kept image joins the library
+  with its prompt, shape, base images and who kept it recorded, and stays
+  **untagged** until it is read. One failed image shows Retry; out of credits
+  shows the reason on every waiting tile.
 - **Done when:** eight images are generated into a new library, some kept and
   some discarded, and only the kept ones are available to a template.
+
+### DEV-36. Image details: AI vision reads a library
+
+Numbered out of sequence because it was added after D8 was approved
+(2026-09-16), and it belongs here beside the other library work.
+
+- **Size:** M.
+- **Depends on:** DEV-19c, DEV-29.
+- **Designs:** D8. **Flows:** F7 steps 7 and 8.
+- **Why:** this is what makes a sequence hang together. The picker (DEV-06)
+  chooses by set and by the template's rules; the details are what let it, and
+  the Studio's AI, tell one Before photo from another.
+- **Build:**
+  - Write the details onto `carousel_images` — **its own columns, not new
+    ones**: `content` (a written description), `emotion`, `subject`,
+    `setting`, `framing`, `color_palette`, `image_type`, `arc_roles` (a list:
+    Hook, Before, After, Stack, Reveal, Payoff, Confession), `pillar`, `tags`,
+    `quality_score` and `has_subject`. Read from Supabase on 2026-09-16; 79
+    rows already carry them, so the vocabulary is set by the live data, not
+    invented.
+  - **Tag with AI** on a library: asks which images (only the ones not read
+    yet, or all) and whether to file them into sets at the same time, then
+    runs a Claude vision pass per image, with progress and a Stop.
+  - One image can be read on its own from its modal, and read again.
+  - **Nothing is read automatically** (Garreth, 2026-09-16): an uploaded or
+    generated image arrives untagged and keeps its amber dot until someone
+    reads it.
+  - The details show in the image modal as metadata, and the unread count
+    shows on the library's board.
+- **Watch:** a vision pass over a full library is the expensive part. Cost per
+  image and a sane batch size are worth measuring on one library before it is
+  offered over a bank of hundreds.
+- **Tests:** a run over a small library fills every column; a failed image
+  keeps its dot and does not stop the run; re-reading replaces rather than
+  appends.
+- **Done when:** a library is tagged from the screen, the details match a
+  direct query, and DEV-06's picker can read them back.
 
 ### DEV-31. Keys out of n8n before any rotation
 

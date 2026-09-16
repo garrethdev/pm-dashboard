@@ -31,7 +31,7 @@ the brain's decision, the painter paints the manifest literally.
 | `text_origin` | Always `ascender` for the imported templates. See §2, rule 1. |
 | `fonts` | Named font files, each recording the macOS font it stands in for. |
 | `text_styles` | Named styles: fill, stroke, shadow, line height, wrap, alignment, emoji handling. |
-| `image_sources` | Where images come from (today, the two bank tables). From Phase 2 this is the image library the content type points at, and the pools are its groups (`CAROUSEL-GENERATOR-PLAN.md` §5.3). |
+| `image_sources` | Where images come from (today, the two bank tables). From Phase 2 this is the image library the content type points at, and the pools are its sets (`CAROUSEL-GENERATOR-PLAN.md` §5.3). |
 | `slides[]` | `n`, a `layout` label, `cells[]` as pixel rectangles, an `images` rule, and `text[]` boxes. A text box names a `role`, a `style`, a `size` and an `anchor`, and may override any field of its style. A layered slide lists its layers in paint order instead; see §7. |
 | `image_rules` | What each `images.rule` means, in words the painter's author implements. |
 | `copy_contract[]` | Every role the writer fills: which lane columns it lands in, who writes it (`ai`, `fixed`, `per_batch`), and a length limit. |
@@ -260,19 +260,25 @@ template.
 | Layer | What it is | Content from |
 |---|---|---|
 | Text | A text box as today, optionally on a box: a solid container with its colour, padding and corner radius | AI, or a fact from the set |
-| Image cell | A rectangle filled cover-style, as today | A group in the library |
-| Cut-out | A subject with its background removed, sized and placed freely over other layers | A group in the set (for example Cover cut-out) |
-| Shaped frame | An image clipped to a shape (rectangle, oval or wave) with a border colour and width, Fill or Fit, and a crop of top, centre or bottom | A group in the set |
+| Image cell | A rectangle filled cover-style, as today | A set in the library |
+| Cut-out | A subject with its background removed, sized and placed freely over other layers | A set inside the subject's set (for example Cover cut-out) |
+| Shaped frame | An image clipped to a shape (rectangle, oval or wave) with a border colour and width, Fill or Fit, and a crop of top, centre or bottom | A set inside the subject's set |
 | Fixed image | The same image on every deck (a paper background, a closing product slide), uploaded to the template | The template itself |
 
 ### 7.3 Sets
 
-Slides that follow one subject draw from **one set** in the library: that
-subject's photos by group (cut-out, before, after) and its facts (for example
-name, before year, after year). A text layer filled from the set shows a fact
-instead of AI copy. When a template needs a group or a fact its library
-lacks, the AI proposes them, whichever way the Studio was started, and
-nothing is added until the person presses Add.
+Slides that follow one subject draw from **one set** in the library. Since
+sets nest one level (D8, Garreth 2026-09-16), a subject is simply a set —
+"Maya R." inside Red Carpet Sets — holding her photos in sets of its own
+(cut-out, before, after) and the facts her labels quote (for example name,
+before year, after year). A text layer filled from the set shows a fact
+instead of AI copy. When a template needs a set or a fact its library lacks,
+the AI proposes them, whichever way the Studio was started, and nothing is
+added until the person presses Add.
+
+There is no separate kind of folder for subjects: a subject's set is a set
+like any other, which is why the same word covers both a Cover set holding a
+dozen different people and a set holding one.
 
 **Proposed, for Phase 2:** §2's rules still apply to text and cells. Cut-outs,
 shaped frames and paint order need rules of their own; the reference

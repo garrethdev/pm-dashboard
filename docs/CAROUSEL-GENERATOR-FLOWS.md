@@ -147,8 +147,8 @@ width.
   - No progress for 60 seconds: the progress line turns `warn` and says which
     deck has stalled and when it last moved.
   - The tab is closed: nothing is lost; see F4.
-  - The chosen library has no images in a group the template draws from:
-    Generate is unavailable and the empty groups are named.
+  - The chosen library has no images in a set the template draws from:
+    Generate is unavailable and the empty sets are named.
 - **Writes:** `carousel_briefs` (recording the library the batch used),
   `content_batches`, `carousel_drafts`, `carousel_draft_slides`, and
   `carousel_templates` when the library is repointed.
@@ -236,7 +236,7 @@ width.
   - The claim returns nothing: the card reads "Rendering elsewhere" and
     refreshes when that finishes. Someone ran the old Python painter, or a
     second tab.
-  - An image fails to download, or a library group is empty: the card is
+  - An image fails to download, or a library set is empty: the card is
     Failed with the slide number and Retry. Other decks continue.
   - An upload fails three times: Failed, Retry.
   - A row stuck in Rendering for more than ten minutes: **Proposed:** the
@@ -313,55 +313,93 @@ width.
 ### F7. Browse and manage the image libraries
 
 - **When:** checking what images a content type can draw from, or filling a
-  library. Phase 2 read-only; Phase 4 new libraries, upload, generate and
-  retire.
-- **What a library is (Garreth, 2026-09-14):** a collection of images of a
-  character, a place, and anything else a carousel needs, sorted into groups
-  (today's pools, such as `cover` or `food`). A library belongs to no content
-  type. A content type points at one library and draws from its groups.
-  Usually one content type uses a library, but any other content type can be
-  pointed at the same one (F8 to F10).
-- **Screens:** Library, then one library.
+  library. Phase 2 read-only; Phase 4 new libraries, upload, generate, tag
+  and retire.
+- **What a library is (Garreth, 2026-09-14, revised 2026-09-16):** a
+  collection of images of a character, a place, and anything else a carousel
+  needs. A library belongs to no content type. A content type points at one
+  library and draws from its sets. Usually one content type uses a library,
+  but any other content type can be pointed at the same one (F8 to F10).
+- **What a set is (Garreth, 2026-09-16):** a folder a person makes inside one
+  library, replacing the groups-and-sets split of 2026-09-15. **A library
+  starts with no sets at all**, and images in no set are ordinary, not a
+  backlog. Sets appear only when a person makes one or asks the AI to file
+  the images. A set belongs to nothing in particular: a Cover set may hold a
+  dozen different people. **Sets nest one level**, which is what the live
+  banks already do — `glowup_image_bank` and `covered_eye_image_bank` are
+  organised `pool` then `category`, so `cover` holds `taraji`,
+  `gabrielle_union` and the rest. A set organised by subject ("Maya R.")
+  is a set like any other, and the facts a template's labels quote hang off
+  that set (F8, D6's Studio).
+- **What an image carries (Garreth, 2026-09-16):** the details the renderer
+  reads when it picks an image for a slide. The headings are
+  `carousel_images`'s own columns, not invented: `content` (a written
+  description), `emotion`, `subject`, `setting`, `framing`, `color_palette`,
+  `image_type`, `arc_roles` (a list — Hook, Before, After, Stack, Reveal,
+  Payoff, Confession), `pillar`, `tags`, `quality_score` and `has_subject`.
+  AI vision writes them from the picture. **Nothing is read automatically:**
+  a generated image arrives untagged and stays that way until a person keeps
+  it and decides to use it.
+- **Screens:** Library, then one library, then a set inside it.
 - **Steps:**
-  1. A grid of libraries: cover image, image count, its groups, and the
-     content types pointing at it. Phase 2 seeds two, from the Glow Up and
-     Covered Eye banks, each already pointed at by its content type,
-     read-only.
-  2. A library shows its images by group, covers marked.
-  3. Phase 4: **New library** (secondary, on the grid) asks for a name and
-     creates an empty library.
-  4. Phase 4: **Upload** adds images; each goes into a group.
+  1. A grid of libraries as boards: a mosaic of three of the library's own
+     images, its name and its image count. Nothing else rides on a board.
+     Phase 2 seeds two, from the Glow Up and Covered Eye banks, each already
+     pointed at by its content type, read-only.
+  2. A library shows its sets as folder cards, then the images in no set
+     under **Not in a set**. Opening a set goes a level down, with a
+     breadcrumb back. The library's cover image is marked where it sits.
+  3. Phase 4: **New library** is a tile at the end of the grid; it asks for a
+     name and creates an empty library. **New set** makes a folder at the
+     level you are on.
+  4. Phase 4: **Upload** adds images; they land in the library, and go into a
+     set only if someone puts them there.
   5. Phase 4: **Generate images** (Garreth, 2026-09-14) makes new images with
      Higgsfield, the provider already chosen (plan §4.7). It does not depend
-     on any content type: nothing is pre-filled from one. The form:
-     **Prompt**, **Shows** (Character, Place or Other), **Group** (an existing
-     group or a new one), **How many** (**Proposed:** capped at 8 per run),
-     **Shape** (**Proposed:** portrait, tall or square; the painter crops each
-     image to its slide cell), and, when it shows a character, **Likeness
-     from**: images of that character already in this library, which
-     Higgsfield uses to keep the face the same.
+     on any content type, and **it never picks a set** (Garreth, 2026-09-16):
+     what it makes lands in the library. The form: **Prompt**, **Base image**
+     (optional — one or more of the library's own images, or one uploaded,
+     which Higgsfield works from to keep a face or a place the same), **How
+     many** (**Proposed:** capped at 8 per run) and **Shape**
+     (**Proposed:** portrait, tall or square; the painter crops each image to
+     its slide cell).
   6. Each requested image appears as a Generating tile, then fills in.
-     **Proposed:** generated images wait in a review row and join their group
-     only when a person presses **Keep**. **Discard** drops one.
-  7. Phase 4: **Retire image** removes an image from future picks.
+     **Proposed:** generated images wait in a review row and join the library
+     only when a person presses **Keep**. **Discard** drops one. A kept image
+     is untagged until it is read.
+  7. Phase 4: **Tag with AI** reads a library with AI vision and writes each
+     image's details. It asks two things first: which images (only the ones
+     not read yet, or all) and whether to file them into sets while it is
+     there. One image can also be read on its own from its modal.
+  8. Phase 4: clicking any image opens it as a modal — the picture and what
+     can be done to it on one side, what was read off it as metadata on the
+     other, and **Retire image** in the footer. Background removal and black
+     and white are automatic; an AI edit waits for Keep like a generated
+     image.
+  9. Phase 4: **Retire image** removes an image from future picks.
 - **Accent action:** Phase 4: Upload. **Proposed:** Generate images sits
   beside it as secondary, and becomes the accent in an empty library.
 - **Hold:** Retire image, because an unrendered manifest may still reference
   it. Discarding an unkept generated image is not a hold; nothing uses it yet.
-- **Empty:** first run (Phase 4, a new library): Generate images and Upload.
-  No results (a group filter): the filter echoed back. A group with one image
-  shows its count with no commentary; the thin groups are visible as numbers.
-  All clear: the review row is empty once every generated image is kept or
-  discarded.
+- **Empty:** first run (Phase 4, a new library): Upload and Generate images,
+  filling the page rather than leaving space under it. A set with nothing in
+  it says so in the same way. A thin set with one image shows its count with
+  no commentary. All clear: the review row is empty once every generated
+  image is kept or discarded.
+- **Marks:** an image nothing has been read off yet carries a small amber dot
+  on its tile; a library board says how many of its images are unread.
 - **Fails:**
   - An upload fails: the tile shows Failed and Retry.
   - A generation fails: that tile shows Failed and Retry; the other images
     in the run carry on.
   - Higgsfield is out of credits or unreachable: every waiting tile shows
     Failed with the reason and Retry.
+  - AI vision fails on an image: its details stay empty and it keeps its dot;
+    the rest of the run carries on.
 - **Writes:** Phase 4 only: `image_libraries`, `image_library_images`,
-  Storage. A generated image also records its prompt, shape, likeness images
-  and who kept it, so a good image can be made again.
+  `carousel_images` (the details AI vision reads), Storage. A generated image
+  also records its prompt, shape, base images and who kept it, so a good
+  image can be made again.
 
 ### F8. Create a template from scratch
 
@@ -386,9 +424,9 @@ width.
      in a dashed frame on the canvas while the AI reads the frames and their
      layers. The app has no Figma access today, so this starts with a spike.
   3. The AI drafts a template: slide size, slide count, layouts, text boxes or
-     layers, style guess, image cells each drawing from a group in the chosen
+     layers, style guess, image cells each drawing from a set in the chosen
      library, and a direction note. It asks at most one question. When the
-     template needs a group or a set fact the library lacks, it proposes them,
+     template needs a set, or a fact the set lacks, it proposes them,
      and nothing is added until Add is pressed.
   4. Every slide sits in a row on an infinite canvas at its true shape: **4:5
      (1080 × 1350) or 9:16 (1080 × 1920)**, the only two sizes (Garreth,
@@ -397,8 +435,8 @@ width.
      text boxes.
   5. **Slide size** comes first in the adjustments. Select a text box to edit
      its font, weight, size, stroke, shadow, alignment and wrap width; drag it
-     to move it. Select an image cell to choose which group of the library it
-     draws from. A cell whose group has no images shows "No images". New
+     to move it. Select an image cell to choose which set of the library it
+     draws from. A cell whose set has no images shows "No images". New
      images are made in the library (F7), not here.
      On a **layered slide** (`CAROUSEL-TEMPLATE-MODEL.md` §7) the Layers list,
      front first, selects a layer, and Bring forward and Send back change its
@@ -445,7 +483,7 @@ width.
      read-only, with a light sweeping down each while the AI works
      (Garreth, 2026-09-15). The AI reads the reference's beats and visual
      notes from the reference library, runs a vision pass over its slides, and drafts a template with the same
-     slide count, layouts and text placement, image cells drawing from groups
+     slide count, layouts and text placement, image cells drawing from sets
      in the chosen library, plus a direction note describing the
      construction.
   4. From here it is F8 from step 4. The saved template records
@@ -714,11 +752,11 @@ Nothing is left to decide before the screens.
 18. Glow Up's `transition_line` stops being written, since no slide draws it
     (`CAROUSEL-TEMPLATE-MODEL.md` §5).
 19. Library generation makes up to 8 images per run, offers portrait, tall or
-    square, and a generated image joins its group only when a person presses
+    square, and a generated image joins the library only when a person presses
     Keep (F7).
 20. The Studio asks for the image library first, so the draft and Render
     preview use real images (F8).
 21. Repointing a content type on the Generate form is saved as a new template
     version, so later batches use that library too (F1).
-22. Generate is unavailable while the chosen library has no images in a group
+22. Generate is unavailable while the chosen library has no images in a set
     the template draws from (F1).

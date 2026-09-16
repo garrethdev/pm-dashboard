@@ -822,6 +822,25 @@ the edges are tested, not just the happy middle.
   set. The Celebrity Peptide template keeps its one-person guarantee and its
   years, and the Studio now says "set" for one thing only. **D8 will need a
   small facts panel on a set** to match; it is not designed yet.
+- **The companion documents were brought across on 2026-09-16**, now that D8
+  is approved and the how-to allows it: F7 rewritten for optional nesting
+  sets, image details and Tag with AI; F1, F3, F8, F9 and F14's passing
+  references; the plan's §5.3 and §6; the template model's layer table and
+  §7.3. Three decisions were made while doing it, each worth knowing:
+  - **`v_image_assets` carries `set_name` and `subset_name`, not `set`.**
+    `SET` is a SQL keyword that would need quoting everywhere, and sets nest
+    one level, so the two levels are named outright. They come from the
+    banks' `pool` and `category` (DEV-01).
+  - **A new ticket, DEV-36**, for AI vision writing the image details. It had
+    no ticket at all — DEV-12's vision check is a different thing, on
+    rendered slides. It writes `carousel_images`'s own columns, so the
+    vocabulary comes from the live data rather than being invented, and it
+    carries a warning that a vision pass over a bank of hundreds needs its
+    cost measured first.
+  - **`CAROUSEL-RENDERER-PORT-SPEC.md` was left alone.** Its "distinct-group"
+    is the existing Python painter's own rule name, cited with line numbers,
+    and `pair_group` is a real column in `glowup_image_bank`. Renaming either
+    would make the document describe code that does not exist.
 
 - **You get here from:** the menu, or Change in D2 and D6.
 - **Flows:** F7.
