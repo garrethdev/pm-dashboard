@@ -55,8 +55,8 @@
  *   Conversation   desktop, both panels open
  *   Collapsed      desktop, both panels folded to rails
  *   Rename         desktop, renaming the type from its title
- *   ImageCell      desktop, slide 2, an image cell selected: which group it draws from
- *   NoImages       desktop, the library has no images in a group a cell draws from
+ *   ImageCell      desktop, slide 2, an image cell selected: which set it draws from
+ *   NoImages       desktop, the library has no images in a set a cell draws from
  *   NewLibrary     desktop, a new library: Upload images and Generate with AI in the panel
  *   Rendered       desktop, slide 1 rendered by the real painter
  *   RenderFailed   desktop, the render failed: the error in the slide's caption, Retry
@@ -139,7 +139,7 @@ export function copyStudioImages(OUT) {
   for (const f of ["cut.png", "photo-before.jpg", "photo-after.jpg", "photo-before2.jpg", "photo-after2.jpg"]) fs.copyFileSync(path.join(HERE, "assets", `d11-${f}`), path.join(OUT, `d6-${f}`));
 }
 
-/* D2's invented libraries and groups, so the picker reads the same on every screen. */
+/* D2's invented libraries and sets, so the picker reads the same on every screen. */
 const GROUPS = ["Cover", "Before", "After", "Portrait"];
 const LIBS = [
   { id: "window", name: "Soft Window Light", hue: "#c8a27a", g: [18, 41, 44, 23] },
@@ -147,10 +147,10 @@ const LIBS = [
   { id: "outdoor", name: "Outdoor Walks", hue: "#7ac8a0", g: [30, 90, 92, 0] },
   { id: "kitchen", name: "Kitchen Counter Shots", hue: "#b8b07a", g: [12, 46, 0, 0] },
 ];
-/* Which of the seven photos each group shows in the panel. */
+/* Which of the seven photos each set shows in the panel. */
 const GROUP_PHOTOS = { Cover: ["mug", "dock", "journal"], Before: ["journal", "shower", "oats"], After: ["vanity", "yoga", "mug"], Portrait: ["yoga", "shower", "dock"] };
 
-/* Six slide layouts: cells as percentages of the slide (1080×1350 at 4:5), each drawing from a group; the text box's anchor. */
+/* Six slide layouts: cells as percentages of the slide (1080×1350 at 4:5), each drawing from a set; the text box's anchor. */
 const LAYOUTS = [
   { cells: [{ x: 0, y: 0, w: 100, h: 100, g: "Cover" }], at: "bottom" },
   { cells: [{ x: 0, y: 0, w: 100, h: 50, g: "Before" }, { x: 0, y: 50, w: 100, h: 50, g: "After" }], at: "centre" },
@@ -440,14 +440,14 @@ ${S} .seg.icons button { padding: 4px 8px; }
 ${S} .sw { display: flex; width: 20px; height: 20px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--border); }
 ${S} .sw i { display: block; width: 12px; height: 12px; border-radius: 999px; }
 ${S} .sw[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-/* Which group an image cell draws from: the picker's rows, one ticked. */
-${S} .groups { display: flex; flex-direction: column; gap: 2px; padding: 0 8px 10px; }
+/* Which set an image cell draws from: the picker's rows, one ticked. */
+${S} .sets { display: flex; flex-direction: column; gap: 2px; padding: 0 8px 10px; }
 ${S} .grow { display: flex; align-items: center; gap: 10px; width: 100%; border-radius: 12px; padding: 8px 10px; font-size: 13px; line-height: 20px; font-weight: 500; transition: background-color 150ms var(--ease); }
 ${S} .grow:hover { background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
 ${S} .grow .gc { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--text-muted); }
 ${S} .grow .gc.is-none { font-weight: 500; color: var(--danger); }
 ${S} .grow .optcheck { margin-left: 4px; }
-/* The library section: its images by group, each draggable onto a cell; a new library offers Upload images and
+/* The library section: its images by set, each draggable onto a cell; a new library offers Upload images and
    Generate with AI instead. */
 ${S} .lhead { display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px 14px; }
 ${S} .lhead .tile { width: 32px; height: 32px; border-radius: 8px; }
@@ -525,7 +525,7 @@ ${S} .slide.is-sk { border: 1px solid var(--border); background: var(--card-rais
 ${S} .cell { position: absolute; display: flex; align-items: center; justify-content: center; margin: 0; border: 0; padding: 0; background-size: cover; background-position: center; cursor: default; }
 ${S} .cell.can-pick { cursor: pointer; }
 ${IMAGES.map((id) => `${S} .img-${id} { background-image: url(./d6-slide-${id}.jpg); }`).join("\n")}
-/* A cell whose group has no images: the empty tile, on the slide. */
+/* A cell whose set has no images: the empty tile, on the slide. */
 ${S} .cell.is-empty { flex-direction: column; gap: 1.5cqw; background: #1a1a1c; color: rgba(255, 255, 255, 0.72); font-size: 3.6cqw; line-height: 1.2; font-weight: 500; }
 ${S} .cell.is-empty::before { content: ""; position: absolute; inset: 2cqw; border: 1px dashed rgba(255, 255, 255, 0.3); border-radius: 2cqw; }
 ${S} .cell.is-empty svg { width: 6cqw; height: 6cqw; }
@@ -751,13 +751,13 @@ const boxSettings = () => `
                 </div>
               </div>`;
 
-/* The settings for an image cell: which group of the library it draws from. */
+/* The settings for an image cell: which set of the library it draws from. */
 const cellSettings = () => `
               <div class="sec" aria-label="{{cl.label}}">
                 <div class="sech"><b>{{cl.title}}</b><span class="pill">Image cell</span></div>
                 <div class="irow" style="padding-bottom: 2px"><span class="ilabel">Draws from</span><span class="ictl libmeta">{{cl.libName}}</span></div>
-                <div class="groups" role="radiogroup" aria-label="Library group">
-                  <sc-for list="{{cl.groups}}" as="g" hint-placeholder-count="4">
+                <div class="sets" role="radiogroup" aria-label="Library set">
+                  <sc-for list="{{cl.sets}}" as="g" hint-placeholder-count="4">
                     <button type="button" class="grow" role="radio" aria-checked="{{g.checked}}" onClick="{{g.pick}}">
                       <span>{{g.name}}</span>
                       <span class="gc tnum {{g.gcCls}}">{{g.count}}</span>
@@ -767,7 +767,7 @@ const cellSettings = () => `
                 </div>
               </div>`;
 
-/* The library section: its images by group, or Upload images and Generate with AI for a new one. */
+/* The library section: its images by set, or Upload images and Generate with AI for a new one. */
 const librarySection = () => `
               <div class="sec" id="sec-library" aria-label="Image library">
                 <div class="lhead">
@@ -777,8 +777,8 @@ const librarySection = () => `
                   <sc-if value="{{canChangeLib}}" hint-placeholder-val="{{ true }}"><button type="button" class="tbtn" onClick="{{changeLib}}">Change</button></sc-if>
                 </div>
                 <sc-if value="{{lp.hasImages}}" hint-placeholder-val="{{ true }}">
-                  <div class="gpills" role="radiogroup" aria-label="Group">
-                    <sc-for list="{{lp.groups}}" as="g" hint-placeholder-count="5">
+                  <div class="gpills" role="radiogroup" aria-label="Set">
+                    <sc-for list="{{lp.sets}}" as="g" hint-placeholder-count="5">
                       <button type="button" class="{{g.cls}}" role="radio" aria-checked="{{g.checked}}" onClick="{{g.pick}}">{{g.name}} <b class="tnum">{{g.count}}</b></button>
                     </sc-for>
                   </div>
@@ -1123,17 +1123,17 @@ function vals(init) {
     var sum = function (a) { return a.reduce(function (x, y) { return x + y; }, 0); };
     var tint = function (hex) { return hex ? "color-mix(in srgb, var(--card-raised) 78%, " + hex + ")" : "var(--card-sunken)"; };
     var images = function (n) { return n === 1 ? "1 image" : fmt(n) + " images"; };
-    var groupCount = function (g) { return lib ? lib.g[GROUPS.indexOf(g)] : 0; };
+    var setCount = function (g) { return lib ? lib.g[GROUPS.indexOf(g)] : 0; };
     var copySet = COPY[s.d6copy] || COPY.morning;
     var NAME = edit ? (P.name || "Before & After") : "Morning Routine";
     /* The title is the type's name; a new type is "New carousel type" until it is renamed here or in the Save dialog. */
     var TITLE = edit ? NAME : (s.d6title || "New carousel type");
     var SLIDES = LAYOUTS.length;
 
-    /* The slides, from the layouts and the sample copy. Each cell's group can be changed in the adjustments (or a
+    /* The slides, from the layouts and the sample copy. Each cell's set can be changed in the adjustments (or a
        library image dropped on it); each text box's style can be changed there too; both are kept as overrides
        keyed by slide and index. */
-    var cellGroups = s.d6cellGroups || {};
+    var cellSets = s.d6cellSets || {};
     var cellImages = s.d6cellImages || {};
     var boxStyles = s.d6boxStyles || {};
     var rendered = s.d6rendered || {};
@@ -1150,8 +1150,8 @@ function vals(init) {
       var lines = copySet[n - 1];
       var onThis = n === slide;
       var cells = L.cells.map(function (c, i) {
-        var g = cellGroups[keyOf(n, i)] || c.g;
-        var count = groupCount(g);
+        var g = cellSets[keyOf(n, i)] || c.g;
+        var count = setCount(g);
         var img = cellImages[keyOf(n, i)] || PHOTOS[n - 1][i];
         var selected = onThis && sel.kind === "cell" && sel.i === i;
         return {
@@ -1308,29 +1308,29 @@ function vals(init) {
     };
 
     /* The adjustments for the selected image cell. */
-    var cellGroup = ready && sel.kind === "cell" ? (cellGroups[keyOf(slide, sel.i)] || LAYOUTS[slide - 1].cells[sel.i].g) : "";
+    var cellSet = ready && sel.kind === "cell" ? (cellSets[keyOf(slide, sel.i)] || LAYOUTS[slide - 1].cells[sel.i].g) : "";
     var cl = {
       label: "Settings for the selected image cell",
       title: "Slide " + slide + " · Image " + ((sel.i || 0) + 1),
       libName: lib ? lib.name : "",
-      groups: GROUPS.map(function (g) {
-        var count = groupCount(g), on = g === cellGroup;
+      sets: GROUPS.map(function (g) {
+        var count = setCount(g), on = g === cellSet;
         return {
           name: g, count: count === 0 ? "No images" : images(count), gcCls: count === 0 ? "is-none" : "",
           on: on, checked: on ? "true" : "false",
-          pick: function () { var next = Object.assign({}, cellGroups); next[keyOf(slide, sel.i)] = g; self.setState({ d6cellGroups: next }); }
+          pick: function () { var next = Object.assign({}, cellSets); next[keyOf(slide, sel.i)] = g; self.setState({ d6cellSets: next }); }
         };
       })
     };
 
     /* The library section. Its images can be dragged onto a cell of any slide; a click puts one in the selected cell. */
     var isNewLib = !!lib && lib.id === "new";
-    var lgroup = s.d6lgroup || "All";
+    var lset = s.d6lset || "All";
     var libImages = [];
     if (lib && !isNewLib) {
       GROUPS.forEach(function (g) {
-        if (lgroup !== "All" && lgroup !== g) return;
-        if (groupCount(g) === 0) return;
+        if (lset !== "All" && lset !== g) return;
+        if (setCount(g) === 0) return;
         GROUP_PHOTOS[g].forEach(function (id, i) { libImages.push({ id: id, g: g, i: i }); });
       });
     }
@@ -1348,9 +1348,9 @@ function vals(init) {
       isNew: isNewLib,
       hasImages: !!lib && !isNewLib,
       imagesLabel: lib ? "Images in " + lib.name : "",
-      groups: [{ name: "All", count: lib ? fmt(sum(lib.g)) : "0" }].concat(GROUPS.map(function (g) { return { name: g, count: fmt(groupCount(g)) }; })).map(function (g) {
-        var on = g.name === lgroup;
-        return { name: g.name, count: g.count, cls: on ? "is-on" : "", checked: on ? "true" : "false", pick: function () { self.setState({ d6lgroup: g.name }); } };
+      sets: [{ name: "All", count: lib ? fmt(sum(lib.g)) : "0" }].concat(GROUPS.map(function (g) { return { name: g, count: fmt(setCount(g)) }; })).map(function (g) {
+        var on = g.name === lset;
+        return { name: g.name, count: g.count, cls: on ? "is-on" : "", checked: on ? "true" : "false", pick: function () { self.setState({ d6lset: g.name }); } };
       }),
       images: libImages.slice(0, 9).map(function (im) {
         return {
@@ -1360,7 +1360,7 @@ function vals(init) {
           pick: function () { placeImage(im.id); }
         };
       }),
-      upload: function () { self.note("Uploads images into " + (lib ? lib.name : "the library") + ", by group · D8"); },
+      upload: function () { self.note("Uploads images into " + (lib ? lib.name : "the library") + ", by set · D8"); },
       generate: function () { self.note("Generates images with Higgsfield into " + (lib ? lib.name : "the library") + " · D8"); }
     };
     var dragOver = function (e) { if (self.d6dragId) { e.preventDefault(); try { e.dataTransfer.dropEffect = "copy"; } catch (err) {} } };
@@ -1618,7 +1618,7 @@ function studioBaseScreen({ init = {} } = {}) {
     d6ref: m.ref, d6refNew: m.refNew, d6sampling: m.sampling,
     d6save: m.save, d6hold: m.hold, d6vers: m.vers, d6copy: m.copy, d6cin: m.cin, d6cinFocus: !!m.cinFocus, d6chatOpen: m.chatOpen, d6unread: m.unread, d6left: m.left,
     d6title: m.title, d6rename: m.rename, d6renameVal: m.renameVal, d6sheet: m.sheet,
-    d6cellGroups: null, d6cellImages: null, d6boxStyles: null, d6lgroup: "All", d6newLib: "", d6ph: 0, d6panning: false, d6panTo: null, d6toLibrary: false,
+    d6cellSets: null, d6cellImages: null, d6boxStyles: null, d6lset: "All", d6newLib: "", d6ph: 0, d6panning: false, d6panTo: null, d6toLibrary: false,
   };
   return {
     id: "studio",
@@ -1685,7 +1685,7 @@ const SLIDES11 = [
     n: 2, name: "Slide 2", layers: [
       { id: "s2-year", kind: "label", name: "Year", src: "Set", x: 70, y: 3, w: 26, h: 5.4, fact: "Before year" },
       { id: "s2-line", kind: "line", name: "Line", src: "AI", x: 6, y: 82.5, w: 88, h: 12 },
-      { id: "s2-photo", kind: "frame", name: "Photo", src: "Set", x: 20.1, y: 13.1, w: 59.7, h: 66.9, tint: "bef", group: "Before" },
+      { id: "s2-photo", kind: "frame", name: "Photo", src: "Set", x: 20.1, y: 13.1, w: 59.7, h: 66.9, tint: "bef", set: "Before" },
       { id: "s2-paper", kind: "fixed", name: "Paper", src: "Fixed", x: 0, y: 0, w: 100, h: 100, img: "paper", file: "paper-texture.png" },
     ],
   },
@@ -1693,7 +1693,7 @@ const SLIDES11 = [
     n: 3, name: "Slide 3", layers: [
       { id: "s3-year", kind: "label", name: "Year", src: "Set", x: 70, y: 3, w: 26, h: 5.4, fact: "After year" },
       { id: "s3-line", kind: "line", name: "Line", src: "AI", x: 6, y: 82.5, w: 88, h: 12 },
-      { id: "s3-photo", kind: "frame", name: "Photo", src: "Set", x: 20.1, y: 13.1, w: 59.7, h: 66.9, tint: "aft", group: "After" },
+      { id: "s3-photo", kind: "frame", name: "Photo", src: "Set", x: 20.1, y: 13.1, w: 59.7, h: 66.9, tint: "aft", set: "After" },
       { id: "s3-paper", kind: "fixed", name: "Paper", src: "Fixed", x: 0, y: 0, w: 100, h: 100, img: "paper", file: "paper-texture.png" },
     ],
   },
@@ -1863,7 +1863,7 @@ ${S} .ly--line, ${S} .ly--label { display: flex; align-items: center; }
 ${S} .ly--line .lyt, ${S} .ly--label .lyt { font-size: 3.89cqw; line-height: 1.18; font-weight: 700; color: #ffffff; -webkit-text-stroke: 0.37cqw #000000; paint-order: stroke fill; }
 ${S} .ly--line .lyt { text-align: center; }
 ${S} .ly--label .lyt { text-align: right; }
-/* A layer whose group has no images yet: D6's empty cell, on the layer. */
+/* A layer whose set has no images yet: D6's empty cell, on the layer. */
 ${S} .ly.is-empty .lyno { position: absolute; inset: 6% 6% 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5cqw; border-radius: 2cqw 2cqw 0 0; border: 1px dashed rgba(255, 255, 255, 0.35); border-bottom: 0;
   background: rgba(26, 26, 28, 0.86); color: rgba(255, 255, 255, 0.72); font-size: 3.6cqw; line-height: 1.2; font-weight: 500; }
 ${S} .ly.is-empty .lyno svg { width: 6cqw; height: 6cqw; }
@@ -2034,7 +2034,7 @@ const textRows = () => `
                   </sc-if>
                 </sc-if>`;
 
-/* The library as sets, in place of D6's groups of loose images. */
+/* The library as sets, in place of D6's sets of loose images. */
 const setsSection = () => `
               <sc-if value="{{d11lay}}" hint-placeholder-val="{{ false }}">
                 <div class="sec" aria-label="Image library">
@@ -2042,7 +2042,7 @@ const setsSection = () => `
                     <span class="tile d11tile" aria-hidden="true"></span>
                     <span class="libtext"><span class="libname">Red Carpet Sets</span><span class="libmeta tnum">24 sets</span></span>
                   </div>
-                  <div class="gpills" role="radiogroup" aria-label="Group">
+                  <div class="gpills" role="radiogroup" aria-label="Set">
                     <sc-for list="{{d11gp}}" as="g" hint-placeholder-count="4">
                       <button type="button" class="{{g.cls}}" role="radio" aria-checked="{{g.checked}}">{{g.name}} <b class="tnum">{{g.count}}</b></button>
                     </sc-for>
@@ -2073,7 +2073,7 @@ function swap(html, find, replace, { optional = false, all = false } = {}) {
 }
 
 /* Shared by the conversation on the desktop and the phone: the AI's proposal of what the library lacks. */
-const proposal = `<sc-if value="{{m.groups}}" hint-placeholder-val="{{ false }}"><div class="msg msg--ai"><span class="aiv" aria-hidden="true">${D11I.ai}</span><span class="bub is-offer"><span>{{m.text}}</span><span class="gprop"><sc-for list="{{m.items}}" as="gi" hint-placeholder-count="4"><span class="gprow"><b>{{gi.name}}</b><span class="pill {{gi.cls}}">{{gi.kind}}</span></span></sc-for></span><span class="offer"><button type="button" class="btn2" onClick="{{m.create}}">{{m.button}}</button></span></span></div></sc-if>`;
+const proposal = `<sc-if value="{{m.sets}}" hint-placeholder-val="{{ false }}"><div class="msg msg--ai"><span class="aiv" aria-hidden="true">${D11I.ai}</span><span class="bub is-offer"><span>{{m.text}}</span><span class="gprop"><sc-for list="{{m.items}}" as="gi" hint-placeholder-count="4"><span class="gprow"><b>{{gi.name}}</b><span class="pill {{gi.cls}}">{{gi.kind}}</span></span></sc-for></span><span class="offer"><button type="button" class="btn2" onClick="{{m.create}}">{{m.button}}</button></span></span></div></sc-if>`;
 
 /* The attached Figma link: in the chat box before sending, with its remove button; above the conversation's chat box
    after, as an indicator. */
@@ -2342,24 +2342,24 @@ function vals11(d6vals) {
     if (LAY && FIG && ready) {
       msgs = [ME_FIG, { ai: true, text: "Five slides from the file's five frames, at 4:5 like the file. Slides 4 and 5 are single images, so they are fixed: the same on every deck." }];
       if (s.d11cutEmpty) msgs.push({
-        groups: true,
-        text: "Slides 1 to 3 follow one person, so they draw from one set in Red Carpet Sets. Its sets have Before and After photos, but no cut-out for the cover, and the labels need two facts.",
+        sets: true,
+        text: "Slides 1 to 3 follow one person, so they draw from one set in Red Carpet Sets — a set per person. Each has Before and After photos, but no cut-out for the cover, and the labels need two facts.",
         items: [
-          { name: "Cover cut-out", kind: "Group", cls: "" },
+          { name: "Cover cut-out", kind: "Set", cls: "" },
           { name: "Name", kind: "Fact", cls: "" },
           { name: "Before year", kind: "Fact", cls: "" },
           { name: "After year", kind: "Fact", cls: "" }
         ],
         button: "Add to Red Carpet Sets",
-        create: function () { self.note("Adds the group and the facts to Red Carpet Sets; its sets fill them in from D8"); }
+        create: function () { self.note("Adds the set and the facts to Red Carpet Sets; each person's set fills them in from D8"); }
       });
     }
     if (s.d11moment === "sizeChange") msgs = [
       { me: true, text: "Make it 9:16" },
       { ai: true, text: "Now 9:16. Each text box kept its margins and the image cells grew to the new height. Save version makes this version 5; version 4 stays 4:5." }
     ];
-    if (msgs) msgs = msgs.map(function (m) { return Object.assign({ me: false, ai: false, busy: false, err: false, offer: false, groups: false, items: [], button: "", create: function () {} }, m); });
-    else msgs = D6V.msgs.map(function (m) { return Object.assign({ groups: false, items: [], button: "", create: function () {} }, m); });
+    if (msgs) msgs = msgs.map(function (m) { return Object.assign({ me: false, ai: false, busy: false, err: false, offer: false, sets: false, items: [], button: "", create: function () {} }, m); });
+    else msgs = D6V.msgs.map(function (m) { return Object.assign({ sets: false, items: [], button: "", create: function () {} }, m); });
 
     var over = {
       d11studioCls: "sz-" + size + (LAY ? " d11-lay" : "") + (FIG ? " d11-fig" : ""),
@@ -2412,7 +2412,7 @@ function vals11(d6vals) {
       d11selCut: !!selL && selL.kind === "cut",
       d11selFrame: !!selL && selL.kind === "frame",
       d11selFixed: !!selL && selL.kind === "fixed",
-      d11drawsFrom: selL && selL.group ? "Set · " + selL.group : "",
+      d11drawsFrom: selL && selL.set ? "Set · " + selL.set : "",
       d11file: selL && selL.file ? selL.file : "",
       d11fileCls: selL && selL.img ? "fx-" + selL.img : "",
       d11replace: function () { self.note("Uploads a new image for every deck of this type; it saves with the next version"); },
@@ -2438,7 +2438,7 @@ function vals11(d6vals) {
         var on = i === (s.d11set || 0);
         return { name: st.name, facts: st.facts, pair: i % 2 ? "p2" : "p1", on: on, cls: on ? "is-on" : "", checked: on ? "true" : "false", cutCls: s.d11cutEmpty ? "is-none" : "", pick: function () { self.setState({ d11set: i }); self.note("The sample deck draws from " + st.name); } };
       }),
-      d11upload: function () { self.note("Uploads images into Red Carpet Sets, by set and group · D8"); },
+      d11upload: function () { self.note("Uploads images into Red Carpet Sets, into the right person's set · D8"); },
       d11generate: function () { self.note("Generates images with Higgsfield into Red Carpet Sets · D8"); }
     };
     /* Composing from a Figma link: the paperclip attaches the link as a chip, and Send takes the link and the prompt
@@ -2553,7 +2553,7 @@ function build(OUT) {
     { name: "ReferenceDraft", phone: false, m: "referenceDraft", title: "D6 · From a reference deck: the draft beside the reference · Desktop", x: 1540, y: ROW * 10 },
     { name: "Rendering", phone: false, m: "rendering", title: "D6 · A slide while it renders · Desktop", x: 0, y: ROW * 11 },
     { name: "ImageCell", phone: false, m: "cell", title: "D6 · An image cell selected · Desktop", x: 0, y: ROW * 5 },
-    { name: "NoImages", phone: false, m: "noImages", title: "D6 · A group with no images · Desktop", x: 1540, y: ROW * 5 },
+    { name: "NoImages", phone: false, m: "noImages", title: "D6 · A set with no images · Desktop", x: 1540, y: ROW * 5 },
     { name: "NewLibrary", phone: false, m: "newLibrary", title: "D6 · A new library: upload or generate · Desktop", x: 0, y: ROW * 6 },
     { name: "Rendered", phone: false, m: "renderedSlide", title: "D6 · Slide 1 rendered by the painter · Desktop", x: 1540, y: ROW * 6 },
     { name: "RenderFailed", phone: false, m: "renderFailed", title: "D6 · The render failed · Desktop", x: 0, y: ROW * 7 },

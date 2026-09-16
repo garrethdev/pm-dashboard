@@ -463,7 +463,7 @@ the edges are tested, not just the happy middle.
     or Fixed, with Bring forward and Send back), cut-outs placed freely,
     text on a box, shaped frames with a border, fixed images, labels filled
     from a set's facts, the library shown as sets, and the AI proposing the
-    groups and facts a template lacks, whichever way the Studio started.
+    sets and facts a template lacks, whichever way the Studio started.
   - **The phone:** D11 has no phone boards, so the size choice, the Figma
     chip and the Layers list in the phone's sheets are designed in this
     pass.
@@ -504,7 +504,7 @@ the edges are tested, not just the happy middle.
   failed; the slides on the canvas with the hook selected; both panels
   open; both panels folded; the adjustments folded with the conversation
   open; asking the AI for an image the library lacks; renaming the type
-  from its title; an image cell selected; a group with no images; a new library
+  from its title; an image cell selected; a set with no images; a new library
   with Upload images and Generate with AI; slide 1 rendered; the render
   failed; the Save as carousel type dialog with the short name taken;
   Discard draft being held; editing an existing type with the versions
@@ -553,16 +553,16 @@ the edges are tested, not just the happy middle.
   - Every library in the Studio's panel, new or existing, carries **Upload
     images** and **Generate with AI** under its header. Both open the
     library's own flows (F7, designed in D8): Upload puts files into a
-    group; Generate with AI takes a prompt, what it shows, the group, how
+    set; Generate with AI takes a prompt, what it shows, the set, how
     many, the shape and the likeness images, and what comes back waits for
-    Keep before it joins the group and appears in the panel. Nothing is
+    Keep before it joins the set and appears in the panel. Nothing is
     made inside the Studio itself.
   - **Asking the AI for an image the library lacks** (Garreth's question,
     2026-09-15): the AI never makes an image on its own, since that spends
     Higgsfield credits and fills a library other types may share. It says
     what it could not find and offers the same two doors in its reply,
     Generate with AI (the form filled in from the conversation: the prompt,
-    what it shows, the group, how many, the shape) and Upload images. What
+    what it shows, the set, how many, the shape) and Upload images. What
     comes back waits for Keep; once kept, the AI puts the image on the slide
     it was asked about and says so.
   - The pointer, text and image tools float at the bottom centre of the
@@ -596,7 +596,7 @@ the edges are tested, not just the happy middle.
     saved deck from Trends) or **Discuss your idea**. Either leads to the
     image library: an existing one, or a new one by name. A new library
     puts **Upload images** and **Generate with AI** in the tools panel; an
-    existing one puts its images there, by group, each draggable onto a
+    existing one puts its images there, by set, each draggable onto a
     cell of the open slide (a click puts it in the selected cell), and the
     AI picks from the same images.
   - Discuss your idea opens a chat box in the reviewed shape: a rounded box
@@ -617,8 +617,8 @@ the edges are tested, not just the happy middle.
     the adjustments edit Font, Weight, Size, Stroke (colour and width),
     Shadow (Off, Hard, Soft, with offset and blur), Alignment and Wrap
     width, each change visible on the canvas at once. A selected image cell
-    shows the library it draws from and its groups as a ticked list; a
-    group with no images says "No images" in the list and on the cell.
+    shows the library it draws from and its sets as a ticked list; a
+    set with no images says "No images" in the list and on the cell.
   - Save as carousel type is a centred dialog: Name, Character, Short name.
     A short name already in use says "Taken" inside the field and Save
     waits. Save itself waits until a library is chosen and a draft exists.
@@ -653,7 +653,7 @@ the edges are tested, not just the happy middle.
   - The AI's first draft arriving.
   - Canvas at true slide shape, filmstrip of the other slides, settings panel
     for the selected text box (font, weight, size, stroke, shadow, alignment,
-    wrap width) or image cell (which library group it draws from).
+    wrap width) or image cell (which library set it draws from).
   - Image cells with **No images**.
   - **Render preview** beside the canvas, and **Regenerate sample**.
   - **Save as carousel type** dialog: name, character, short name, with the
@@ -813,10 +813,15 @@ the edges are tested, not just the happy middle.
   tried both. D2 was renamed to match on the same day, so the generator says
   sets throughout. The database still calls the two levels `pool` and
   `category`, which is a naming question for the dev tickets, not the screens.
-- **D6's Studio still says "groups"** for the same thing, in its ticket and
-  its build script. It is a finished ticket with its own two canvases, so it
-  was left alone rather than swept up here; it needs its own small pass
-  before the Studio's dev tickets are written.
+- **D6 and D11 were brought across too** (Garreth, 2026-09-16). The Studio had
+  the harder version of this: it used "Group" for the folder and "set" for a
+  per-person set with facts, so a plain rename would have left two meanings of
+  one word on the same screen. Settled by making **a person just a set inside
+  the library** — sets nest, so "Maya R." is a set in Red Carpet Sets holding
+  her cut-out, before and after, and the facts her labels quote hang off that
+  set. The Celebrity Peptide template keeps its one-person guarantee and its
+  years, and the Studio now says "set" for one thing only. **D8 will need a
+  small facts panel on a set** to match; it is not designed yet.
 
 - **You get here from:** the menu, or Change in D2 and D6.
 - **Flows:** F7.
@@ -933,7 +938,7 @@ the edges are tested, not just the happy middle.
   just opened with the third card; a Figma link attached to the chat box
   with a prompt; the attached link failing with No access; the file's five
   frames being read; the draft beside the
-  frames with the AI proposing the group and facts the library lacks; the
+  frames with the AI proposing the set and facts the library lacks; the
   layers list with the masthead behind the cut-out; a cut-out placed
   freely; the hook on its box; a photo in the wavy frame; a label filled
   from the set; a fixed image; Quiet Luxury Picks at 9:16 from D7's Edit
@@ -1006,7 +1011,7 @@ the edges are tested, not just the happy middle.
     subject, background removed, sized and positioned over another image.
   - **Fixed images** that appear on every deck (a grunge paper background, a
     closing product slide), uploaded to the template instead of picked from a
-    group.
+    set.
   - **Text on a box:** a solid container behind a text box, with its colour
     and padding, as a text style option.
   - **Shaped frames:** an image clipped to a shape (the wavy frame) with a
@@ -1015,10 +1020,10 @@ the edges are tested, not just the happy middle.
     (D8), and text boxes filled from that set's facts instead of by the AI.
   - **A third way to start: from a Figma link**, beside Start from a
     reference deck and Discuss your idea. The AI reads the frames and their
-    layers, drafts the template, and proposes the library groups it needs.
+    layers, drafts the template, and proposes the library sets it needs.
     The app has no Figma access today (a token or connection), so this starts
     with a spike.
-  - The AI proposes the library groups a new template needs, whichever way
+  - The AI proposes the library sets a new template needs, whichever way
     the Studio was started.
 - **Also affected:** the slide slots on D3 to D5's deck cards and the
   full-size preview take the type's size. D7's template strip already does
