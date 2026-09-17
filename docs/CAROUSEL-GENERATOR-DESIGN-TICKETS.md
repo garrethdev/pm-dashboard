@@ -539,7 +539,7 @@ the edges are tested, not just the happy middle.
   sheet, and the Layers list in the adjustments sheet; the adjustments sheet
   board now opens on Slide size. The phone keeps its sideways scroll, with
   no zoom. The layered desktop screens stay on D11's canvas.
-- **Status:** **Round three approved** (Garreth, 2026-09-17: the slide controls, on both D6 canvases and carried to D11's). Before that, **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). **approved in dark by Garreth on 2026-09-15 after seven
+- **Status:** **Round three approved** (Garreth, 2026-09-17: the slide controls, on both D6 canvases and carried to D11's). Merged to `main` and **in the prototype since 2026-09-18** (version 19, rebuilt whole from `main`): on a ready draft the Add slide slot, the plus in the gap, and each slide's Duplicate, Move left, Move right and Delete all work, the new slide is written before it lands, the count in the top strip follows, Delete goes unavailable at two slides, and a deck handed over from Trends takes the same controls; checked on desktop and phone by driving the boards locally, not on the canvas. Before that, **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). **approved in dark by Garreth on 2026-09-15 after seven
   review rounds the same day; light mode designed and D6 added to the
   Carousel Generator Prototype
   (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
