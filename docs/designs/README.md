@@ -6,9 +6,13 @@ its own branch. The tickets themselves are in
 `docs/CAROUSEL-GENERATOR-DESIGN-TICKETS.md`; take the lowest one not marked
 done, or the one Garreth names.
 
-**The design step is closed (2026-09-16).** D1 to D11 are all approved and in
-the prototype, and the work moved to `CAROUSEL-GENERATOR-DEV-TICKETS.md`. This
-page stays as the how-to for any screen Garreth reopens or adds.
+**The design step closed on 2026-09-16** with D1 to D11 approved and in the
+prototype, and the work moved to `CAROUSEL-GENERATOR-DEV-TICKETS.md`. **D10 was
+reopened on 2026-09-17** (Garreth) for a second round, the feed and the search,
+redesigned in place in its own build file and on its own canvas pages; the dev
+tickets for it were written the same day, in parallel, and **round two was
+approved the same day**, so the design step is closed again. This page stays
+as the how-to for any screen Garreth reopens or adds.
 
 ## Where the designs live
 
@@ -59,8 +63,22 @@ page stays as the how-to for any screen Garreth reopens or adds.
   `"🎠🕰️"`. Steps 3–6 read and save this canvas; step 4 runs
   `place-ticket.mjs` without `--theme`; step 5 packages it with
   `--title "Carousel Generator Designs - (D9 and D10)"`. D9 is 8 boards a
-  theme and D10 is 15, both themes 8.9 MB of the 16 MB limit. Both tickets are
-  approved; nothing else should be added here.
+  theme and D10 is 25 since its second round (2026-09-17; it was 15), both
+  themes 13.3 MB of the 16 MB limit. Nothing else should be added here.
+  The `/design` skill that shipped `seed-canvas.mjs` was not on the machine
+  on 2026-09-17; the canvas is one page whose whole content sits in a JSON
+  block (`<script type="application/json" id="appifact-doc">`, with `title`
+  and `content.files`: artboards and `canvas.json` as text, images as plain
+  base64), so `carousel-generator/canvas-pack.mjs` (added 2026-09-17) does
+  steps 3 and 5 instead: `--extract <saved page> --to <dir>`, then
+  `--pack --template <saved page> --from <merged dir> --out <file> --title
+  "..."`, then `--check <file>`. The saved page comes from the Artifact tool's
+  read of the canvas link (it names the file it saved). And a board can be
+  looked at before saving: `carousel-generator/render-board.mjs <board.dc.html>
+  <out.html>` fills the board's template without the canvas runtime, and
+  headless Chrome (`--headless=new --screenshot=... --window-size=1440,900`,
+  run against the file inside the build folder so its images resolve) gives a
+  picture of it. D10's second round was checked that way.
 - **Carousel Generator Designs - (D6 pt. 2 Studio)**, D11's own canvas (the
   Studio's second round), named by Garreth on 2026-09-15:
   https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5. Pages `D11 · Dark` and

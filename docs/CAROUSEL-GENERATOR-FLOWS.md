@@ -3,6 +3,9 @@
 **Status:** Phase 1 deliverable of `CAROUSEL-GENERATOR-PLAN.md` §9. Written
 2026-09-14 for Garreth's sign-off. **Nothing here is built.** Screens are
 designed from this document; code is written only after both are signed off.
+**Revised 2026-09-17:** F15 added, for browsing and searching the reference
+library on the Trends page, and the hand-off to the Studio renamed **Use as
+reference** in F9 and F12.
 
 Companion documents: the plan (why and what), `CAROUSEL-TEMPLATE-MODEL.md`
 (the contract the painter and studio share), `CAROUSEL-RENDERER-PORT-SPEC.md`
@@ -64,7 +67,7 @@ no longer used on a card.
 | · Wiring tab | same, `?tab=wiring` | 4 | none; the run is itself a hold | Wire |
 | Library | `/carousel-generator/library`, `/library/[id]` | 2 read-only, 4 editable | Phase 4: Upload; Generate images in an empty library | Phase 4: Retire image |
 | Studio | `/carousel-generator/studio`, `/studio/[template]` | 3 | Save as content type, or Save version | Discard draft |
-| Trends | `/carousel-generator/trends` | 5 | Analyse, on the newest unanalysed digest | — |
+| Trends | `/carousel-generator/trends` | 5 | Analyse on the Digests section, on the newest unanalysed digest; none on the Feed | — |
 
 All screens work in dark and light mode, like every other page of the
 dashboard (Garreth, 2026-09-14). Dark is designed first; light uses the same
@@ -487,8 +490,13 @@ width.
 ### F9. Recreate a reference
 
 - **When:** a reference carousel is worth copying the construction of.
-  Phase 3 from a reference id; Phase 5 adds the Trends entry.
-- **Screens:** Trends ("Recreate this") or a reference id, then Studio.
+  Phase 3 from a reference id; Phase 5 adds the two Trends entries.
+- **Screens:** Trends, then Studio — or a reference id on its own. On Trends
+  the way in is **Copy to Studio**, either on a **feed card** (F15) or on a
+  carousel listed under an analysed digest (F12). Both land in the same place
+  with the same reference (Garreth, 2026-09-17). The button was called
+  "Recreate this", then "Use as reference", earlier the same day; **Copy to
+  Studio** is its name everywhere in this file from here on.
 - **Steps:**
   1. Studio opens on **Start from a reference deck**, then the saved decks.
   2. **Image library** (Garreth, 2026-09-14): a reference comes with none, so
@@ -600,9 +608,9 @@ width.
      analyses of its linked posts.
   3. The result lists proposed rules (the rule, the evidence lines, a
      confidence, the carousel types it applies to) and the **carousels** it
-     read, each with its slides and **Recreate this** (F9). A rule here shows
+     read, each with its slides and **Copy to Studio** (F9). A rule here shows
      a Pending pill and nothing to press: accepting and rejecting are F13's
-     job, on the Knowledge base tab.
+     job, on the Knowledge tab.
   4. Links still waiting for analysis show "Queued" with the time they were
      queued, and the digest can be analysed again once they land.
   5. **Videos are ignored** (Garreth, 2026-09-16): this app makes carousels.
@@ -612,8 +620,10 @@ width.
      body still shows every link, because the body is the email that arrived.
      The pattern pass still reads a video's analysis where one exists: a video
      can support a rule without being shown.
-- **Accent action:** Analyse, on the newest unanalysed digest — the page's
-  only accent. Analyse again, Retry and Recreate this are all secondary.
+- **Accent action:** Analyse, on the newest unanalysed digest — this tab's
+  only accent (D10) — and the page's only accent anywhere. Analyse again,
+  Retry and **Copy to Studio** are all secondary here, and Copy to Studio is
+  quiet on a feed card too (F15).
 - **Hold:** none.
 - **Empty:** first run: no digests yet, no action (they arrive on their own),
   and the block fills the screen. All clear: every digest analysed, which reads
@@ -626,9 +636,9 @@ width.
 ### F13. Accept or reject a proposed rule
 
 - **When:** an analysed digest proposed rules. Phase 5.
-- **Screens:** Trends, Knowledge base pane.
+- **Screens:** Trends, Knowledge pane.
 - **Steps:**
-  1. Proposed rules appear as pending on the **Knowledge base** tab,
+  1. Proposed rules appear as pending on the **Knowledge** tab,
      filterable by lane and confidence, above the rules already accepted.
   2. **Accept** appends the rule with the digest it came from and the session
      email. The Direction conversation can now cite it.
@@ -709,6 +719,148 @@ width.
   and 11 have no links at all. **Proposed:** those 26 are repaired by this
   flow when a deck chooses them, not in a separate clean-up.
 
+### F15. Browse and search the library
+
+- **When:** looking for a carousel worth building a content type from, or
+  checking what the library already holds on a subject or on an account. The
+  feed shows carousels the library scraped from **other creators, never our
+  own** — like a social feed — so that a person can see what is doing well and
+  recreate it in the Studio (Garreth, 2026-09-17, first review of round two).
+  Phase 5, with the rest of Trends. It needs only the reference library, which
+  is already full (plan §2.6), so it does not wait on the digest work.
+- **What the library is:** the 1,246 reference carousels the Virlo bridge and
+  the analysis workers have collected, read live on 2026-09-17. **Carousels
+  only** — videos are filtered out here exactly as they are on the digests
+  (Garreth, 2026-09-16, restated 2026-09-17), and the filter is on the
+  reference's `format`, not on the address.
+- **Screens:** Trends, **Feed** — the first of the four buttons on the page's
+  left rail (Feed, Saved, Digests, **Knowledge**, renamed from "Knowledge
+  base" on screen by Garreth, 2026-09-17, fourth review of round two; only the
+  label changed, the table behind it is still `content_knowledge_base`), which
+  on a phone is a floating bar along the bottom of the screen. Then the Studio, if a card is
+  copied into it.
+- **Steps:**
+  1. The generator's **Trends** menu item opens the page on **Feed**, the
+     first and default of the four buttons on the page's **left rail**
+     (Garreth, 2026-09-17). **Saved** is the second, then Digests and
+     Knowledge, unchanged. **No button carries a count** (Garreth,
+     2026-09-17, second review of round two). On a phone the rail is a
+     floating bar at the bottom of the screen. The search box sits centred
+     over the posts, and on a phone beside the **Trends** title on the same
+     row. **Only the posts scroll** (Garreth, 2026-09-17, third review of
+     round two): the title and the search box, the rail and the Recent saves
+     panel are pinned, and the column of posts moves in a scroller of its own,
+     with a generous gap under the search box before the first post. On a
+     phone the same — title and bar pinned, floating bar pinned, posts
+     scrolling under them.
+  2. The feed is one column of cards **500px wide on the desktop**, one under
+     the other with a thin divider between them and no box drawn around them.
+     It is centred **between the rail (200px) and the Recent saves panel
+     (300px), not on the page**, so the gap either side of the posts is the
+     same — 76px on a 1440px screen — and the search box is centred over them
+     the same way (Garreth, 2026-09-17, third review of round two). **A card is shaped
+     like an Instagram feed post:** a header row with a round platform mark,
+     the handle and the date beside it (only when the library knows one), and
+     **View Post** at its top right, opposite the handle and the topic line; a
+     muted second line of topic tags, which on a search result also says
+     "Matches on slide 3";
+     the slides at 4:5 as **a track that snaps slide to slide** (Garreth,
+     2026-09-17, fourth review of round two) — a trackpad swipe pages them on
+     the desktop the way a thumb does on a phone, and the dots and the arrows
+     on hover page them too — with the slide counter over them; then a row
+     carrying the numbers ("24.3k views · 1.2k
+     likes · 108 saves") at the left and **Copy to Studio** beside **Save** at
+     the right — **Copy to Studio is a quiet grey outline button**, no fill,
+     its text and its icon in the ordinary text colour (Garreth, 2026-09-17,
+     third review of round two); then the hook as the caption with the handle
+     in bold
+     before it, directly under that row. **View Post is the way out to the
+     original post** (Garreth, 2026-09-17, fourth review of round two): a
+     quiet grey outline button, no fill and ordinary text colour, which opens
+     that post on TikTok or Instagram in a new tab from
+     `references_unified.source_url`. It answers the note the second review
+     left open when it took the Share and Open source buttons off the card.
+     Pressing the handle still shows that creator's carousels. On a phone the
+     card is the same, with the image edge to edge and nothing riding on top
+     of it.
+  3. The feed is **one list, best-scored first**, and there is **no chip
+     row** — no Trending chip, no Saved chip and no carousel-type chips, so
+     nothing filters it by type (Garreth, 2026-09-17, first review of round
+     two). Best-scored means best in our own library rather than trending this
+     week, because the carousels we hold carry no publish date. **The feed
+     says none of that:** the honest caption "Trending in the library" is gone
+     too, so nothing at all sits above the first card (Garreth, 2026-09-17,
+     second review of round two).
+  4. Reaching the end of twenty cards fetches the next twenty; the next card's
+     outline stands in with the busy icon while they load. At the end of the
+     library the column says "That's every carousel".
+  5. **Save** is the quiet bookmark beside Copy to Studio. Pressing it fills
+     the icon; pressing again unsaves. Saves are personal to the email that
+     made them, newest saved first.
+  6. **Saved**, the rail's second button, lists them back: the same feed
+     layout, this person's saves, newest saved first, and **"Nothing saved
+     yet"** when there are none (Garreth, 2026-09-17, second review of round
+     two).
+  7. **On the desktop only, a "Recent saves" panel** sits to the right of the
+     feed: the last five saves as horizontal cards — the thumbnail at the
+     left, then the handle, and views and likes — with **View all saves**,
+     which opens the Saved section. The phone has no panel; its way in is the
+     Saved button on the floating bar.
+  8. **Searching:** type in the one box — as wide as the posts, 500px on the
+     desktop, with **no scope pills** (Garreth, 2026-09-17, second review of
+     round two) — then
+     press Enter or the search icon. Nothing runs while typing, because
+     the search is a round trip that can take seconds. One query searches
+     creators and carousels together. **Accounts that match come back as a
+     short list above the carousels** — handle, platform, how many of their
+     carousels we hold, their best views — and pressing one shows that
+     creator's carousels as ordinary feed cards, with the handle pinned as a
+     chip above them. The carousels themselves replace the feed in place as
+     **a grid, three tiles across** (Garreth, 2026-09-17, fourth review of
+     round two), each tile the slide that matched, at 4:5, with a small
+     carousel mark in the corner and an "n slides" badge — the way Instagram
+     lays its search results out — under a line that says what was found —
+     "14 carousels for 'under-eye serum'", or "No carousels match". **Clear**
+     returns to the feed at the top.
+  9. **Pressing a tile opens that post alone in the column**, drawn in the
+     feed's own layout, with **Back to results** in the results line to return
+     to the grid. Clearing the search is the X on the search bar; there is
+     no Clear button in the results line (Garreth, 2026-09-17, after the
+     fifth cut).
+  10. Searching from any other section switches to Feed to show the results.
+  11. **Copy to Studio** on a card hands over to F9 with that reference — the
+      same destination as the button on a carousel under a digest (F12).
+- **Accent action:** **none on the feed** (Garreth, 2026-09-17, third review
+  of round two). Copy to Studio was the lit button for a day; it is now a
+  quiet grey outline button beside Save, and everything else here — Save, the
+  search box, the rail buttons — is quiet too. The generator's accent on this
+  page belongs to **Analyse**, on the Digests section (F12).
+- **Hold:** none. Unsaving loses nothing that cannot be saved again in one
+  press.
+- **Empty:** first run: "No carousels yet" fills the screen, and only when the
+  library itself is empty. No results: "No carousels match" after a search,
+  sitting inline where the grid would be, because the rest of the page is
+  still there.
+- **Fails:**
+  - A slide's picture has expired, which the stored media links do: the frame
+    reads "Image gone" and the card keeps its hook, its metrics and its
+    buttons. A reference is never dropped because a picture went missing.
+  - The search errors or times out: the message sits where the results line
+    would be, with Retry, and the feed is still underneath, behind Clear.
+  - A page of cards fails to load: the busy outline becomes a Retry in the same
+    place, and the cards already read stay where they are.
+- **Writes:** `reference_favourites`, on Save and on unsave. Browsing and
+  searching write nothing.
+- **Answered, 2026-09-17:** the first review left it open where a person finds
+  what they saved, once the chip row went. The second review settled it —
+  **Saved is a fourth section on the left rail** (and on the phone's floating
+  bar), with the desktop's Recent saves panel as the shortcut to it
+  (Garreth, 2026-09-17, second review of round two).
+  The second review left a second note open — nothing on a post led back to
+  the original any more — and **the fourth review answers it: View Post**, a
+  quiet grey outline button at the top right of every post, opens it on its
+  own platform (Garreth, 2026-09-17, fourth review of round two).
+
 ---
 
 ## 3. Rules that apply to every flow
@@ -760,6 +912,27 @@ width.
    hub. Its items are named Carousel types and History (§1).
 
 Nothing is left to decide before the screens.
+
+**Decided (Garreth, 2026-09-17)**
+
+10. Trends opens on **Feed**, a feed of the reference library, with one search
+    box centred over it, as wide as the posts and with no scope pills; one
+    query searches creators and carousels together, and the carousels come
+    back as a grid of three tiles across, a tile opening that post alone with
+    **Back to results** (F15). **Saved**, Digests and
+    **Knowledge** are the other three buttons on the page's left rail, none
+    of them carrying a count (F15). Carousels only, as before.
+11. The hand-off button is called **Copy to Studio** everywhere, after a day
+    that also tried "Recreate this" and "Use as reference" (F9, F12, F15).
+12. Favourites are personal to the person who saved them, newest saved first,
+    and they are listed back in the **Saved** section, with the desktop's
+    **Recent saves** panel as a shortcut into it (F15).
+13. A post carries **no Share and no Open source button**; the handle is what
+    opens that creator's carousels. *(Answered 2026-09-17, in the fourth
+    review: a quiet **View Post** button at the top right of every post opens
+    it on its own platform, from `references_unified.source_url`. The slides
+    swipe sideways on the desktop too, as a track that snaps slide to slide.
+    See F15.)*
 
 **Proposed defaults, accepted unless changed**
 
