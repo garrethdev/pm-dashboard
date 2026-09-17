@@ -1078,6 +1078,16 @@ const colOverlay = (phone) =>
 /* Focus moves into the dialog as it opens; the canvas pans to a slide when asked; the left panel scrolls to its
    library section when opened from the rail's library icon. */
 const didUpdate = `
+    /* Handed a deck by Trends (Copy to Studio, D10, prototype 2026-09-17 at Garreth's request): start from it the
+       way picking it from the saved decks does, once per hand-off. The landing is D10's approved Studio board: the
+       deck under analysis, the chat open, the left panel folded, the Window library, and the "Not analysed in
+       Trends" pill when nothing has been run on it. Opened from the menu, with no deck, the Studio still keeps
+       whatever draft was in progress. */
+    var P6 = st.params || {};
+    if (st.screen === "studio" && P6.ref && !P6.refTaken && this.d6startAnalyse) {
+      this.setState({ params: Object.assign({}, P6, { refTaken: true }), d6mode: "new", d6entry: "reference", d6lib: "window", d6refNew: !!P6.refNew, d6left: false, d6rendered: null, d6vers: false, d6rename: false, d6sheet: false });
+      this.d6startAnalyse(P6.ref);
+    }
     if (st.d6focusSave) {
       var dlg6 = document.getElementById("save-dialog");
       if (dlg6) dlg6.focus({ preventScroll: true });
@@ -1398,6 +1408,8 @@ function vals(init) {
       clearTimeout(self.d6draft);
       self.d6draft = setTimeout(function () { startDraft({ d6ref: title }); }, 2400);
     };
+    /* Kept on the component so the update hook can start from a deck Trends hands over (Copy to Studio, D10). */
+    self.d6startAnalyse = startAnalyse;
     /* Regenerate sample: the boxes pulse until the new copy lands. */
     var resample = function () {
       if (s.d6sampling) return;

@@ -67,14 +67,16 @@ if (flag("extract")) {
   const manifest = JSON.parse(files["canvas.json"]);
   const problems = [];
   for (const b of manifest.artboards) if (!files[b.file]) problems.push(`artboard ${b.file} listed but missing`);
-  const pages = new Set(manifest.pages.map((p) => p.id));
+  /* The Prototype canvas is a single page and has no pages list. */
+  const pageList = manifest.pages || [];
+  const pages = new Set(pageList.map((p) => p.id));
   for (const b of manifest.artboards) if (b.page && !pages.has(b.page)) problems.push(`artboard ${b.file} on unknown page ${b.page}`);
   for (const [n, v] of Object.entries(files)) {
     if (!n.endsWith(".dc.html")) continue;
     for (const m of v.matchAll(/url\("\.\/([^"]+)"\)/g)) if (!files[m[1]]) problems.push(`${n} uses ${m[1]}, not in the canvas`);
   }
   if (!files["Main.dc.html"]) console.log("note: no Main.dc.html (expected for a multi-ticket canvas)");
-  console.log(`"${doc.title}": ${manifest.pages.length} pages, ${manifest.artboards.length} artboards, ${Object.keys(files).length} files, ${(html.length / 1048576).toFixed(1)} MB`);
+  console.log(`"${doc.title}": ${pageList.length} pages, ${manifest.artboards.length} artboards, ${Object.keys(files).length} files, ${(html.length / 1048576).toFixed(1)} MB`);
   if (problems.length) {
     console.log(problems.join("\n"));
     process.exit(1);

@@ -1503,7 +1503,14 @@ function vals(init) {
       qValue: q,
       qPlaceholder: "Search carousels or creators",
       qShort: "Search",
-      qKey: function (e) { if (e.key === "Enter") self.note("Searches the library's carousels by words and meaning, and its creators by handle"); },
+      /* In the prototype Enter runs the search: the three sample queries bring back the boards' results, and any
+         other finds nothing (the round trip is a note on the review canvas, where typing changes nothing). */
+      qKey: function (e) {
+        if (e.key !== "Enter") return;
+        var typed = ((e.target && e.target.value) || "").trim();
+        self.note("Searches the library's carousels by words and meaning, and its creators by handle");
+        if (typed) self.setState({ t10q: typed, t10creator: null, t10one: null, t10slide: {} });
+      },
       showClear: !!q || !!creator,
       clear: function () { self.setState({ t10q: "", t10creator: null, t10one: null, t10tab: "feed", t10slide: {} }); },
       showBack: !!one,

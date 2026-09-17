@@ -1012,9 +1012,12 @@ the edges are tested, not just the happy middle.
 
 - **Status:** **Done — round two approved by Garreth on 2026-09-17, dark and
   light, both sizes**, after four reviews and two rounds of small fixes, every
-  change made and saved (canvas version 26). Next: merge to `main`, then the
-  prototype is rebuilt from `main` with the new Trends screen (its Feed is the
-  default, and Copy to Studio aims at the Studio the way DEV-35 will).
+  change made and saved (canvas version 26). Merged to `main` and **in the
+  prototype since 2026-09-17**: Trends opens on the Feed, the search bar runs
+  the three sample queries on Enter (and finds nothing for any other), Saved
+  and the Recent saves panel work, and Copy to Studio opens the Studio on the
+  deck picked, from a post and from a digest's carousel (Garreth asked for
+  the landing the same day; D6's build reads the deck it is handed).
   **Reopened 2026-09-17 (Garreth)** for **round two — the feed and
   the search**, redesigned **in place**: the same build file
   `docs/designs/carousel-generator/d10-trends.build.mjs` and the same canvas

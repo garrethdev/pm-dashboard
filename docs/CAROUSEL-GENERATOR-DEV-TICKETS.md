@@ -1173,9 +1173,9 @@ The tickets below are listed by number, not in that order.
   It is reached from **two places and lands in the same one**: the icon row on
   a **feed card**, where it sits beside Save, and a carousel in a **digest's**
   list. This is
-  where the link gets aimed: in the design prototype it opens the Studio but
-  not on the deck picked, because the Studio takes a type's name and
-  character today rather than a reference (D10, 2026-09-16). Only carousels
+  where the link gets aimed: the design prototype lands on the deck picked
+  since 2026-09-17 (it opened the Studio at its start before, because the
+  Studio took a type's name and character rather than a reference). Only carousels
   carry it — videos never reach the page (DEV-40), and the Studio drafts a
   template from slides.
 - **Done when:** the button opens the Studio from a feed card **and** from a
