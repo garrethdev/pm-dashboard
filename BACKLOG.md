@@ -1031,6 +1031,51 @@ Each of these is deliberately parked, not unfinished. Every one records why it
 was deferred and what is already confirmed, so it can start from evidence rather
 than from a fresh investigation.
 
+## Trends feed and search — what v1 deliberately leaves out
+
+**Deferred by Garreth on 2026-09-17**, deciding the second round of the Trends
+screen (design ticket D10, reopened in place). The feed and the search are
+being designed and their dev tickets written now; these five pieces were looked
+at the same day and consciously left for later. Nothing here is broken.
+
+**A real trending signal.** The Feed's first chip says **"Trending in the
+library"** and means exactly that: the best-scoring carousels we hold, then the
+most-viewed, and no sense of *this week*. That is not a shortcut, it is the only
+honest thing the data supports — `published_at` is empty on every carousel in
+`references_unified` (checked live 2026-09-17), so there is no date to measure
+rising against. When posting dates start arriving, add a recency term to the
+ranking and the label can stop hedging. Until then the screen must not say
+"Trending this week".
+
+**Videos in the feed.** The feed shows carousels only, the same call D10 made
+for digests on 2026-09-16, and the format filter in the feed's ranking function
+is what enforces it. The reason is that nothing has read the videos yet — 235
+`video_enrich` jobs were still queued on 2026-09-17. Revisit when video analysis
+lands and there is something to show beyond a thumbnail.
+
+**Team-shared favourites.** Save is personal: your saves, by the email you
+signed in with. The `reference_favourites` table is shaped for the other case
+anyway — it keeps who saved each one — so showing the whole team's saves later
+is a change of filter, not a rebuild.
+
+**Reranked search.** The library search (`search_carousel_library`) merges a
+word search and a meaning search and can then re-score the winners with a
+second model. v1 runs **without** that last step, because the handover's own
+tests measured **13 to 33 seconds** with it on. A person will not wait that long
+for a search box. Turn it back on only behind something that sets expectations —
+a "better results, slower" switch, or a background pass — and measure again.
+
+**A taxonomy endpoint.** The topic and hook-family pills on a card come straight
+from `reference_analysis`, and the type chips under the tabs are the carousel
+types. There is no endpoint that lists the possible values, so the screen cannot
+offer a tidy list of topics to filter by. Worth building when the filters grow
+past chips.
+
+**Also settled that day, so nobody re-opens it:** the Studio hand-off is called
+**Use as reference** everywhere (it used to be "Recreate this"), and the search
+runs **server-side** in the app's own route handler, never from the browser, so
+the database keys stay out of the page.
+
 ## The generator has no idea what a carousel is about
 
 **Deferred by Garreth on 2026-09-16**, during D8's review, to be picked up when
@@ -1209,6 +1254,25 @@ carousel-search worker ran between 09-10 and 09-12: `reference_analysis` holds
 zero, and the plan uses them as the generation record. The row counts and the
 "no worker writes to them" line below are a 09-10 snapshot and are stale; the
 four schema cautions still hold.
+
+**Update 2026-09-17 (checked live, project `qlcmgxgwpzmiebzxflai`): the tables
+below are not empty, and the zeros are kept only so the starting point is still
+readable.** `references_unified` holds 4,293 rows, of which 1,246 are carousels
+by 1,005 different creators; `reference_analysis` 1,511; `reference_beats`
+8,287; `angle_blueprints` 480; `carousel_search_documents` 25,113. The workers
+are still running — the last indexing job finished at 12:16 UTC that day and 235
+video jobs were queued. Only `carousel_briefs`, `carousel_drafts` and
+`carousel_draft_slides` are still at zero, which is right: they are the
+generator's own record and the generator is not built. **Searching those
+examples works today** — the function `search_carousel_library` merges a word
+search and a meaning search and returns ranked posts — but **nothing in the app
+calls it yet, and there is no screen for it**: that screen is the Trends feed
+and search, designed 2026-09-17 (D10, round two) and written up as dev tickets
+the same day. There is also **no feed ranking function, no favourites table and
+no creator search** yet, and the hosted search API the original handover
+described was never deployed, so the app calls the function itself, server-side.
+The search schema lives outside this repo's `supabase/migrations`, so anything
+new goes in here as a tracked migration.
 
 **Deferred 2026-09-10 (Garreth): this lands with the carousel generator app,
 which is a V2 build in its own right and will be integrated into this
