@@ -446,6 +446,48 @@ the edges are tested, not just the happy middle.
 
 ## D6. Studio — create a new carousel type
 
+- **Round three, approved by Garreth on 2026-09-17: slides can be added,
+  duplicated, deleted and moved.** Garreth asked whether D6 or D11 had any
+  way to add a slide; neither did. The slide count was set only by the AI's
+  draft, and the tool strip added a text box or an image cell to a slide,
+  never a slide. Designed in place in `d6-studio.build.mjs` and placed on
+  both D6 canvases the same day (pages D6 · Dark and D6 · Light, seven new
+  boards a theme, 36 in all). What it does:
+  - **A dashed Add slide slot** the size of a slide sits after the last one,
+    on the canvas, at the type's size. Pressing it adds a slide at the end.
+  - **A plus in the gap** between two slides appears on hover, to insert one
+    there. The phone has no hover, so it has the slot and the menu only.
+  - **Each slide's caption carries a menu** (three dots, shown on hover and
+    on the selected slide): Duplicate, Move left, Move right and Delete. It
+    is a solid surface like the versions list. Move left is unavailable on
+    the first slide and Move right on the last.
+  - **A new slide takes the layout of the slide before it**, and the AI
+    writes its line to match: the boxes pulse, the top strip says "Writing
+    slide 4" and the conversation says what it is doing, then the line
+    lands and the AI says what it did. A **duplicate** keeps the text too.
+    Regenerate sample rewrites the whole deck as before.
+  - **A carousel keeps at least two slides**: at two, Delete is unavailable
+    with "Keep at least two slides" under it. Delete is a plain action, not
+    a hold, because the Studio has undo (DEV-21); the AI's reply says Ctrl
+    or Cmd+Z brings the slide back.
+  - **The slide count in the top strip follows** ("Slide 4 of 7"), and each
+    slide's own settings, images and Rendered mark travel with it when it
+    moves.
+  - **The conversation can do the same**: "Make it eight slides" adds two,
+    and the canvas follows. The buttons and the chat are two doors to one
+    thing, the way images already work.
+  - **In edit mode a changed slide count saves a new version**, like a
+    changed slide size (D11).
+  - Boards: the slot after the last slide; the plus in the gap; a slide's
+    menu open; a slide added after slide 3 with its line being written; the
+    new slide written with the AI's reply; two slides left with Delete
+    unavailable; and the phone with the slot at the end of the row and a
+    slide's menu open. Both themes.
+  - Not decided: the most slides a carousel may have. Instagram allows
+    twenty; the design sets no cap and leaves it to DEV-21.
+  - **D11's layered decks have the same controls** (the slot, the plus in the
+    gap and the caption menu); D11's canvas was re-saved with them on
+    2026-09-17, and Garreth approved D11's version on 2026-09-18.
 - **Round two:** D11 (slide sizes, layered templates, starting from a Figma
   link), added 2026-09-15 during D7's review and approved in dark the same
   day. The prototype's Studio is already D11's (2026-09-15). **Still to
@@ -497,7 +539,7 @@ the edges are tested, not just the happy middle.
   sheet, and the Layers list in the adjustments sheet; the adjustments sheet
   board now opens on Slide size. The phone keeps its sideways scroll, with
   no zoom. The layered desktop screens stay on D11's canvas.
-- **Status:** **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). **approved in dark by Garreth on 2026-09-15 after seven
+- **Status:** **Round three approved** (Garreth, 2026-09-17: the slide controls, on both D6 canvases and carried to D11's). Before that, **Done** (Garreth, 2026-09-15: D1 to D7 closed; the next ticket is D8). **approved in dark by Garreth on 2026-09-15 after seven
   review rounds the same day; light mode designed and D6 added to the
   Carousel Generator Prototype
   (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
@@ -1387,7 +1429,7 @@ the edges are tested, not just the happy middle.
 
 ## D11. Studio, round two — slide sizes, layered templates, Figma
 
-- **Status:** **approved in dark by Garreth on 2026-09-15 after three review
+- **Status:** **Round three's slide controls carried in on 2026-09-17 and approved by Garreth on 2026-09-18** (the layered decks got the Add slide slot, the plus in the gap and the caption menu, and this canvas was re-saved). Before that, **approved in dark by Garreth on 2026-09-15 after three review
   rounds; light mode designed and the Carousel Generator Prototype's Studio
   switched to D11's the same day.** No phone boards: the phone is designed
   when D11 is brought into D6 (the list is under D6's Round two). Added by

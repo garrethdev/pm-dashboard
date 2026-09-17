@@ -691,27 +691,94 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
 
 ## Phase 3 — the front: the Studio
 
-### DEV-21. Studio canvas, filmstrip and inspector
+### DEV-21. Studio canvas, slides and inspector
 
-- **Size:** L.
-- **Depends on:** DEV-03, DEV-04 (fonts), approved D6.
+- **Size:** L. Round three's slide controls (2026-09-17, below) add to it,
+  but it stays inside the week's guess.
+- **Depends on:** DEV-03, DEV-04 (fonts), approved D6. D6's round three, the
+  slide controls, was approved by Garreth the same day
+  (2026-09-17); the rest of the ticket does not wait on it.
 - **Designs:** D6. **Flows:** F8 steps 4 and 5. **Plan:** §4.7.
 - **Build:** `/carousel-generator/studio` and `/studio/[template]`.
   - The canvas draws the template as HTML at true slide shape, scaled to fit,
     with the **same bundled font files** as the painter.
-  - Filmstrip of slides; select a text box or an image cell; drag to move.
+  - **Every slide sits in a row on the canvas**, which pans in every
+    direction and zooms from 25% to 200% (D6, 2026-09-15); select a text box
+    or an image cell; drag to move. This line read "Filmstrip of slides"
+    and the ticket was titled "Studio canvas, filmstrip and inspector" until
+    2026-09-17: the filmstrip went on 2026-09-15, when D6's third review put
+    every slide on the canvas, and the wording here is corrected to match
+    (Garreth, 2026-09-17, D6 round three, approved the same day). Plan §4.7 still says
+    filmstrip; the approved design is the truth.
   - Inspector for a text box (font, weight, size, stroke, shadow, alignment,
     wrap width) with the change shown at once; for an image cell, which
     library set it draws from, and "No images" when the set is empty.
   - Every change edits the template object and is saved as a draft template
     row (`status = 'draft'`) a moment after the last change, so a closed tab
     loses nothing.
-  - Undo and redo for canvas edits.
+  - Undo and redo for canvas edits. **Undo covers deleting a slide** (Garreth,
+  2026-09-17, D6 round three, approved the same day): Delete is a plain press, not a
+    hold, because Ctrl or Cmd+Z brings the slide back, and the AI's reply
+    after a delete says so.
   - The generator menu folds to icons while the Studio is open.
+  - **Slides can be added, duplicated, deleted and moved** (Garreth,
+  2026-09-17, D6 round three, approved the same day). Until this pass the AI's draft
+    set the slide count and nothing on the screen could change it: the tool
+    strip added a text box or an image cell to a slide, never a slide.
+    - A dashed **Add slide** slot the size of a slide sits after the last one
+      on the canvas, at the type's size; pressing it adds a slide at the end.
+      On the desktop, hovering the gap between two slides shows a plus that
+      inserts a slide there. The phone has no hover, so it has the slot and
+      the menu only.
+    - Each slide's caption carries a menu (three dots, shown on hover and on
+      the selected slide; always shown on the phone) with **Duplicate**,
+      **Move left**, **Move right** and **Delete**. Move left is unavailable
+      on the first slide and Move right on the last. The menu is a solid
+      surface, like the versions list.
+    - **A new slide takes the layout of the slide before it** (its boxes,
+      cells and styles), and the writer (DEV-08) writes that one slide's line
+      to fit between its neighbours under the current direction. While it
+      writes, the new slide's text boxes pulse, the top strip reads
+      **Writing slide 4** and the conversation says what it is doing; when
+      the line lands the AI says what it did. A **duplicate** keeps the text
+      too and asks the writer for nothing. Regenerate sample still rewrites
+      the whole deck. The design draws no failure state for the one-slide
+      write; until it does, treat it like the draft call failing (F8: the
+      error in the conversation, with Retry).
+    - **A carousel keeps at least two slides**: at two, Delete is unavailable
+      with **Keep at least two slides** under it.
+    - **Layered decks (D11) have the same controls**: a new slide copies the
+      layers of the slide before it, and a duplicate copies its copy too
+      (Garreth, 2026-09-17).
+    - **The slide count in the top strip follows** ("Slide 4 of 7"), and each
+      slide's own settings, images and **Rendered** mark travel with it when
+      it moves, so they belong to the slide and not to its position.
+    - **The conversation can do the same**: "Make it eight slides" adds two
+      and the canvas follows. The buttons and the chat are two doors to the
+      same edit operations on the template object, the way images already
+      work.
+    - **In edit mode a changed slide count saves a new version** (DEV-24),
+      like a changed slide size.
+    - **Not decided: the most slides a carousel may have.** Instagram allows
+      twenty; the design sets no cap. Open question 6 at the end of this
+      document. Until it is answered, build without a cap and keep the number
+      in one place so it is a one-line change.
 - **Tests:** unit tests for the edit operations on the template object
-  (move, restyle, change set) and that the result still validates.
+  (move, restyle, change set) and that the result still validates. **Added
+  for round three** (Garreth, 2026-09-17, D6 round three, approved the same day): add at
+  the end, insert after a slide, duplicate, delete and move each leave the
+  template valid; a new slide copies the layout of the slide before it and a
+  duplicate copies its text as well; delete refuses at two slides; moving a
+  slide carries its settings, images and Rendered mark with it; undo after a
+  delete puts the slide back in its old place with its copy; the slide count
+  read back is right after every operation.
 - **Done when:** the Glow Up template opens and edits in the Studio, and the
-  canvas matches D6 at desktop.
+  canvas matches D6 at desktop. **And for round three** (Garreth,
+  2026-09-17, D6 round three, approved the same day): a slide added after slide 3 of
+  Glow Up arrives with slide 3's layout and a freshly written line, Delete on
+  a two-slide deck is unavailable, a moved slide keeps its Rendered mark, and
+  after a delete Ctrl or Cmd+Z brings the slide back — seen on the canvas and
+  in the saved draft row, by query.
 
 ### DEV-22. Render preview and Regenerate sample
 
@@ -1444,6 +1511,7 @@ On top of D10 as approved on 2026-09-16, and all about the Trends page.
 | 3 | **Czedrick's sign-in email** for `ALLOWED_EMAILS`. Likely `czedrickjhake.cc@gmail.com`, unconfirmed (plan §10, item 5). | DEV-00 |
 | 4 | **Who runs the external analysis worker** that analyses new references? If it stops, links from a digest stay Queued (plan §10, item 3). | DEV-33 working fully, not its build |
 | 5 | **Where does a person find what they saved? Answered the same day** (Garreth, 2026-09-17, second review of round two): **a fourth section, Saved**, on the left rail and on the phone's floating bar, plus a **Recent saves** panel beside the feed on the desktop. Built in DEV-37 and drawn in DEV-34. | Nothing. Closed. |
+| 6 | **How many slides may a carousel have at most?** Instagram allows twenty. D6 round three (Garreth, 2026-09-17, approved) lets a person add slides but sets no cap, and neither the flows nor the template model names one. | DEV-21's cap only, not the ticket |
 
 ### Proposed defaults, accepted unless changed
 

@@ -68,6 +68,20 @@
  *   PhoneChat      phone, the conversation sheet open
  *   PhoneFigma     phone, started from a Figma link: the conversation sheet with the file's chip (round two)
  *   PhoneLayers    phone, a layered template: the Layers list in the adjustments sheet (round two)
+ *   AddSlot        desktop, the dashed Add slide slot after the last slide (round three)
+ *   InsertBetween  desktop, the plus in the gap between two slides (round three)
+ *   SlideMenu      desktop, a slide's menu open: Duplicate, Move left, Move right, Delete (round three)
+ *   SlideWriting   desktop, a slide added after slide 3, its copy being written (round three)
+ *   SlideAdded     desktop, the new slide written, the AI saying what it did (round three)
+ *   DeleteFloor    desktop, two slides left: Delete unavailable (round three)
+ *   PhoneAddSlide  phone, the slot at the end of the row and a slide's menu (round three)
+ *
+ * Round three (Garreth, 2026-09-17): slides can be added, duplicated, deleted and moved. A dashed slot the size of
+ * a slide sits after the last one; hovering the gap between two slides shows a plus to insert there; each caption
+ * carries a menu with Duplicate, Move left, Move right and Delete. A new slide takes the layout of the slide before
+ * it and the AI writes its copy to match (its boxes pulse until the line lands); a duplicate copies the text too.
+ * A carousel keeps at least two slides, so Delete is unavailable at two. The count in the top strip follows. The
+ * phone has the slot and the menu (its dots always show), no hover plus.
  *
  * Round two (D11, approved 2026-09-15 and brought in here the same day) is layered over the first round further
  * down: slides at 4:5 or 9:16, a canvas that pans in every direction and zooms, Start from a Figma link, the chat box
@@ -109,6 +123,13 @@ const D6I = {
   sliders: icon("SlidersHorizontal", 18),
   foldL: icon("CaretDoubleLeft", 14, "bold"),
   foldR: icon("CaretDoubleRight", 14, "bold"),
+  dots: icon("DotsThree", 16, "bold"),
+  plusSm: icon("Plus", 14, "bold"),
+  plusLg: icon("Plus", 22, "bold"),
+  copy: icon("Copy", 14),
+  trash: icon("Trash", 14),
+  left: icon("ArrowLeft", 14, "bold"),
+  right: icon("ArrowRight", 14, "bold"),
 };
 
 /* The Peptide Miracles mark, read from the app the way the kit reads it. */
@@ -516,6 +537,30 @@ ${S} .tb--line .tbsk i { height: 3.6cqw; }
 ${S} .fcap { display: flex; align-items: center; gap: 8px; min-height: 20px; padding: 0 2px; font-size: 12px; line-height: 16px; color: var(--text-muted); }
 ${S} .fcap b { font-weight: 500; color: var(--text-primary); }
 ${S} .fcap .busy { display: inline-flex; align-items: center; gap: 6px; }
+/* Slides can be added, duplicated, deleted and moved (Garreth, 2026-09-17, round three). The caption's dots open a
+   slide's menu (they show on hover and on the selected slide); a solid menu, like the versions list, hangs under
+   the caption. A plus appears in the gap between two slides on hover, to insert one there. */
+${S} .sframe { position: relative; }
+${S} .capmenu { display: flex; align-items: center; justify-content: center; width: 24px; height: 20px; margin-left: auto; border-radius: 6px; color: var(--text-muted); opacity: 0; transition: opacity 150ms var(--ease), color 150ms var(--ease), background-color 150ms var(--ease); }
+${S} .sframe:hover .capmenu, ${S} .capmenu.is-vis, ${S} .capmenu.is-on, ${S} .capmenu:focus-visible { opacity: 1; }
+${S} .capmenu:hover, ${S} .capmenu.is-on { background: var(--card-raised); color: var(--text-primary); }
+${S} .smenu { position: absolute; right: 0; top: 30px; z-index: 40; width: 204px; border-radius: 16px; border: 1px solid var(--border); padding: 8px; background: var(--card); box-shadow: var(--sb-shadow); animation: d6-in 160ms var(--ease-out-strong); }
+.is-light ${S} .smenu { box-shadow: 0 16px 40px rgba(27, 29, 33, 0.18); }
+${S} .mrow { display: flex; align-items: center; gap: 10px; width: 100%; border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 20px; color: var(--text-primary); text-align: left; transition: background-color 150ms var(--ease); }
+${S} .mrow:hover:not(:disabled) { background: var(--card-raised); }
+${S} .mrow:disabled { color: var(--text-muted); opacity: 0.55; cursor: default; }
+${S} .mrow svg { flex-shrink: 0; color: var(--text-muted); }
+${S} .mrow.is-danger:not(:disabled) { color: var(--danger); } ${S} .mrow.is-danger:not(:disabled) svg { color: var(--danger); }
+${S} .msep { height: 1px; margin: 6px 4px; background: var(--border); }
+${S} .mhint { padding: 2px 10px 6px; font-size: 11px; line-height: 14px; color: var(--text-muted); }
+${S} .mcatch { inset: -20000px; z-index: 30; }
+${S} .gapadd { position: absolute; left: 100%; top: 30px; bottom: 0; z-index: 6; display: flex; align-items: center; justify-content: center; width: ${SLIDE_GAP}px; margin: 0; border: 0; padding: 0; background: none; opacity: 0; transition: opacity 150ms var(--ease); }
+${S} .gapadd:hover, ${S} .gapadd.is-show, ${S} .gapadd:focus-visible { opacity: 1; }
+${S} .gapadd i { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text-primary); box-shadow: var(--sb-shadow); }
+/* The slot after the last slide: a dashed frame the size of a slide, whatever the type's size. */
+${S} .slides .slide.slide--add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border: 2px dashed color-mix(in srgb, var(--text-muted) 55%, transparent); background: none; box-shadow: none; color: var(--text-muted); font-size: 14px; line-height: 20px; font-weight: 500; cursor: pointer; transition: border-color 150ms var(--ease), color 150ms var(--ease); }
+${S} .slides .slide.slide--add:hover { border-color: var(--text-primary); color: var(--text-primary); }
+${S} .slide--add i { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); }
 /* The slide. Its ground is the template's canvas colour, so it looks the same in both themes. */
 ${S} .slide { position: relative; width: ${w}px; aspect-ratio: 4 / 5; flex-shrink: 0; overflow: hidden; border-radius: 16px; background: #101012; container-type: inline-size; box-shadow: var(--sb-shadow); cursor: default; }
 ${S} .slide.is-on { outline: 2px solid var(--accent); outline-offset: 6px; }
@@ -607,6 +652,8 @@ ${S} .ttl .cmeta .pill { min-width: 0; overflow: hidden; text-overflow: ellipsis
 ${S} .tbtn-title { flex-shrink: 0; max-width: 60%; }
 ${S} .side { display: none; }
 ${S} .pan { padding-bottom: 76px; }
+${S} .capmenu { opacity: 1; }
+${S} .gapadd { display: none; }
 /* The slide count sits above the pill of buttons, as plain text (Garreth, 2026-09-15). */
 ${S} .ftop { top: 12px; flex-direction: column; gap: 6px; padding: 0; border: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 ${S} .ftop .fpill { display: flex; align-items: center; gap: 4px; border-radius: 999px; border: 1px solid var(--border); padding: 4px; background: var(--overlay-veil); box-shadow: var(--overlay-rim); -webkit-backdrop-filter: var(--overlay-blur); backdrop-filter: var(--overlay-blur); }
@@ -881,7 +928,7 @@ const topStrip = () => `
                   <sc-if value="{{isReady}}" hint-placeholder-val="{{ true }}">
                     <span class="scount tnum">{{slideCount}}</span>
                     <span class="fpill">
-                      <sc-if value="{{sampling}}" hint-placeholder-val="{{ false }}"><span class="scount busy" role="status" style="padding: 0 10px"><span class="spin on">${I.busy}</span>Rewriting sample</span></sc-if>
+                      <sc-if value="{{sampling}}" hint-placeholder-val="{{ false }}"><span class="scount busy" role="status" style="padding: 0 10px"><span class="spin on">${I.busy}</span>{{busyText}}</span></sc-if>
                       <sc-if value="{{notSampling}}" hint-placeholder-val="{{ true }}">
                         <button type="button" class="btn2" onClick="{{render}}">${D6I.render}Render preview</button>
                         <button type="button" class="btn2" onClick="{{regenSample}}">${D6I.retry}Regenerate sample</button>
@@ -964,11 +1011,30 @@ const canvas = (phone) => `
                           <sc-if value="{{sl.rBusy}}" hint-placeholder-val="{{ false }}"><span class="busy" role="status"><span class="spin on">${I.busy}</span>Rendering</span></sc-if>
                           <sc-if value="{{sl.rDone}}" hint-placeholder-val="{{ false }}"><span class="pill pill--ok">Rendered</span></sc-if>
                           <sc-if value="{{sl.rFail}}" hint-placeholder-val="{{ false }}"><span class="pill pill--danger">${D6I.warnSm}Render failed</span><button type="button" class="tbtn" onClick="{{sl.retry}}">${D6I.retry}Retry</button></sc-if>
+                          <sc-if value="{{sl.canMenu}}" hint-placeholder-val="{{ false }}"><button type="button" class="capmenu {{sl.menuCls}}" aria-label="{{sl.menuLabel}}" aria-haspopup="menu" aria-expanded="{{sl.menuExpanded}}" onClick="{{sl.menuToggle}}">${D6I.dots}</button></sc-if>
                         </div>
+                        <sc-if value="{{sl.menuOpen}}" hint-placeholder-val="{{ false }}">
+                          <div class="smenu" role="menu" aria-label="{{sl.name}}">
+                            <button type="button" class="mrow" role="menuitem" onClick="{{sl.duplicate}}">${D6I.copy}Duplicate</button>
+                            <button type="button" class="mrow" role="menuitem" disabled="{{sl.leftOff}}" onClick="{{sl.moveLeft}}">${D6I.left}Move left</button>
+                            <button type="button" class="mrow" role="menuitem" disabled="{{sl.rightOff}}" onClick="{{sl.moveRight}}">${D6I.right}Move right</button>
+                            <div class="msep" aria-hidden="true"></div>
+                            <button type="button" class="mrow is-danger" role="menuitem" disabled="{{sl.delOff}}" onClick="{{sl.remove}}">${D6I.trash}Delete</button>
+                            <sc-if value="{{sl.delOff}}" hint-placeholder-val="{{ false }}"><div class="mhint">Keep at least two slides</div></sc-if>
+                          </div>
+                        </sc-if>
                         <sc-if value="{{sl.sk}}" hint-placeholder-val="{{ false }}"><div class="slide is-sk" aria-label="Drafting"></div></sc-if>
                         <sc-if value="{{sl.real}}" hint-placeholder-val="{{ true }}"><div class="slide {{sl.cls}}" aria-label="{{sl.label}}" onDragOver="{{dragOver}}" onDrop="{{sl.drop}}" onClick="{{sl.pick}}">${slideFace("sl", !phone)}</div></sc-if>
+                        ${phone ? "" : `<sc-if value="{{sl.gap}}" hint-placeholder-val="{{ false }}"><button type="button" class="gapadd {{sl.gapCls}}" aria-label="{{sl.gapLabel}}" title="Add a slide here" onClick="{{sl.addAfter}}"><i>${D6I.plusSm}</i></button></sc-if>`}
                       </div>
                     </sc-for>
+                    <sc-if value="{{canAdd}}" hint-placeholder-val="{{ false }}">
+                      <div class="sframe">
+                        <div class="fcap" aria-hidden="true"></div>
+                        <button type="button" class="slide slide--add" aria-label="{{addLabel}}" onClick="{{addEnd}}"><i>${D6I.plusLg}</i><span>Add slide</span></button>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}"><div class="catch mcatch" aria-hidden="true" onClick="{{menuClose}}"></div></sc-if>
                   </div>
                 </div>
                 ${phone ? "" : chatReveal()}
@@ -1138,7 +1204,12 @@ function vals(init) {
     var NAME = edit ? (P.name || "Before & After") : "Morning Routine";
     /* The title is the type's name; a new type is "New carousel type" until it is renamed here or in the Save dialog. */
     var TITLE = edit ? NAME : (s.d6title || "New carousel type");
-    var SLIDES = LAYOUTS.length;
+    /* The deck: which layout and which copy each slide carries. Slides can be added, duplicated, deleted and moved
+       (Garreth, 2026-09-17), so the draft is a list of slides rather than the six layouts in order. A slide the
+       person added takes the other sample copy set, so its line differs from its neighbour's. */
+    var deck = s.d6deck || LAYOUTS.map(function (_, i) { return { src: i, alt: false }; });
+    var SLIDES = deck.length;
+    var altCopy = s.d6copy === "morningAlt" ? COPY.morning : s.d6copy === "before" ? COPY.before : COPY.morningAlt;
 
     /* The slides, from the layouts and the sample copy. Each cell's set can be changed in the adjustments (or a
        library image dropped on it); each text box's style can be changed there too; both are kept as overrides
@@ -1155,14 +1226,16 @@ function vals(init) {
       return Object.assign({ name: role }, STYLES[role], boxStyles[keyOf(n, i)] || {});
     };
     var select = function (n, kind, i) { self.setState({ d6slide: n, d6sel: { kind: kind, i: i }, d6vers: false, d6sheet: PHONE }); };
+    var writing = s.d6writing || 0;
     var faceOf = function (n, live) {
-      var L = LAYOUTS[n - 1];
-      var lines = copySet[n - 1];
+      var d = deck[n - 1];
+      var L = LAYOUTS[d.src];
+      var lines = (d.alt ? altCopy : copySet)[d.src];
       var onThis = n === slide;
       var cells = L.cells.map(function (c, i) {
         var g = cellSets[keyOf(n, i)] || c.g;
         var count = setCount(g);
-        var img = cellImages[keyOf(n, i)] || PHOTOS[n - 1][i];
+        var img = cellImages[keyOf(n, i)] || PHOTOS[d.src][i];
         var selected = onThis && sel.kind === "cell" && sel.i === i;
         return {
           x: c.x, y: c.y, w: c.w, h: c.h,
@@ -1180,8 +1253,8 @@ function vals(init) {
         var selected = onThis && sel.kind === "box" && sel.i === i;
         return {
           text: text,
-          sk: !!s.d6sampling,
-          txt: !s.d6sampling,
+          sk: !!s.d6sampling || writing === n,
+          txt: !s.d6sampling && writing !== n,
           role: i === 0 ? (n === 1 ? "Hook" : n === SLIDES ? "Closing" : "Line") : "Line",
           w: Math.round((st.wrap / 1080) * 1000) / 10,
           cls: ["tb--" + st.name, "st-" + Math.max(0, Math.min(4, st.stroke)), "sw-" + (st.strokeColour || "black"), "sh-" + st.shadow.toLowerCase(), "al-" + st.align, "at-" + at, selected ? "is-sel" : "", live ? "can-pick" : ""].join(" "),
@@ -1221,7 +1294,7 @@ function vals(init) {
         if (!id || !ready) return;
         var r = e.currentTarget.getBoundingClientRect();
         var px = ((e.clientX - r.left) / r.width) * 100, py = ((e.clientY - r.top) / r.height) * 100;
-        var L = LAYOUTS[n - 1];
+        var L = LAYOUTS[deck[n - 1].src];
         var hit = 0;
         L.cells.forEach(function (c, i) { if (px >= c.x && px <= c.x + c.w && py >= c.y && py <= c.y + c.h) hit = i; });
         var next = Object.assign({}, cellImages); next[keyOf(n, hit)] = id;
@@ -1237,6 +1310,41 @@ function vals(init) {
         self.setState({ d6rendered: cur6 });
       }, 1400);
     };
+    /* Adding, duplicating, deleting and moving slides (Garreth, 2026-09-17). The per-slide overrides (sets, images,
+       styles) and the Rendered marks are keyed by slide number, so they travel with their slide. */
+    var menu = s.d6menu || 0;
+    var shiftKeys = function (map, fn) { var out = {}; Object.keys(map).forEach(function (k) { var p = k.split(":"); var m = fn(+p[0]); if (m > 0) out[m + ":" + p[1]] = map[k]; }); return out; };
+    var shiftRendered = function (fn) { var out = {}; Object.keys(rendered).forEach(function (k) { var m = fn(+k); if (m > 0) out[m] = rendered[k]; }); return out; };
+    var applyDeck = function (next, fn, extra) {
+      self.setState(Object.assign({
+        d6deck: next, d6cellSets: shiftKeys(cellSets, fn), d6cellImages: shiftKeys(cellImages, fn), d6boxStyles: shiftKeys(boxStyles, fn),
+        d6rendered: shiftRendered(fn), d6menu: 0, d6vers: false, d6added: 0, d6removed: 0
+      }, extra || {}));
+    };
+    /* A new slide takes the layout of the slide before it. Added, the AI writes its line (the boxes pulse until it
+       lands); duplicated, the text comes along. */
+    var insertAfter = function (n, fresh) {
+      var d = deck[n - 1], k = n + 1;
+      var next = deck.slice(); next.splice(k - 1, 0, { src: d.src, alt: fresh ? !d.alt : d.alt });
+      var fn = function (m) { return m >= k ? m + 1 : m; };
+      applyDeck(next, fn, Object.assign({ d6slide: k, d6sel: { kind: "box", i: 0 } }, fresh ? { d6writing: k } : { d6added: k, d6addedHow: "dup" }));
+      if (fresh) {
+        clearTimeout(self.d6writeT);
+        self.d6writeT = setTimeout(function () { self.setState({ d6writing: 0, d6added: k, d6addedHow: "new" }); }, 1500);
+      }
+    };
+    var removeSlide = function (n) {
+      if (SLIDES <= 2) return;
+      var next = deck.slice(); next.splice(n - 1, 1);
+      var fn = function (m) { return m === n ? 0 : m > n ? m - 1 : m; };
+      applyDeck(next, fn, { d6slide: Math.min(n, next.length), d6sel: { kind: "box", i: 0 }, d6removed: n });
+    };
+    var moveSlide = function (n, by) {
+      var j = n + by; if (j < 1 || j > SLIDES) return;
+      var next = deck.slice(); var t = next[n - 1]; next[n - 1] = next[j - 1]; next[j - 1] = t;
+      var fn = function (m) { return m === n ? j : m === j ? n : m; };
+      applyDeck(next, fn, { d6slide: j });
+    };
     var slidesAll = [];
     for (var n = 1; n <= (analysing ? 0 : SLIDES); n++) {
       var face = ready ? faceOf(n, true) : { cells: [], boxes: [] };
@@ -1248,8 +1356,23 @@ function vals(init) {
         rBusy: r === "busy", rDone: r === "done", rFail: r === "failed",
         retry: (function (k) { return function () { renderSlide(k); }; })(n),
         drop: dropOn(n),
-        pick: (function (k) { return function () { if (ready && k !== slide) self.setState({ d6slide: k, d6sel: { kind: "box", i: 0 }, d6vers: false }); }; })(n),
-        cells: face.cells, boxes: face.boxes
+        pick: (function (k) { return function () { if (ready && k !== slide) self.setState({ d6slide: k, d6sel: { kind: "box", i: 0 }, d6vers: false, d6menu: 0 }); }; })(n),
+        cells: face.cells, boxes: face.boxes,
+        canMenu: ready,
+        menuOpen: ready && menu === n,
+        menuCls: (menu === n ? "is-on " : "") + (n === slide ? "is-vis" : ""),
+        menuLabel: "Slide " + n + " options",
+        menuExpanded: menu === n ? "true" : "false",
+        menuToggle: (function (k) { return function (e) { if (e && e.stopPropagation) e.stopPropagation(); self.setState({ d6menu: menu === k ? 0 : k, d6vers: false }); }; })(n),
+        duplicate: (function (k) { return function () { insertAfter(k, false); }; })(n),
+        moveLeft: (function (k) { return function () { moveSlide(k, -1); }; })(n),
+        moveRight: (function (k) { return function () { moveSlide(k, 1); }; })(n),
+        remove: (function (k) { return function () { removeSlide(k); }; })(n),
+        leftOff: n === 1, rightOff: n === SLIDES, delOff: SLIDES <= 2,
+        gap: ready && n < SLIDES,
+        gapCls: s.d6gapShow === n ? "is-show" : "",
+        gapLabel: "Add a slide between " + n + " and " + (n + 1),
+        addAfter: (function (k) { return function () { insertAfter(k, true); }; })(n)
       });
     }
 
@@ -1257,7 +1380,7 @@ function vals(init) {
        with the selected slide in view. */
     var panDown = function (e) {
       if (e.button !== 0) return;
-      if (e.target && e.target.closest && e.target.closest(".slide")) return;
+      if (e.target && e.target.closest && e.target.closest(".slide, .fcap, .smenu, .gapadd")) return;
       var el = e.currentTarget;
       self.d6pan = { x: e.clientX, y: e.clientY, sl: el.scrollLeft, st: el.scrollTop };
       try { el.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1273,7 +1396,7 @@ function vals(init) {
     var slideW = PHONE ? SLIDE_W.phone : SLIDE_W.desk;
     if (ready && !self.d6panned) {
       self.d6panned = true;
-      var x0 = Math.max(0, (slide - 1) * (slideW + SLIDE_GAP) - (PHONE ? 0 : 24));
+      var x0 = s.d6panAt !== undefined && s.d6panAt !== null ? s.d6panAt : Math.max(0, (slide - 1) * (slideW + SLIDE_GAP) - (PHONE ? 0 : 24));
       if (x0 > 0) setTimeout(function () { self.setState({ d6panTo: { x: x0, smooth: false } }); }, 40);
     }
 
@@ -1318,7 +1441,7 @@ function vals(init) {
     };
 
     /* The adjustments for the selected image cell. */
-    var cellSet = ready && sel.kind === "cell" ? (cellSets[keyOf(slide, sel.i)] || LAYOUTS[slide - 1].cells[sel.i].g) : "";
+    var cellSet = ready && sel.kind === "cell" ? (cellSets[keyOf(slide, sel.i)] || LAYOUTS[deck[slide - 1].src].cells[sel.i].g) : "";
     var cl = {
       label: "Settings for the selected image cell",
       title: "Slide " + slide + " · Image " + ((sel.i || 0) + 1),
@@ -1383,6 +1506,9 @@ function vals(init) {
     if (stage === "draftFailed") msgs.push({ err: true, text: "Couldn't draft: the model call failed." });
     if (ready && !edit) msgs.push({ ai: true, text: entry === "reference" ? "Six slides, built the way the reference is: the same slide count, layouts and text placement, with your library's images. One question: keep its first-person voice, or make it the character's?" : "Six slides drafted, first person, warm and plain. One question: is this your morning, or a character's? I've written it as yours for now." });
     if (ready && !edit && s.d6copy === "morningAlt") msgs.push({ ai: true, text: "New sample copy, same direction." });
+    if (ready && writing) msgs.push({ busy: true, text: "Writing slide " + writing + " to sit between its neighbours" });
+    if (ready && s.d6added) msgs.push({ ai: true, text: s.d6addedHow === "dup" ? "Slide " + s.d6added + " is a copy of slide " + (s.d6added - 1) + ", line and all. Change what you like; Regenerate sample rewrites the whole deck." : "Slide " + s.d6added + " added with slide " + (s.d6added - 1) + "'s layout and a new line to match. Regenerate sample rewrites the whole deck." });
+    if (ready && s.d6removed) msgs.push({ ai: true, text: "Slide " + s.d6removed + " removed; the rest moved up. Ctrl or Cmd+Z brings it back." });
     if (ready && s.d6ask) {
       msgs.push({ me: true, text: "Put a kitchen at dawn on slide 3" });
       msgs.push({ offer: true, text: "Nothing in " + (lib ? lib.name : "the library") + " shows a kitchen at dawn. I can make four into Cover with the prompt ready, or you can upload your own. Either way they wait for Keep before I put one on slide 3." });
@@ -1400,7 +1526,7 @@ function vals(init) {
     var send = function () {
       if (!cinVal.trim()) return;
       if (stage === "empty") startDraft();
-      else { self.setState({ d6cin: "" }); self.note("Sends the message; the draft changes to match"); }
+      else { self.setState({ d6cin: "" }); self.note("Sends the message; the draft changes to match, slide count included"); }
     };
     /* From a reference: the vision pass first, then the draft. */
     var startAnalyse = function (title) {
@@ -1519,8 +1645,9 @@ function vals(init) {
       refNotAnalysed: showRef && !!s.d6refNew,
       refSlides: refSlides,
       isAnalysing: analysing,
-      sampling: !!s.d6sampling,
-      notSampling: !s.d6sampling,
+      sampling: !!s.d6sampling || !!writing,
+      notSampling: !s.d6sampling && !writing,
+      busyText: writing ? "Writing slide " + writing : "Rewriting sample",
 
       /* The phone's bar is short on room: Discard alone (Garreth, 2026-09-15). */
       holdText: PHONE ? "Discard" : edit ? "Discard changes" : "Discard draft",
@@ -1551,6 +1678,11 @@ function vals(init) {
       toolImage: function () { self.note("Adds an image cell to the slide"); },
       slidesAll: slidesAll,
       slideCount: "Slide " + slide + " of " + SLIDES,
+      canAdd: ready,
+      addLabel: "Add a slide after slide " + SLIDES,
+      addEnd: function () { insertAfter(SLIDES, true); },
+      menuOpen: ready && menu > 0,
+      menuClose: function () { self.setState({ d6menu: 0 }); },
       panCls: s.d6panning ? "is-drag" : "",
       panDown: panDown, panMove: panMove, panUp: panUp,
       dragOver: dragOver,
@@ -1623,11 +1755,13 @@ function studioBaseScreen({ init = {} } = {}) {
     mode: "new", stage: "start", entry: "discuss", lib: null, libName: "", slide: 1, sel: { kind: "box", i: 0 }, rendered: null,
     save: false, hold: 0, vers: false, copy: "morning", cin: "", chatOpen: false, unread: false, left: true, title: "", rename: false, renameVal: undefined, sheet: false, ask: false,
     ref: "", refNew: false, sampling: false,
+    deck: null, menu: 0, gapShow: 0, writing: 0, added: 0, addedHow: "", removed: 0, panAt: null,
     ...init,
   };
   const fresh = {
     d6mode: m.mode, d6stage: m.stage, d6entry: m.entry, d6lib: m.lib, d6newLibName: m.libName, d6slide: m.slide, d6sel: m.sel, d6rendered: m.rendered, d6ask: m.ask,
     d6ref: m.ref, d6refNew: m.refNew, d6sampling: m.sampling,
+    d6deck: m.deck, d6menu: m.menu, d6gapShow: m.gapShow, d6writing: m.writing, d6added: m.added, d6addedHow: m.addedHow, d6removed: m.removed, d6panAt: m.panAt,
     d6save: m.save, d6hold: m.hold, d6vers: m.vers, d6copy: m.copy, d6cin: m.cin, d6cinFocus: !!m.cinFocus, d6chatOpen: m.chatOpen, d6unread: m.unread, d6left: m.left,
     d6title: m.title, d6rename: m.rename, d6renameVal: m.renameVal, d6sheet: m.sheet,
     d6cellSets: null, d6cellImages: null, d6boxStyles: null, d6lset: "All", d6newLib: "", d6ph: 0, d6panning: false, d6panTo: null, d6toLibrary: false,
@@ -1643,7 +1777,7 @@ function studioBaseScreen({ init = {} } = {}) {
     /* Opened from another screen: a draft in progress is kept and the Studio reopens on it (Garreth, 2026-09-15);
        only what was mid-press is dropped. With no draft, New carousel type and the Studio menu item land on the two
        cards. */
-    enter: { d6save: false, d6hold: 0, d6vers: false, d6rename: false, d6sheet: false, d6panning: false },
+    enter: { d6save: false, d6hold: 0, d6vers: false, d6rename: false, d6sheet: false, d6panning: false, d6menu: 0 },
     vals: vals(init),
     didUpdate,
   };
@@ -2185,7 +2319,7 @@ function vals11(d6vals) {
     var FIG = !edit && s.d6entry === "figma";
     var LAY = !!s.d11lay;
     var size = s.d11size || "45";
-    var slide = Math.max(1, Math.min(LAY ? SLIDES11.length : 6, s.d6slide || 1));
+    var slide = Math.max(1, Math.min(LAY ? SLIDES11.length : (s.d6deck ? s.d6deck.length : 6), s.d6slide || 1));
     var selId = LAY && ready ? (s.d11sel || null) : null;
     var order = s.d11order || {};
     var byId = {};
@@ -2226,6 +2360,10 @@ function vals11(d6vals) {
       return out;
     });
     if (LAY) {
+      /* Round three's slide controls on a layered deck (Garreth, 2026-09-17): the dots, the menu, the plus in the gap
+         and the slot. The sample deck is fixed, so the actions are notes. */
+      var menu11 = s.d6menu || 0;
+      var note11 = function (t) { return function () { self.setState({ d6menu: 0 }); self.note(t); }; };
       slidesAll = analysing ? [] : SLIDES11.map(function (sd) {
         return {
           n: sd.n, name: sd.name, label: sd.name + (sd.n === slide ? ", selected" : ""),
@@ -2233,7 +2371,21 @@ function vals11(d6vals) {
           rBusy: false, rDone: false, rFail: false, retry: function () {},
           drop: function (e) { e.preventDefault(); },
           pick: (function (k) { return function () { if (ready) self.setState({ d6slide: k, d11sel: null }); }; })(sd.n),
-          cells: [], boxes: [], fixed: !!sd.fixed, layered: ready, layers: ready ? faceOf(sd, true, false) : []
+          cells: [], boxes: [], fixed: !!sd.fixed, layered: ready, layers: ready ? faceOf(sd, true, false) : [],
+          canMenu: ready,
+          menuOpen: ready && menu11 === sd.n,
+          menuCls: (menu11 === sd.n ? "is-on " : "") + (sd.n === slide ? "is-vis" : ""),
+          menuLabel: sd.name + " options",
+          menuExpanded: menu11 === sd.n ? "true" : "false",
+          menuToggle: (function (k) { return function (e) { if (e && e.stopPropagation) e.stopPropagation(); self.setState({ d6menu: menu11 === k ? 0 : k, d6vers: false }); }; })(sd.n),
+          duplicate: note11("Duplicates slide " + sd.n + ", layers and copy"),
+          moveLeft: note11("Moves slide " + sd.n + " left"),
+          moveRight: note11("Moves slide " + sd.n + " right"),
+          remove: note11("Removes slide " + sd.n + "; Ctrl or Cmd+Z brings it back"),
+          leftOff: sd.n === 1, rightOff: sd.n === SLIDES11.length, delOff: SLIDES11.length <= 2,
+          gap: ready && sd.n < SLIDES11.length, gapCls: "",
+          gapLabel: "Add a slide between " + sd.n + " and " + (sd.n + 1),
+          addAfter: note11("Adds a slide after slide " + sd.n + " with its layers, then writes it")
         };
       });
     }
@@ -2293,7 +2445,7 @@ function vals11(d6vals) {
     if (!self.d11mounted) { self.d11mounted = true; setTimeout(function () { self.setState({ d11tick: 1 }); }, 30); }
     var panDown11 = function (e) {
       if (e.button !== 0) return;
-      if (e.target && e.target.closest && e.target.closest(".slide")) return;
+      if (e.target && e.target.closest && e.target.closest(".slide, .fcap, .smenu, .gapadd")) return;
       var v = viewNow();
       self.d11drag = { x: e.clientX, y: e.clientY, vx: v.x, vy: v.y };
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
@@ -2474,6 +2626,11 @@ function vals11(d6vals) {
     /* Shift+Enter starts a new line in the growing chat box; Enter alone still sends. */
     var keyBase = over.cinKey || D6V.cinKey;
     over.cinKey = function (e) { if (e.key === "Enter" && e.shiftKey) return; keyBase(e); };
+    /* A layered deck is a fixed sample here: adding after its last slide is a note. */
+    if (LAY) {
+      over.addLabel = "Add a slide after slide " + SLIDES11.length;
+      over.addEnd = function () { self.note("Adds a slide after slide " + SLIDES11.length + " with its layers, then writes it"); };
+    }
     if (edit && s.d11name) {
       over.sdTitle = s.d11name;
       over.sdCrumb = s.d11name;
@@ -2535,6 +2692,14 @@ const MOMENTS = {
   referenceDraft: { ...READY, entry: "reference", ref: REFS[0].title, left: false },
   resample: { ...READY, sampling: true },
   rendering: { ...READY, rendered: { 1: "busy" } },
+  /* Round three (Garreth, 2026-09-17): slides added, duplicated, deleted and moved. */
+  addSlot: { ...READY, slide: 6 },
+  insertBetween: { ...READY, slide: 2, gapShow: 2 },
+  slideMenu: { ...READY, slide: 3, menu: 3 },
+  slideWriting: { ...READY, slide: 4, chatOpen: true, deck: [0, 1, 2, [2, true], 3, 4, 5].map((d) => (Array.isArray(d) ? { src: d[0], alt: d[1] } : { src: d, alt: false })), writing: 4 },
+  slideAdded: { ...READY, slide: 4, chatOpen: true, deck: [0, 1, 2, [2, true], 3, 4, 5].map((d) => (Array.isArray(d) ? { src: d[0], alt: d[1] } : { src: d, alt: false })), added: 4, addedHow: "new" },
+  deleteFloor: { ...READY, slide: 2, menu: 2, deck: [{ src: 0, alt: false }, { src: 5, alt: false }] },
+  phoneAddSlide: { ...READY, slide: 6, menu: 6, panAt: 2030 },
 };
 /* Round two's phone boards (D11 has none): a draft started from a Figma link, drawn as a layered template. */
 const FIGMA_READY = { stage: "ready", entry: "figma", lib: "window", slide: 1, title: "Red Carpet Rewind" };
@@ -2577,6 +2742,13 @@ function build(OUT) {
     { name: "PhoneChat", phone: true, m: "phoneChat", title: "D6 · The conversation open · Phone", x: 4020, y: ROW * 3 },
     { name: "PhoneFigma", phone: true, m: "phoneFigma", title: "D6 · From a Figma link: the conversation sheet, the file's chip above the chat box · Phone", x: 3080, y: ROW * 5 },
     { name: "PhoneLayers", phone: true, m: "phoneLayers", title: "D6 · A layered template: the Layers list in the adjustments sheet · Phone", x: 3550, y: ROW * 5 },
+    { name: "AddSlot", phone: false, m: "addSlot", title: "D6 · Add a slide: the dashed slot after the last slide · Desktop", x: 0, y: ROW * 12 },
+    { name: "InsertBetween", phone: false, m: "insertBetween", title: "D6 · Add a slide between two: the plus in the gap · Desktop", x: 1540, y: ROW * 12 },
+    { name: "SlideMenu", phone: false, m: "slideMenu", title: "D6 · A slide's menu: Duplicate, Move left, Move right, Delete · Desktop", x: 0, y: ROW * 13 },
+    { name: "SlideWriting", phone: false, m: "slideWriting", title: "D6 · A slide added after slide 3, its line being written · Desktop", x: 1540, y: ROW * 13 },
+    { name: "SlideAdded", phone: false, m: "slideAdded", title: "D6 · The new slide written, the AI says what it did · Desktop", x: 0, y: ROW * 14 },
+    { name: "DeleteFloor", phone: false, m: "deleteFloor", title: "D6 · Two slides left: Delete unavailable · Desktop", x: 1540, y: ROW * 14 },
+    { name: "PhoneAddSlide", phone: true, m: "phoneAddSlide", title: "D6 · The Add slide slot at the end of the row, a slide's menu open · Phone", x: 3080, y: ROW * 12 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
@@ -2588,7 +2760,7 @@ function build(OUT) {
     }
   }
   const note =
-    "Pictures, one screen per state; the controls that do work are a bonus. From the two cards you can walk the whole path: a card, a library (or New library), a saved deck or the chat box, then the draft. On the canvas boards, try dragging the dotted ground to pan, the title (press it to rename), a text box or an image cell on any slide, the adjustments on the left (the canvas follows), a library image (click it into the selected cell, or drag it onto a cell), the fold buttons on both panels and the rails they leave, Render preview, Regenerate sample, Save as carousel type, and Discard draft (press and hold).\n\nThe phone boards: the slides pan sideways, the adjustments open as a sheet from the bottom, the conversation floats behind the round button.\n\nRound two (D11, approved and brought in on 2026-09-15): slides are 4:5 or 9:16, and so are the reference's slides, the saved decks' covers and the library's tiles; Slide size comes first in the adjustments; a third card, Start from a Figma link; the chat box grows with the prompt (Shift+Enter starts a new line); the canvas pans in every direction and zooms (Ctrl or Cmd with the wheel, a pinch, or the buttons at the end of the tool strip; the zoom level fits every slide). Layered templates and the Figma link's desktop screens are on D11's canvas, Carousel Generator Designs - (D6 pt. 2 Studio).\n\nNew for review, the phone in round two: the Figma file's chip above the chat box in the conversation sheet, and the Layers list in the adjustments sheet. The phone keeps its sideways scroll, with no zoom.";
+    "Pictures, one screen per state; the controls that do work are a bonus. From the two cards you can walk the whole path: a card, a library (or New library), a saved deck or the chat box, then the draft. On the canvas boards, try dragging the dotted ground to pan, the title (press it to rename), a text box or an image cell on any slide, the adjustments on the left (the canvas follows), a library image (click it into the selected cell, or drag it onto a cell), the fold buttons on both panels and the rails they leave, Render preview, Regenerate sample, Save as carousel type, and Discard draft (press and hold).\n\nThe phone boards: the slides pan sideways, the adjustments open as a sheet from the bottom, the conversation floats behind the round button.\n\nRound two (D11, approved and brought in on 2026-09-15): slides are 4:5 or 9:16, and so are the reference's slides, the saved decks' covers and the library's tiles; Slide size comes first in the adjustments; a third card, Start from a Figma link; the chat box grows with the prompt (Shift+Enter starts a new line); the canvas pans in every direction and zooms (Ctrl or Cmd with the wheel, a pinch, or the buttons at the end of the tool strip; the zoom level fits every slide). Layered templates and the Figma link's desktop screens are on D11's canvas, Carousel Generator Designs - (D6 pt. 2 Studio).\n\nNew for review, the phone in round two: the Figma file's chip above the chat box in the conversation sheet, and the Layers list in the adjustments sheet. The phone keeps its sideways scroll, with no zoom.\n\nRound three, for review (2026-09-17): slides can be added, duplicated, deleted and moved. Press the dashed slot after the last slide, or the plus that appears between two slides on hover; the dots on a slide's caption open Duplicate, Move left, Move right and Delete. A new slide takes the layout of the slide before it and the AI writes its line; a duplicate keeps the text. Delete is unavailable at two slides. On the phone the dots always show and the slot ends the row.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

@@ -19,7 +19,14 @@ const scriptEnd = html.indexOf("</script>", scriptStart);
 const script = html.slice(scriptStart, scriptEnd);
 const markup = html.slice(0, at);
 
-const sandbox = { console };
+/* The Studio's script reaches for timers and the document while it renders (the canvas's wheel listener, the
+   pan-to-slide); the stub gives it no-ops so a board still fills. */
+const noop = () => 0;
+const sandbox = {
+  console,
+  setTimeout: noop, clearTimeout: noop, setInterval: noop, clearInterval: noop,
+  document: { getElementById: () => null, querySelectorAll: () => [], querySelector: () => null, addEventListener: noop, removeEventListener: noop },
+};
 vm.createContext(sandbox);
 vm.runInContext(
   `class DCLogic { constructor() { this.state = {}; } setState() {} note() {} }\n${script}\nglobalThis.__vals = new Component().renderVals();`,

@@ -461,6 +461,15 @@ width.
      designed yet); a cut-out is sized and placed freely; a shaped frame
      takes a shape, a border, Fill or Fit and a crop; a fixed image is
      replaced by uploading another.
+     **Slides can be added, duplicated, deleted and moved** (D6 round three,
+     approved by Garreth on 2026-09-17): a dashed **Add slide** slot after the last
+     slide, a plus in the gap between two slides on hover, and a menu on each
+     slide's caption with **Duplicate**, **Move left**, **Move right** and
+     **Delete**. A new slide takes the layout of the slide before it and the
+     AI writes its line; a duplicate keeps the text; a carousel keeps at
+     least two slides, so Delete is unavailable at two. The conversation can
+     do the same ("Make it eight slides"). In edit mode a changed slide count
+     saves a new version, like a changed size.
   6. **Regenerate sample** asks for new sample copy under the current
      direction.
   7. **Render preview** runs the real painter on the selected slide and marks
