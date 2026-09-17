@@ -37,7 +37,9 @@ as the how-to for any screen Garreth reopens or adds.
   shared canvases on 2026-09-15. Both themes on one canvas came to 14.3 MB,
   too close to the limit for D6's round two, so on 2026-09-15 Garreth had
   light mode split onto its own canvas, the way D1 to D5 are split; each
-  came to 8.9 MB, and each is 12.2 MB with round two. Nothing else is placed on either. Steps 3–6 read and save
+  came to 8.9 MB, and each is 12.2 MB with round two. Round three
+  (2026-09-17, slides added, duplicated, deleted and moved) adds seven boards
+  a theme, 36 in all. Nothing else is placed on either. Steps 3–6 read and save
   the canvas for the theme being placed; step 4 runs `place-ticket.mjs` with
   `--theme dark` or `--theme light`; and step 5 packages it with
   `--title "Carousel Generator Designs - Dark (D6 Studio)"` or
