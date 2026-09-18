@@ -7,6 +7,7 @@ import {
   fetchEffectiveConfig,
   fetchOverrides,
 } from "@/lib/data/scheduler-overrides";
+import { type Platform, hasAnalytics, toPlatform } from "@/lib/platform";
 
 /**
  * Accounts assembly (plan §4). One row per account (incl. banned/retired —
@@ -14,11 +15,20 @@ import {
  * (created 2026-08-31, keyed username+platform); errors from
  * v_dashboard_task_errors_7d; device login from v_dashboard_latest_login.
  */
+// Platform lives in @/lib/platform (no server imports, safe for client
+// components); re-exported here because the data layer is where it is read.
+export { type Platform, toPlatform };
+export type DeliveryMode = "geelark" | "manual";
+
 export interface AccountRow {
   profile: string;
   username: string | null;
   character: string; // "Character 3"
-  platform: "tiktok" | "instagram";
+  platform: Platform;
+  /** Who delivers posts: a Geelark cloud phone, or a person on a real iPhone (PF-01). */
+  deliveryMode: DeliveryMode;
+  /** The physical phone this account lives on; null while it is still on Geelark (PF-02). */
+  deviceId: number | null;
   isActive: boolean;
   paused: boolean;
   healthStatus: string;
@@ -85,6 +95,8 @@ interface RawAccount {
   username: string | null;
   character: string;
   platform: string;
+  delivery_mode: string | null;
+  device_id: number | null;
   is_active: boolean;
   posting_paused: boolean | null;
   health_status: string | null;
@@ -122,7 +134,7 @@ async function fetchAccounts(): Promise<AccountRow[]> {
     effective,
   ] = await Promise.all([
     sbRest<RawAccount[]>(
-      "accounts?select=geelark_profile,username,character,platform,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
+      "accounts?select=geelark_profile,username,character,platform,delivery_mode,device_id,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
     ),
     sbRest<{ platform: string; account: string; median_views_last5: number; posts_counted: number }[]>(
       "v_dashboard_last5_views?select=platform,account,median_views_last5,posts_counted",
@@ -224,7 +236,12 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       : null;
     // Honesty rule (plan §10.2): a tracking-broken account's stale median must
     // never render as a number — the analytics feed is blind, not the account.
-    const analyticsTrustworthy = health !== "tracking broken";
+    // Same rule for a platform with no performance feed at all (Facebook,
+    // PF-08): the health view joins posts on the handle alone, so a Facebook
+    // account sharing its character's Instagram handle would otherwise borrow
+    // that account's numbers.
+    const platform = toPlatform(a.platform);
+    const analyticsTrustworthy = health !== "tracking broken" && hasAnalytics(platform);
 
     // Same honesty rule, applied to the sample size. A suppression share taken
     // over 1-3 posts converges on 0% or 100% by construction, and 100% is what
@@ -239,7 +256,9 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       profile: a.geelark_profile,
       username: a.username,
       character: a.character,
-      platform: a.platform === "instagram" ? "instagram" : "tiktok",
+      platform,
+      deliveryMode: a.delivery_mode === "manual" ? "manual" : "geelark",
+      deviceId: a.device_id,
       isActive: a.is_active,
       paused: a.posting_paused === true,
       healthStatus: health,

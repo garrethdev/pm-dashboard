@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from "@/components/ui/icons";
 import type { CalendarDayAccount, CalendarDayDetail, CalendarPost } from "@/lib/data/calendar";
-import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
+import { PlatformIcon } from "@/components/ui/platform-icon";
+import { isPlatform } from "@/lib/platform";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
 import { StaleNotice } from "@/components/ui/stale-notice";
 import { healthTone } from "@/lib/health";
@@ -416,7 +417,6 @@ function PostRow({ post: p }: { post: CalendarPost }) {
 /** Platform as a glyph. The word "tiktok" beside a profile is a label nobody
  *  reads twice; the mark is recognised without being read at all. */
 function PlatformGlyph({ platform }: { platform: string }) {
-  if (platform === "instagram") return <InstagramIcon className="size-3.5 shrink-0 text-text-muted" />;
-  if (platform === "tiktok") return <TikTokIcon className="size-3.5 shrink-0 text-text-muted" />;
-  return null;
+  // An unrecognised value shows no mark here rather than guessing TikTok.
+  return isPlatform(platform) ? <PlatformIcon platform={platform} /> : null;
 }

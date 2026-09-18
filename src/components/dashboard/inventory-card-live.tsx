@@ -1,6 +1,9 @@
 import { BarcodeBar } from "@/components/ui/barcode-bar";
 import { DashCard } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Package } from "@/components/ui/icons";
 import { getInventory } from "@/lib/data/inventory";
+import type { Fleet } from "@/lib/fleet";
 import { formatEtShort } from "@/lib/data/format";
 import { upstreamMessage } from "@/lib/data/upstream-error";
 
@@ -18,11 +21,20 @@ export function coverLabel(days: number): string {
 /** Homepage inventory card — days-of-cover per character × bucket, live.
  *
  *  The `try` guards the read only — see the note in accounts/page.tsx. */
-export async function InventoryCardLive({ className }: { className?: string }) {
+export async function InventoryCardLive({
+  className,
+  fleet,
+}: {
+  className?: string;
+  /** Passed in by the page rather than read here: this file also exports
+   *  coverColor / coverLabel to browser-side cards, so it must not import
+   *  anything server-only (the cookie reader is). */
+  fleet: Fleet;
+}) {
   let data;
   let fetchedAt;
   try {
-    ({ data, fetchedAt } = await getInventory());
+    ({ data, fetchedAt } = await getInventory(fleet));
   } catch (err) {
     return (
       <DashCard title="Inventory" viewAllHref="/inventory" className={className}>
@@ -38,7 +50,12 @@ export async function InventoryCardLive({ className }: { className?: string }) {
       viewAllHref="/inventory"
       className={className}
     >
-      <div className="flex flex-col gap-3">
+      {data.buckets.length === 0 && (
+        <EmptyState icon={Package} compact>
+          No demand yet
+        </EmptyState>
+      )}
+      <div hidden={data.buckets.length === 0} className="flex flex-col gap-3">
         <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider text-text-muted">
           <span className="w-28 shrink-0" />
           <span className="flex-1" />

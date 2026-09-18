@@ -1,3 +1,5 @@
+import type { Fleet } from "@/lib/fleet";
+import { toPlatform } from "@/lib/platform";
 import { sbRest } from "@/lib/data/supabase";
 
 /**
@@ -36,7 +38,26 @@ const RANGE_DAYS: Record<TopRange, number | null> = { week: 7, month: 30, all: n
 
 export type TopPlatform = "all" | "tiktok" | "instagram";
 
-async function topRows(range: TopRange, platform: TopPlatform): Promise<RawPost[]> {
+/**
+ * PostgREST filter that limits a views table to one fleet (PF-17).
+ *
+ * An account's data follows the account (Garreth, 2026-09-18): Physical is the
+ * posts of accounts that are on real phones today, matched on handle AND
+ * platform; Cloud is everything else, including posts whose handle matches no
+ * account, so the two fleets always add up to the whole. Returns null when the
+ * fleet can have no rows at all, so the table is not read.
+ */
+export function fleetHandleFilter(
+  fleet: Fleet,
+  physicalHandles: string[],
+): string | null {
+  // Quoted, because a handle may hold a dot or a comma-unsafe character.
+  const list = physicalHandles.map((h) => `"${h.replace(/"/g, "")}"`).join(",");
+  if (fleet === "physical") return physicalHandles.length ? `&account=in.(${list})` : null;
+  return physicalHandles.length ? `&account=not.in.(${list})` : "";
+}
+
+async function topRows(range: TopRange, platform: TopPlatform, fleet: Fleet): Promise<RawPost[]> {
   // PostgREST can't UNION, so pull each table's top rows and merge in JS.
   const cols = "account,post_id,post_url,views,total_engagement,posted_at,caption_snippet";
 
@@ -52,15 +73,23 @@ async function topRows(range: TopRange, platform: TopPlatform): Promise<RawPost[
   const wantTt = platform !== "instagram";
   const wantIg = platform !== "tiktok";
 
+  const physical = await sbRest<{ username: string; platform: string | null }[]>(
+    "accounts?select=username,platform&delivery_mode=eq.manual&username=not.is.null",
+  );
+  const handlesOn = (p: "tiktok" | "instagram") =>
+    physical.filter((a) => toPlatform(a.platform) === p).map((a) => a.username);
+  const ttFleet = fleetHandleFilter(fleet, handlesOn("tiktok"));
+  const igFleet = fleetHandleFilter(fleet, handlesOn("instagram"));
+
   const [tt, ig] = await Promise.all([
-    wantTt
+    wantTt && ttFleet !== null
       ? sbRest<Omit<RawPost, "platform">[]>(
-          `tt_post_performance?select=${cols}${filter}&order=views.desc.nullslast&limit=5`,
+          `tt_post_performance?select=${cols}${filter}${ttFleet}&order=views.desc.nullslast&limit=5`,
         )
       : Promise.resolve([]),
-    wantIg
+    wantIg && igFleet !== null
       ? sbRest<Omit<RawPost, "platform">[]>(
-          `post_performance?select=${cols}${filter}&order=views.desc.nullslast&limit=5`,
+          `post_performance?select=${cols}${filter}${igFleet}&order=views.desc.nullslast&limit=5`,
         )
       : Promise.resolve([]),
   ]);
@@ -182,8 +211,9 @@ export async function resolveThumbnail(post: {
 export async function getTopPosts(
   range: TopRange,
   platform: TopPlatform = "all",
+  fleet: Fleet = "cloud",
 ): Promise<TopPost[]> {
-  const rows = await topRows(range, platform);
+  const rows = await topRows(range, platform, fleet);
   const thumbs = await Promise.all(rows.map(resolveThumbnail));
   return rows.map((r, i) => ({
     platform: r.platform === "instagram" ? "instagram" : "tiktok",

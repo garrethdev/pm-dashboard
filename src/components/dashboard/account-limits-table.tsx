@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { SlidersHorizontal } from "@/components/ui/icons";
+import { SlidersHorizontal, Users } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterChips } from "@/components/ui/filter-chips";
@@ -12,6 +13,14 @@ import { SearchInput } from "@/components/ui/search-input";
 import type { AccountConfigRow, SchedulerConfigData } from "@/lib/data/scheduler-config";
 import { minutesToEt } from "@/lib/data/scheduler-config";
 import { healthTone } from "@/lib/health";
+import type { Fleet } from "@/lib/fleet";
+import {
+  PLATFORM_LABEL,
+  type Platform,
+  platformFilterOptions,
+  platformsToOffer,
+  toPlatform,
+} from "@/lib/platform";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,12 +34,19 @@ import { cn } from "@/lib/utils";
  */
 
 type StatusFilter = "all" | "blocked" | "throttled" | "full" | "paused";
-type PlatformFilter = "all" | "tiktok" | "instagram";
+type PlatformFilter = "all" | Platform;
 /** Derived from the rows, never hardcoded — the old fixed union stopped at
  *  Character 4, so Character 5 could not be filtered for at all. */
 type CharFilter = string;
 
-export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
+export function AccountLimitsTable({
+  data,
+  fleet,
+}: {
+  data: SchedulerConfigData;
+  /** The fleet being looked at. Physical always offers the Facebook filter. */
+  fleet?: Fleet;
+}) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [platform, setPlatform] = useState<PlatformFilter>("all");
@@ -74,7 +90,7 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
       ? [
           {
             key: "platform",
-            label: platform === "tiktok" ? "TikTok" : "Instagram",
+            label: PLATFORM_LABEL[platform],
             onClear: () => setPlatform("all" as PlatformFilter),
           },
         ]
@@ -122,11 +138,12 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
                   <FilterPills
                     value={platform}
                     onChange={setPlatform}
-                    options={[
-                      { value: "all", label: "All" },
-                      { value: "tiktok", label: "TT" },
-                      { value: "instagram", label: "IG" },
-                    ]}
+                    options={platformFilterOptions(
+                      platformsToOffer(
+                        fleet,
+                        data.rows.map((r) => toPlatform(r.platform)),
+                      ),
+                    )}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -161,7 +178,7 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
       }
     >
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table hidden={rows.length === 0} className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-text-muted">
               <th className="pb-2 font-medium">Profile</th>
@@ -183,9 +200,9 @@ export function AccountLimitsTable({ data }: { data: SchedulerConfigData }) {
           </tbody>
         </table>
         {rows.length === 0 && (
-          <p className="py-6 text-center text-sm text-text-muted">
-            No accounts match those filters.
-          </p>
+          <EmptyState icon={Users} compact>
+            {data.rows.length === 0 ? "No accounts yet" : "No accounts match"}
+          </EmptyState>
         )}
       </div>
 

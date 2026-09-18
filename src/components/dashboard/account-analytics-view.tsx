@@ -21,6 +21,7 @@ import {
   type AccountRangeKey,
 } from "@/lib/data/account-analytics";
 import { formatEtDate } from "@/lib/data/format";
+import type { AnalyticsPlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 import { useDataRefresh } from "@/lib/refresh-bus";
 
@@ -48,7 +49,7 @@ export function AccountAnalyticsView({
 }: {
   initial: AccountAnalytics;
   account: string | null;
-  platform: "tiktok" | "instagram";
+  platform: AnalyticsPlatform;
 }) {
   const [data, setData] = useState(initial);
   const [range, setRange] = useState<AccountRangeKey>("7d");
@@ -371,7 +372,7 @@ function TopPostsSection({
 }: {
   initial: AccountPost[];
   account: string;
-  platform: "tiktok" | "instagram";
+  platform: AnalyticsPlatform;
 }) {
   const [posts, setPosts] = useState(initial);
   const [range, setRange] = useState<AccountRangeKey>("7d");

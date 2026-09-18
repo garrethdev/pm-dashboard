@@ -49,6 +49,11 @@ applied 2026-09-06) are deliberately not here.
 | 09-11 | `profile_cards_keyed_by_handle_and_platform` | a handle is unique only within a platform; the old key let one platform overwrite the other's cached profile card |
 | 09-11 | `content_type_stats_one_row_per_measured_post` | performance was joined to a placement table, counting each post once per profile it was sent to |
 | 09-11 | `cleora_content_caption_prefix_index` | the one registered caption column with no prefix index, so every `tt_post_performance` insert seq-scanned it inside a trigger |
+| 09-18 | `accounts_delivery_mode` | PF-01: `geelark` or `manual` per account, default `geelark`, so accounts move to real iPhones one at a time and the rest keep working untouched |
+| 09-18 | `devices` | PF-02: one row per physical phone, `accounts.device_id`, and the private `device-proofs` bucket for whoer.net screenshots. RLS on with no policies and `anon`/`authenticated` revoked by name — read back from `relacl` after applying |
+| 09-18 | `analytics_rollup_fleet` | PF-17: `analytics_rollup` limited to one fleet (Cloud / Physical / all). The original is untouched. Proven: `'all'` equals the original for 7d, 28d and all-time; Cloud equals it today; Physical is empty |
+| 09-18 | `analytics_top_content_fleet` | PF-17: the same for the analysis page's top content. Original untouched; same parity check |
+| 09-18 | `inventory_fleet` | PF-18: `inventory_rollup_fleet` and `scheduler_production_order_fleet`, the two Inventory calculations for one fleet. Demand comes from the fleet's accounts; unassigned content is Physical's supply, so Cloud's pool is zero. Originals and `inventory_check` untouched (the emails read them). **Parity not proven against live demand**: every account was paused, so both sides returned no rows. Once accounts are unpaused, check `select * from inventory_rollup(14,0,null)` against `inventory_rollup_fleet(14,0,null,'all')`, and that the `cloud` and `physical` targets add up to it |
 
 ## A migration that only replaces a function must leave its grants alone
 

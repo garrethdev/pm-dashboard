@@ -131,6 +131,10 @@ async function fetchSchedulerConfig(): Promise<SchedulerConfigData> {
     }),
   );
 
+  return summarise(rows);
+}
+
+function summarise(rows: AccountConfigRow[]): SchedulerConfigData {
   return {
     rows,
     // A paused account is neither blocked nor throttled — it is switched off,
@@ -139,6 +143,18 @@ async function fetchSchedulerConfig(): Promise<SchedulerConfigData> {
     throttled: rows.filter((r) => !r.paused && r.canDeliver && r.throttleReason !== null).length,
     paused: rows.filter((r) => r.paused).length,
   };
+}
+
+/**
+ * The same data limited to some accounts, with the counts redone so the
+ * headline numbers always describe the rows underneath them. Used to show one
+ * fleet (Cloud or Physical) at a time.
+ */
+export function limitSchedulerConfig(
+  data: SchedulerConfigData,
+  profiles: ReadonlySet<string>,
+): SchedulerConfigData {
+  return summarise(data.rows.filter((r) => profiles.has(r.geelarkProfile)));
 }
 
 export const getSchedulerConfig = cachedFetcher(

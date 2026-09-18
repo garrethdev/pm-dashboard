@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CalendarRange, Sparkles } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterPills } from "@/components/ui/filter-pills";
@@ -110,7 +111,7 @@ export function ProductionOrderCard({
             so the leftover width falls to Content type and Days of cover, which
             are the ones that can actually use it — otherwise auto-layout
             spreads it evenly and every number drifts away from its header. */}
-        <table className="w-full text-left text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
+        <table hidden={shown.length === 0} className="w-full text-left text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
           <thead>
             <tr className="text-left text-xs text-text-muted">
               <th className="pb-2 font-medium whitespace-nowrap">Character</th>
@@ -182,7 +183,9 @@ export function ProductionOrderCard({
         </table>
       </div>
       {shown.length === 0 && (
-        <p className="text-sm text-text-muted">Nothing queued for this character.</p>
+        <EmptyState icon={Sparkles}>
+          {rows.length === 0 ? "Nothing to make yet" : "Nothing queued for this character"}
+        </EmptyState>
       )}
     </DashCard>
   );

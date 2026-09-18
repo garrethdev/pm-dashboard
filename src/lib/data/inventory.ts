@@ -1,5 +1,6 @@
 import { INVENTORY_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
+import { deliveryModeOfFleet, type Fleet } from "@/lib/fleet";
 
 /**
  * Inventory (plan §5) — rendered from the same views the Mon/Fri digest reads,
@@ -68,26 +69,20 @@ export interface InventoryData {
   pausedCharacters: PausedCharacter[];
 }
 
-async function fetchInventory(): Promise<InventoryData> {
-  const [checks, order, accounts, pools] = await Promise.all([
-    sbRest<
-      {
-        character: string;
-        bucket: string;
-        scheduled_in_window: number;
-        target: number;
-        pool_available: string | number | null;
-        shortfall: number;
-        new_acct_need: number;
-        grand_total: number;
-        iso_week_start: string | null;
-        iso_week_end: string | null;
-      }[]
-    >(
-      "inventory_check?select=character,bucket,scheduled_in_window,target,pool_available,shortfall,new_acct_need,grand_total,iso_week_start,iso_week_end",
-    ),
+async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
+  const mode = deliveryModeOfFleet(fleet);
+  const [rollup, orderRaw, accounts, poolsRaw, newAcct] = await Promise.all([
+    // PF-18: inventory_rollup_fleet(14) is inventory_check for one fleet. The
+    // view itself is still what the digest email reads, and it stays
+    // fleet-wide; the dashboard no longer reads it.
+    sbRpc<RawRollupRow[]>("inventory_rollup_fleet", {
+      p_days: 14,
+      p_new_accounts: 0,
+      p_new_character: null,
+      p_fleet: fleet,
+    }),
     // Numerics arrive as strings over PostgREST, hence the Number() below.
-    sbRest<
+    sbRpc<
       {
         character: string;
         content_type: string;
@@ -101,16 +96,51 @@ async function fetchInventory(): Promise<InventoryData> {
         produce_to_reach_21d: string | number | null;
         status: string;
       }[]
-    >(
-      "v_scheduler_production_order?select=character,content_type,bucket,usable_pool,quarantined,weekly_demand,days_cover,slots_missed_14d,last_missed,produce_to_reach_21d,status&order=days_cover.asc",
-    ),
+    >("scheduler_production_order_fleet", { p_fleet: fleet }),
     sbRest<{ character: string | null; posting_paused: boolean | null }[]>(
-      "accounts?select=character,posting_paused&is_active=eq.true&character=like.Character*",
+      `accounts?select=character,posting_paused&is_active=eq.true&character=like.Character*&delivery_mode=eq.${mode}`,
     ),
     sbRest<{ content_type: string; character: string; pool_n: number }[]>(
       "v_scheduler_pool?select=content_type,character,pool_n",
     ),
+    // Accounts about to be added are only ever added to Physical.
+    fleet === "physical"
+      ? sbRest<{ character: string; new_acct_filler: number | null; new_acct_glp: number | null }[]>(
+          "v_new_account_demand?select=character,new_acct_filler,new_acct_glp",
+        )
+      : Promise.resolve([]),
   ]);
+
+  // Content not yet given to an account is Physical's supply: Cloud accounts no
+  // longer post, so Cloud sees an empty pool (Garreth, 2026-09-18).
+  const pools = fleet === "cloud" ? [] : poolsRaw;
+
+  // The view was read with order=days_cover.asc; a function call cannot be, so
+  // sort here the way Postgres did: ascending, no-demand (null) rows last.
+  const order = [...orderRaw].sort((a, b) => {
+    if (a.days_cover == null) return b.days_cover == null ? 0 : 1;
+    if (b.days_cover == null) return -1;
+    return Number(a.days_cover) - Number(b.days_cover);
+  });
+
+  const n = (v: string | number | null | undefined) => Number(v ?? 0);
+  const needByCharacter = new Map(newAcct.map((r) => [r.character, r]));
+  const checks = rollup.map((r) => {
+    const need = needByCharacter.get(r.character);
+    const newAcctNeed = n(r.bucket === "filler" ? need?.new_acct_filler : need?.new_acct_glp);
+    return {
+      character: r.character,
+      bucket: r.bucket,
+      scheduled_in_window: n(r.scheduled_in_window),
+      target: n(r.target),
+      pool_available: r.pool_available,
+      shortfall: n(r.shortfall),
+      new_acct_need: newAcctNeed,
+      grand_total: n(r.shortfall) + newAcctNeed,
+      iso_week_start: r.window_start,
+      iso_week_end: r.window_end,
+    };
+  });
 
   // "All paused" means every live account for that character, not merely one.
   const byCharacter = new Map<string, { total: number; paused: number }>();
@@ -176,9 +206,12 @@ async function fetchInventory(): Promise<InventoryData> {
 // v4: added pausedCharacters. The suffix is bumped whenever InventoryData
 // changes shape — a cache entry written by the previous version has no such
 // field, and the page crashed on `characters.length` reading it back.
-export const getInventory = cachedFetcher("inventory-data-v4", TTL.supabase, fetchInventory, {
-  tags: [INVENTORY_TAG],
-});
+// v5: one entry per fleet (Cloud / Physical).
+export function getInventory(fleet: Fleet = "cloud") {
+  return cachedFetcher(`inventory-data-v5:${fleet}`, TTL.supabase, () => fetchInventory(fleet), {
+    tags: [INVENTORY_TAG],
+  })();
+}
 
 /* ── Demand vs supply, parameterised window ────────────────────────────────── */
 
@@ -246,16 +279,18 @@ export async function getDemandSupply(
   days: number,
   newAccts = 0,
   newChar: string | null = null,
+  fleet: Fleet = "cloud",
 ) {
   const n = (v: string | number | null) => Number(v ?? 0);
   return cachedFetcher(
-    `inventory-rollup-v1:${days}:${newAccts}:${newChar ?? "-"}`,
+    `inventory-rollup-v2:${fleet}:${days}:${newAccts}:${newChar ?? "-"}`,
     TTL.supabase,
     async (): Promise<DemandSupplyData> => {
-      const raw = await sbRpc<RawRollupRow[]>("inventory_rollup", {
+      const raw = await sbRpc<RawRollupRow[]>("inventory_rollup_fleet", {
         p_days: days,
         p_new_accounts: newAccts,
         p_new_character: newChar,
+        p_fleet: fleet,
       });
       const rows = raw.map(
         (r): DemandSupplyRow => ({

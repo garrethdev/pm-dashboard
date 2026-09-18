@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyState } from "@/components/ui/empty-state";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -165,9 +166,7 @@ export function IncidentHistory({
         {error ? (
           <p className="text-sm text-text-muted">Could not load incidents: {error}</p>
         ) : shown.length === 0 ? (
-          <p className="flex items-center gap-1.5 py-2 text-sm text-text-muted">
-            <CheckCircle2 className="size-4 text-ok" /> No incidents in this range.
-          </p>
+          <EmptyState icon={CheckCircle2}>No incidents in this range</EmptyState>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm [&_td]:pr-4 [&_th]:pr-4 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">

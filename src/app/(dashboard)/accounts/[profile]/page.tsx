@@ -6,14 +6,16 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusPill } from "@/components/ui/pill";
-import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { AccountAnalyticsView } from "@/components/dashboard/account-analytics-view";
 import { AccountDetailTabs } from "@/components/dashboard/account-detail-tabs";
+import { AccountDeviceCard } from "@/components/dashboard/account-device-card";
 import { AccountTaskLog } from "@/components/dashboard/account-task-log";
 import { getAccountAnalytics } from "@/lib/data/account-analytics";
 import { getAccountDetail } from "@/lib/data/account-detail";
 import { healthTone } from "@/lib/health";
 import { formatEtDate } from "@/lib/data/format";
+import { PLATFORM_LABEL, type Platform, hasAnalytics } from "@/lib/platform";
 
 /** Route is /accounts/20 — the bare profile number, not "Profile%2020". */
 function toProfileName(slug: string): string {
@@ -73,8 +75,17 @@ async function AnalyticsPanel({
   platform,
 }: {
   username: string | null;
-  platform: "tiktok" | "instagram";
+  platform: Platform;
 }) {
+  // Nothing collects Facebook views yet (PF-08). Say so, rather than look the
+  // handle up in the TikTok table and report an account nobody is watching.
+  if (!hasAnalytics(platform)) {
+    return (
+      <p className="text-sm text-text-muted">
+        Views are not collected for {PLATFORM_LABEL[platform]} accounts yet.
+      </p>
+    );
+  }
   // Opens on 7 days, matching the fleet Analytics page.
   let analytics;
   try {
@@ -133,14 +144,14 @@ export default async function AccountDetailPage({
                 {/* Platform now reads as a badge on the name, replacing the
                     labelled pill that used to sit on the far right. */}
                 <span
-                  title={isIg ? "Instagram" : "TikTok"}
+                  title={PLATFORM_LABEL[data.platform]}
                   className="flex size-6 shrink-0 items-center justify-center rounded-full bg-white"
                 >
-                  {isIg ? (
-                    <InstagramIcon className="size-[15px] text-[#E4405F]" />
-                  ) : (
-                    <TikTokIcon className="size-[15px] text-black" />
-                  )}
+                  {/* Facebook takes the same black as TikTok: no new brand colour. */}
+                  <PlatformIcon
+                    platform={data.platform}
+                    className={isIg ? "size-[15px] text-[#E4405F]" : "size-[15px] text-black"}
+                  />
                 </span>
               </div>
 
@@ -199,6 +210,8 @@ export default async function AccountDetailPage({
           ))}
         </div>
       </Card>
+
+      <AccountDeviceCard profile={data.profile} />
 
       {/* mt-6 on top of the column's gap-3 — the tab row starts a new section,
           and at 12px it read as another row of the header card. */}

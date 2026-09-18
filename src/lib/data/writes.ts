@@ -1,5 +1,6 @@
 import { authBypassed, isEmailAllowed } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import type { DeliveryMode } from "@/lib/data/accounts";
 
 /**
  * Server-side write helpers for dashboard actions (plan §9). Every write is
@@ -124,8 +125,14 @@ export function validProfile(p: unknown): p is string {
   return typeof p === "string" && PROFILE_RE.test(p);
 }
 
+/** Who does the posting: the Geelark robot, or a person on a real iPhone. */
+export function validDeliveryMode(m: unknown): m is DeliveryMode {
+  return m === "geelark" || m === "manual";
+}
+
 export interface AccountState {
   posting_paused: boolean | null;
+  delivery_mode: DeliveryMode;
   is_active: boolean;
   status_note: string | null;
   /** "Character 3" — the outer bound on which content types may be selected. */
@@ -137,19 +144,26 @@ export interface AccountState {
 /** Read one account's current state (for old_value + guardrails). */
 export async function getAccountState(profile: string): Promise<AccountState | null> {
   const res = await sbFetch(
-    `accounts?select=posting_paused,is_active,status_note,character&geelark_profile=eq.${encodeURIComponent(profile)}`,
+    `accounts?select=posting_paused,delivery_mode,is_active,status_note,character&geelark_profile=eq.${encodeURIComponent(profile)}`,
     { method: "GET" },
   );
   if (!res.ok) throw new Error(`Supabase read failed (HTTP ${res.status})`);
   const rows = (await res.json()) as {
     posting_paused: boolean | null;
+    delivery_mode: string | null;
     is_active: boolean;
     status_note: string | null;
     character: string | null;
   }[];
   const row = rows[0];
   if (!row) return null;
-  return { ...row, cleanedUp: /post-ban cleanup/i.test(row.status_note ?? "") };
+  return {
+    ...row,
+    // Anything the column could not be (it is NOT NULL with a check) still
+    // reads as the default rather than as a third state.
+    delivery_mode: row.delivery_mode === "manual" ? "manual" : "geelark",
+    cleanedUp: /post-ban cleanup/i.test(row.status_note ?? ""),
+  };
 }
 
 /** §9.2 pause/unpause: explicit boolean only, never NULL; never touches is_active. */
@@ -179,6 +193,43 @@ export async function setPostingPaused(
     }),
   });
   if (!res.ok) throw new Error(`Pause write failed (HTTP ${res.status}). Nothing was changed`);
+}
+
+/**
+ * PF-01 delivery mode: who posts for this account. Writes that one column and
+ * nothing else -- never posting_paused, never is_active -- so moving an
+ * account to a real phone cannot quietly resume or stop its schedule. Who and
+ * when live in dashboard_audit_log, written by the route.
+ */
+export async function setDeliveryMode(
+  profile: string,
+  mode: DeliveryMode,
+  userEmail: string,
+): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10);
+  const noteFragment = ` | ${today} ${userEmail}: posting moved to ${
+    mode === "manual" ? "a real phone" : "Geelark"
+  } via dashboard`;
+
+  // Same read-modify-write as the pause note (PostgREST has no string concat).
+  const cur = await sbFetch(
+    `accounts?select=status_note&geelark_profile=eq.${encodeURIComponent(profile)}`,
+    { method: "GET" },
+  );
+  if (!cur.ok) throw new Error(`Supabase read failed (HTTP ${cur.status}). Nothing was changed`);
+  const curRows = (await cur.json()) as { status_note: string | null }[];
+  const newNote = (curRows[0]?.status_note ?? "") + noteFragment;
+
+  const res = await sbFetch(`accounts?geelark_profile=eq.${encodeURIComponent(profile)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      delivery_mode: mode,
+      status_note: newNote,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  if (!res.ok) throw new Error(`Could not change who posts (HTTP ${res.status}). Nothing was changed`);
 }
 
 /**

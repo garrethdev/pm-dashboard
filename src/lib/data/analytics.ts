@@ -1,4 +1,5 @@
 import { ANALYTICS_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
+import { deliveryModeOfFleet, type Fleet } from "@/lib/fleet";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
 
 /**
@@ -240,16 +241,24 @@ function bucketLabel(key: string, bucket: "day" | "week") {
   return bucket === "week" ? `wk ${d}` : d;
 }
 
-async function fetchAnalytics(days: number | null, platform: PlatformKey): Promise<AnalyticsData> {
+async function fetchAnalytics(
+  days: number | null,
+  platform: PlatformKey,
+  fleet: Fleet,
+): Promise<AnalyticsData> {
   const [raw, liveAccounts] = await Promise.all([
-    sbRpc<RawRollup>("analytics_rollup", {
+    // analytics_rollup_fleet is analytics_rollup limited to one fleet's
+    // accounts (PF-17). An account's data follows the account: whatever fleet
+    // it is in today, all of its history counts there (Garreth, 2026-09-18).
+    sbRpc<RawRollup>("analytics_rollup_fleet", {
       p_days: days,
       p_platform: platform,
+      p_fleet: fleet,
     }),
     // Straight off accounts, not off the rollup: this is the "what exists"
     // list, and it must not depend on anything having been measured yet.
     sbRest<{ character: string | null }[]>(
-      "accounts?select=character&is_active=eq.true&character=like.Character*",
+      `accounts?select=character&is_active=eq.true&character=like.Character*&delivery_mode=eq.${deliveryModeOfFleet(fleet)}`,
     ).catch((): { character: string | null }[] => []),
   ]);
 
@@ -356,14 +365,18 @@ async function fetchAnalytics(days: number | null, platform: PlatformKey): Promi
   };
 }
 
-export function getAnalytics(range: RangeKey = "7d", platform: PlatformKey = "all") {
+export function getAnalytics(
+  range: RangeKey = "7d",
+  platform: PlatformKey = "all",
+  fleet: Fleet = "cloud",
+) {
   // `?? 7` would be wrong here: "all" carries a deliberate null.
   const entry = RANGES.find((r) => r.key === range);
   const days = entry ? entry.days : 7;
   return cachedFetcher(
-    `analytics-v12:${range}:${platform}`,
+    `analytics-v13:${fleet}:${range}:${platform}`,
     TTL.supabase,
-    () => fetchAnalytics(days, platform),
+    () => fetchAnalytics(days, platform, fleet),
     // Without the family tag the Refresh button cannot reach a range it has
     // never been told about, and there is one key per range per platform.
     { tags: [ANALYTICS_TAG] },
@@ -406,17 +419,18 @@ export interface TopContentData {
   posts: TopContentPost[];
 }
 
-export function getTopContent(range: ContentRange = "week") {
+export function getTopContent(range: ContentRange = "week", fleet: Fleet = "cloud") {
   const entry = CONTENT_RANGES.find((r) => r.key === range);
   const days = entry ? entry.days : 7;
   return cachedFetcher(
-    `analytics-top-content-v1:${range}`,
+    `analytics-top-content-v2:${fleet}:${range}`,
     TTL.supabase,
     async () => {
-      const raw = await sbRpc<{ judged: number; posts: TopContentPost[] }>("analytics_top_content", {
-        p_days: days,
-        p_limit: 12,
-      });
+      const raw = await sbRpc<{ judged: number; posts: TopContentPost[] }>(
+        // The same list limited to one fleet's accounts (PF-17).
+        "analytics_top_content_fleet",
+        { p_days: days, p_limit: 12, p_fleet: fleet },
+      );
       return { judged: n(raw.judged), posts: raw.posts ?? [] } satisfies TopContentData;
     },
     { tags: [ANALYTICS_TAG] },

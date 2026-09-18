@@ -17,12 +17,14 @@ import {
   Sparkle,
   Gear,
   SignOut,
+  Smartphone,
   X,
 } from "@/components/ui/icons";
 import { SidebarToggleIcon } from "@/components/ui/sidebar-toggle-icon";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { useMobileNav } from "@/components/shell/mobile-nav";
 import { PeptideMark } from "@/components/ui/peptide-mark";
+import type { Fleet } from "@/lib/fleet";
 import { cn } from "@/lib/utils";
 
 interface NavLink {
@@ -32,6 +34,8 @@ interface NavLink {
   /** Which paths light the row. A function rather than a prefix because a
    *  row can own pages that do not share its address. */
   isActive: (pathname: string) => boolean;
+  /** Shown only while looking at this fleet. Unset means both. */
+  fleet?: Fleet;
 }
 
 interface NavGroup {
@@ -55,7 +59,9 @@ const DASHBOARD_NAV: NavConfig = {
         { label: "Dashboard", href: "/", icon: House, isActive: (pathname) => pathname === "/" },
         { label: "Accounts", href: "/accounts", icon: Users, isActive: under("/accounts") },
         { label: "Inventory", href: "/inventory", icon: Package, isActive: under("/inventory") },
-        { label: "Proxies & phones", href: "/proxies", icon: Globe, isActive: under("/proxies") },
+        { label: "Proxies & numbers", href: "/proxies", icon: Globe, isActive: under("/proxies") },
+        // Real phones only: the Cloud menu stays exactly as it was (Garreth, 2026-09-18).
+        { label: "Devices", href: "/devices", icon: Smartphone, isActive: under("/devices"), fleet: "physical" },
         { label: "Automation", href: "/automation", icon: FlowArrow, isActive: under("/automation") },
         { label: "Analytics", href: "/analytics", icon: ChartBar, isActive: under("/analytics") },
       ],
@@ -171,8 +177,12 @@ function NavItem({
   );
 }
 
-export function Sidebar({ nav = "dashboard" }: { nav?: SidebarNav }) {
-  const { groups, back } = NAVS[nav];
+export function Sidebar({ nav = "dashboard", fleet }: { nav?: SidebarNav; fleet?: Fleet }) {
+  const { groups: allGroups, back } = NAVS[nav];
+  const groups = allGroups.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => !i.fleet || i.fleet === fleet),
+  }));
   const pathname = usePathname();
   const { open, setOpen } = useMobileNav();
   const [collapsedPref, setCollapsedPref] = useState(false);

@@ -20,8 +20,10 @@ import {
   Check as PhCheck,
   CheckCircle as PhCheckCircle,
   CircleNotch as PhCircleNotch,
+  Cloud as PhCloud,
   CloudSlash as PhCloudSlash,
   DeviceMobile as PhDeviceMobile,
+  FacebookLogo as PhFacebookLogo,
   FileMagnifyingGlass as PhFileMagnifyingGlass,
   FilmSlate as PhFilmSlate,
   FlowArrow as PhFlowArrow,
@@ -110,8 +112,10 @@ export const CheckCircle2 = icon(PhCheckCircle, "CheckCircle2");
 export const ChevronDown = icon(PhCaretDown, "ChevronDown", "bold");
 export const ChevronLeft = icon(PhCaretLeft, "ChevronLeft", "bold");
 export const ChevronRight = icon(PhCaretRight, "ChevronRight", "bold");
+export const Cloud = icon(PhCloud, "Cloud");
 export const CloudOff = icon(PhCloudSlash, "CloudOff");
 export const ExternalLink = icon(PhArrowSquareOut, "ExternalLink");
+export const FacebookLogo = icon(PhFacebookLogo, "FacebookLogo");
 export const FileSearch = icon(PhFileMagnifyingGlass, "FileSearch");
 export const Film = icon(PhFilmSlate, "Film");
 export const Globe = icon(PhGlobe, "Globe");

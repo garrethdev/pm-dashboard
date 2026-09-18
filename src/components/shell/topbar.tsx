@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 // The shape the bell endpoint returns, imported rather than restated. It was a
 // second copy of the interface here until 2026-09-12, which is how `markKeys`
 // could be added server-side and silently not exist on the client. `import
 // type` is erased at build, so nothing from the server module reaches the
 // bundle.
 import type { NotificationItem } from "@/lib/data/notifications";
-import { ArrowUpRight, Bell, CheckCircle2, RotateCw } from "@/components/ui/icons";
+import { ArrowUpRight, Bell, CheckCircle2 } from "@/components/ui/icons";
+import { FleetSwitch } from "@/components/shell/fleet-switch";
 import { MobileNavTrigger } from "@/components/shell/mobile-nav";
+import type { Fleet } from "@/lib/fleet";
 import { displayNameOf } from "@/lib/people";
-import { reloadClientViews } from "@/lib/refresh-bus";
 import { cn } from "@/lib/utils";
 
 const SECTION_NAMES: Record<string, string> = {
@@ -24,7 +25,7 @@ const SECTION_NAMES: Record<string, string> = {
   "carousel-generator": "Carousel Generator",
   "content-calendar": "Content calendar",
   "content-types": "Content types",
-  proxies: "Proxies & phones",
+  proxies: "Proxies & numbers",
   automation: "Automation",
   analytics: "Analytics",
   settings: "Settings",
@@ -82,9 +83,8 @@ function timeAgo(iso: string): string {
   return `${Math.floor(days / 30)}mo`;
 }
 
-export function Topbar({ userEmail }: { userEmail?: string }) {
+export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   // Read state comes from the server, per person. It used to live in
@@ -95,7 +95,6 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
   // everyone. Held separately from `items` so an optimistic mark survives the
   // next 20s poll landing before the write does.
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
-  const [refreshing, setRefreshing] = useState(false);
   const [greeting, setGreeting] = useState<string | null>(null);
   const name = displayNameOf(userEmail);
 
@@ -212,42 +211,6 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
     };
   }, [load]);
 
-  /**
-   * Refresh, in three parts. All three are needed and none of them covers for
-   * another:
-   *
-   *  1. **Expire the server caches.** `router.refresh()` re-renders but reads
-   *     the same `unstable_cache` entry, so without this the button did
-   *     nothing for up to 60 seconds.
-   *  2. **Re-render.** Picks up the newly-expired data for everything drawn on
-   *     the server.
-   *  3. **Reload what the client is holding.** Half the pages seed React state
-   *     from their first server render and fetch every later slice themselves;
-   *     a re-render does not touch that state, so Calendar, Analytics, Content
-   *     Types, Demand/Supply and Incident History would keep showing the slice
-   *     they already had. See `refresh-bus.ts`.
-   */
-  const refresh = useCallback(async () => {
-    if (refreshing) return;
-    setRefreshing(true);
-    try {
-      await fetch("/api/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: pathname }),
-        cache: "no-store",
-      });
-    } catch {
-      /* fall through — a plain re-render is still better than nothing */
-    }
-    router.refresh();
-    // The notification bell and the views that hold their own state, together.
-    // The spinner stays up until they are all done, so "finished" on screen
-    // means the numbers on screen have actually been re-read.
-    await Promise.all([load(), reloadClientViews()]);
-    setRefreshing(false);
-  }, [refreshing, pathname, router, load]);
-
   useEffect(() => {
     if (!open) return;
     // Opening the panel is a deliberate "show me the latest": re-reading on
@@ -289,14 +252,7 @@ export function Topbar({ userEmail }: { userEmail?: string }) {
             {name ? `, ${name}` : ""}
           </span>
         )}
-        <button
-          onClick={refresh}
-          disabled={refreshing}
-          title={refreshing ? "Refreshing…" : "Refresh data"}
-          className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-text-muted transition-colors hover:text-text-primary disabled:opacity-60"
-        >
-          <RotateCw className={cn("size-4", refreshing && "animate-spin")} />
-        </button>
+        {fleet && <FleetSwitch fleet={fleet} />}
 
         <div className="relative" ref={panelRef}>
           <button

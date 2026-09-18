@@ -3,7 +3,7 @@ import { ArrowUpRight } from "@/components/ui/icons";
 /**
  * Hand-off to a provider's own panel to extend a proxy or a phone rental.
  *
- * One component for both surfaces — the homepage Proxies & phones card and the
+ * One component for both surfaces — the homepage Proxies & numbers card and the
  * full table on /proxies — so the control cannot come to look or mean two
  * different things depending on where it was clicked. Destinations come from
  * `proxyExtendHref` / `phoneExtendHref`; a null href means the row has nothing

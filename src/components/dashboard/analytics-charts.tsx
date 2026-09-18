@@ -3,7 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpDown, ArrowUpRight, ExternalLink } from "@/components/ui/icons";
+import {
+  ArrowDown,
+  ArrowDownRight,
+  ArrowUp,
+  ArrowUpDown,
+  ArrowUpRight,
+  Cards,
+  ChartBar,
+  ExternalLink,
+  FacebookLogo,
+  Users,
+} from "@/components/ui/icons";
+import type { Fleet } from "@/lib/fleet";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Area,
   AreaChart,
@@ -21,7 +34,8 @@ import { Card, DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { TopPostsCard } from "@/components/dashboard/top-posts-card";
 import { AnalyticsSkeleton } from "@/components/dashboard/analytics-skeleton";
-import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
+import { PlatformIcon } from "@/components/ui/platform-icon";
+import { platformProfileUrl, toPlatform } from "@/lib/platform";
 import { formatEtDate } from "@/lib/data/format";
 import { cn } from "@/lib/utils";
 import { useDataRefresh } from "@/lib/refresh-bus";
@@ -42,18 +56,11 @@ const compact = (v: number) =>
 const AXIS = { stroke: "var(--text-muted)", fontSize: 11, tickLine: false, axisLine: false } as const;
 
 const profileNumber = (p: string | null) => (p ? p.replace(/\D+/g, "") : "");
+// Rows here come out of the two performance tables, so they are only ever
+// TikTok or Instagram; the shared helpers are used so the links and marks match
+// the Accounts table.
 const platformUrl = (platform: string, account: string) =>
-  platform === "instagram"
-    ? `https://www.instagram.com/${account}/`
-    : `https://www.tiktok.com/@${account}`;
-
-function PlatformIcon({ platform, className }: { platform: string; className?: string }) {
-  return platform === "instagram" ? (
-    <InstagramIcon className={className} />
-  ) : (
-    <TikTokIcon className={className} />
-  );
-}
+  platformProfileUrl(toPlatform(platform), account) ?? undefined;
 
 function Tip({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
@@ -373,6 +380,13 @@ function BestAccountTile({ data }: { data: AnalyticsData }) {
 /* ────────────────────── Avg views by character + types ────────────────────── */
 
 function CharacterBars({ data }: { data: AnalyticsData }) {
+  if (data.characters.length === 0) {
+    return (
+      <EmptyState icon={ChartBar} compact className="h-full">
+        No posts yet
+      </EmptyState>
+    );
+  }
   return (
     // h-full so the chart grows to match the taller card beside it instead of
     // leaving dead space under a fixed height.
@@ -420,7 +434,11 @@ const TD = "py-2.5 pr-6 whitespace-nowrap last:pr-0";
 
 function ContentTypes({ data, only }: { data: AnalyticsData; only: string }) {
   if (data.contentTypes.length === 0) {
-    return <p className="text-sm text-text-muted">No posts could be attributed to a content type.</p>;
+    return (
+      <EmptyState icon={Cards} compact className="h-full">
+        No posts attributed to a content type
+      </EmptyState>
+    );
   }
 
   const shown = only === "all" ? data.contentTypes : data.contentTypes.filter((t) => t.character === only);
@@ -581,6 +599,14 @@ function AccountPerformance({ rows }: { rows: AccountPerfRow[] }) {
     );
   };
 
+  if (rows.length === 0) {
+    return (
+      <EmptyState icon={Users} compact>
+        No accounts yet
+      </EmptyState>
+    );
+  }
+
   return (
     <div className="max-h-[520px] overflow-auto">
       <table className="w-full text-sm">
@@ -681,8 +707,13 @@ function AccountPerformance({ rows }: { rows: AccountPerfRow[] }) {
 /** The slice the server rendered into `initial`. */
 const SERVER_KEY = "7d|all";
 
-export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
+export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; fleet?: Fleet }) {
   const [platform, setPlatform] = useState<PlatformKey>("all");
+  // Facebook is a tab in Physical, where Facebook accounts live, but there is
+  // nothing to chart: views are not collected for Facebook yet. So it is not a
+  // PlatformKey and never reaches the fetch; choosing it only swaps the charts
+  // for a line that says so, rather than drawing zeros that read as "dead".
+  const [facebook, setFacebook] = useState(false);
   const [range, setRange] = useState<RangeKey>("7d");
   const [ctChar, setCtChar] = useState<string>("all");
   const [metric, setMetric] = useState<Metric>("avg");
@@ -781,12 +812,16 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
           <h1 className="shrink-0 text-xl font-semibold">Analytics</h1>
           <FilterPills
             inline
-            value={platform}
-            onChange={(v) => setPlatform(v as PlatformKey)}
+            value={facebook ? "facebook" : platform}
+            onChange={(v) => {
+              setFacebook(v === "facebook");
+              if (v !== "facebook") setPlatform(v as PlatformKey);
+            }}
             options={[
               { value: "all", label: "All" },
               { value: "tiktok", label: "TikTok" },
               { value: "instagram", label: "Instagram" },
+              ...(fleet === "physical" ? [{ value: "facebook", label: "Facebook" }] : []),
             ]}
           />
         </div>
@@ -803,7 +838,13 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
         </div>
       </div>
 
-      {showingOtherSlice && (
+      {facebook && (
+        <Card className="flex flex-col">
+          <EmptyState icon={FacebookLogo}>Views are not collected for Facebook yet</EmptyState>
+        </Card>
+      )}
+
+      {!facebook && showingOtherSlice && (
         <div
           role="status"
           className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-text"
@@ -816,7 +857,7 @@ export function AnalyticsView({ initial }: { initial: AnalyticsData }) {
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
+      <div hidden={facebook} className="flex flex-col gap-3">
         {/* While a range or platform switch is in flight, everything below is
             derived from `data` and so is genuinely stale — show the same
             skeleton the route uses rather than the old numbers.

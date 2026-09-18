@@ -1,3 +1,4 @@
+import { getFleet } from "@/lib/fleet-server";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "@/components/ui/icons";
 import { Card, DashCard } from "@/components/ui/card";
@@ -140,7 +141,7 @@ export default async function AnalysisPage({
 
   let data;
   try {
-    ({ data } = await getTopContent(range));
+    ({ data } = await getTopContent(range, await getFleet()));
   } catch (err) {
     return (
       <div className="flex flex-col gap-6">
