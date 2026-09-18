@@ -5,14 +5,17 @@ import { getDemandSupply, getInventory } from "@/lib/data/inventory";
 import { DemandSupplyCard } from "@/components/dashboard/demand-supply-card";
 import { ProductionOrderCard } from "@/components/dashboard/production-order-card";
 import { PausedCharacterNote } from "@/components/dashboard/paused-character-note";
+import { getFleet } from "@/lib/fleet-server";
 import { formatEtShort } from "@/lib/data/format";
 
 async function InventoryLive() {
   let data, fetchedAt, demand;
   try {
-    ({ data, fetchedAt } = await getInventory());
+    // Only the fleet being looked at (Cloud or Physical, top right).
+    const fleet = await getFleet();
+    ({ data, fetchedAt } = await getInventory(fleet));
     // 14d is the default window and reproduces inventory_check exactly.
-    demand = (await getDemandSupply(14)).data;
+    demand = (await getDemandSupply(14, 0, null, fleet)).data;
   } catch (err) {
     return (
       <DashCard title="Demand vs supply">

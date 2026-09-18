@@ -1,3 +1,4 @@
+import { getFleet } from "@/lib/fleet-server";
 import { DashCard } from "@/components/ui/card";
 import { AnalyticsView } from "@/components/dashboard/analytics-charts";
 import { getAnalytics } from "@/lib/data/analytics";
@@ -17,8 +18,10 @@ import { getAnalytics } from "@/lib/data/analytics";
 
 async function AnalyticsLive() {
   let data;
+  let fleet;
   try {
-    ({ data } = await getAnalytics());
+    fleet = await getFleet();
+    ({ data } = await getAnalytics("7d", "all", fleet));
   } catch (err) {
     return (
       <DashCard title="Analytics">
@@ -28,7 +31,7 @@ async function AnalyticsLive() {
       </DashCard>
     );
   }
-  return <AnalyticsView initial={data} />;
+  return <AnalyticsView initial={data} fleet={fleet} />;
 }
 
 export default function AnalyticsPage() {

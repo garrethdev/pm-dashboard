@@ -1,3 +1,5 @@
+import { getPhysicalProfiles, limitIncidents } from "@/lib/data/fleet-accounts";
+import { getFleet } from "@/lib/fleet-server";
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { INCIDENT_RANGES, getIncidentHistory, type IncidentRange } from "@/lib/data/incidents";
@@ -17,7 +19,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { data, fetchedAt } = await getIncidentHistory(range as IncidentRange);
+    const { data: all, fetchedAt } = await getIncidentHistory(range as IncidentRange);
+    // Only the fleet being looked at: an incident follows its account.
+    const data = limitIncidents(
+      all,
+      await getFleet(),
+      new Set((await getPhysicalProfiles()).data),
+    );
     return NextResponse.json({ data, fetchedAt });
   } catch (err) {
     return NextResponse.json(

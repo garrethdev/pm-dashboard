@@ -133,6 +133,11 @@ export const CADENCE_TAG = "cadence-data-v2";
 export const GEELARK_PHONES_TAG = "geelark-phones";
 export const PROXYCHEAP_PROXIES_TAG = "proxycheap-proxies";
 
+/** The physical-phone family (PF-02): the Devices list, each phone's page, the
+ *  accounts that can still be put on a phone, and the phone card on an account
+ *  page all carry it, so one expiry after a write reaches every one of them. */
+export const DEVICES_TAG = "devices";
+
 /**
  * Shared tags for the caches whose keys carry a date or a range, so Refresh
  * can expire the whole family without enumerating every key it might hold.
@@ -169,6 +174,7 @@ export const DATA_TAGS = [
   INCIDENTS_TAG,
   INVENTORY_TAG,
   CADENCE_TAG,
+  DEVICES_TAG,
   GEELARK_PHONES_TAG,
   "geelark-wallet",
   "inventory-data-v4",

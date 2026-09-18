@@ -62,7 +62,7 @@ export function ProxiesCard({ fetchedAt, className, proxies, phones }: ProxiesCa
 
   return (
     <DashCard
-      title="Proxies & phones"
+      title="Proxies & numbers"
       fetchedAt={fetchedAt}
       viewAllHref="/proxies"
       className={className}

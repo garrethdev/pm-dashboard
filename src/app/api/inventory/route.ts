@@ -1,3 +1,4 @@
+import { getFleet } from "@/lib/fleet-server";
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { INVENTORY_RANGES, getDemandSupply } from "@/lib/data/inventory";
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
       match.days,
       newAccounts,
       newAccounts > 0 ? character : null,
+      await getFleet(),
     );
     return NextResponse.json({ data, fetchedAt });
   } catch (err) {

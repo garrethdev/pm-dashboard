@@ -10,7 +10,7 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 export default function ProxiesLoading() {
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Proxies &amp; phones</h1>
+      <h1 className="text-xl font-semibold">Proxies &amp; numbers</h1>
       <DashCard
         title="Proxies"
         toolbar={<Skeleton className="h-[26px] w-[150px] rounded-full" />}

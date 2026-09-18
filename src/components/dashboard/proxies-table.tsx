@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "@/components/ui/icons";
+import { ArrowDown, ArrowUp, ArrowUpDown, Globe, Smartphone } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DashCard } from "@/components/ui/card";
 import { ExtendButton } from "@/components/ui/extend-button";
 import { FilterPills } from "@/components/ui/filter-pills";
@@ -47,7 +48,7 @@ function ReplaceProxyButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Proxies & phones detail — header search + pill switcher between two tables. */
+/** Proxies & numbers detail — header search + pill switcher between two tables. */
 export function ProxiesTable({
   rows: allRows,
   fetchedAt,
@@ -134,7 +135,7 @@ export function ProxiesTable({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-wrap items-center gap-4">
-          <h1 className="text-xl font-semibold">Proxies &amp; phones</h1>
+          <h1 className="text-xl font-semibold">Proxies &amp; numbers</h1>
           {/* The view selector belongs to the page, not the card — the card
               keeps its own smaller title naming whichever view is active. */}
           <FilterPills
@@ -178,7 +179,16 @@ export function ProxiesTable({
             </p>
           )}
 
-          <div className="overflow-x-auto">
+          {rows.length === 0 && (
+            <EmptyState icon={view === "proxies" ? Globe : Smartphone}>
+              {query.trim()
+                ? "Nothing matches"
+                : view === "proxies"
+                  ? "No proxies yet"
+                  : "No numbers yet"}
+            </EmptyState>
+          )}
+          <div hidden={rows.length === 0} className="overflow-x-auto">
             {view === "proxies" ? (
               <table className="w-full text-sm [&_td]:pr-4 [&_th]:pr-4 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
                 <thead>

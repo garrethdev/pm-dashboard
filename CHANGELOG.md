@@ -20,6 +20,252 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-18 — Phone farm: Cloud and Physical fleets, a Devices page, and Facebook accounts
+
+**Garreth's request, 2026-09-18:** start the first three phone-farm tickets,
+PF-01, PF-02 and PF-08 from `BACKLOG.md`. They come from his 2026-09-16
+decision to move the accounts off Geelark cloud phones onto real iPhones.
+Built by three Claude agents working side by side, then checked together.
+
+**Not on `main` yet.** This is on the `dashboard-app-phone-farm-updates`
+branch, uncommitted, waiting for Garreth's say-so. The two database changes
+below are the exception: they are already live, because the screens cannot be
+tried without them. Both only add things; nothing existing was altered or
+removed.
+
+**Cloud and Physical, two fleets in one app (Garreth's design, 2026-09-18).**
+The first version of PF-01 put a Geelark / Real phone pill on the account page
+and the Accounts table. Garreth did not want the screens that run the Geelark
+pipeline to change at all, so the same day it became this instead:
+
+- **A Cloud | Physical switch at the top right, beside your name.** Cloud is
+  the app exactly as it was: the same menu, the same Accounts table, no sign of
+  phones. Physical is the same screens showing only the accounts on real
+  iPhones, plus the pages that only make sense there. Devices is the first;
+  the Posting To-Do page and the warmup log will join it.
+- **It is per person.** Each person's choice is remembered in their own
+  browser for a year, so Yurie working in Physical never changes what anyone
+  else is looking at. Everyone starts in Cloud.
+- **It only changes what you see.** The scheduler and the posting robot are
+  not affected by it in any way.
+- **Settings → Account management** (the Settings page was an empty
+  placeholder until now) lists every live account with a Cloud or Physical
+  pill. Pressing the pill opens a confirm with a press-and-hold button, the
+  same as Retire, so an account cannot be moved by a stray tap. Each move is
+  written to the audit log with who, when, and the old and new value, and it
+  never touches paused or unpaused. Once moved, an account shows on the other
+  fleet's screens only.
+- **What follows the switch today:** the Accounts table, the Accounts card on
+  the homepage, the per-account posting limits on the Content calendar (with
+  its blocked, throttled and paused counts redone for the fleet shown), and
+  whether Devices is in the menu. An account's own page opens from a direct
+  link in either mode, so a link in the bell never lands on nothing.
+- **Analytics follows it (PF-17).** The Analytics page, the Top posts card
+  and the analysis page's top content show only the fleet being looked at.
+  Garreth's rule: an account's data follows the account. Whatever fleet an
+  account is in today, all of its history counts there, including everything
+  from before it moved. Posts whose handle matches no account count as Cloud,
+  so the two fleets always add up to the whole. Checked by query: the new
+  calculation set to "all" gives exactly the old answer for 7 days, 28 days
+  and all time; Cloud gives exactly the old answer today; Physical is empty.
+  In the running app Cloud shows the same 75 posts from 26 accounts over 7
+  days that Analytics showed before, and Physical shows none.
+- **Inventory follows it (PF-18).** The Inventory page, its window switcher
+  and what-if, the production order and the homepage Inventory card. Demand
+  comes from the fleet's own accounts. Garreth clarified that Cloud accounts
+  will not post any more, so content not yet given to an account is
+  Physical's supply and Cloud sees an empty pool. No post is labelled with a
+  fleet and the Smart Scheduler was not changed. (An earlier plan that day to
+  label every post Cloud or Physical was dropped as unnecessary.) **This one
+  could not be proven with real numbers:** every account is paused, paused
+  accounts create no demand, so Inventory is empty for both fleets and for
+  the old calculation alike. The changes are small and marked line by line in
+  the migration, and the check to run once accounts are unpaused is written
+  in `supabase/migrations/README.md`.
+- **What does not follow it yet:** the Content calendar itself, Content
+  types, Incidents and the bell still count both fleets together (PF-19,
+  PF-20 in `BACKLOG.md`). The calendar is better done after the posting
+  hand-off (PF-05) exists, because without it a Physical post has no record
+  of having been delivered.
+- **The emails are not touched.** The digest and the Monday production order
+  stay fleet-wide; Garreth will retire them once everything is in the
+  dashboard. Their calculations (`inventory_check`, `inventory_rollup`,
+  `v_scheduler_production_order`, `analytics_rollup`) were left exactly as
+  they were; every per-fleet number comes from a new calculation beside them.
+
+**After Garreth tried it (same day).** He confirmed the top-right switch works
+in a real browser, and asked for four things, all done:
+
+- **The switch is two icons,** a cloud and a phone, instead of the words. The
+  name still shows on hover and is read out by a screen reader.
+- **Empty states.** A list with nothing in it used to show its column headings
+  over blank space, which reads as broken or still loading. It now shows an
+  icon over one quiet line, the same as the Devices page: "No accounts yet"
+  (or "No accounts match" when a filter hid them) on the Accounts table, the
+  homepage Accounts card and the posting limits; "No demand yet" on Demand vs
+  supply and the homepage Inventory card; "Nothing to make yet" on What to make
+  next. This is one shared piece, `src/components/ui/empty-state.tsx`. It shows
+  in Cloud too wherever a list is empty, which today means Cloud's Inventory,
+  since every account is paused.
+- **Physical's homepage shows Devices where the GeeLark wallet was.** One row
+  per phone in use: its name, model, iOS version and time zone, how many of its
+  three places are taken, and a "No proof" flag when it has no whoer screenshot
+  yet, with View all going to the Devices page. Cloud keeps the wallet. Last
+  warmup per phone will join this card when the warmup log (PF-04) exists.
+- **"Proxies & phones" is now "Proxies & numbers"** in the menu, the top bar,
+  the page and the homepage card, in both fleets, so "phones" only ever means
+  the real devices. The page's second tab was already called Phone numbers.
+
+Looked at in the running app in Physical and in Cloud. The Devices card has
+only been seen empty, because no phone is registered yet.
+
+**A second round from Garreth the same day,** all in the app:
+
+- **The refresh button at the top right is gone.** Pages still show fresh
+  numbers on their own: everything is re-read within a minute, and straight
+  away after a change made in the app (moving an account, pausing, editing a
+  phone). What is lost is forcing a re-read on demand.
+- **Proxies & numbers and the Incident feed now follow the fleet.** A phone's
+  proxy and number, and any incident about an account, show only where that
+  account lives. Spare proxies and numbers tied to no phone stay in Cloud,
+  where the Replace proxy action that uses them lives. Incidents that are not
+  about an account (a failed n8n workflow, a data feed, a scheduled job, a
+  character running out of content) also stay in Cloud, because today all of
+  that machinery serves the Cloud pipeline; when Physical gets automations of
+  its own their failures belong in Physical. This covers the homepage cards,
+  both pages, and their range and tab switches. Seen in the running app:
+  Physical shows no proxies, numbers or incidents today, which is right with
+  no account moved. The Proxies & numbers tables gained the shared empty state
+  ("No proxies yet", "No numbers yet", "Nothing matches" under a search).
+  **Known gap, written up as design ticket P6:** the page is built from
+  Geelark's phone list, so a real phone's own proxy is not tracked for expiry
+  anywhere yet.
+- **Settings → Account management is four columns** on a desktop (two on a
+  tablet, one on a phone), so all 32 accounts fit on one screen.
+
+Also new: `docs/PHONE-FARM-DESIGN-TICKETS.md`, design tickets P1 to P6 for the
+Physical side, written because Garreth asked whether the daily to-do list had
+a design and it did not. As a design document it gets no entry of its own
+here; its record is each ticket's Status line.
+
+**2026-09-19, two design requests from Garreth:**
+
+- **Empty lists now fill the page.** A page whose list is empty used to show
+  a short card over a blank screen. The card now reaches the bottom of the
+  screen with the message centred in it: Devices, Accounts, Inventory (both
+  cards share the space), Proxies & numbers, Incidents and Settings. This is a
+  rule for every new screen, and it is built into the shared empty state, so a
+  screen gets it by using that piece. Small cards on the dashboard keep their
+  size, because the dashboard grid sets it. Analytics got the same icon-and-
+  one-line treatment in its three bare spots (the character chart, the content
+  types card and the account table). Looked at in the running app in Physical;
+  Cloud's Accounts and Analytics were checked and have not moved.
+  **It did not work in Safari, which is the browser Garreth uses.** The first
+  version leaned on one CSS feature (`:has`) to find a card with an empty list
+  in it. Safari supports the feature but does not re-check it for content
+  that arrives after the page frame, and every page here arrives that way, so
+  his cards stayed short while Chrome, where it was checked, was fine. The
+  empty state now also sets the same thing by hand once the page is live
+  (`fill-ancestors.tsx`), which does not depend on the browser, and it passes
+  the height down through plain wrappers so the message sits in the middle of
+  the card (on Accounts it had been near the top). Checked again in Chrome;
+  **not yet seen in Safari by anyone but Garreth.**
+- **The Cloud / Physical switch is wider,** so each icon is an easier target.
+
+**2026-09-19, Facebook was missing from the platform filters (Garreth).** Two
+causes, both choices made the day before rather than faults. The Accounts and
+posting-limits filters only offered FB once a Facebook account was in the
+list, to keep Cloud's filter as it was; with no Facebook account yet, FB never
+appeared anywhere, which read as the feature being missing. And Analytics had
+no Facebook tab at all, because there are no Facebook views to chart. Now, in
+**Physical**, where Facebook accounts live, FB is always offered on the
+Accounts table, the homepage Accounts card and the posting limits, and
+Analytics has a **Facebook** tab. That tab does not draw charts of zeros, which
+would read as dead accounts; it says "Views are not collected for Facebook
+yet". **Cloud keeps All / TT / IG**, since a Cloud account is never Facebook.
+Seen in the running app: the FB filter on Physical Accounts and the Facebook
+tab on Physical Analytics. Still true: nothing collects Facebook views, and
+Top posts and the analysis page have no Facebook because they list measured
+posts only.
+
+Two things keep the wrong fleet from posting, and both are just the pause:
+**never unpause a Cloud account** (the scheduler would plan it and the robot
+would send it to Geelark as it always has), and **keep Physical accounts
+paused until PF-05 to PF-07 exist**, because until then the robot would try to
+send their posts to a Geelark phone too.
+
+One thing to know: **moving an account to Physical does not stop the robot
+yet.** The Posting Agent in n8n does not read the setting until PF-06 is built.
+Today a move only records the choice and changes which screens show the
+account. An agent had written "Geelark stops posting for this account" into
+the confirm; that line was removed because it is not true yet.
+
+**PF-02, the Devices page.** New page in the sidebar under Proxies & phones, in Physical only.
+Add phone takes a name, model, iOS version, proxy, time zone, notes and the
+whoer.net proof screenshot. Each phone has its own page: switch it in or out
+of use, edit its details, replace the screenshot, and add or remove the
+accounts it holds. A phone holds at most three accounts. The fourth is refused
+with a sentence that names the phone, and so is adding to a phone that is
+switched off, a retired account, or an account already on another phone.
+Phones are switched off, never deleted. An account that is on a phone shows
+that phone on its account page. Proof screenshots show a proxy address, so
+they sit in a private storage folder and the app shows them through links that
+expire after ten minutes. Only the count of three is enforced, not the
+masterplan's mix of one character's Instagram and Facebook plus another
+character's TikTok.
+
+**PF-08, Facebook as a platform.** A Facebook account now shows as Facebook
+wherever an account is named: the Accounts table (its icon, a link to the
+Facebook profile, and an FB filter that appears only when the list holds a
+Facebook account, so Cloud keeps its All / TT / IG filter), the account page, the posting
+limits table and the calendar day panel. Before this, anything that was not
+Instagram was treated as TikTok. That would have made a Facebook account look
+dead: its views would have been looked up in the TikTok tables and come back
+as zero. Views are not collected for Facebook yet, so those numbers now stay
+blank and the account's Analytics tab says so in one line. No Facebook tab was
+added to the Analytics page. The three platform names, short labels, icons and
+profile links now live in one file, `src/lib/platform.ts`, ready for the
+Posting To-Do page and the warmup log.
+
+A Facebook account on a real phone has no Geelark profile, but the dashboard
+names every account by its "Profile 12" label and uses it in the web address.
+For now such an account simply takes the next Profile number as a label.
+Changing how the whole app names accounts would be a much larger job and was
+not part of these tickets.
+
+**Database, applied live 2026-09-18** (all five only add things):
+`analytics_rollup_fleet`, `analytics_top_content_fleet` and `inventory_fleet`
+are the per-fleet calculations described above, plus `accounts_delivery_mode` (the switch,
+defaulting to Geelark, so nothing n8n writes behaves differently) and
+`devices` (the phones table, a link from each account to its phone, and the
+private `device-proofs` storage folder). The devices table can only be reached
+by the app itself, not with the public key; this was read back from the
+database after applying rather than assumed. All five files
+in `supabase/migrations/` match what ran, byte for byte.
+
+**How it was checked.** The code compiles, the lint is clean, and all 134
+automated tests pass, 47 of them new (the three-account rule, the Facebook
+handling, the fleet rules, the move's validation). The Devices page, the Accounts table, an
+account page and Settings were opened in the running app against live data and
+looked at. Loaded as Cloud, the Accounts page lists all 32 live accounts and
+the menu has no Devices; loaded as Physical, it lists none (nothing has been
+moved yet) and Devices is in the menu. The refusals were tried for real: a made-up mode, an unknown account, a
+phone with no name, and a phone that does not exist are each turned away with
+a plain sentence.
+
+**Not checked yet.** No write has met the live database: no phone has been
+registered, no screenshot uploaded, no account put on a phone, and no account
+moved to Physical, so no audit-log row for any of these has been seen. A
+query after testing confirmed the database holds no phones, no real-phone
+accounts and no new audit rows. No screen has seen a real Facebook account,
+because none exists. The pages were not seen in light mode, nor at a true
+phone width (the test browser cannot go narrower than about 500 pixels). The
+first real use by Yurie is the first real test.
+
+Found along the way and written into `BACKLOG.md` rather than fixed: two
+places in the database match accounts by handle alone, and the scheduler has
+no platform filter. Both matter the day the first Facebook account is created.
+
 ## 2026-09-14 (latest) — Carousel Generator: first design, D1 Carousel types
 
 **Garreth's request, 2026-09-14:** design ticket D1 as a clickable prototype,

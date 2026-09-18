@@ -1,5 +1,6 @@
 import { TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRestAll } from "@/lib/data/supabase";
+import { type Platform, hasAnalytics, platformProfileUrl, toPlatform } from "@/lib/platform";
 
 /**
  * Everything the single-account page needs (plan §4 detail view).
@@ -28,11 +29,13 @@ export interface AccountTask {
 export interface AccountDetail {
   profile: string;
   username: string | null;
-  platform: "tiktok" | "instagram";
+  platform: Platform;
   character: string | null;
   allowedContentTypes: string[];
   isActive: boolean;
   paused: boolean;
+  /** Who posts: the Geelark robot, or a person on a real iPhone (PF-01). */
+  deliveryMode: "geelark" | "manual";
   health: string;
   accountCreatedOn: string | null;
   profileUrl: string | null;
@@ -313,7 +316,7 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
   const TASK_COLS =
     "task_id,schedule_at,task_type,task_category,status,fail_code,fail_desc,action_counts,source_workflow,source_carousel_id";
 
-  const [rows, healthRows, tasks, pending] = await Promise.all([
+  const [rows, healthRows, tasks, pending, modeRows] = await Promise.all([
     sbRest<
       {
         geelark_profile: string;
@@ -344,12 +347,21 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
     sbRest<RawTask[]>(
       `geelark_tasks?select=${TASK_COLS}&serial_name=eq.${enc}&schedule_at=gt.${nowIso}&order=schedule_at.asc&limit=200`,
     ),
+    // Read off the table itself: accounts_with_content_types predates the
+    // column and does not carry it.
+    sbRest<{ delivery_mode: string | null }[]>(
+      `accounts?select=delivery_mode&geelark_profile=eq.${enc}`,
+    ),
   ]);
 
   const a = rows[0];
   if (!a) return null;
 
-  const platform: "tiktok" | "instagram" = a.platform === "instagram" ? "instagram" : "tiktok";
+  const platform = toPlatform(a.platform);
+  // Facebook has no performance feed and no profile lookup yet (PF-08). Its
+  // numbers stay empty rather than being read from the TikTok side, where the
+  // handle would either find nothing (and look dead) or find a stranger.
+  const measured = hasAnalytics(platform);
 
   // Views live in two tables PostgREST cannot UNION, so pull the account's rows
   // from each and aggregate here. One account's history is a few hundred rows —
@@ -357,14 +369,14 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
   // rows without saying so, and "highest" and "total views" computed over a
   // silent prefix would just be wrong numbers with no way to tell.
   const perfTable = platform === "instagram" ? "post_performance" : "tt_post_performance";
-  const views = a.username
+  const views = a.username && measured
     ? await sbRestAll<{ views: number | null }>(
         `${perfTable}?select=views&account=eq.${encodeURIComponent(a.username)}&order=post_id.asc`,
       ).catch(() => [])
     : [];
   const nums = views.map((v) => v.views ?? 0).filter((n) => Number.isFinite(n));
 
-  const card = a.username
+  const card = a.username && measured
     ? await getProfileCard(a.username, platform)
     : { avatarUrl: null, displayName: null, followers: null };
 
@@ -376,17 +388,14 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
     allowedContentTypes: a.allowed_content_types ?? [],
     isActive: a.is_active,
     paused: a.posting_paused === true,
+    deliveryMode: modeRows[0]?.delivery_mode === "manual" ? "manual" : "geelark",
     health: healthRows[0]?.health ?? "no data",
     accountCreatedOn: a.account_created_on,
-    profileUrl: a.username
-      ? platform === "instagram"
-        ? `https://www.instagram.com/${a.username}/`
-        : `https://www.tiktok.com/@${a.username}`
-      : null,
+    profileUrl: platformProfileUrl(platform, a.username),
     avatarUrl: card.avatarUrl,
     displayName: card.displayName,
     followers: card.followers,
-    medianViews7d: healthRows[0]?.median_7d_r ?? null,
+    medianViews7d: measured ? (healthRows[0]?.median_7d_r ?? null) : null,
     highestViews: nums.length ? Math.max(...nums) : null,
     totalViews: nums.length ? nums.reduce((s, n) => s + n, 0) : null,
     postsCounted: nums.length,
@@ -395,8 +404,13 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
   };
 }
 
+/** The cache tag for one account's page, so a write can expire exactly it. */
+export function accountDetailTag(profile: string): string {
+  return `account-detail-v9:${profile}`;
+}
+
 export function getAccountDetail(profile: string) {
   // v2 in the key: unstable_cache keys on the string, not the function body, so
   // a logic change alone will keep serving the old shape until the TTL lapses.
-  return cachedFetcher(`account-detail-v8:${profile}`, TTL.supabase, () => fetchDetail(profile))();
+  return cachedFetcher(accountDetailTag(profile), TTL.supabase, () => fetchDetail(profile))();
 }

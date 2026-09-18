@@ -3,7 +3,7 @@ import { getPhoneRentals, type PhoneRental } from "@/lib/data/textverified";
 import { getProxySubscriptions, type ProxySubscription } from "@/lib/data/proxycheap";
 
 /**
- * Proxies & phones assembly (plan §7): GeeLark phone list is the truth for
+ * Proxies & numbers assembly (plan §7): GeeLark phone list is the truth for
  * *assignment*; proxy-cheap for subscription/expiry; TextVerified for phone
  * rentals. Joins observed live on 2026-08-31:
  *   GeeLark proxy.server:port  ⟷  proxy-cheap connection.connectIp:socks5Port

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
+import { getFleet } from "@/lib/fleet-server";
 import { RANGES, getAnalytics, type PlatformKey, type RangeKey } from "@/lib/data/analytics";
 
 /** GET /api/analytics?range=7d&platform=all — powers the page's range/platform
@@ -21,7 +22,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { data, fetchedAt } = await getAnalytics(range as RangeKey, platform as PlatformKey);
+    const { data, fetchedAt } = await getAnalytics(
+      range as RangeKey,
+      platform as PlatformKey,
+      await getFleet(),
+    );
     return NextResponse.json({ data, fetchedAt });
   } catch (err) {
     return NextResponse.json(

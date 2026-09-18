@@ -1,3 +1,5 @@
+import { getPhysicalProfiles, limitProxyData } from "@/lib/data/fleet-accounts";
+import { getFleet } from "@/lib/fleet-server";
 import { DashCard } from "@/components/ui/card";
 import { ProxiesCard, type AttentionItem } from "@/components/dashboard/proxies-card";
 import { getProxyPhoneData, type ProxyPhoneData } from "@/lib/data/proxies";
@@ -99,10 +101,15 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
 export async function ProxiesCardLive({ className }: { className?: string }) {
   let data;
   try {
-    data = await getProxyPhoneData();
+    // Only the fleet being looked at: a proxy and a number follow their account.
+    data = limitProxyData(
+      await getProxyPhoneData(),
+      await getFleet(),
+      new Set((await getPhysicalProfiles()).data),
+    );
   } catch (err) {
     return (
-      <DashCard title="Proxies & phones" viewAllHref="/proxies" className={className}>
+      <DashCard title="Proxies & numbers" viewAllHref="/proxies" className={className}>
         <p className="text-sm text-text-muted">
           {upstreamMessage(err, "The proxy and phone data")}
         </p>

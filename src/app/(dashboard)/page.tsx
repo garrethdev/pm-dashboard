@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { AccountsCardLive } from "@/components/dashboard/accounts-card-live";
 import { AutomationCard } from "@/components/dashboard/automation-card";
-import { GeelarkWalletCard } from "@/components/dashboard/geelark-wallet-card";
+import { FleetTopCard } from "@/components/dashboard/fleet-top-card";
 import { IncidentFeedLive } from "@/components/dashboard/incident-feed-live";
-import { InventoryCardLive } from "@/components/dashboard/inventory-card-live";
+import { InventoryCardForFleet } from "@/components/dashboard/inventory-card-fleet";
 import { ProxiesCardLive } from "@/components/dashboard/proxies-card-live";
 import { TopPostsCard } from "@/components/dashboard/top-posts-card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
@@ -33,15 +33,16 @@ export default function Home() {
         {/* Middle stack: GeeLark Wallet (short) over Inventory + Automation. */}
         <div className="col-span-12 flex min-h-0 flex-col gap-3 xl:col-span-4 2xl:col-span-3">
           <div className="shrink-0">
-            <Suspense fallback={<CardSkeleton title="GeeLark Wallet" lines={1} />}>
-              <GeelarkWalletCard />
+            {/* GeeLark wallet in Cloud, the phones in use in Physical. */}
+            <Suspense fallback={<CardSkeleton title="" lines={1} />}>
+              <FleetTopCard />
             </Suspense>
           </div>
           <div className="relative min-h-0 flex-1">
             <Suspense
               fallback={<CardSkeleton title="Inventory" lines={6} className="xl:absolute xl:inset-0" />}
             >
-              <InventoryCardLive className="xl:absolute xl:inset-0 xl:overflow-auto" />
+              <InventoryCardForFleet className="xl:absolute xl:inset-0 xl:overflow-auto" />
             </Suspense>
           </div>
           <div className="relative min-h-0 flex-1">
@@ -57,7 +58,7 @@ export default function Home() {
         <div className="hidden min-h-0 flex-col gap-3 2xl:col-span-3 2xl:flex">
           <div className="relative min-h-0 flex-1">
             <Suspense
-              fallback={<CardSkeleton title="Proxies & phones" lines={4} className="absolute inset-0" />}
+              fallback={<CardSkeleton title="Proxies & numbers" lines={4} className="absolute inset-0" />}
             >
               <ProxiesCardLive className="absolute inset-0 overflow-auto" />
             </Suspense>
@@ -78,7 +79,7 @@ export default function Home() {
       <div className="grid grid-cols-12 gap-3 2xl:hidden">
         <Suspense
           fallback={
-            <CardSkeleton title="Proxies & phones" lines={4} className="col-span-12 xl:col-span-6" />
+            <CardSkeleton title="Proxies & numbers" lines={4} className="col-span-12 xl:col-span-6" />
           }
         >
           <ProxiesCardLive className="col-span-12 xl:col-span-6" />

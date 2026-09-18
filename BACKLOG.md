@@ -142,9 +142,9 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 
 | # | Ticket | Phase | Status |
 |---|---|---|---|
-| PF-01 | `accounts.delivery_mode` switch | Immediate | Ready now |
-| PF-02 | `devices` table + Devices page | Immediate | Ready now |
-| PF-08 | Facebook as a platform | Immediate | Ready now |
+| PF-01 | `accounts.delivery_mode` switch | Immediate | Built 2026-09-18 on branch `dashboard-app-phone-farm-updates`, not merged; first live write still to come |
+| PF-02 | `devices` table + Devices page | Immediate | Built 2026-09-18 on branch `dashboard-app-phone-farm-updates`, not merged; first live write still to come |
+| PF-08 | Facebook as a platform | Immediate | Built 2026-09-18 on branch `dashboard-app-phone-farm-updates`, not merged; first live write still to come |
 | PF-03 | Move to phone button | Immediate | Blocked by PF-01, PF-02 |
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | Blocked by PF-02 |
 | PF-05 | `post_deliveries` table | Immediate | Blocked by PF-01, PF-02 |
@@ -158,6 +158,10 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
+| PF-17 | Analytics per fleet | Intermediate | Built 2026-09-18 on the branch, not merged; parity confirmed by query |
+| PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built 2026-09-18 on the branch, not merged; **numbers unproven until accounts are unpaused** |
+| PF-19 | Calendar and Content types per fleet | Intermediate | Ready now; needs database changes |
+| PF-20 | Incidents and the bell per fleet | Intermediate | Ready now |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -165,6 +169,23 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 editable on the account page, audit-logged like the pause toggle.
 *Done when:* an account can be flipped from the app and the row in
 `dashboard_audit_log` says who and when.
+
+*2026-09-18:* built, column live (default `geelark`). The flip has not been
+run on a real account yet, so the audit row has not been seen. The switch does
+nothing to posting until PF-06 makes the Posting Agent read it.
+
+*Redesigned the same day (Garreth):* no pill on the Accounts table or the
+account page, so the Geelark screens stay as they were. Instead the app has
+two fleets. **Cloud | Physical** at the top right, per person (a cookie, set by
+`/api/fleet`, read by `getFleet()`), chooses which fleet's accounts the screens
+show; Cloud is the default and is the app as it always was. **Settings →
+Account management** is where an account is moved between the two, and that
+move is what writes `delivery_mode` (`geelark` = Cloud, `manual` = Physical).
+The switch is a view only and never affects the scheduler or posting. Pages
+that exist only for real phones (Devices, later PF-04 and PF-07) are in the
+menu in Physical only. Rules live in `src/lib/fleet.ts`. PF-03's "Move to
+phone" button should follow this: it belongs on the Physical side, not on the
+Cloud account page.
 
 ## PF-02 · `devices` table + Devices page — Ready now
 
@@ -175,6 +196,11 @@ FK. Rule enforced in the app: at most three accounts per device.
 *Done when:* Yurie can register a phone with its proof screenshot and see
 which accounts it holds.
 
+*2026-09-18:* built, table and private `device-proofs` bucket live. No phone
+registered yet. Accounts are attached by `accounts.id`. Only the count of three
+is enforced, not the masterplan's character mix (one character's IG + FB plus
+another character's TikTok); add that rule here if it should be a hard stop.
+
 ## PF-08 · Facebook as a platform — Ready now
 
 `accounts.platform` and `content_type_registry` know only `tiktok` and
@@ -184,6 +210,33 @@ page (PF-07) and the warmup log (PF-04). Performance ingest for Facebook is a
 separate, later question and not part of this ticket.
 *Done when:* a Facebook account row can be created, filtered and moved to a
 phone like any other.
+
+*2026-09-18:* built in the app; no database change was needed (`platform` is
+free text, and `content_type_registry` has no platform column). There is no
+"add account" screen for any platform, so a Facebook row is still created by
+hand in Supabase like every other account; it takes the next `Profile N` label
+because the app names accounts by that label. No Facebook row exists yet.
+
+**Before the first Facebook account is created** (found 2026-09-18, not fixed):
+
+- **Create it paused.** `v_scheduler_account_config` has no platform filter
+  (judged from a pattern search, not a full read), so an active, unpaused
+  Facebook row would most likely be planned like any other and the Posting
+  Agent would look for a Geelark phone named after its label. Keep
+  `posting_paused = true` until PF-05 to PF-07 exist. How the n8n workflows
+  (Smart Scheduler, Posting Agent, warmups, digest) treat a Facebook row has
+  not been checked.
+- **Handles are matched without the platform in two places.**
+  `v_account_view_health` joins views on the handle alone, and
+  `analytics_rollup` joins `accounts` on the handle alone in three places. A
+  Facebook row sharing a handle with the same character's Instagram would
+  borrow that account's medians and could double-count fleet views. No handle
+  sits on two rows today (checked live). Either fix the joins to include the
+  platform, or keep Facebook handles distinct.
+- `v_dashboard_last5_views`, `v_analytics_summary`, `v_analytics_weekly`,
+  `v_filler_task_analytics` and `content_type_stats` hard-code the two
+  platforms. They will simply never see Facebook, which is right until
+  Facebook performance ingest is decided.
 
 ## PF-03 · Move to phone — Blocked by PF-01, PF-02
 
@@ -200,6 +253,23 @@ account page. Point `v_account_warmup_health` at the union of Geelark
 type-42/90 tasks and these rows so the green/yellow/red dot means the same
 thing for both fleets.
 *Done when:* a logged session turns a moved account's dot green.
+
+*Garreth, 2026-09-18:* **a Manual / Automated warmup switch per account.**
+Warmup starts manual and moves to the script later, account by account. Add
+`accounts.warmup_mode` (`manual` | `script`, default `manual`). Manual: the
+account's warmups appear on the to-do list (PF-07) and are logged with the
+form. Automated: the script logs its own sessions (PF-13) and nothing is added
+to the to-do list. The risk to design for: once an account is Automated nobody
+is asked to warm it, so a script that stops is silent unless the screens make
+it loud (design ticket P4). The form itself is design ticket P3; do not build
+it before that is approved.
+*2026-09-19:* **two warmup sessions a day per account.** A manual session is
+done when the minutes logged reach its target; an automated one when the
+script has finished its run. So `warmup_sessions` needs the session it counts
+toward (first or second of the day) and, for the script, a finished-at time.
+A manual session is about 15 to 20 minutes (Garreth, 2026-09-19), so 15 is
+the done line; the automated session waits on the new warmup script, which is
+not decided. To-do items carry over for 3 days, for now.
 
 ## PF-05 · `post_deliveries` — Blocked by PF-01, PF-02
 
@@ -228,6 +298,35 @@ download button, a caption copy button, **Posted** (asks for the post link) and
 **Failed** (asks why). Posted flips `posting_status` and stores the link, which
 also closes the long-open gap that post URLs were never captured (ticket #227).
 *Done when:* Yurie can complete a delivery from the iPhone's browser.
+
+*Garreth, 2026-09-18:* **designed before it is built.** No design existed for
+the daily manual work, so it now has design tickets:
+`docs/PHONE-FARM-DESIGN-TICKETS.md`, P1 to P6. His decisions, which change this
+ticket:
+
+- The list is **grouped by device, then by account** inside each device, not
+  per account as written above.
+- It is **shared, not per person**: everyone sees the same items and the same
+  status. The app still names nobody on screen; who did it stays in the audit
+  log.
+- It holds **warmups as well as posts**, for accounts whose warmup is Manual
+  (see PF-04).
+- It also appears on the **Physical dashboard, upper right**, above Devices and
+  Inventory; **Automation leaves the Physical dashboard** (design ticket P1).
+- It gets its own **To-do item in the Physical menu**.
+
+- *2026-09-19:* an unfinished item **carries over to tomorrow**; **paused
+  accounts are hidden**; and **Posted does not require the link**. The link
+  can be added later, and the item shows whether it is fully done or posted
+  and waiting for its link. For PF-05 that means `post_url` stays empty on a
+  posted row and "waiting for link" is read from that, rather than being a
+  fifth status.
+
+Do not build this until the designs in P1 to P3 are approved. Since 2026-09-19
+the P tickets are **design and build** tickets (Garreth): each one is designed,
+approved, then built, and this PF ticket is the detail of its build half. They grew to 13
+(P1 to P13) on 2026-09-19, with a table mapping every PF ticket that shows
+something on screen to the design ticket that covers it.
 
 ## PF-11 · Post-ban branch for manual accounts — Blocked by PF-01
 
@@ -302,6 +401,85 @@ Scheduler and Virlo bridge — move those to n8n credentials first (see the n8n
 credentials note in memory).
 *Done when:* no live workflow or app route calls Geelark and the old key is
 dead.
+
+## PF-17 to PF-20 · Each fleet gets its own numbers
+
+Garreth, 2026-09-18: Cloud and Physical should have separate data, not just
+separate account lists. Inventory, analytics and the rest should count only
+the accounts inside the fleet being looked at. Today only the account lists
+follow the switch (Accounts, the homepage Accounts card, per-account posting
+limits); everything below still counts both fleets together. Each of these is
+worked out inside the database, so each needs a database change, and the rule
+for all of them is the one used for the Inventory window toggle: **add a new
+function or a new optional parameter, never alter what exists**, because n8n
+and the digest email read the existing ones, then prove the two fleets add up
+to the old total before switching the screen over.
+
+**PF-17 · Analytics per fleet — Ready now.** `analytics_rollup(p_days,
+p_platform)` joins `accounts`; add an optional `p_fleet` (default all, so
+nothing else changes) and pass the viewer's fleet from `src/lib/data/analytics.ts`.
+`analytics_top_content` and the Top posts card do not join `accounts` at all
+and need the join added. Fix the handle-only joins noted under PF-08 in the
+same pass. This is also most of what PF-10 (the before/after comparison) needs.
+*Done when:* Cloud plus Physical equals the old fleet total for the same
+window, checked by query.
+
+**PF-18 · Inventory per fleet — simplified 2026-09-18, no content labels.**
+Earlier the same day Garreth chose to earmark content per fleet, and a plan was
+written to put a `fleet` label on all 17 content tables and teach the Smart
+Scheduler to keep one pool per fleet. He then clarified the fact that makes all
+of that unnecessary: **Cloud accounts will not post any more.** Posting resumes
+on Physical only. So there is never a moment when two fleets draw on the same
+pool, and nothing needs labelling:
+
+- **A post that has been given to an account belongs to that account's fleet.**
+  Every content table already records the account (`geelark_profile` /
+  `geelark_profiles`), and the account says Cloud or Physical.
+- **Content not yet given to anyone is Physical's supply**, because Physical is
+  the only fleet that will ever take from it. Cloud's Inventory is history
+  only: no demand, nothing to produce.
+- **Physical starts with no posts** and stays that way until the phone farm
+  starts running (Garreth: that is what he wants).
+- **The Smart Scheduler is not changed.** It already plans only unpaused
+  accounts, and every Cloud account is paused. What keeps Cloud from posting
+  is that pause, so it must stay on: unpausing a Cloud account would have the
+  scheduler plan it and the Posting Agent send it to Geelark. Worth a hard
+  stop later (the scheduler's config view refusing Cloud accounts outright),
+  listed under PF-16 rather than done now.
+- **Emails stay fleet-wide and are not touched.** Garreth: they are retired
+  once everything has moved into the dashboard.
+
+What is left to build is the screen side only: sibling calculations of
+`inventory_rollup` and `v_scheduler_production_order` whose demand counts one
+fleet's accounts (additive; never alter `inventory_check` or the existing
+ones, the emails still read them), and the Inventory page following the
+Cloud | Physical switch. *Done when:* Physical's Inventory shows the unassigned
+pool against Physical accounts' demand only, Cloud's shows no demand, and the
+two add up to the old fleet-wide numbers.
+
+**One rule for PF-17 to PF-20 (Garreth, 2026-09-18): an account's data follows
+the account.** Whatever fleet an account is in today, all of its posts, views
+and history count for that fleet, including everything from before it moved.
+Move Profile 31 to Physical and its whole history shows under Physical; move it
+back and it all goes back. There is no move-date split. (A split by move date
+was offered so Geelark-era posts would not sit in Physical's numbers; Garreth
+chose the simpler rule. The before/after comparison in PF-10 still has its own
+date to split on.) In practice: every per-fleet number is "the same number,
+limited to the accounts currently in that fleet".
+
+**PF-19 · Calendar and Content types per fleet — Ready now.**
+`calendar_month_rollup`, `calendar_month_days` and `calendar_day_detail` join
+`accounts` and can take an optional fleet. They read delivery from
+`geelark_tasks`, so Physical will look empty until PF-05 gives manual posts a
+delivery record; do this after PF-05, with PF-09. `content_type_stats` does not
+join `accounts` and needs the join added.
+
+**PF-20 · Incidents and the bell per fleet — Ready now.** Both are assembled
+in the app (`src/lib/data/incidents.ts`, `notifications.ts`), so this is an app
+change: filter by the account's fleet. Worth deciding before building: a ban on
+a Physical account is news even to someone sitting in Cloud. Suggested: the
+Incidents page follows the switch; the bell keeps showing both and names the
+fleet on each item.
 
 **Not tickets, but on the sheet:** Tailscale + Screen Sharing on the Air,
 installing Xcode and the developer Apple ID (Yurie), installing WebDriverAgent

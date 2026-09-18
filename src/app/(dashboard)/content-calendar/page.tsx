@@ -7,7 +7,14 @@ import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { getCadence } from "@/lib/data/cadence";
 import { etToday, getCalendarMonth } from "@/lib/data/calendar";
-import { getFleetDefaults, getSchedulerConfig } from "@/lib/data/scheduler-config";
+import { getAccounts } from "@/lib/data/accounts";
+import {
+  getFleetDefaults,
+  getSchedulerConfig,
+  limitSchedulerConfig,
+} from "@/lib/data/scheduler-config";
+import { inFleet } from "@/lib/fleet";
+import { getFleet } from "@/lib/fleet-server";
 
 /**
  * Content Calendar — the Smart Scheduler's activity, by day, with the
@@ -77,8 +84,17 @@ async function CadenceEditor() {
 
 async function AccountLimits() {
   let data;
+  let fleet;
   try {
-    ({ data } = await getSchedulerConfig());
+    let config, accounts;
+    [config, accounts, fleet] = await Promise.all([
+      getSchedulerConfig(),
+      getAccounts(),
+      getFleet(),
+    ]);
+    // Only the fleet being looked at (Cloud or Physical, top right).
+    const mine = new Set(inFleet(accounts.data, fleet).map((a) => a.profile));
+    data = limitSchedulerConfig(config.data, mine);
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     return (
@@ -88,7 +104,7 @@ async function AccountLimits() {
     );
   }
 
-  return <AccountLimitsTable data={data} />;
+  return <AccountLimitsTable data={data} fleet={fleet} />;
 }
 
 export default function ContentCalendarPage() {

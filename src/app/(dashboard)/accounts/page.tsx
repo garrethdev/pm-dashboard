@@ -4,6 +4,8 @@ import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { getAccounts } from "@/lib/data/accounts";
 import { getContentTypeOptions } from "@/lib/data/scheduler-overrides";
+import { inFleet } from "@/lib/fleet";
+import { getFleet } from "@/lib/fleet-server";
 import { upstreamMessage } from "@/lib/data/upstream-error";
 
 /**
@@ -23,6 +25,7 @@ async function AccountsLive() {
       // Selectable content types per character. Falls back to empty so an
       // unreadable registry costs the modal its checkboxes, not the page.
       getContentTypeOptions().catch(() => ({ data: {} })),
+      getFleet(),
     ]);
   } catch (err) {
     return (
@@ -35,8 +38,10 @@ async function AccountsLive() {
     );
   }
 
-  const [{ data }, options] = loaded;
-  return <AccountsTable rows={data} contentTypeOptions={options.data} />;
+  const [{ data }, options, fleet] = loaded;
+  // Only the fleet being looked at (Cloud or Physical, top right). An account
+  // moved to a real phone leaves the Cloud list and appears in the Physical one.
+  return <AccountsTable rows={inFleet(data, fleet)} contentTypeOptions={options.data} fleet={fleet} />;
 }
 
 export default function AccountsPage() {

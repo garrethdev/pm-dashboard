@@ -11,11 +11,14 @@ import {
   ListChecks,
   Loader2,
   SlidersHorizontal,
+  Users,
 } from "@/components/ui/icons";
+import type { Fleet } from "@/lib/fleet";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Card, DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterPills } from "@/components/ui/filter-pills";
-import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { StatusPill } from "@/components/ui/pill";
 import { cycleSort, type SortDir } from "@/components/ui/sort-button";
 import { FilterChips } from "@/components/ui/filter-chips";
@@ -28,10 +31,17 @@ import type { AccountRow } from "@/lib/data/accounts";
 import type { ContentTypeOption } from "@/lib/data/scheduler-overrides";
 import { summarizeOverride } from "@/lib/data/scheduler-overrides";
 import { PostingSettingsModal } from "@/components/dashboard/posting-settings-modal";
+import {
+  PLATFORM_LABEL,
+  type Platform,
+  platformFilterOptions,
+  platformsToOffer,
+  platformProfileUrl,
+} from "@/lib/platform";
 import { cn } from "@/lib/utils";
 
 type HealthFilter = "all" | "healthy" | "attention";
-type PlatformFilter = "all" | "tiktok" | "instagram";
+type PlatformFilter = "all" | Platform;
 /** Derived from the rows, never a fixed list — the hardcoded union stopped at
  *  Character 4, so a new character could not be filtered for until someone
  *  remembered to edit it. */
@@ -67,10 +77,7 @@ function profileNumber(row: AccountRow): string {
 }
 
 function profileUrl(row: AccountRow): string | null {
-  if (!row.username) return null;
-  return row.platform === "instagram"
-    ? `https://www.instagram.com/${row.username}/`
-    : `https://www.tiktok.com/@${row.username}`;
+  return platformProfileUrl(row.platform, row.username);
 }
 
 /** Ban signals make the Retire button prominent (plan §4 / handover). */
@@ -135,9 +142,12 @@ export function AccountsTable({
   rows: allRows,
   mode = "page",
   contentTypeOptions = {},
+  fleet,
   className,
 }: {
   rows: AccountRow[];
+  /** The fleet being looked at. Physical always offers the Facebook filter. */
+  fleet?: Fleet;
   /** "page" = full detail table with action buttons; "card" = compact homepage card. */
   mode?: "page" | "card";
   /** Selectable content types per character. Page mode only. */
@@ -271,7 +281,7 @@ export function AccountsTable({
           ? [
               {
                 key: "platform",
-                label: platform === "tiktok" ? "TikTok" : "Instagram",
+                label: PLATFORM_LABEL[platform],
                 onClear: () => setPlatform("all"),
               },
             ]
@@ -344,11 +354,12 @@ export function AccountsTable({
             <FilterPills
               value={platform}
               onChange={setPlatform}
-              options={[
-                { value: "all", label: "All" },
-                { value: "tiktok", label: "TT" },
-                { value: "instagram", label: "IG" },
-              ]}
+              options={platformFilterOptions(
+                platformsToOffer(
+                  fleet,
+                  allRows.map((r) => r.platform),
+                ),
+              )}
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -378,7 +389,14 @@ export function AccountsTable({
     </label>
   );
 
-  const table = (
+  // No headings over empty space: with nothing to list, say so instead. "Yet"
+  // when the fleet holds no accounts at all (Physical before the first phone),
+  // "match" when filters or search hid them.
+  const table = rows.length === 0 ? (
+    <EmptyState icon={Users} compact={mode === "card"}>
+      {allRows.length === 0 ? "No accounts yet" : "No accounts match"}
+    </EmptyState>
+  ) : (
     <table className="w-full text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0 [&_td:nth-last-child(2)]:pr-1 [&_th:nth-last-child(2)]:pr-1 [&_td:last-child]:pl-1 [&_th:last-child]:pl-1">
       <thead>
                 <tr className="text-left text-xs text-text-muted">
@@ -444,11 +462,10 @@ export function AccountsTable({
                         )}
                         {/* Platform reads as a mark on the handle now that the
                             column it had is carrying suppression. */}
-                        {row.platform === "instagram" ? (
-                          <InstagramIcon className="size-3 shrink-0 text-text-muted" />
-                        ) : (
-                          <TikTokIcon className="size-3 shrink-0 text-text-muted" />
-                        )}
+                        <PlatformIcon
+                          platform={row.platform}
+                          className="size-3 shrink-0 text-text-muted"
+                        />
                       </span>
                       </td>
                       <td className="py-2.5 text-text-muted whitespace-nowrap">

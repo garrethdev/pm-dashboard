@@ -1,3 +1,5 @@
+import { getPhysicalProfiles, limitIncidents } from "@/lib/data/fleet-accounts";
+import { getFleet } from "@/lib/fleet-server";
 import { DashCard } from "@/components/ui/card";
 import { IncidentHistory } from "@/components/dashboard/incident-history";
 import { getIncidentHistory } from "@/lib/data/incidents";
@@ -17,7 +19,12 @@ export default async function IncidentsPage({
   const { focus } = await searchParams;
   let data;
   try {
-    ({ data } = await getIncidentHistory(DEFAULT_RANGE));
+    // Only the fleet being looked at: an incident follows its account.
+    data = limitIncidents(
+      (await getIncidentHistory(DEFAULT_RANGE)).data,
+      await getFleet(),
+      new Set((await getPhysicalProfiles()).data),
+    );
   } catch (err) {
     return (
       <DashCard title="Incidents">

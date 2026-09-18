@@ -24,7 +24,13 @@ export async function GET(request: Request) {
   const range: AccountRangeKey = ACCOUNT_RANGES.some((r) => r.key === rawRange)
     ? (rawRange as AccountRangeKey)
     : "7d";
-  const platform = params.get("platform") === "instagram" ? "instagram" : "tiktok";
+  // Missing still means TikTok, as it always has. A platform with no
+  // performance feed (Facebook) is refused rather than read as TikTok.
+  const rawPlatform = params.get("platform") ?? "tiktok";
+  if (rawPlatform !== "tiktok" && rawPlatform !== "instagram") {
+    return NextResponse.json({ error: "no analytics for this platform" }, { status: 400 });
+  }
+  const platform = rawPlatform;
 
   try {
     const { data, fetchedAt } = await getAccountAnalytics(account, platform, range);

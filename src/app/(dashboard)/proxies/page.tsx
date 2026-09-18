@@ -1,3 +1,5 @@
+import { getPhysicalProfiles, limitProxyData } from "@/lib/data/fleet-accounts";
+import { getFleet } from "@/lib/fleet-server";
 import { Suspense } from "react";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
@@ -11,11 +13,16 @@ import { upstreamMessage } from "@/lib/data/upstream-error";
 async function ProxiesLive() {
   let data;
   try {
-    data = await getProxyPhoneData();
+    // Only the fleet being looked at: a proxy and a number follow their account.
+    data = limitProxyData(
+      await getProxyPhoneData(),
+      await getFleet(),
+      new Set((await getPhysicalProfiles()).data),
+    );
   } catch (err) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-xl font-semibold">Proxies &amp; phones</h1>
+        <h1 className="text-xl font-semibold">Proxies &amp; numbers</h1>
         <DashCard title="Proxies">
           {/* Three upstreams feed this page — Supabase, proxy-cheap and
               GeeLark — and the read does not say which one refused, so the
@@ -44,7 +51,7 @@ export default function ProxiesPage() {
     <Suspense
       fallback={
         <div className="flex flex-col gap-6">
-          <h1 className="text-xl font-semibold">Proxies &amp; phones</h1>
+          <h1 className="text-xl font-semibold">Proxies &amp; numbers</h1>
           <CardSkeleton title="Proxies" lines={12} />
         </div>
       }

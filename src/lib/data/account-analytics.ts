@@ -1,6 +1,7 @@
 import { ACCOUNT_ANALYTICS_TAG, TTL, cachedFetcher, type Cached } from "@/lib/data/cache";
 import { sbRestAll } from "@/lib/data/supabase";
 import { resolveThumbnail } from "@/lib/data/top-posts";
+import type { AnalyticsPlatform } from "@/lib/platform";
 
 /**
  * Analytics for ONE account — the same shapes the fleet page uses, minus every
@@ -54,7 +55,7 @@ export interface AccountPost {
 
 export interface AccountAnalytics {
   account: string | null;
-  platform: "tiktok" | "instagram";
+  platform: AnalyticsPlatform;
   rangeDays: number | null;
   bucket: "day" | "week";
   lastIngest: string | null;
@@ -129,7 +130,9 @@ function bucketLabel(key: string, bucket: "day" | "week"): string {
  * that stopped growing. `post_id` breaks ties in the sort so paging cannot
  * repeat or drop a row when two posts share a timestamp.
  */
-async function rowsFor(account: string, platform: string, sinceIso: string | null) {
+// Typed to the two platforms that have a performance table. A Facebook account
+// cannot reach this: it would otherwise fall through to the TikTok table.
+async function rowsFor(account: string, platform: AnalyticsPlatform, sinceIso: string | null) {
   const table = platform === "instagram" ? "post_performance" : "tt_post_performance";
   const cols = "post_id,post_url,posted_at,caption_snippet,views,likes,comments,total_engagement,ingested_at";
   const since = sinceIso ? `&posted_at=gte.${sinceIso}` : "";
@@ -169,7 +172,7 @@ function toPost(r: RawRow, thumb: string | null): AccountPost {
 
 async function fetchAccountAnalytics(
   account: string | null,
-  platform: "tiktok" | "instagram",
+  platform: AnalyticsPlatform,
   days: number | null,
 ): Promise<AccountAnalytics> {
   const bucket = bucketOf(days);
@@ -274,7 +277,7 @@ export function accountAnalyticsTag(account: string): string {
 
 export function getAccountAnalytics(
   account: string | null,
-  platform: "tiktok" | "instagram",
+  platform: AnalyticsPlatform,
   range: AccountRangeKey = "7d",
 ): Promise<Cached<AccountAnalytics>> {
   const entry = ACCOUNT_RANGES.find((r) => r.key === range);
