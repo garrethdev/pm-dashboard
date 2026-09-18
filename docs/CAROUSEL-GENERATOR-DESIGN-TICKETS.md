@@ -1037,6 +1037,18 @@ the edges are tested, not just the happy middle.
   was replaced on 2026-09-15. Two other documents still carry the old list and
   needed the same correction, and got it on approval: the plan's §6.3, F4 and
   F5 in the flows, and **DEV-19a**.
+  **Fixed in the prototype on 2026-09-19 (version 21)** after Garreth found
+  History broken. Two faults. One was D9's own and had been there since it
+  joined the prototype on 2026-09-16: the screen looked a type up in a table
+  eight lines before making the table, which only bites when History is
+  opened by a click (from the menu, or History › on a type's page), and then
+  stops the whole board; the review boards never reach that line, so they
+  were always fine. The other came with D10's round three (see D10's
+  Status). Checked with the local harness, desktop and phone, headless
+  Chrome: History opens from both routes, the pills filter, the date range
+  opens and shuts, Clear filters works, and a sweep pressing every button on
+  every screen once (8,580 presses a size) finds no crash. D9's 16 boards
+  render exactly as before.
   **In the prototype** (https://claude.ai/code/artifact/94d569f8-fd94-4ce0-9298-f9d0f0f5f175)
   since 2026-09-16: the History menu item opens it, and so does **History ›**
   on a type's page, which arrives already filtered to that type. A row, or its
@@ -1081,8 +1093,68 @@ the edges are tested, not just the happy middle.
   heading §6.5, §10 items 43 to 53), the flows (**F15 rewritten, F16 new**, F9
   and F12 touched), the dev tickets (**DEV-34 rewritten; DEV-35, 36, 37 and 39
   amended; DEV-42 to DEV-47 new**; decisions and open questions 7 to 9) and
-  the backlog. **Still to do:** the prototype, rebuilt from `main` once this
-  branch is merged. What round three is, as first saved for review (
+  the backlog. Merged to `main` (commit cb79ce4, pull request 8) and **the
+  prototype holds round three since 2026-09-19** (version 24 of Carousel
+  Generator Prototype, https://claude.ai/artifact/KNxf22ERryEbTmr2tRuzF6,
+  rebuilt whole from `main`). Clicked through on desktop and phone with the
+  local harness, 60 checks a size, all passing in dark and again in light,
+  with screenshots in headless Chrome (not Safari): the details window from View Details, a search tile, a
+  Saved tile and a Recent saves row, and the X back to where it was opened;
+  the three tabs; Analysis's groups; the thumbs; Save in the window feeding
+  the Saved grid and Recent saves; the filter panel, its three dropdowns,
+  Apply, and the chips; the search-type picker; the phone's grab bar; the
+  three sample searches. One change to the build file for the prototype's
+  sake: only the under-eye serum post had an analysis written out, so the
+  other five opened on a near-empty Analysis tab; they now borrow a general
+  sample one (`ANALYSIS_ANY`). Every review board renders exactly as it did
+  (all 96 compared before and after). Not reachable by clicking, because
+  they are moments a board is opened on rather than something a press
+  leads to: a search on its way or timed out, analysis nothing yet / on its
+  way / blocked / failed / partial, a dead slide link, and the feed's
+  caught up, new carousels and See older states. **Version 21, the same
+  day, put History right** (Garreth found it broken on version 20; see D9's
+  Status). Round three was half the cause: its new filter panel used value
+  names History already had (`showFilters`, `clearFilters`, and the
+  dropdown's three), and in the prototype the screen added last won, so
+  History lost its filter row. The shared kit now lets the screen that is
+  showing have the last word on its own names; all 386 review boards across
+  the 11 tickets render exactly as before. **Version 22, the same day, made
+  the feed posts match the design** (Garreth saw a rounded, bordered box
+  round each post, crowding the handle and clipping View Post). The
+  Generate form (D2) styled a class named `.fcard` as a card without tying
+  the rule to its own screen, and Trends' feed post is `.fcard` too, so in
+  the prototype, where D2's styles are also on the page, the box leaked
+  onto every post; D10's own canvas has no D2 on it, so the design was
+  always right there. D2's rule is now scoped to `.screen-generate`; its
+  12 boards compare identical as images before and after. Checked by
+  drawing each of the ten screens twice, with every screen's styles and
+  with its own only, desktop and phone (headless Chrome): all ten now
+  match, opening state only. **Version 23, the same day, made the phone's
+  menu open again** (Garreth: the menu button only blurred the screen).
+  Trends named its own rail's values `railCls`, the very name the shell
+  uses for the side menu, so on every screen the menu's "open" arrived as
+  nonsense; the desktop's Collapse sidebar was dead the same way. In since
+  round two (2026-09-17), so version 19 had it too. Trends' values are now
+  `t10railCls` and `t10railCur`; its 96 boards are otherwise unchanged. The
+  prototype build now stops, naming the screen and the value, if any
+  screen hands over a name the shell uses (the batch screens' bell is the
+  one allowed). Checked on all ten screens, headless Chrome: the drawer
+  opens, shuts on the blur, and a menu item goes there and shuts it
+  (phone); Collapse and Expand (desktop). **Version 24, the same day, made
+  the phone's details sheet pull** (Garreth: it should pull up over the
+  slide and would not). The design had always said so, but only the two
+  resting positions were drawn, and the build moved the sheet on a press of
+  the small grab bar alone. Now, on the phone: a pull on the grab bar or the
+  row of tabs makes the sheet follow the finger between its two rests, and
+  letting go settles it (60px or more goes the way it was pulled, less
+  falls back to the nearer rest); scrolling what the sheet holds raises it,
+  and at the top a pull down lowers it; the grab bar takes a finger 14px
+  above itself; a press still toggles it and a tab still switches. The look
+  is untouched: all 96 boards match as text and the 20 phone boards as
+  images. Tested with REAL input in headless Chrome at 390 by 844, through
+  a small stand-in for the canvas runtime: touch 18 of 18, mouse and wheel 8
+  of 8. Not tested on the saved canvas itself, in Safari, or on a real
+  phone. What round three is, as first saved for review (
   2026-09-19, canvas version 39, page D10 · Dark, top row, 24 new boards):**
   **On the phone the details are a sheet that rides up over the slides**
   (Garreth, 2026-09-19: the room under the slide was too small, and only two

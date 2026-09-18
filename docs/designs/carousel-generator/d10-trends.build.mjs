@@ -455,6 +455,30 @@ const ANALYSIS_THIN = { tags: ["Hook", "Story"], notes: ["Call to action"] };
    the model read what it was given; what is short is the slides it could
    fetch. So the label says Partial and the transcription says how many. */
 const ANALYSIS_PART = { slides: 4 };
+/* In the prototype any post can be opened, not only the one the boards open,
+   so a post with no analysis written out above borrows this one: its own
+   topic and hook tags, and the rest general enough to sit under any deck.
+   Invented, like the rest. No review board draws it: the boards that show a
+   finished analysis all open f4. */
+const ANALYSIS_ANY = {
+  tags: [
+    { k: "Angle", v: "Personal story" },
+    { k: "Story", v: "Setup, turn, payoff" },
+    { k: "Tone", v: "Plain and direct" },
+    { k: "Look", v: "Photo with a caption bar" },
+  ],
+  notes: [
+    { k: "Why it hooks", v: "The cover makes a claim the reader half believes already, so they stay to see it argued." },
+    { k: "Opener", v: "One photo and one line that names the subject and holds back the answer." },
+    { k: "Payoff", v: "Near the end. One line that says what changed." },
+    { k: "Proof", v: "Her own photos. Source imagery observed; the outcome is not independently checked." },
+    { k: "Call to action", v: "The last slide. Asks for a save." },
+  ],
+  keep: ["A claim on the cover, the answer held back", "One idea a slide, in a caption bar low on the photo", "The ask comes last, after the payoff"],
+  limits: ["Leans on photos that read at a glance", "Works for one idea; a list would lose the turn"],
+  themes: ["Asking what she uses", "Sharing their own routine"],
+  questions: ["How long did it take?"],
+};
 const ANALYSIS_POOL = [
   { copy: "Here is what nobody tells you", role: "Setup", visual: "A person at a bathroom mirror, products along the counter" },
   { copy: "I did this for thirty days", role: "Problem", visual: "A hand holding a small bottle up to the light" },
@@ -637,6 +661,11 @@ export function copyTrendsImages(OUT) {
 
 /* The feed column's width, and the search bar's: Instagram's is 470; 500
    after Garreth's third review (2026-09-17). */
+/* The phone's details sheet is pulled by its grab bar or its row of tabs. */
+const SHEET_PULL = ` onPointerDown="{{sheetDown}}" onPointerMove="{{sheetMove}}" onPointerUp="{{sheetEnd}}" onPointerCancel="{{sheetEnd}}"`;
+/* Where the sheet rests, as margin-top: under the slides, and up over them. */
+const SHEET_REST = -16;
+const SHEET_RAISED = -416;
 const COL = 500;
 /* The Recent saves panel's width; the column of posts is centred between the
    rail and the panel, so the two gaps match (Garreth, 2026-09-17). */
@@ -899,9 +928,13 @@ ${S} .dx:hover { color: var(--text-primary); background: var(--card-raised); }
    they are, pinned under the header, and the sheet rides up over them as the
    reader scrolls, until only a strip of the slide shows; scrolling back down
    lets it go again. The grab bar at its top does the same on a press. */
-${S} .dsheet { position: relative; display: flex; flex: 1; flex-direction: column; min-height: 0; ${P ? "z-index: 3; margin-top: -16px; border-radius: 20px 20px 0 0; background: var(--card); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35); transition: margin-top 320ms var(--ease-out-strong);" : ""} }
-${P ? `${S} .dsheet.is-up { margin-top: -416px; }
-${S} .dgrab { display: flex; justify-content: center; width: 100%; padding: 8px 0 2px; }
+${S} .dsheet { position: relative; display: flex; flex: 1; flex-direction: column; min-height: 0; ${P ? `z-index: 3; margin-top: ${SHEET_REST}px; border-radius: 20px 20px 0 0; background: var(--card); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35); transition: margin-top 320ms var(--ease-out-strong);` : ""} }
+${P ? `${S} .dsheet.is-up { margin-top: ${SHEET_RAISED}px; }
+/* The bar looks as it did; what takes the finger is taller, and reaches up over the foot of the slide. Neither
+   it nor the tabs scroll, so the browser leaves a drag on them to the sheet. */
+${S} .dgrab { position: relative; display: flex; justify-content: center; width: 100%; padding: 8px 0 2px; cursor: grab; touch-action: none; }
+${S} .dgrab::after { content: ""; position: absolute; inset: -14px 0 0; }
+${S} .dtabs { touch-action: none; }
 ${S} .dgrab span { width: 36px; height: 4px; border-radius: 999px; background: var(--border); }
 ${S} .dleft .fdots { bottom: 26px; }
 @media (prefers-reduced-motion: reduce) { ${S} .dsheet { transition: none; } }` : ""}
@@ -1252,14 +1285,14 @@ const rail = () => `
             <nav class="rail10" aria-label="Trends">
               ${RAIL_ROWS.map(
                 (r) =>
-                  `<button type="button" class="rrow {{railCls.${r.id}}}" aria-current="{{railCur.${r.id}}}" onClick="{{tabGo.${r.id}}}"><span class="ri">${r.icon}</span><span>${r.label}</span></button>`,
+                  `<button type="button" class="rrow {{t10railCls.${r.id}}}" aria-current="{{t10railCur.${r.id}}}" onClick="{{tabGo.${r.id}}}"><span class="ri">${r.icon}</span><span>${r.label}</span></button>`,
               ).join("\n              ")}
             </nav>`;
 const floatingNav = () => `
     <nav class="fnav10" aria-label="Trends">
       ${RAIL_ROWS.map(
         (r) =>
-          `<button type="button" class="fn {{railCls.${r.id}}}" aria-current="{{railCur.${r.id}}}" onClick="{{tabGo.${r.id}}}">${r.iconLg}<span>${r.label}</span></button>`,
+          `<button type="button" class="fn {{t10railCls.${r.id}}}" aria-current="{{t10railCur.${r.id}}}" onClick="{{tabGo.${r.id}}}">${r.iconLg}<span>${r.label}</span></button>`,
       ).join("\n      ")}
     </nav>`;
 
@@ -1346,9 +1379,9 @@ const detailsWindow = (phone) => `
             </span>
             <button type="button" class="dx" title="Close" aria-label="Close" onClick="{{closeDet}}">${D10I.close}</button>
           </header>
-          <div class="dsheet {{sheetCls}}">
-          ${phone ? `<button type="button" class="dgrab" aria-label="{{sheetLabel}}" aria-expanded="{{sheetUp}}" onClick="{{sheetToggle}}"><span></span></button>` : ""}
-          <div class="dtabs" role="tablist">
+          <div class="dsheet {{sheetCls}}"${phone ? ` id="t10-sheet"` : ""}>
+          ${phone ? `<button type="button" class="dgrab" aria-label="{{sheetLabel}}" aria-expanded="{{sheetUp}}" onClick="{{sheetToggle}}"${SHEET_PULL}><span></span></button>` : ""}
+          <div class="dtabs" role="tablist"${phone ? SHEET_PULL : ""}>
             <button type="button" class="dtab {{dtabCls.details}}" role="tab" aria-selected="{{dtabSel.details}}" onClick="{{dtabGo.details}}">Details</button>
             <button type="button" class="dtab {{dtabCls.analysis}}" role="tab" aria-selected="{{dtabSel.analysis}}" onClick="{{dtabGo.analysis}}">Analysis</button>
             <button type="button" class="dtab {{dtabCls.words}}" role="tab" aria-selected="{{dtabSel.words}}" onClick="{{dtabGo.words}}">Transcription</button>
@@ -1796,6 +1829,7 @@ function vals(init) {
     var CHANNELS = ${JSON.stringify(CHANNELS)};
     var FILTERS = ${JSON.stringify(FILTERS)};
     var ANALYSIS = ${JSON.stringify(ANALYSIS)};
+    var ANALYSIS_ANY = ${JSON.stringify(ANALYSIS_ANY)};
     var ANALYSIS_POOL = ${JSON.stringify(ANALYSIS_POOL)};
     var ANALYSIS_PART = ${JSON.stringify(ANALYSIS_PART)};
     var ANALYSIS_THIN = ${JSON.stringify(ANALYSIS_THIN)};
@@ -1818,6 +1852,11 @@ function vals(init) {
     var anState = ${JSON.stringify(init.analysis || "ready")};
     var feedState = ${JSON.stringify(init.feedState || null)};
     var anScrolled = ${init.anScrolled === true};
+
+    var SHEET_REST = ${SHEET_REST};
+    var SHEET_RAISED = ${SHEET_RAISED};
+    /* Letting go of a pull over the grab bar or a tab also sends that button a click. */
+    var justPulled = function () { return !!self.t10pulledAt && Date.now() - self.t10pulledAt < 400; };
 
     var byId = function (list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; };
 
@@ -1950,7 +1989,12 @@ function vals(init) {
     /* Part-read and still-working decks show the slides read so far. */
     var anPart = anState === "part";
     var anShown = anState === "working" ? 2 : anPart ? Math.min(ANALYSIS_PART.slides, anLinesAll.length) : anLinesAll.length;
-    var anTags = an ? an.tags : detF ? [{ k: "Topic", v: detF.tags[0] }, { k: "Hook", v: detF.tags[detF.tags.length - 1] }] : [];
+    /* A post with no analysis of its own borrows the general one, under its
+       own topic and hook; its slides' words still come from the pool above. */
+    if (!an && detF) an = Object.assign({}, ANALYSIS_ANY, {
+      tags: [{ k: "Topic", v: detF.tags[0] }, ANALYSIS_ANY.tags[0], { k: "Hook", v: detF.tags[detF.tags.length - 1] }].concat(ANALYSIS_ANY.tags.slice(1))
+    });
+    var anTags = an ? an.tags : [];
     var anNotes = an ? an.notes : [];
     /* A row the library has nothing for is left out, never shown blank: the
        newer run's analyses carry fewer rows and no pattern or audience read. */
@@ -2160,10 +2204,12 @@ function vals(init) {
     });
 
     var tab0 = s.t10tab || "feed";
-    var railCls = {}, railCur = {}, tabGo = {};
+    /* Named for this screen: the shell's side menu is railCls, and a screen that hands over the same name
+       takes the menu's class away on every screen of the prototype (the phone's drawer never opened). */
+    var t10railCls = {}, t10railCur = {}, tabGo = {};
     ["feed", "digests", "knowledge", "saved"].forEach(function (id) {
-      railCls[id] = tab === id ? "on" : "";
-      railCur[id] = tab === id ? "page" : "false";
+      t10railCls[id] = tab === id ? "on" : "";
+      t10railCur[id] = tab === id ? "page" : "false";
       tabGo[id] = function () { self.setState({ t10tab: id, t10dd: false, t10q: "", t10creator: null, t10filt: false, t10chdd: false }); };
     });
     /* A search's results show in the column whichever section the bar was
@@ -2173,8 +2219,8 @@ function vals(init) {
     return {
       is: { feed: tab === "feed", saved: tab === "saved", column: column, digests: tab === "digests", knowledge: tab === "knowledge" },
       columnLabel: tab === "saved" ? "Saved" : "Feed",
-      railCls: railCls,
-      railCur: railCur,
+      t10railCls: t10railCls,
+      t10railCur: t10railCur,
       tabGo: tabGo,
       digestCount: firstRun ? "" : String(list.length),
       pendingCount: pendingAll.length ? String(pendingAll.length) : "",
@@ -2263,14 +2309,48 @@ function vals(init) {
       sheetCls: s.t10up ? "is-up" : "",
       sheetUp: s.t10up ? "true" : "false",
       sheetLabel: s.t10up ? "Show the slides" : "Show more",
-      sheetToggle: function () { self.setState({ t10up: !s.t10up }); },
+      /* A pull that has just ended is not also a press. */
+      sheetToggle: function () { if (justPulled()) return; self.setState({ t10up: !s.t10up }); },
+      /* The pull: the sheet follows the finger between its two rests, moved on the element itself so nothing
+         is redrawn under the finger, then settles up or down: a pull of 60px or more goes the way it was
+         pulled, a shorter one to whichever rest is nearer. */
+      sheetDown: function (e) {
+        self.t10pull = { y: e.clientY, from: s.t10up ? SHEET_RAISED : SHEET_REST, at: null };
+        /* Hold the pointer from the press, or a quick mouse leaves the row before the pull is known and the
+           pull is lost. Hold it on the BUTTON under it, not the row: a mouse's click goes to whatever holds
+           the pointer, and held by the row a tab would never switch. */
+        var hold = (e.target && e.target.closest && e.target.closest("button")) || e.currentTarget;
+        if (hold && hold.setPointerCapture) { try { hold.setPointerCapture(e.pointerId); } catch (x) {} }
+      },
+      sheetMove: function (e) {
+        var d = self.t10pull; if (!d) return;
+        var dy = e.clientY - d.y;
+        if (d.at === null && Math.abs(dy) < 6) return;
+        var el = document.getElementById("t10-sheet"); if (!el) return;
+        d.at = Math.max(SHEET_RAISED, Math.min(SHEET_REST, d.from + dy));
+        el.style.transition = "none";
+        el.style.marginTop = d.at + "px";
+      },
+      sheetEnd: function (e) {
+        var d = self.t10pull; self.t10pull = null;
+        if (!d || d.at === null) return;
+        var el = document.getElementById("t10-sheet");
+        if (el) { el.style.transition = ""; el.style.marginTop = ""; }
+        var dy = e.clientY - d.y;
+        self.t10pulledAt = Date.now();
+        self.setState({ t10up: Math.abs(dy) >= 60 ? dy < 0 : d.at < (SHEET_RAISED + SHEET_REST) / 2 });
+      },
       /* The details window. */
       showDet: !!detF,
       det: det,
       closeDet: function () { self.setState({ t10det: null, t10up: false }); },
       dtabCls: { details: dtab === "details" ? "on" : "", analysis: dtab === "analysis" ? "on" : "", words: dtab === "words" ? "on" : "" },
       dtabSel: { details: dtab === "details" ? "true" : "false", analysis: dtab === "analysis" ? "true" : "false", words: dtab === "words" ? "true" : "false" },
-      dtabGo: { details: function () { self.setState({ t10dtab: "details" }); }, analysis: function () { self.setState({ t10dtab: "analysis" }); }, words: function () { self.setState({ t10dtab: "words" }); } },
+      dtabGo: (function () {
+        var go = {};
+        ["details", "analysis", "words"].forEach(function (id) { go[id] = function () { if (justPulled()) return; self.setState({ t10dtab: id }); }; });
+        return go;
+      })(),
       isDetails: dtab === "details",
       /* Analysis and Transcription are two tabs over one reading (Garreth,
          2026-09-19): they share its states (nothing yet, on its way, blocked,
@@ -2406,6 +2486,36 @@ function vals(init) {
 `;
 }
 
+/*
+ * The phone's sheet rides up as the reader scrolls what it holds, and comes back down on a pull from the top
+ * (Garreth, 2026-09-19). The scrolling part is made again whenever the tab changes, so each new one is given its
+ * listeners once. Only the phone's sheet has the id.
+ */
+const didUpdate = `
+    if (st.screen === "trends" && st.t10det && document.getElementById("t10-sheet")) {
+      var self10 = this;
+      var isUp10 = function () { return !!(self10.state || {}).t10up; };
+      var bodies10 = document.querySelectorAll("#t10-sheet .dbody");
+      for (var b10 = 0; b10 < bodies10.length; b10++) (function (body) {
+        if (body.t10bound) return;
+        body.t10bound = true;
+        var startY = null;
+        body.addEventListener("scroll", function () { if (!isUp10() && body.scrollTop > 4) self10.setState({ t10up: true }); }, { passive: true });
+        body.addEventListener("wheel", function (e) {
+          if (!isUp10() && e.deltaY > 4) self10.setState({ t10up: true });
+          else if (isUp10() && body.scrollTop <= 0 && e.deltaY < -4) self10.setState({ t10up: false });
+        }, { passive: true });
+        body.addEventListener("touchstart", function (e) { startY = e.touches[0] ? e.touches[0].clientY : null; }, { passive: true });
+        body.addEventListener("touchmove", function (e) {
+          if (startY === null || !e.touches[0]) return;
+          var dy = e.touches[0].clientY - startY;
+          if (!isUp10() && dy < -24) { startY = null; self10.setState({ t10up: true }); }
+          else if (isUp10() && body.scrollTop <= 0 && dy > 40) { startY = null; self10.setState({ t10up: false }); }
+        }, { passive: true });
+      })(bodies10[b10]);
+    }
+`;
+
 export function trendsScreen({ init = {}, tall = 0 } = {}) {
   const full = {
     tab: "feed", q: "", creator: null, saved: ["f4", "f2", "f6"], slide: {},
@@ -2447,6 +2557,7 @@ export function trendsScreen({ init = {}, tall = 0 } = {}) {
     /* Opened from the menu: the feed, nothing searched. */
     enter: { t10tab: "feed", t10q: "", t10creator: null, t10det: null, t10acc: { summary: true }, t10up: false, t10filt: false, t10fdd: null, t10chdd: false, t10slide: {}, t10open: null, t10type: "all", t10conf: "any", t10dd: false },
     vals: vals(full),
+    didUpdate,
   };
 }
 

@@ -202,7 +202,16 @@ On `main`, once the ticket's branch is merged:
    `contract: "0.1.31"`, `favicon: "🕹️"`, no `capabilities`. The prototype is
    rebuilt whole from `main` every time, so nothing on it is merged by hand.
 5. Click through it before handing over: every link into and out of the new
-   screen, on desktop and phone.
+   screen, on desktop and phone. **And check the rest of the prototype, not
+   only the new screen.** Every screen's values and styles share the one
+   page, so a new screen can break an old one without any review board
+   showing it (2026-09-19: Trends round three took History's filter row,
+   the Generate form's card style boxed Trends' posts, and Trends' rail
+   stopped the phone's menu opening on every screen). Open every menu item;
+   open the phone's menu and the desktop's Collapse sidebar; put the new
+   screen beside its approved board. Name a screen's values after its
+   ticket (`t10…`, `h9…`) and scope its styles under `.screen-<id>`. The
+   build stops by itself if a screen hands over a name the shell uses.
 
 ## Status
 

@@ -55,7 +55,8 @@ function css(phone) {
 .pill--danger, .pill--danger b { color: var(--danger); }
 
 /* The form is one card of rows between thin lines, the same banding as D1's View details. */
-.fcard { display: flex; flex-direction: column; border-radius: 24px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--sh-card); }
+/* Scoped: Trends' feed post and the libraries' folder card are .fcard too, and unscoped this boxed them in. */
+.screen-generate .fcard { display: flex; flex-direction: column; border-radius: 24px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--sh-card); }
 .frow { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 24px; align-items: start; padding: 16px 24px; border-top: 1px solid var(--border); }
 .frow:first-child, .fgroup + .frow { border-top: 0; }
 .flabel { display: flex; flex-direction: column; padding-top: 6px; font-size: 14px; line-height: 20px; font-weight: 500; }

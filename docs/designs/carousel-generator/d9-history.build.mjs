@@ -355,6 +355,11 @@ function vals(init) {
     var BATCHES = ${JSON.stringify(BATCHES)};
     var TYPES = ${JSON.stringify(TYPES)};
     var RANGES = ${JSON.stringify(RANGES)};
+    /* A type's page hands History the type's NAME, not its id (D7's History ›).
+       Built before TYPE reads it: opened from the menu nothing is picked yet,
+       so the lookup runs, and it has to exist by then. */
+    var idOfName = {};
+    TYPES.forEach(function (t) { idOfName[t.name] = t.id; });
     /* Opened from a type's own page, History arrives already filtered to it
        (D7's "History ›"); pressing a pill takes over from there. */
     var TYPE = s.h9type || idOfName[P.type] || P.type || "all";
@@ -364,9 +369,6 @@ function vals(init) {
       return null;
     };
     var nameOf = function (id) { var t = typeOf(id); return t ? t.name : id; };
-    /* A type's page hands History the type's NAME, not its id (D7's History ›). */
-    var idOfName = {};
-    TYPES.forEach(function (t) { idOfName[t.name] = t.id; });
     var batchOf = function (id) {
       for (var i = 0; i < BATCHES.length; i++) if (BATCHES[i].id === id) return BATCHES[i];
       return null;

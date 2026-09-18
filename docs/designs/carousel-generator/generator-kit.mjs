@@ -25,6 +25,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -345,7 +346,7 @@ function topbar(phone) {
  * designed yet show D1's placeholder page (D1's own behaviour). navMode "note":
  * a menu item only shows a Prototype note (a single screen that is not D1).
  */
-function logic({ phone, light, screens, start, navMode }) {
+function logic({ phone, light, screens, start, navMode, probe = false }) {
   const first = screens.find((sc) => sc.id === start);
   const state = Object.assign(
     { screen: start, params: {}, active: first.nav, collapsed: false, note: "", noteOn: false, spinning: false, drawer: false, light },
@@ -464,10 +465,36 @@ ${screens.map((sc) => sc.didUpdate || "").join("\n")}
       theme: function () { self.setState({ light: !s.light }); },
       bell: function () { self.note("Opens notifications"); }
     };
-${screens.map((sc) => `    Object.assign(vals, (function () {\n${sc.vals}\n    })());`).join("\n")}
-    return vals;
+    /* Every screen hands its values into the one pot the markup reads, and two screens may use the same name
+       (History and Trends both have showFilters). The screen that is showing has the last word on its own
+       names, so a screen added later cannot switch off a part of an earlier one. */
+${probe ? "    var shellNames = Object.keys(vals);\n" : ""}    var mine = {};
+${screens.map((sc) => `    Object.assign(vals, mine[${JSON.stringify(sc.id)}] = (function () {\n${sc.vals}\n    })());`).join("\n")}
+    Object.assign(vals, mine[s.screen] || {});
+${probe ? "    vals.__probe = { shell: shellNames, mine: mine };\n" : ""}    return vals;
   }
 }`;
+}
+
+/**
+ * The names a screen hands over that the shell already uses, as "screen: name". The shell's values run the side
+ * menu, the phone's drawer, the theme and which screen shows, and a screen's value of the same name replaces the
+ * shell's on EVERY screen: Trends once handed over railCls for its own rail, and the phone's menu never opened
+ * again, anywhere. `allow` holds the ones done on purpose (the batch screens take over the bell).
+ */
+export function shellClashes(screens, { start = screens[0].id, allow = ["bell"] } = {}) {
+  const noop = () => 0;
+  const sandbox = {
+    setTimeout: noop, clearTimeout: noop, setInterval: noop, clearInterval: noop,
+    document: { getElementById: () => null, querySelectorAll: () => [], querySelector: () => null, addEventListener: noop, removeEventListener: noop },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    `class DCLogic { constructor() { this.state = {}; } setState() {} }\n${logic({ phone: false, light: false, screens, start, navMode: "page", probe: true })}\nglobalThis.__p = new Component().renderVals().__probe;`,
+    sandbox,
+  );
+  const { shell, mine } = sandbox.__p;
+  return Object.entries(mine).flatMap(([id, vals]) => Object.keys(vals).filter((k) => shell.includes(k) && !allow.includes(k)).map((k) => `${id}: ${k}`));
 }
 
 /**
