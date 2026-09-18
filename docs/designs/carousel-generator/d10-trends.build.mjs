@@ -92,6 +92,36 @@
  *    search bar clears). And the feed's scroller spans the whole section, so
  *    a wheel over the empty space either side of the posts scrolls it.
  *
+ * Round three (Garreth, 2026-09-18), after the developer handover's frontend
+ * addendum of 2026-09-17 was read against the page. Dark first; light follows
+ * his approval (R3_LIGHT in build()).
+ *  - **The search bar gains a search-type picker and a filter button.** The
+ *    picker sits inside the bar at its right (Meaning, Exact words, How it's
+ *    built, How it looks, Comments: the handover's five channels in plain
+ *    words); the filter button sits just outside it and opens a panel of a
+ *    short set of the handover's filters (topic, hook style, visual style,
+ *    views, standout posts only) with Clear all and Apply. On the phone the
+ *    panel is a sheet and carries the search type too. This reverses "no
+ *    scope pills, no chips" from the second review of round two.
+ *  - **A post opens in a details window**, not alone in the column: slides at
+ *    the left, swipeable, an X at the upper right; at the right who posted
+ *    it and two tabs. Details is the numbers, when it was posted, the
+ *    platform, the caption. Analysis is the words on each slide and the
+ *    model's reading, shown at once when the library holds them, and a
+ *    Transcribe and analyse button when it does not, which fills the tab in
+ *    as the slides are read and keeps the result on the carousel. The one
+ *    window opens from a results tile, from View Details on a post, and from
+ *    a Recent saves row. It replaces the "tile opened alone" board.
+ *  - **Useful and not useful** are a thumb up and a thumb down, on every post
+ *    and in the window.
+ *  - **On a post, View Details takes Save's place**; Save lives in the window.
+ *    The numbers move to a line of their own under the buttons, the way a
+ *    social post reads.
+ *  - From the handover: a search on its way and a search that timed out each
+ *    have a board; a number the library does not hold is left off a post and
+ *    reads Unknown in the window, never 0; a slide with no words says so; and
+ *    a full page of results reads "The 25 best matches", never a total.
+ *
  * Decisions carried from earlier in round two:
  *  - Save is quiet (and, from the third review, so is Copy to Studio).
  *  - **Recreate this is now called Use as reference**, on the feed and on a
@@ -189,6 +219,15 @@ const D10I = {
   feedLg: icon("Rows", 20),
   digestsLg: icon("EnvelopeSimple", 20),
   knowledgeLg: icon("BookOpen", 20),
+  /* Round three (2026-09-18): the filter button, the votes, the details window. */
+  filter: icon("SlidersHorizontal", 16, "bold"),
+  up: icon("ThumbsUp", 20, "regular"),
+  upOn: icon("ThumbsUp", 20, "fill"),
+  down: icon("ThumbsDown", 20, "regular"),
+  downOn: icon("ThumbsDown", 20, "fill"),
+  close: icon("X", 16, "bold"),
+  text: icon("TextAa", 24),
+  link: icon("ArrowSquareOut", 14),
 };
 
 /* ── Sample content ────────────────────────────────────────────────────── */
@@ -258,6 +297,8 @@ const FEED = [
     date: null,
     slides: ["serum", "vanity", "bath", "shower", "journal", "mug"],
     tags: ["Eye care", "Before and after"],
+    caption:
+      "My under-eyes last year against now, and the one thing I stopped doing. It was never the serum. Eight weeks, same shelf, one habit gone. Routine in the next post. #eyecare #undereyes #skincareroutine",
   },
   {
     id: "f5",
@@ -266,7 +307,7 @@ const FEED = [
     hook: "Five things on the shelf that cost less than the serum",
     views: "58k",
     likes: "4.1k",
-    saves: "1.9k",
+    saves: null,
     date: null,
     slides: ["shoes", "vanity", "journal", "dock", "oats"],
     tags: ["Quiet luxury", "List"],
@@ -317,6 +358,111 @@ const ACCOUNTS = {
 };
 /* One creator's carousels: the feed's posts under that handle. */
 const CREATOR = { handle: "@arielle.skin", net: "tiktok", decks: 38, cards: ["f3", "f4", "f1"] };
+
+/*
+ * Round three (Garreth, 2026-09-18). How a search reads the library: the
+ * handover's five channels, in plain words. Meaning is the default.
+ */
+const CHANNELS = [
+  { id: "meaning", label: "Meaning" },
+  { id: "literal", label: "Exact words" },
+  { id: "construction", label: "How it\u2019s built" },
+  { id: "visual", label: "How it looks" },
+  { id: "comments", label: "Comments" },
+];
+
+/*
+ * The filter panel, redrawn against the live library (Garreth, 2026-09-18).
+ * Three filters, each a dropdown that starts on Any and takes one value:
+ *   Topic   the one filter search_carousel_library has built in (p_topic, one
+ *           value, matched against the search documents' topics). The names
+ *           are the library's own seven common topics; the analysis picks
+ *           from a fixed list, so they do not drift
+ *   Hook    reference_analysis.hook_family, its six common values (the field
+ *           is free text, 189 values in all, so the list is a fixed short one)
+ *   Views   references_unified.views, which every carousel has
+ * Visual style is gone (614 values over 835 carousels: a list cannot hold it;
+ * "How it looks" searches it in words instead), and so is Standout posts only
+ * (4 carousels marked, of 309 scored) until the scoring covers the library.
+ */
+const FILTERS = [
+  { id: "topic", label: "Topic", opts: ["Any topic", "Wellness", "Skincare", "Lifestyle", "Weight loss", "Eye care", "Peptides", "GLP-1"] },
+  { id: "hook", label: "Hook style", opts: ["Any hook", "Outcome preview", "Information gap", "List", "Recognition", "Question", "Contradiction"] },
+  { id: "views", label: "Views", opts: ["Any views", "10k and over", "100k and over", "1M and over"] },
+];
+
+/*
+ * What the library's analysis holds on a post, shaped like the live tables
+ * (read 2026-09-18), so the tab is drawn from what is really there:
+ *   beats   reference_beats, one a slide: visible_copy (the words, empty on
+ *           about 300 of 6,461 slides, and the screen then says so rather than
+ *           inventing copy), narrative_role (on every slide) and
+ *           visual_description (on nearly every one)
+ *   tags    reference_analysis's short values: topic, angle, hook_family,
+ *           emotional_tone, visual_style. They are stored as code words
+ *           ("outcome_preview"); the screen shows them in plain words
+ *   notes   its sentences: opener_treatment, proof_placement, cta_structure
+ *   status  its inspection_status: complete (977), partial (167), blocked (24)
+ * A row the library has nothing for is left out, never shown blank: topic is
+ * missing on about 300 analyses, angle, tone and look on about 330.
+ * More of it sits in reference_analysis.inferred (835 carousels): the hook's
+ * mechanism, story_structure, the payoff and its slide, the first product and
+ * first call-to-action slides, a reusable_pattern (what to keep, and its
+ * limits) and an audience_response read from the comments (themes, questions,
+ * or a note that the sample was too small). The strength scores are in
+ * reference_format_evaluations (309 carousels) and are not drawn. Invented,
+ * like the rest.
+ */
+const ANALYSIS = {
+  f4: {
+    status: "complete",
+    read: "Sep 14",
+    beats: [
+      { copy: "My under-eyes last year vs now", role: "Setup", visual: "Two close portraits side by side, the same woman a year apart, soft daylight" },
+      { copy: "I tried every serum on the shelf", role: "Problem", visual: "Six small bottles lined up on a marble shelf" },
+      { copy: "The under-eye serum was never the problem", role: "Turn", visual: "Two amber dropper bottles on a folded white towel beside a jade stone" },
+      { copy: "", role: "Proof", visual: "A close portrait with no caption, looking straight at the camera" },
+      { copy: "I stopped rubbing my eyes dry after the shower", role: "Payoff", visual: "A hand pressing a towel to a cheek, steam on the mirror behind" },
+      { copy: "Eight weeks. Same serum. Follow for the routine", role: "Call to action", visual: "A notebook open on a desk, a pen across it" },
+    ],
+    tags: [
+      { k: "Topic", v: "Eye care" },
+      { k: "Angle", v: "Before and after" },
+      { k: "Hook", v: "Outcome preview" },
+      { k: "Story", v: "Problem, turn, payoff" },
+      { k: "Tone", v: "Confessional" },
+      { k: "Look", v: "Close portrait with text overlay" },
+      { k: "Product", v: "First shown on slide 3" },
+    ],
+    notes: [
+      { k: "Why it hooks", v: "The cover shows the result before it says anything, so the reader stays to find out what changed." },
+      { k: "Opener", v: "Two portraits a year apart under a plain caption that promises a change and holds back what caused it." },
+      { k: "Payoff", v: "Slide 5. The one habit she dropped, named in a single line." },
+      { k: "Proof", v: "Her own before and after photos. Source imagery observed; the outcome is not independently checked." },
+      { k: "Call to action", v: "Slide 6. Asks for a follow and points to the routine in the next post." },
+    ],
+    keep: ["A result on the cover, the cause held back", "One idea a slide, in a caption bar low on the photo", "The fix is a habit dropped, not a product bought", "The ask comes last, after the payoff"],
+    limits: ["Needs a real before and after that reads at a glance", "Works for one change; a list of five would lose the turn"],
+    themes: ["Asking which serum", "Doubt that a habit alone did it", "Sharing their own under-eye routine"],
+    questions: ["How long before you saw a difference?", "Do you still use the serum?"],
+  },
+};
+/* The newer run (phase0-multiformat-v1, 309 carousels) records less: the
+   hook, the story and the call to action, and none of topic, angle, tone,
+   look, opener or proof. The tab then simply has fewer rows. */
+const ANALYSIS_THIN = { tags: ["Hook", "Story"], notes: ["Call to action"] };
+/* A part-read deck (167 of them): every row of the analysis is there, because
+   the model read what it was given; what is short is the slides it could
+   fetch. So the label says Partial and the transcription says how many. */
+const ANALYSIS_PART = { slides: 4 };
+const ANALYSIS_POOL = [
+  { copy: "Here is what nobody tells you", role: "Setup", visual: "A person at a bathroom mirror, products along the counter" },
+  { copy: "I did this for thirty days", role: "Problem", visual: "A hand holding a small bottle up to the light" },
+  { copy: "", role: "Proof", visual: "A flat lay of a towel, a mug and a notebook" },
+  { copy: "The part that surprised me", role: "Turn", visual: "A close portrait in window light" },
+  { copy: "What I would do again", role: "Payoff", visual: "A shelf of products, one pulled forward" },
+  { copy: "Save this for later", role: "Call to action", visual: "A notebook page with a short list" },
+];
 
 /*
  * The digest body. Invented: the links go nowhere and the numbers are made up.
@@ -525,12 +671,86 @@ ${S} .t10head { position: relative; display: flex; align-items: center; gap: 12p
    surface, the search mark at its left), as wide as the posts (Garreth,
    2026-09-17). One box for creators and carousels alike; the placeholder
    carries the format, there is no instruction text. */
-${S} .sb10 { display: flex; align-items: center; gap: 8px; ${P ? "flex: 1; min-width: 0;" : `position: absolute; left: calc(50% - ${(PANEL - RAIL) / 2}px); top: 50%; width: ${COL}px; transform: translate(-50%, -50%);`} border-radius: 999px; border: 1px solid var(--border); background: var(--card-raised); padding: 7px 10px 7px 14px; }
+/* Round three (Garreth, 2026-09-18): the bar keeps its place and gains two
+   things. How the search reads the library sits inside the bar at its right
+   (on the phone it is the first group of the filter sheet, the bar being too
+   short for it), and the filter button sits just outside it, so the bar
+   itself stays as wide as the posts. */
+${S} .sbw10 { ${P ? "display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;" : `position: absolute; z-index: 5; left: calc(50% - ${(PANEL - RAIL) / 2}px); top: 50%; width: ${COL}px; transform: translate(-50%, -50%);`} }
+${S} .sb10 { display: flex; align-items: center; gap: 8px; ${P ? "flex: 1; min-width: 0;" : "width: 100%;"} border-radius: 999px; border: 1px solid var(--border); background: var(--card-raised); padding: 7px 10px 7px 14px; }
 ${S} .sb10 .ic { display: flex; flex-shrink: 0; color: var(--text-muted); }
 ${S} .sb10 input { flex: 1; min-width: 0; font-size: 14px; line-height: 20px; }
 ${S} .sb10 input::placeholder { color: var(--text-muted); }
 ${S} .sb10 .clr { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; color: var(--text-muted); transition: color 150ms var(--ease); }
 ${S} .sb10 .clr:hover { color: var(--text-primary); }
+
+${S} .sbch { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; margin: -2px 0; padding: 4px 6px 4px 12px; border-left: 1px solid var(--border); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--text-muted); white-space: nowrap; transition: color 150ms var(--ease); }
+${S} .sbch:hover, ${S} .sbch[aria-expanded="true"] { color: var(--text-primary); }
+${S} .sbch .ddcaret { display: flex; transition: transform 150ms var(--ease); }
+${S} .sbch[aria-expanded="true"] .ddcaret { transform: rotate(180deg); }
+${S} .chpop { top: calc(100% + 8px); right: 0; width: 200px; }
+/* The filter button: a quiet round button, with how many filters are on. */
+${S} .fbt10 { position: ${P ? "relative" : "absolute"}; ${P ? "" : "left: calc(100% + 8px); top: 50%; transform: translateY(-50%);"} display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 999px; border: 1px solid var(--border); background: var(--card-raised); color: var(--text-muted);
+  transition: color 150ms var(--ease), border-color 150ms var(--ease); }
+${S} .fbt10:hover, ${S} .fbt10[aria-expanded="true"], ${S} .fbt10.has { color: var(--text-primary); }
+${S} .fbt10[aria-expanded="true"] { border-color: color-mix(in srgb, var(--text-primary) 30%, var(--border)); }
+${S} .fbt10 .fn10 { position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; border-radius: 999px; padding: 0 4px; font-size: 10px; line-height: 16px; font-weight: 600; text-align: center; color: var(--bg); background: var(--text-primary); }
+
+/* The filter panel: under the bar and as wide as it on the desktop, a sheet
+   from the foot of the screen on the phone. Nothing in it is lit: a chosen
+   chip is the rail's glass, and Apply is the ordinary text colour, filled. */
+${S} .fp10 { ${P ? "position: absolute; left: 0; right: 0; bottom: 0; z-index: 66; max-height: 86%; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 20px 16px 16px;" : `position: absolute; top: calc(100% + 10px); left: 0; width: ${COL}px; z-index: 40; border-radius: 20px; padding: 18px;`} display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border);
+  /* Darker than the app's glass (Garreth, 2026-09-18): the panel sits over
+     photos, and at the glass's 60% its labels lost their contrast. Nearly
+     solid, with the blur kept for the little that still shows through. */
+  background: color-mix(in srgb, var(--card) 94%, transparent); box-shadow: var(--overlay-rim); -webkit-backdrop-filter: var(--overlay-blur); backdrop-filter: var(--overlay-blur); }
+/* Light mode has no blur, so anything short of solid shows the results
+   through the panel: there it is the card colour outright, with the app's
+   own light shadow. */
+.is-light${S} .fp10 { background: var(--card); box-shadow: var(--sb-shadow); }
+.is-light${S} .dsheet { box-shadow: 0 -6px 18px rgba(27, 29, 33, 0.12); }
+.is-light${S} .dmodal { box-shadow: 0 24px 80px rgba(27, 29, 33, 0.25); }
+${S} .fpg { display: flex; flex-direction: column; gap: 8px; }
+/* A filter is a row: what it is at the left, its dropdown at the right
+   (Garreth, 2026-09-18: a dropdown that starts on Any, not a row of pills).
+   The dropdown is D9's, the one Knowledge's confidence filter uses. */
+${S} .fprow { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; line-height: 20px; }
+${S} .fprow .dd10 .btn2 { min-width: 176px; justify-content: space-between; ${P ? "padding: 9px 14px;" : ""} }
+${S} .fprow .dd10 .btn2.has { color: var(--text-primary); border-color: color-mix(in srgb, var(--text-primary) 35%, var(--border)); }
+${S} .fprow .pop10 { width: 220px; background: var(--card-raised); -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* The filters a search ran with, over its results (Garreth, 2026-09-18):
+   one chip each, its X taking that filter off and running the search again. */
+${S} .fused { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: -6px 0 16px; }
+${S} .fchip.fx { gap: 6px; padding-right: 9px; }
+${S} .fchip.fx svg { opacity: 0.7; }
+${S} .fchip.fx:hover svg { opacity: 1; }
+${S} .fused .lnk10 { margin-left: 4px; }
+/* No new carousels: a small line over the last ones seen, and the quiet
+   button that brings new ones in when there are some (Garreth, 2026-09-18). */
+${S} .fnew { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; font-size: 13px; line-height: 20px; color: var(--text-muted); }
+${S} .fnew .ic { display: flex; }
+/* The end of what is new: the line that says so, and the way on into the
+   ones already seen (Garreth, 2026-09-18). */
+${S} .folder { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 12px 0 32px; }
+${S} .folder .fnew { margin-bottom: 0; }
+${S} .fpl { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .fpc { display: flex; flex-wrap: wrap; gap: 6px; }
+${S} .fchip { position: relative; display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid var(--border); padding: ${P ? 7 : 5}px 12px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-muted); white-space: nowrap;
+  transition: color 150ms var(--ease), border-color 150ms var(--ease), background-color 150ms var(--ease), transform 160ms var(--ease-out-strong); }
+${S} .fchip:hover { color: var(--text-primary); }
+${S} .fchip:active { transform: scale(0.97); }
+${S} .fchip.on { color: var(--text-primary); border-color: color-mix(in srgb, var(--text-primary) 45%, var(--border)); background: var(--glass); }
+${S} .fpsw { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; line-height: 20px; }
+${S} .sw10 { position: relative; width: 36px; height: 20px; flex-shrink: 0; border-radius: 999px; border: 1px solid var(--border); background: var(--card-sunken); transition: background-color 150ms var(--ease); }
+${S} .sw10::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 999px; background: var(--text-muted); transition: transform 160ms var(--ease-out-strong), background-color 150ms var(--ease); }
+${S} .sw10.on { background: var(--text-primary); border-color: var(--text-primary); }
+${S} .sw10.on::after { transform: translateX(16px); background: var(--bg); }
+${S} .fpf { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+${S} .lnk10 { font-size: 13px; line-height: 20px; font-weight: 500; color: var(--text-muted); transition: color 150ms var(--ease); }
+${S} .lnk10:hover { color: var(--text-primary); }
+${S} .solid10 { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 8px 20px; font-size: 13px; line-height: 16px; font-weight: 600; color: var(--bg); background: var(--text-primary); transition: opacity 150ms var(--ease), transform 160ms var(--ease-out-strong); }
+${S} .solid10:hover { opacity: 0.9; }
+${S} .solid10:active { transform: scale(0.97); }
 
 /* The body: the rail of sections on the left, the section beside it. */
 ${S} .tbody { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
@@ -613,7 +833,9 @@ ${S} .ghost10 { display: inline-flex; align-items: center; gap: 8px; flex-shrink
   transition: border-color 150ms var(--ease), background-color 150ms var(--ease), transform 160ms var(--ease-out-strong); }
 ${S} .ghost10:hover { border-color: color-mix(in srgb, var(--text-primary) 30%, var(--border)); background: var(--card); }
 ${S} .ghost10:active { transform: scale(0.97); }
-${S} .fact .fbtn { margin-right: -6px; }
+${S} .fact .fbtn:first-child { margin-left: -8px; }
+${S} .fact .fbtn + .fbtn { margin-left: -6px; }
+${S} .fnums { ${P ? "padding: 0 16px;" : ""} }
 ${S} .fbtn { position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 999px; color: var(--text-primary); transition: background-color 150ms var(--ease), transform 160ms var(--ease-out-strong); }
 ${S} .fbtn:hover { background: var(--card); }
 ${S} .fbtn:active { transform: scale(0.94); }
@@ -645,6 +867,123 @@ ${S} .gt { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-rad
 ${S} .gt:hover { opacity: 0.85; }
 ${S} .gt .gm { position: absolute; top: 8px; right: 8px; display: flex; color: #fff; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
 ${S} .gt .gq { position: absolute; left: 8px; bottom: 8px; border-radius: 999px; padding: 2px 8px; font-size: 11px; line-height: 16px; font-weight: 500; color: #fff; background: rgba(0, 0, 0, 0.45); }
+
+/* A search on its way: the tiles it will fill, breathing. */
+${S} .gt.is-skel { background: var(--card); animation: t10pulse 1.4s var(--ease) infinite; }
+${S} .gt.is-skel:hover { opacity: 1; }
+@keyframes t10pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+${S} .fres .busy { display: inline-flex; align-items: center; gap: 8px; }
+
+/* ── The details window (Garreth, 2026-09-18) ──
+   One window for a post wherever it is opened from: a tile in the results,
+   View Details on a post, a row of Recent saves. The slides at the left,
+   swipeable; at the right who posted it, two tabs, and the actions along the
+   foot. On the phone it fills the screen, slides first. */
+/* Above the shell's page glow (z 60), which would otherwise wash over the
+   window, and under the prototype note (z 70). */
+${S} .dscrim { position: absolute; inset: 0; z-index: 65; display: flex; align-items: center; justify-content: center; background: var(--scrim); -webkit-backdrop-filter: var(--scrim-blur); backdrop-filter: var(--scrim-blur); }
+${S} .dmodal { position: relative; display: flex; ${P ? "flex-direction: column; width: 100%; height: 100%;" : "width: 1040px; height: 720px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);"} overflow: hidden; background: var(--card); }
+${S} .dleft { position: relative; ${P ? "width: 100%;" : "height: 100%;"} aspect-ratio: 4 / 5; flex-shrink: 0; background: var(--card-sunken); }
+${S} .dleft .fview { height: 100%; border-radius: 0; }
+${S} .dleft .fdots { position: absolute; left: 0; right: 0; bottom: 12px; z-index: 2; }
+${S} .dleft .fdot { background: #fff; }
+${S} .dleft .fdot.on { background: #fff; opacity: 1; }
+/* On the phone the right side's parts join the window's own column, so the
+   header, with its X, sits above the slides. */
+${S} .dright { ${P ? "display: contents;" : "display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; border-left: 1px solid var(--border);"} }
+${S} .dhd { display: flex; align-items: center; gap: 10px; padding: ${P ? "10px 12px 10px 16px" : "16px 16px 16px 20px"}; ${P ? "order: -1; border-bottom: 1px solid var(--border);" : ""} }
+${S} .dx { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 999px; color: var(--text-muted); transition: color 150ms var(--ease), background-color 150ms var(--ease); }
+${S} .dx:hover { color: var(--text-primary); background: var(--card-raised); }
+/* The tabs and what they hold are one sheet. On the desktop it simply fills
+   the right side. On the phone (Garreth, 2026-09-19) the slides stay where
+   they are, pinned under the header, and the sheet rides up over them as the
+   reader scrolls, until only a strip of the slide shows; scrolling back down
+   lets it go again. The grab bar at its top does the same on a press. */
+${S} .dsheet { position: relative; display: flex; flex: 1; flex-direction: column; min-height: 0; ${P ? "z-index: 3; margin-top: -16px; border-radius: 20px 20px 0 0; background: var(--card); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35); transition: margin-top 320ms var(--ease-out-strong);" : ""} }
+${P ? `${S} .dsheet.is-up { margin-top: -416px; }
+${S} .dgrab { display: flex; justify-content: center; width: 100%; padding: 8px 0 2px; }
+${S} .dgrab span { width: 36px; height: 4px; border-radius: 999px; background: var(--border); }
+${S} .dleft .fdots { bottom: 26px; }
+@media (prefers-reduced-motion: reduce) { ${S} .dsheet { transition: none; } }` : ""}
+/* The tabs: the app's underline tabs, the chosen one in the text colour. */
+${S} .dtabs { display: flex; gap: 20px; padding: 0 ${P ? 16 : 20}px; border-bottom: 1px solid var(--border); }
+${S} .dtab { position: relative; padding: 10px 0; font-size: 13px; line-height: 20px; font-weight: 500; color: var(--text-muted); transition: color 150ms var(--ease); }
+${S} .dtab:hover { color: var(--text-primary); }
+${S} .dtab.on { color: var(--text-primary); }
+${S} .dtab.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px; background: var(--text-primary); }
+${S} .dbody { display: flex; flex: 1; flex-direction: column; gap: 18px; min-height: 0; overflow-y: auto; padding: ${P ? "16px 16px 20px" : "20px"}; }
+/* The numbers: three cells, each what it is and what it reads. A number the
+   library does not hold says Unknown, never 0 (the handover's rule). */
+${S} .dstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+${S} .dstat { display: flex; flex-direction: column; gap: 2px; border-radius: 14px; background: var(--card-raised); padding: 10px 12px; }
+${S} .dstat span { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .dstat b { font-size: 17px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em; }
+${S} .dstat b.unk { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+${S} .drows { display: flex; flex-direction: column; }
+${S} .drow { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 13px; line-height: 20px; }
+${S} .drow:first-child { border-top: 0; padding-top: 0; }
+${S} .drow span { flex-shrink: 0; color: var(--text-muted); }
+${S} .drow b { min-width: 0; font-weight: 500; text-align: right; text-wrap: pretty; }
+${S} .drow b.unk { font-weight: 400; color: var(--text-muted); }
+${S} .dcap { margin: 0; font-size: 14px; line-height: 21px; text-wrap: pretty; }
+${S} .dcap b { font-weight: 600; margin-right: 6px; }
+${S} .dsh { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; font-size: 13px; line-height: 20px; font-weight: 600; }
+${S} .dsh .n { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+${S} .dsec { display: flex; flex-direction: column; gap: 10px; }
+/* The words on each slide, in the deck's order. */
+${S} .dline { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 13.5px; line-height: 20px; }
+${S} .dline:first-of-type { border-top: 0; padding-top: 0; }
+${S} .dline .no { width: 56px; flex-shrink: 0; font-size: 12px; color: var(--text-muted); }
+${S} .dline .tx { min-width: 0; text-wrap: pretty; }
+${S} .dline .tx .none { color: var(--text-muted); }
+${S} .dline .tx .op { display: block; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+/* Under the words, what the slide shows; at the right, its job in the story. */
+${S} .dline .tx { flex: 1; }
+${S} .dline .tx .vis { display: block; margin-top: 2px; font-size: 12.5px; line-height: 18px; color: var(--text-muted); text-wrap: pretty; }
+${S} .dline .role { align-self: flex-start; }
+${S} .dline .no.wide { width: 96px; }
+${S} .dsh .n { display: inline-flex; align-items: center; gap: 8px; }
+/* The Analysis tab is groups that open and close (Garreth, 2026-09-19), so
+   it opens tidy: the summary open, the rest shut. A header is its name and
+   nothing else (Garreth, 2026-09-19: no counts, no unnecessary text). More
+   than one can be open at once. */
+${S} .danh { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .dbody:has(.dacc) { gap: 10px; }
+${S} .dacc { border-radius: 16px; border: 1px solid var(--border); background: var(--card-raised); }
+${S} .dacch { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; font-size: 13px; line-height: 20px; text-align: left; border-radius: 16px; transition: background-color 150ms var(--ease); }
+${S} .dacch:hover { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+${S} .dacch .t { flex: 1; font-weight: 600; }
+${S} .dacch .n { font-size: 12px; color: var(--text-muted); }
+${S} .dacch .ddcaret { display: flex; color: var(--text-muted); transition: transform 150ms var(--ease); }
+${S} .dacc.on .dacch .ddcaret { transform: rotate(180deg); }
+${S} .daccb { display: flex; flex-direction: column; gap: 10px; padding: 2px 14px 14px; }
+${S} .daccb .dtags { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
+${S} .daccb .dline:first-child { border-top: 0; padding-top: 0; }
+/* The short values, two across: what each is, over its tag. */
+${S} .dtags { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; padding-bottom: 14px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+${S} .dtag { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+${S} .dtag > span:first-child { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .dtag .pill { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+/* A review board of the tab scrolled down: the first section is off the top. */
+
+/* What to keep, and what to watch for; what the comments said. */
+${S} .dlist { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; line-height: 20px; }
+${S} .dlist li { position: relative; padding-left: 14px; text-wrap: pretty; }
+${S} .dlist li::before { content: ""; position: absolute; left: 0; top: 8px; width: 4px; height: 4px; border-radius: 999px; background: var(--text-muted); }
+${S} .dsub { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .dpills { display: flex; flex-wrap: wrap; gap: 6px; }
+${S} .dmuted { margin: 0; font-size: 13px; line-height: 20px; color: var(--text-muted); }
+/* The analysis's own state: words first, the colour only agrees. */
+${S} .pill.is-wait { color: var(--warn); }
+${S} .pill.is-bad { color: var(--danger); }
+${S} .dnone { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 220px; border-radius: 20px; border: 1px dashed var(--border); padding: 28px 20px; text-align: center; }
+${S} .dnone .ic { display: flex; color: var(--text-muted); }
+${S} .dnone p { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-muted); }
+/* The actions along the foot: the votes and Save at the left, the two ways
+   on at the right. All quiet. */
+${S} .dft { display: flex; align-items: center; gap: 6px; padding: ${P ? "10px 12px 14px" : "12px 16px"}; border-top: 1px solid var(--border); }
+${S} .dft .sp { flex: 1; }
+${S} .dft .fbtn + .fbtn { margin-left: -4px; }
 
 /* The next twenty on their way, and the end of the library. */
 ${S} .fmore { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 120px; border-radius: 24px; border: 1px dashed var(--border); font-size: 13px; line-height: 20px; color: var(--text-muted); }
@@ -816,12 +1155,15 @@ ${S} .khead { display: none; }
 ${S} .krow { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
 ${S} .kmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 /* 44px touch targets: the pill keeps its size, the hit area grows (D2). */
-${S} .chip10::after, ${S} .kbtn::after, ${S} .fbtn::after, ${S} .fdot::after { content: ""; position: absolute; inset: -6px; }
+${S} .chip10::after, ${S} .kbtn::after, ${S} .fbtn::after, ${S} .fdot::after, ${S} .fchip::after { content: ""; position: absolute; inset: -6px; }
+/* Two buttons and two votes share a 390px row: the buttons tighten. */
+${S} .fact .ghost10 { padding: 7px 12px; gap: 6px; }
 `
     : ""
 }
 @media (prefers-reduced-motion: reduce) {
-  ${S} .chip10, ${S} .dgrow, ${S} .rrow, ${S} .fn, ${S} .opt10, ${S} .kbtn, ${S} .ddcaret, ${S} .fsl, ${S} .fdot, ${S} .farrow, ${S} .fbtn, ${S} .svrow, ${S} .ghost10, ${S} .gt { transition: none; }
+  ${S} .chip10, ${S} .dgrow, ${S} .rrow, ${S} .fn, ${S} .opt10, ${S} .kbtn, ${S} .ddcaret, ${S} .fsl, ${S} .fdot, ${S} .farrow, ${S} .fbtn, ${S} .svrow, ${S} .ghost10, ${S} .gt, ${S} .fchip, ${S} .sw10, ${S} .sw10::after, ${S} .dtab, ${S} .dx, ${S} .fbt10, ${S} .sbch { transition: none; }
+  ${S} .gt.is-skel { animation: none; }
   ${S} .pop10 { transition: opacity 120ms linear, visibility 0s 120ms; transform: none; }
   ${S} .pop10.on { transition: opacity 150ms linear; }
 }
@@ -843,13 +1185,60 @@ const net = (row, lg = false) =>
 
 /* The search bar, in the header on every section: one box for creators and
    carousels alike. */
+const chOptions = () => `
+                  <sc-for list="{{chOpts}}" as="c" hint-placeholder-count="5">
+                    <button type="button" class="opt10 {{c.cls}}" role="option" aria-selected="{{c.selected}}" onClick="{{c.pick}}">{{c.label}}<span class="optcheck10"><sc-if value="{{c.isSelected}}" hint-placeholder-val="{{ false }}">${D10I.check}</sc-if></span></button>
+                  </sc-for>`;
+
+/* The filter panel: under the bar on the desktop, a sheet on the phone, where
+   it also carries how the search reads the library. */
+const filterPanel = (phone) => `
+              <section class="fp10" role="dialog" aria-label="Filters">
+                ${
+                  phone
+                    ? `<div class="fpg"><span class="fpl">Search by</span><div class="fpc">
+                  <sc-for list="{{chOpts}}" as="c" hint-placeholder-count="5">
+                    <button type="button" class="fchip {{c.cls}}" aria-pressed="{{c.selected}}" onClick="{{c.pick}}">{{c.label}}</button>
+                  </sc-for></div></div>`
+                    : ""
+                }
+                <sc-for list="{{fGroups}}" as="g" hint-placeholder-count="3">
+                  <div class="fprow">
+                    <span>{{g.label}}</span>
+                    <div class="dd10 {{g.ddCls}}">
+                      <button type="button" class="btn2 {{g.btnCls}}" aria-haspopup="listbox" aria-expanded="{{g.expanded}}" aria-label="{{g.aria}}" onClick="{{g.toggle}}">{{g.value}}<span class="ddcaret">${D10I.caretDown}</span></button>
+                      <div class="pop10 {{g.ddCls}}" role="listbox" aria-label="{{g.label}}">
+                        <sc-for list="{{g.opts}}" as="o" hint-placeholder-count="7">
+                          <button type="button" class="opt10 {{o.cls}}" role="option" aria-selected="{{o.pressed}}" onClick="{{o.pick}}">{{o.label}}<span class="optcheck10"><sc-if value="{{o.on}}" hint-placeholder-val="{{ false }}">${D10I.check}</sc-if></span></button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+                <div class="fpf">
+                  <button type="button" class="lnk10" onClick="{{clearFilters}}">Clear all</button>
+                  <button type="button" class="solid10" onClick="{{applyFilters}}">Apply</button>
+                </div>
+              </section>`;
+
+const filterButton = () => `
+              <button type="button" class="fbt10 {{filterBtnCls}}" title="Filters" aria-label="{{filterBtnLabel}}" aria-haspopup="dialog" aria-expanded="{{filtersExpanded}}" onClick="{{toggleFilters}}">${D10I.filter}<sc-if value="{{hasFilters}}" hint-placeholder-val="{{ false }}"><span class="fn10 tnum">{{filterCount}}</span></sc-if></button>`;
+
 const searchBar = (phone) => `
-            <div class="sb10" role="search">
-              <span class="ic">${D10I.search}</span>
-              <input type="search" value="{{qValue}}" placeholder="{{${phone ? "qShort" : "qPlaceholder"}}}" aria-label="{{qPlaceholder}}" onKeyDown="{{qKey}}">
-              <sc-if value="{{showClear}}" hint-placeholder-val="{{ false }}">
-                <button type="button" class="clr" title="Clear" aria-label="Clear the search" onClick="{{clear}}">${D10I.xSm}</button>
-              </sc-if>
+            <div class="sbw10">
+              <div class="sb10" role="search">
+                <span class="ic">${D10I.search}</span>
+                <input type="search" value="{{qValue}}" placeholder="{{${phone ? "qShort" : "qPlaceholder"}}}" aria-label="{{qPlaceholder}}" onKeyDown="{{qKey}}">
+                <sc-if value="{{showClear}}" hint-placeholder-val="{{ false }}">
+                  <button type="button" class="clr" title="Clear" aria-label="Clear the search" onClick="{{clear}}">${D10I.xSm}</button>
+                </sc-if>
+                ${phone ? "" : `<button type="button" class="sbch" aria-haspopup="listbox" aria-expanded="{{chExpanded}}" aria-label="{{chAria}}" onClick="{{toggleCh}}">{{chLabel}}<span class="ddcaret">${D10I.caretDown}</span></button>`}
+              </div>
+              ${filterButton()}
+              ${phone ? "" : `<div class="pop10 chpop {{chCls}}" role="listbox" aria-label="Search by">${chOptions()}
+              </div>
+              <sc-if value="{{showFilters}}" hint-placeholder-val="{{ false }}">${filterPanel(false)}
+              </sc-if>`}
             </div>`;
 
 /* The sections: a rail on the desktop, a floating bar on the phone. */
@@ -873,6 +1262,13 @@ const floatingNav = () => `
           `<button type="button" class="fn {{railCls.${r.id}}}" aria-current="{{railCur.${r.id}}}" onClick="{{tabGo.${r.id}}}">${r.iconLg}<span>${r.label}</span></button>`,
       ).join("\n      ")}
     </nav>`;
+
+/* Useful and not useful, as a thumb up and a thumb down (Garreth,
+   2026-09-18): on every post and in the details window. Pressing one fills
+   it; pressing it again takes the vote back. */
+const votes = (row) =>
+  `<button type="button" class="fbtn" title="Useful" aria-label="Useful" aria-pressed="{{${row}.upOn}}" onClick="{{${row}.up}}"><sc-if value="{{${row}.notUp}}" hint-placeholder-val="{{ true }}">${D10I.up}</sc-if><sc-if value="{{${row}.isUp}}" hint-placeholder-val="{{ false }}">${D10I.upOn}</sc-if></button>` +
+  `<button type="button" class="fbtn" title="Not useful" aria-label="Not useful" aria-pressed="{{${row}.downOn}}" onClick="{{${row}.down}}"><sc-if value="{{${row}.notDown}}" hint-placeholder-val="{{ true }}">${D10I.down}</sc-if><sc-if value="{{${row}.isDown}}" hint-placeholder-val="{{ false }}">${D10I.downOn}</sc-if></button>`;
 
 /* One post in the feed, Instagram's layout on both sizes. */
 const feedCard = () => `
@@ -903,21 +1299,213 @@ const feedCard = () => `
                     </sc-for>
                   </div>
                   <div class="fact">
-                    <span class="fmeta tnum">{{f.meta}}</span>
+                    ${votes("f")}
                     <span class="sp"></span>
                     <button type="button" class="ghost10" onClick="{{f.use}}">${D10I.studio}Copy to Studio</button>
-                    <button type="button" class="fbtn" title="{{f.saveLabel}}" aria-label="{{f.saveLabel}}" aria-pressed="{{f.savedOn}}" onClick="{{f.save}}"><sc-if value="{{f.unsaved}}" hint-placeholder-val="{{ true }}">${D10I.bookmark}</sc-if><sc-if value="{{f.saved}}" hint-placeholder-val="{{ false }}">${D10I.bookmarkOn}</sc-if></button>
+                    <button type="button" class="ghost10" onClick="{{f.details}}">View Details</button>
                   </div>
+                  <sc-if value="{{f.hasMeta}}" hint-placeholder-val="{{ true }}"><span class="fmeta fnums tnum">{{f.meta}}</span></sc-if>
                   <p class="fcap"><b>{{f.handle}}</b>{{f.hook}}</p>
                 </article>`;
+
+/*
+ * The details window (Garreth, 2026-09-18): the post's slides at the left, and
+ * at the right who posted it, Details and Analysis as two tabs, and along the
+ * foot the votes, Save, View Post and Copy to Studio. The X at the upper right
+ * closes it, back to wherever it was opened from.
+ */
+const detailsWindow = (phone) => `
+  <sc-if value="{{showDet}}" hint-placeholder-val="{{ false }}">
+    <div class="dscrim">
+      <section class="dmodal" role="dialog" aria-modal="true" aria-label="{{det.label}}">
+        <div class="dleft">
+          <div class="fview">
+            <div class="ftrack" aria-label="Slides, swipe sideways">
+              <sc-for list="{{det.track}}" as="sl" hint-placeholder-count="6">
+                <span class="fsl {{sl.cls}}" aria-hidden="true">
+                  <sc-if value="{{sl.gone}}" hint-placeholder-val="{{ false }}"><span class="gone">${D10I.broken}<b>Image gone</b></span></sc-if>
+                </span>
+              </sc-for>
+            </div>
+            <span class="fcount tnum">{{det.counter}}</span>
+            <button type="button" class="farrow farrow--l show" aria-label="Previous slide" onClick="{{det.prev}}">${D10I.prev}</button>
+            <button type="button" class="farrow farrow--r show" aria-label="Next slide" onClick="{{det.next}}">${D10I.next}</button>
+          </div>
+          <div class="fdots" role="group" aria-label="Slides">
+            <sc-for list="{{det.slides}}" as="sl" hint-placeholder-count="6">
+              <button type="button" class="fdot {{sl.dotCls}}" aria-label="{{sl.label}}" aria-pressed="{{sl.pressed}}" onClick="{{sl.pick}}"></button>
+            </sc-for>
+          </div>
+        </div>
+        <div class="dright">
+          <header class="dhd">
+            <span class="fav" aria-hidden="true">${net("det", true)}</span>
+            <span class="fwho">
+              <span class="l1"><b title="{{det.handle}}">{{det.handle}}</b></span>
+              <span class="l2">{{det.tagsLine}}<sc-if value="{{det.hasMatch}}" hint-placeholder-val="{{ false }}"><span class="m tnum"> · {{det.matchText}}</span></sc-if></span>
+            </span>
+            <button type="button" class="dx" title="Close" aria-label="Close" onClick="{{closeDet}}">${D10I.close}</button>
+          </header>
+          <div class="dsheet {{sheetCls}}">
+          ${phone ? `<button type="button" class="dgrab" aria-label="{{sheetLabel}}" aria-expanded="{{sheetUp}}" onClick="{{sheetToggle}}"><span></span></button>` : ""}
+          <div class="dtabs" role="tablist">
+            <button type="button" class="dtab {{dtabCls.details}}" role="tab" aria-selected="{{dtabSel.details}}" onClick="{{dtabGo.details}}">Details</button>
+            <button type="button" class="dtab {{dtabCls.analysis}}" role="tab" aria-selected="{{dtabSel.analysis}}" onClick="{{dtabGo.analysis}}">Analysis</button>
+            <button type="button" class="dtab {{dtabCls.words}}" role="tab" aria-selected="{{dtabSel.words}}" onClick="{{dtabGo.words}}">Transcription</button>
+          </div>
+          <sc-if value="{{isDetails}}" hint-placeholder-val="{{ true }}">
+            <div class="dbody" role="tabpanel" aria-label="Details">
+              <div class="dstats">
+                <sc-for list="{{det.stats}}" as="n" hint-placeholder-count="3">
+                  <span class="dstat"><span>{{n.k}}</span><b class="tnum {{n.cls}}">{{n.v}}</b></span>
+                </sc-for>
+              </div>
+              <div class="drows">
+                <sc-for list="{{det.rows}}" as="r" hint-placeholder-count="3">
+                  <div class="drow"><span>{{r.k}}</span><b class="tnum {{r.cls}}">{{r.v}}</b></div>
+                </sc-for>
+              </div>
+              <p class="dcap"><b>{{det.handle}}</b>{{det.caption}}</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{isRead}}" hint-placeholder-val="{{ false }}">
+            <div class="dbody" role="tabpanel" aria-label="{{readLabel}}">
+              <sc-if value="{{anReadyWords}}" hint-placeholder-val="{{ false }}">
+                <div class="danh"><span class="n tnum">{{anCoverage}}</span></div>
+                <div>
+                  <sc-for list="{{anLines}}" as="l" hint-placeholder-count="6">
+                      <div class="dline"><span class="no tnum">{{l.no}}</span><span class="tx"><sc-if value="{{l.opening}}" hint-placeholder-val="{{ false }}"><span class="op">Opening slide</span></sc-if><span class="{{l.cls}}">{{l.text}}</span><sc-if value="{{l.hasVisual}}" hint-placeholder-val="{{ true }}"><span class="vis">{{l.visual}}</span></sc-if></span><sc-if value="{{l.hasRole}}" hint-placeholder-val="{{ true }}"><span class="pill pill--quiet role">{{l.role}}</span></sc-if></div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{anReadyAnalysis}}" hint-placeholder-val="{{ true }}">
+                <div class="danh"><span class="pill {{anStatusCls}}">{{anStatus}}</span><span class="n">{{anBy}}</span></div>
+                <div class="dacc {{acc.summary.cls}}">
+                  <button type="button" class="dacch" aria-expanded="{{acc.summary.expanded}}" onClick="{{acc.summary.toggle}}"><span class="t">Summary</span><span class="ddcaret">${D10I.caretDown}</span></button>
+                  <sc-if value="{{acc.summary.open}}" hint-placeholder-val="{{ false }}">
+                    <div class="daccb">
+                      <div class="dtags">
+                        <sc-for list="{{anTags}}" as="a" hint-placeholder-count="7">
+                          <span class="dtag"><span>{{a.k}}</span><span class="pill pill--quiet">{{a.v}}</span></span>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+                <div class="dacc {{acc.how.cls}}">
+                  <button type="button" class="dacch" aria-expanded="{{acc.how.expanded}}" onClick="{{acc.how.toggle}}"><span class="t">How it works</span><span class="ddcaret">${D10I.caretDown}</span></button>
+                  <sc-if value="{{acc.how.open}}" hint-placeholder-val="{{ false }}">
+                    <div class="daccb">
+                      <sc-for list="{{anNotes}}" as="a" hint-placeholder-count="5">
+                        <div class="dline"><span class="no wide">{{a.k}}</span><span class="tx">{{a.v}}</span></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{anHasPattern}}" hint-placeholder-val="{{ true }}">
+                <div class="dacc {{acc.pattern.cls}}">
+                  <button type="button" class="dacch" aria-expanded="{{acc.pattern.expanded}}" onClick="{{acc.pattern.toggle}}"><span class="t">Reusable pattern</span><span class="ddcaret">${D10I.caretDown}</span></button>
+                  <sc-if value="{{acc.pattern.open}}" hint-placeholder-val="{{ false }}">
+                    <div class="daccb">
+                      <span class="dsub">Keep</span>
+                      <ul class="dlist"><sc-for list="{{anKeep}}" as="k" hint-placeholder-count="4"><li>{{k.t}}</li></sc-for></ul>
+                      <span class="dsub">Limits</span>
+                      <ul class="dlist"><sc-for list="{{anLimits}}" as="k" hint-placeholder-count="2"><li>{{k.t}}</li></sc-for></ul>
+                    </div>
+                  </sc-if>
+                </div>
+                </sc-if>
+                <sc-if value="{{anHasAudience}}" hint-placeholder-val="{{ true }}">
+                <div class="dacc {{acc.audience.cls}}">
+                  <button type="button" class="dacch" aria-expanded="{{acc.audience.expanded}}" onClick="{{acc.audience.toggle}}"><span class="t">Audience response</span><span class="ddcaret">${D10I.caretDown}</span></button>
+                  <sc-if value="{{acc.audience.open}}" hint-placeholder-val="{{ false }}">
+                    <div class="daccb">
+                      <sc-if value="{{anAudienceThin}}" hint-placeholder-val="{{ false }}"><p class="dmuted">Too few comments to read</p></sc-if>
+                      <sc-if value="{{anAudienceFull}}" hint-placeholder-val="{{ true }}">
+                        <div class="dpills"><sc-for list="{{anThemes}}" as="k" hint-placeholder-count="3"><span class="pill pill--quiet">{{k.t}}</span></sc-for></div>
+                        <ul class="dlist"><sc-for list="{{anQuestions}}" as="k" hint-placeholder-count="2"><li>{{k.t}}</li></sc-for></ul>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                </div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{anNone}}" hint-placeholder-val="{{ false }}">
+                <div class="dnone">
+                  <span class="ic">${D10I.text}</span>
+                  <p>Not transcribed or analysed yet</p>
+                  <button type="button" class="ghost10" onClick="{{anRun}}">${D10I.spark}Transcribe and analyse</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{anWorking}}" hint-placeholder-val="{{ false }}">
+                <div class="work10" role="status">
+                  <b><span class="spin on">${I.busy}</span>{{anWorkNow}}</b>
+                  <span>{{anWorkDone}}</span>
+                </div>
+                <sc-if value="{{isWords}}" hint-placeholder-val="{{ false }}">
+                  <div class="danh"><span class="n tnum">{{anCoverage}}</span></div>
+                  <div>
+                    <sc-for list="{{anLines}}" as="l" hint-placeholder-count="2">
+                      <div class="dline"><span class="no tnum">{{l.no}}</span><span class="tx"><sc-if value="{{l.opening}}" hint-placeholder-val="{{ false }}"><span class="op">Opening slide</span></sc-if><span class="{{l.cls}}">{{l.text}}</span><sc-if value="{{l.hasVisual}}" hint-placeholder-val="{{ true }}"><span class="vis">{{l.visual}}</span></sc-if></span><sc-if value="{{l.hasRole}}" hint-placeholder-val="{{ true }}"><span class="pill pill--quiet role">{{l.role}}</span></sc-if></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{anBlocked}}" hint-placeholder-val="{{ false }}">
+                <div class="dsec">
+                  <h3 class="dsh">Analysis<span class="n"><span class="pill is-bad">Blocked</span></span></h3>
+                  <div class="fail10" role="status">
+                    <span class="ft">${D10I.warn}{{anBlockedText}}</span>
+                    <button type="button" class="btn2" onClick="{{anRun}}">${D10I.retry}Try again</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{anFailed}}" hint-placeholder-val="{{ false }}">
+                <div class="fail10" role="status">
+                  <span class="ft">${D10I.warn}{{anFailText}}</span>
+                  <button type="button" class="btn2" onClick="{{anRun}}">${D10I.retry}Retry</button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+          </div>
+          <footer class="dft">
+            ${votes("det")}
+            <button type="button" class="fbtn" title="{{det.saveLabel}}" aria-label="{{det.saveLabel}}" aria-pressed="{{det.savedOn}}" onClick="{{det.save}}"><sc-if value="{{det.unsaved}}" hint-placeholder-val="{{ true }}">${D10I.bookmark}</sc-if><sc-if value="{{det.saved}}" hint-placeholder-val="{{ false }}">${D10I.bookmarkOn}</sc-if></button>
+            <span class="sp"></span>
+            <button type="button" class="ghost10" onClick="{{det.view}}">${phone ? "" : D10I.link}View Post</button>
+            <button type="button" class="ghost10" onClick="{{det.use}}">${D10I.studio}Copy to Studio</button>
+          </footer>
+        </div>
+      </section>
+    </div>
+  </sc-if>
+  ${
+    phone
+      ? `<sc-if value="{{showFilters}}" hint-placeholder-val="{{ false }}"><div class="dscrim" aria-hidden="true" onClick="{{toggleFilters}}"></div>${filterPanel(true)}</sc-if>`
+      : ""
+  }`;
 
 const feedPanel = () => `
           <div class="fwrap">
             <div class="fcol">
               <sc-if value="{{showRes}}" hint-placeholder-val="{{ false }}">
                 <div class="fres" role="status">
-                  <span><b>{{resText}}</b><sc-if value="{{hasResNote}}" hint-placeholder-val="{{ false }}"><span class="n"> · {{resNote}}</span></sc-if></span>
-                  <sc-if value="{{showBack}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2" onClick="{{back}}">${I.backSm}Back to results</button></sc-if>
+                  <span class="busy"><sc-if value="{{resBusy}}" hint-placeholder-val="{{ false }}"><span class="spin on">${I.busy}</span></sc-if><span><b>{{resText}}</b><sc-if value="{{hasResNote}}" hint-placeholder-val="{{ false }}"><span class="n"> · {{resNote}}</span></sc-if></span></span>
+                </div>
+              </sc-if>
+              <sc-if value="{{showChips}}" hint-placeholder-val="{{ false }}">
+                <div class="fused" role="group" aria-label="Filters on this search">
+                  <sc-for list="{{usedFilters}}" as="u" hint-placeholder-count="2">
+                    <button type="button" class="fchip on fx" aria-label="{{u.aria}}" title="{{u.aria}}" onClick="{{u.remove}}"><span>{{u.label}}</span>${D10I.x}</button>
+                  </sc-for>
+                  <sc-if value="{{showClearFilters}}" hint-placeholder-val="{{ false }}"><button type="button" class="lnk10" onClick="{{clearFilters}}">Clear all</button></sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{showSearchFail}}" hint-placeholder-val="{{ false }}">
+                <div class="fail10" role="status">
+                  <span class="ft">${D10I.warn}{{searchFailText}}</span>
+                  <button type="button" class="btn2" onClick="{{searchRetry}}">${D10I.retry}Retry</button>
                 </div>
               </sc-if>
               <sc-if value="{{showCreators}}" hint-placeholder-val="{{ false }}">
@@ -940,6 +1528,12 @@ const feedPanel = () => `
                   </sc-for>
                 </div>
               </sc-if>
+              <sc-if value="{{showCaught}}" hint-placeholder-val="{{ false }}">
+                <div class="fnew" role="status"><span class="ic">${D10I.check}</span>No new carousels</div>
+              </sc-if>
+              <sc-if value="{{showNewPosts}}" hint-placeholder-val="{{ false }}">
+                <div class="fnew"><button type="button" class="ghost10" onClick="{{loadNew}}">{{newPostsText}}</button></div>
+              </sc-if>
               <sc-for list="{{feed}}" as="f" hint-placeholder-count="6">${feedCard()}
               </sc-for>
               <sc-if value="{{showFeedEmpty}}" hint-placeholder-val="{{ false }}">
@@ -950,6 +1544,12 @@ const feedPanel = () => `
               </sc-if>
               <sc-if value="{{showMore}}" hint-placeholder-val="{{ false }}">
                 <div class="fmore" role="status"><b><span class="spin on">${I.busy}</span>Loading more</b></div>
+              </sc-if>
+              <sc-if value="{{showOlder}}" hint-placeholder-val="{{ false }}">
+                <div class="folder" role="status">
+                  <span class="fnew"><span class="ic">${D10I.check}</span>No more new carousels</span>
+                  <button type="button" class="ghost10" onClick="{{seeOlder}}">See older carousels</button>
+                </div>
               </sc-if>
               <sc-if value="{{showEnd}}" hint-placeholder-val="{{ false }}">
                 <div class="fend">{{endText}}</div>
@@ -1193,6 +1793,12 @@ function vals(init) {
     var QUEUED_POSTS = ${JSON.stringify(QUEUED_POSTS)};
     var TYPES = ${JSON.stringify(TYPES)};
     var CONFS = ${JSON.stringify(CONFS)};
+    var CHANNELS = ${JSON.stringify(CHANNELS)};
+    var FILTERS = ${JSON.stringify(FILTERS)};
+    var ANALYSIS = ${JSON.stringify(ANALYSIS)};
+    var ANALYSIS_POOL = ${JSON.stringify(ANALYSIS_POOL)};
+    var ANALYSIS_PART = ${JSON.stringify(ANALYSIS_PART)};
+    var ANALYSIS_THIN = ${JSON.stringify(ANALYSIS_THIN)};
 
     var firstRun = ${init.empty === "first"};
     /* "Every digest analysed" is the all-clear: the accent leaves the screen
@@ -1206,6 +1812,12 @@ function vals(init) {
     var moreState = ${JSON.stringify(init.more || null)};
     var arrowsOn = ${init.arrows === true};
     var feedTake = ${init.take || 0};
+    /* Round three's review moments: a search on its way or failed, and what
+       the library holds on the open post (ready, part, none, working, failed). */
+    var searchState = ${JSON.stringify(init.searchState || null)};
+    var anState = ${JSON.stringify(init.analysis || "ready")};
+    var feedState = ${JSON.stringify(init.feedState || null)};
+    var anScrolled = ${init.anScrolled === true};
 
     var byId = function (list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; };
 
@@ -1214,9 +1826,17 @@ function vals(init) {
     var creator = s.t10creator || null;
     var searching = !!q && !creator;
     var noMatch = searching && q === NO_MATCH_Q;
-    var one = s.t10one || null;
+    /* The filters that are on, and how the search reads the library. */
+    var filt = s.t10f || {};
+    var filtCount = 0;
+    FILTERS.forEach(function (g) { var v = filt[g.id]; if (v && v !== g.opts[0]) filtCount += 1; });
+    var channel = CHANNELS.filter(function (c) { return c.id === s.t10ch; })[0] || CHANNELS[0];
     /* One query finds creators and carousels alike. */
     var found = !searching ? null : q === ACCOUNTS.q ? ACCOUNTS : q === SEARCH.q ? SEARCH : { total: 0, hits: [], rows: [] };
+    /* Filters narrow what a search found. */
+    if (found && filtCount && found.hits.length) found = { total: 5, hits: found.hits.slice(0, 5), rows: [] };
+    var searchBusy = searching && searchState === "loading";
+    var searchFailed = searching && searchState === "failed";
 
     /* ── The feed ── */
     var savedIds = s.t10saved || [];
@@ -1233,16 +1853,17 @@ function vals(init) {
       cards = CREATOR.cards.map(function (id) { return Object.assign({}, byId(FEED, id), { handle: creator, net: CREATOR.net, id: id + "-c" }); });
     } else if (searching) {
       found.hits.forEach(function (h) { matchOf[h.id] = h.slide; });
-      /* The results are a grid; a tile opens that post alone in the column. */
-      cards = one ? [byId(FEED, one)] : [];
+      /* The results are a grid; a tile opens that post in the details window. */
+      cards = [];
     } else if (tab === "saved") {
-      cards = savedIds.map(function (id) { return byId(FEED, id); }).filter(Boolean);
+      cards = [];
     } else {
       cards = FEED.slice();
     }
     if (feedTake) cards = cards.slice(0, feedTake);
 
-    var feed = cards.map(function (f, idx) {
+    var votesOf = s.t10votes || {};
+    var mkPost = function (f, idx) {
       var baseId = f.id.replace(/-c$/, "");
       var n = f.slides.length;
       var at = slideAt[f.id] != null ? slideAt[f.id] : (matchOf[baseId] ? matchOf[baseId] - 1 : 0);
@@ -1258,7 +1879,21 @@ function vals(init) {
         date: f.date || "",
         tagsLine: f.tags.join(" \\u00b7 "),
         hook: f.hook,
-        meta: f.views + " views \\u00b7 " + f.likes + " likes \\u00b7 " + f.saves + " saves",
+        /* A number the library does not hold is left out, never shown as 0. */
+        meta: [f.views && f.views + " views", f.likes && f.likes + " likes", f.saves && f.saves + " saves"].filter(Boolean).join(" \\u00b7 "),
+        hasMeta: !!(f.views || f.likes || f.saves),
+        isUp: votesOf[baseId] === "up", notUp: votesOf[baseId] !== "up", upOn: votesOf[baseId] === "up" ? "true" : "false",
+        isDown: votesOf[baseId] === "down", notDown: votesOf[baseId] !== "down", downOn: votesOf[baseId] === "down" ? "true" : "false",
+        up: function () { var v = Object.assign({}, votesOf); if (v[baseId] === "up") delete v[baseId]; else v[baseId] = "up"; self.setState({ t10votes: v }); },
+        down: function () { var v = Object.assign({}, votesOf); if (v[baseId] === "down") delete v[baseId]; else v[baseId] = "down"; self.setState({ t10votes: v }); },
+        details: function () { self.setState({ t10det: f.id, t10dtab: "details" }); },
+        caption: f.caption || f.hook,
+        stats: [["Views", f.views], ["Likes", f.likes], ["Saves", f.saves]].map(function (p) { return { k: p[0], v: p[1] || "Unknown", cls: p[1] ? "" : "unk" }; }),
+        rows: [
+          { k: "Posted", v: f.date || "Unknown", cls: f.date ? "" : "unk" },
+          { k: "Platform", v: f.net === "tiktok" ? "TikTok" : "Instagram", cls: "" },
+          { k: "Slides", v: String(n), cls: "" }
+        ],
         counter: (at + 1) + " / " + n,
         arrowCls: arrowsOn && idx === 0 ? "show" : "",
         hasMatch: !!matchOf[baseId],
@@ -1297,27 +1932,73 @@ function vals(init) {
             "Opens the Studio on \\u201c" + f.hook + "\\u201d, to build a template the same way \\u00b7 D6");
         }
       };
+    };
+    var feed = cards.map(mkPost);
+
+    /* The details window: the open post, built the way a feed post is. */
+    var detId = s.t10det || null;
+    var detF = detId ? byId(FEED, detId.replace(/-c$/, "")) : null;
+    var det = mkPost(detF ? Object.assign({}, detF, { id: detId }) : FEED[0], -1);
+    var dtab = s.t10dtab === "analysis" || s.t10dtab === "words" ? s.t10dtab : "details";
+    var an = detF ? ANALYSIS[detF.id] || null : null;
+    var anLinesAll = (detF ? detF.slides : []).map(function (img, i) {
+      var b = an ? an.beats[i] : (i === 0 ? Object.assign({}, ANALYSIS_POOL[0], { copy: detF.hook }) : ANALYSIS_POOL[i % ANALYSIS_POOL.length]);
+      b = b || {};
+      return { no: "Slide " + (i + 1), opening: i === 0, text: b.copy || "No words on this slide", cls: b.copy ? "" : "none",
+        role: b.role || "", hasRole: !!b.role, visual: b.visual || "", hasVisual: !!b.visual };
     });
+    /* Part-read and still-working decks show the slides read so far. */
+    var anPart = anState === "part";
+    var anShown = anState === "working" ? 2 : anPart ? Math.min(ANALYSIS_PART.slides, anLinesAll.length) : anLinesAll.length;
+    var anTags = an ? an.tags : detF ? [{ k: "Topic", v: detF.tags[0] }, { k: "Hook", v: detF.tags[detF.tags.length - 1] }] : [];
+    var anNotes = an ? an.notes : [];
+    /* A row the library has nothing for is left out, never shown blank: the
+       newer run's analyses carry fewer rows and no pattern or audience read. */
+    var anThin = anState === "thin";
+    if (anThin) {
+      anTags = anTags.filter(function (t) { return ANALYSIS_THIN.tags.indexOf(t.k) >= 0; });
+      anNotes = anNotes.filter(function (t) { return ANALYSIS_THIN.notes.indexOf(t.k) >= 0; });
+    }
+    var asRows = function (list) { return (list || []).map(function (t) { return { t: t }; }); };
+    var anKeep = an && !anThin ? asRows(an.keep) : [];
+    var anLimits = an && !anThin ? asRows(an.limits) : [];
+    /* A part-read deck is usually one whose comments were thin too. */
+    var anThemes = an && !anThin && !anPart ? asRows(an.themes) : [];
+    var anQuestions = an && !anThin && !anPart ? asRows(an.questions) : [];
 
     /* The grid: one tile per carousel found, the slide that matched. */
-    var grid = (searching && !one ? found.hits : []).map(function (h) {
+    var grid = (searching && !searchBusy && !searchFailed ? found.hits : []).map(function (h) {
       var f = byId(FEED, h.id);
       return {
         cls: "ps-" + f.slides[h.slide - 1],
         label: f.handle + ", " + f.hook + ", matches on slide " + h.slide,
         count: f.slides.length + " slides",
-        open: function () { self.setState({ t10one: h.id, t10slide: {} }); }
+        open: function () { self.setState({ t10det: h.id, t10dtab: "details", t10slide: {} }); }
       };
     });
+    /* Saved is a grid too (Garreth, 2026-09-19), the way search results are:
+       each tile the post's cover, newest saved first, opening the details
+       window, which is also where a post is unsaved. */
+    if (tab === "saved" && !searching && !creator) grid = savedIds.map(function (id) {
+      var f = byId(FEED, id);
+      return { cls: "ps-" + f.slides[0], label: f.handle + ", " + f.hook, count: f.slides.length + " slides",
+        open: function () { self.setState({ t10det: id, t10dtab: "details" }); } };
+    });
+    /* A search on its way: the tiles it will fill. */
+    if (searchBusy) grid = [0, 1, 2, 3, 4, 5].map(function () { return { cls: "is-skel", label: "Loading", count: "", open: function () {} }; });
 
     /* What the search found, in words. */
     var resText = "", resNote = "", showRes = false;
-    var accs = searching && found.rows && !one ? found.rows : [];
+    var accs = searching && found.rows && !searchBusy && !searchFailed ? found.rows : [];
     if (creator) { showRes = true; resText = CREATOR.decks + " carousels by " + creator; }
-    else if (searching && one) { showRes = true; resText = "One of " + found.total + " carousels for \\u201c" + q + "\\u201d"; }
+    else if (searchBusy) { showRes = true; resText = "Searching for \\u201c" + q + "\\u201d"; }
+    else if (searchFailed) { showRes = false; }
     else if (searching) {
       showRes = true;
       if (noMatch) resText = "Nothing matches \\u201c" + q + "\\u201d";
+      /* A search returns 25 at most, so a full page is "the 25 best matches",
+         never a total the library was not asked for (the handover's rule). */
+      else if (found.total >= 25) resText = (accs.length ? accs.length + " accounts and the " : "The ") + "25 best matches for \\u201c" + q + "\\u201d";
       else resText = (accs.length ? accs.length + " accounts and " : "") + found.total + " carousels for \\u201c" + q + "\\u201d";
       resNote = noMatch ? "" : "best match first";
     }
@@ -1328,12 +2009,12 @@ function vals(init) {
         isInsta: c.net === "instagram",
         handle: c.handle,
         stats: c.decks + " carousels \\u00b7 top " + c.top + " views",
-        pick: function () { self.setState({ t10creator: c.handle, t10q: "", t10one: null, t10slide: {} }); }
+        pick: function () { self.setState({ t10creator: c.handle, t10q: "", t10slide: {} }); }
       };
     });
 
     var feedEmptyText = "";
-    if (!feed.length && !creators.length && !grid.length) {
+    if (!feed.length && !creators.length && !grid.length && !searchFailed) {
       if (searching) feedEmptyText = "Nothing in the library matches";
       else if (tab === "saved") feedEmptyText = "Nothing saved yet";
       else feedEmptyText = "No carousels yet";
@@ -1346,7 +2027,7 @@ function vals(init) {
         handle: f.handle,
         thCls: "ps-" + f.slides[0],
         stats: f.views + " views \\u00b7 " + f.likes + " likes",
-        open: function () { self.setState({ t10tab: "saved", t10q: "", t10creator: null }); }
+        open: function () { self.setState({ t10det: id, t10dtab: "details" }); }
       };
     });
 
@@ -1483,7 +2164,7 @@ function vals(init) {
     ["feed", "digests", "knowledge", "saved"].forEach(function (id) {
       railCls[id] = tab === id ? "on" : "";
       railCur[id] = tab === id ? "page" : "false";
-      tabGo[id] = function () { self.setState({ t10tab: id, t10dd: false, t10q: "", t10creator: null, t10one: null }); };
+      tabGo[id] = function () { self.setState({ t10tab: id, t10dd: false, t10q: "", t10creator: null, t10filt: false, t10chdd: false }); };
     });
     /* A search's results show in the column whichever section the bar was
        used from; the feed is the column with the Recent saves beside it. */
@@ -1509,12 +2190,131 @@ function vals(init) {
         if (e.key !== "Enter") return;
         var typed = ((e.target && e.target.value) || "").trim();
         self.note("Searches the library's carousels by words and meaning, and its creators by handle");
-        if (typed) self.setState({ t10q: typed, t10creator: null, t10one: null, t10slide: {} });
+        if (typed) self.setState({ t10q: typed, t10creator: null, t10slide: {}, t10filt: false, t10chdd: false });
       },
       showClear: !!q || !!creator,
-      clear: function () { self.setState({ t10q: "", t10creator: null, t10one: null, t10tab: "feed", t10slide: {} }); },
-      showBack: !!one,
-      back: function () { self.setState({ t10one: null, t10slide: {} }); },
+      clear: function () { self.setState({ t10q: "", t10creator: null, t10tab: "feed", t10slide: {} }); },
+      resBusy: searchBusy,
+      showSearchFail: searchFailed,
+      searchFailText: "The search timed out",
+      searchRetry: function () { self.note("Runs the same search again"); },
+
+      /* How the search reads the library, and the filters. */
+      chLabel: channel.label,
+      chAria: "Search by: " + channel.label,
+      chCls: s.t10chdd ? "on" : "",
+      chExpanded: s.t10chdd ? "true" : "false",
+      toggleCh: function () { self.setState({ t10chdd: !s.t10chdd, t10filt: false }); },
+      chOpts: CHANNELS.map(function (c) {
+        var on = c.id === channel.id;
+        return { label: c.label, cls: on ? "on" : "", selected: on ? "true" : "false", isSelected: on, pick: function () { self.setState({ t10ch: c.id, t10chdd: false }); } };
+      }),
+      showFilters: !!s.t10filt,
+      filtersExpanded: s.t10filt ? "true" : "false",
+      toggleFilters: function () { self.setState({ t10filt: !s.t10filt, t10chdd: false }); },
+      hasFilters: filtCount > 0,
+      filterCount: String(filtCount),
+      filterBtnCls: filtCount ? "has" : "",
+      filterBtnLabel: filtCount ? "Filters, " + filtCount + " on" : "Filters",
+      fGroups: FILTERS.map(function (g) {
+        var cur = filt[g.id] || g.opts[0];
+        var open = s.t10fdd === g.id;
+        return {
+          label: g.label,
+          value: cur,
+          aria: g.label + ": " + cur,
+          btnCls: cur !== g.opts[0] ? "has" : "",
+          ddCls: open ? "on" : "",
+          expanded: open ? "true" : "false",
+          toggle: function () { self.setState({ t10fdd: open ? null : g.id }); },
+          opts: g.opts.map(function (o) {
+            var on = cur === o;
+            return { label: o, on: on, cls: on ? "on" : "", pressed: on ? "true" : "false",
+              pick: function () { var next = Object.assign({}, filt); next[g.id] = o; self.setState({ t10f: next, t10fdd: null }); } };
+          })
+        };
+      }),
+      clearFilters: function () { self.setState({ t10f: {}, t10fdd: null }); },
+
+      /* The feed holds what this person has not seen. With nothing new it
+         shows the last ones seen under a small line that says so; when new
+         ones land while the page is open, a quiet button brings them in
+         rather than moving the posts under the reader. */
+      showCaught: feedState === "caught" && tab === "feed" && !searching && !creator,
+      showNewPosts: feedState === "new" && tab === "feed" && !searching && !creator,
+      newPostsText: "6 new carousels",
+      loadNew: function () { self.note("Puts the new carousels at the top of the feed"); },
+      applyFilters: function () { self.setState({ t10filt: false }); self.note("Runs the search again with these filters"); },
+      /* The filters this search ran with, each one removable. */
+      showChips: searching && filtCount > 0,
+      usedFilters: FILTERS.filter(function (g) { return filt[g.id] && filt[g.id] !== g.opts[0]; }).map(function (g) {
+        return {
+          label: filt[g.id],
+          aria: "Remove the " + g.label.toLowerCase() + " filter, " + filt[g.id],
+          remove: function () {
+            var next = Object.assign({}, filt); delete next[g.id];
+            self.setState({ t10f: next }); self.note("Runs the search again without that filter");
+          }
+        };
+      }),
+      showClearFilters: filtCount > 1,
+
+      /* The phone's sheet: up over the slides, or resting under them. */
+      sheetCls: s.t10up ? "is-up" : "",
+      sheetUp: s.t10up ? "true" : "false",
+      sheetLabel: s.t10up ? "Show the slides" : "Show more",
+      sheetToggle: function () { self.setState({ t10up: !s.t10up }); },
+      /* The details window. */
+      showDet: !!detF,
+      det: det,
+      closeDet: function () { self.setState({ t10det: null, t10up: false }); },
+      dtabCls: { details: dtab === "details" ? "on" : "", analysis: dtab === "analysis" ? "on" : "", words: dtab === "words" ? "on" : "" },
+      dtabSel: { details: dtab === "details" ? "true" : "false", analysis: dtab === "analysis" ? "true" : "false", words: dtab === "words" ? "true" : "false" },
+      dtabGo: { details: function () { self.setState({ t10dtab: "details" }); }, analysis: function () { self.setState({ t10dtab: "analysis" }); }, words: function () { self.setState({ t10dtab: "words" }); } },
+      isDetails: dtab === "details",
+      /* Analysis and Transcription are two tabs over one reading (Garreth,
+         2026-09-19): they share its states (nothing yet, on its way, blocked,
+         failed), and each shows its own half once it is there. */
+      isRead: dtab === "analysis" || dtab === "words",
+      isWords: dtab === "words",
+      readLabel: dtab === "words" ? "Transcription" : "Analysis",
+      anReadyAnalysis: (anState === "ready" || anState === "part" || anState === "thin") && dtab === "analysis",
+      anReadyWords: (anState === "ready" || anState === "part" || anState === "thin") && dtab === "words",
+      /* The groups: Summary starts open, the others shut. */
+      acc: (function () {
+        var openNow = s.t10acc || { summary: true };
+        var out = {};
+        ["summary", "how", "pattern", "audience"].forEach(function (id) {
+          var on = !!openNow[id];
+          out[id] = { open: on, cls: on ? "on" : "", expanded: on ? "true" : "false",
+            toggle: function () { var next = Object.assign({}, openNow); next[id] = !on; self.setState({ t10acc: next }); } };
+        });
+        return out;
+      })(),
+      anHasPattern: anKeep.length > 0,
+      anKeep: anKeep,
+      anLimits: anLimits,
+      anHasAudience: !!an && !anThin,
+      anAudienceFull: anThemes.length > 0,
+      anAudienceThin: !!an && !anThin && anThemes.length === 0,
+      anThemes: anThemes,
+      anQuestions: anQuestions,
+      anNone: anState === "none",
+      anWorking: anState === "working",
+      anFailed: anState === "failed",
+      anBlocked: anState === "blocked",
+      anBlockedText: "The slides could not be fetched",
+      anLines: anLinesAll.slice(0, anShown),
+      anCoverage: anState === "ready" ? "All " + anLinesAll.length + " slides read" : anShown + " of " + anLinesAll.length + " slides read",
+      anBy: an && an.read ? "Read by the model \\u00b7 " + an.read : "Read by the model",
+      anTags: anTags,
+      anNotes: anNotes,
+      anStatus: anPart ? "Partial" : "Complete",
+      anStatusCls: anPart ? "is-wait" : "",
+      anWorkNow: "Reading slide 3 of " + anLinesAll.length,
+      anWorkDone: "Saved to this carousel as it goes",
+      anFailText: "The analysis failed",
+      anRun: function () { self.note("Queues this carousel for the analysis worker and fills the tab in as the slides are read; the result is kept on the carousel"); },
       showGrid: grid.length > 0,
       grid: grid,
 
@@ -1535,6 +2335,12 @@ function vals(init) {
       feedEmptyText: feedEmptyText,
       showMore: moreState === "loading" && feed.length > 0,
       showEnd: moreState === "end" && feed.length > 0,
+      /* Seen means on the screen for about a second (Garreth, 2026-09-18).
+         After the last unseen post the feed says so and offers the ones
+         already seen, most recently seen first, in the same pages of twenty;
+         "That's every carousel" is the end of those. */
+      showOlder: moreState === "older" && feed.length > 0,
+      seeOlder: function () { self.note("Carries on into the carousels already seen, most recently seen first"); },
       endText: "That\\u2019s every carousel",
 
       hasDigests: !firstRun,
@@ -1602,7 +2408,8 @@ function vals(init) {
 
 export function trendsScreen({ init = {}, tall = 0 } = {}) {
   const full = {
-    tab: "feed", q: "", creator: null, one: null, saved: ["f4", "f2", "f6"], slide: {},
+    tab: "feed", q: "", creator: null, saved: ["f4", "f2", "f6"], slide: {},
+    det: null, dtab: "details", acc: { summary: true }, up: false, votes: { f2: "up" }, filt: false, f: {}, fdd: null, ch: "meaning", chdd: false,
     open: null, type: "all", conf: "any", dd: false, empty: null, allDone: false, working: false, pending: true,
     ...init,
   };
@@ -1614,11 +2421,22 @@ export function trendsScreen({ init = {}, tall = 0 } = {}) {
     /* The phone's floating bar rides over the column, so it is drawn outside
        the page's scroll. */
     colOverlay: (phone) => (phone ? floatingNav() : ""),
+    /* The details window covers the whole app, menu included. */
+    appOverlay: (phone) => detailsWindow(phone),
     state: {
       t10tab: full.tab,
       t10q: full.q,
       t10creator: full.creator,
-      t10one: full.one,
+      t10det: full.det,
+      t10dtab: full.dtab,
+      t10acc: full.acc,
+      t10up: !!full.up,
+      t10votes: full.votes,
+      t10filt: !!full.filt,
+      t10f: full.f,
+      t10fdd: full.fdd,
+      t10ch: full.ch,
+      t10chdd: !!full.chdd,
       t10saved: full.saved,
       t10slide: full.slide,
       t10open: full.open,
@@ -1627,7 +2445,7 @@ export function trendsScreen({ init = {}, tall = 0 } = {}) {
       t10dd: !!full.dd,
     },
     /* Opened from the menu: the feed, nothing searched. */
-    enter: { t10tab: "feed", t10q: "", t10creator: null, t10one: null, t10slide: {}, t10open: null, t10type: "all", t10conf: "any", t10dd: false },
+    enter: { t10tab: "feed", t10q: "", t10creator: null, t10det: null, t10acc: { summary: true }, t10up: false, t10filt: false, t10fdd: null, t10chdd: false, t10slide: {}, t10open: null, t10type: "all", t10conf: "any", t10dd: false },
     vals: vals(full),
   };
 }
@@ -1681,16 +2499,47 @@ function build(OUT) {
   fs.mkdirSync(OUT, { recursive: true });
   copyTrendsImages(OUT);
 
+  /* Round three (2026-09-18): the top row. Dark first; the light boards of
+     this row are built once Garreth approves the dark ones (R3_LIGHT). */
+  const R3 = [
+    { file: "Filters.dc.html", title: "D10 · Round 3 · The filter panel open, two filters on · Desktop", init: { q: SEARCH.q, filt: true, f: { topic: "Eye care", views: "100k and over" } } },
+    { file: "Filtered.dc.html", title: "D10 · Round 3 · Results with the filters used over them, each with its X · Desktop", init: { q: SEARCH.q, f: { topic: "Eye care", views: "100k and over" } } },
+    { file: "FilterTopic.dc.html", title: "D10 · Round 3 · The Topic dropdown open · Desktop", init: { q: SEARCH.q, filt: true, fdd: "topic", f: { topic: "Eye care", views: "100k and over" } } },
+    { file: "SearchType.dc.html", title: "D10 · Round 3 · How the search reads the library · Desktop", init: { q: SEARCH.q, chdd: true } },
+    { file: "Searching.dc.html", title: "D10 · Round 3 · A search on its way · Desktop", init: { q: SEARCH.q, searchState: "loading" } },
+    { file: "SearchFailed.dc.html", title: "D10 · Round 3 · The search timed out: Retry · Desktop", init: { q: SEARCH.q, searchState: "failed" } },
+    { file: "Details.dc.html", title: "D10 · Round 3 · The details window, from a tile · Desktop", init: { q: SEARCH.q, det: "f4" } },
+    { file: "Analysis.dc.html", title: "D10 · Round 3 · Analysis: transcribed and analysed · Desktop", init: { q: SEARCH.q, det: "f4", dtab: "analysis", votes: { f4: "up" }, saved: ["f4", "f2", "f6"] } },
+    { file: "AnalysisMore.dc.html", title: "D10 · Round 3 · Analysis with Reusable pattern and Audience response opened · Desktop", init: { q: SEARCH.q, det: "f4", dtab: "analysis", acc: { pattern: true, audience: true }, votes: { f4: "up" } } },
+    { file: "AnalysisWords.dc.html", title: "D10 · Round 3 · The Transcription tab · Desktop", init: { q: SEARCH.q, det: "f4", dtab: "words", votes: { f4: "up" } } },
+    { file: "AnalysisPartial.dc.html", title: "D10 · Round 3 · Analysis: part-read, every row there, fewer slides · Desktop", init: { q: SEARCH.q, det: "f4", dtab: "analysis", analysis: "part" } },
+    { file: "AnalysisThin.dc.html", title: "D10 · Round 3 · Analysis from the newer run: fewer rows, nothing blank · Desktop", init: { q: SEARCH.q, det: "f4", dtab: "analysis", analysis: "thin" } },
+    { file: "NotAnalysed.dc.html", title: "D10 · Round 3 · Analysis: nothing yet, and the button · Desktop", init: { det: "f1", dtab: "analysis", analysis: "none" } },
+    { file: "Analysing.dc.html", title: "D10 · Round 3 · Transcription: on its way, filling in · Desktop", init: { det: "f1", dtab: "words", analysis: "working" } },
+    { file: "AnalysisBlocked.dc.html", title: "D10 · Round 3 · Analysis: blocked, the slides could not be fetched · Desktop", init: { det: "f1", dtab: "analysis", analysis: "blocked" } },
+    { file: "AnalysisFailed.dc.html", title: "D10 · Round 3 · Analysis: failed, Retry · Desktop", init: { det: "f1", dtab: "analysis", analysis: "failed" } },
+    { file: "PhoneDetails.dc.html", title: "D10 · Round 3 · The details window · Phone", phone: true, init: { q: SEARCH.q, det: "f4" } },
+    { file: "PhoneAnalysisUp.dc.html", title: "D10 · Round 3 · The sheet scrolled up over the slides: Analysis · Phone", phone: true, init: { q: SEARCH.q, det: "f4", dtab: "analysis", up: true } },
+    { file: "PhoneWordsUp.dc.html", title: "D10 · Round 3 · The sheet scrolled up over the slides: Transcription · Phone", phone: true, init: { q: SEARCH.q, det: "f4", dtab: "words", up: true } },
+    { file: "PhoneFilters.dc.html", title: "D10 · Round 3 · The filter sheet · Phone", phone: true, init: { q: SEARCH.q, filt: true, f: { topic: "Eye care", views: "100k and over" } } },
+    { file: "PhoneFiltered.dc.html", title: "D10 · Round 3 · Results with the filters used over them · Phone", phone: true, init: { q: SEARCH.q, f: { topic: "Eye care", views: "100k and over" } } },
+    { file: "EndOfNew.dc.html", title: "D10 · Round 3 · The end of what is new: See older carousels · Desktop", init: { more: "older", take: 2 }, tall: 1960 },
+    { file: "Caught.dc.html", title: "D10 · Round 3 · The feed with nothing new: the last ones seen · Desktop", init: { feedState: "caught" } },
+    { file: "NewPosts.dc.html", title: "D10 · Round 3 · New carousels landed while the feed was open · Desktop", init: { feedState: "new" } },
+  ].map((b, col) => ({ ...b, r3: true, row: 0, col }));
+  const R3_LIGHT = true; /* dark approved by Garreth, 2026-09-19 */
+
   const BOARDS = [
+    ...R3,
     /* The feed. */
     { file: "Main.dc.html", title: "D10 · Trends: the feed · Desktop", init: {}, row: 0, col: 0 },
     { file: "Paged.dc.html", title: "D10 · A post on its third slide, saved, with the arrows · Desktop", init: { slide: { f1: 2 }, arrows: true, saved: ["f1", "f4", "f2", "f6"] }, row: 0, col: 1 },
-    { file: "Saved.dc.html", title: "D10 · Saved: the saved posts, newest first · Desktop", init: { tab: "saved" }, row: 1, col: 4 },
+    { file: "Saved.dc.html", title: "D10 · Saved: a grid of the saved posts, newest first · Desktop", init: { tab: "saved" }, row: 1, col: 4 },
     { file: "NothingSaved.dc.html", title: "D10 · The feed with nothing saved yet · Desktop", init: { saved: [] }, row: 1, col: 5 },
     { file: "PhoneSaved.dc.html", title: "D10 · Saved · Phone", phone: true, init: { tab: "saved" }, row: 1, col: 6 },
     { file: "ImageGone.dc.html", title: "D10 · A slide whose link has died: the post stays · Desktop", init: { gone: "f1" }, row: 0, col: 2 },
-    { file: "More.dc.html", title: "D10 · The next twenty loading · Desktop", init: { more: "loading", take: 2 }, tall: 1700, row: 0, col: 3 },
-    { file: "End.dc.html", title: "D10 · The end of the library · Desktop", init: { more: "end", take: 2 }, tall: 1700, row: 0, col: 4 },
+    { file: "More.dc.html", title: "D10 · The next twenty loading · Desktop", init: { more: "loading", take: 2 }, tall: 1960, row: 0, col: 3 },
+    { file: "End.dc.html", title: "D10 · The end of the library · Desktop", init: { more: "end", take: 2 }, tall: 1960, row: 0, col: 4 },
     /* D6's own screen, on this canvas so D10's reviewer can see where Use as
        reference lands without opening D6's. */
     { file: "Studio.dc.html", title: "D10 · Copy to Studio: the Studio on a reference with no analysis · Desktop", studio: true, init: {}, row: 0, col: 5 },
@@ -1698,7 +2547,6 @@ function build(OUT) {
     { file: "PhoneSearch.dc.html", title: "D10 · Carousels found for a search · Phone", phone: true, init: { q: SEARCH.q }, row: 0, col: 7 },
     /* Search. */
     { file: "Search.dc.html", title: "D10 · Carousels found for a search, as a grid · Desktop", init: { q: SEARCH.q }, row: 1, col: 0 },
-    { file: "SearchOpen.dc.html", title: "D10 · A tile opened: the post alone, with the way back · Desktop", init: { q: SEARCH.q, one: "f4" }, row: 1, col: 7 },
     { file: "Accounts.dc.html", title: "D10 · A search that found accounts and carousels · Desktop", init: { q: ACCOUNTS.q }, row: 1, col: 1 },
     { file: "Creator.dc.html", title: "D10 · One creator's carousels · Desktop", init: { creator: CREATOR.handle }, row: 1, col: 2 },
     { file: "NoMatches.dc.html", title: "D10 · A search that found nothing · Desktop", init: { q: NO_MATCH_Q }, row: 1, col: 3 },
@@ -1713,6 +2561,9 @@ function build(OUT) {
     { file: "PhoneDigest.dc.html", title: "D10 · An analysed digest · Phone", phone: true, init: { tab: "digests", allDone: true }, row: 2, col: 7 },
     { file: "PhoneKnowledge.dc.html", title: "D10 · Knowledge · Phone", phone: true, init: { tab: "knowledge" }, row: 2, col: 8 },
   ];
+
+  /* Round three took the top row; everything approved before it moves down one. */
+  for (const b of BOARDS) if (!b.r3) b.row += 1;
 
   /* Rows are laid out from the tallest board in each one, so a board that
      grows cannot land on its neighbour (D8's rule). */
@@ -1739,6 +2590,7 @@ function build(OUT) {
   const artboards = [];
   for (const light of [false, true]) {
     for (const b of BOARDS) {
+      if (light && b.r3 && !R3_LIGHT) continue;
       const phone = !!b.phone;
       const file = light ? b.file.replace(".dc.html", "Light.dc.html") : b.file;
       const screen = b.studio ? studioBoard() : trendsScreen({ init: b.init, tall: b.tall || 0 });
@@ -1759,7 +2611,7 @@ function build(OUT) {
   }
 
   const tryNote =
-    "Round two, fifth cut (2026-09-17, after Garreth's fourth review): the page is a feed first, laid out the way a social feed is, and only the posts scroll. Clickable. The rail on the left (the floating bar on the phone) switches between Feed, Digests, Knowledge and Saved; on a post, a swipe across the slides pages them, as do the dots and the arrows; the bookmark saves it. Typing does nothing on a board: a search is a round trip, so it runs on Enter, and the boards in the second row show what comes back.\n\nEach post is one carousel another creator published, never ours: who posted it and when, the topics under the handle, View Post opposite them (it opens the post on its platform), the slides, then the numbers at the left and, together at the right, Copy to Studio (it opens the Studio on that deck) and Save. Both are quiet outlines; nothing on the feed is lit. The handle and the hook sit right under.\n\nNo filters and no label: the feed is one list, best-scored first. A date shows on a post only when there is one. Videos never reach the feed; this app makes carousels.\n\nOne search box, as wide as the posts, finds creators and carousels alike: accounts that match are listed first, and the carousels are a grid three across, each tile the slide that matched. Pressing a tile opens that post alone in the column, with Back to results; Clear brings the feed back. Pressing an account shows that creator's carousels.\n\nSaved: the panel to the right of the feed holds the last five saves, thumbnail first, and View all saves opens the Saved section, where the saved posts sit in the feed's layout, newest saved first. The phone has the Saved section on its bar and no panel.\n\nA slide whose link has died says Image gone and nothing else about the post changes. The two tall boards show the next twenty loading and the end of the library.\n\nOn the phone the search bar sits beside the title, the image runs edge to edge, the posts snap post to post, and the four sections float at the foot of the screen.\n\nDigests and Knowledge are as approved on 2026-09-16, one rail button along: Analyse lit only on the newest digest nothing has been run on, Accept and Reject on Knowledge only. The Studio board is D6's own screen, where Copy to Studio lands.\n\nThe content is invented: the handles and links go nowhere, the hooks and numbers are made up, and the reference decks are the ones D6 already keeps, so the same titles show in both.";
+    "ROUND THREE (2026-09-18), the top row, dark only until approved. The search bar keeps its place and gains two things: how the search reads the library, inside the bar at its right (Meaning, Exact words, How it's built, How it looks, Comments), and a filter button just outside it, which opens Topic, Hook style, Visual style, Views and Standout posts only, with Clear all and Apply; the button counts the filters that are on, and the results line says so and offers Clear filters. On the phone the filters are a sheet, and the search type is its first group. A post now opens in a details window: slides at the left, the X at the upper right, Details and Analysis as tabs, and along the foot the thumbs, Save, View Post and Copy to Studio. It opens from a results tile, from View Details on a post, and from a Recent saves row. Analysis shows the words on each slide and the model's reading at once when the library holds them; when it does not, Transcribe and analyse starts it, the tab fills in as slides are read, and the result stays on the carousel. On a post, the thumbs sit at the left, View Details takes Save's place, and the numbers have a line of their own. Also new: a search on its way, a search that timed out, Unknown instead of 0, and No words on this slide instead of invented copy. The rows below are round two as approved, with the new post row.\n\nRound two, fifth cut (2026-09-17, after Garreth's fourth review): the page is a feed first, laid out the way a social feed is, and only the posts scroll. Clickable. The rail on the left (the floating bar on the phone) switches between Feed, Digests, Knowledge and Saved; on a post, a swipe across the slides pages them, as do the dots and the arrows; the bookmark saves it. Typing does nothing on a board: a search is a round trip, so it runs on Enter, and the boards in the second row show what comes back.\n\nEach post is one carousel another creator published, never ours: who posted it and when, the topics under the handle, View Post opposite them (it opens the post on its platform), the slides, then the numbers at the left and, together at the right, Copy to Studio (it opens the Studio on that deck) and Save. Both are quiet outlines; nothing on the feed is lit. The handle and the hook sit right under.\n\nNo filters and no label: the feed is one list, best-scored first. A date shows on a post only when there is one. Videos never reach the feed; this app makes carousels.\n\nOne search box, as wide as the posts, finds creators and carousels alike: accounts that match are listed first, and the carousels are a grid three across, each tile the slide that matched. Pressing a tile opens that post alone in the column, with Back to results; Clear brings the feed back. Pressing an account shows that creator's carousels.\n\nSaved: the panel to the right of the feed holds the last five saves, thumbnail first, and View all saves opens the Saved section, where the saved posts sit in the feed's layout, newest saved first. The phone has the Saved section on its bar and no panel.\n\nA slide whose link has died says Image gone and nothing else about the post changes. The two tall boards show the next twenty loading and the end of the library.\n\nOn the phone the search bar sits beside the title, the image runs edge to edge, the posts snap post to post, and the four sections float at the foot of the screen.\n\nDigests and Knowledge are as approved on 2026-09-16, one rail button along: Analyse lit only on the newest digest nothing has been run on, Accept and Reject on Knowledge only. The Studio board is D6's own screen, where Copy to Studio lands.\n\nThe content is invented: the handles and links go nowhere, the hooks and numbers are made up, and the reference decks are the ones D6 already keeps, so the same titles show in both.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

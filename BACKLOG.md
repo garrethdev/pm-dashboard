@@ -1076,6 +1076,47 @@ past chips.
 runs **server-side** in the app's own route handler, never from the browser, so
 the database keys stay out of the page.
 
+## Trends round three — what was drawn or considered, and left out
+
+**From D10's third round (approved by Garreth 2026-09-19).** Each of these was
+looked at against the live database on 2026-09-18 or 2026-09-19 and left for
+later. Nothing here is broken.
+
+**A Visual style filter.** Drawn, then dropped: `reference_analysis.visual_style`
+has 614 different values across 835 carousels, nearly one each, so no list can
+hold it. The "How it looks" search type reads the same field in words. It comes
+back if the analysis ever picks a look from a fixed list, the way it already
+does for topics.
+
+**A "Standout posts only" filter.** Drawn, then dropped:
+`account_relative_outlier` is true on 4 carousels, because the scoring has run
+on 309 of 1,252. It comes back when the scoring covers the library.
+
+**Filters on the plain feed.** The filters narrow a search only. Narrowing the
+feed means giving `carousel_feed_unseen` a topic, a hook and a views floor
+(dev tickets, open question 8).
+
+**"Analyse in full" for thinly analysed carousels.** 309 carousels were read by
+the newer analysis run, which records only the hook, the story and the call to
+action; their Analysis tab has three rows. Transcribe and analyse is offered
+only where there is no reading at all, so these stay thin. Offering it costs
+model spend per press (open question 7).
+
+**The strength scores.** Hook, payoff and call-to-action strength exist for the
+same 309 carousels only, so the Analysis tab does not show them.
+
+**Picking several topics at once.** `search_carousel_library` takes one topic.
+Several would be a small change to a function this repo does not own.
+
+**The handover's feedback endpoint and query log.** Votes go to our own
+`reference_votes`, which keeps the search text when there is one. If the
+handover's service is ever hosted, the two could be reconciled; until then its
+`carousel_search_queries` log gets nothing from this app.
+
+**Tidying the search index's topic tags.** About 200 stray free-text tags from
+the visual scout share the `topics` array with the fixed nine. The dropdown is
+a fixed list, so none of it shows (open question 9).
+
 ## The generator has no idea what a carousel is about
 
 **Deferred by Garreth on 2026-09-16**, during D8's review, to be picked up when

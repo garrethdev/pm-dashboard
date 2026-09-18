@@ -11,6 +11,14 @@ reference library and a search bar over it, after Garreth reopened that design
 (§10, items 17 to 37, three reviews of the boards included). The library counts in §2.6 were re-read live the same
 day.
 
+**Revised 2026-09-19 (D10 round three, approved by Garreth that day).** The
+developer handover's frontend addendum was read against the Trends page, and
+the page was then checked against the live database. §1 gains D6 to D9, §5.3
+gains two tables and two functions, §6.5 opens with what round three changed,
+and §10 gains items 43 to 53. The step-by-step detail is in the flows (F15
+rewritten, F16 new) and the dev tickets (DEV-34 rewritten, DEV-42 to DEV-47
+new); this plan says what and why.
+
 Every number below was pulled live on 2026-09-14, and the reference-library
 counts again on 2026-09-17. Re-run the queries in §11 before acting on them;
 inventory moves daily.
@@ -95,6 +103,13 @@ and back of the pipeline.
 | D3 | Browse the whole reference library as a feed of carousels, best first | Trends page, Feed (§6.5) |
 | D4 | Search that library by text, and by account | Trends page, search bar (§6.5) |
 | D5 | Save a carousel and come back to it later | Trends page, Save on a card; `reference_favourites` (§5.3, §6.5) |
+
+| D6 | Narrow a search: by how it reads the library (meaning, exact words, how it's built, how it looks, comments) and by topic, hook style and views | Trends page, search-type picker and filters (§6.5) |
+| D7 | Open a carousel and read what the library knows about it: its numbers, the analysis of how it works and what to reuse, and the words on every slide | Trends page, details window (§6.5) |
+| D8 | Have a carousel the workers have not reached read on the spot | Transcribe and analyse, in the details window (§6.5) |
+| D9 | See only what is new to me in the feed, and say whether a carousel was useful | The unseen feed, `reference_seen`; thumbs, `reference_votes` (§5.3, §6.5) |
+
+D6 to D9 were added on 2026-09-19, with D10's third round.
 
 D3 to D5 were added on 2026-09-17, when Garreth reopened the Trends design:
 the library is the part of this with 1,246 carousels in it, and the digest is
@@ -330,6 +345,16 @@ over the network: the app calls the function itself from a Next.js route
 handler on the server, which is where the keys stay (§6.5). Three things the
 database does not have yet, and which this plan adds as tracked migrations
 (§5.3): no feed or trending function, no favourites table, no creator search.
+**Read again on 2026-09-18 and 2026-09-19**, and four more things matter to
+the page: the search function **needs the query's embedding handed to it**
+and raises an exception without one, a step the never-hosted service did;
+its only content filter is **one topic** — hook style, visual style, views
+and the outlier flag were that service's work, not the function's; **only a
+carousel the workers have read can be found by its content** (1,143 of 1,252,
+with 84 unread and 24 blocked); and the analysis is richer than its columns —
+`reference_analysis.inferred` holds the hook's mechanism, the story structure,
+the payoff, a reusable pattern and the audience's response for 835 carousels,
+while a newer run left only the hook and the call to action on another 309.
 
 **How the library fills itself** (read from the two n8n workflows on
 2026-09-14, after Garreth switched on their MCP access). It is a job queue,
@@ -894,7 +919,30 @@ first review of round two).
 only, unioned with `creators.handle`, and returns the handle, the platform,
 how many of that creator's carousels the library holds, and their best views.
 
-**All three go in as tracked migrations in this repo.** The search schema
+**`reference_votes`** (added 2026-09-19, requirement D9) — a thumb up or a
+thumb down on a carousel: `reference_id`, `voted_by` (the session email),
+`vote`, `voted_at`, and `query`, the search that found it when there was one.
+Unique on (`reference_id`, `voted_by`); security and grants as
+`reference_favourites`. It is our own table because the handover's feedback
+endpoint only takes a vote tied to a logged search, and a post in the feed has
+no search behind it. **A vote approves nothing**: it never touches a creative
+flag.
+
+**`reference_seen`** (added 2026-09-19, requirement D9) — what a person has
+already had on the screen: `reference_id`, `seen_by`, `seen_at`, unique on the
+pair, secured the same way. **Seen means on the screen for about a second**
+(Garreth, 2026-09-19). Two functions read it:
+**`carousel_feed_unseen(viewer, after_score, after_id, limit)`** is
+`carousel_feed_page`'s order minus that person's seen rows, and
+**`carousel_feed_seen(viewer, before_seen_at, limit)`** is the same table read
+back, most recently seen first, for **See older carousels**. No second table.
+
+**Nothing is added for analysis on demand**: a reading started from the
+details window lands where every other reading lands (`reference_beats`,
+`reference_analysis`, `carousel_search_documents`), so it belongs to the
+carousel, not to the person who asked for it.
+
+**All of these go in as tracked migrations in this repo.** The search schema
 itself — `carousel_search_documents`, `search_chunks`,
 `search_carousel_library` and the rest — is **not** in `supabase/migrations`:
 it was provisioned outside this repo, which is why §2.6 describes it from a
@@ -1047,6 +1095,64 @@ active again. Every batch records the direction version it used, so History
 can answer "which instruction produced this".
 
 ### 6.5 Trends — `/carousel-generator/trends`
+
+**Round three, 2026-09-19 (approved by Garreth). Read this block first: where
+it disagrees with the round-two text under it, this block is right.** The
+steps are in flows **F15** (rewritten) and **F16** (new), and the build in
+**DEV-34** (rewritten) and **DEV-42 to DEV-47**.
+
+- **Why it was reopened.** The developer handover's frontend addendum
+  (2026-09-17) describes a research tool — a search page with filters, a
+  detail page with transcription and analysis, feedback votes. Garreth kept
+  the feed and took from it what the feed lacked: a way to narrow a search, a
+  way to read what the library knows about a post, and a way to say a post was
+  useful. Each piece was then checked against the live database, which
+  overruled the document more than once.
+- **The search box keeps its place and gains two things**: how the search
+  reads the library (Meaning, Exact words, How it's built, How it looks,
+  Comments), inside the box, and a **filter** button beside it. The filters
+  are **Topic, Hook style and Views**, each a dropdown that starts on Any and
+  takes one value — one, because the search function takes one topic; those
+  three, because they are what the data can carry (visual style has 614
+  different values, and only 4 carousels are marked as standouts). The filters
+  a search ran with sit over its results as **chips with an X**. *This
+  replaces "no scope pills" and "no chip row" below, for the search; the plain
+  feed still has no filter.*
+- **A post opens in a details window**, from a feed post's **View Details**, a
+  results tile, a Saved tile or a recent save: the slides at the left, an X at
+  the upper right, and **Details, Analysis, Transcription** as tabs. Analysis
+  is groups that open and close — Summary (open), How it works, Reusable
+  pattern, Audience response — with no counts on their headers. *This replaces
+  "pressing a tile opens that post alone, with Back to results" below.* On a
+  phone the slides stay pinned and the tabs are a sheet that rides up over
+  them, because the room under a 4:5 slide is too small to read in.
+- **A carousel the workers have not read offers one button, Transcribe and
+  analyse**, which starts the reading at once and keeps the result on the
+  carousel for everyone — which also makes it searchable. One button, because
+  the pipeline does both in one pass.
+- **On a post, View Details takes Save's place**, thumbs up and down sit at
+  the left, and the numbers have a line of their own. Save lives in the
+  details window. **Saved is a grid**, like the search results. *This replaces
+  "Save beside Copy to Studio" and "Saved in the feed's own layout" below.*
+- **The feed holds what the person has not seen** — seen meaning on the screen
+  for about a second — so the best-scored posts are not the same ones every
+  morning. After the last new one: **No more new carousels** and **See older
+  carousels**. With nothing new: **No new carousels** over the last ones seen.
+  New ones arriving while the page is open are announced by a quiet button,
+  never dropped in under the reader. *This replaces "the feed is the whole
+  library, best first" below; the order among unseen posts is unchanged.*
+- **From the handover, kept as rules:** a number or a date the library does
+  not hold is **left off a post and reads Unknown in the window, never 0**; a
+  slide with no words **says so**, and nothing is invented; a search on its
+  way and a search that timed out each have their own state, neither of them
+  "nothing matches"; a full page of results reads **"The 25 best matches"**,
+  never a total; a missing picture never drops a post; a vote approves
+  nothing.
+- **Not taken from the handover:** its `/story-finder` pages, its coverage
+  screen, video shots (this app makes carousels), its review app, its strength
+  scores (309 carousels only), and its hosted search service, which was never
+  hosted — the app calls the database function itself and makes the query's
+  embedding itself (DEV-47).
 
 **Rewritten 2026-09-17, and revised four times the same day, after Garreth's
 first, second, third and fourth reviews of round two.** The page was two tabs over the daily study digest. It is now
@@ -1592,6 +1698,27 @@ Decided by Garreth on 2026-09-17, in the fourth review of round two's boards:
 | 40 | What the third section is called on screen | **"Knowledge"**, not "Knowledge base", on the rail, on the phone's bar and wherever the section is named on screen. The label only: the table behind it is still `content_knowledge_base` (§6.5). |
 | 41 | How carousel search results are laid out | **A grid, three tiles across**, the way Instagram lays its search results out: each tile is the slide that matched, at 4:5, with a small carousel mark in the corner and an "n slides" badge. Matching accounts stay as a short list above the grid. Pressing a tile opens that post alone in the column, in the feed's layout, with **Back to results** in the results line; **Clear** still returns to the feed (§6.5). |
 | 42 | The results line and the Recent saves panel | **No Clear button in the results line**: clearing a search is the X on the search bar, and Back to results stays on the one-post view. The Recent saves panel is tighter, with a thin rule under its title. And the feed scrolls from anywhere in the section, not only with the cursor over the posts (Garreth, 2026-09-17, after the fifth cut). |
+
+Decided by Garreth on 2026-09-18 and 2026-09-19, in D10's third round
+(approved 2026-09-19):
+
+| # | Question | Decision |
+|---|---|---|
+| 43 | Search on its own page, or in the feed | **In the feed.** The search box keeps its place and gains a search-type picker inside it and a filter button beside it (§6.5). Reverses item 30's "no scope switch". |
+| 44 | Which filters | **Topic, Hook style and Views, each a dropdown that starts on Any and takes one value.** Visual style and Standout posts only were drawn and dropped when the data was read (§6.5, DEV-43). |
+| 45 | How a person sees which filters a search used | **Chips over the results, each with an X**, and Clear all when there is more than one. |
+| 46 | What opening a post looks like | **One details window** — slides left, X upper right, Details, Analysis and Transcription as tabs — from a post, a tile or a recent save. Replaces item 41's "a tile opens that post alone". |
+| 47 | Saying a post was useful | **Thumb up and thumb down**, on every post and in the window, in a table of our own (§5.3). |
+| 48 | Save on a post | **View Details takes its place; Save is in the window. Saved is a grid.** |
+| 49 | What the feed shows | **Only what the person has not seen; seen means on the screen for about a second.** Older ones by See older carousels (§5.3). |
+| 50 | How the Analysis tab is laid out | **Groups that open and close, Summary open, no counts on the headers; Transcription is a tab of its own.** |
+| 51 | A carousel with no reading | **One Transcribe and analyse button**, starting at once, its result kept on the carousel for everyone. |
+| 52 | The details window on a phone | **A sheet that rides up over pinned slides.** |
+| 53 | Where the designs live | **One canvas a ticket** (D6 and D10 one a theme), since 2026-09-18 (`docs/designs/README.md`). |
+
+Open after round three (dev tickets, open questions 7 to 9): whether a thinly
+analysed carousel should offer "Analyse in full"; whether the filters should
+narrow the plain feed too; and who tidies the search index's stray topic tags.
 
 ---
 

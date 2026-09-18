@@ -20,7 +20,7 @@ Companion documents, read before starting any ticket:
 | Document | What it gives the build |
 |---|---|
 | `CAROUSEL-GENERATOR-PLAN.md` | Why, the architecture (§4), the data model (§5), the phases (§9) |
-| `CAROUSEL-GENERATOR-FLOWS.md` | What every screen does, step by step (F1 to F15), and the deck state words |
+| `CAROUSEL-GENERATOR-FLOWS.md` | What every screen does, step by step (F1 to F16), and the deck state words |
 | `CAROUSEL-GENERATOR-DESIGN-TICKETS.md` | The approved screens (D1 to D11); D10 is reopened for its second round, the Trends feed and search (2026-09-17) |
 | `CAROUSEL-TEMPLATE-MODEL.md` and `carousel-templates/*.v1.json` | The contract the painter and the Studio share |
 | `CAROUSEL-RENDERER-PORT-SPEC.md` | The exact layout numbers, the race guard, the bugs not to port |
@@ -40,7 +40,7 @@ comes after everything it depends on.
 | 2. The middle | DEV-01 to DEV-20 | A generator-made batch for each of Glow Up and Covered Eye, posted live |
 | 3. The front | DEV-21 to DEV-26 | A new carousel type made in the Studio, first batch reviewed, not yet wired |
 | 4. The back | DEV-27 to DEV-31, and DEV-41 | That type wired and posting; libraries fillable by upload and Higgsfield |
-| 5. Learning | DEV-32 to DEV-40 | Trends opens on a searchable feed of the carousel library, reads digests, proposes rules, and opens references in the Studio |
+| 5. Learning | DEV-32 to DEV-40, DEV-42 to DEV-47 | Trends opens on a searchable, filterable feed of the carousels a person has not seen, opens a post's details, analysis and transcription, reads digests, proposes rules, and opens references in the Studio |
 
 **Sizes** are rough guesses for one developer: **S** a day or less, **M** two
 to three days, **L** about a week. They are for planning the order, not
@@ -1023,7 +1023,27 @@ rewritten for that, and DEV-36 to DEV-40 are new. These tickets are written
 now, in parallel with the design rather than after it, at Garreth's request,
 so the screen wording here follows the brief the design is being drawn from.
 
-**Build order inside this phase (Garreth, 2026-09-17):** DEV-32 → DEV-33 as
+**Round three, 2026-09-19 (Garreth approved D10's third round that day).**
+The developer handover's frontend addendum (2026-09-17) was read against the
+page, and then the page was checked against the live database, which changed
+more than the document did. **DEV-34 is rewritten** for the page as it now
+is; **DEV-35, DEV-36, DEV-37 and DEV-39 are amended**; and **DEV-42 to DEV-47
+are new**: the details window, the filters, the votes, the unseen feed,
+analysis on demand, and the query embedding the search function needs.
+(DEV-41 is the image-details ticket in Phase 4, so the new numbers start at
+42.) What was found in the database is written into the tickets that depend
+on it, with the date it was read.
+
+**Build order inside this phase (round three, 2026-09-19):** DEV-32 → DEV-33
+as before, then **DEV-36 → DEV-45 → DEV-37 → DEV-44 → DEV-34 → DEV-42 →
+DEV-47 → DEV-39 → DEV-43 → DEV-38 → DEV-35 → DEV-46 → DEV-40**. The feed's
+order, what has been seen, saves and votes exist before the page that shows
+them; the details window comes with the page; the search needs its embedding
+before it is wired, and its filters after; analysis on demand is last because
+it is the one piece that reaches into the pipeline outside this repo.
+
+**Build order as it stood after round two (Garreth, 2026-09-17), kept for the
+record:** DEV-32 → DEV-33 as
 before, then **DEV-36 → DEV-37 → DEV-34 (amended) → DEV-39 → DEV-38 →
 DEV-35 → DEV-40**. The feed's order and its Save both exist before the page
 that shows them; the two searches are wired after the cards they render into.
@@ -1072,158 +1092,116 @@ The tickets below are listed by number, not in that order.
 - **Done when:** a real digest is analysed, its new links appear as references
   within the bridge's five-minute cycle, and a re-analysis picks them up.
 
-### DEV-34. Trends page: the feed, the search bar, digests and the knowledge base
+### DEV-34. Trends page: the feed, the search bar, Saved, digests and the knowledge base
 
-- **Size:** L. Was M, and grew when the feed arrived.
-- **Depends on:** DEV-33, DEV-36, DEV-37. D10 approved 2026-09-16, reopened
-  and redesigned in place 2026-09-17.
-- **Designs:** D10. **Flows:** F15, F12, F13.
-- **Build:** `/carousel-generator/trends`, as the redesigned D10 draws it.
-  **Four sections on a vertical rail of buttons down the left of the page**:
-  **Feed** first and open by default, then **Saved**, then **Digests**, then
-  **Knowledge** — renamed from "Knowledge base" on screen (Garreth,
-  2026-09-17, fourth review of round two); the label is all that changed, and
-  the table behind it is still `content_knowledge_base`. **No section carries
-  a count** — the digests-waiting and
-  rules-pending numbers come off the rail, and off the phone's bar too
-  (Garreth, 2026-09-17, second review of round two). The underline
-  tabs of the first cut are gone (Garreth, 2026-09-17, first review of round
-  two). **On a phone the rail becomes a floating bar along the bottom of the
-  screen.**
-  - **Only the posts scroll** (Garreth, 2026-09-17, third review of round
-    two). The page itself does not: the title and the search box, the left
-    rail and the Recent saves panel are pinned, and the column of posts is the
-    one thing with a scroller, inside the page. On a phone the same — the
-    title and the search bar stay, the floating bar stays, and the posts
-    scroll under them. Build it as a fixed page frame with one scrolling
-    region, not a scrolling document.
-  - **Widths and centring** (Garreth, 2026-09-17, third review of round two).
-    The posts and the search box are **500px wide on the desktop**, where the
-    third cut drew 450. The rail takes **200px** and the Recent saves panel
-    **300px**, and the column of posts is centred **in the space between
-    them, not on the page**, so the gap either side of the posts is the same —
-    76px on a 1440px screen. The search box is centred over the posts the same
-    way. There is a **generous gap under the search box** before the first
-    post.
-  - **Header.** The title **Trends** and **one search box, centred
-    horizontally over the posts and as wide as they are**. **There is no scope
-    switch**: the Carousels and Accounts pills are gone, and one query
-    searches creators and carousels together (Garreth, 2026-09-17, second
-    review of round two). The
-    format lives in the placeholder; there is no instruction text anywhere.
-    Nothing happens until Enter or the search icon, because a search is a
-    round trip that can take seconds, not a keystroke. **On a phone the box
-    sits beside the "Trends" title on the same row**, never under it: a
-    compact bar with the search mark and a short placeholder.
-  - **The feed is one list, best-scored first, and there is no chip row** —
-    no Trending chip, no Saved chip, no carousel-type chips, so no type
-    filter either (Garreth, 2026-09-17, first review of round two). It shows
-    carousels the library scraped from **other creators, never our own work**,
-    the way a social feed does, so a person sees what is doing well and can
-    recreate it in the Studio. **Nothing at all sits above the first card:**
-    the honest label "Trending in the library" is gone with the rest of it
-    (Garreth, 2026-09-17, second review of round two). The ranking is
-    unchanged (DEV-36); the screen simply no longer names it.
-  - **The card is shaped like an Instagram feed post**, top to bottom: a
-    **header row** with a round platform mark (TikTok or Instagram), the
-    creator's handle and the date beside it — the date **only when it is
-    known** — and **View Post** at the **top right**, opposite the handle and
-    the topic line; a **muted second line** carrying the topic and hook-family
-    tags,
-    which on a search result also reads `Matches on slide 3`; the **slides at
-    4:5 as a horizontal scroll-snap track** — one slide to a snap point, so a
-    trackpad swipe pages it on the desktop the way a thumb does on a phone,
-    **not a stacked fade** (Garreth, 2026-09-17, fourth review of round two) —
-    with the slide counter, the left and right arrows on hover and a row of
-    dots under it all still paging it; then the **icon row**, which is the
-    **numbers** —
-    `24.3k views · 1.2k likes · 108 saves` — at the left and **Copy to
-    Studio** beside **Save** (DEV-37) at the right; then the **hook as the
-    caption**, with the handle in bold before it, directly under that row.
-    Cards run down the centred column, one under the other, with a thin
-    divider between them and **no card box**. **Copy to Studio is a quiet grey
-    outline button** — no fill, its text and its icon in the ordinary text
-    colour — sitting beside Save (DEV-35). **The Feed has no accent action at
-    all** (Garreth, 2026-09-17, third review of round two), which reverses the
-    second review's one lit button per post; **Analyse**, on Digests, keeps
-    the page's only accent.
-    **View Post is the way out to the original post** (Garreth, 2026-09-17,
-    fourth review of round two), which answers the note the second review left
-    open when it took the Share and Open source buttons off the card. It is a
-    quiet grey **outline** button — no fill, ordinary text colour — at the top
-    right of the post, and it opens `references_unified.source_url` (DEV-36
-    already returns it) on TikTok or Instagram **in a new tab**, with
-    `rel="noopener noreferrer"`. Pressing the **handle** still shows that
-    creator's carousels instead (DEV-38).
-  - **Feed, on a phone.** The same card, with the image running **edge to
-    edge** and nothing riding on top of it — the action rail the first cut
-    laid over the slide is gone. The section rail is the floating bar at the
-    bottom of the screen, its four buttons carrying no counts.
-  - **Saved**, the rail's second section: this person's saves in the feed's
-    own layout, newest saved first, from DEV-37's list. Empty, it reads
-    **Nothing saved yet**.
-  - **Recent saves**, on the desktop only: a panel to the right of the feed
-    holding the last five saves as **horizontal cards** — the thumbnail at the
-    left, then the handle, and views and likes — with a **View all saves**
-    button that opens the Saved section (DEV-37 supplies both queries). **The
-    phone has no panel**; its way in is the Saved button on the floating bar.
-  - **Paging.** Twenty cards; the next twenty are fetched as the end comes
-    near, with the next card's outline and the busy icon while they load. The
-    end of the library reads **That's every carousel**.
-  - **Searching replaces the feed in place**, under the same header: a
-    words-before-colour line — `14 carousels for "under-eye serum"`, or
-    **No carousels match** — then **a grid of the carousels, three tiles
-    across** (Garreth, 2026-09-17, fourth review of round two), each tile the
-    slide that matched (DEV-39 returns its image) at **4:5**, with a small
-    carousel mark in the corner and an **`n slides`** badge — the way
-    Instagram lays its search results out — and a
-    **Clear** that puts the feed back at the top. **Pressing a tile opens that
-    post alone in the column**, drawn in the feed's own layout, with a
-    **Back to results** button in the results line that returns to the grid;
-    Clearing the search is the X on the search bar, with no Clear button in
-    the results line (Garreth, 2026-09-17); the Recent saves panel is tight,
-    with a thin rule under its title. The posts' scroller spans the whole
-    section (the posts centred inside it by padding, not margins), so a
-    wheel over the empty space either side of them scrolls the feed too. **One query returns both
-    lists** (DEV-39): the creators that match sit **above** the grid as a
-    short, compact list (DEV-38), and pressing one shows that creator's
-    carousels as ordinary feed cards with the handle
-    pinned as a chip above them. Searching from any other section
-    switches to Feed to show the results.
+*Rewritten 2026-09-19 for D10's third round. Round two's text is in git
+history; everything it decided that still holds is restated here.*
+
+- **Size:** L.
+- **Depends on:** DEV-33, DEV-36, DEV-45, DEV-37, DEV-44. D10 approved
+  2026-09-16, redesigned in place 2026-09-17 (round two) and 2026-09-18/19
+  (round three, approved 2026-09-19).
+- **Designs:** D10, on its own canvases since 2026-09-18 (the how-to lists
+  them). **Flows:** F15, F16, F12, F13.
+- **Build:** `/carousel-generator/trends`. **Four sections on a vertical rail
+  of buttons down the left of the page**: **Feed** first and open by default,
+  then **Digests**, **Knowledge** (the table behind it is still
+  `content_knowledge_base`) and **Saved**. **No section carries a count.** On
+  a phone the rail is a floating bar along the bottom of the screen.
+  - **Only the posts scroll** (Garreth, 2026-09-17). Build it as a fixed page
+    frame with one scrolling region, not a scrolling document: the title and
+    the search box, the rail and the Recent saves panel are pinned. The
+    scroller spans the whole section, the posts centred inside it by padding,
+    so a wheel over the empty space either side scrolls the feed too.
+  - **Widths.** Posts and search box **500px** on the desktop; rail **200px**;
+    Recent saves panel **300px**; the column centred **between them, not on
+    the page** (76px either side on a 1440px screen).
+  - **Header.** The title **Trends** and one search box as wide as the posts.
+    **Inside the box, at its right, the search-type picker** — Meaning (the
+    default), Exact words, How it's built, How it looks, Comments — and **just
+    outside it a round filter button** carrying a small count when filters are
+    on (DEV-43). The format lives in the placeholder; there is no instruction
+    text anywhere. Nothing runs until Enter or the search icon. **On a phone**
+    the box sits beside the title on the same row with the filter button after
+    it, and the search type is the first group of the filter sheet, the box
+    being too short for it.
+  - **The post**, top to bottom: header row (platform mark, handle, the date
+    **only when it is known**, **View Post** at the top right, opening
+    `references_unified.source_url` in a new tab with `rel="noopener
+    noreferrer"`); a muted line of topic tags; the slides at 4:5 as **a
+    horizontal scroll-snap track**, with the counter, the arrows on hover and
+    the dots; **a row with thumb up and thumb down at the left (DEV-44) and
+    Copy to Studio (DEV-35) and View Details (DEV-42) at the right**; **the
+    numbers on a line of their own**; then the hook as the caption with the
+    handle in bold. **A number that is null is left off the line — never
+    printed as 0** (the handover's rule; build the line from the parts that
+    exist). Posts run down the column with a thin divider and no card box.
+    **Every button on a post is a quiet grey outline; the Feed has no accent
+    action** (Garreth, 2026-09-17). **A post has no Save** (Garreth,
+    2026-09-18): Save is in the details window. Pressing the handle shows that
+    creator's carousels (DEV-38). On a phone the image runs edge to edge.
+  - **What the feed holds, and its ends** (DEV-45 supplies the lists): the
+    carousels this person has **not seen**, best-scored first; **No more new
+    carousels** and a quiet **See older carousels** after the last of them,
+    carrying on into the seen ones, most recently seen first; **That's every
+    carousel** at the end of those. With nothing new at launch, a small **No
+    new carousels** line over the last ones seen, which scroll on into the
+    older ones without a button. When new ones land while the page is open, a
+    quiet **"n new carousels"** button at the top brings them in; **the feed
+    never reorders itself under the reader**. Twenty to a page, the next
+    post's outline and the busy icon while a page loads.
+  - **Saved** is **a grid three tiles across** (Garreth, 2026-09-19), the same
+    component as the search results: each tile the post's **cover**, the
+    carousel mark, an `n slides` badge, newest saved first (DEV-37). A tile
+    opens the details window. Empty: **Nothing saved yet**.
+  - **Recent saves**, desktop only: the last five saves to the right of the
+    feed — thumbnail, handle, views and likes — each **opening the details
+    window**, with **View all saves**. The phone has no panel.
+  - **Search results replace the feed in place**: the results line
+    (`14 carousels for "under-eye serum" · best match first`; **"The 25 best
+    matches for …" when the page is full**, because the search returns 25 at
+    most and a total was never asked for; **Nothing matches "…"** when there
+    are none), then **the filters the search ran with as chips, each with an X,
+    and Clear all when there is more than one** (DEV-43), then the accounts
+    that match as a short list (DEV-38), then **the grid**: three across, each
+    tile **the slide that matched** (DEV-39 returns its image), with the
+    carousel mark and the `n slides` badge. **A tile opens the details window
+    on that slide** (DEV-42); closing it leaves the grid where it was. The X
+    on the search box clears the search. Searching from any other section
+    switches to Feed.
+  - **A search on its way:** the results line reads **Searching for "…"** with
+    the busy icon, over six skeleton tiles. **A search that failed:** **The
+    search timed out** with **Retry**, where the results would be — never the
+    "nothing matches" state, which means something else.
   - **A slide whose image has gone** shows a muted frame reading **Image
-    gone**. The card and its buttons stay: a picture that has
-    expired is no reason to drop the reference.
-  - **Empty states.** **No carousels yet** fills the screen, and only when
-    the library itself is empty. **No carousels match** sits inline, where the
-    grid would have been.
+    gone**. The post and its buttons stay.
+  - **Empty states.** **No carousels yet** fills the screen only when the
+    library itself is empty. **Nothing in the library matches** sits inline
+    where the grid would have been.
+  - **Layers.** The shell's page glow sits above the page content. Anything
+    that must cover the page — the details window, the phone's filter sheet —
+    has to sit above the glow, or the glow washes over it (found in the design
+    build, 2026-09-19).
   - **Digests**, unchanged in substance: a narrow column of dates newest
     first, the open one beside it — its body readable in place, the rules it
-    proposed (rule, evidence lines, confidence, types), then the
-    **carousels** it read with their slides and **Copy to Studio**. Queued
-    links show when they were queued. **Analyse** sits only on the newest
-    digest nothing has been run on; Analyse again, Retry and Copy to Studio
-    are secondary. A digest is counted in **carousels, not links** (DEV-33
-    stores that count), and a rule shown under its digest carries a Pending
-    pill and nothing to press — deciding on it is the next section's job.
-  - **Knowledge**, unchanged: pending rules first, filterable by type
-    and confidence, with **Accept** (appends to `content_knowledge_base` with
-    the digest id and session email) and **Reject** (marks the rule
-    dismissed; see *Proposed defaults*, item 4), then the rules already
-    accepted. Adds Trends to the menu.
-- **Watch:** the design's own build script proved that an icon handed over as a
-  template value renders as escaped text. Whatever the React port does, icons
-  belong in the markup.
-- **Done when:** the page opens on Feed and scrolls the whole library **with
-  the title, the search box, the rail and the Recent saves panel staying
-  put**, a
-  search puts its accounts and a grid of tiles in place of the cards, a tile
-  opens that post alone with **Back to results** and Clear
-  brings the feed back, a post's slides page with a trackpad swipe as well as
-  with the dots and the arrows, **View Post** opens the original on its
-  platform, a carousel saved on the Feed shows up in Saved and in the
-  Recent saves panel,
-  and a rule accepted on the Knowledge tab is cited by the Direction
-  conversation (DEV-25).
+    proposed, then the **carousels** it read with their slides and **Copy to
+    Studio**. Queued links show when they were queued. **Analyse** sits only
+    on the newest digest nothing has been run on; it is the page's one accent.
+    A digest is counted in **carousels, not links** (DEV-33).
+  - **Knowledge**, unchanged: pending rules first, filterable by type and
+    confidence, with **Accept** and **Reject** (see *Proposed defaults*, item
+    4), then the rules already accepted. Adds Trends to the menu.
+- **Watch:** the design's own build script proved that an icon handed over as
+  a template value renders as escaped text. Icons belong in the markup.
+- **Done when:** the page opens on Feed with only unseen carousels and scrolls
+  them **with the title, the search box, the rail and the Recent saves panel
+  staying put**; the end of the new ones offers the older ones; a search shows
+  its searching state, then its accounts and a grid of tiles with the filters
+  it ran with as chips; a tile, a post's View Details, a Saved tile and a
+  recent save all open the same details window; a timed-out search says so;
+  a post with a null number prints the others and no 0; **View Post** opens
+  the original on its platform; and a rule accepted on Knowledge is cited by
+  the Direction conversation (DEV-25).
 
 ### DEV-35. Copy to Studio
 
@@ -1237,16 +1215,21 @@ The tickets below are listed by number, not in that order.
   everywhere now (Garreth, 2026-09-17, second review of round two), on the
   screen, in the flows and in the designs. Same action, same destination — only
   the name changed.
-  It is reached from **two places and lands in the same one**: the icon row on
-  a **feed card**, where it sits beside Save, and a carousel in a **digest's**
-  list. This is
+  It is reached from **three places and lands in the same one** (round three,
+  2026-09-19): the button row on a **feed post**, where it sits beside View
+  Details; the foot of the **details window** (DEV-42); and a carousel in a
+  **digest's** list. **The details window's Reusable pattern — what to keep,
+  and its limits — is the part of a reading most worth handing to the Studio
+  with the reference**; the Studio's reference variant (DEV-23) should read
+  `reference_analysis.inferred->'reusable_pattern'` where it exists. This is
   where the link gets aimed: the design prototype lands on the deck picked
   since 2026-09-17 (it opened the Studio at its start before, because the
   Studio took a type's name and character rather than a reference). Only carousels
   carry it — videos never reach the page (DEV-40), and the Studio drafts a
   template from slides.
-- **Done when:** the button opens the Studio from a feed card **and** from a
-  digest's carousel list, both on the same reference, and the draft saves as a
+- **Done when:** the button opens the Studio from a feed post, from the
+  details window **and** from a digest's carousel list, all on the same
+  reference, and the draft saves as a
   type with `source_reference_id` set.
 
 ### DEV-36. Feed ranking and paging
@@ -1286,6 +1269,13 @@ The tickets below are listed by number, not in that order.
     other new pieces (DEV-37, DEV-38) go in as **tracked migrations** here,
     with execute revoked from `public`, `anon` and `authenticated` by name
     and `proacl` read back.
+  - **Round three (2026-09-19):** the feed no longer shows the whole library
+    in this order; it shows what the signed-in person **has not seen**, in
+    this order. This function stays the library's ranking, and **DEV-45**
+    wraps it with the person and the seen list. Counted 2026-09-18: 1,252
+    carousels; **every one has `views`, and `published_at` is still null on
+    all of them**. A null `likes` or `saves` must reach the page as null, not
+    0 (DEV-34 leaves a null number off the line).
 - **Tests:** paging from the top to the end returns each reference id exactly
   once.
 - **Done when:** the Feed scrolls the whole library in pages of twenty, with
@@ -1319,6 +1309,14 @@ The tickets below are listed by number, not in that order.
   - **The Recent saves panel** on the desktop takes the **last five** rows of
     that same query, with the thumbnail, the handle, views and likes — one
     small query, not a second table.
+  - **Round three (2026-09-19):** **Save is pressed in the details window**
+    (DEV-42), not on a feed post, which carries View Details in its place.
+    **The Saved section is a grid**, three across, each tile the carousel's
+    cover (its first `reference_beats.media`, falling back to
+    `thumbnail_url`) with its slide count — the search results' own tile
+    component — and a tile opens the details window, which is also where a
+    carousel is unsaved. A **Recent saves** row opens the details window too,
+    rather than the Saved section.
 - **Done when:** pressing Save twice leaves one row, the saved state survives
   a reload, and a carousel saved on the Feed appears at the top of Saved and
   in the Recent saves panel.
@@ -1379,6 +1377,38 @@ The tickets below are listed by number, not in that order.
     needed — the app calls the database function through its own server, so
     no key ever reaches the browser. Every excerpt and every line of
     reference text renders as **plain text**.
+  - **Round three (2026-09-19), read from the live function on 2026-09-18.**
+    Its arguments are `p_query, p_embedding, p_channel, p_mode, p_limit,
+    p_reference_ids, p_creator, p_topic, p_audience, p_status, p_date_from,
+    p_date_to, p_exact, p_semantic_floor, p_keyword_weight,
+    p_semantic_weight, p_embedding_model`.
+    - **`p_embedding` is required** for hybrid and semantic searches on every
+      channel but `literal`: the function raises *"An embedding is required"*
+      without one. The handover's Node service made it; this app must
+      (**DEV-47**). Until then only `p_mode = 'keyword'` works.
+    - **`p_channel` comes from the search-type picker**: Meaning → `meaning`,
+      Exact words → `literal` with `p_exact = true`, How it's built →
+      `construction`, How it looks → `visual`, Comments → `comments`.
+      Coverage differs by channel, because only one analysis run wrote some
+      kinds of search document: `meaning`/`literal`/`construction` reach
+      nearly all of the 1,143 searchable carousels, **`visual` about 834 and
+      `comments` about 710**. The screen says nothing about it; a thin result
+      on those two is expected, not a bug.
+    - **What is searchable:** a carousel with enabled, non-empty
+      `carousel_search_documents` rows whose `inspection_status` is not
+      `blocked` — **1,143 of 1,252** on 2026-09-19 (84 unread, 24 blocked, one
+      read but never indexed). The feed shows all 1,252, so a carousel can sit
+      in the feed and never turn up in a search until it is read (DEV-46).
+    - **Filter the results to carousels.** The function does not take a
+      format; join the returned reference ids to `references_unified` and keep
+      `format = 'carousel'` (DEV-40), asking for a few more than 25 so that a
+      page is still full after the videos drop out.
+    - **The count line:** the function returns at most `p_limit`. When 25 come
+      back, the page says **"The 25 best matches for …"**; it never prints 25
+      as though it were a total.
+    - **Time out at 20 seconds** on the server and return a distinct error the
+      page can tell from an empty result (DEV-34 draws them differently).
+    - Topic, hook style and views filtering is **DEV-43**.
 - **Watch:** the searchable documents are written by workers that are still
   running (the last index job was 12:16 UTC on 2026-09-17), so the count
   grows. That is fine; nothing here caches it.
@@ -1402,6 +1432,252 @@ The tickets below are listed by number, not in that order.
     queued on 2026-09-17 and nothing on this page reads them.
 - **Done when:** the decision is recorded here, and a direct query of the feed
   function returns no row whose format is anything but carousel.
+
+### DEV-42. The details window: details, analysis, transcription
+
+- **Size:** L.
+- **Depends on:** DEV-34, DEV-37, DEV-44.
+- **Designs:** D10 round three. **Flows:** F16.
+- **Build:** one window over the Trends page, opened from four places — a
+  feed post's **View Details**, a search-results tile (on the slide that
+  matched), a Saved tile, a Recent saves row — and closed by the **X at its
+  upper right**, the scrim or Escape, back to exactly where it was opened
+  from. `role="dialog"`, `aria-modal`, focus trapped inside and returned to
+  the opener on close.
+  - **Desktop:** 1040×720. The slides at the left at 4:5, the feed's own
+    scroll-snap track with the arrows, the counter and the dots. At the right:
+    platform mark, handle, the topic line (with "Matches on slide 3" from a
+    search), then **three tabs — Details, Analysis, Transcription** — and
+    along the foot **thumb up, thumb down (DEV-44), Save (DEV-37)** at the
+    left and **View Post** and **Copy to Studio (DEV-35)** at the right. All
+    quiet.
+  - **Details:** Views, Likes, Saves as three cells; Posted, Platform, Slides
+    as rows; the whole caption. **Null reads "Unknown", never 0.**
+  - **Analysis** reads `reference_analysis` for the reference. **Groups that
+    open and close**: Summary open when the tab opens, the rest shut; several
+    can be open at once; **a header is its name and a caret, nothing else**
+    (Garreth, 2026-09-19: no counts). Over them a label from
+    `inspection_status` — **Complete**, **Partial**, **Blocked** — and "Read
+    by the model · date".
+    - *Summary*, two across: `topic`, `angle`, `hook_family`,
+      `inferred->>'story_structure'`, `emotional_tone`, `visual_style`, and
+      "First shown on slide n" from `inferred->>'first_product_slide'`.
+      **These are code words in the table (`outcome_preview`,
+      `list_with_introduction`); map them to plain words in one place**, with
+      a fallback that turns underscores into spaces for a value the map has
+      not met.
+    - *How it works*, as sentences: `inferred->>'hook_mechanism'` (Why it
+      hooks), `opener_treatment`, `inferred->'payoff'` (its `position` as
+      "Slide n." before its `description`), `proof_placement`,
+      `cta_structure` (with `inferred->>'first_explicit_cta_slide'`).
+    - *Reusable pattern:* `inferred->'reusable_pattern'` — `invariants` as
+      **Keep**, `limitations` as **Limits**.
+    - *Audience response:* `inferred->'audience_response'` — `themes` as tags,
+      `questions` as a list; when both are empty, **Too few comments to
+      read** (the model says so in its own `limitations`).
+    - **A row or a group with nothing behind it is left out, never drawn
+      blank.** Two analysis runs exist (read 2026-09-19): `perez-slides-v1`
+      (835 carousels) fills all of the above; `phase0-multiformat-v1` (309
+      carousels) fills only `hook_family` and `cta_structure`, with
+      `story_structure` in `reference_format_evaluations`. For those the tab
+      has three rows and no pattern or audience group. The strength scores in
+      `reference_format_evaluations` are **not shown**. Model bookkeeping in
+      `observed` (cost, requests, providers) is not shown either.
+  - **Transcription** reads `reference_beats` in `position` order: the slide
+    number, `visible_copy`, `visual_description` as a muted line under it, and
+    `narrative_role` as a tag (also a code word — same map). Slide 1 is
+    labelled **Opening slide**. **An empty `visible_copy` reads "No words on
+    this slide"**; nothing is invented (about 300 of 6,461 slides). Over the
+    list: **"All n slides read"**, or **"m of n slides read"** from
+    `observed->'coverage'` (`inspected_images` of `supplied_images`).
+  - **Partial keeps every row.** All 167 partial analyses have every analysis
+    column filled; what is short is the slides fetched. Show the whole
+    analysis under a Partial label.
+  - **States shared by the Analysis and Transcription tabs**, since one
+    reading makes both: not read yet (DEV-46's button), on its way, **Blocked**
+    ("The slides could not be fetched", **Try again**), failed ("The analysis
+    failed", **Retry**).
+  - **Phone:** the window fills the screen. **The slides are pinned under the
+    header and do not scroll away; the tabs and their content are a sheet
+    that rides up over the slides as the reader scrolls**, until a strip of
+    the slide (and its counter) is left, and lets go on the way back down; a
+    grab bar at the sheet's top does the same on a press (Garreth,
+    2026-09-19). The header and the foot never move. Honour
+    `prefers-reduced-motion`.
+  - Every line of reference and model text renders as **plain text**.
+- **Done when:** the window opens from all four places on the right slide and
+  closes back to the same scroll position; a carousel from each analysis run
+  shows its own rows with nothing blank; a part-read carousel shows its whole
+  analysis with "m of n slides read"; a wordless slide says so; a null date
+  reads Unknown; and on a phone the sheet covers the slides on scroll while
+  the slide strip, the header and the foot stay put.
+
+### DEV-43. Search filters: topic, hook style, views
+
+- **Size:** M.
+- **Depends on:** DEV-39.
+- **Designs:** D10 round three. **Flows:** F15 steps 11 and 14.
+- **Build:** the filter button opens a panel under the search box (a bottom
+  sheet on a phone, which also carries the search type): **three dropdowns,
+  each starting on Any and taking one value**, with **Clear all** and
+  **Apply**. Apply runs the search again. The button shows a count when
+  filters are on. The panel is nearly solid in dark mode and **solid in light
+  mode** (light has no blur, so anything less showed the results through it).
+  Apply is filled in the ordinary text colour, **not the accent**.
+  - **Topic → `p_topic`**, the one filter `search_carousel_library` has built
+    in: one value, matched with `= any(topics)` on the search documents. The
+    options are a **fixed list served by the server**, not every tag that
+    exists: wellness, skincare, lifestyle, weight_loss, eye_care, peptides,
+    glp_1 (their counts on 2026-09-18: 474, 389, 298, 237, 208, 168, 114;
+    they overlap). The main analysis picks topics **from a fixed list of
+    nine**, so the list does not drift; the search documents' `topics` array
+    also carries about 200 stray free-text tags from the visual scout
+    (`typography:bold_sans_serif`), which must not reach the dropdown.
+    **291 of the searchable carousels have no topic**, so choosing one hides
+    them.
+  - **Hook style and Views are not arguments of the function** — they were
+    applied by the handover's never-hosted Node service — so **apply them in
+    our route handler**: ask the function for more than a page, join the ids
+    to `reference_analysis.hook_family` and `references_unified.views`, filter,
+    then cut to 25. Hook style's options are a fixed short list (outcome
+    preview, information gap, list, recognition, question, contradiction): the
+    column is free text with **189 distinct values**, so a list of everything
+    is not possible. Views is 10k, 100k or 1M and over; every carousel has
+    `views`.
+  - **Not built, and why:** **Visual style** (614 distinct values over 835
+    carousels — "How it looks" searches it in words instead); **Standout posts
+    only** (`account_relative_outlier` is true on 4 carousels, of 309 scored)
+    until the scoring covers the library; creator (the account search does
+    it), dates and freshness (`published_at` is null everywhere), audience
+    (empty on every analysis).
+  - **Filters narrow a search; they do not filter the plain feed** (open
+    question 8).
+  - **The filters a search ran with sit over its results as chips**, each with
+    an **X** that removes that one and runs the search again, and **Clear
+    all** when there is more than one. They show over an empty result too.
+    The chip reads the value only ("Eye care"), not "Topic: Eye care".
+- **Done when:** a search with Topic and Views set returns only carousels that
+  carry both, shows both as chips, and taking one off widens the result
+  without retyping the query.
+
+### DEV-44. Votes: useful and not useful
+
+- **Size:** S.
+- **Depends on:** DEV-36.
+- **Build:** a thumb up and a thumb down on every feed post and in the details
+  window. Pressing one fills it; pressing it again takes the vote back;
+  pressing the other swaps it.
+  - A tracked migration for `reference_votes`: `reference_id` (bigint,
+    references `references_unified`), `voted_by` (text, the session email),
+    `vote` (`up` or `down`), `voted_at`, `query` (text, null unless the vote
+    was cast from a search result, then the query that found it). **Unique on
+    `(reference_id, voted_by)`.** RLS on, rows visible only to their own
+    `voted_by`, grants named to `authenticated` only, as DEV-37 does.
+  - **Why our own table and not the handover's `/v1/feedback`:** that
+    endpoint only takes a vote tied to a logged search query id, and a feed
+    post has no query behind it; nor is that service hosted. Ours keeps the
+    query text when there is one, so the votes can still inform search later.
+  - A vote **approves nothing**: it never touches `human_approved`,
+    `internally_tested` or any creative flag (the handover's rule).
+  - Who voted comes from the session, never from the request body; disable
+    the control while a vote is saving.
+- **Done when:** a vote survives a reload, pressing twice leaves no row,
+  swapping leaves one, and no creative flag changes.
+
+### DEV-45. The unseen feed
+
+- **Size:** M.
+- **Depends on:** DEV-36.
+- **Flows:** F15 steps 4 to 8.
+- **Build:**
+  - A tracked migration for `reference_seen`: `reference_id`, `seen_by` (the
+    session email), `seen_at`; unique on `(reference_id, seen_by)`; RLS and
+    grants as DEV-37.
+  - **Seen means the post has been on the screen for about a second**
+    (Garreth, 2026-09-19): an IntersectionObserver at about half the post's
+    height, held for a second, then queued; send the queue in batches (every
+    few seconds, and on leaving the page with `sendBeacon`). A post loaded
+    below the fold and never reached is not seen. Upsert, so a second sighting
+    changes nothing.
+  - `carousel_feed_unseen(viewer, after_score, after_id, limit)`: DEV-36's
+    order, minus the viewer's `reference_seen` rows, keyset-paged.
+    `carousel_feed_seen(viewer, before_seen_at, limit)`: the viewer's seen
+    carousels, **most recently seen first** — the same table read back, no
+    second one. Execute revoked by name, `proacl` read back.
+  - **A seen post stays in place for the rest of the visit** and is gone at
+    the next launch: the page holds its list in memory and only the next
+    fetch from the top excludes it.
+  - **New while open:** poll the count of unseen carousels newer than the top
+    of the list every few minutes; when it is above zero show the quiet
+    **"n new carousels"** button (DEV-34). Pressing it puts them at the top.
+    Never insert on its own.
+  - The library grows by a handful of carousels a day, so after the first
+    pass through it "No new carousels" is the ordinary morning.
+- **Done when:** a carousel scrolled past is absent after a reload and one
+  only loaded below the fold is still there; the end of the unseen ones offers
+  the seen ones, newest seen first; and a carousel added to the library while
+  the page is open is announced by the button, not dropped into the list.
+
+### DEV-46. Transcribe and analyse, on demand
+
+- **Size:** M, and the one ticket here that reaches outside this repo.
+- **Depends on:** DEV-42.
+- **Flows:** F16 step 7.
+- **Build:** a carousel with no `reference_analysis` row (84 on 2026-09-19)
+  shows **Not transcribed or analysed yet** and one quiet button,
+  **Transcribe and analyse**, on both the Analysis and Transcription tabs.
+  **One button** — the pipeline reads and analyses a deck in a single pass.
+  - Pressing it must start the reading **at once**, not wait for the workers'
+    two-minute schedule. The pipeline is n8n's (*PM Carousel Shared Analysis
+    and Search*, `yzDMPwIOrBJYXivh`, and the Content Analysis Pipeline,
+    `m19op1GcjoGfkIxd`), fed by `content_pipeline_jobs`. **First find out how
+    a job is enqueued and whether the image-analysis workflow can be called
+    directly for one reference** (a webhook on it is the clean way); do not
+    copy the prompts into this app — the handover is firm that the analysis
+    is not reproduced anywhere else. Completed dedupe keys are not
+    re-enqueued, so a retry needs a fresh key or the job's own retry path.
+  - The route handler starts with `requireSession()`, writes through the
+    server helper with `auditLog()`, and **rate-limits** the button (each
+    press is model spend).
+  - The tabs poll the reading while it runs: **"Reading slide 3 of 7"**, the
+    transcription filling in slide by slide as `reference_beats` rows land.
+  - **The result is the carousel's, for everyone** — it lands in
+    `reference_beats`, `reference_analysis` and `carousel_search_documents`
+    like any other reading, so the next person sees it at once and **the
+    carousel becomes searchable** (DEV-39). Nothing is stored per person.
+  - **Blocked** carousels (24): the tab reads **Blocked**, "The slides could
+    not be fetched", with **Try again**, which asks for the media to be
+    fetched afresh before the reading; the pipeline already refreshes expired
+    Instagram and TikTok media. **Failed:** "The analysis failed", **Retry**.
+- **Watch:** n8n saves a workflow change as a draft until it is published;
+  compare `versionId` with `activeVersionId`. And do not switch off or alter
+  the permanent collection workflows to make this work.
+- **Done when:** an unread carousel pressed in the window is transcribed and
+  analysed within a couple of minutes without anyone touching n8n, shows the
+  same result to a second signed-in person, and turns up in a search for words
+  on its slides.
+
+### DEV-47. The query embedding for search
+
+- **Size:** S.
+- **Depends on:** nothing new. **Blocks DEV-39.**
+- **Build:** `search_carousel_library` needs the query's embedding handed to
+  it (`p_embedding`) for every hybrid or semantic search; it raises an
+  exception without one (read from the live function, 2026-09-18). The
+  documents were embedded with **`openai/text-embedding-3-small`** (the
+  function's `p_embedding_model` default, and it only compares against rows
+  of that model), through OpenRouter in the handover's service.
+  - A server-only helper that embeds the query text with **the same model and
+    dimensions**, called from DEV-39's route handler before the function.
+    Confirm the dimension against the `embedding` column before writing it.
+  - The key lives in a server-only environment variable, never `NEXT_PUBLIC_`.
+  - Cache by the normalised query text for a short while; people repeat
+    searches.
+  - If the embedding call fails, fall back to `p_mode = 'keyword'` so the box
+    still answers, and log that it did.
+- **Done when:** a meaning search for "tired eyes" returns a carousel about
+  under-eye bags that does not contain the words, and a failed embedding call
+  still returns keyword results.
 
 ---
 
@@ -1502,6 +1778,40 @@ On top of D10 as approved on 2026-09-16, and all about the Trends page.
     results** in the results line; Clear still returns to the feed. DEV-39
     returns the matched slide's image so a tile can show it. DEV-34, DEV-39.
 
+### Decided (Garreth, 2026-09-18 and 2026-09-19)
+
+D10's third round, approved 2026-09-19. It started from the developer
+handover's frontend addendum and was then checked against the live database.
+
+1. **The search box keeps its place and gains a search-type picker and a
+   filter button** (Garreth chose this over a separate search page). This
+   reverses round two's "no scope pills, no chips". DEV-34, DEV-39, DEV-43.
+2. **Filters are Topic, Hook style and Views, each a dropdown that starts on
+   Any and takes one value**, because the search function takes one topic and
+   the other fields cannot carry a list of everything. Visual style and
+   Standout posts only were drawn and then dropped when the data was read.
+   DEV-43.
+3. **The filters a search ran with sit over the results as chips with an X.**
+   DEV-43.
+4. **A post opens in one details window**, with Details, Analysis and
+   Transcription as tabs; it replaces round two's "a tile opens the post alone
+   with Back to results". DEV-42.
+5. **Thumb up and thumb down** on every post and in the window, in a table of
+   our own. DEV-44.
+6. **On a post, View Details takes Save's place**; Save is in the window.
+   **Saved is a grid.** DEV-34, DEV-37.
+7. **The feed holds what the person has not seen; seen means on the screen for
+   about a second.** Older ones are reached by **See older carousels**.
+   DEV-45.
+8. **Analysis is groups that open and close, Summary open, no counts on the
+   headers; Transcription is its own tab.** DEV-42.
+9. **One Transcribe and analyse button**, starting at once, its result kept on
+   the carousel for everyone. DEV-46.
+10. **On a phone the details are a sheet that rides up over pinned slides.**
+    DEV-42.
+11. **Every design ticket has its own canvas** (D6 and D10 one a theme), since
+    2026-09-18. `docs/designs/README.md`.
+
 ### Open questions, to be answered
 
 | # | Question | Holds up |
@@ -1512,6 +1822,9 @@ On top of D10 as approved on 2026-09-16, and all about the Trends page.
 | 4 | **Who runs the external analysis worker** that analyses new references? If it stops, links from a digest stay Queued (plan §10, item 3). | DEV-33 working fully, not its build |
 | 5 | **Where does a person find what they saved? Answered the same day** (Garreth, 2026-09-17, second review of round two): **a fourth section, Saved**, on the left rail and on the phone's floating bar, plus a **Recent saves** panel beside the feed on the desktop. Built in DEV-37 and drawn in DEV-34. | Nothing. Closed. |
 | 6 | **How many slides may a carousel have at most?** Instagram allows twenty. D6 round three (Garreth, 2026-09-17, approved) lets a person add slides but sets no cap, and neither the flows nor the template model names one. | DEV-21's cap only, not the ticket |
+| 7 | **Should a thinly analysed carousel offer "Analyse in full"?** 309 carousels were read by the newer run, which records only the hook, the story and the call to action; their Analysis tab has three rows and stays that way, because Transcribe and analyse is offered only where there is no reading at all. Offering it on these too costs model spend per press (raised 2026-09-19, not drawn). | Nothing; DEV-42 and DEV-46 work without it |
+| 8 | **Should the filters also narrow the plain feed**, not only a search? Today they apply to a search; on the feed they would need `carousel_feed_unseen` to take a topic, a hook and a views floor (raised 2026-09-18). | Nothing; DEV-43 as written |
+| 9 | **Who cleans the search index's topic tags?** The main analysis picks from a fixed list of nine, but the visual scout writes free-text tags (`typography:bold_sans_serif`, about 200 of them) into the same `topics` array, and `glp_1` comes from there too. The dropdown is a fixed list so none of it shows, but the index is another project's to tidy (found 2026-09-18). | Nothing |
 
 ### Proposed defaults, accepted unless changed
 

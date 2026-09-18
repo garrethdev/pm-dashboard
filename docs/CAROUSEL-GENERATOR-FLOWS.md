@@ -6,6 +6,12 @@ designed from this document; code is written only after both are signed off.
 **Revised 2026-09-17:** F15 added, for browsing and searching the reference
 library on the Trends page, and the hand-off to the Studio renamed **Use as
 reference** in F9 and F12.
+**Revised 2026-09-19 (D10 round three, approved by Garreth):** F15 rewritten —
+the search box gains a search-type picker and filters, the feed holds only
+what the person has not seen, Saved is a grid, and a post carries thumbs and
+**View Details** — and **F16 added**, for the details window a post opens in
+(Details, Analysis, Transcription, and analysis on demand). Everything in it
+was checked against the live database on 2026-09-18 and 2026-09-19.
 
 Companion documents: the plan (why and what), `CAROUSEL-TEMPLATE-MODEL.md`
 (the contract the painter and studio share), `CAROUSEL-RENDERER-PORT-SPEC.md`
@@ -68,6 +74,7 @@ no longer used on a card.
 | Library | `/carousel-generator/library`, `/library/[id]` | 2 read-only, 4 editable | Phase 4: Upload; Generate images in an empty library | Phase 4: Retire image |
 | Studio | `/carousel-generator/studio`, `/studio/[template]` | 3 | Save as content type, or Save version | Discard draft |
 | Trends | `/carousel-generator/trends` | 5 | Analyse on the Digests section, on the newest unanalysed digest; none on the Feed | — |
+| · Details window | over Trends, from a post, a tile or a recent save (F16) | 5 | none | — |
 
 All screens work in dark and light mode, like every other page of the
 dashboard (Garreth, 2026-09-14). Dark is designed first; light uses the same
@@ -501,9 +508,10 @@ width.
 - **When:** a reference carousel is worth copying the construction of.
   Phase 3 from a reference id; Phase 5 adds the two Trends entries.
 - **Screens:** Trends, then Studio — or a reference id on its own. On Trends
-  the way in is **Copy to Studio**, either on a **feed card** (F15) or on a
-  carousel listed under an analysed digest (F12). Both land in the same place
-  with the same reference (Garreth, 2026-09-17). The button was called
+  the way in is **Copy to Studio**: on a **feed post** (F15), in the **details
+  window** a post opens in (F16, added 2026-09-19), or on a carousel listed
+  under an analysed digest (F12). All three land in the same place with the
+  same reference (Garreth, 2026-09-17). The button was called
   "Recreate this", then "Use as reference", earlier the same day; **Copy to
   Studio** is its name everywhere in this file from here on.
 - **Steps:**
@@ -632,7 +640,7 @@ width.
 - **Accent action:** Analyse, on the newest unanalysed digest — this tab's
   only accent (D10) — and the page's only accent anywhere. Analyse again,
   Retry and **Copy to Studio** are all secondary here, and Copy to Studio is
-  quiet on a feed card too (F15).
+  quiet on a feed post and in the details window too (F15, F16).
 - **Hold:** none.
 - **Empty:** first run: no digests yet, no action (they arrive on their own),
   and the block fills the screen. All clear: every digest analysed, which reads
@@ -730,145 +738,218 @@ width.
 
 ### F15. Browse and search the library
 
+*Rewritten 2026-09-19 for D10's third round (Garreth approved dark that day).
+Round two's version is in git history; what it decided and round three kept
+is restated here, so this section reads on its own.*
+
 - **When:** looking for a carousel worth building a content type from, or
   checking what the library already holds on a subject or on an account. The
-  feed shows carousels the library scraped from **other creators, never our
+  feed shows carousels the library collected from **other creators, never our
   own** — like a social feed — so that a person can see what is doing well and
-  recreate it in the Studio (Garreth, 2026-09-17, first review of round two).
-  Phase 5, with the rest of Trends. It needs only the reference library, which
-  is already full (plan §2.6), so it does not wait on the digest work.
-- **What the library is:** the 1,246 reference carousels the Virlo bridge and
-  the analysis workers have collected, read live on 2026-09-17. **Carousels
-  only** — videos are filtered out here exactly as they are on the digests
-  (Garreth, 2026-09-16, restated 2026-09-17), and the filter is on the
-  reference's `format`, not on the address.
-- **Screens:** Trends, **Feed** — the first of the four buttons on the page's
-  left rail (Feed, Saved, Digests, **Knowledge**, renamed from "Knowledge
-  base" on screen by Garreth, 2026-09-17, fourth review of round two; only the
-  label changed, the table behind it is still `content_knowledge_base`), which
-  on a phone is a floating bar along the bottom of the screen. Then the Studio, if a card is
-  copied into it.
+  recreate it in the Studio (Garreth, 2026-09-17). Phase 5, with the rest of
+  Trends. It needs only the reference library, which is already full, so it
+  does not wait on the digest work.
+- **What the library is:** 1,252 reference carousels on 2026-09-18, collected
+  by the Virlo bridge and read by the analysis workers. **Carousels only** —
+  videos are filtered out here exactly as they are on the digests (Garreth,
+  2026-09-16), on the reference's `format`, never on the address.
+- **What can be searched:** only a carousel the workers have read. Search runs
+  over the pieces of text a reading writes (slide words, caption, what each
+  slide looks like, how the deck is built, its comments), so a carousel with
+  no reading cannot be found by its content. On 2026-09-19 that was **1,143 of
+  1,252**; 84 were unread, 24 blocked (their images could not be fetched) and
+  one had no search pieces. The workers close the gap on their own, and
+  **Transcribe and analyse** (F16) closes it for one carousel at once.
+  Searching by **account name** works for all of them. "How it looks" reaches
+  about 834 carousels and "Comments" about 710, because only one of the two
+  analysis runs wrote those pieces. The screen says none of this.
+- **Screens:** Trends — **Feed**, the first of the four buttons on the page's
+  left rail (Feed, Digests, Knowledge, Saved), which on a phone is a floating
+  bar along the bottom — then the details window (F16), then the Studio if a
+  post is copied into it (F9).
 - **Steps:**
-  1. The generator's **Trends** menu item opens the page on **Feed**, the
-     first and default of the four buttons on the page's **left rail**
-     (Garreth, 2026-09-17). **Saved** is the second, then Digests and
-     Knowledge, unchanged. **No button carries a count** (Garreth,
-     2026-09-17, second review of round two). On a phone the rail is a
-     floating bar at the bottom of the screen. The search box sits centred
-     over the posts, and on a phone beside the **Trends** title on the same
-     row. **Only the posts scroll** (Garreth, 2026-09-17, third review of
-     round two): the title and the search box, the rail and the Recent saves
-     panel are pinned, and the column of posts moves in a scroller of its own,
-     with a generous gap under the search box before the first post. On a
-     phone the same — title and bar pinned, floating bar pinned, posts
-     scrolling under them.
-  2. The feed is one column of cards **500px wide on the desktop**, one under
-     the other with a thin divider between them and no box drawn around them.
-     It is centred **between the rail (200px) and the Recent saves panel
-     (300px), not on the page**, so the gap either side of the posts is the
-     same — 76px on a 1440px screen — and the search box is centred over them
-     the same way (Garreth, 2026-09-17, third review of round two). **A card is shaped
-     like an Instagram feed post:** a header row with a round platform mark,
-     the handle and the date beside it (only when the library knows one), and
-     **View Post** at its top right, opposite the handle and the topic line; a
-     muted second line of topic tags, which on a search result also says
-     "Matches on slide 3";
-     the slides at 4:5 as **a track that snaps slide to slide** (Garreth,
-     2026-09-17, fourth review of round two) — a trackpad swipe pages them on
-     the desktop the way a thumb does on a phone, and the dots and the arrows
-     on hover page them too — with the slide counter over them; then a row
-     carrying the numbers ("24.3k views · 1.2k
-     likes · 108 saves") at the left and **Copy to Studio** beside **Save** at
-     the right — **Copy to Studio is a quiet grey outline button**, no fill,
-     its text and its icon in the ordinary text colour (Garreth, 2026-09-17,
-     third review of round two); then the hook as the caption with the handle
-     in bold
-     before it, directly under that row. **View Post is the way out to the
-     original post** (Garreth, 2026-09-17, fourth review of round two): a
-     quiet grey outline button, no fill and ordinary text colour, which opens
-     that post on TikTok or Instagram in a new tab from
-     `references_unified.source_url`. It answers the note the second review
-     left open when it took the Share and Open source buttons off the card.
-     Pressing the handle still shows that creator's carousels. On a phone the
-     card is the same, with the image edge to edge and nothing riding on top
-     of it.
-  3. The feed is **one list, best-scored first**, and there is **no chip
-     row** — no Trending chip, no Saved chip and no carousel-type chips, so
-     nothing filters it by type (Garreth, 2026-09-17, first review of round
-     two). Best-scored means best in our own library rather than trending this
-     week, because the carousels we hold carry no publish date. **The feed
-     says none of that:** the honest caption "Trending in the library" is gone
-     too, so nothing at all sits above the first card (Garreth, 2026-09-17,
-     second review of round two).
-  4. Reaching the end of twenty cards fetches the next twenty; the next card's
-     outline stands in with the busy icon while they load. At the end of the
-     library the column says "That's every carousel".
-  5. **Save** is the quiet bookmark beside Copy to Studio. Pressing it fills
-     the icon; pressing again unsaves. Saves are personal to the email that
-     made them, newest saved first.
-  6. **Saved**, the rail's second button, lists them back: the same feed
-     layout, this person's saves, newest saved first, and **"Nothing saved
-     yet"** when there are none (Garreth, 2026-09-17, second review of round
-     two).
-  7. **On the desktop only, a "Recent saves" panel** sits to the right of the
-     feed: the last five saves as horizontal cards — the thumbnail at the
-     left, then the handle, and views and likes — with **View all saves**,
-     which opens the Saved section. The phone has no panel; its way in is the
-     Saved button on the floating bar.
-  8. **Searching:** type in the one box — as wide as the posts, 500px on the
-     desktop, with **no scope pills** (Garreth, 2026-09-17, second review of
-     round two) — then
-     press Enter or the search icon. Nothing runs while typing, because
-     the search is a round trip that can take seconds. One query searches
-     creators and carousels together. **Accounts that match come back as a
-     short list above the carousels** — handle, platform, how many of their
-     carousels we hold, their best views — and pressing one shows that
-     creator's carousels as ordinary feed cards, with the handle pinned as a
-     chip above them. The carousels themselves replace the feed in place as
-     **a grid, three tiles across** (Garreth, 2026-09-17, fourth review of
-     round two), each tile the slide that matched, at 4:5, with a small
-     carousel mark in the corner and an "n slides" badge — the way Instagram
-     lays its search results out — under a line that says what was found —
-     "14 carousels for 'under-eye serum'", or "No carousels match". **Clear**
-     returns to the feed at the top.
-  9. **Pressing a tile opens that post alone in the column**, drawn in the
-     feed's own layout, with **Back to results** in the results line to return
-     to the grid. Clearing the search is the X on the search bar; there is
-     no Clear button in the results line (Garreth, 2026-09-17, after the
-     fifth cut).
-  10. Searching from any other section switches to Feed to show the results.
-  11. **Copy to Studio** on a card hands over to F9 with that reference — the
-      same destination as the button on a carousel under a digest (F12).
-- **Accent action:** **none on the feed** (Garreth, 2026-09-17, third review
-  of round two). Copy to Studio was the lit button for a day; it is now a
-  quiet grey outline button beside Save, and everything else here — Save, the
-  search box, the rail buttons — is quiet too. The generator's accent on this
-  page belongs to **Analyse**, on the Digests section (F12).
-- **Hold:** none. Unsaving loses nothing that cannot be saved again in one
-  press.
-- **Empty:** first run: "No carousels yet" fills the screen, and only when the
-  library itself is empty. No results: "No carousels match" after a search,
-  sitting inline where the grid would be, because the rest of the page is
-  still there.
+  1. **Trends** in the generator's menu opens the page on **Feed**. No rail
+     button carries a count. The title and the search box, the rail and the
+     Recent saves panel are pinned; **only the posts scroll** (Garreth,
+     2026-09-17). The posts are one column **500px wide**, centred between the
+     rail (200px) and the Recent saves panel (300px), with the search box
+     centred over them the same way.
+  2. **A post** is shaped like an Instagram feed post: a header row with the
+     platform mark, the handle, the date **only when the library knows one**,
+     and **View Post** at the top right (it opens the original on TikTok or
+     Instagram in a new tab); a muted line of topic tags; the slides at 4:5 as
+     **a track that snaps slide to slide**, with the counter, the arrows on
+     hover and the dots; then a row with **thumb up and thumb down** at the
+     left (useful / not useful — pressing one fills it, pressing it again
+     takes the vote back) and **Copy to Studio** and **View Details** at the
+     right; then the numbers on a line of their own (`24.3k views · 1.2k likes
+     · 108 saves`); then the hook as the caption with the handle in bold.
+     **A number the library does not hold is left off the line, never shown as
+     0.** Every button on a post is a quiet grey outline; **nothing on the
+     feed is lit** (Garreth, 2026-09-17).
+  3. **View Details** opens the post in the details window (F16). **Save moved
+     there**: a feed post has no bookmark (Garreth, 2026-09-18).
+  4. **The feed holds what this person has not seen** (Garreth, 2026-09-18),
+     best-scored first among those. **Seen means the post has been on the
+     screen for about a second** (Garreth, 2026-09-19); a post loaded below
+     the fold and never reached does not count. A seen post stays where it is
+     for the rest of the visit — nothing vanishes under the reader — and is
+     gone from the feed at the next launch. It is found again by searching, or
+     in Saved.
+  5. Reaching the end of twenty posts fetches the next twenty, with the next
+     post's outline and the busy icon while they load.
+  6. **After the last unseen post** the feed reads **No more new carousels**
+     with a quiet **See older carousels** button, which carries on into the
+     ones already seen, **most recently seen first**, in the same pages of
+     twenty. **That's every carousel** is the end of those.
+  7. **With nothing new at launch**, the feed shows a small **No new
+     carousels** line and, under it, the last ones seen; scrolling carries on
+     into the older ones without a button, since the reader is already among
+     seen posts.
+  8. **When new carousels land while the page is open**, a quiet button at the
+     top — **6 new carousels** — brings them in. The feed never reorders
+     itself under the reader.
+  9. **Saved**, on the rail, is **a grid three tiles across**, like search
+     results (Garreth, 2026-09-19): each tile the post's **cover**, a small
+     carousel mark and an `n slides` badge, newest saved first; a tile opens
+     the details window, which is also where a post is unsaved. **Nothing
+     saved yet** when there are none. **On the desktop only**, a **Recent
+     saves** panel to the right of the feed lists the last five (thumbnail,
+     handle, views and likes), each opening the details window, with **View
+     all saves**.
+  10. **Searching.** One box as wide as the posts. Inside it at the right is
+      **how the search reads the library** — Meaning (the default), Exact
+      words, How it's built, How it looks, Comments — and just outside it a
+      round **filter** button, which shows how many filters are on (Garreth,
+      2026-09-18, reversing round two's "no scope pills, no chips"). On a
+      phone the box sits beside the title, and the search type is the first
+      group of the filter sheet. Type, then press Enter or the search icon:
+      nothing runs while typing, because a search is a round trip. One query
+      searches creators and carousels together.
+  11. **Filters** open as a panel under the box (a sheet from the bottom on a
+      phone): **Topic**, **Hook style** and **Views**, each **a dropdown that
+      starts on Any and takes one value** (Garreth, 2026-09-18), with **Clear
+      all** and **Apply**. Apply runs the search again. The panel is nearly
+      solid in dark and solid in light, so its labels keep their contrast over
+      the photos. Filters narrow a search; they do not filter the plain feed.
+  12. **While a search is on its way** the results line reads **Searching for
+      "under-eye serum"** with the busy icon, over six breathing tiles.
+  13. **Results replace the feed in place.** Accounts that match come first as
+      a short list (handle, platform, how many of their carousels we hold,
+      their best views); pressing one shows that creator's carousels as
+      ordinary posts with the handle as a chip. The carousels are **a grid
+      three tiles across**, each tile **the slide that matched**, with the
+      carousel mark and the `n slides` badge, under a line that says what was
+      found — `14 carousels for "under-eye serum" · best match first`. **A
+      search returns 25 at most, so a full page reads "The 25 best matches
+      for …"**, never a total the library was not asked for.
+  14. **The filters a search ran with sit over its results as chips**, each
+      with an **X** that takes that filter off and runs the search again, and
+      **Clear all** when there is more than one (Garreth, 2026-09-18). They
+      show over a search that found nothing too, where taking one off is
+      usually the fix.
+  15. **Pressing a tile opens the details window** (F16) on the slide that
+      matched; closing it returns to the grid where it was. The X on the
+      search box clears the search and brings the feed back. Searching from
+      any other section switches to Feed to show the results.
+- **Accent action:** **none on the feed** (Garreth, 2026-09-17). Apply, in the
+  filter panel, is filled in the ordinary text colour, not the accent. The
+  page's accent belongs to **Analyse**, on Digests (F12).
+- **Hold:** none. A vote, a save and a filter are each undone in one press.
+- **Empty:** first run: **No carousels yet** fills the screen, and only when
+  the library itself is empty. No results: **Nothing matches "…"** in the
+  results line and **Nothing in the library matches** where the grid would be.
+  Saved with nothing in it: **Nothing saved yet**.
 - **Fails:**
-  - A slide's picture has expired, which the stored media links do: the frame
-    reads "Image gone" and the card keeps its hook, its metrics and its
-    buttons. A reference is never dropped because a picture went missing.
-  - The search errors or times out: the message sits where the results line
-    would be, with Retry, and the feed is still underneath, behind Clear.
-  - A page of cards fails to load: the busy outline becomes a Retry in the same
-    place, and the cards already read stay where they are.
-- **Writes:** `reference_favourites`, on Save and on unsave. Browsing and
-  searching write nothing.
-- **Answered, 2026-09-17:** the first review left it open where a person finds
-  what they saved, once the chip row went. The second review settled it —
-  **Saved is a fourth section on the left rail** (and on the phone's floating
-  bar), with the desktop's Recent saves panel as the shortcut to it
-  (Garreth, 2026-09-17, second review of round two).
-  The second review left a second note open — nothing on a post led back to
-  the original any more — and **the fourth review answers it: View Post**, a
-  quiet grey outline button at the top right of every post, opens it on its
-  own platform (Garreth, 2026-09-17, fourth review of round two).
+  - A slide's picture has expired, which the stored links do: the frame reads
+    **Image gone** and the post keeps its words, its numbers and its buttons.
+    A reference is never dropped because a picture went missing.
+  - **The search times out or errors:** a message where the results would be —
+    **The search timed out** — with **Retry**. This is a different thing from
+    finding nothing, and the screen says so.
+  - A page of posts fails to load: the busy outline becomes a Retry in the
+    same place, and the posts already read stay where they are.
+- **Writes:** `reference_favourites` on Save and unsave (in the details
+  window); `reference_votes` on a thumb; `reference_seen` as posts pass under
+  the reader's eye. Browsing and searching write nothing else.
+
+### F16. Open a post: details, analysis, transcription
+
+*Added 2026-09-19 (D10 round three).*
+
+- **When:** a post in the feed, a tile in the search results or in Saved, or a
+  row of Recent saves is worth a closer look — its numbers, what the library's
+  reading says about it, the words on its slides — before copying it into the
+  Studio. Phase 5.
+- **Screens:** the **details window**, over the Trends page. One window,
+  wherever it is opened from (Garreth, 2026-09-18).
+- **Steps:**
+  1. The window opens with the **slides at the left**, 4:5, swipeable, with
+     the arrows, the counter and the dots — on the slide that matched, when it
+     was opened from a search result — and at the right the platform mark, the
+     handle, the topic line, and an **X at the upper right** that closes it
+     back to wherever it was opened from. Along the foot: **thumb up, thumb
+     down, Save** at the left, **View Post** and **Copy to Studio** at the
+     right. All quiet.
+  2. **Three tabs: Details, Analysis, Transcription** (Garreth, 2026-09-19).
+  3. **Details:** Views, Likes and Saves as three cells; then Posted, Platform
+     and Slides; then the whole caption. **A number or a date the library does
+     not hold reads Unknown, never 0.** Every carousel's posted date is blank
+     today.
+  4. **Analysis** is what the library's reading says about the deck, as
+     **groups that open and close** (Garreth, 2026-09-19): **Summary** (open
+     when the tab opens), **How it works**, **Reusable pattern** and
+     **Audience response** (shut). A header is its name and a caret, **with no
+     counts or other small text**. More than one can be open at once. Over
+     them, the reading's own state — **Complete**, **Partial** or **Blocked**
+     — and "Read by the model" with the date.
+     - *Summary:* the short values, two across — Topic, Angle, Hook, Story,
+       Tone, Look, and the slide the product first shows on. They are stored
+       as code words (`outcome_preview`); the screen shows plain words.
+     - *How it works:* Why it hooks, Opener, Payoff and Call to action with
+       their slide, and Proof, as sentences.
+     - *Reusable pattern:* what to **Keep**, and its **Limits**.
+     - *Audience response:* themes and questions read from the comments, or
+       **Too few comments to read**.
+     - **A row the library has nothing for is left out, never shown blank.**
+       The newer of the two analysis runs (309 carousels) records only the
+       hook, the story and the call to action, so its tab has fewer rows and
+       no pattern or audience group.
+  5. **Transcription** is each slide in the deck's order: its words, a muted
+     line saying what the slide shows, and its job in the story (Setup,
+     Problem, Turn, Proof, Payoff, Call to action), with **All 6 slides read**
+     — or **4 of 6 slides read** — at the top. **A slide with no words says
+     "No words on this slide"; the screen never invents copy.** The first
+     slide is labelled **Opening slide**.
+  6. **A part-read deck keeps every row of its analysis.** Partial means the
+     worker could only fetch some of the slides, not that the analysis is
+     short: the label reads Partial and the transcription says how many.
+  7. **Not read yet:** both tabs show **Not transcribed or analysed yet** and
+     one quiet button, **Transcribe and analyse**. It is one button because
+     the reading does both in one pass (Garreth asked for two; one pass makes
+     two pointless). Pressing it starts the reading **at once**; the tabs fill
+     in as it goes — "Reading slide 3 of 7" — and **the result is kept on the
+     carousel, for everyone**, not for the person who pressed it, so it is
+     paid for once and the carousel becomes searchable (F15).
+  8. **On a phone** the window fills the screen. The **slides stay pinned
+     under the header**; the tabs and what they hold are a **sheet that rides
+     up over the slides as the reader scrolls**, until a strip of the slide is
+     left, and lets go again on the way back down; a grab bar at its top does
+     the same on a press (Garreth, 2026-09-19). The header and the foot never
+     move.
+  9. **Copy to Studio** hands over to F9 with this reference.
+- **Accent action:** none.
+- **Hold:** none.
+- **Empty:** the not-read-yet state above.
+- **Fails:**
+  - **Blocked:** the slides could not be fetched. The tab reads **Blocked**
+    and **The slides could not be fetched**, with **Try again**, because the
+    pipeline can fetch expired media afresh.
+  - **The reading failed:** **The analysis failed**, with **Retry**.
+- **Writes:** `reference_favourites`, `reference_votes`; and, on Transcribe
+  and analyse, a job for the analysis worker, whose results land in
+  `reference_beats`, `reference_analysis` and `carousel_search_documents` as
+  they do for every other carousel.
 
 ---
 
@@ -942,6 +1023,34 @@ Nothing is left to decide before the screens.
     it on its own platform, from `references_unified.source_url`. The slides
     swipe sideways on the desktop too, as a track that snaps slide to slide.
     See F15.)*
+
+**Decided (Garreth, 2026-09-18 and 2026-09-19, D10 round three)**
+
+14. The search box gains **how the search reads the library** (Meaning, Exact
+    words, How it's built, How it looks, Comments) and a **filter** button;
+    the filters are **Topic, Hook style and Views, each a dropdown that starts
+    on Any and takes one value**, and the ones a search ran with sit over its
+    results as **chips with an X**. This reverses item 10's "no scope pills"
+    (F15).
+15. A post opens in **one details window** — slides at the left, an X at the
+    upper right, **Details, Analysis and Transcription** as tabs — from a feed
+    post's **View Details**, a results tile, a Saved tile or a recent save. It
+    replaces "a tile opening that post alone with Back to results" in item 10
+    (F16).
+16. **Useful and not useful** are a thumb up and a thumb down, on every post
+    and in the details window (F15, F16).
+17. On a post **View Details takes Save's place**; Save lives in the details
+    window. **Saved is a grid**, like the search results (F15).
+18. **The feed holds what the person has not seen**, and **seen means on the
+    screen for about a second**. After the last unseen post: **No more new
+    carousels** and **See older carousels**. With nothing new: **No new
+    carousels** over the last ones seen (F15).
+19. **Analysis is groups that open and close**, Summary open and the rest
+    shut, their headers carrying no counts; **Transcription is a tab of its
+    own**. A carousel not read yet offers one **Transcribe and analyse**
+    button, whose result is kept on the carousel for everyone (F16).
+20. On a phone the details are **a sheet that rides up over pinned slides**
+    (F16).
 
 **Proposed defaults, accepted unless changed**
 

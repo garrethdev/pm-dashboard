@@ -16,57 +16,54 @@ as the how-to for any screen Garreth reopens or adds.
 
 ## Where the designs live
 
-- **Carousel Generator Designs - Dark (D1 to D5)**, the dark-mode review canvas:
-  https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8.
-  One page per ticket (`D1 · Dark`, `D2 · Dark` …).
-- **Carousel Generator Designs - Light (D1 to D5)**, the light-mode review canvas:
-  https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4. One page per ticket
-  (`D1 · Light`, `D2 · Light` …). Split off the dark canvas on 2026-09-15
-  (Garreth), because one canvas holding both themes was nearing the 16 MB
-  limit by D5. A ticket's screens go to whichever canvas matches the theme;
-  the build script still writes both themes into one folder, and
-  `place-ticket.mjs --theme` picks the page for the canvas being saved.
-- **Carousel Generator Designs - Dark (D6 Studio)**, D6's dark canvas:
-  https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p, page `D6 · Dark`, favicon
-  `"🎠🎨"`.
-- **Carousel Generator Designs - Light (D6 Studio)**, D6's light canvas:
-  https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p, page `D6 · Light`, favicon
-  `"🎨☀️"`.
-  The Studio is a heavy ticket (27 boards a theme, and the shared dark canvas
-  had reached 15.7 MB of its 16 MB with it), so Garreth moved it off the
-  shared canvases on 2026-09-15. Both themes on one canvas came to 14.3 MB,
-  too close to the limit for D6's round two, so on 2026-09-15 Garreth had
-  light mode split onto its own canvas, the way D1 to D5 are split; each
-  came to 8.9 MB, and each is 12.2 MB with round two. Round three
-  (2026-09-17, slides added, duplicated, deleted and moved) adds seven boards
-  a theme, 36 in all. Nothing else is placed on either. Steps 3–6 read and save
-  the canvas for the theme being placed; step 4 runs `place-ticket.mjs` with
-  `--theme dark` or `--theme light`; and step 5 packages it with
-  `--title "Carousel Generator Designs - Dark (D6 Studio)"` or
-  `--title "Carousel Generator Designs - Light (D6 Studio)"`.
-  A ticket that grows past a dozen boards should take the same route
-  rather than push a shared canvas toward the limit.
-- **Carousel Generator Designs - (D7 and D8)**, dark and light pages
-  together: https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH. Started
-  2026-09-15 at Garreth's request, so these tickets stay off the full shared
-  canvases. Pages `D7 · Dark`, `D7 · Light`, `D8 · Dark`, `D8 · Light`. Its
-  favicon is `"🎠📑"`. Steps 3–6 read and save this canvas; step 4 runs
-  `place-ticket.mjs` without `--theme`; step 5 packages it with
-  `--title "Carousel Generator Designs - (D7 and D8)"`.
-  **It is full and closed to new tickets.** It was called "(D7 to D10)" until
-  2026-09-16, when the two tickets on it reached 14 MB of the 16 MB limit and
-  Garreth renamed it for what it actually holds. D9 and D10 need a new canvas
-  of their own, and the first of them to be designed makes it: give it a name
-  that says what it holds, its own favicon, and a bullet here.
-- **Carousel Generator Designs - (D9 and D10)**, dark and light pages
-  together: https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1. Started
-  2026-09-16 with D9, because the D7 and D8 canvas was full. Pages `D9 · Dark`,
-  `D9 · Light`, `D10 · Dark` and `D10 · Light`. Its favicon is
-  `"🎠🕰️"`. Steps 3–6 read and save this canvas; step 4 runs
-  `place-ticket.mjs` without `--theme`; step 5 packages it with
-  `--title "Carousel Generator Designs - (D9 and D10)"`. D9 is 8 boards a
-  theme and D10 is 25 since its second round (2026-09-17; it was 15), both
-  themes 13.3 MB of the 16 MB limit. Nothing else should be added here.
+**One canvas a ticket since 2026-09-18** (Garreth). Each holds the ticket's
+dark and light pages together; D6 and D10 have a canvas a theme, because
+their two themes do not fit under the 16 MB limit of one canvas (D6 is
+12.2 MB a theme; D10 would be about 21 MB with round three in both).
+
+| Ticket | Canvas | Pages | Link | Favicon |
+|---|---|---|---|---|
+| D1 | Carousel Generator Designs - (D1 Carousel types) | D1 · Dark, D1 · Light | https://claude.ai/artifact/R1qCqyRpsX7AehQPLCbAMi | 🎠1️⃣ |
+| D2 | Carousel Generator Designs - (D2 Generate form) | D2 · Dark, D2 · Light | https://claude.ai/artifact/BYwZo8XWDR4x33MszvVotX | 🎠2️⃣ |
+| D3 | Carousel Generator Designs - (D3 Batch writing) | D3 · Dark, D3 · Light | https://claude.ai/artifact/1BS64VF3Sydob9oPMU7Xtg | 🎠3️⃣ |
+| D4 | Carousel Generator Designs - (D4 Batch review) | D4 · Dark, D4 · Light | https://claude.ai/artifact/J2NcLiDevFJp6s3zf6dhVN | 🎠4️⃣ |
+| D5 | Carousel Generator Designs - (D5 Batch render) | D5 · Dark, D5 · Light | https://claude.ai/artifact/4h66j2MEbBPzuJzRujwuXp | 🎠5️⃣ |
+| D6 dark | Carousel Generator Designs - Dark (D6 Studio) | D6 · Dark | https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p | 🎠🎨 |
+| D6 light | Carousel Generator Designs - Light (D6 Studio) | D6 · Light | https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p | 🎨☀️ |
+| D7 | Carousel Generator Designs - (D7 Type page) | D7 · Dark, D7 · Light | https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp | 🎠7️⃣ |
+| D8 | Carousel Generator Designs - (D8 Image libraries) | D8 · Dark, D8 · Light | https://claude.ai/artifact/WqEfhNzEiUiTieUAU14qms | 🎠8️⃣ |
+| D9 | Carousel Generator Designs - (D9 History) | D9 · Dark, D9 · Light | https://claude.ai/artifact/2EjoB77uj9C8qXriiUmRxT | 🎠📜 |
+| D10 dark | Carousel Generator Designs - Dark (D10 Trends) | D10 · Dark | https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1 | 🎠📈 |
+| D10 light | Carousel Generator Designs - Light (D10 Trends) | D10 · Light | https://claude.ai/artifact/8vc8Sv7TRCi5Xqbhxqi1Sp | 📈☀️ |
+| D11 | Carousel Generator Designs - (D6 pt. 2 Studio) | D11 · Dark, D11 · Light | https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5 | 🎠🧩 |
+| Prototype | Carousel Generator Prototype | desktop, phone | https://claude.ai/artifact/KNxf22ERryEbTmr2tRuzF6 | 🕹️ |
+
+- **Saving a ticket.** Steps 3–6 below read and save **that ticket's own
+  canvas**. Step 4 runs `place-ticket.mjs --ticket DN` without `--theme` for a
+  canvas that holds both themes, and with `--theme dark` or `--theme light`
+  for D6 and D10. Step 5's `--title` is the canvas's name in the table, and
+  step 6's `favicon` is the one beside it.
+- **A new ticket makes its own canvas**: name it "Carousel Generator Designs -
+  (DN <what it is>)", give it a favicon, publish it without `url`, and add a
+  row here. If both themes pass about 14 MB together, split it by theme the
+  way D6 and D10 are, "Dark (DN …)" and "Light (DN …)".
+- **Redrawing one theme on a two-theme canvas** (dark first, light after
+  approval): place without `--theme`, then put the other theme's artboards,
+  files and note back from the extracted live canvas, because
+  `place-ticket.mjs` drops every page the ticket owns.
+- **The old shared canvases are an archive, not saved to any more**, left
+  exactly as they were on 2026-09-18: Dark (D1 to D5)
+  https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8,
+  Light (D1 to D5) https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4, and
+  (D7 and D8) https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH. "(D9 and
+  D10)" is not among them: its link became D10's dark canvas. The boards were
+  copied off them unchanged. The separate D2 canvas (`815e3cc0-…`) was
+  retired earlier.
+- **Reading a canvas without filling the session.** The Artifact tool's plain
+  read prints the page's long head into the conversation; reading it with
+  `path: "index.html"` saves the same file and prints nothing. Use the plain
+  read only for the canvas about to be saved over, which the tool asks for.
+- **Packing and looking.**
   The `/design` skill that shipped `seed-canvas.mjs` was not on the machine
   on 2026-09-17; the canvas is one page whose whole content sits in a JSON
   block (`<script type="application/json" id="appifact-doc">`, with `title`
@@ -81,28 +78,17 @@ as the how-to for any screen Garreth reopens or adds.
   headless Chrome (`--headless=new --screenshot=... --window-size=1440,900`,
   run against the file inside the build folder so its images resolve) gives a
   picture of it. D10's second round was checked that way.
-- **Carousel Generator Designs - (D6 pt. 2 Studio)**, D11's own canvas (the
-  Studio's second round), named by Garreth on 2026-09-15:
-  https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5. Pages `D11 · Dark` and
-  `D11 · Light`. Its favicon is `"🎠🧩"`. Built by
-  `d11-studio-round-two.build.mjs`, which draws D11's pictures from D6's
-  Studio: round two was brought into `d6-studio.build.mjs` on 2026-09-15, so
-  that file now holds the whole screen, and D11's file keeps only its own
-  review moments and image names. Steps 3–6 read and save this
-  canvas; step 4 runs `place-ticket.mjs --ticket D11` without `--theme`;
-  step 5 packages it with `--title "Carousel Generator Designs - (D6 pt. 2 Studio)"`.
-  13 desktop boards a theme, both themes 11.2 MB.
-- **Carousel Generator Prototype**, the click-through of every approved screen:
-  https://claude.ai/artifact/KNxf22ERryEbTmr2tRuzF6 (the same artifact as the
-  older `claude.ai/code/artifact/94d569f8-…` form; both open it).
-  A desktop artboard and a phone artboard; holds D1 to D10. Its Studio is
-  D6's own build with round two included, and a type's slide size travels
-  from Carousel types through Generate, the batch and review to D5, so
-  Quiet Luxury Picks renders at 9:16 (2026-09-15). It is built only from `main`, by one
-  session, after a ticket is approved. Ticket sessions never save it (D11's
-  switch was the exception, saved from its branch at Garreth's request on
-  2026-09-15, since the branch was `main` plus D11).
-- The separate D2 canvas (`815e3cc0-…`) is retired and no longer updated.
+- **D11** is built by `d11-studio-round-two.build.mjs`, which draws its
+  pictures from D6's Studio: round two was brought into `d6-studio.build.mjs`
+  on 2026-09-15, so that file holds the whole screen and D11's keeps only its
+  own review moments and image names.
+- **The prototype** is the click-through of every approved screen (a desktop
+  artboard and a phone artboard; holds D1 to D10; the older
+  `claude.ai/code/artifact/94d569f8-…` form opens the same artifact). Its
+  Studio is D6's own build with round two included, and a type's slide size
+  travels from Carousel types through Generate, the batch and review to D5,
+  so Quiet Luxury Picks renders at 9:16. It is built only from `main`, by one
+  session, after a ticket is approved. Ticket sessions never save it.
 
 ## The rules
 
@@ -185,14 +171,14 @@ other's way:
    `node <design>/seed-canvas.mjs --template <design>/payload.template.html --out ../carousel-generator-designs.html --title "Carousel Generator Designs - Dark (D1 to D5)" <that list> --canvas canvas.json`;
    light: the same with `--out ../carousel-generator-designs-light.html --title "Carousel Generator Designs - Light (D1 to D5)"`.
    Then `node <design>/seed-canvas.mjs --check <that file>`. The warning that
-   there is no `Main.dc.html` is expected. The canvas names say what they
-   hold (Garreth, 2026-09-15), so when a ticket joins a shared canvas the
-   `--title` range grows with it (`D1 to D7`), and a ticket on its own
-   canvas that carries both themes says only what it holds (`(D6
-   Studio)`).
+   there is no `Main.dc.html` is expected. Since 2026-09-18 every ticket has
+   its own canvas, so `--out` and `--title` are that canvas's own (the table
+   above); the "(D1 to D5)" names in this step are the old shared canvases.
 6. **Save it** with the Artifact tool: publish that file with `url` set to
    that theme's link, `contract: "0.1.31"`, the canvas's own `favicon`
-   (`"🎠"` dark, `"🎠☀️"` light), and no `capabilities`. If the save is refused
+   (the table above), and no `capabilities` (a brand-new canvas is the one
+   exception: publish it with `capabilities: {"downloads": {}, "self": {}}`,
+   which is what the editor's Save needs). If the save is refused
    because someone else saved in the meantime, go back to step 3 and redo
    steps 3–6. Never force it.
 7. **Look at it** on the saved canvas, open to your ticket's page, before
