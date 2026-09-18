@@ -14,27 +14,41 @@ and the dev tickets are being written in parallel with that design.**
 The canvas D7 and D8 share is full — 14 MB of its 16 MB with both tickets on
 it in both themes — so it was **renamed from "(D7 to D10)" to "(D7 and D8)" on
 2026-09-16** (Garreth), because it is never going to hold the other two. D9
-made the new canvas the two of them share, **(D9 and D10)**; the how-to lists
-it.
+made the new canvas the two of them shared, **(D9 and D10)**, until
+**2026-09-18**, when D10's third round filled it and Garreth had them
+separated: **(D9 History)** is a new canvas and **(D10 Trends)** keeps the
+old link. The how-to lists both.
 Each ticket is a set of screens to design in the **Peptide Miracles Dashboard**
 project in Claude Design. The app is not changed during this step.
 
-**Three review canvases since 2026-09-15** (Garreth), each named for what
-it holds: dark pages of D1 to D5 stay on **Carousel Generator Designs -
-Dark (D1 to D5)**
-(https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8),
-every `DN · Light` page named below lives on **Carousel Generator Designs -
-Light (D1 to D5)** (https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4), and
-D6, a heavy ticket, has a canvas per theme: **Carousel Generator Designs -
-Dark (D6 Studio)** (https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p) and
-**Carousel Generator Designs - Light (D6 Studio)**
-(https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p). D7 and D8 go on
-another, **Carousel Generator Designs - (D7 and D8)**
-(https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH), both themes (Garreth,
-2026-09-15). The `docs/designs/README.md` how-to has the steps.
+**One canvas a ticket since 2026-09-18** (Garreth): every ticket has its own
+review canvas holding both of its themes, except D6 and D10, whose two themes
+do not fit under one canvas's 16 MB and so have a canvas a theme. **The Status
+lines below were written before that and still name the shared canvases each
+ticket was reviewed on** — "Dark (D1 to D5)", "Light (D1 to D5)", "(D7 and
+D8)", "(D9 and D10)". Those three old shared canvases were left exactly as
+they were, as an archive, and are no longer saved to; the boards were copied
+off them unchanged. The `docs/designs/README.md` how-to has the steps.
+
+| Ticket | Canvas | Pages | Link | Favicon |
+|---|---|---|---|---|
+| D1 | Carousel Generator Designs - (D1 Carousel types) | D1 · Dark, D1 · Light | https://claude.ai/artifact/R1qCqyRpsX7AehQPLCbAMi | 🎠1️⃣ |
+| D2 | Carousel Generator Designs - (D2 Generate form) | D2 · Dark, D2 · Light | https://claude.ai/artifact/BYwZo8XWDR4x33MszvVotX | 🎠2️⃣ |
+| D3 | Carousel Generator Designs - (D3 Batch writing) | D3 · Dark, D3 · Light | https://claude.ai/artifact/1BS64VF3Sydob9oPMU7Xtg | 🎠3️⃣ |
+| D4 | Carousel Generator Designs - (D4 Batch review) | D4 · Dark, D4 · Light | https://claude.ai/artifact/J2NcLiDevFJp6s3zf6dhVN | 🎠4️⃣ |
+| D5 | Carousel Generator Designs - (D5 Batch render) | D5 · Dark, D5 · Light | https://claude.ai/artifact/4h66j2MEbBPzuJzRujwuXp | 🎠5️⃣ |
+| D6 dark | Carousel Generator Designs - Dark (D6 Studio) | D6 · Dark | https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p | 🎠🎨 |
+| D6 light | Carousel Generator Designs - Light (D6 Studio) | D6 · Light | https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p | 🎨☀️ |
+| D7 | Carousel Generator Designs - (D7 Type page) | D7 · Dark, D7 · Light | https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp | 🎠7️⃣ |
+| D8 | Carousel Generator Designs - (D8 Image libraries) | D8 · Dark, D8 · Light | https://claude.ai/artifact/WqEfhNzEiUiTieUAU14qms | 🎠8️⃣ |
+| D9 | Carousel Generator Designs - (D9 History) | D9 · Dark, D9 · Light | https://claude.ai/artifact/2EjoB77uj9C8qXriiUmRxT | 🎠📜 |
+| D10 dark | Carousel Generator Designs - Dark (D10 Trends) | D10 · Dark | https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1 | 🎠📈 |
+| D10 light | Carousel Generator Designs - Light (D10 Trends) | D10 · Light | https://claude.ai/artifact/8vc8Sv7TRCi5Xqbhxqi1Sp | 📈☀️ |
+| D11 | Carousel Generator Designs - (D6 pt. 2 Studio) | D11 · Dark, D11 · Light | https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5 | 🎠🧩 |
+| Prototype | Carousel Generator Prototype | desktop, phone | https://claude.ai/artifact/KNxf22ERryEbTmr2tRuzF6 | 🕹️ |
 
 Companion documents: `CAROUSEL-GENERATOR-FLOWS.md` (what each screen does,
-step by step; the flow numbers F1 to F15 below point there) and
+step by step; the flow numbers F1 to F16 below point there) and
 `CAROUSEL-GENERATOR-PLAN.md` (why).
 
 ## How the tickets are ordered
@@ -993,8 +1007,10 @@ the edges are tested, not just the happy middle.
   after one round of review whose every change is made and saved. Desktop, the
   date-range dropdown, a re-run beside the batch it copied, the no-results
   state and first run, plus the phone at all three. On its own new canvas,
-  **Carousel Generator Designs - (D9 and D10)**
-  (https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1), pages **D9 · Dark** and
+  **Carousel Generator Designs - (D9 History)**
+  (https://claude.ai/artifact/2EjoB77uj9C8qXriiUmRxT; moved there on
+  2026-09-18 from the canvas it shared with D10, which kept the old link),
+  pages **D9 · Dark** and
   **D9 · Light**, built by
   `docs/designs/carousel-generator/d9-history.build.mjs`. The light pages are
   built from the same tokens and were approved alongside the dark ones.
@@ -1052,7 +1068,114 @@ the edges are tested, not just the happy middle.
 
 ## D10. Trends
 
-- **Status:** **Done — round two approved by Garreth on 2026-09-17, dark and
+- **Status:** **Done — round three APPROVED by Garreth on 2026-09-19, dark
+  and light, both sizes.** Light was drawn the same day, once dark was
+  approved. Dark is version 40 of
+  Carousel Generator Designs - Dark (D10 Trends), light is version 2 of
+  Carousel Generator Designs - Light (D10 Trends)
+  (https://claude.ai/artifact/8vc8Sv7TRCi5Xqbhxqi1Sp), 48 boards a theme from
+  one build (`R3_LIGHT = true`). In light the filter panel is the card colour
+  outright (light mode has no blur, so anything short of solid showed the
+  results through it). **The documents were brought up to date on 2026-09-19** at
+  Garreth's word: the plan (§1 D6 to D9, §2.6, §5.3, a round-three block
+  heading §6.5, §10 items 43 to 53), the flows (**F15 rewritten, F16 new**, F9
+  and F12 touched), the dev tickets (**DEV-34 rewritten; DEV-35, 36, 37 and 39
+  amended; DEV-42 to DEV-47 new**; decisions and open questions 7 to 9) and
+  the backlog. **Still to do:** the prototype, rebuilt from `main` once this
+  branch is merged. What round three is, as first saved for review (
+  2026-09-19, canvas version 39, page D10 · Dark, top row, 24 new boards):**
+  **On the phone the details are a sheet that rides up over the slides**
+  (Garreth, 2026-09-19: the room under the slide was too small, and only two
+  of Analysis's groups showed). The slides stay pinned under the header and do
+  not scroll away; scrolling the sheet carries it up over them until a strip
+  of the slide is left, and scrolling back down lets it go; the grab bar at
+  its top does the same on a press. Two phone boards: Analysis and
+  Transcription with the sheet up. The details window also sits above the
+  shell's page glow now, which had been washing over it.
+  The Analysis groups' headers carry their name and nothing else: the small
+  counts ("7 tags", "5 notes") came off the same day (Garreth: no
+  unnecessary text).
+  **Saved is a grid** (Garreth, 2026-09-19), three across like the search
+  results, each tile the post's cover with its slide count, newest saved
+  first; a tile opens the details window, which is where a post is unsaved.
+  It replaces the saved posts drawn in the feed's layout (desktop and phone
+  boards redrawn in place). **Transcription is a tab of its own** beside
+  Details and Analysis: the two share one reading and so its states (nothing
+  yet, on its way, blocked, failed), and Analysis keeps four groups (Summary,
+  How it works, Reusable pattern, Audience response).
+  **The Analysis tab is groups that open and close** (Garreth, 2026-09-19,
+  so it is tidy when it opens): Summary, How it works, Reusable pattern and
+  Audience response; **Summary starts open, the rest shut**,
+  and more than one can be open at once. Boards: the default, the pattern and
+  the audience opened, and the transcription opened.
+  **The Analysis tab was widened on 2026-09-19** after Garreth asked whether
+  the analysis really was three rows (the part-read board had shown three,
+  wrongly). Read from the live tables: the short values two across (Topic,
+  Angle, Hook, Story, Tone, Look, and the slide the product first shows on),
+  then Why it hooks, Opener, Payoff and Call to action with their slide, and
+  Proof; then **Reusable pattern** (what to keep, its limits), **Audience
+  response** from the comments (themes and questions, or "Too few comments to
+  read"), then the transcription. **A part-read deck keeps every row** — the
+  model read what it was given; what is short is the slides it could fetch —
+  so that board now shows the whole analysis under a Partial label and "4 of
+  6 slides read". Two more boards: the tab scrolled down, and the **newer
+  run's thinner analysis** (309 carousels: hook, story and call to action
+  only), which simply has fewer rows and nothing blank.
+  **Seen means a post has been on the screen for about a second** (Garreth,
+  decided 2026-09-18). **After the last unseen post the feed reads "No more
+  new carousels" with a quiet See older carousels button**, which carries on
+  into the ones already seen, most recently seen first; "That's every
+  carousel" is the end of those. The three tall boards grew to 1960px, since
+  a post is a line taller than it was in round two.
+  **The filters a search ran with sit over its results as chips, each with an
+  X that takes it off and runs the search again, and Clear all when there is
+  more than one** (Garreth; desktop and phone boards); they replace the
+  "2 filters" note and the Clear filters link in the results line.
+  Latest cut, after the filters and the search were checked against the live
+  database: the filter panel is **three dropdowns that start on Any and take
+  one value** — Topic (the one filter the search function has built in; the
+  library's seven common topics), Hook style (its six common values) and
+  Views; Visual style and Standout posts only are gone (614 free-text values;
+  4 carousels marked) — with a board of the Topic dropdown open. **The feed
+  holds what this person has not seen** (Garreth): a post seen does not come
+  back on the next launch and is found again by searching; with nothing new
+  the feed shows the last ones seen under a small **No new carousels** line,
+  and when new ones land while the page is open a quiet **"6 new carousels"**
+  button brings them in (two boards). The Analysis tab has a **Blocked** board
+  (the slides could not be fetched, Try again). The filter panel is nearly solid rather than the app's glass (Garreth, same day: over photos the glass left its labels without contrast). The Analysis
+  tab was redrawn the same day from the live tables' own fields (Garreth asked
+  whether the first cut matched the database; it did not): the analysis first
+  — Topic, Angle, Hook, Tone, Look as short tags, then Opener, Proof and Call
+  to action as sentences, with a Complete / Partial / Blocked label, and any
+  row the library has nothing for left out — then the transcription, each
+  slide with its words, what it shows, and its job in the story. Story shows
+  only when it is there (309 of 1,252 carousels) and the strength scores are
+  not drawn. A twelfth board shows a part-read deck. Reopened by
+  Garreth on 2026-09-18 after the developer handover's frontend addendum
+  (2026-09-17) was read against the page. Twelve new dark boards: the filter
+  panel open with two filters on, the search-type picker, a search on its
+  way, a search that timed out, the details window from a tile, its Analysis
+  tab in four states (transcribed and analysed, nothing yet with the
+  Transcribe and analyse button, on its way and filling in, failed with
+  Retry), and on the phone the details window and the filter sheet. What
+  changed: the search bar gains a search-type picker inside it and a filter
+  button beside it (reversing round two's "no scope pills, no chips"); a post
+  opens in a **details window** (slides left, X upper right, Details and
+  Analysis tabs, and along the foot the thumbs, Save, View Post, Copy to
+  Studio), which replaces the "tile opened alone" board and also opens from
+  **View Details** on a post and from a Recent saves row; **useful / not
+  useful** are a thumb up and down on every post and in the window; on a post
+  **View Details takes Save's place** and the numbers get a line of their
+  own; a missing number is left off a post and reads Unknown in the window,
+  never 0; a full page of results reads "The 25 best matches", never a
+  total. Light mode was drawn after dark was approved (see the top of this line). D9 moved to
+  its own canvas the same day (Garreth), and then **D10 · Light moved to a
+  canvas of its own**, Carousel Generator Designs - Light (D10 Trends)
+  (https://claude.ai/artifact/8vc8Sv7TRCi5Xqbhxqi1Sp), because both themes
+  with round three would come to about 21 MB; the old link is now
+  **Carousel Generator Designs - Dark (D10 Trends)**, D10 · Dark only,
+  10.7 MB, version 31, every board kept. The plan, flows and dev tickets are not updated until dark
+  is approved. **Before it: round two approved by Garreth on 2026-09-17, dark and
   light, both sizes**, after four reviews and two rounds of small fixes, every
   change made and saved (canvas version 26). Merged to `main` and **in the
   prototype since 2026-09-17**: Trends opens on the Feed, the search bar runs
@@ -1064,8 +1187,9 @@ the edges are tested, not just the happy middle.
   the search**, redesigned **in place**: the same build file
   `docs/designs/carousel-generator/d10-trends.build.mjs` and the same canvas
   pages **D10 · Dark** and **D10 · Light** on
-  **Carousel Generator Designs - (D9 and D10)**
-  (https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1). There is no D12: this
+  **Carousel Generator Designs - (D10 Trends)**
+  (https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1; called "(D9 and D10)"
+  until D9 moved to its own canvas on 2026-09-18). There is no D12: this
   one ticket carries both rounds.
   **Round two, fifth cut, saved 2026-09-17 after Garreth's fourth review,
   dark and light, 25 boards a theme; approved the same day.** Desktop: the feed, a post
