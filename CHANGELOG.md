@@ -20,6 +20,72 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — A To-do list for the phone farm, and Automation stays on the Physical side
+
+**Where it came from:** Garreth asked on 2026-09-22 to start the phone-farm
+design tickets, P1 and P2 in `docs/PHONE-FARM-DESIGN-TICKETS.md`. He chose to
+have them drawn **in the running app** rather than on a design canvas, so what
+he reviews is the screen itself and nothing has to be re-made for the build.
+Eleven rounds of his feedback followed the same day; the ticket records each.
+
+**A new To-do page, and a To-do card on the Physical dashboard.** This is the
+screen Yurie will live in: the day's posts and warmups, grouped by phone and
+then by account, because she works phone by phone. On the dashboard each phone
+is one line saying how it stands; opening it shows that phone's work. The page
+itself shows everything, with a day-stepper to look back at a day that was
+missed or forward at the load coming, a picker for one phone or several, and a
+filter for posts that were marked done but still owe their link.
+
+**An item is ticked off, and the app then asks what happened.** Ticking a post
+opens a small sheet: the link (optional — saving without it leaves the item
+owing one), or what went wrong from a short list. Ticking a warmup asks for the
+minutes. A wrong tap is undone by holding a button in the same sheet. This is
+design ticket P3, brought forward, because a tick cannot be judged without the
+thing it opens.
+
+**Warmups done by the script stay on the list**, marked "Automated" and with no
+tick anyone can press. That way a warmup script that has stopped running shows
+up as an item that never completes, instead of as silence.
+
+**Automation stays on the Physical side** (Garreth, 2026-09-22, reversing an
+earlier decision). Plenty still runs by robot for real phones — the scheduler,
+the warmup scheduler, the pollers and the alarms — so the card and the menu
+item both stay; the **Devices card** left the dashboard instead, since the
+phones have a page of their own. The one workflow hidden on the Physical side
+is the **Posting Agent**, because posting is by hand there. It still shows on
+Cloud.
+
+**Smaller things on the dashboard.** The Inventory card's empty state now fills
+its card so the "Total to produce" line sits on the bottom edge. The Proxies &
+numbers card puts its Proxies / Phone numbers switch on its own line on the
+Physical dashboard, where a third of a row leaves no space beside the title.
+Cloud's homepage is untouched throughout.
+
+**The list is not real yet, and says so honestly.** Every phone, account, post
+and warmup on both screens is invented placeholder content, held in
+`src/lib/data/todo-placeholder.ts`, and the ticks live only in the browser for
+as long as the page is open. The real list needs `post_deliveries` (PF-05) and
+the page behind it (PF-07), neither of which exists; both placeholder files
+delete themselves when PF-07 lands. So the Devices card can say "No phones yet"
+while the To-do card lists three — that is the placeholder sitting beside true
+empty data, not a fault.
+
+**What was checked:** it compiles, types and lint are clean, and both screens
+were looked at in the running app at phone width (390) and desktop (1440) in
+dark mode, including the empty, all-done, no-phones, switched-off-phone and
+long-content cases. Checked in headless Chrome, so anything Safari-specific was
+not seen. **Light mode has not been designed or looked at yet**, and no part of
+this has met real data. The screens are **waiting for Garreth's review**; the
+tickets are not closed.
+
+**Also corrected:** this file, `BACKLOG.md` and the phone-farm ticket list all
+still said the earlier phone-farm work (the Cloud/Physical switch, Devices,
+Facebook, the per-fleet numbers) was sitting on a branch waiting to be merged.
+It has been on `main` since 2026-09-18, in pull request #7. Six places now say
+so.
+
+---
+
 ## 2026-09-21 — Strangers can no longer create a login account
 
 **Where it came from:** the 2026-09-09 outside code review's one security
@@ -159,11 +225,10 @@ PF-01, PF-02 and PF-08 from `BACKLOG.md`. They come from his 2026-09-16
 decision to move the accounts off Geelark cloud phones onto real iPhones.
 Built by three Claude agents working side by side, then checked together.
 
-**Not on `main` yet.** This is on the `dashboard-app-phone-farm-updates`
-branch, uncommitted, waiting for Garreth's say-so. The two database changes
-below are the exception: they are already live, because the screens cannot be
-tried without them. Both only add things; nothing existing was altered or
-removed.
+**On `main`,** merged the same day in pull request #7. (This entry first said
+it was waiting on a branch for Garreth's say-so; that was true for a few hours
+and was never corrected until 2026-09-22.) The two database changes below only
+add things; nothing existing was altered or removed.
 
 **Cloud and Physical, two fleets in one app (Garreth's design, 2026-09-18).**
 The first version of PF-01 put a Geelark / Real phone pill on the account page

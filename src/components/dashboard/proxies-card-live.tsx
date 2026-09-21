@@ -99,12 +99,13 @@ function phoneAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
 
 /** Server wrapper: fetches live data, reduces it to display props. */
 export async function ProxiesCardLive({ className }: { className?: string }) {
+  const fleet = await getFleet();
   let data;
   try {
     // Only the fleet being looked at: a proxy and a number follow their account.
     data = limitProxyData(
       await getProxyPhoneData(),
-      await getFleet(),
+      fleet,
       new Set((await getPhysicalProfiles()).data),
     );
   } catch (err) {
@@ -123,6 +124,10 @@ export async function ProxiesCardLive({ className }: { className?: string }) {
       className={className}
       proxies={proxyAttention(data)}
       phones={phoneAttention(data)}
+      // Physical puts this card in a third of the row below the hero, where
+      // the segmented control has no room beside the card's name (Garreth,
+      // 2026-09-22). Cloud's layout is untouched.
+      toolbarBelow={fleet === "physical"}
     />
   );
 }

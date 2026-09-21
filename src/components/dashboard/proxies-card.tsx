@@ -56,7 +56,13 @@ function AttentionList({ items, footer }: { items: AttentionItem[]; footer: stri
 }
 
 /** Homepage proxies/phones card — presentational; data comes from the server wrapper. */
-export function ProxiesCard({ fetchedAt, className, proxies, phones }: ProxiesCardProps) {
+export function ProxiesCard({
+  fetchedAt,
+  className,
+  proxies,
+  phones,
+  toolbarBelow = false,
+}: ProxiesCardProps & { toolbarBelow?: boolean }) {
   const [view, setView] = useState<View>("proxies");
   const active = view === "proxies" ? proxies : phones;
 
@@ -66,6 +72,7 @@ export function ProxiesCard({ fetchedAt, className, proxies, phones }: ProxiesCa
       fetchedAt={fetchedAt}
       viewAllHref="/proxies"
       className={className}
+      toolbarBelow={toolbarBelow}
       toolbar={
         <FilterPills
           value={view}

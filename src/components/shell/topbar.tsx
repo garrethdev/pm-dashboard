@@ -26,6 +26,7 @@ const SECTION_NAMES: Record<string, string> = {
   "content-calendar": "Content calendar",
   "content-types": "Content types",
   proxies: "Proxies & numbers",
+  todo: "To-do",
   automation: "Automation",
   analytics: "Analytics",
   settings: "Settings",

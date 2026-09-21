@@ -50,8 +50,11 @@ export async function InventoryCardLive({
       viewAllHref="/inventory"
       className={className}
     >
+      {/* A column the height of the card, so the total is pinned to the bottom
+          edge whether there is demand to list or not (Garreth, 2026-09-22). */}
+      <div className="flex h-full min-h-0 flex-col gap-4">
       {data.buckets.length === 0 && (
-        <EmptyState icon={Package} compact>
+        <EmptyState icon={Package} compact className="flex-1">
           No demand yet
         </EmptyState>
       )}
@@ -81,12 +84,13 @@ export async function InventoryCardLive({
           </div>
         ))}
       </div>
-      <p className="mt-4 border-t border-border pt-3 text-xs text-text-muted">
+      <p className="mt-auto border-t border-border pt-3 text-xs text-text-muted">
         Total to produce (14 d window):{" "}
         <span className="font-medium text-text-primary tnum">
           {data.totalToProduce.toLocaleString("en-US")}
         </span>
       </p>
+      </div>
     </DashCard>
   );
 }

@@ -13,6 +13,7 @@ import {
   Cards,
   Globe,
   FlowArrow,
+  ListChecks,
   ChartBar,
   Sparkle,
   Gear,
@@ -57,6 +58,9 @@ const DASHBOARD_NAV: NavConfig = {
       label: "Pipeline",
       items: [
         { label: "Dashboard", href: "/", icon: House, isActive: (pathname) => pathname === "/" },
+        // The day's hand-made work. Real phones only, and second because it is
+        // the page Yurie lives in (P2).
+        { label: "To-do", href: "/todo", icon: ListChecks, isActive: under("/todo"), fleet: "physical" },
         { label: "Accounts", href: "/accounts", icon: Users, isActive: under("/accounts") },
         { label: "Inventory", href: "/inventory", icon: Package, isActive: under("/inventory") },
         { label: "Proxies & numbers", href: "/proxies", icon: Globe, isActive: under("/proxies") },
