@@ -15,10 +15,13 @@
  *   Overview   the template's slides across the full width, with a version
  *              dropdown, Make active and Edit template; four stat tiles beside
  *              the details; then the batches, each row opening that batch
- *   Direction  the direction, its version picked from a dropdown with Make
- *              active beside it, and Save version; the conversation beside it, its
- *              suggested change shown against the current text
- *   Wiring     the cadence and its rebalance across the character's other
+ *   Writing    the standing instruction the copy is written from, its version
+ *              picked from a dropdown with Make active beside it, and Save
+ *              version; the conversation beside it, its suggested change shown
+ *              against the current text; the template's text-box names along
+ *              the bottom, so the instruction is written against the boxes
+ *              that exist
+ *   Go Live    the cadence and its rebalance across the character's other
  *              types (the cadence editor's rules and running total), Preview,
  *              Wire (a hold), and the checklist with the n8n media line to copy
  *
@@ -44,6 +47,19 @@
  * From his third review (2026-09-15): the direction's versions are the same
  * dropdown as the template's; the Versions card is gone.
  *
+ * D13 (Garreth, 2026-09-21): the Direction tab is named **Writing** and the
+ * Wiring tab is named **Go Live** — "Direction" read just as naturally as how
+ * the deck looks, which is the Studio's job, and "Writing" and "Wiring" are
+ * one letter apart sitting side by side. Writing is also required: a type with
+ * none cannot generate, so its header carries the neutral pill "Needs
+ * writing". **Generate stays available** (Garreth, 2026-09-22, first review):
+ * it opens the Generate form, which is where the missing Writing is marked in
+ * the danger stroke and required. The Writing tab is the other way there. An empty Writing editor carries a guiding
+ * placeholder, and a template drafted from a reference opens with the AI's own
+ * note in the editor, unsaved — Save version is still a person's press. Only
+ * the screen changes: the panel ids, the state names and the field itself keep
+ * the names the docs and the database use.
+ *
  * From Garreth's decision on 2026-09-21: a batch that has finished a stage and
  * is waiting for a person to press something says so in the batch table, in the
  * same words the Carousel types card (D1) and the bell already use — "18 to
@@ -58,18 +74,23 @@
  * designed the same day, so every board is written twice (Dark page, Light
  * page). In the prototype the page takes the type's name from the link that
  * opened it, and a link can open a tab (the Generate form's Edit opens
- * Direction).
+ * Writing).
  *
  * Run directly, it writes D7's review artboards and canvas.json:
  *   Overview         desktop (tall), Before & After
  *   OverviewVersions desktop (tall), the version dropdown open, Version 3 picked
  *   OverviewPhone    phone (tall), Before & After
- *   Direction        desktop, a suggested change shown against Version 4
- *   DirectionFailed  desktop, the conversation's reply failed, Retry
- *   DirectionPhone   phone, the suggested change, the conversation folded
- *   DirectionVersions desktop, the direction's version dropdown open, Version 3 picked
- *   Wiring           desktop, Quiet Luxury Picks just saved, arriving on Wiring
- *   WiringPhone      phone, the same
+ *   Writing          desktop, a suggested change shown against Version 4
+ *   WritingFailed    desktop, the conversation's reply failed, Retry
+ *   WritingPhone     phone, the suggested change, the conversation folded
+ *   WritingVersions  desktop, the writing's version dropdown open, Version 3 picked
+ *   WritingEmpty     desktop, no writing saved: the guiding placeholder (D13)
+ *   WritingEmptyPhone phone, the same
+ *   WritingDraft     desktop, the Studio's drafted note, unsaved (D13)
+ *   NeedsWriting     desktop, Overview with Generate unavailable (D13)
+ *   NeedsWritingPhone phone, the same
+ *   GoLive           desktop, Quiet Luxury Picks just saved, arriving on Go Live
+ *   GoLivePhone      phone, the same
  *   Mismatch         desktop, the cadence does not add up: Wire unavailable
  *   Running          desktop, Wire held and running, the checklist ticking
  *   CheckFailed      desktop, a verification failed: rolled back, the item named
@@ -154,6 +175,9 @@ const TYPES = {
       "Which habit would you start with?",
     ],
     details: [["Slide size", "4:5"], ["Short name", "before-after"], ["Created", "Aug 2 · Alex"], ["Wired", "Aug 9 · Sam"]],
+    /* The template's text boxes, by the name each carries in the copy contract. D14 gives the Studio the field
+       that sets them; D13 lists them here so the instruction is written against the boxes that exist. */
+    boxes: ["hook", "line", "closing"],
     /* Direction versions, newest first: the text each one gave the writer. */
     directions: [
       { name: "Version 4", date: "Sep 12", by: "Alex", active: true, text: "Open on a before-and-after people can picture in their own mirror. Keep every line under twelve words, warm and plain, never clinical. The after slide names one habit, never a product, and the caption ends on a question the viewer wants to answer." },
@@ -177,6 +201,7 @@ const TYPES = {
     templates: [{ name: "Version 1", date: "Sep 13", active: true, hook: "Five pieces I've worn for ten years", imgs: ["dock", "vanity", "journal", "mug", "yoga"] }],
     lines: ["The coat: wool, no logo", "The bag only gets better", "The watch, wound every morning", "Worn in Lisbon, Paris and at home"],
     details: [["Slide size", "9:16"], ["Short name", "quiet-luxury"], ["Created", "Sep 13 · Alex"]],
+    boxes: ["hook", "line", "closing"],
     directions: [
       { name: "Version 1", date: "Sep 13", by: "Alex", active: true, text: "Show one piece at a time, photographed plainly, and say why it lasts. No prices, no brand names. Every line under ten words; the caption closes on where it was worn." },
     ],
@@ -189,6 +214,16 @@ const TYPES = {
     wiredOn: "Sep 15 · Alex",
   },
 };
+
+/* An empty Writing editor's placeholder: the shape of a good instruction, not an instruction to write one
+   (Garreth, 2026-09-21). Grey, and gone the moment anything is typed. */
+const WRITING_PLACEHOLDER =
+  "who is speaking, and to whom · what each slide has to do · the words to use, and the words never to use · how the caption should read";
+
+/* What the Studio's AI wrote when the template was drafted from a reference: it describes the construction, and it
+   opens in the editor unsaved, so the requirement is met by someone having read it (Garreth, 2026-09-21). */
+const DRAFTED_NOTE =
+  "Five slides at 9:16. Slide 1 carries the hook over the cover photo. Slides 2 to 4 each show one piece, plainly photographed, with a line under ten words saying why it lasts. Slide 5 closes on where it was worn. No prices and no brand names anywhere.";
 
 /* The suggested change, against Version 4 (removed words struck through, added words marked). */
 const DIFF = [
@@ -362,13 +397,19 @@ ${S} .edbody { display: flex; flex: 1; min-height: 0; padding: 0 ${P ? 20 : 24}p
 ${S} .edtext { display: block; flex: 1; width: 100%; min-height: ${P ? 236 : 0}px; resize: none; overflow-y: auto; border-radius: 16px; border: 1px solid var(--border); background: var(--card-sunken); padding: 14px 16px;
   font: inherit; font-size: ${P ? 16 : 15}px; line-height: 26px; color: var(--text-primary); outline: none; text-wrap: pretty; transition: box-shadow 150ms var(--ease); }
 ${S} .edtext:focus { box-shadow: 0 0 0 2px var(--accent); }
+${S} .edtext::placeholder { color: var(--text-muted); }
 /* The suggestion against the current text: removed words struck through in red, added words underlined in green,
    so the change reads without relying on colour alone. */
 ${S} .diff { white-space: pre-wrap; }
 ${S} .diff del { text-decoration: line-through; text-decoration-thickness: 1.5px; color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); border-radius: 4px; padding: 1px 2px; }
 ${S} .diff ins { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); border-radius: 4px; padding: 1px 2px; }
-${S} .edfoot { display: flex; align-items: center; gap: 16px; min-height: 70px; padding: 16px ${P ? 20 : 24}px; margin-top: 16px; border-top: 1px solid var(--border); }
+${S} .edfoot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; min-height: 70px; padding: 16px ${P ? 20 : 24}px; margin-top: 16px; border-top: 1px solid var(--border); }
 ${S} .edfoot .cta { margin-left: auto; }
+/* The template's text boxes, by name, under the editor they are written for (D13). */
+${S} .boxes7 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+${S} .boxes7 .bxl { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .boxes7 .pill { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+${P ? `${S} .edboxes { padding: 0 20px 16px; }` : ""}
 
 /* The conversation: D6's messages and chat box, at the panel's full height. */
 ${S} .chat7 { min-height: 0; }
@@ -609,19 +650,23 @@ function overview(T, init, phone) {
 function direction(T, init, phone) {
   const proposal = init.dir === "proposal";
   const failed = init.dir === "failed";
+  /* D13: a type can have no Writing at all, or the Studio's drafted note sitting in the editor unsaved. Neither has
+     a saved version yet, so neither shows the version dropdown. */
+  const draft = init.writing === "draft";
+  const saved = init.writing !== "none" && !draft;
   const text = proposal
-    ? `<div class="edtext diff" role="textbox" aria-multiline="true" aria-label="Direction">${DIFF.map(([k, t]) => (k === "add" ? `<ins>${esc(t)}</ins>` : k === "del" ? `<del>${esc(t)}</del>` : esc(t))).join("")}</div>`
-    : `<textarea class="edtext" aria-label="Direction" value="{{d7dirText}}" onChange="{{d7typeDir}}"></textarea>`;
+    ? `<div class="edtext diff" role="textbox" aria-multiline="true" aria-label="Writing">${DIFF.map(([k, t]) => (k === "add" ? `<ins>${esc(t)}</ins>` : k === "del" ? `<del>${esc(t)}</del>` : esc(t))).join("")}</div>`
+    : `<textarea class="edtext" aria-label="Writing" placeholder="${esc(WRITING_PLACEHOLDER)}" value="{{d7dirText}}" onChange="{{d7typeDir}}"></textarea>`;
+  /* The boxes the instruction is written against, listed under the editor (D13). */
+  const boxes = `<span class="boxes7"><span class="bxl">Text boxes</span>${T.boxes.map((b) => `<span class="pill">${esc(b)}</span>`).join("")}</span>`;
   /* The versions are a dropdown, the same as the template's (Garreth, 2026-09-15, third review): the version picked
      is the one in the editor, with Make active beside it when it is not the active one. */
-  const editor = `
-              <section class="c7 edcard">
-                <div class="c7h">
+  const versions = `
                   <div class="tplh">
                     <div class="vsel">
                       <button type="button" class="vbtn7" aria-haspopup="listbox" aria-expanded="{{d7dvExpanded}}" onClick="{{d7dvToggle}}"><span class="tnum">{{d7dvName}}</span><span class="vd tnum">{{d7dvDate}}</span>${I.caretDown}</button>
                       <sc-if value="{{d7dvOpen}}" hint-placeholder-val="{{ ${!!init.dvOpen} }}">
-                        <div class="vpop7" role="listbox" aria-label="Direction versions" onKeyDown="{{d7dvKey}}">
+                        <div class="vpop7" role="listbox" aria-label="Writing versions" onKeyDown="{{d7dvKey}}">
                           <sc-for list="{{d7dvList}}" as="v" hint-placeholder-count="${T.directions.length}">
                             <button type="button" class="vopt" role="option" aria-selected="{{v.selected}}" onClick="{{v.pick}}"><b class="tnum">{{v.name}}</b><span class="vd tnum">{{v.meta}}</span><span class="vend"><sc-if value="{{v.active}}" hint-placeholder-val="{{ false }}"><span class="pill pill--ok">Active</span></sc-if></span></button>
                           </sc-for>
@@ -632,13 +677,20 @@ function direction(T, init, phone) {
                     <sc-if value="{{d7dvOld}}" hint-placeholder-val="{{ ${!!init.dv} }}"><button type="button" class="btn2" onClick="{{d7makeDirection}}">Make active</button></sc-if>
                     ${proposal ? `<span class="pill pill--accent">Suggested change</span>` : ""}
                   </div>
-                  ${proposal ? `<button type="button" class="tbtn7" onClick="{{d7dropSuggestion}}">Discard suggestion</button>` : ""}
+                  ${proposal ? `<button type="button" class="tbtn7" onClick="{{d7dropSuggestion}}">Discard suggestion</button>` : ""}`;
+  /* Nothing saved yet: no version to pick, so the card takes the plain heading every other card has, and the
+     Studio's draft says so with a neutral pill (D13). */
+  const noVersions = `
+                  <div class="tplh"><h2>Writing</h2>${draft ? `<span class="pill">Not saved</span>` : ""}</div>`;
+  const editor = `
+              <section class="c7 edcard">
+                <div class="c7h">${saved ? versions : noVersions}
                 </div>
                 <div class="edbody">${text}</div>
                 ${
                   phone
-                    ? `<div style="height: 20px"></div>`
-                    : `<div class="edfoot"><button type="button" class="cta" disabled="{{d7saveDisabled}}" onClick="{{d7saveVersion}}">Save version</button></div>`
+                    ? `<div class="edboxes">${boxes}</div>`
+                    : `<div class="edfoot">${boxes}<button type="button" class="cta" disabled="{{d7saveDisabled}}" onClick="{{d7saveVersion}}">Save version</button></div>`
                 }
               </section>`;
   const me = proposal || failed ? `<div class="msg7 me"><div class="bub">Lean into winter skin, make the hook shorter, and put the hook in a bigger font.</div></div>` : "";
@@ -728,9 +780,13 @@ function wiring(T, mode, phone) {
   return `<div class="wire7">${form}${list}</div>`;
 }
 
-function header(T, wired, mode, phone) {
-  /* The name and pills come from the link that opened the page (the prototype); the review boards show T's own. */
-  const statusPill = !wired ? `<span class="pill">Not wired</span>` : mode === "media" ? `<span class="pill pill--warn">Media map missing</span>` : "";
+function header(T, wired, mode, phone, init) {
+  /* The name and pills come from the link that opened the page (the prototype); the review boards show T's own.
+     Needs writing is neutral, like Not wired, and sits closest to Generate because it is why Generate is off (D13). */
+  const needsWriting = init.writing !== "saved";
+  const statusPill =
+    (!wired ? `<span class="pill">Not wired</span>` : mode === "media" ? `<span class="pill pill--warn">Media map missing</span>` : "") +
+    (needsWriting ? `<span class="pill">Needs writing</span>` : "");
   const actions = phone
     ? ""
     : `<div class="t7act">
@@ -760,8 +816,9 @@ function page(T, init, phone) {
   return `
       <main class="main">
         <div class="page">
-          ${header(T, wired, mode, phone)}
-          <div class="tabs7" role="tablist" aria-label="Carousel type">${tab("overview", "Overview")}${tab("direction", "Direction")}${tab("wiring", "Wiring")}</div>
+          ${header(T, wired, mode, phone, init)}
+          <!-- D13: the panel ids keep the names the docs and the database use; only the labels changed. -->
+          <div class="tabs7" role="tablist" aria-label="Carousel type">${tab("overview", "Overview")}${tab("direction", "Writing")}${tab("wiring", "Go Live")}</div>
           ${panel("overview", overview(T, init, phone))}
           ${panel("direction", direction(T, init, phone))}
           ${panel("wiring", wiring(T, mode, phone))}
@@ -824,7 +881,10 @@ function vals(T, init) {
     var P = s.params || {};
     var NAME = P.name || ${JSON.stringify(T.name)};
     var PROPOSAL = ${init.dir === "proposal"};
-    var DIRS = ${JSON.stringify(T.directions)};
+    /* D13: no Writing saved means no version to pick and Generate unavailable. The Studio's draft counts as not
+       saved — the requirement is met by someone having read it and pressed Save version, not by a full field. */
+    var NOWRITING = ${init.writing !== "saved"};
+    var DIRS = ${JSON.stringify(init.writing === "saved" ? T.directions : [])};
     var TPL = ${JSON.stringify(TPL)};
     var LINES = ${JSON.stringify(T.lines)};
     /* A link may name the tab to open on (the Generate form's Edit opens Direction) until a tab is pressed. */
@@ -838,7 +898,7 @@ function vals(T, init) {
     var say = function (text) { return function () { self.note(text); }; };
     var params = { name: NAME, character: P.character || ${JSON.stringify(T.character)}, slides: P.slides || ${JSON.stringify(`${T.slides} slides`)}, size: P.size || ${JSON.stringify(T.size || "4:5")} };
     var cur = TPL[s.d7tv] || TPL[0];
-    var dv = DIRS[s.d7dv] || DIRS[0];
+    var dv = DIRS[s.d7dv] || DIRS[0] || { name: "", date: "", active: false, text: "" };
     return {
       d7is: d7is, d7sel: d7sel, d7go: d7go,
       d7name: NAME,
@@ -849,7 +909,7 @@ function vals(T, init) {
       d7genAccent: tab !== "direction",
       d7genPlain: tab === "direction",
       d7back: function () { ctx.open("types", null, "Back to Carousel types · D1"); },
-      d7generate: function () { ctx.open("generate", params, "Opens the Generate form for " + NAME + " · D2"); },
+      d7generate: function () { ctx.open("generate", Object.assign({}, params, { nowriting: NOWRITING ? "1" : "" }), "Opens the Generate form for " + NAME + (NOWRITING ? ", which has no Writing yet" : "") + " · D2"); },
       d7editTemplate: function () { ctx.open("studio", null, "Opens the Studio on " + NAME + "'s active version · D6"); },
       d7history: function () { ctx.open("history", { type: NAME }, "Opens History, filtered to " + NAME + " · D9"); },
 
@@ -895,13 +955,13 @@ function vals(T, init) {
         var on = i === (s.d7dv || 0);
         return { name: v.name, meta: v.date + " · " + v.by, active: !!v.active, selected: on ? "true" : "false", pick: function () { self.setState({ d7dv: i, d7dvOpen: false, d7dir: v.text }); } };
       }),
-      d7makeDirection: say("Makes " + dv.name + " the active direction; new batches are written from it"),
+      d7makeDirection: say("Makes " + dv.name + " the active Writing; new batches are written from it"),
       d7anyOpen: !!(s.d7tvOpen || s.d7dvOpen),
       d7closeMenus: function () { self.setState({ d7tvOpen: false, d7dvOpen: false }); },
       d7dirText: s.d7dir,
       d7typeDir: function (e) { self.setState({ d7dir: e.target.value }); },
       d7saveDisabled: !(PROPOSAL || s.d7dir !== dv.text),
-      d7saveVersion: say("Saves Version 5 and makes it active"),
+      d7saveVersion: say("Saves Version " + (DIRS.length + 1) + " and makes it active"),
       d7dropSuggestion: say("Drops the suggestion; Version 4 stays as it is"),
       d7send: say("Sends the message"),
       d7retry: say("Asks again"),
@@ -918,13 +978,15 @@ function vals(T, init) {
 
 /**
  * D7 as a screen. `init`: type ("before" wired, "quiet" not wired), tab, tv (the template version showing, 0 is
- * the newest), tvOpen (its dropdown open), dv and dvOpen (the same for the direction), dir ("plain" | "proposal" | "failed"), wire ("fresh" | "mismatch" |
- * "running" | "failed" | "media" | "done"), preview (the dialog open). `tall` lengthens a review board so the
- * whole page shows.
+ * the newest), tvOpen (its dropdown open), dv and dvOpen (the same for the writing), dir ("plain" | "proposal" | "failed"), wire ("fresh" | "mismatch" |
+ * "running" | "failed" | "media" | "done"), writing ("saved" | "none" | "draft", D13), preview (the dialog open).
+ * `tall` lengthens a review board so the whole page shows.
  */
 export function typeScreen({ init = {}, tall = 0 } = {}) {
-  const i = { type: "before", tab: "overview", tv: 0, tvOpen: false, dv: 0, dvOpen: false, dir: "plain", wire: "done", preview: false, ...init };
+  const i = { type: "before", tab: "overview", tv: 0, tvOpen: false, dv: 0, dvOpen: false, dir: "plain", wire: "done", writing: "saved", preview: false, ...init };
   const T = TYPES[i.type];
+  /* What the editor opens on: a saved version, the Studio's drafted note (unsaved), or nothing at all (D13). */
+  const startText = i.writing === "none" ? "" : i.writing === "draft" ? DRAFTED_NOTE : T.directions[i.dv].text;
   return {
     id: "type",
     nav: "types",
@@ -932,7 +994,7 @@ export function typeScreen({ init = {}, tall = 0 } = {}) {
     markup: (phone) => page(T, i, phone),
     appOverlay: () => appOverlay(T, i),
     colOverlay: (phone) => (phone ? phoneBar(T, i) : ""),
-    state: { d7tab: i.tab, d7tabSet: false, d7tv: i.tv, d7tvOpen: i.tvOpen, d7dv: i.dv, d7dvOpen: i.dvOpen, d7dir: T.directions[i.dv].text, d7preview: i.preview },
+    state: { d7tab: i.tab, d7tabSet: false, d7tv: i.tv, d7tvOpen: i.tvOpen, d7dv: i.dv, d7dvOpen: i.dvOpen, d7dir: startText, d7preview: i.preview },
     enter: { d7tab: "overview", d7tabSet: false, d7tv: 0, d7tvOpen: false, d7dv: 0, d7dvOpen: false, d7dir: T.directions[0].text, d7preview: false },
     vals: vals(T, i),
   };
@@ -952,12 +1014,12 @@ function build(OUT) {
     { file: "Overview", tall: TALL, init: { type: "before", tab: "overview" }, title: "Overview · Desktop", x: 0, y: 0 },
     { file: "OverviewVersions", tall: TALL, init: { type: "before", tab: "overview", tv: 1, tvOpen: true }, title: "Overview, picking a template version · Desktop", x: D, y: 0 },
     { file: "OverviewPhone", phone: true, tall: TALL_PHONE, init: { type: "before", tab: "overview" }, title: "Overview · Phone", x: D * 2, y: 0 },
-    { file: "Direction", init: { type: "before", tab: "direction", dir: "proposal" }, title: "Direction, a suggested change · Desktop", x: 0, y: R0 },
-    { file: "DirectionFailed", init: { type: "before", tab: "direction", dir: "failed" }, title: "Direction, the reply failed · Desktop", x: D, y: R0 },
-    { file: "DirectionPhone", phone: true, init: { type: "before", tab: "direction", dir: "proposal" }, title: "Direction, a suggested change · Phone", x: D * 2, y: R0 },
-    { file: "DirectionVersions", init: { type: "before", tab: "direction", dv: 1, dvOpen: true }, title: "Direction, picking a version · Desktop", x: D * 2 + 470, y: R0 },
-    { file: "Wiring", init: { type: "quiet", tab: "wiring", wire: "fresh" }, title: "Newly saved, arriving on Wiring · Desktop", x: 0, y: R0 + R },
-    { file: "WiringPhone", phone: true, init: { type: "quiet", tab: "wiring", wire: "fresh" }, title: "Newly saved, arriving on Wiring · Phone", x: D, y: R0 + R },
+    { file: "Writing", init: { type: "before", tab: "direction", dir: "proposal" }, title: "Writing, a suggested change · Desktop", x: 0, y: R0 },
+    { file: "WritingFailed", init: { type: "before", tab: "direction", dir: "failed" }, title: "Writing, the reply failed · Desktop", x: D, y: R0 },
+    { file: "WritingPhone", phone: true, init: { type: "before", tab: "direction", dir: "proposal" }, title: "Writing, a suggested change · Phone", x: D * 2, y: R0 },
+    { file: "WritingVersions", init: { type: "before", tab: "direction", dv: 1, dvOpen: true }, title: "Writing, picking a version · Desktop", x: D * 2 + 470, y: R0 },
+    { file: "GoLive", init: { type: "quiet", tab: "wiring", wire: "fresh" }, title: "Newly saved, arriving on Go Live · Desktop", x: 0, y: R0 + R },
+    { file: "GoLivePhone", phone: true, init: { type: "quiet", tab: "wiring", wire: "fresh" }, title: "Newly saved, arriving on Go Live · Phone", x: D, y: R0 + R },
     { file: "Mismatch", init: { type: "quiet", tab: "wiring", wire: "mismatch" }, title: "Cadence does not add up, Wire unavailable · Desktop", x: 0, y: R0 + R * 2 },
     { file: "Running", init: { type: "quiet", tab: "wiring", wire: "running" }, title: "Wiring, the checklist ticking · Desktop", x: D, y: R0 + R * 2 },
     { file: "CheckFailed", init: { type: "quiet", tab: "wiring", wire: "failed" }, title: "A check failed, rolled back · Desktop", x: 0, y: R0 + R * 3 },
@@ -965,6 +1027,14 @@ function build(OUT) {
     { file: "AllTicked", init: { type: "quiet", tab: "wiring", wire: "done" }, title: "Wired, every item ticked · Desktop", x: 0, y: R0 + R * 4 },
     { file: "Preview", init: { type: "quiet", tab: "wiring", wire: "fresh", preview: true }, title: "Preview, what Wire will run · Desktop", x: D, y: R0 + R * 4 },
     { file: "PreviewPhone", phone: true, init: { type: "quiet", tab: "wiring", wire: "fresh", preview: true }, title: "Preview, what Wire will run · Phone", x: D * 2, y: R0 + R * 4 },
+    /* D13 (Garreth, 2026-09-21): Writing is required, so a type saved out of the Studio starts here. Quiet Luxury
+       Picks is that type on every board below: nothing written, the Studio's own drafted note, and the header a
+       person meets when neither has been saved. */
+    { file: "WritingEmpty", init: { type: "quiet", tab: "direction", wire: "fresh", writing: "none" }, title: "Writing, nothing written yet · Desktop", x: 0, y: R0 + R * 5 },
+    { file: "WritingDraft", init: { type: "quiet", tab: "direction", wire: "fresh", writing: "draft" }, title: "Writing, the Studio's drafted note, not saved · Desktop", x: D, y: R0 + R * 5 },
+    { file: "NeedsWriting", init: { type: "quiet", tab: "overview", wire: "fresh", writing: "none" }, title: "A type that needs writing: the pill, and Generate still opens the form · Desktop", x: D * 2, y: R0 + R * 5 },
+    { file: "WritingEmptyPhone", phone: true, init: { type: "quiet", tab: "direction", wire: "fresh", writing: "none" }, title: "Writing, nothing written yet · Phone", x: D * 3, y: R0 + R * 5 },
+    { file: "NeedsWritingPhone", phone: true, init: { type: "quiet", tab: "overview", wire: "fresh", writing: "none" }, title: "A type that needs writing: the pill, and Generate still opens the form · Phone", x: D * 3 + 470, y: R0 + R * 5 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
@@ -976,7 +1046,7 @@ function build(OUT) {
     }
   }
   const note =
-    "Pictures, one per state. The tabs switch, the template's version dropdown works, the direction text can be typed into, and Preview opens its dialog (Escape or X closes either).\n\nBefore & After is wired and posting. Quiet Luxury Picks was just saved from the Studio and is not wired yet. The Overview boards are taller than a screen so the whole page shows.\n\nFrom the first review: the template's slides lead Overview across the full width, one version at a time with Make active; the four numbers are tiles beside the details; the batch table is left-aligned without Ran by, and a row opens that batch; panels side by side end on the same line.\n\nFrom the second review: narrower tiles in the analytics style beside a wider details card, the version showing tinted instead of ticked, and Preview on the phone as a sheet from the bottom. From the third review: the direction's versions use the same dropdown.\n\nStill proposed:\n· Generate stays in the header on every tab; on Direction it steps back to secondary, so Save version is that tab's one accent.\n· The suggestion shows inside the direction itself: removed words struck through, added words underlined.\n· The cadence rebalance is the cadence editor's rule, with its running total and \"too many\" wording.\n· Wire is a hold in the amber tone: it changes the database but deletes nothing.";
+    "Pictures, one per state. The tabs switch, the template's version dropdown works, the Writing text can be typed into, and Preview opens its dialog (Escape or X closes either).\n\nBefore & After is wired and posting. Quiet Luxury Picks was just saved from the Studio and is not wired yet. The Overview boards are taller than a screen so the whole page shows.\n\nFrom the first review: the template's slides lead Overview across the full width, one version at a time with Make active; the four numbers are tiles beside the details; the batch table is left-aligned without Ran by, and a row opens that batch; panels side by side end on the same line.\n\nFrom the second review: narrower tiles in the analytics style beside a wider details card, the version showing tinted instead of ticked, and Preview on the phone as a sheet from the bottom. From the third review: the writing's versions use the same dropdown.\n\nNew in D13 (Garreth, 2026-09-21), the bottom row: Direction is named Writing and Wiring is named Go Live, and a type cannot generate until its Writing is saved.\n· Nothing written: the editor carries a guiding placeholder and the header the neutral pill Needs writing. Generate stays available and opens the Generate form, which is where the missing Writing is marked in red and required (Garreth, 2026-09-22).\n· The Studio's drafted note opens in the editor as Not saved; Save version is still a person's press.\n· The template's text boxes are listed under the editor, so the instruction is written against the boxes that exist. D14 is what gives the Studio a way to name them.\n\nStill proposed:\n· Generate stays in the header on every tab; on Direction it steps back to secondary, so Save version is that tab's one accent.\n· The suggestion shows inside the direction itself: removed words struck through, added words underlined.\n· The cadence rebalance is the cadence editor's rule, with its running total and \"too many\" wording.\n· Wire is a hold in the amber tone: it changes the database but deletes nothing.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

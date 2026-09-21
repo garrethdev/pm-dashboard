@@ -16,7 +16,8 @@ that design.**
 past D11, added and approved the same day. It adds no screen — its states
 live on D1 to D5, D7 and D9 — and it is in the prototype.
 **And three more, 2026-09-21: D13, D14 and D15**, out of a session on how a
-new content type gets written and wired. **Open, not drawn yet.** D13 renames
+new content type gets written and wired. **D13 was drawn and approved on
+2026-09-22; D14 and D15 are open and not drawn yet.** D13 renames
 Direction to **Writing** and Wiring to **Go Live** and makes Writing required;
 D14 gives a text box in the Studio a **name**, which is how the writer knows
 what goes in it; D15 adds a **Rows** tab showing what is sitting in a type's
@@ -2006,14 +2007,95 @@ the edges are tested, not just the happy middle.
 
 ## D13. Writing, and Go Live — two tabs renamed, and Writing made required
 
-- **Status:** **Open. Raised and decided by Garreth, 2026-09-21**, out of the
-  question of what "direction" actually controls. Not drawn yet.
+- **Status:** **APPROVED by Garreth, 2026-09-22**, dark and light, desktop and
+  phone, on the D1, D2 and D7 canvases. Drawn and reviewed the same day, in one
+  round plus two fixes (where the requirement is enforced, and a phone board
+  laid on top of a desktop one). The four judgement calls listed below were
+  approved as drawn.** Raised and decided by Garreth, 2026-09-21, out of the
+  question of what "direction" actually controls.
   **It has no canvas and no build file of its own** (the D12 rule, Garreth
   2026-09-21: a separate canvas would confuse the developer, who should find
   every state of a screen in one place). Its pictures are new rows on the
   **D1**, **D2** and **D7** canvases, and the boards it changes are redrawn on
   those same pages. Build files: `d1-carousel-types.build.mjs`,
   `d2-generate-form.build.mjs`, `d7-type-page.build.mjs`.
+  - **What is on the canvases now.**
+    **D1** — a new board, *A type that needs writing*, desktop and phone. The
+    sample gained "Sunday Reset", a type saved out of the Studio: its card
+    carries the neutral pill **Needs writing** beside an ordinary Generate,
+    which opens the form. Both boards scroll to that card, which sits last in
+    the grid with the other types that cannot produce yet.
+    **D2** — every board's Direction row now reads **Writing**, and the Note's
+    placeholder reads *anything specific about this batch?*. Two new boards,
+    desktop and phone, *A type with no writing yet*: the Writing row in the
+    danger stroke, reading **No writing** with **Write** in Edit's place, the
+    reason beside Generate, and Generate unavailable.
+    **D7** — the tab row reads **Overview · Writing · Go Live** on every board.
+    Three new boards: *Writing, nothing written yet* (desktop and phone), with
+    the guiding placeholder; *Writing, the Studio's drafted note, not saved*;
+    and *A type that needs writing* (desktop and phone), where the header
+    carries the pill and Generate still opens the form.
+    The four Direction boards were renamed Writing and the two Wiring boards
+    Go Live. The editor now lists the template's **text boxes** by name under
+    it — `hook`, `line`, `closing`.
+  - **Changed in the first review (Garreth, 2026-09-22): where the requirement
+    is enforced.** He asked the question the first board raised — *if Generate
+    is unavailable, how does anyone write the writing?* — and then answered it
+    himself, which is the better answer: **leave Generate alone.**
+    - **The card keeps a plain neutral pill and an ordinary Generate.** The
+      pill says what is missing; the button still works.
+    - **The Generate form is where Writing is required.** Arriving for a type
+      with nothing written, the Writing row is drawn in the **danger stroke**,
+      its line reads *No writing* in red, and **Write** in the row's corner
+      goes red with it — the one red thing on the page, impossible to walk
+      past. Generate at the foot of the form stays unavailable with *No
+      writing* beside it, as it already is for a missing library.
+    - **Why this is better than what was drawn first.** It matches what the
+      screen already does: a type whose library has no images also keeps a live
+      Generate, and the form is what tells you. One rule instead of two —
+      *Generate always opens the form; the form names what is missing.* It also
+      closed the dead end the first round had, where the only board showing a
+      type with no writing could not be reached from anywhere.
+    - **The stroke is there when the form opens, not after a press.** Generate
+      on the form is unavailable, so there is no press to fail; the form shows
+      the requirement on arrival. *(Only the Writing row gets this treatment.
+      The library row, which is just as missing on its own board, does not —
+      that board is approved and was left alone. If both should be marked the
+      same way, say so and the library row gets it too.)*
+    - Briefly drawn and undone the same day: Needs writing as a pill you press,
+      borrowing D12's *18 to render* treatment. It is gone; the pill is plain
+      again and `d1-carousel-types.build.mjs` keeps D12's own `.towait` name.
+  - **Four things settled while drawing, approved as drawn (Garreth,
+    2026-09-22).**
+    1. **D2 says "No writing" where D1 and D7 say "Needs writing."** Still the
+       case after the first review. D2's
+       status line beside Generate already reads *No image library* and *No
+       images in Cover and Before*, so the new reason was written to match its
+       neighbours rather than the pill. If one wording everywhere matters more,
+       D2's line becomes *Needs writing*.
+    2. **The Studio's drafted note does not let a type generate.** The ticket
+       says the requirement is met by someone having read the draft and
+       pressing Save version, so the drafted board still shows **Needs
+       writing**, and the form would still stop it. The draft carries a neutral pill
+       reading **Not saved**, which is a new word on a screen.
+    3. **The text-box names sit under the editor, not beside it.** The ticket
+       says "beside the editor"; the right-hand column is the Conversation at
+       full height, so the names went along the bottom of the editor card,
+       left of Save version, and on the phone at the foot of the card. Moving
+       them to a side would mean moving the Conversation.
+    4. **A card shows one pill, and it is the blocking one.** A type fresh out
+       of the Studio is both not wired and needs writing; D1's card has room
+       for one, so it shows Needs writing, the reason Generate is off. D7's
+       header has room for both and shows both.
+  - **Fixed in the first review (Garreth, 2026-09-22): two boards on top of
+    each other.** D2's new phone board was laid inside its desktop board — a
+    phone board following a desktop one steps a whole 1540, not the 470 that
+    separates two phone boards. Moved, and `canvas-pack.mjs --check` now refuses
+    a canvas with any two boards overlapping on the same page, so the next one
+    is caught before it is saved rather than by Garreth opening the canvas.
+  - **Not renamed, deliberately:** the panel ids, the state names, the build
+    files' own `dir*` names and `carousel_lane_directions.direction` itself.
+    Only the screen changed, as the ticket says.
 - **What it is.** The word *direction* was doing two jobs. On the type page it
   names the standing instruction the copy prompt is built from —
   `carousel_lane_directions.direction`, one text column, words only. But
@@ -2034,10 +2116,13 @@ the edges are tested, not just the happy middle.
     explaining. The database step keeps its own name in the docs and the code;
     only the screen changes.
   - **Writing is required before a type can generate.** A type saved out of
-    the Studio with no Writing shows **Generate** unavailable — on D1's card
-    and in the type page's header — with the reason named, the way D2 already
-    names a missing library or an empty set. The card carries a neutral pill,
-    **Needs writing**.
+    the Studio with no Writing carries a neutral pill, **Needs writing**, on
+    D1's card and in the type page's header.
+    *(This bullet first said Generate is unavailable on the card and in the
+    header. Garreth changed that on 2026-09-22, after seeing it drawn:
+    **Generate stays an ordinary button everywhere, and the requirement is
+    enforced on the Generate form**, which is where D2 already names a missing
+    library or an empty set. See the Status line.)*
   - **The Note's placeholder does the explaining.** The one-line Note on the
     Generate form takes the placeholder *"anything specific about this
     batch?"*, so the difference between the standing Writing and the per-batch

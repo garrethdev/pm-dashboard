@@ -11,7 +11,20 @@
  *   Main.dc.html           desktop 1440×900, populated          (Dark page)
  *   Phone.dc.html          phone 390×844, menu as a drawer      (Dark page)
  *   FirstRun.dc.html       desktop 1440×900, no carousel types  (Dark page)
+ *   NeedsWriting / PhoneNeedsWriting .dc.html   a type that cannot
+ *                          generate until its Writing is saved (D13)
  *   MainLight / PhoneLight / FirstRunLight .dc.html             (Light page)
+ *
+ * D13 (Garreth, 2026-09-21): a type saved out of the Studio with no Writing
+ * cannot generate. Its card carries the neutral pill "Needs writing" where a
+ * status already goes. **Generate stays available** (Garreth, 2026-09-22,
+ * first review): the card lets you in, and the Generate form is where the
+ * missing Writing is named and marked, exactly as that form already names a
+ * library with no images. A Generate switched off on the card would leave
+ * nowhere to press. The card shows the one pill
+ * that blocks Generate: a type in this state is not wired either, but Needs
+ * writing is the reason the button is off.
+ *
  * Imported, `typesScreen()` is the screen prototype.build.mjs links to D2.
  *
  *   node docs/designs/carousel-generator/d1-carousel-types.build.mjs <out dir>
@@ -97,7 +110,7 @@ function css(phone) {
 /* ── Markup ────────────────────────────────────────────────────────────── */
 
 const typeCard = (varName, retired) => `
-            <article class="card${retired ? " is-retired" : ""} {{${varName}.openCls}}">
+            <article class="card${retired ? " is-retired" : ""} {{${varName}.openCls}} {{${varName}.stateCls}}">
               <button type="button" class="cname" title="{{${varName}.name}}" onClick="{{${varName}.openType}}">{{${varName}.name}}</button>
               <div class="cmeta">
                 <span class="pill">{{${varName}.character}}</span>
@@ -126,7 +139,8 @@ const typeCard = (varName, retired) => `
                     ? ""
                     : `<sc-if value="{{${varName}.isAccent}}" hint-placeholder-val="{{ false }}"><button type="button" class="cta cta--sm" onClick="{{${varName}.generate}}">Generate</button></sc-if>
                 <sc-if value="{{${varName}.isSecondary}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn2" onClick="{{${varName}.generate}}">Generate</button></sc-if>
-                <sc-if value="{{${varName}.isRunning}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2" onClick="{{${varName}.openBatch}}">Open running batch</button></sc-if>`
+                <sc-if value="{{${varName}.isRunning}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2" onClick="{{${varName}.openBatch}}">Open running batch</button></sc-if>
+`
                 }
               </div>
             </article>`;
@@ -209,12 +223,15 @@ function vals(firstRun, waiting, waitText, waitTo) {
       { id: "before-after", slides: 7, name: "Before & After", character: "Character 2", posts: 14, cover: 6, median: 31700, last: "Sep 11", status: "live" },
       { id: "day-life", slides: 10, name: "Day in the Life", character: "Character 4", posts: 22, cover: 11, median: 9800, last: "Sep 13", status: "live" },
       { id: "quiet-luxury", slides: 5, size: "9:16", name: "Quiet Luxury Picks", character: "Character 4", status: "unwired" },
+      /* D13: saved out of the Studio with no Writing, so it cannot generate yet. */
+      { id: "sunday-reset", slides: 6, name: "Sunday Reset", character: "Character 3", status: "nowriting" },
       { id: "weekly-wins", slides: 6, name: "Weekly Wins", character: "Character 2", posts: 0, cover: 0, median: 12400, last: "Jul 2", status: "retired" },
       { id: "ama", slides: 4, name: "Ask Me Anything", character: "Character 3", posts: 0, cover: 0, median: 6100, last: "Jun 18", status: "retired" }
     ];
 
     var wired = TYPES.filter(function (t) { return t.status === "live"; }).sort(function (a, b) { return a.cover - b.cover; });
     var unwired = TYPES.filter(function (t) { return t.status === "unwired"; });
+    var nowriting = TYPES.filter(function (t) { return t.status === "nowriting"; });
 
     var view = function (t) {
       var isLive = t.status === "live";
@@ -236,7 +253,7 @@ function vals(firstRun, waiting, waitText, waitTo) {
         coverCls: isLive && t.cover <= 1 ? "danger" : "",
         median: t.median != null ? compact(t.median) : "—",
         /* Opposite Generate: the last batch date, or the status in its place when there is one (Garreth, 2026-09-14). */
-        showLast: !(t.running || t.status === "unwired" || t.status === "retired" || (WAITING && t.id === "before-after")),
+        showLast: !(t.running || t.status === "unwired" || t.status === "nowriting" || t.status === "retired" || (WAITING && t.id === "before-after")),
         isWaiting: !!WAITING && t.id === "before-after",
         waitText: WAIT_TEXT,
         openWaiting: function () {
@@ -248,20 +265,26 @@ function vals(firstRun, waiting, waitText, waitTo) {
           ctx.open(WAIT_TO, p, WAIT_TO === "review" ? "Opens the written batch, with Render " + WAITING + " decks · D4" : "Opens the finished batch, with Approve " + WAITING + " decks · D5");
         },
         lastText: t.last ? "Last batch " + t.last : "No batches yet",
-        hasPill: !!t.running || t.status === "unwired" || t.status === "retired",
-        pill: t.running ? t.running : t.status === "unwired" ? "Not wired" : "Retired",
+        hasPill: !!t.running || t.status === "unwired" || t.status === "nowriting" || t.status === "retired",
+        /* Needs writing is neutral, like Not wired: nothing has gone wrong, the type is not finished (D13). */
+        pill: t.running ? t.running : t.status === "unwired" ? "Not wired" : t.status === "nowriting" ? "Needs writing" : "Retired",
         pillCls: t.running ? "pill--accent" : "",
         /* Every Generate is the same accent button (Garreth, 2026-09-14). A type not wired yet has one too, so its first
-           batch can be made and judged before wiring; its approved decks wait for Wire (Garreth, 2026-09-15). */
-        isAccent: (isLive || t.status === "unwired") && !t.running,
+           batch can be made and judged before wiring; its approved decks wait for Wire (Garreth, 2026-09-15). A type
+           with no Writing has one too (Garreth, 2026-09-22): the card lets you in and the form names what is missing,
+           exactly as it already does for a type whose library has no images. */
+        isAccent: (isLive || t.status === "unwired" || t.status === "nowriting") && !t.running,
         isSecondary: false,
         isRunning: isLive && !!t.running,
+        /* A hook for the review board that scrolls to this card; it paints nothing. */
+        stateCls: t.status === "nowriting" ? "is-nowriting" : "",
         /* The prototype holds one sample type page (D7); a type not wired yet shows its own page on the D7 canvas. */
         openType: function () {
-          if (t.status === "unwired") { self.note("Opens " + t.name + "'s page on its Wiring tab · D7"); return; }
+          if (t.status === "nowriting") { self.note("Opens " + t.name + "'s page on its Writing tab · D7"); return; }
+          if (t.status === "unwired") { self.note("Opens " + t.name + "'s page on its Go Live tab · D7"); return; }
           ctx.open("type", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5" }, "Opens the page for " + t.name + " · D7");
         },
-        generate: function () { ctx.open("generate", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", lastAuto: t.lastAuto ? "1" : "" }, "Opens the Generate form for " + t.name + " · D2"); },
+        generate: function () { ctx.open("generate", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", lastAuto: t.lastAuto ? "1" : "", nowriting: t.status === "nowriting" ? "1" : "" }, "Opens the Generate form for " + t.name + (t.status === "nowriting" ? ", which has no Writing yet" : "") + " · D2"); },
         openBatch: function () { ctx.open("batch", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); }
       };
     };
@@ -277,7 +300,7 @@ function vals(firstRun, waiting, waitText, waitTo) {
       showProto: !onTypes,
       showHeaderAction: onTypes && !FIRST_RUN,
 
-      live: wired.concat(unwired).map(view),
+      live: wired.concat(unwired).concat(nowriting).map(view),
       retired: retired.map(view),
       retiredCount: String(retired.length),
       retiredCls: s.retiredOpen ? "open" : "",
@@ -288,8 +311,9 @@ function vals(firstRun, waiting, waitText, waitTo) {
 }
 
 /** D1 as a screen. `firstRun` shows the screen with no carousel types at all. `waiting` is how many finished decks
-    of Before & After wait for Approve (D12, Garreth 2026-09-21): its card carries "18 to approve" in place of Last batch. */
-export function typesScreen({ firstRun = false, waiting = 0, waitText = waiting + " to approve", waitTo = "render", toCard = false } = {}) {
+    of Before & After wait for Approve (D12, Garreth 2026-09-21): its card carries "18 to approve" in place of Last batch.
+    `toCard` is a selector a review board scrolls to, so a card further down the grid is the picture. */
+export function typesScreen({ firstRun = false, waiting = 0, waitText = waiting + " to approve", waitTo = "render", toCard = "" } = {}) {
   return {
     id: "types",
     nav: "types",
@@ -297,10 +321,10 @@ export function typesScreen({ firstRun = false, waiting = 0, waitText = waiting 
     markup: page,
     state: { retiredOpen: false, openCards: {} },
     vals: vals(firstRun, waiting, waitText, waitTo),
-    /* The phone's picture of the waiting card: Before & After is the fourth card down. */
+    /* A picture of one card further down the grid: the waiting card (D12), or the one that needs writing (D13). */
     didUpdate: toCard
       ? `
-    if (!this.d1carded) { var d1b = document.querySelector(".towait"); var d1c = document.querySelector(".col"); if (d1b && d1c) { this.d1carded = true; d1c.scrollTop = d1b.closest("article").offsetTop - 96; } }`
+    if (!this.d1carded) { var d1b = document.querySelector(${JSON.stringify(toCard)}); var d1c = document.querySelector(".col"); if (d1b && d1c) { this.d1carded = true; d1c.scrollTop = d1b.closest("article").offsetTop - 96; } }`
       : "",
   };
 }
@@ -316,15 +340,19 @@ function build(OUT) {
     /* A batch waiting for its person (D12, Garreth 2026-09-21): the count sits where Last batch does, and Generate stays,
        because a batch waiting to be pressed does not hold up the next one. Read left to right in the order a batch runs. */
     { file: "WaitingRender.dc.html", phone: false, firstRun: false, waiting: 18, waitText: "18 to render", waitTo: "review", title: "D1 · A written batch waiting for Render · Desktop", x: 0, y: 2080 },
-    { file: "PhoneWaitingRender.dc.html", phone: true, firstRun: false, waiting: 18, waitText: "18 to render", waitTo: "review", toCard: true, title: "D1 · A written batch waiting for Render · Phone", x: 1540, y: 2080 },
+    { file: "PhoneWaitingRender.dc.html", phone: true, firstRun: false, waiting: 18, waitText: "18 to render", waitTo: "review", toCard: ".towait", title: "D1 · A written batch waiting for Render · Phone", x: 1540, y: 2080 },
     { file: "WaitingApproval.dc.html", phone: false, firstRun: false, waiting: 18, title: "D1 · A finished batch waiting for Approve · Desktop", x: 3080, y: 2080 },
-    { file: "PhoneWaitingApproval.dc.html", phone: true, firstRun: false, waiting: 18, toCard: true, title: "D1 · A finished batch waiting for Approve · Phone", x: 4620, y: 2080 },
+    /* D13 (Garreth, 2026-09-21): a type that cannot generate until its Writing is saved. Both boards scroll to the
+       card, which sits last in the grid with the other types that cannot produce yet. */
+    { file: "NeedsWriting.dc.html", phone: false, firstRun: false, toCard: ".is-nowriting", title: "D1 · A type that needs writing · Desktop", x: 0, y: 3120 },
+    { file: "PhoneNeedsWriting.dc.html", phone: true, firstRun: false, toCard: ".is-nowriting", title: "D1 · A type that needs writing · Phone", x: 1540, y: 3120 },
+    { file: "PhoneWaitingApproval.dc.html", phone: true, firstRun: false, waiting: 18, toCard: ".towait", title: "D1 · A finished batch waiting for Approve · Phone", x: 4620, y: 2080 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
     for (const b of BOARDS) {
       const file = light ? b.file.replace(".dc.html", "Light.dc.html") : b.file;
-      fs.writeFileSync(path.join(OUT, file), artboard({ phone: b.phone, light, screens: [typesScreen({ firstRun: b.firstRun, waiting: b.waiting || 0, waitText: b.waitText, waitTo: b.waitTo, toCard: !!b.toCard })], navMode: "page" }));
+      fs.writeFileSync(path.join(OUT, file), artboard({ phone: b.phone, light, screens: [typesScreen({ firstRun: b.firstRun, waiting: b.waiting || 0, waitText: b.waitText, waitTo: b.waitTo, toCard: b.toCard || "" })], navMode: "page" }));
       artboards.push({
         file,
         title: light ? `${b.title} · Light` : b.title,
@@ -338,7 +366,7 @@ function build(OUT) {
     }
   }
   const tryNote =
-    "Clickable. Try the menu (the highlight glides), the collapse button beside the logo, View details on a card, Retired, refresh, the Dark mode switch, a type's name, and Generate, Open running batch, 18 to render, 18 to approve or New carousel type.\n\nScreens not designed yet show a Prototype note naming their ticket.\n\nOn the phone, the menu button opens the drawer.";
+    "Clickable. Try the menu (the highlight glides), the collapse button beside the logo, View details on a card, Retired, refresh, the Dark mode switch, a type's name, and Generate, Open running batch, 18 to render, 18 to approve or New carousel type. Sunday Reset needs writing: its Generate opens the form, which marks what is missing.\n\nScreens not designed yet show a Prototype note naming their ticket.\n\nOn the phone, the menu button opens the drawer.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

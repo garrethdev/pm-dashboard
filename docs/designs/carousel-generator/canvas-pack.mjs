@@ -10,6 +10,10 @@
  *   node canvas-pack.mjs --extract <page.html> --to <dir>
  *   node canvas-pack.mjs --pack --template <page.html> --from <dir> --out <page.html> [--title "..."]
  *   node canvas-pack.mjs --check <page.html>
+ *
+ * --check reads the manifest back: every artboard listed is present, sits on a
+ * page that exists, uses only images the canvas carries, and does not overlap
+ * another board on its own page.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -74,6 +78,18 @@ if (flag("extract")) {
   for (const [n, v] of Object.entries(files)) {
     if (!n.endsWith(".dc.html")) continue;
     for (const m of v.matchAll(/url\("\.\/([^"]+)"\)/g)) if (!files[m[1]]) problems.push(`${n} uses ${m[1]}, not in the canvas`);
+  }
+  /* Two boards sitting on top of each other on the same page. Easy to write by hand (a phone board after a desktop
+     one steps a whole 1540, not the 470 that separates two phone boards) and invisible until someone opens the
+     canvas — Garreth found the first one, 2026-09-22. */
+  const hits = (p, q) => p.x < q.x + q.w && q.x < p.x + p.w && p.y < q.y + q.h && q.y < p.y + p.h;
+  const boards = manifest.artboards;
+  for (let i = 0; i < boards.length; i++) {
+    for (let j = i + 1; j < boards.length; j++) {
+      const one = boards[i], two = boards[j];
+      if ((one.page ?? "") !== (two.page ?? "")) continue;
+      if (hits(one, two)) problems.push(`${one.file} and ${two.file} overlap on page ${one.page ?? "(none)"} — ${one.file} at ${one.x},${one.y} (${one.w}x${one.h}), ${two.file} at ${two.x},${two.y} (${two.w}x${two.h})`);
+    }
   }
   if (!files["Main.dc.html"]) console.log("note: no Main.dc.html (expected for a multi-ticket canvas)");
   console.log(`"${doc.title}": ${pageList.length} pages, ${manifest.artboards.length} artboards, ${Object.keys(files).length} files, ${(html.length / 1048576).toFixed(1)} MB`);

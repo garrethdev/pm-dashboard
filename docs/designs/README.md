@@ -48,12 +48,16 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   2026-09-21. A ticket that extends existing screens is drawn this way; a
   ticket that adds a screen still gets its own canvas.
 - **D13, D14 and D15 have no canvas of their own either** (Garreth,
-  2026-09-21), for the same reason, and are **open — not drawn yet**. They
-  change and extend screens that already exist, so their boards are new last
-  rows on the canvases those screens own:
+  2026-09-21), for the same reason. They change and extend screens that
+  already exist, so their boards are new last rows on the canvases those
+  screens own. **D13 was approved on 2026-09-22; D14 and D15 are still open.**
   - **D13** (Direction → **Writing**, Wiring → **Go Live**, Writing required)
-    — **D1**, **D2** and **D7**. Boards that already show the old names are
-    redrawn in place on those pages, not added beside.
+    — **D1**, **D2** and **D7**, all three saved in dark and light. Boards
+    that showed the old names were redrawn in place on those pages, not added
+    beside, and D7's Direction and Wiring boards were renamed Writing and Go
+    Live. Because the rename had to reach both themes at once, the three
+    canvases were placed **without `--theme`** (each holds both pages), not
+    dark-first.
   - **D14** (naming a text box) — **D6 · Dark**, **D6 · Light**, and **D11**
     for the same inspector section on a layered slide.
   - **D15** (the **Rows** tab) — **D7**.
@@ -100,7 +104,11 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   base64), so `carousel-generator/canvas-pack.mjs` (added 2026-09-17) does
   steps 3 and 5 instead: `--extract <saved page> --to <dir>`, then
   `--pack --template <saved page> --from <merged dir> --out <file> --title
-  "..."`, then `--check <file>`. The saved page comes from the Artifact tool's
+  "..."`, then `--check <file>`. **`--check` also catches two boards laid on
+  top of each other** on the same page (added 2026-09-22, after Garreth found
+  D13's phone board sitting inside its desktop one): a phone board placed after
+  a desktop board steps a whole **1540**, not the 470 that separates two phone
+  boards. Read what `--check` prints; it exits non-zero on a problem. The saved page comes from the Artifact tool's
   read of the canvas link (it names the file it saved). And a board can be
   looked at before saving: `carousel-generator/render-board.mjs <board.dc.html>
   <out.html>` fills the board's template without the canvas runtime, and
