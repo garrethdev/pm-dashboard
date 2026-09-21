@@ -142,9 +142,9 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 
 | # | Ticket | Phase | Status |
 |---|---|---|---|
-| PF-01 | `accounts.delivery_mode` switch | Immediate | Built 2026-09-18 on branch `dashboard-app-phone-farm-updates`, not merged; first live write still to come |
-| PF-02 | `devices` table + Devices page | Immediate | Built 2026-09-18 on branch `dashboard-app-phone-farm-updates`, not merged; first live write still to come |
-| PF-08 | Facebook as a platform | Immediate | Built 2026-09-18 on branch `dashboard-app-phone-farm-updates`, not merged; first live write still to come |
+| PF-01 | `accounts.delivery_mode` switch | Immediate | Built and on `main` 2026-09-18; first live write still to come |
+| PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
+| PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-03 | Move to phone button | Immediate | Blocked by PF-01, PF-02 |
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | Blocked by PF-02 |
 | PF-05 | `post_deliveries` table | Immediate | Blocked by PF-01, PF-02 |
@@ -158,8 +158,8 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
-| PF-17 | Analytics per fleet | Intermediate | Built 2026-09-18 on the branch, not merged; parity confirmed by query |
-| PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built 2026-09-18 on the branch, not merged; **numbers unproven until accounts are unpaused** |
+| PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
+| PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
 | PF-19 | Calendar and Content types per fleet | Intermediate | Ready now; needs database changes |
 | PF-20 | Incidents and the bell per fleet | Intermediate | Ready now |
 

@@ -1,4 +1,5 @@
 import { UNREACHABLE, makeExecutionsFetcher, type ExecutionRead } from "@/lib/data/n8n";
+import type { Fleet } from "@/lib/fleet";
 
 /**
  * The tracked workflow list — hardcoded per plan §8 (IDs are stable).
@@ -82,6 +83,25 @@ export type RunState =
   | "unknown"
   /** n8n itself could not be read. NOT the same as "this never ran". */
   | "unreachable";
+
+/**
+ * The workflow a real phone does not have (Garreth, 2026-09-22).
+ *
+ * The Posting Agent is what hands a cloud phone its post. On the Physical side
+ * Yurie posts by hand off the To-do list, so it is not her automation and it is
+ * left out of both the Physical dashboard card and the Physical Automation
+ * page. Everything else still runs for both fleets and stays visible.
+ *
+ * Note for PF-06: the fork of this workflow will WRITE the Physical to-do rows
+ * rather than call Geelark. When that lands, decide whether the forked
+ * workflow earns its place back on this screen under its own name.
+ */
+export const POSTING_AGENT_ID = "lioNzkWRocyDvZS5";
+
+/** Drop what does not apply to the fleet being looked at. */
+export function workflowsForFleet<T extends { id: string }>(rows: T[], fleet: Fleet): T[] {
+  return fleet === "physical" ? rows.filter((r) => r.id !== POSTING_AGENT_ID) : rows;
+}
 
 export interface WorkflowStatus {
   id: string;

@@ -56,6 +56,7 @@ export function Card({
 export function DashCard({
   title,
   toolbar,
+  toolbarBelow = false,
   actions,
   headerAction,
   viewAllHref,
@@ -67,6 +68,10 @@ export function DashCard({
   title: string;
   /** Filter/selector pills, rendered inline beside the title. */
   toolbar?: React.ReactNode;
+  /** Put the toolbar on its own line under the title instead of beside it.
+   *  For a card in a narrow column, where a segmented control next to the
+   *  name leaves neither enough room (Garreth, 2026-09-22). */
+  toolbarBelow?: boolean;
   /** Controls pinned to the right of the header row, before "View all". */
   actions?: React.ReactNode;
   /** The card's one way out — a CTA that behaves like "View all" does: paired
@@ -96,6 +101,7 @@ export function DashCard({
           stays a single flex context, and `sm:order-last` returns the link to
           the end of it. Flat rather than nested groups so a narrow card wraps
           to two lines rather than three. */}
+      <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
         <div className="flex items-center justify-between gap-3 sm:contents">
           {/* A step larger on a phone. At 14px the card's own name was quieter
@@ -123,12 +129,14 @@ export function DashCard({
             </Link>
           )}
         </div>
-        {toolbar}
+        {!toolbarBelow && toolbar}
         {actions && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:ml-auto sm:shrink-0 sm:flex-nowrap">
             {actions}
           </div>
         )}
+      </div>
+      {toolbarBelow && toolbar}
       </div>
       <div className="min-h-0 min-w-0 flex-1">{children}</div>
     </Card>

@@ -3,9 +3,10 @@ import { ExternalLink } from "@/components/ui/icons";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { StatusPill } from "@/components/ui/pill";
-import { getAutomationStatuses } from "@/lib/data/automation";
+import { getAutomationStatuses, workflowsForFleet } from "@/lib/data/automation";
 import { RUN_STATE_TONE, formatEtShort } from "@/lib/data/format";
 import { upstreamMessage } from "@/lib/data/upstream-error";
+import { getFleet } from "@/lib/fleet-server";
 
 function formatDuration(sec: number | null): string {
   if (sec === null) return "—";
@@ -15,6 +16,7 @@ function formatDuration(sec: number | null): string {
 
 /** The `try` guards the read only — see the note in accounts/page.tsx. */
 async function AutomationTable() {
+  const fleet = await getFleet();
   let data;
   try {
     data = await getAutomationStatuses();
@@ -44,7 +46,7 @@ async function AutomationTable() {
             </tr>
           </thead>
           <tbody>
-            {data.rows.map((row) => (
+            {workflowsForFleet(data.rows, fleet).map((row) => (
               <tr key={row.id} className="border-t border-border hover:bg-card-raised/50">
                 <td className="py-3">
                   <StatusPill tone={RUN_STATE_TONE[row.state]}>{row.label}</StatusPill>

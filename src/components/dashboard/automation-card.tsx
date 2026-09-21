@@ -1,13 +1,15 @@
 import { DashCard } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/pill";
-import { getAutomationStatuses } from "@/lib/data/automation";
+import { getAutomationStatuses, workflowsForFleet } from "@/lib/data/automation";
 import { RUN_STATE_TONE, formatEtShort } from "@/lib/data/format";
 import { upstreamMessage } from "@/lib/data/upstream-error";
+import { getFleet } from "@/lib/fleet-server";
 
 /** Homepage automation lights — the 6 key workflows, live from n8n.
  *
  *  The `try` guards the read only — see the note in accounts/page.tsx. */
 export async function AutomationCard({ className }: { className?: string }) {
+  const fleet = await getFleet();
   let data;
   try {
     data = await getAutomationStatuses();
@@ -19,7 +21,7 @@ export async function AutomationCard({ className }: { className?: string }) {
     );
   }
 
-  const keyRows = data.rows.filter((r) => r.key);
+  const keyRows = workflowsForFleet(data.rows, fleet).filter((r) => r.key);
   return (
     <DashCard
       title="Automation"
