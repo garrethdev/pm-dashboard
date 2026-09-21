@@ -30,6 +30,15 @@ and what they saved on Trends. **Open, not drawn yet.** It adds a screen rather 
 changing one, so unlike D13 to D15 it **does** get a canvas of its own, and it
 reopens D1, which moves to `/carousel-generator/types` and stops being the
 landing.
+**And D13b, 2026-09-22 (Garreth), taken before D14:** D13 made the Writing
+required and drew the empty editor, but the **Conversation** beside it is a
+blank card on a type that has nothing written, still asking *What should
+change?* — so a person is asked to write a standing instruction from a blank
+page with no help from the one panel that could give it. **Open, not drawn
+yet.** It changes no screen but D7's Writing tab, so its pictures are new rows
+on D7's own canvas. It is numbered 13b, not 17, so the order of work reads off
+the numbers: it is D13's loose end, and renumbering D14 to D16 would break the
+references the dev tickets, the plan and the canvases already make to them.
 The canvas D7 and D8 share is full — 14 MB of its 16 MB with both tickets on
 it in both themes — so it was **renamed from "(D7 to D10)" to "(D7 and D8)" on
 2026-09-16** (Garreth), because it is never going to hold the other two. D9
@@ -2189,6 +2198,79 @@ the edges are tested, not just the happy middle.
   the generator says "Direction" or "Wiring" any more.
 - **Followed on approval:** the rename reached the plan, the flows and the
   dev tickets on **2026-09-22**. See the Status line. **Done.**
+- **Left for D13b (Garreth, 2026-09-22).** On the *Writing, nothing written
+  yet* board the **Conversation** is a blank card still asking *What should
+  change?*. D13 is approved as drawn and is not being reopened; the empty
+  panel and the wording before a first version exists are **D13b**, taken
+  before D14.
+
+## D13b. Writing a first draft — the Conversation on a type that has none
+
+- **Status:** **Open. Raised by Garreth, 2026-09-22**, off the back of D13,
+  from looking at its own *Writing, nothing written yet* board. Not drawn yet.
+  **Taken before D14**, because it finishes the screen D13 just made required.
+  **It has no canvas of its own**: its pictures are new rows on the **D7**
+  canvas, dark and light, desktop and phone. Build file:
+  `d7-type-page.build.mjs`. Numbered **13b** rather than 17 so the order of
+  work reads off the numbers — it is D13's loose end, not a new subject, and
+  renumbering D14 to D16 would break every reference the dev tickets, the
+  plan and the canvases already make to them.
+- **What it is.** D13 made the Writing required and drew the empty editor with
+  a guiding placeholder. Beside it sits the **Conversation**, the panel that
+  on a type with a saved Writing does real work: you ask for a change, the AI
+  answers, and the suggestion shows against the current text with Discard
+  suggestion beside it. On a type that has **nothing written**, that same
+  panel is a tall empty card, and its box still reads **What should change?**
+  — the wording for editing something that exists.
+  So the screen asks a person to write a standing instruction from a blank
+  page while the one thing on it that could help says nothing. The guiding
+  placeholder in the editor carries the whole load, and it disappears the
+  moment anyone types a word.
+  **This is also where the Studio's drafted note comes from.** A type saved
+  out of the Studio arrives with the AI's note already in the editor, unsaved.
+  A type made any other way arrives with nothing, and has no way to ask for
+  the same thing.
+- **What it is not.** Not a rewrite of the Writing tab, not a new screen, and
+  not a change to what the Writing *is*. The editor, Save version, the version
+  dropdown and the text-box names all stay exactly as D13 approved them.
+- **To decide (Garreth):**
+  - **Does the Conversation offer a first draft?** The obvious shape is one
+    quiet offer in the empty panel — write me a first draft from this type's
+    template and its slides — which fills the editor the way the Studio's
+    drafted note does, unsaved, under the **Not saved** pill D13 already
+    drew. Save version stays a person's press either way, so nothing about
+    the requirement moves.
+  - **What the box says when there is nothing yet.** *What should change?*
+    reads wrong on an empty Writing. Something like *What should this type
+    sound like?* until the first version is saved, then back to the existing
+    wording. One box, two states, no new control.
+  - **Whether the empty panel gets an empty state at all**, or stays blank.
+    The standing rule since 2026-09-19 is that an empty state fills its card
+    rather than leaving a void, and these boards were redrawn on 2026-09-22,
+    after it — so if blank is deliberate, the ticket records that and closes.
+  - **The phone.** There the Conversation is a sheet behind a floating button,
+    so an empty panel is never on screen. Whatever the offer is, it has to be
+    reachable without opening the sheet, or a phone writer never meets it.
+- **Flows:** F6 (the Writing tab), and F11 where a type arrives from the
+  Studio with its drafted note.
+- **Design:** the Conversation's empty state on the Writing tab, the box's
+  wording before a first version exists, and however the offer reaches the
+  phone. Nothing else on the tab moves.
+- **States:**
+  - Nothing written, Conversation empty — the state as D13 left it, for
+    comparison.
+  - Nothing written, the Conversation offering a first draft.
+  - The draft arriving in the editor, unsaved, under **Not saved** — the same
+    place the Studio's note lands, so the two agree.
+  - The offer refused or the reply failed, in D7's existing failed shape.
+  - The phone, wherever the offer sits.
+- **Screen's own rules kept:** no instruction text on the screen (the guidance
+  goes in the box's placeholder and the offer's own words), no second accent —
+  Save version stays the tab's one accent and any offer is secondary, no new
+  pill colour, nobody named.
+- **Done when:** approved in dark and light at both sizes, and a person who
+  has just saved a type out of the Studio and a person who has not both have
+  the same way to get a first Writing.
 
 ## D14. Naming a text box in the Studio
 

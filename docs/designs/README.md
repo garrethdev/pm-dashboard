@@ -47,10 +47,11 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   and its states live in those screens' own build files. Approved
   2026-09-21. A ticket that extends existing screens is drawn this way; a
   ticket that adds a screen still gets its own canvas.
-- **D13, D14 and D15 have no canvas of their own either** (Garreth,
+- **D13, D13b, D14 and D15 have no canvas of their own either** (Garreth,
   2026-09-21), for the same reason. They change and extend screens that
   already exist, so their boards are new last rows on the canvases those
-  screens own. **D13 was approved on 2026-09-22; D14 and D15 are still open.**
+  screens own. **D13 was approved on 2026-09-22; D13b, D14 and D15 are still
+  open, and D13b is taken first.**
   - **D13** (Direction → **Writing**, Wiring → **Go Live**, Writing required)
     — **D1**, **D2** and **D7**, all three saved in dark and light. Boards
     that showed the old names were redrawn in place on those pages, not added
@@ -58,6 +59,11 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
     Live. Because the rename had to reach both themes at once, the three
     canvases were placed **without `--theme`** (each holds both pages), not
     dark-first.
+  - **D13b** (a first draft from the Conversation, taken before D14) — **D7**,
+    dark and light, desktop and phone. Added 2026-09-22 off D13's own *Writing,
+    nothing written yet* board, where the Conversation is a blank card. It is
+    numbered 13b so the queue reads off the numbers without renumbering D14 to
+    D16.
   - **D14** (naming a text box) — **D6 · Dark**, **D6 · Light**, and **D11**
     for the same inspector section on a layered slide.
   - **D15** (the **Rows** tab) — **D7**.
