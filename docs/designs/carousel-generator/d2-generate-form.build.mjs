@@ -485,7 +485,13 @@ function vals(init) {
       dirExpanded: s.dirOpen ? "true" : "false",
       dirToggle: s.dirOpen ? "Less" : "More",
       toggleDir: function () { self.setState({ dirOpen: !s.dirOpen }); },
-      editDirection: function () { ctx.open("type", { name: NAME, character: CHARACTER, slides: SLIDES, size: P.size || "4:5", tab: "direction" }, "Opens the Writing tab for " + NAME + " · D7"); },
+      /* The prototype holds one sample type page (D7), a wired type with its Writing saved, so a type that has none
+         is named as a note the way D1 names a type that is not wired yet. Its picture is D7's own Writing, nothing
+         written yet board; opening the sample page here would show a saved Writing under a name that has none. */
+      editDirection: function () {
+        if (!HAS_WRITING) { self.note("Opens the Writing tab for " + NAME + ", with nothing written yet · D7"); return; }
+        ctx.open("type", { name: NAME, character: CHARACTER, slides: SLIDES, size: P.size || "4:5", tab: "direction" }, "Opens the Writing tab for " + NAME + " · D7");
+      },
 
       noteVal: s.noteVal,
       typeNote: function (e) { self.setState({ noteVal: e.target.value }); },

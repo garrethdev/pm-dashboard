@@ -2011,8 +2011,16 @@ the edges are tested, not just the happy middle.
   phone, on the D1, D2 and D7 canvases. Drawn and reviewed the same day, in one
   round plus two fixes (where the requirement is enforced, and a phone board
   laid on top of a desktop one). The four judgement calls listed below were
-  approved as drawn.** Raised and decided by Garreth, 2026-09-21, out of the
-  question of what "direction" actually controls.
+  approved as drawn.**
+  **In the prototype since 2026-09-22 (canvas version 27).** The walk is
+  Carousel types → Sunday Reset's Generate → the form, where the Writing row
+  stands in the danger stroke and Generate is unavailable. Write, on that
+  form, names D7's *Writing, nothing written yet* board rather than opening
+  the type page — the prototype holds one sample type page, a wired type with
+  its Writing saved, and opening it would show a saved Writing under a name
+  that has none. That is how a type not wired yet is already handled.
+  Raised and decided by Garreth, 2026-09-21, out of the question of what
+  "direction" actually controls.
   **It has no canvas and no build file of its own** (the D12 rule, Garreth
   2026-09-21: a separate canvas would confuse the developer, who should find
   every state of a screen in one place). Its pictures are new rows on the

@@ -120,7 +120,8 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   on 2026-09-15, so that file holds the whole screen and D11's keeps only its
   own review moments and image names.
 - **The prototype** is the click-through of every approved screen (a desktop
-  artboard and a phone artboard; holds D1 to D10; the older
+  artboard and a phone artboard; holds D1 to D10, with D11, D12 and D13 riding
+  in on the screens they extend — version 27, 2026-09-22; the older
   `claude.ai/code/artifact/94d569f8-…` form opens the same artifact). Its
   Studio is D6's own build with round two included, and a type's slide size
   travels from Carousel types through Generate, the batch and review to D5,
