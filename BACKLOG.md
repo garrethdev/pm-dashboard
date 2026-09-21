@@ -1022,7 +1022,10 @@ the assistant's project memory.
 
 ## Also open
 
-- **Service-role JWTs are hardcoded** into six HTTP nodes in
+- ~~**Service-role JWTs are hardcoded**~~ **Moved to the saved credential
+  2026-09-21**, all six steps, published and read back; first real run
+  2026-09-23 08:30 ET. See the touched-workflows table under "Close the anon-key
+  hole". Original note: they were hardcoded into six HTTP nodes in
   `84bcYyXfCgtLB7y4` (`Upsert tt_post_performance`, `Read TT Outliers`,
   `Read TikTok Accounts`, `Read Final Scores`, `Query This Week Stats`,
   `Query All Time Stats`). n8n flags them as `HARDCODED_CREDENTIALS`. They
@@ -1112,22 +1115,24 @@ protects, because the honest answer is "the app, and nothing else":
   on the public internet at `<project>.supabase.co/rest/v1/...` regardless of
   who the dashboard is for. The `200` recorded above was fetched from outside
   the network.
-- **Public signup is enabled.** Checked live 2026-09-11:
-  `GET /auth/v1/settings` returns `disable_signup: false` with the email
-  provider on. Anyone holding the anon key can create an account against this
-  project and confirm it from their own inbox. `ALLOWED_EMAILS` stops them at
-  the dashboard's front door; it does not stop them getting a valid
-  `authenticated` JWT.
+- ~~**Public signup is enabled.**~~ **Closed 2026-09-21 — Garreth turned signup
+  off in the Supabase dashboard.** Confirmed live the same day:
+  `GET /auth/v1/settings` returns `disable_signup: true`, and both
+  `POST /auth/v1/otp` and `POST /auth/v1/signup` with a never-seen email return
+  `422 signup_disabled`. Until then (checked 2026-09-11) anyone holding the anon
+  key could create an account and confirm it from their own inbox;
+  `ALLOWED_EMAILS` stopped them at the dashboard's front door but not from
+  getting a valid `authenticated` JWT.
 
-**Today that escalates nothing**, because `anon` already holds everything
-`authenticated` does — same precondition, same access. It matters for the *fix*,
-and it is the reason the revoke below names both roles. See the warning in
-step 2.
+  **New teammates now need an invite** (Supabase → Authentication → Users →
+  Invite user) as well as an `ALLOWED_EMAILS` entry, because the login page's
+  magic link no longer creates the account on first use.
 
-**Done when** (small, separable, and worth doing even while the revoke is
-parked): decide whether signup should be open at all. If the team is a fixed
-list, turning signup off in the Supabase dashboard costs nothing and removes a
-whole class of future mistake.
+**It escalated nothing on its own**, because `anon` already holds everything
+`authenticated` does — same precondition, same access. It mattered for the
+*fix*. The revoke below still names both roles: signup is a dashboard toggle
+that can be switched back on, so `authenticated` should not be left holding
+grants on the strength of it. See the warning in step 2.
 
 ### What is *not* wrong, and why the urgency is lower than the numbers suggest
 
@@ -1164,11 +1169,223 @@ Read the `role` claim out of each credential in the n8n UI, or apply the revoke
 to a Supabase branch and run the workflows against it. Write down what each
 credential holds — that list is worth having on its own.
 
+**Stored credentials: answered 2026-09-21. None of the six holds this project's
+anon key.** n8n hides saved keys, so each credential was tested by behaviour
+instead, read-only, from two throwaway manual workflows (both archived
+afterwards: `M9OhNKUiG9q3DGNQ`, `1Tq2zf74OUtgsKb5`). Test one asked each
+credential to read one `id` from `tt_post_performance`, a table that is already
+RLS-on with zero policies: the service role gets a row, anon gets an empty list
+(control run with the publishable key: `200 []`), a key from elsewhere gets
+`401`. Test two repeated the read through each credential's *own* saved host, to
+tell "another project" from "dead key".
+
+| n8n credential | id | Result | What it is |
+|---|---|---|---|
+| `Supabase Service Role` | `BpJOuYVDTTtsYa5o` | `200`, one row | **Service role for this project.** The revoke does not affect it. |
+| `Supabase Peptide Miracles` | `lfPSs5V5GYgG4Fzq` | `401` here; on its own host "could not find the table" | Working key for a **different** Supabase project |
+| `Supabase Research Agent` | `OkYON0TCcLlsoWAl` | same | Working key for a different project |
+| `Supabase JobOps` | `vzoMzdYzgLwnHfgu` | same | Working key for a different project |
+| `Supabase` | `CtUhnvCRF0e5dBds` | `401 Unregistered API key`, here *and* on its own host | **Dead key.** Anything using it is already failing. |
+| `Supabase Peptide Miracles Production` | `EopK9rDuglrCdkiF` | same | **Dead key**, despite the name |
+
+So the names really were not evidence: the one called "Production" is dead, and
+the one called "Peptide Miracles" points somewhere else (the organisation has
+seven other Supabase projects, "Peptide Miracles Website" among them). Which
+project each of the three foreign credentials belongs to was not established
+and does not matter for this revoke.
+
+**The anon key IS in live use — the revoke would break things today. Found
+2026-09-21.** The stored credentials came back clean only because every public
+-key caller has the key *pasted into the node*. Found by asking the database
+rather than the workflows: Supabase's own request logs record the role of the
+key on every call (`edge_logs`, `request.sb.jwt.apikey.payload.role = 'anon'`,
+or an `sb_publishable_` key prefix). Seven days of logs were read, 09-14 to
+09-21, then each n8n line was traced to its node. Every pasted legacy key
+decodes to `role: anon` for this project; every new-style one is this project's
+publishable key. Read-only throughout; nothing was changed.
+
+*n8n workflows that had to move to the service role before any revoke* (all
+active; "pasted" means typed into the `apikey` and `Authorization` headers).
+This is the list as found; **the table after it records what was moved. As of
+2026-09-21 all eleven are off the public key:**
+
+| Workflow | id | Tables it touches with the public key |
+|---|---|---|
+| `[BA Journey Carousel] Posting Agent` | `23y8KrcquzL5ap7d` | `ba_journey_carousel` read + status write |
+| ~~`[Health] Analytics Freshness Alarm`~~ | `KGBE446F9K51ugtd` | **Moved 2026-09-21** to the `Supabase Service Role` credential and published. It was `rpc/analytics_freshness_check`, which is dashboard monitoring. The pattern for the other ten: `authentication: predefinedCredentialType`, `nodeCredentialType: supabaseApi`, delete the pasted `apikey` and `Authorization` headers, then **publish**. |
+| `[Cleora] Director` | `ILloovicJh9HTH5v` | `cleora_content` read + write, `cleora_clips`, `cleora_hooks` |
+| `[Cleora] Writing Agent` | `XExs9ffnqdh0Un4i` | `cleora_content` read + write |
+| `[Cleora] Story Auto-Vetter` | `SOfcSkp6EYpSqgRW` | `cleora_story_candidates` read + write |
+| `[Cleora ASMR] Scriptwriter` | `edVxJGF5UVCCrwy4` | `cleora_story_candidates` read, `cleora_asmr` insert |
+| `[Cleora] Story Research → Findings Queue` | `GrTdGsVVKMHjQvQ0` | `cleora_content`, `cleora_taste_signal`, `cleora_story_candidates` insert |
+| `[Cleora] Instagram Scout — @holisticentral` | `VQLX9l05S6flpzI7` | `cleora_story_candidates` insert (weekly, Thursday) |
+| `Podcast Clips - Ingest` | `x2mzHWtFtBVDOCZn` | `podcast_clips` insert |
+| `[Embarrassed Angle] Hook Writer` | `gJoDyLHc7NB3mLfM` | `embarrassed_angle_content`, `embarrassed_angle_sources`, `machine_hooks` |
+| `[Embarrassed Angle] Scriptwriter` | `LaRZgyxm1G3I6tFr` | same tables (form-triggered) |
+
+**All eleven were moved on 2026-09-21** (Garreth's instruction), same
+recipe each time, none of them run by hand. **If one of these misbehaves, start
+here:** in n8n open the workflow → version history → restore the "old" version
+below. Every change is named "Supabase steps use saved Service Role credential".
+
+| Workflow | id | Steps changed | Old version → new version | First real run |
+|---|---|---|---|---|
+| `[Health] Analytics Freshness Alarm` | `KGBE446F9K51ugtd` | 1 | `94164bb6…` → `436f2af8…` | daily 10:00 ET |
+| `[Cleora] Director` | `ILloovicJh9HTH5v` | 4 | `0694c4a0…` → `99cf8aba…` | hourly |
+| `[Cleora] Writing Agent` | `XExs9ffnqdh0Un4i` | 2 | `06425b05…` → `86e2d8fd…` | hourly |
+| `[Cleora] Story Auto-Vetter` | `SOfcSkp6EYpSqgRW` | 2 | `c7d2abd2…` → `9854d5ee…` | hourly |
+| `[Cleora] Story Research → Findings Queue` | `GrTdGsVVKMHjQvQ0` | 3 | `46860567…` → `c4dab1f4…` | Monday 08:00 Manila |
+| `[Cleora] Instagram Scout — @holisticentral` | `VQLX9l05S6flpzI7` | 1 | `aa392116…` → `8257146d…` | Thursday 09:00 |
+| `Podcast Clips - Ingest` | `x2mzHWtFtBVDOCZn` | 1 | `1f0637e8…` → `c971677e…` | daily 08:00 Manila |
+| `[BA Journey Carousel] Posting Agent` | `23y8KrcquzL5ap7d` | 2 | `bcbfaa2e…` → `a398158e…` | daily 10:00 ET |
+| `[Embarrassed Angle] Hook Writer` | `gJoDyLHc7NB3mLfM` | 4 | `77c7d5ed…` → `230677dc…` | Monday 10:00 Manila |
+| `[Embarrassed Angle] Scriptwriter` | `LaRZgyxm1G3I6tFr` | 3, plus one fix | `954e55c3…` → `4aea394e…` | on form submit |
+| `[Cleora ASMR] Scriptwriter` | `edVxJGF5UVCCrwy4` | 2 | `ba5b43ad…` → `fcc37807…` | every 2 hours |
+| `[TikTok Analytics] Engine — ScrapeCreators` *(service key, not public — see below)* | `84bcYyXfCgtLB7y4` | 6 | `0bbcaec3…` → `4be7b805…` | Sun/Mon/Wed/Fri 08:30 ET, next 09-23 |
+| `[Unified] Posting Agent` *(service key, not public — see below)* | `lioNzkWRocyDvZS5` | 6 | `cf2cc559…` → `e7ff03a2…` | daily 10:00 ET |
+
+*Second pass the same day — the leftovers from the sweep:*
+
+| Workflow | id | Steps changed (key it held) | Old version → new version | Runs |
+|---|---|---|---|---|
+| `[Health] View-Collapse Detector` | `2Goujvw8qSvVzIfo` | 2 (one anon, one service) | `260d2703…` → `4c55a2ab…` | Tue + Fri 08:00 ET |
+| `[BA Older Woman] Hook Generator` | `YrVGDxC6G1F2urSl` | 1 (anon) | `b285afcc…` → `b2ec310a…` | form / webhook |
+| `[2-slide BA] Scriptwriter` | `zeMbOTbgRqcowz3g` | 3 (anon) | `c650ab81…` → `ea40e73b…` | form / webhook |
+| `Peptide Miracles — Pillar A Promoter` | `RkSgeE8lw41rZk6z` | 1 (service) | `1d50a97d…` → `5ae26e8f…` | every 4 hours + weekly |
+| `[Content Audit] Pre-Publish Gate` | `uCCwmE2Hs4Cutrke` | 3 (service) | `891bf7ab…` → `9b5be7c6…` | called by the Daily Scheduler |
+
+The View-Collapse Detector was the source of the `run_account_health_check`
+public-key calls (Tue/Fri 12:00 UTC). That function is `security definer` and
+does not look at who is calling, so running it as the service role changes
+nothing about what it does (checked 2026-09-21).
+
+**The last two rows of the first table are a different job done with the same recipe** (the "pasted
+service-role JWTs" item under "Also open", and the Posting Agent part of PF-16).
+Their pasted key was already this project's service-role key, confirmed per
+step before editing, so their access did not change at all; only where the key
+is kept changed. On the TikTok upsert the deliberate `batchSize 1`, 200 ms
+interval, 60 s timeout and retry settings were read back unchanged. While the
+fleet is paused the Posting Agent's 10:00 run will exercise its three read
+steps but probably not its three write steps.
+
+**Still holding a pasted service key, because it sits in a Code step** where n8n
+cannot use a saved credential: `[Unified] Smart Scheduler` (`Jaf78Yt9XAuj9PNJ`),
+`[Virlo] References → Story Finder Bridge` (`O8RNjCtOR77d8WvA`, keys for two
+projects), `[Embarrassed Angle] Hook Writer`, `[Embarrassed Angle] Find + Vet
+(Weekly)`, `Machine Hooks - Tag Labeler (Opus)` (`DNnvnZGhf4L63QfF`), `Peptide
+Miracles — Pillar A Promoter` (two Code steps, one holding a key for the other
+project `bckghrtcdapqeyunqrdk`) and `[Universal] Caption Maker`
+(`ql9ttZVBSt5PPLzU`). **The Caption Maker is the one to do first:** it lets the
+caller pass in a different database address, so whoever can trigger it can have
+our service key sent to a server of their choosing. One **Anthropic API key**
+is also pasted into three of these Code steps (Tag Labeler, Pillar A Promoter,
+Caption Maker); it wants a saved credential and replacing. Each needs the database call rebuilt as an ordinary HTTP step. That
+is a change to how the workflow works, not a key swap; do them one at a time
+with a real test.
+
+**Moving a key does not un-leak it.** n8n's version history keeps every old
+version of these workflows with the pasted key still in it, and the keys have
+been returned in full to tooling sessions more than once (again on 2026-09-21,
+into a local session transcript). The moves make rotation *possible* in one
+place; only the rotation in PF-16 actually retires the old keys.
+
+What "changed" means in every row: the pasted `apikey` and `Authorization`
+headers were removed and the step now signs in with the `Supabase Service Role`
+credential. URLs, bodies, schedules and every other header were kept, the
+`Prefer` headers in particular, since they decide whether a write merges,
+ignores duplicates or fails. Each workflow was checked for someone else's
+unpublished edits first (none had any), published, and read back: live version
+equals edited version, and no anon or publishable key is left in any of them.
+
+- **The one fix:** `Fetch Reference Hooks` in the Embarrassed Angle Scriptwriter
+  had the Supabase credential type chosen but no credential attached, so it was
+  already failing. The Service Role credential was attached.
+- **Watch for silent failure.** The inserts in Story Research, Instagram Scout
+  and Podcast Clips are set to carry on when they error, so a bad sign-in would
+  not show as a failed run. After each first run, check that rows landed, or
+  that the request log shows `service_role` and `2xx` on that table.
+- **Cosmetic leftover:** steps whose header list became empty still carry an
+  empty list beside "send headers: off". n8n warns about it on save and ignores
+  it at run time.
+
+**`[Cleora ASMR] Scriptwriter` needed one extra step.** n8n first refused it:
+"credential is not usable in this workflow's project", because the workflow
+lives in a different n8n project from the credential. Garreth shared the
+`Supabase Service Role` credential with that project the same day and the move
+then went through (row above). Expect the same refusal for any other workflow
+outside Garreth's personal project.
+
+Every line in the most recent 24 hours of logs was matched to a node, with the
+counts adding up exactly. The earlier-in-the-week `run_account_health_check`
+calls and the unopened `machine_hooks` workflows were traced in a second pass
+(table above).
+
+**Still not traced: the `conspiracy_kitchen` public-key calls** (1 on 09-16, 11
+on 09-19, from n8n). No workflow name or description mentions the table. Not yet
+opened, any of which could be it: `[Content Quality] KB Check`
+(`8Jzxa6KpJTCRkpba`), `[Unified] Inventory Monitor` (`Q5VXmY5RFMXX2uBZ`),
+`[Unified] Scheduling & Posting Audit` (`leToUZ6OGY06MtWk`), `[Universal]
+Carousel Quality Gate` (`97mqgxro4CVdwBcF`), `[Carousel] Unified Renderer`
+(`rIJH0BHZ5plaOjSy`), `[Conspiracy] Story Finder` (`U1EvzfSXVinkDwoK`). The
+cheap way to find it is the log gate itself: once everything else is moved,
+whatever still shows up as an anon call is the answer, with its timestamp.
+
+**Public key still pasted inside Code steps** (not swappable, same rebuild job
+as the service-key ones below): `Build Items` in the BA Older Woman Hook
+Generator and `Select Picks` in the 2-slide BA Scriptwriter, both reading
+`batch_briefs`. **These two would break at the revoke.**
+
+**Already broken, found in passing:** the BA Older Woman Hook Generator's two
+Supabase steps (`Fetch Emotion Seeds`, `Fetch Gold`) use the n8n credential
+`Supabase` (`CtUhnvCRF0e5dBds`), which the probe above showed is a dead key.
+Point them at `Supabase Service Role`. Not changed, because it is a repair
+rather than a key move and nobody asked for it.
+
+*Callers outside n8n, from the same logs* — these were not in anyone's picture:
+
+- **Python scripts and curl** on `celebrity_verdict` (725 calls on 09-17/18),
+  `carousel_render_runs`, `celebrity_peptide_posts`, `content_type_registry`,
+  `filler_library`. Almost certainly the Celebrity Peptide renderer and the
+  batch skills around it.
+- **A desktop web browser** on `carousel_copy`,
+  `before_after_evidence_carousel`, `batch_briefs`, `research_findings`. Almost
+  certainly the carousel review boards. **This corrects a statement further up:**
+  "the anon key never reaches the browser" is true of the dashboard and false of
+  these pages, which carry the key in their source. A page cannot hold the
+  service key, so these need a different answer (a small server route, or a
+  narrow RLS policy for exactly what the board reads and writes), not a key
+  swap.
+
+*Side findings, same sweep:* a full `sb_secret_` service key is typed into Code
+nodes in `[Embarrassed Angle] Hook Writer` and `[Embarrassed Angle] Find + Vet
+(Weekly)` (`CY9wDqG6yVNEgs8b`), alongside plain-text ScrapeCreators, OpenRouter
+and Rendi keys. Add them to the credential move in "Also open" / PF-16. And two
+nodes fire far more often than intended because they are not set to run once:
+`Read BA Journey Carousel` (76 reads per run, one per music row) and `Fetch
+Taste Signal` (44 per run). Harmless, but not deliberate.
+
+**What is left of step 1:** trace the three untraced n8n calls and the five
+unopened `machine_hooks` workflows; name the scripts and pages behind the
+non-n8n callers; and the generic credentials below. Re-run the log query after
+the moves — **the revoke is safe when seven consecutive days of logs show no
+anon or publishable call to `/rest/`**, which is a better gate than any
+inventory.
+
+- **Three unnamed generic credentials**: `Header Auth account`
+  (`kIdk71QmJQlBTPgp`), `Header Auth account 2` (`u1ARoIREsKilTeHr`) and
+  `Header Auth account 3` (`4lzj98XNm6AwmxF4`). A header credential can carry a
+  Supabase key just as well as anything else. Deliberately **not** probed the
+  same way: if one holds some other service's secret, the probe would send that
+  secret to Supabase. Open each in n8n and read the header *name* (the name is
+  visible, the value is not): `apikey` or `Authorization` aimed at
+  `supabase.co` means it needs the row test; anything else rules it out.
+
 **2. Revoke, naming both roles.**
 
 **Do not revoke `anon` alone.** The instinct is that `authenticated` is "our
-team" and can keep its grants — that is wrong here, because signup is open (see
-above), so `authenticated` means anyone on the internet who bothered to register.
+team" and can keep its grants — that is wrong here. Signup was open until
+2026-09-21 (see above) and is one dashboard toggle away from being open again,
+and then `authenticated` means anyone on the internet who bothered to register.
 Revoking `anon` while keeping `authenticated` looks like a fix, closes nothing,
 and is harder to spot the second time.
 
@@ -1191,8 +1408,21 @@ alter default privileges in schema public revoke all on functions from anon, aut
 still reachable through a `security definer` function that reads it. Step 2 on
 its own is a half-fix.
 
-**4. Review the 9 RLS-on-with-policies tables.** Never looked at. A permissive
-policy (`using (true)`) is the same hole wearing a policy.
+**4. Review the 9 RLS-on-with-policies tables.** A permissive policy
+(`using (true)`) is the same hole wearing a policy.
+
+**Reviewed 2026-09-21, read-only (`pg_policies`). Seven of the nine are exactly
+that; two are real.**
+
+| Table(s) | Policy | Verdict |
+|---|---|---|
+| `cooking_ctas`, `cooking_openers`, `cooking_scripts`, `cooking_stories`, `covered_eye_validation`, `mito_facts`, `mito_hooks` | one policy each, `FOR ALL TO anon USING (true) WITH CHECK (true)` | **No protection.** RLS is on, and the only rule says anon may do anything. Treat these seven exactly like the 155: revoke and drop the policy. Small content tables (the largest is about 100 rows). |
+| `api_docs_state` | `SELECT` for anon/authenticated, only the row `id = 'spec'` | **Real and narrow.** Anon can read one row and cannot write (writes go through `set_api_docs_state`, which belongs in the function pass, step 3). |
+| `orchestrator_runs` | four policies `TO public`: insert only as `queued`; read all; update only along `done/failed → dumped` and `queued/review → producing/dumped` | **Real, a deliberate small state machine** for a page that queues and reviews runs with the public key. No delete policy, so deletes are blocked even though the grant exists. Its one soft spot: anyone with the key can read every run and queue new ones. Keep it if that page stays on the public key; it is the model for what the review boards would need. |
+
+So the count for the revoke is really **162 open tables (155 + 7)**, 16 locked
+correctly, and 2 with genuine rules. `mito_hooks` had one n8n read in the last
+24 hours, so at least one workflow uses these.
 
 **5. Read the ACL back and re-run the request.** Do not trust the migration's
 exit code — read `proacl`/`role_table_grants` back and confirm `anon` and
