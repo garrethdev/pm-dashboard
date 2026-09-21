@@ -30,8 +30,9 @@
  *    Writing 7 of 20, Stopped, Not wired (Garreth, 2026-09-16).
  *    A status that means something went wrong is red (Garreth, 2026-09-16);
  *    Stopped is the only one so far. Not wired is not an error — it is a type
- *    whose approved decks wait for Wire, and D1 shows it neutral — and neither
- *    is a batch nobody approved, which still reads Done.
+ *    whose approved decks wait for Wire, and D1 shows it neutral. A batch
+ *    nobody approved is not an error either, but it is not Done: since
+ *    2026-09-21 it reads "24 to approve" (D12).
  *  - Both empty states fill the rest of the screen rather than sitting in a
  *    short dashed box with dead space under it (Garreth, 2026-09-16).
  *  - A re-run and the batch it copied are tied by a marker in the type cell
@@ -61,11 +62,11 @@
  * "18 to approve" — the same words the type's card on D1 and the bell use —
  * and clicking the row opens the screen that holds that press, D4 or D5
  * rather than the finished-batch view. Both are neutral: waiting is not an
- * error. The state is read off the counts, where a dash means the stage has
- * not happened and a nought means it happened and caught nothing, so Sep 8
- * — 24 rendered, 0 approved — is untouched and still reads Done: that batch
- * reached the approve step and nobody approved, which was settled on
- * 2026-09-16 and is not the same thing as work still queued for him.
+ * error. The state is read off the counts: a dash or a nought in Approved
+ * both mean nobody has signed the batch off, so Sep 8 — 24 rendered, 0
+ * approved — reads "24 to approve" (Garreth, 2026-09-21, replacing the
+ * 2026-09-16 reading that left it Done). A batch with some approvals is
+ * Done: the rendered decks it did not approve are what the checks caught.
  *
  * Sample content only: the carousel type names are D1's invented ones, and
  * every count and date is made up.
@@ -128,15 +129,17 @@ const TYPES = [
  * rendered is what the gate flagged, rendered minus approved is what the
  * render checks caught.
  *
- * A count is null, and shows a dash, where that stage has not happened yet —
- * which is not the same as a nought. Sep 8's nought is real: 24 decks were
- * written and rendered and not one was approved.
+ * A count is null, and shows a dash, where that stage has not happened yet.
+ * Sep 8's nought is a real reading — 24 decks were written and rendered and
+ * not one was approved — but for the status it counts the same as a dash:
+ * nobody signed that batch off, so it waits (Garreth, 2026-09-21).
  *
- * Two batches sit at a stage that is waiting on a person (D12). Sep 13 is
+ * Three batches sit at a stage that is waiting on a person (D12). Sep 13 is
  * rendered and not approved, so only Approved is a dash; it is the one the
  * phone board shows, because it carries the longest of the new statuses.
  * Sep 6 is written and not rendered, so Rendered and Approved are both
- * dashes. Everything else that finished is approved and reads Done.
+ * dashes. Sep 8 is rendered with 0 approved. Everything else that finished
+ * has approvals on it and reads Done.
  *
  * `auto` marks a batch that was made in Auto mode (D12): one running and two
  * finished, so the label shows on a batch still going and on batches that
@@ -435,12 +438,16 @@ function vals(init) {
       var mateB = mate ? batchOf(mate) : null;
       var run = running[b.type];
       /* A batch that finished a stage and is waiting for a person to press
-         something (D12). Read off this file's own counts: a dash means the
-         stage has not happened, a nought means it happened and caught
-         nothing. So Sep 8 — rendered, approved 0 — is not waiting: it
-         reached the approve step and nobody approved, which still reads
-         Done (Garreth, 2026-09-16). */
-      var waits = b.state ? null : b.rend == null ? "render" : b.appr == null ? "approve" : null;
+         something (D12). Read off this file's own counts, where a dash and a
+         nought both mean the press has not happened: a batch with no
+         approvals at all is waiting for Approve however it got there, so
+         Sep 8 — 24 rendered, 0 approved — reads "24 to approve" and not
+         Done (Garreth, 2026-09-21, overruling 2026-09-16: rendered decks
+         nobody signed off are decks still waiting on him). Once anything
+         was approved the batch is done: the rendered decks left over are
+         what the checks caught, not work queued for a person. */
+      var none = function (v) { return v == null || v === 0; };
+      var waits = b.state ? null : none(b.rend) ? "render" : none(b.appr) ? "approve" : null;
       return {
         date: b.date,
         name: name,

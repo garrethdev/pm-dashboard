@@ -1767,8 +1767,10 @@ the edges are tested, not just the happy middle.
 
 ## D12. Auto mode — a batch that runs itself to the sign-off
 
-- **Status:** **first version drawn in dark, light and phone, 2026-09-21;
-  waiting for Garreth's review.** Added by Garreth on 2026-09-21, after the
+- **Status:** **APPROVED by Garreth, 2026-09-21**, drawn in dark, light and
+  phone over four rounds the same day. The boards on D1, D2, D3, D4, D5, D7
+  and D9 are the approved picture; what is left is building, not drawing
+  (Auto's timers in the prototype, DEV-48 and the tickets under it).** Added by Garreth on 2026-09-21, after the
   design step had closed, so it is the first ticket numbered past D11 (the
   "There is no D12" note at the top of this file was about D10's second
   round, not this). **It has no canvas and no build file of its own**
@@ -1792,9 +1794,10 @@ the edges are tested, not just the happy middle.
     (desktop and phone; Garreth, 2026-09-21, who pointed out that the card
     had a state for a running batch and none for this). Where *Last batch*
     sits, the type's card carries a small button, **18 to approve**, that
-    opens the finished batch. **Generate stays**: a batch waiting for its
-    sign-off does not hold up the next one, unlike a running batch, which
-    swaps Generate for *Open running batch*. It applies to any finished
+    opens the finished batch. **Generate stays** (**Garreth, 2026-09-21**,
+    asked what the rule was and kept it): a batch waiting for its sign-off
+    does not hold up the next one, unlike a running batch, which swaps
+    Generate for *Open running batch*. It applies to any finished
     batch, Auto or not. The card's state lives in
     `d1-carousel-types.build.mjs` (`typesScreen({ waiting: 18 })`), and the
     same two pictures are on **D1's canvas** too, as its last row (*A
@@ -1881,17 +1884,46 @@ the edges are tested, not just the happy middle.
     the same two words, where such a batch used to read *Done* — the one
     place the app could call finished work finished while it still needed
     him. Neither status is red: neither is an error.
-    **The one batch that still reads Done** is Sep 8 (24 written, 24
-    rendered, 0 approved). Its nought is real — that batch reached the
-    approve step and nobody approved anything, which the table already
-    tells apart from a dash — and Garreth's 2026-09-16 decision that such a
-    batch is not an error stands. A waiting batch has never reached the
-    step, and that is the difference both statuses read off.
+    **A batch nobody approved waits too** (Garreth, 2026-09-21, on
+    approval, replacing the 2026-09-16 reading): Sep 8 — 24 written, 24
+    rendered, **0 approved** — used to read Done because its nought was a
+    real answer rather than a blank. It now reads **24 to approve**. Twenty-
+    four rendered decks that nobody signed off are decks still waiting on
+    him, however the count got to zero, so for the status a dash and a
+    nought mean the same thing: the press has not happened. **A batch with
+    some approvals on it is Done**: the rendered decks it did not approve
+    are what the checks caught, which is what *n flagged* says on D7. The
+    rule is `v == null || v === 0` on the Rendered and Approved counts, in
+    `d9-history.build.mjs` and `d7-type-page.build.mjs`. Only Sep 8 moves;
+    Sep 15 (16 rendered, 15 approved), Sep 12 and Sep 4 still read Done.
+    **For the developer:** this rests on the query keeping *nothing yet*
+    and *zero* apart only for the Rendered and Approved **numbers** — the
+    status itself no longer cares which it is, so a column that defaults to
+    0 cannot make a waiting batch read Done.
     D7 and D9 show it on boards they already had; no board moved.
   - **History labels an Auto batch.** A small neutral **Auto** pill on the
     batch's row, running or done; nothing else changes. On D9's canvas.
-  - **A batch waiting for Render or Approve never blocks Generate.** Only a
-    running batch swaps Generate for *Open running batch*.
+  - **A batch waiting for Render or Approve never blocks Generate**
+    (proposed by me, **confirmed by Garreth on 2026-09-21**). A finished
+    batch is sitting still, so starting the next one clashes with nothing;
+    the cost he accepted is that a type can gather several unapproved
+    batches, and the three places that name a waiting batch — the bell, the
+    type's card and History's Status column — are what keep it from being
+    forgotten. Only a running batch swaps Generate for *Open running
+    batch*, because two batches of one type would write into the same lane
+    at once.
   The shared picture of Carousel types with the bell is `typesWithBell()` in
   `d3-batch-writing.build.mjs` (D3 owns the bell's panel; D4 and D5 import
   it).
+- **Settled by Garreth, 2026-09-21 (on approval): the two screens count a
+  dropped deck the same way.** D3 used to say "11 of 20 written" while its
+  bar filled as though the dropped decks were done, so the words and the bar
+  disagreed on one line. D3 now follows D5: **a dropped deck leaves the
+  denominator and is said beside it** — "11 of 18 written" with **2
+  dropped** — and the bar fills against the same 18, so both count the decks
+  the batch will actually finish. The denominator shrinks as decks drop,
+  which is what D5 has done since 2026-09-15 for decks flagged in the review
+  ("12 of 12 rendered · 5 flagged"). Changed in
+  `d3-batch-writing.build.mjs` (`toWrite = total - dropped`); only D3's
+  *Dropped* boards move, the other boards are untouched (checked by
+  rendering every writing board before and after).

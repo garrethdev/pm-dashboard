@@ -551,9 +551,11 @@ function vals({ auto, init }) {
     var total = decks.length;
     var written = decks.filter(function (d) { return d.st === "written" || d.st === "editing" || d.st === "flagged"; }).length;
     var failed = decks.filter(function (d) { return d.st === "failed"; }).length;
-    /* A dropped deck is not written — the count never claims it — but the batch is done with it, so the bar counts it
-       as work behind us and can still reach the end. */
+    /* A dropped deck (D12) leaves the count, the way a dropped deck does on D5 (Garreth, 2026-09-21, asked the two
+       screens to agree): it is out of the denominator and said separately beside it — "11 of 18 written" with
+       "2 dropped" — so the words and the bar count the same thing, the decks this batch will finish. */
     var dropped = decks.filter(function (d) { return d.st === "dropped"; }).length;
+    var toWrite = Math.max(1, total - dropped);
     var mode = s.d3mode || "writing";
     var firstFlag = decks.filter(function (d) { return d.st === "flagged"; })[0];
 
@@ -617,9 +619,9 @@ function vals({ auto, init }) {
 
       d3Decks: view,
       progCls: mode === "stalled" ? "is-stalled" : mode === "stopped" ? "is-stopped" : "",
-      progCount: written + " of " + total + " written",
+      progCount: written + " of " + toWrite + " written",
       showTrack: mode !== "stopped",
-      trackW: Math.round(((written + dropped) / total) * 100),
+      trackW: Math.round((written / toWrite) * 100),
       showStall: mode === "stalled",
       stallDeck: "Deck " + ${init.stalledDeck || 8},
       stallAgo: "3 min ago",

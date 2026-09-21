@@ -520,10 +520,13 @@ function batchRows(T, phone) {
   return T.batches
     .map((b) => {
       /* A batch that has finished a stage and waits for a person says so in the same words as the Carousel types
-         card and the bell (Garreth, 2026-09-21). A stage that has not happened is null, so written but not yet
-         rendered waits for Render, and rendered but not yet approved waits for Approve. */
-      const toRender = !b.state && b.rendered == null;
-      const toApprove = !b.state && b.rendered != null && b.approved == null;
+         card and the bell (Garreth, 2026-09-21). A press that has not happened reads as a dash or a nought — the
+         same rule D9 uses — so written but nothing rendered waits for Render, and rendered but nothing approved
+         waits for Approve, however the count got to zero. A batch with some approvals on it is done: what it did
+         not approve is what the checks caught, which is the n flagged below. */
+      const nothing = (v) => v == null || v === 0;
+      const toRender = !b.state && nothing(b.rendered);
+      const toApprove = !b.state && !nothing(b.rendered) && nothing(b.approved);
       const flagged = !b.state && !toRender && !toApprove ? b.written - b.rendered : 0;
       const pill =
         b.state === "running"
@@ -815,8 +818,8 @@ function phoneBar(T, init) {
 function vals(T, init) {
   const TPL = T.templates.map((v) => ({ name: v.name, date: v.date, active: !!v.active, hook: v.hook, imgs: v.imgs.slice(0, T.slides) }));
   /* The two batches waiting for a person (Garreth, 2026-09-21): their rows open the screen that holds the press. */
-  const wRender = T.batches.find((b) => !b.state && b.rendered == null) || { req: 20, written: 0 };
-  const wApprove = T.batches.find((b) => !b.state && b.rendered != null && b.approved == null) || { req: 20, rendered: 0 };
+  const wRender = T.batches.find((b) => !b.state && (b.rendered == null || b.rendered === 0)) || { req: 20, written: 0 };
+  const wApprove = T.batches.find((b) => !b.state && b.rendered && (b.approved == null || b.approved === 0)) || { req: 20, rendered: 0 };
   return `
     var P = s.params || {};
     var NAME = P.name || ${JSON.stringify(T.name)};

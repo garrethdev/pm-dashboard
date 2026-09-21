@@ -7,7 +7,8 @@ its own branch. The tickets themselves are in
 done, or the one Garreth names.
 
 **The design step closed on 2026-09-16** with D1 to D11 approved and in the
-prototype, and the work moved to `CAROUSEL-GENERATOR-DEV-TICKETS.md`. **D10 was
+prototype (**D12, Auto mode, was added and approved on 2026-09-21** and is not
+in the prototype yet), and the work moved to `CAROUSEL-GENERATOR-DEV-TICKETS.md`. **D10 was
 reopened on 2026-09-17** (Garreth) for a second round, the feed and the search,
 redesigned in place in its own build file and on its own canvas pages; the dev
 tickets for it were written the same day, in parallel, and **round two was
@@ -38,6 +39,14 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
 | D11 | Carousel Generator Designs - (D6 pt. 2 Studio) | D11 · Dark, D11 · Light | https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5 | 🎠🧩 |
 | Prototype | Carousel Generator Prototype | desktop, phone | https://claude.ai/artifact/KNxf22ERryEbTmr2tRuzF6 | 🕹️ |
 
+- **D12 (Auto mode) has no canvas of its own** (Garreth, 2026-09-21: a
+  separate canvas would confuse the developer, who should find every state of
+  a screen in one place). It extends screens that already exist, so its
+  boards are the last rows of **D1, D2, D3, D4, D5, D7 and D9**, every title
+  starting "Auto mode", "Auto paused" or naming what a batch is waiting for,
+  and its states live in those screens' own build files. Approved
+  2026-09-21. A ticket that extends existing screens is drawn this way; a
+  ticket that adds a screen still gets its own canvas.
 - **Saving a ticket.** Steps 3–6 below read and save **that ticket's own
   canvas**. Step 4 runs `place-ticket.mjs --ticket DN` without `--theme` for a
   canvas that holds both themes, and with `--theme dark` or `--theme light`
