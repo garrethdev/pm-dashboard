@@ -1764,3 +1764,134 @@ the edges are tested, not just the happy middle.
   Studio's own AI conversation, since creating a content type is the moment
   its data set should be researched and created. **Do the boards with that
   work, in one pass, rather than patching the word now.**
+
+## D12. Auto mode — a batch that runs itself to the sign-off
+
+- **Status:** **first version drawn in dark, light and phone, 2026-09-21;
+  waiting for Garreth's review.** Added by Garreth on 2026-09-21, after the
+  design step had closed, so it is the first ticket numbered past D11 (the
+  "There is no D12" note at the top of this file was about D10's second
+  round, not this). **It has no canvas and no build file of its own**
+  (Garreth, 2026-09-21: a separate canvas would confuse the developer, who
+  should find every state of a screen in one place). It is an extension of
+  screens that already exist, so its states live in those screens' build
+  files and its pictures are the last rows of those screens' canvases, every
+  title starting "Auto mode" or "Auto paused":
+  - **D2's canvas**: every form board now shows the new last row with the
+    switch off; *Auto mode on*, desktop and phone, are added.
+  - **D3's canvas**: *writing with Pause auto*, *flagged decks rewritten by
+    themselves, Try 2 of 3*, *still flagged after three tries, Dropped*,
+    *Auto paused*, and two phone boards.
+  - **D5's canvas**: *rendering started by itself*, *Auto paused while
+    rendering*, *Batch finished seen from another screen* (Carousel types:
+    panel open, dot only, phone), *where the notification lands, Approve 18
+    decks*, *the same item in the bell on the batch itself*, and phone
+    boards. The bell-from-another-screen pictures sit here because this is
+    the screen that item opens.
+    Also here: **a finished batch waiting for approval, on Carousel types**
+    (desktop and phone; Garreth, 2026-09-21, who pointed out that the card
+    had a state for a running batch and none for this). Where *Last batch*
+    sits, the type's card carries a small button, **18 to approve**, that
+    opens the finished batch. **Generate stays**: a batch waiting for its
+    sign-off does not hold up the next one, unlike a running batch, which
+    swaps Generate for *Open running batch*. It applies to any finished
+    batch, Auto or not. The card's state lives in
+    `d1-carousel-types.build.mjs` (`typesScreen({ waiting: 18 })`), and the
+    same two pictures are on **D1's canvas** too, as its last row (*A
+    finished batch waiting for approval*, desktop and phone, both themes;
+    Garreth, 2026-09-21). D1's earlier boards are unchanged.
+    **Laid out again the same day:** the Auto rows first overlapped the row
+    above, whose *After Approve, not wired* board is 300 taller than the
+    rest; they now start below it, and a check of every board's position
+    on the D1, D2, D3 and D5 builds finds no overlaps.
+  D2, D3 and D5's approved boards are unchanged apart from the form's new
+  row (D3's and D5's were compared picture for picture before and after).
+  The switch, Pause auto / Resume auto and the bell work; nothing runs on a
+  timer until the prototype. Checked in headless Chrome only, not Safari.
+  This section is the one written record of the feature's rules.
+- **What it is.** Today a batch stops once between writing and rendering: the
+  review screen (D4) waits for someone to press **Render n decks**. (There has
+  been no per-deck Approve since 2026-09-14; Render is the press.) Auto mode
+  takes that wait away. The Generate form gets one switch, **Auto mode**, off
+  by default. A batch started with it on writes, deals with its own flagged
+  decks, renders, and stops at the finished batch, where **Approve n decks**
+  is still a person's press. Auto never approves.
+- **Decided by Garreth, 2026-09-21:**
+  - **Flagged decks are retried three times, then dropped.** Every kind of
+    flag: a copy flag (score, compliance, the risk gate, too similar) is
+    rewritten with the gate's suggested fix as the feedback; a track that was
+    not found has its lookup run again; a slide flagged by the check after
+    rendering is rewritten and rendered again. A deck being retried shows
+    **Rewriting** or **Up next** with **Try 2 of 3** beside it.
+  - **Dropped decks stay in the batch**, labelled **Dropped** with the reason,
+    dimmed, never rendered and never approved. They can still be regenerated
+    by hand, and they count into **Regenerate n decks** on the finished batch.
+    Like a flagged deck today, a dropped deck leaves the count of decks to
+    render: the finished batch reads "18 of 18 rendered" with "2 dropped"
+    beside it.
+  - **Pausing puts the batch back to manual.** The progress line carries an
+    **Auto** pill and a **Pause auto** button for as long as the batch runs.
+    Paused, the pill reads **Auto paused** and the button **Resume auto**;
+    writing carries on, flagged decks wait for a person and ring the bell as
+    they do today, and rendering waits for **Render n decks**. A deck already
+    queued to render keeps rendering.
+  - **It keeps running with the dashboard closed.** That is a development
+    matter rather than a screen (today the open tab drives every deck), and
+    it gets its own dev ticket once this design is approved.
+- **The bell.** In Auto a flagged deck does not ring the bell, because nobody
+  is being asked to do anything. The batch rings it once, when it finishes:
+  **Batch finished**, the Carousel Generator chip, "Before & After · 18
+  rendered, 2 dropped". It shows on whatever screen the person is on, and
+  clicking it opens the batch on its finished state, the screen D5 already
+  has, with **Approve 18 decks**.
+- **Screen's own rules kept:** no instruction text anywhere (the switch is its
+  label and nothing else), no accent button added (Pause auto is secondary),
+  no new pill colour (Auto is accent, Auto paused, Try n of 3 and Dropped are
+  neutral), nobody is named.
+- **Settled by Garreth, 2026-09-21 (second round), all four drawn:**
+  - **The switch remembers the type.** A type last generated in Auto opens
+    its form with Auto mode on; after that the switch is the person's. On
+    D2's canvas: *Auto mode on, the way it opens for a type last generated
+    in Auto*. In the builds, Morning Routine is the sample type that was.
+  - **Every batch that needs its person rings the bell**, Auto or not,
+    wherever they are. Two items, each opening the screen that holds the
+    press: **Batch written** ("Before & After · 18 to render, 2 flagged"), a
+    manual batch that has finished writing and waits for *Render n decks*,
+    opens D4; **Batch finished** ("… 18 rendered, 2 dropped"), any batch
+    waiting for *Approve n decks*, opens D5. A flagged deck still rings its
+    own item in a manual or paused batch, and stays quiet while Auto runs.
+    The type's card says the same where *Last batch* sits: **18 to render**
+    or **18 to approve**. Pictures: *Batch written, seen from another
+    screen* and *A written batch waiting for Render, on Carousel types* on
+    **D4's canvas** (its last row); the Batch finished ones on D5's.
+  - **Every screen that lists batches says what a batch is waiting for**
+    (Garreth, 2026-09-21, asked for the render wording "on D1 and other
+    pages that should have that"), so a batch cannot sit finished and
+    unnoticed on one screen while another calls it done. On **D1** the two
+    waiting cards are their own row, read left to right in the order a batch
+    runs: *A written batch waiting for Render* and *A finished batch waiting
+    for Approve*, each desktop and phone. Neither takes Generate away. On
+    **D7**, the type's own page, its table of that type's batches gains the
+    same two words in the column that already carries *Writing 7 of 20* and
+    *Stopped*, and the row opens the screen that holds the press. A waiting
+    row says what it is waiting for rather than how many decks were flagged
+    — the bell words it the same way ("18 rendered, 2 dropped", then
+    *Approve 18 decks*) — so *n flagged* is what a finished batch says once
+    nothing is waiting on it. On **D9**, History, the Status column gains
+    the same two words, where such a batch used to read *Done* — the one
+    place the app could call finished work finished while it still needed
+    him. Neither status is red: neither is an error.
+    **The one batch that still reads Done** is Sep 8 (24 written, 24
+    rendered, 0 approved). Its nought is real — that batch reached the
+    approve step and nobody approved anything, which the table already
+    tells apart from a dash — and Garreth's 2026-09-16 decision that such a
+    batch is not an error stands. A waiting batch has never reached the
+    step, and that is the difference both statuses read off.
+    D7 and D9 show it on boards they already had; no board moved.
+  - **History labels an Auto batch.** A small neutral **Auto** pill on the
+    batch's row, running or done; nothing else changes. On D9's canvas.
+  - **A batch waiting for Render or Approve never blocks Generate.** Only a
+    running batch swaps Generate for *Open running batch*.
+  The shared picture of Carousel types with the bell is `typesWithBell()` in
+  `d3-batch-writing.build.mjs` (D3 owns the bell's panel; D4 and D5 import
+  it).

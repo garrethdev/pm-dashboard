@@ -63,6 +63,18 @@ function css(phone) {
 .flabel .opt { font-size: 12px; line-height: 16px; font-weight: 400; color: var(--text-muted); }
 .fgroup { padding: 20px 24px 4px; border-top: 1px solid var(--border); font-size: 11px; line-height: 16.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
 .fctl { position: relative; min-width: 0; }
+/* Auto mode (D12): the app's switch (theme-toggle.tsx), with its own on state; the kit's .switch is the theme toggle,
+   which light mode always paints on. */
+.screen-generate .asw { position: relative; display: block; width: 36px; height: 20px; flex-shrink: 0; border: 0; padding: 0; border-radius: 999px; background: var(--card-raised); cursor: pointer; transition: background-color 150ms var(--ease); }
+.screen-generate .asw i { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px; background: var(--text-primary); transition: transform 150ms var(--ease), background-color 150ms var(--ease); }
+.screen-generate .asw[aria-checked="true"] { background: var(--accent); }
+.screen-generate .asw[aria-checked="true"] i { transform: translateX(16px); background: var(--bg); }
+.screen-generate .asw:active i { width: 18px; }
+.screen-generate .asw::after { content: ""; position: absolute; inset: -12px -8px; }
+.is-light .screen-generate .asw { background: color-mix(in srgb, var(--text-muted) 35%, transparent); }
+.is-light .screen-generate .asw i, .is-light .screen-generate .asw[aria-checked="true"] i { background: var(--card); }
+.is-light .screen-generate .asw[aria-checked="true"] { background: var(--accent); }
+.screen-generate .frow--auto { align-items: center; }
 .ffoot { display: flex; align-items: center; gap: 16px; min-height: 70px; padding: 16px 24px; border-top: 1px solid var(--border); }
 .status { min-width: 0; font-size: 13px; line-height: 20px; color: var(--text-muted); }
 .status.danger { color: var(--danger); }
@@ -154,6 +166,7 @@ ${
 .flabel { flex-direction: row; align-items: baseline; justify-content: space-between; padding-top: 0; }
 .fgroup { padding: 20px 20px 4px; }
 .ffoot { display: none; }
+.screen-generate .frow--auto { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 .bar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 25; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 70%, transparent); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
 .bar .status { font-size: 12px; line-height: 16px; }
@@ -178,7 +191,7 @@ ${
 }
 .is-light .seg button[aria-checked="true"] { color: #ffffff; }
 @media (prefers-reduced-motion: reduce) {
-  .fixed, .seg button, .stepbtn { transition: none; }
+  .fixed, .seg button, .stepbtn, .screen-generate .asw, .screen-generate .asw i { transition: none; }
   .pop { transform: none; transition: opacity 120ms linear, visibility 0s 120ms; }
   .pop.on { transition: opacity 120ms linear; }
   ${phone ? ".libpop, .libpop.on { transform: translate(-50%, -50%); } .catch.modal { animation: none; }" : ""}
@@ -301,6 +314,14 @@ function page(phone) {
               </div>
             </div>
 
+            <!-- D12: the batch runs through writing and rendering by itself; the finished batch still waits for Approve. -->
+            <div class="frow frow--auto">
+              <span class="flabel" id="auto-label">Auto mode</span>
+              <div class="fctl">
+                <button type="button" class="asw" role="switch" aria-checked="{{d2autoOn}}" aria-labelledby="auto-label" onClick="{{d2autoFlip}}"><i></i></button>
+              </div>
+            </div>
+
             <div class="ffoot">
               <span class="status {{statusCls}}" role="status" aria-live="polite">{{statusText}}</span>
               ${phone ? "" : generateButton}
@@ -331,7 +352,9 @@ const colOverlay = (phone) =>
 const didUpdate = `
     if (st.libOpen && !this.libWas) { var o = document.querySelector('.libpop [aria-selected="true"]') || document.querySelector(".libpop .optrow"); if (o) o.focus(); }
     if (!st.libOpen && this.libWas && st.returnFocus) { var t = document.querySelector(".js-libtrigger"); if (t) t.focus(); }
-    this.libWas = !!st.libOpen;`;
+    this.libWas = !!st.libOpen;
+    /* A review picture of the form's last row on the phone (D12). */
+    if (st.d2toEnd && !this.d2ended) { this.d2ended = true; var c2 = document.querySelector(".col"); if (c2) c2.scrollTop = c2.scrollHeight; }`;
 
 function vals(init) {
   return `
@@ -339,6 +362,7 @@ function vals(init) {
     /* The carousel type it was opened for; Before & After when seen on its own. */
     var P = s.params || {};
     var NAME = P.name || "Before & After";
+    var D2AUTO = s.d2auto != null ? !!s.d2auto : !!P.lastAuto;
 
     /* Sample content only — invented libraries, sets and counts. */
     var GROUPS = ["Cover", "Before", "After", "Portrait"];
@@ -434,6 +458,9 @@ function vals(init) {
       /* Generate */
       statusText: statusText,
       statusCls: cur && empty.length ? "danger" : "",
+      /* The switch opens the way this type was last generated (Garreth, 2026-09-21); after that it is the person's. */
+      d2autoOn: D2AUTO ? "true" : "false",
+      d2autoFlip: function () { self.setState({ d2auto: !D2AUTO }); },
       genDisabled: !ready || s.busy,
       genBusyCls: s.busy ? "is-busy" : "",
       busy: s.busy,
@@ -444,7 +471,7 @@ function vals(init) {
         clearTimeout(self.busyTimer);
         self.busyTimer = setTimeout(function () {
           self.setState({ busy: false });
-          ctx.open("batch", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", size: P.size || "4:5", count: s.count }, "Opens the batch: " + s.count + " decks of " + NAME + " · D3");
+          ctx.open("batch", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", size: P.size || "4:5", count: s.count, auto: D2AUTO ? "on" : "" }, "Opens the batch: " + s.count + " decks of " + NAME + (D2AUTO ? ", in Auto mode" : "") + " · D3");
         }, 900);
       },
       submit: function (e) { e.preventDefault(); }
@@ -465,10 +492,10 @@ export function generateScreen({ init = { libId: "window", libOpen: false } } = 
     colOverlay,
     state: {
       count: 50, libId: init.libId, libOpen: init.libOpen, returnFocus: false, dirOpen: false, noteVal: "",
-      opening: "fixed", busy: false,
+      opening: "fixed", busy: false, d2auto: init.auto ? true : null, d2toEnd: !!init.toEnd,
     },
     /* Opened from another screen: no picker left open, nothing mid-start. */
-    enter: { libOpen: false, busy: false },
+    enter: { libOpen: false, busy: false, d2auto: null },
     vals: vals(init),
     didUpdate,
   };
@@ -486,6 +513,9 @@ function build(OUT) {
     { file: "Picker.dc.html", phone: false, init: { libId: "window", libOpen: true }, title: "D2 · Library picker · Desktop", x: 0, y: 1040 },
     { file: "EmptySets.dc.html", phone: false, init: { libId: "kitchen", libOpen: false }, title: "D2 · Library with empty sets · Desktop", x: 1540, y: 1040 },
     { file: "NoLibrary.dc.html", phone: false, init: { libId: null, libOpen: false }, title: "D2 · No library chosen · Desktop", x: 0, y: 2080 },
+    /* Auto mode (D12, Garreth 2026-09-21): the form's last row, off as the form opens (every board above), on here. */
+    { file: "AutoOn.dc.html", phone: false, init: { libId: "window", libOpen: false, auto: true }, title: "D2 · Auto mode on, the way it opens for a type last generated in Auto · Desktop", x: 1540, y: 2080 },
+    { file: "PhoneAutoOn.dc.html", phone: true, init: { libId: "window", libOpen: false, auto: true, toEnd: true }, title: "D2 · Auto mode on, the form's last row · Phone", x: 3080, y: 2080 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
@@ -505,7 +535,7 @@ function build(OUT) {
     }
   }
   const tryNote =
-    "Clickable. Try typing 64 into How many (it stops at 50), Change on the library and pick Kitchen Counter Shots or New library, Undo, More on the direction, Fixed and Written, and Generate.\n\nEscape or a click outside closes a picker.\n\nScreens not designed yet show a Prototype note naming their ticket.";
+    "Clickable. Try typing 64 into How many (it stops at 50), Change on the library and pick Kitchen Counter Shots or New library, Undo, More on the direction, Fixed and Written, the Auto mode switch, and Generate.\n\nEscape or a click outside closes a picker.\n\nScreens not designed yet show a Prototype note naming their ticket.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

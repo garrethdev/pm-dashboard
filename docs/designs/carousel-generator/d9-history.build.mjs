@@ -45,6 +45,28 @@
  *    inside itself the way the app's own FilterPills does, rather than
  *    wrapping over three lines and eating the top of the screen.
  *
+ * D12 · Auto mode (Garreth, 2026-09-21): a batch made in Auto carries an Auto
+ * pill in History. It is the kit's plain neutral pill, and most batches are
+ * still manual, so the label reads as the exception it is. On the desktop it
+ * sits inside the Status cell, right after the status it qualifies: the widest
+ * status and the pill together still fit the 156px column, so no row grows and
+ * no column moves. On the phone it sits on the carousel-type line beside the
+ * re-run marker instead — the first line there is date, status and the action
+ * button, and "Writing 7 of 20" plus a second pill wraps that line onto two,
+ * which is a taller row for the one batch you are most likely watching.
+ *
+ * Waiting on a person (Garreth, 2026-09-21): a batch that has finished a
+ * stage and is waiting for someone to press something no longer hides behind
+ * Done. Finished writing reads "18 to render", finished rendering reads
+ * "18 to approve" — the same words the type's card on D1 and the bell use —
+ * and clicking the row opens the screen that holds that press, D4 or D5
+ * rather than the finished-batch view. Both are neutral: waiting is not an
+ * error. The state is read off the counts, where a dash means the stage has
+ * not happened and a nought means it happened and caught nothing, so Sep 8
+ * — 24 rendered, 0 approved — is untouched and still reads Done: that batch
+ * reached the approve step and nobody approved, which was settled on
+ * 2026-09-16 and is not the same thing as work still queued for him.
+ *
  * Sample content only: the carousel type names are D1's invented ones, and
  * every count and date is made up.
  *
@@ -109,17 +131,27 @@ const TYPES = [
  * A count is null, and shows a dash, where that stage has not happened yet —
  * which is not the same as a nought. Sep 8's nought is real: 24 decks were
  * written and rendered and not one was approved.
+ *
+ * Two batches sit at a stage that is waiting on a person (D12). Sep 13 is
+ * rendered and not approved, so only Approved is a dash; it is the one the
+ * phone board shows, because it carries the longest of the new statuses.
+ * Sep 6 is written and not rendered, so Rendered and Approved are both
+ * dashes. Everything else that finished is approved and reads Done.
+ *
+ * `auto` marks a batch that was made in Auto mode (D12): one running and two
+ * finished, so the label shows on a batch still going and on batches that
+ * finished, while most rows stay manual.
  */
 const BATCHES = [
-  { id: "b11", date: "Sep 16", ago: 0, type: "myth", req: 20, written: 7, rend: null, appr: null, state: "running" },
+  { id: "b11", date: "Sep 16", ago: 0, type: "myth", req: 20, written: 7, rend: null, appr: null, state: "running", auto: true },
   { id: "b10", date: "Sep 16", ago: 0, type: "before", req: 12, written: 12, rend: 11, appr: 11, rerunOf: "b05" },
-  { id: "b09", date: "Sep 15", ago: 1, type: "five", req: 20, written: 18, rend: 16, appr: 15 },
+  { id: "b09", date: "Sep 15", ago: 1, type: "five", req: 20, written: 18, rend: 16, appr: 15, auto: true },
   { id: "b08", date: "Sep 14", ago: 2, type: "day", req: 20, written: 12, rend: null, appr: null, state: "stopped" },
-  { id: "b07", date: "Sep 13", ago: 3, type: "morning", req: 8, written: 8, rend: 8, appr: 8 },
-  { id: "b06", date: "Sep 12", ago: 4, type: "myth", req: 20, written: 20, rend: 18, appr: 17 },
+  { id: "b07", date: "Sep 13", ago: 3, type: "morning", req: 20, written: 20, rend: 18, appr: null },
+  { id: "b06", date: "Sep 12", ago: 4, type: "myth", req: 20, written: 20, rend: 18, appr: 17, auto: true },
   { id: "b05", date: "Sep 11", ago: 5, type: "before", req: 12, written: 12, rend: 12, appr: 12 },
   { id: "b03", date: "Sep 8", ago: 8, type: "day", req: 24, written: 24, rend: 24, appr: 0 },
-  { id: "b02", date: "Sep 6", ago: 10, type: "morning", req: 6, written: 6, rend: 6, appr: 6 },
+  { id: "b02", date: "Sep 6", ago: 10, type: "morning", req: 6, written: 6, rend: null, appr: null },
   { id: "b01", date: "Sep 4", ago: 12, type: "myth", req: 20, written: 20, rend: 19, appr: 19 },
   /* Approved, but the type is not wired, so nothing can post yet: the decks
      wait for Wire on the type's page (D1, D7). The Status column says so. */
@@ -200,8 +232,12 @@ ${S} .dim9 { color: var(--text-muted); }
 ${S} .hnum { color: var(--text-primary); }
 ${S} .hact { position: relative; z-index: 1; display: flex; justify-content: flex-start; }
 /* Status: every row says where it got to, so the column reads straight down —
-   Done, Writing 7 of 20, Stopped at 12 of 20, Not wired. */
-${S} .hstatus { display: flex; min-width: 0; }
+   Done, Writing 7 of 20, Stopped, 18 to render, 18 to approve, Not wired. */
+/* A batch made in Auto mode carries the kit's plain pill, right after the
+   status it qualifies, so the column still reads straight down and nothing
+   new is coloured (D12, Garreth, 2026-09-21). On the phone the same pill
+   rides in the type line instead, where there is room for it. */
+${S} .hstatus { display: flex; align-items: center; gap: 6px; min-width: 0; }
 ${S} .pill--accent { color: var(--accent); }
 /* A status that means something went wrong is red, the way D7 marks flagged
    decks (Garreth, 2026-09-16). --danger is globals.css's own, so it changes
@@ -291,7 +327,7 @@ const desktopRow = `
                 <span class="tnum {{b.writtenCls}}">{{b.written}}</span>
                 <span class="tnum {{b.rendCls}}">{{b.rend}}</span>
                 <span class="tnum {{b.apprCls}}">{{b.appr}}</span>
-                <span class="hstatus"><span class="pill {{b.pillCls}} tnum">{{b.pillText}}</span></span>
+                <span class="hstatus"><span class="pill {{b.pillCls}} tnum">{{b.pillText}}</span><sc-if value="{{b.isAuto}}" hint-placeholder-val="{{ false }}"><span class="pill">Auto</span></sc-if></span>
                 <span class="hact"><button type="button" class="btn2" onClick="{{b.act}}">{{b.actLabel}}</button></span>
               </div>`;
 
@@ -304,6 +340,7 @@ const phoneRow = `
                 </span>
                 <span class="htype">
                   <span class="hname" title="{{b.name}}">{{b.name}}</span>
+                  <sc-if value="{{b.isAuto}}" hint-placeholder-val="{{ false }}"><span class="pill">Auto</span></sc-if>
                   <sc-if value="{{b.hasRerun}}" hint-placeholder-val="{{ false }}"><span class="rerun9">${D9I.rerun}{{b.rerunText}}</span></sc-if>
                 </span>
                 <span class="hcounts">
@@ -397,6 +434,13 @@ function vals(init) {
       var mate = b.rerunOf || rerunBy[b.id] || null;
       var mateB = mate ? batchOf(mate) : null;
       var run = running[b.type];
+      /* A batch that finished a stage and is waiting for a person to press
+         something (D12). Read off this file's own counts: a dash means the
+         stage has not happened, a nought means it happened and caught
+         nothing. So Sep 8 — rendered, approved 0 — is not waiting: it
+         reached the approve step and nobody approved, which still reads
+         Done (Garreth, 2026-09-16). */
+      var waits = b.state ? null : b.rend == null ? "render" : b.appr == null ? "approve" : null;
       return {
         date: b.date,
         name: name,
@@ -406,17 +450,29 @@ function vals(init) {
         rend: num(b.rend), rendCls: numCls(b.rend),
         appr: num(b.appr), apprCls: numCls(b.appr),
         /* Every row says where it got to. A stopped batch just says Stopped:
-           how far it got is the Written column's job. */
+           how far it got is the Written column's job. A batch waiting on a
+           person names the press it is waiting for and how many decks it is
+           for — "18 to render", "18 to approve" — the same words the type's
+           card and the bell use (D12, Garreth, 2026-09-21). Neither is an
+           error, so both stay neutral. */
         pillText: b.state === "running"
           ? "Writing " + b.written + " of " + b.req
           : b.state === "stopped" ? "Stopped"
-            : b.state === "unwired" ? "Not wired" : "Done",
+            : b.state === "unwired" ? "Not wired"
+              : waits === "render" ? b.written + " to render"
+                : waits === "approve" ? b.rend + " to approve" : "Done",
         pillCls: b.state === "running" ? "pill--accent" : b.state === "stopped" ? "pill--danger" : "",
+        /* Made in Auto mode (D12): a plain pill beside the status, nothing else. */
+        isAuto: !!b.auto,
         hasRerun: !!mateB,
         rerunText: !mateB ? "" : b.rerunOf ? "Re-run of " + mateB.date : "Re-run on " + mateB.date,
         open: function () {
           if (b.state === "stopped") ctx.open("batch", Object.assign({ writtenUpTo: b.written }, handover), "Opens the stopped batch, with Continue · D3");
           else if (b.state === "running") ctx.open("batch", Object.assign({ writtenUpTo: b.written }, handover), "Opens the running batch · D3");
+          /* A waiting row opens the screen that holds the press it is
+             waiting for, not the finished-batch view (D12). */
+          else if (waits === "render") ctx.open("review", handover, "Opens the batch that finished writing, with Render " + b.written + " decks · D4");
+          else if (waits === "approve") ctx.open("render", handover, "Opens the batch that finished rendering, with Approve " + b.rend + " decks · D5");
           else ctx.open("render", handover, "Opens that batch's decks, rendered and approved · D5");
         },
         actLabel: b.state === "running" ? "Open batch" : b.state === "stopped" ? "Continue" : "Run again",

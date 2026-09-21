@@ -69,6 +69,10 @@
  *   PhoneRows           phone, the Rows view, stacked
  * Imported, `renderScreen({ auto: true })` is the screen the prototype opens.
  *
+ * D12 · Auto mode (Garreth, 2026-09-21) is designed on this same screen and its
+ * pictures sit on this canvas, after D5's own (Garreth, 2026-09-21: no separate
+ * D12 canvas). AUTO_MOMENTS holds its moments; D5's own boards are unchanged.
+ *
  *   node docs/designs/carousel-generator/d5-batch-render.build.mjs <out dir>
  */
 import fs from "node:fs";
@@ -76,6 +80,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { I, icon, artboard, isMain } from "./generator-kit.mjs";
 import { reviewScreen } from "./d4-batch-review.build.mjs";
+import { typesWithBell } from "./d3-batch-writing.build.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -90,6 +95,9 @@ const D5I = {
   arrow: icon("ArrowUpRight", 14, "bold"),
   grid: icon("SquaresFour", 14, "bold"),
   rows: icon("Rows", 14, "bold"),
+  /* D12: Pause and Resume on the progress line, at the size the line's other buttons carry their icon. */
+  pause: icon("Pause", 12),
+  play: icon("Play", 12),
 };
 
 /* ── Sample content ────────────────────────────────────────────────────── */
@@ -146,8 +154,9 @@ const REVIEW_FLAG = "Compliance: brand name";
 /* A deck. st: queued | rendering | rendered | flagged (from the review, skipped) | elsewhere | failed | rewriting.
    done: slides landed. check: { k, why } when the automatic check flagged a slide. failSlide: the slide a failed
    render stopped on. freshK: the slide that just landed. */
-/* st also takes "approved" once Approve (n) decks has flipped the deck. */
-const BASE = { st: "queued", done: 0, check: null, failSlide: 0, flag: "", freshK: 0, retried: false, wait: 0, fb: false, scope: 0, note: "", taFocus: false, kbd: false };
+/* st also takes "approved" once Approve (n) decks has flipped the deck, and "dropped" once Auto (D12) has
+   given up on it after three tries. tries: which of Auto's three tries this deck is on, 0 when a person asked. */
+const BASE = { st: "queued", done: 0, check: null, failSlide: 0, flag: "", freshK: 0, retried: false, wait: 0, fb: false, scope: 0, note: "", taFocus: false, kbd: false, tries: 0 };
 
 /* ── Styles ────────────────────────────────────────────────────────────── */
 
@@ -216,7 +225,20 @@ ${S} .rs.is-long .rt { font-size: 10cqw; }
 ${S} .rs.is-contrast::after { background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.2)); }
 ${S} .th.is-fresh .rs { animation: d3-arrive 220ms var(--ease-out-strong); }
 /* A card sent back for a rewrite: its slots empty again. */
-${S} .deck.is-rewriting .th, ${S} .deck.is-queued .th, ${S} .deck.is-elsewhere .th { cursor: default; }
+${S} .deck.is-rewriting .th, ${S} .deck.is-queued .th, ${S} .deck.is-elsewhere .th, ${S} .deck.is-dropped .th { cursor: default; }
+
+/* ── D12 · Auto mode ── */
+/* A deck Auto gave up on after its third try. It is not a thing to fix now, so it takes none of the check's red:
+   its label and its reason are ordinary pills, and the work itself — the slides, the caption, the music — goes
+   quiet, so the card reads as out of the batch at a glance, in Grid and in Rows alike. The pills and Regenerate
+   stay at full strength, because they are what is left to read and to press. */
+/* One value for both themes on purpose: a ".is-light" prefix with a space cannot match here, because the theme
+   class and the screen class sit on the same element, so a light-only override would quietly do nothing. 0.52 is
+   the value that still reads on a white card and is still plainly faded on a black one. */
+${S} .deck.is-dropped .dbody, ${S} .deck.is-dropped .dmeta { opacity: 0.52; }
+/* The slide the check kept catching, ringed in the muted tone rather than the danger one, so the reason on the
+   pill still has something to point at without shouting. */
+${S} .th.is-drop::before { content: ""; position: absolute; inset: 0; z-index: 2; border: 2px solid color-mix(in srgb, var(--text-muted) 65%, transparent); border-radius: inherit; pointer-events: none; }
 
 /* The view switch, opposite the title: FilterPills' segmented shape (D4's slide picker), with an icon per view. */
 ${S} .view { display: flex; align-items: center; gap: 2px; flex-shrink: 0; border-radius: 999px; background: var(--card-raised); padding: 2px; }
@@ -361,6 +383,10 @@ const deckCard = () => `
                   <sc-if value="{{c.pillElsewhere}}" hint-placeholder-val="{{ false }}"><span class="pill">Rendering elsewhere</span></sc-if>
                   <sc-if value="{{c.pillFailed}}" hint-placeholder-val="{{ false }}"><span class="pill pill--danger tnum">{{c.failedText}}</span></sc-if>
                   <sc-if value="{{c.pillRewriting}}" hint-placeholder-val="{{ false }}"><span class="pill pill--accent">Rewriting</span></sc-if>
+                  <!-- D12: which of Auto's three tries this deck is on, and the deck Auto dropped after the third. -->
+                  <sc-if value="{{c.a12Try}}" hint-placeholder-val="{{ false }}"><span class="pill tnum">{{c.a12TryText}}</span></sc-if>
+                  <sc-if value="{{c.a12Dropped}}" hint-placeholder-val="{{ false }}"><span class="pill">Dropped</span></sc-if>
+                  <sc-if value="{{c.a12Reason}}" hint-placeholder-val="{{ false }}"><span class="pill tnum">{{c.checkText}}</span></sc-if>
                   <sc-if value="{{c.pillApproved}}" hint-placeholder-val="{{ false }}"><span class="pill pill--ok">Approved</span></sc-if>
                 </span>
               </div>
@@ -404,6 +430,13 @@ const deckCard = () => `
 const regenAllButton = `<sc-if value="{{rnShowRegenAll}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn2 btn2--line tnum" onClick="{{rnRegenAll}}">${D5I.retry}{{rnRegenAllText}}</button></sc-if>`;
 const approveButton = `<sc-if value="{{rnShowApprove}}" hint-placeholder-val="{{ true }}"><button type="button" class="cta tnum" onClick="{{rnApprove}}">{{rnApproveText}}</button></sc-if>`;
 
+/* D12: Auto's one control. Pausing hands the batch back to the person, Resume gives it to Auto again; never the
+   accent, because the accent on this screen is Approve. On the desktop it sits at the right end of the progress
+   line, opposite the counts; on the phone, where that line has no room, under the title where the finished
+   batch's Regenerate (n) decks sits. The two never show together: this one is gone once the batch is finished. */
+const autoButton = `<sc-if value="{{a12On}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn2 btn2--line" onClick="{{a12Toggle}}">${D5I.pause}Pause auto</button></sc-if>
+                  <sc-if value="{{a12Paused}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2 btn2--line" onClick="{{a12Toggle}}">${D5I.play}Resume auto</button></sc-if>`;
+
 function page(phone) {
   return `
       <main class="main">
@@ -417,17 +450,27 @@ function page(phone) {
                 <button type="button" role="radio" class="{{rnRowsCls}}" aria-checked="{{rnRowsOn}}" onClick="{{rnSetRows}}">${D5I.rows}Rows</button>
               </div>
             </div>
-            ${phone ? `<sc-if value="{{rnDone}}" hint-placeholder-val="{{ false }}"><div class="pbatch">${regenAllButton}</div></sc-if>` : ""}
+            ${phone ? `<sc-if value="{{a12Show}}" hint-placeholder-val="{{ false }}"><div class="pbatch">${autoButton}</div></sc-if>\n            <sc-if value="{{rnDone}}" hint-placeholder-val="{{ false }}"><div class="pbatch">${regenAllButton}</div></sc-if>` : ""}
           </div>
           <div class="prog">
             <div class="prow">
               <span class="pstat" role="status" aria-live="polite">
                 <span class="pcount tnum">{{rnCount}}</span>
+                <!-- D12: whether this batch is running itself, right after the count it is running. -->
+                <sc-if value="{{a12On}}" hint-placeholder-val="{{ false }}"><span class="pill pill--accent">Auto</span></sc-if>
+                <sc-if value="{{a12Paused}}" hint-placeholder-val="{{ false }}"><span class="pill">Auto paused</span></sc-if>
                 <sc-if value="{{rnShowApproved}}" hint-placeholder-val="{{ false }}"><span class="pmeta tnum">{{rnApprovedText}}</span></sc-if>
                 <sc-if value="{{rnShowFlagged}}" hint-placeholder-val="{{ true }}"><button type="button" class="pflag tnum" onClick="{{rnJumpFlag}}">{{rnFlaggedText}}</button></sc-if>
+                <!-- D12: the decks Auto gave up on. Muted, not red: nothing is being asked of the person here. -->
+                <sc-if value="{{a12ShowDropped}}" hint-placeholder-val="{{ false }}"><span class="pmeta tnum">{{a12DroppedText}}</span></sc-if>
                 <sc-if value="{{rnShowFailed}}" hint-placeholder-val="{{ false }}"><span class="pfail tnum">{{rnFailedText}}</span></sc-if>
                 <sc-if value="{{rnShowElse}}" hint-placeholder-val="{{ false }}"><span class="pelse"><span><b>{{rnElseDeck}}</b> is rendering elsewhere</span></span></sc-if>
               </span>
+              <sc-if value="{{a12Show}}" hint-placeholder-val="{{ false }}">
+                <div class="pacts">
+                  ${autoButton}
+                </div>
+              </sc-if>
               <sc-if value="{{rnDone}}" hint-placeholder-val="{{ false }}">
                 <div class="pacts">
                   ${regenAllButton}
@@ -472,9 +515,44 @@ const appOverlay = (phone) => `
       </div>
     </sc-if>`;
 
-/* The bell's dot (flagged decks ring it, as designed in D3), and on the phone the finished batch's bottom bar. */
+/* The bell's dot (flagged decks ring it, as designed in D3), its panel, and on the phone the finished batch's
+   bottom bar. The panel is D3's, markup and all: D3's page styles are re-scoped into this screen, so the same
+   classes are already here and nothing is retyped. In Auto (D12) the flagged decks keep quiet and the finished
+   batch is the one thing that rings, first in the list; its item leads back to the state where Approve lives. */
 const colOverlay = (phone) => `
     <sc-if value="{{rnBellDot}}" hint-placeholder-val="{{ true }}"><span class="d3-dot" aria-hidden="true"></span></sc-if>
+    <sc-if value="{{a12PanelOpen}}" hint-placeholder-val="{{ false }}">
+      <div class="ncatch" aria-hidden="true" onClick="{{a12PanelClose}}"></div>
+      <div class="npop" role="dialog" aria-label="Notifications" onKeyDown="{{a12PanelKey}}">
+        <div class="nhead">
+          <b>Notifications</b>
+          <sc-if value="{{a12Unread}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{a12MarkRead}}">Mark all read (1)</button></sc-if>
+          <sc-if value="{{a12AllRead}}" hint-placeholder-val="{{ false }}"><span>All read</span></sc-if>
+        </div>
+        <div class="nlist">
+          <button type="button" class="nitem {{a12ItemCls}}" onClick="{{a12OpenFinished}}">
+            <span class="nin">
+              <span class="ndot" aria-hidden="true"></span>
+              <span class="nmain">
+                <span class="ntop"><span class="ntitle">Batch finished<span class="ncat">Carousel Generator</span></span>${D5I.arrow}</span>
+                <span class="nbody tnum">{{a12ItemBody}}</span>
+                <span class="ntime">Just now</span>
+              </span>
+            </span>
+          </button>
+          <button type="button" class="nitem" onClick="{{a12OpenOther}}">
+            <span class="nin">
+              <span class="ndot" aria-hidden="true"></span>
+              <span class="nmain">
+                <span class="ntop"><span class="ntitle">Deck 14 flagged<span class="ncat">Carousel Generator</span></span>${D5I.arrow}</span>
+                <span class="nbody">Myth vs Fact · Score 5.2</span>
+                <span class="ntime">2h ago</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </sc-if>
     ${
       phone
         ? `<sc-if value="{{rnShowBar}}" hint-placeholder-val="{{ false }}"><div class="bar">
@@ -530,6 +608,10 @@ function vals({ auto, init }) {
     var TALL = (P.size || ${JSON.stringify(init.size || "4:5")}) === "9:16";
     var SONG = "Artist Name – Song Title";
     var PHONE = ctx.PHONE;
+    /* D12 · Auto mode: "" the ordinary batch a person drives, "on" a batch running itself, "paused" one handed
+       back to the person. It is chosen on the Generate form and travels here in the params; Pause and Resume on
+       this line flip it from here. (Not to be confused with AUTO above, which only runs the prototype's timers.) */
+    var A12 = s.d12auto != null ? s.d12auto : (P.auto || "");
 
     /* Opened from D4: the batch's decks, queued in order; the ones D4 listed as flagged are skipped, the ones
        discarded there are gone. */
@@ -573,7 +655,9 @@ function vals({ auto, init }) {
     };
     var hasSlots = function (d) { return d.st !== "flagged"; };
     var canOpen = function (d) { return d.st === "rendering" || d.st === "rendered" || d.st === "approved" || d.st === "failed"; };
-    var isFlagged = function (d) { return d.st === "flagged" || !!d.check; };
+    /* A dropped deck (D12) carries the check that finished it off, but it is not waiting on anybody, so it is
+       counted and drawn on its own rather than among the flagged. */
+    var isFlagged = function (d) { return d.st !== "dropped" && (d.st === "flagged" || !!d.check); };
     var openPv = function (n, k) { self.setState({ d5pv: { n: n, k: k }, d5focusPv: true, d5drag: null }); };
 
     /* The prototype's painter, on a timer: one deck at a time, one slide at a time. Deck 7 fails once on slide 5
@@ -627,7 +711,8 @@ function vals({ auto, init }) {
     var view = decks.map(function (d) {
       var slots = hasSlots(d);
       var busy = d.st === "queued" || d.st === "rendering" || d.st === "elsewhere" || d.st === "rewriting";
-      var settled = d.st === "rendered" || d.st === "flagged";
+      var isDropped = d.st === "dropped";
+      var settled = d.st === "rendered" || d.st === "flagged" || isDropped;
       var approved = d.st === "approved";
       var slideText = function (k) { return k === 1 ? "Slide 1" : "Slide " + k; };
       var o = {
@@ -637,7 +722,8 @@ function vals({ auto, init }) {
         slidesLabel: "Deck " + d.n + " slides",
         fbLabel: "Feedback for deck " + d.n,
         scopeLabel: "What to regenerate in deck " + d.n,
-        cls: ["is-" + d.st, d.check ? "is-flagged" : "", d.fb ? "is-editing" : "", d.kbd ? "is-kbd" : ""].join(" "),
+        /* A dropped deck keeps the check on it but never the red outline: it is out of the batch, not in trouble. */
+        cls: ["is-" + d.st, d.check && !isDropped ? "is-flagged" : "", d.fb ? "is-editing" : "", d.kbd ? "is-kbd" : ""].join(" "),
         busy: d.st === "rendering" || d.st === "rewriting" ? "true" : "false",
         pillQueued: d.st === "queued",
         pillRendering: d.st === "rendering",
@@ -651,6 +737,11 @@ function vals({ auto, init }) {
         pillFailed: d.st === "failed",
         failedText: "Failed on slide " + d.failSlide,
         pillRewriting: d.st === "rewriting",
+        /* D12: Auto's try counter, beside the rewriting or rendering pill, and the deck it gave up on. */
+        a12Try: (d.st === "rewriting" || d.st === "rendering") && d.tries > 0,
+        a12TryText: "Try " + d.tries + " of 3",
+        a12Dropped: isDropped,
+        a12Reason: isDropped && !!d.check,
         pillApproved: approved,
         showDact: !approved,
         showSlots: slots,
@@ -674,7 +765,8 @@ function vals({ auto, init }) {
         submitText: d.scope === 0 ? "Regenerate deck" : d.scope === 1 ? "Regenerate hook" : "Regenerate slide " + d.scope,
         /* Sent back with feedback: the deck rewrites (D4), then renders again. */
         submit: function () {
-          setDeck(d.n, { fb: false, st: "rewriting", done: 0, check: null, flag: "" });
+          /* A person asking for this deck again is not one of Auto's three tries, so the counter goes back to none. */
+          setDeck(d.n, { fb: false, st: "rewriting", done: 0, check: null, flag: "", tries: 0 });
           if (!AUTO) self.note("Rewrites " + (d.scope === 0 ? "the deck" : d.scope === 1 ? "the hook" : "slide " + d.scope) + " with the feedback, then renders it again");
         },
         scc0: d.scope === 0 ? "is-on" : "",
@@ -685,12 +777,13 @@ function vals({ auto, init }) {
         if (k > SLIDES) break;
         var landed = d.st !== "rewriting" && k <= d.done;
         var failedHere = d.st === "failed" && k === d.failSlide;
-        var flaggedHere = !!d.check && d.check.k === k;
+        var flaggedHere = !!d.check && d.check.k === k && !isDropped;
+        var droppedHere = isDropped && !!d.check && d.check.k === k;
         var face = landed ? slideOf(d, k) : { text: "", imgCls: "", rsCls: "", rtCls: "" };
         o.slots.push({
           k: k,
-          label: slideText(k) + " of deck " + d.n + (landed ? "" : ", not rendered yet") + (flaggedHere ? ", " + CHECK[d.check.why] : "") + (failedHere ? ", render failed" : ""),
-          cls: [landed ? "is-done" : "is-empty", d.st === "rendering" && k === d.done + 1 ? "is-landing" : "", flaggedHere ? "is-flag" : "", failedHere ? "is-fail" : "", d.freshK === k ? "is-fresh" : "", canOpen(d) ? "" : "is-still"].join(" "),
+          label: slideText(k) + " of deck " + d.n + (landed ? "" : ", not rendered yet") + (flaggedHere || droppedHere ? ", " + CHECK[d.check.why] : "") + (failedHere ? ", render failed" : ""),
+          cls: [landed ? "is-done" : "is-empty", d.st === "rendering" && k === d.done + 1 ? "is-landing" : "", flaggedHere ? "is-flag" : "", droppedHere ? "is-drop" : "", failedHere ? "is-fail" : "", d.freshK === k ? "is-fresh" : "", canOpen(d) ? "" : "is-still"].join(" "),
           off: !canOpen(d),
           open: (function (kk) { return function () { if (canOpen(d)) openPv(d.n, kk); }; })(k),
           empty: !landed && !failedHere,
@@ -714,11 +807,16 @@ function vals({ auto, init }) {
 
     /* The counts. "Rendered" counts every deck the painter finished, checked or not, approved or not. Approve takes the
        rendered decks the checks passed; Regenerate (n) takes every flagged one, from the review or from the check. */
-    var toRender = decks.filter(function (d) { return d.st !== "flagged"; });
+    /* A dropped deck (D12) is not rendered and never will be, so it leaves the count's denominator the way a deck
+       flagged in the review does, and is said separately: "18 of 18 rendered" beside "2 dropped". */
+    var toRender = decks.filter(function (d) { return d.st !== "flagged" && d.st !== "dropped"; });
     var rendered = toRender.filter(function (d) { return d.st === "rendered" || d.st === "approved"; });
     var approvable = rendered.filter(function (d) { return d.st === "rendered" && !d.check; });
     var approved = decks.filter(function (d) { return d.st === "approved"; });
     var flagged = decks.filter(isFlagged);
+    var dropped = decks.filter(function (d) { return d.st === "dropped"; });
+    /* What Regenerate (n) decks takes: everything still flagged, and everything Auto dropped. */
+    var regenable = flagged.concat(dropped);
     var failed = toRender.filter(function (d) { return d.st === "failed"; });
     var elsewhere = toRender.filter(function (d) { return d.st === "elsewhere"; })[0];
     var done = toRender.length > 0 && rendered.length === toRender.length;
@@ -739,6 +837,14 @@ function vals({ auto, init }) {
     var priorBell = vals.bell;
 
     var rows = s.d5view === "rows";
+
+    /* D12 · Auto. The pill and the Pause / Resume button belong to a batch still being made: once it is finished
+       the line is about Approve, and Auto has nothing left to do. A finished batch rings the bell, once, and only
+       until the person has read it; while an Auto batch is still running its flagged decks stay quiet. */
+    var a12Live = (A12 === "on" || A12 === "paused") && !done;
+    /* Any finished batch rings it, Auto or not (Garreth, 2026-09-21), until it is read or the batch is approved. */
+    var a12Finished = done && !decks.some(function (d) { return d.st === "approved"; });
+    var a12Read = !!s.d12read;
 
     return {
       rnName: NAME,
@@ -765,6 +871,12 @@ function vals({ auto, init }) {
         var i = (s.d5flag || 0) % flagged.length;
         self.setState({ d5scroll: flagged[i].n, d5flag: i + 1 });
       },
+      a12On: a12Live && A12 === "on",
+      a12Paused: a12Live && A12 === "paused",
+      a12Show: a12Live,
+      a12Toggle: function () { self.setState({ d12auto: A12 === "on" ? "paused" : "on" }); },
+      a12ShowDropped: dropped.length > 0,
+      a12DroppedText: dropped.length + " dropped",
       rnShowFailed: failed.length > 0,
       rnFailedText: failed.length + " failed",
       rnShowElse: !!elsewhere,
@@ -772,14 +884,15 @@ function vals({ auto, init }) {
       rnTrackW: toRender.length ? Math.round((rendered.length / toRender.length) * 100) : 0,
       rnDone: done,
       rnShowBar: done && (approvable.length > 0 || approved.length > 0),
-      rnBarSub: approved.length ? approved.length + (UNWIRED ? " approved, waiting for wiring" : " approved") : flagged.length ? flagged.length + " flagged" : "",
-      /* Regenerate (n) decks: every flagged deck goes back to be rewritten (the gate runs again), then renders again. */
-      rnShowRegenAll: done && flagged.length > 0,
-      rnRegenAllText: "Regenerate " + flagged.length + plural(flagged.length),
+      rnBarSub: approved.length ? approved.length + (UNWIRED ? " approved, waiting for wiring" : " approved") : flagged.length ? flagged.length + " flagged" : dropped.length ? dropped.length + " dropped" : "",
+      /* Regenerate (n) decks: every flagged deck, and every deck Auto dropped (D12), goes back to be rewritten
+         (the gate runs again), then renders again — by hand this time, so Auto's try counter starts over. */
+      rnShowRegenAll: done && regenable.length > 0,
+      rnRegenAllText: "Regenerate " + regenable.length + plural(regenable.length),
       rnRegenAll: function () {
-        var next = current().map(function (d) { return isFlagged(d) ? Object.assign({}, d, { st: "rewriting", done: 0, check: null, flag: "", fb: false }) : d; });
+        var next = current().map(function (d) { return isFlagged(d) || d.st === "dropped" ? Object.assign({}, d, { st: "rewriting", done: 0, check: null, flag: "", fb: false, tries: 0 }) : d; });
         self.setState({ d5decks: next });
-        if (!AUTO) self.note("Rewrites the " + flagged.length + " flagged" + plural(flagged.length) + " with the gate's suggestions, then renders them again");
+        if (!AUTO) self.note("Rewrites the " + regenable.length + plural(regenable.length) + " with the gate's suggestions, then renders them again");
       },
       /* Approve (n) decks: the sign-off. Flips scheduler_ready, the flag the Smart Scheduler reads, on every clean, rendered deck. */
       rnShowApprove: done && approvable.length > 0,
@@ -838,10 +951,25 @@ function vals({ auto, init }) {
         pvGo(to);
       },
 
-      rnBellDot: flagged.length > 0,
+      /* In Auto a flagged deck is Auto's own business and stays quiet; the batch finishing is what rings. Paused
+         hands the flagged decks back to the person, so the bell goes back to D3's behaviour, as it is in manual. */
+      rnBellDot: a12Finished ? !a12Read : A12 === "on" ? false : flagged.length > 0,
+      a12PanelOpen: a12Finished && !!s.d12open,
+      a12Unread: !a12Read,
+      a12AllRead: a12Read,
+      a12ItemCls: (a12Read ? "" : "is-unread") + (${!!init.hoverFirst} ? " is-hover" : ""),
+      a12ItemBody: NAME + " · " + rendered.length + " rendered" + (dropped.length ? ", " + dropped.length + " dropped" : ""),
+      /* The item lands on the finished batch, which is this screen: it closes the panel, reads itself, and leaves
+         the person on the state where Approve (n) decks is. Auto never presses that. */
+      a12OpenFinished: function () { self.setState({ d12open: false, d12read: true }); },
+      a12OpenOther: function () { self.setState({ d12open: false }); self.note("Opens the Myth vs Fact batch at deck 14"); },
+      a12MarkRead: function () { self.setState({ d12read: true }); },
+      a12PanelClose: function () { self.setState({ d12open: false }); },
+      a12PanelKey: function (e) { if (e.key === "Escape") self.setState({ d12open: false }); },
       bell: function () {
-        if (s.screen === "render") self.note("Flagged decks ring the bell · designed in D3");
-        else if (priorBell) priorBell();
+        if (s.screen !== "render") { if (priorBell) priorBell(); return; }
+        if (a12Finished) self.setState({ d12open: !s.d12open });
+        else self.note("Flagged decks ring the bell · designed in D3");
       }
     };`;
 }
@@ -867,9 +995,14 @@ export function renderScreen({ auto = false, tall = 0, init = {} } = {}) {
       d5focus: 0,
       d5focusPv: false,
       d5flag: 0,
+      /* D12 · Auto mode: "" or null the ordinary batch, "on" running itself, "paused" handed back. */
+      d12auto: init.auto || null,
+      d12open: !!init.notifyOpen,
+      d12read: false,
     },
-    /* Opened from another screen: the batch from its params, everything queued. The view chosen last time stays. */
-    enter: { d5decks: null, d5pv: null, d5drag: null, d5scroll: 0, d5focus: 0, d5focusPv: false, d5flag: 0 },
+    /* Opened from another screen: the batch from its params, everything queued. The view chosen last time stays,
+       and Auto comes from that screen's params rather than from the batch just left. */
+    enter: { d5decks: null, d5pv: null, d5drag: null, d5scroll: 0, d5focus: 0, d5focusPv: false, d5flag: 0, d12auto: null, d12open: false, d12read: false },
     vals: vals({ auto, init }),
     didUpdate,
   };
@@ -925,14 +1058,59 @@ const MOMENTS = {
   previewTall: { decks: decks(APPROVED), pv: { n: 2, k: 3 }, unwired: true, name: "Quiet Luxury Picks", size: "9:16" },
 };
 
-const DESK_H = 1700;
+/* Exported for D12's build script, which draws its Auto boards at this screen's own desktop height. */
+export const DESK_H = 1700;
 const SHEET_H = 2500;
+
+/* ── D12 · Auto mode: the review moments ───────────────────────────────── */
+
+/* Auto (Garreth, 2026-09-21) runs a batch without a person: writing goes straight on to rendering, a flagged
+ * deck is rewritten and rendered again by itself up to three times, and one still flagged after the third try is
+ * dropped — it stays in the batch behind a Dropped label with its reason, is never approved, and can still be
+ * regenerated by hand. The person sees this same screen and can pause Auto at any time.
+ *
+ * A twenty-deck Before & After batch, four moments. D12's build script makes a board from one exactly the way
+ * build() below does:
+ *
+ *   import { renderScreen, AUTO_MOMENTS, DESK_H, copySlides } from "./d5-batch-render.build.mjs";
+ *   copySlides(OUT);                                     // the slides' bank photos, beside the boards
+ *   const screen = renderScreen({ tall: phone ? 0 : DESK_H, init: { ...AUTO_MOMENTS.autoFinished, scrollTo: 0 } });
+ *   const html = artboard({ phone, light, screens: [screen], navMode: "note" })
+ *     .replace('"height":900', `"height":${phone ? 844 : DESK_H}`);
+ *
+ * They are the last rows of BOARDS below, with the bell seen from another screen (Garreth, 2026-09-21).
+ */
+const A12_TOTAL = 20;
+/* A deck Auto dropped: it rendered, the check caught the same slide three times over, and that was that. */
+const a12Dropped = (check) => ({ st: "dropped", done: 7, check, tries: 3 });
+/* A deck Auto is having another go at: the ordinary rewriting look, plus which try this is. */
+const a12Retry = (tries) => ({ st: "rewriting", done: 0, tries });
+
+const A12_FINISHED = { ...renderedTo(18), 19: a12Dropped({ k: 4, why: "cut" }), 20: a12Dropped({ k: 6, why: "contrast" }) };
+
+export const AUTO_MOMENTS = {
+  /* Running itself: eight decks in the pool, deck 9 being painted, deck 10 on Auto's first retry, deck 11 dropped. */
+  autoRendering: {
+    auto: "on",
+    decks: decks({ ...renderedTo(8), 9: { st: "rendering", done: 3 }, 10: a12Retry(1), 11: a12Dropped({ k: 4, why: "cut" }) }, A12_TOTAL),
+  },
+  /* Paused: the batch is the person's again, so a flagged deck waits for them in the usual red and rings the bell. */
+  autoPausedRendering: {
+    auto: "paused",
+    decks: decks({ ...renderedTo(7), 4: rendered({ k: 4, why: "cut" }), 8: { st: "rendering", done: 2 } }, A12_TOTAL),
+  },
+  /* Finished by itself: eighteen rendered, two dropped, and one unread notification on the bell. */
+  autoFinished: { auto: "on", decks: decks(A12_FINISHED, A12_TOTAL) },
+  /* The same, with that notification open and the pointer on it. */
+  autoFinishedNotify: { auto: "on", notifyOpen: true, hoverFirst: true, decks: decks(A12_FINISHED, A12_TOTAL) },
+};
 
 function build(OUT) {
   fs.mkdirSync(OUT, { recursive: true });
   copySlides(OUT);
   const R1 = SHEET_H + 140;
   const ROW = DESK_H + 140;
+  const A0 = R1 + ROW * 5 + 1040 + 300;
   const BOARDS = [
     { name: "CardStates", phone: false, h: SHEET_H, m: "cards", title: "D5 · Every card state · Desktop", x: 0, y: 0 },
     { name: "Main", phone: false, m: "main", title: "D5 · Rendering · Desktop", x: 0, y: R1 },
@@ -952,13 +1130,27 @@ function build(OUT) {
     { name: "ApprovedNotWired", phone: false, h: DESK_H + 300, m: "approvedNotWired", title: "D5 · After Approve, a 9:16 type not wired yet · Desktop", x: 1540, y: R1 + ROW * 4 + 1040 },
     { name: "PreviewTall", phone: false, h: 900, m: "previewTall", title: "D5 · Full-size preview, a 9:16 type · Desktop", x: 3080, y: R1 + ROW * 4 + 1040 },
     { name: "PhonePreviewTall", phone: true, m: "previewTall", title: "D5 · Full-size preview, a 9:16 type · Phone", x: 4620, y: R1 + ROW * 4 + 1040 },
+    /* Auto mode (D12, Garreth 2026-09-21), below everything D5 had. The row above holds a board 300 taller than the rest
+       (ApprovedNotWired), so this block starts 300 lower; each row then steps by its own height plus 140. */
+    { name: "AutoRendering", phone: false, m: "autoRendering", title: "D5 · Auto mode: rendering started by itself, no Render press · Desktop", x: 0, y: A0 },
+    { name: "AutoPausedRendering", phone: false, m: "autoPausedRendering", title: "D5 · Auto paused while rendering · Desktop", x: 1540, y: A0 },
+    { name: "PhoneAutoRendering", phone: true, m: "autoRendering", title: "D5 · Auto mode: rendering · Phone", x: 3080, y: A0 },
+    { name: "AutoNotifyElsewhere", phone: false, h: 900, screen: () => typesWithBell(), title: "D5 · Auto mode: Batch finished, seen from another screen · Desktop", x: 0, y: A0 + ROW },
+    { name: "AutoBellElsewhere", phone: false, h: 900, screen: () => typesWithBell({ open: false }), title: "D5 · Auto mode: the bell's dot before it is opened · Desktop", x: 1540, y: A0 + ROW },
+    { name: "PhoneAutoNotifyElsewhere", phone: true, screen: () => typesWithBell(), title: "D5 · Auto mode: Batch finished, seen from another screen · Phone", x: 3080, y: A0 + ROW },
+    /* Any finished batch, Auto or not, waits here for its sign-off: the type's card says so where Last batch sits. */
+    { name: "WaitingOnTypes", phone: false, h: 900, screen: () => typesWithBell({ bell: false }), title: "D5 · A finished batch waiting for approval, on Carousel types · Desktop", x: 0, y: A0 + ROW + 1040 },
+    { name: "PhoneWaitingOnTypes", phone: true, screen: () => typesWithBell({ bell: false, toCard: true }), title: "D5 · A finished batch waiting for approval, on Carousel types · Phone", x: 1540, y: A0 + ROW + 1040 },
+    { name: "AutoFinished", phone: false, m: "autoFinished", title: "D5 · Auto mode: where the notification and the card lead, Approve 18 decks · Desktop", x: 0, y: A0 + ROW + 2080 },
+    { name: "AutoFinishedNotify", phone: false, m: "autoFinishedNotify", title: "D5 · Auto mode: the same item in the bell on the batch itself · Desktop", x: 1540, y: A0 + ROW + 2080 },
+    { name: "PhoneAutoFinished", phone: true, m: "autoFinished", title: "D5 · Auto mode: the finished batch · Phone", x: 3080, y: A0 + ROW + 2080 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
     for (const b of BOARDS) {
       const file = `${b.name}${light ? "Light" : ""}.dc.html`;
       const h = b.phone ? 844 : b.h || DESK_H;
-      const screen = renderScreen({ tall: b.phone || h === 900 ? 0 : h, init: { ...MOMENTS[b.m], scrollTo: b.scrollTo || 0 } });
+      const screen = b.screen ? b.screen() : renderScreen({ tall: b.phone || h === 900 ? 0 : h, init: { ...(MOMENTS[b.m] || AUTO_MOMENTS[b.m]), scrollTo: b.scrollTo || 0 } });
       const html = artboard({ phone: b.phone, light, screens: [screen], navMode: "note" }).replace('"height":900', `"height":${h}`);
       fs.writeFileSync(path.join(OUT, file), html);
       artboards.push({ file, title: light ? `${b.title} · Light` : b.title, page: light ? "light" : "dark", x: b.x, y: b.y, w: b.phone ? 390 : 1440, h });

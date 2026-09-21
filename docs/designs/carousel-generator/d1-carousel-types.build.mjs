@@ -64,6 +64,12 @@ function css(phone) {
 /* The button sits right whether or not a status sits left of it. On the button
    itself rather than as a child selector, since it renders inside a sc-if. */
 .cfoot .cta, .cfoot .btn2 { margin-left: auto; }
+/* A finished batch waiting for its sign-off (D12): the count is the way in, where Last batch sits, and Generate stays. */
+.screen-types .towait { position: relative; cursor: pointer; color: var(--text-primary); transition: background-color 150ms var(--ease); }
+.screen-types .towait:hover { background: var(--card-raised); }
+.screen-types .towait:active { transform: scale(0.97); }
+.screen-types .towait::after { content: ""; position: absolute; inset: -12px -6px; }
+.screen-types .towait svg { margin-right: -4px; color: var(--text-muted); }
 .last { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 16px; color: var(--text-muted); }
 
 .retired { display: flex; flex-direction: column; gap: 12px; }
@@ -111,6 +117,7 @@ const typeCard = (varName, retired) => `
               </div>
               <div class="cfoot">
                 <sc-if value="{{${varName}.showLast}}" hint-placeholder-val="{{ true }}"><span class="last tnum">{{${varName}.lastText}}</span></sc-if>
+                <sc-if value="{{${varName}.isWaiting}}" hint-placeholder-val="{{ false }}"><button type="button" class="pill towait tnum" onClick="{{${varName}.openWaiting}}">{{${varName}.waitText}}${I.caretRightSm}</button></sc-if>
                 <sc-if value="{{${varName}.hasPill}}" hint-placeholder-val="{{ false }}">
                   <span class="pill {{${varName}.pillCls}} tnum">{{${varName}.pill}}</span>
                 </sc-if>
@@ -179,16 +186,20 @@ function page() {
 
 /* ── Behaviour ─────────────────────────────────────────────────────────── */
 
-function vals(firstRun) {
+function vals(firstRun, waiting, waitText, waitTo) {
   return `
     var FIRST_RUN = ${firstRun};
+    /* How many finished decks of Before & After wait for Approve (D12); 0 on D1's own boards. */
+    var WAITING = ${waiting};
+    var WAIT_TEXT = ${JSON.stringify(waitText)};
+    var WAIT_TO = ${JSON.stringify(waitTo)};
     var compact = function (v) { return v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? (v / 1e3).toFixed(1) + "k" : String(v); };
     var days = function (n) { return n === 1 ? "1 day" : n + " days"; };
 
     /* Sample content only — invented names and numbers, per the design step. */
     var TYPES = [
       { id: "five-things", slides: 7, name: "Five Things I Stopped Doing After Thirty", character: "Character 3", posts: 0, cover: 0, median: 1240000, last: "Aug 29", status: "live" },
-      { id: "morning", slides: 6, name: "Morning Routine", character: "Character 2", posts: 2, cover: 1, median: 18200, last: "Sep 8", status: "live" },
+      { id: "morning", slides: 6, name: "Morning Routine", character: "Character 2", posts: 2, cover: 1, median: 18200, last: "Sep 8", status: "live", lastAuto: true },
       { id: "myth", slides: 8, name: "Myth vs Fact", character: "Character 3", posts: 5, cover: 2, median: 24300, last: "Sep 12", status: "live", running: "Writing 7 of 20" },
       { id: "before-after", slides: 7, name: "Before & After", character: "Character 2", posts: 14, cover: 6, median: 31700, last: "Sep 11", status: "live" },
       { id: "day-life", slides: 10, name: "Day in the Life", character: "Character 4", posts: 22, cover: 11, median: 9800, last: "Sep 13", status: "live" },
@@ -220,7 +231,10 @@ function vals(firstRun) {
         coverCls: isLive && t.cover <= 1 ? "danger" : "",
         median: t.median != null ? compact(t.median) : "—",
         /* Opposite Generate: the last batch date, or the status in its place when there is one (Garreth, 2026-09-14). */
-        showLast: !(t.running || t.status === "unwired" || t.status === "retired"),
+        showLast: !(t.running || t.status === "unwired" || t.status === "retired" || (WAITING && t.id === "before-after")),
+        isWaiting: !!WAITING && t.id === "before-after",
+        waitText: WAIT_TEXT,
+        openWaiting: function () { ctx.open(WAIT_TO, { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", count: 20 }, WAIT_TO === "review" ? "Opens the written batch, with Render " + WAITING + " decks · D4" : "Opens the finished batch, with Approve " + WAITING + " decks · D5"); },
         lastText: t.last ? "Last batch " + t.last : "No batches yet",
         hasPill: !!t.running || t.status === "unwired" || t.status === "retired",
         pill: t.running ? t.running : t.status === "unwired" ? "Not wired" : "Retired",
@@ -235,7 +249,7 @@ function vals(firstRun) {
           if (t.status === "unwired") { self.note("Opens " + t.name + "'s page on its Wiring tab · D7"); return; }
           ctx.open("type", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5" }, "Opens the page for " + t.name + " · D7");
         },
-        generate: function () { ctx.open("generate", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5" }, "Opens the Generate form for " + t.name + " · D2"); },
+        generate: function () { ctx.open("generate", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", lastAuto: t.lastAuto ? "1" : "" }, "Opens the Generate form for " + t.name + " · D2"); },
         openBatch: function () { ctx.open("batch", { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); }
       };
     };
@@ -261,15 +275,21 @@ function vals(firstRun) {
     };`;
 }
 
-/** D1 as a screen. `firstRun` shows the screen with no carousel types at all. */
-export function typesScreen({ firstRun = false } = {}) {
+/** D1 as a screen. `firstRun` shows the screen with no carousel types at all. `waiting` is how many finished decks
+    of Before & After wait for Approve (D12, Garreth 2026-09-21): its card carries "18 to approve" in place of Last batch. */
+export function typesScreen({ firstRun = false, waiting = 0, waitText = waiting + " to approve", waitTo = "render", toCard = false } = {}) {
   return {
     id: "types",
     nav: "types",
     css,
     markup: page,
     state: { retiredOpen: false, openCards: {} },
-    vals: vals(firstRun),
+    vals: vals(firstRun, waiting, waitText, waitTo),
+    /* The phone's picture of the waiting card: Before & After is the fourth card down. */
+    didUpdate: toCard
+      ? `
+    if (!this.d1carded) { var d1b = document.querySelector(".towait"); var d1c = document.querySelector(".col"); if (d1b && d1c) { this.d1carded = true; d1c.scrollTop = d1b.closest("article").offsetTop - 96; } }`
+      : "",
   };
 }
 
@@ -281,12 +301,18 @@ function build(OUT) {
     { file: "Main.dc.html", phone: false, firstRun: false, title: "D1 · Carousel types · Desktop", x: 0, y: 0 },
     { file: "Phone.dc.html", phone: true, firstRun: false, title: "D1 · Carousel types · Phone", x: 1540, y: 0 },
     { file: "FirstRun.dc.html", phone: false, firstRun: true, title: "D1 · First run · Desktop", x: 0, y: 1040 },
+    /* A batch waiting for its person (D12, Garreth 2026-09-21): the count sits where Last batch does, and Generate stays,
+       because a batch waiting to be pressed does not hold up the next one. Read left to right in the order a batch runs. */
+    { file: "WaitingRender.dc.html", phone: false, firstRun: false, waiting: 18, waitText: "18 to render", waitTo: "review", title: "D1 · A written batch waiting for Render · Desktop", x: 0, y: 2080 },
+    { file: "PhoneWaitingRender.dc.html", phone: true, firstRun: false, waiting: 18, waitText: "18 to render", waitTo: "review", toCard: true, title: "D1 · A written batch waiting for Render · Phone", x: 1540, y: 2080 },
+    { file: "WaitingApproval.dc.html", phone: false, firstRun: false, waiting: 18, title: "D1 · A finished batch waiting for Approve · Desktop", x: 3080, y: 2080 },
+    { file: "PhoneWaitingApproval.dc.html", phone: true, firstRun: false, waiting: 18, toCard: true, title: "D1 · A finished batch waiting for Approve · Phone", x: 4620, y: 2080 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
     for (const b of BOARDS) {
       const file = light ? b.file.replace(".dc.html", "Light.dc.html") : b.file;
-      fs.writeFileSync(path.join(OUT, file), artboard({ phone: b.phone, light, screens: [typesScreen({ firstRun: b.firstRun })], navMode: "page" }));
+      fs.writeFileSync(path.join(OUT, file), artboard({ phone: b.phone, light, screens: [typesScreen({ firstRun: b.firstRun, waiting: b.waiting || 0, waitText: b.waitText, waitTo: b.waitTo, toCard: !!b.toCard })], navMode: "page" }));
       artboards.push({
         file,
         title: light ? `${b.title} · Light` : b.title,
@@ -300,7 +326,7 @@ function build(OUT) {
     }
   }
   const tryNote =
-    "Clickable. Try the menu (the highlight glides), the collapse button beside the logo, View details on a card, Retired, refresh, the Dark mode switch, a type's name, and Generate, Open running batch or New carousel type.\n\nScreens not designed yet show a Prototype note naming their ticket.\n\nOn the phone, the menu button opens the drawer.";
+    "Clickable. Try the menu (the highlight glides), the collapse button beside the logo, View details on a card, Retired, refresh, the Dark mode switch, a type's name, and Generate, Open running batch, 18 to render, 18 to approve or New carousel type.\n\nScreens not designed yet show a Prototype note naming their ticket.\n\nOn the phone, the menu button opens the drawer.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

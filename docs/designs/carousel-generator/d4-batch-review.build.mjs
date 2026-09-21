@@ -60,7 +60,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { I, icon, artboard, isMain } from "./generator-kit.mjs";
-import { batchScreen } from "./d3-batch-writing.build.mjs";
+import { batchScreen, typesWithBell } from "./d3-batch-writing.build.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -1004,13 +1004,18 @@ function build(OUT) {
     { name: "PhoneRegenerateBatch", phone: true, m: "batch", title: "D4 · Regenerate batch · Phone", x: 1540, y: R1 + ROW + 984 },
     { name: "ReadOnly", phone: false, m: "readOnly", title: "D4 · Someone else is running it · Desktop", x: 0, y: R1 + ROW * 2 },
     { name: "PhoneReadOnly", phone: true, m: "readOnly", title: "D4 · Someone else is running it · Phone", x: 2010, y: R1 + ROW + 984 },
+    /* A manual batch that has finished writing waits here for Render, and says so wherever its person is (D12, Garreth
+       2026-09-21): the bell's Batch written, and "18 to render" on the type's card. Both open this screen. */
+    { name: "WrittenNotifyElsewhere", phone: false, h: 900, screen: () => typesWithBell({ kind: "written" }), title: "D4 · Batch written, seen from another screen · Desktop", x: 0, y: R1 + ROW * 3 },
+    { name: "WrittenOnTypes", phone: false, h: 900, screen: () => typesWithBell({ kind: "written", bell: false }), title: "D4 · A written batch waiting for Render, on Carousel types · Desktop", x: 1540, y: R1 + ROW * 3 },
+    { name: "PhoneWrittenNotifyElsewhere", phone: true, screen: () => typesWithBell({ kind: "written" }), title: "D4 · Batch written, seen from another screen · Phone", x: 3080, y: R1 + ROW * 3 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
     for (const b of BOARDS) {
       const file = `${b.name}${light ? "Light" : ""}.dc.html`;
       const h = b.phone ? 844 : b.h || DESK_H;
-      const screen = reviewScreen({ tall: b.phone ? 0 : h, init: { ...MOMENTS[b.m], scrollTo: b.scrollTo || 0 } });
+      const screen = b.screen ? b.screen() : reviewScreen({ tall: b.phone ? 0 : h, init: { ...MOMENTS[b.m], scrollTo: b.scrollTo || 0 } });
       const html = artboard({ phone: b.phone, light, screens: [screen], navMode: "note" }).replace('"height":900', `"height":${h}`);
       fs.writeFileSync(path.join(OUT, file), html);
       artboards.push({ file, title: light ? `${b.title} · Light` : b.title, page: light ? "light" : "dark", x: b.x, y: b.y, w: b.phone ? 390 : 1440, h });

@@ -44,6 +44,14 @@
  * From his third review (2026-09-15): the direction's versions are the same
  * dropdown as the template's; the Versions card is gone.
  *
+ * From Garreth's decision on 2026-09-21: a batch that has finished a stage and
+ * is waiting for a person to press something says so in the batch table, in the
+ * same words the Carousel types card (D1) and the bell already use — "18 to
+ * render" once the writing is done, "18 to approve" once it is rendered. Plain
+ * pills, no new colour, and the row opens the screen that holds the press:
+ * waiting for Render opens the written batch (D4), waiting for Approve opens
+ * the finished one (D5).
+ *
  * Pictures, one screen per state (Garreth's rule from D3 on); only the tabs,
  * the version dropdowns, the direction text and Preview's dialog respond.
  * Dark approved by Garreth on 2026-09-15 after five review rounds; light mode
@@ -120,12 +128,14 @@ const TYPES = {
   before: {
     name: "Before & After", character: "Character 2", slides: 7, size: "4:5", short: "before_after",
     stats: [["Posts left", "14"], ["Days of cover", "6 days"], ["Median views", "31.7k"], ["Weekly cap", "3"]],
+    /* The two newest finished batches are the ones waiting for a person: Sep 13 has been written and waits for
+       Render, Sep 11 has been rendered and waits for Approve (Garreth, 2026-09-21). */
     batches: [
       { date: "Sep 14", req: 20, written: 7, rendered: null, approved: null, state: "running" },
-      { date: "Sep 11", req: 20, written: 20, rendered: 18, approved: 16 },
+      { date: "Sep 13", req: 20, written: 18, rendered: null, approved: null },
+      { date: "Sep 11", req: 20, written: 20, rendered: 18, approved: null },
       { date: "Sep 6", req: 50, written: 12, rendered: null, approved: null, state: "stopped" },
-      { date: "Aug 29", req: 12, written: 12, rendered: 12, approved: 12 },
-      { date: "Aug 22", req: 8, written: 8, rendered: 7, approved: 7 },
+      { date: "Aug 22", req: 8, written: 8, rendered: 8, approved: 8 },
       { date: "Aug 9", req: 50, written: 50, rendered: 47, approved: 44 },
     ],
     /* Template versions, newest first: each with its own hook and photo order. */
@@ -509,18 +519,33 @@ function batchRows(T, phone) {
   const n = (v) => (v == null ? `<span class="dim tnum">—</span>` : `<span class="tnum">${v}</span>`);
   return T.batches
     .map((b) => {
-      const flagged = !b.state ? b.written - b.rendered : 0;
+      /* A batch that has finished a stage and waits for a person says so in the same words as the Carousel types
+         card and the bell (Garreth, 2026-09-21). A stage that has not happened is null, so written but not yet
+         rendered waits for Render, and rendered but not yet approved waits for Approve. */
+      const toRender = !b.state && b.rendered == null;
+      const toApprove = !b.state && b.rendered != null && b.approved == null;
+      const flagged = !b.state && !toRender && !toApprove ? b.written - b.rendered : 0;
       const pill =
         b.state === "running"
           ? `<span class="pill pill--accent tnum">Writing ${b.written} of ${b.req}</span>`
           : b.state === "stopped"
             ? `<span class="pill">Stopped</span>`
-            : flagged
-              ? `<span class="pill pill--danger tnum">${flagged} flagged</span>`
-              : "";
-      const open = b.state === "running" ? "d7openRunning" : b.state === "stopped" ? "d7openStopped" : "d7openBatch";
+            : toRender
+              ? `<span class="pill tnum">${b.written} to render</span>`
+              : toApprove
+                ? `<span class="pill tnum">${b.rendered} to approve</span>`
+                : flagged
+                  ? `<span class="pill pill--danger tnum">${flagged} flagged</span>`
+                  : "";
+      const open = b.state === "running" ? "d7openRunning" : b.state === "stopped" ? "d7openStopped" : toRender ? "d7openToRender" : toApprove ? "d7openToApprove" : "d7openBatch";
       if (phone) {
-        const counts = b.state ? `${b.written} of ${b.req} written` : `${b.req} decks · ${b.rendered} rendered · ${b.approved} approved`;
+        const counts = b.state
+          ? `${b.written} of ${b.req} written`
+          : toRender
+            ? `${b.req} decks · ${b.written} written`
+            : toApprove
+              ? `${b.req} decks · ${b.rendered} rendered`
+              : `${b.req} decks · ${b.rendered} rendered · ${b.approved} approved`;
         return `
                 <button type="button" class="brow" onClick="{{${open}}}"><span class="bl"><span class="bdate tnum">${b.date}</span>${pill}</span><span class="bcounts tnum">${counts}</span><span class="chev7">${I.caretRightSm}</span></button>`;
       }
@@ -789,6 +814,9 @@ function phoneBar(T, init) {
 
 function vals(T, init) {
   const TPL = T.templates.map((v) => ({ name: v.name, date: v.date, active: !!v.active, hook: v.hook, imgs: v.imgs.slice(0, T.slides) }));
+  /* The two batches waiting for a person (Garreth, 2026-09-21): their rows open the screen that holds the press. */
+  const wRender = T.batches.find((b) => !b.state && b.rendered == null) || { req: 20, written: 0 };
+  const wApprove = T.batches.find((b) => !b.state && b.rendered != null && b.approved == null) || { req: 20, rendered: 0 };
   return `
     var P = s.params || {};
     var NAME = P.name || ${JSON.stringify(T.name)};
@@ -846,6 +874,10 @@ function vals(T, init) {
       d7openBatch: function () { ctx.open("render", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: 20 }, "Opens that batch's decks: rendered, and any flagged or failed · D5"); },
       d7openRunning: function () { ctx.open("batch", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: 20, writtenUpTo: 7 }, "Opens the running batch · D3"); },
       d7openStopped: function () { ctx.open("batch", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: 50, writtenUpTo: 12 }, "Opens the stopped batch, with Continue · D3"); },
+      /* A waiting row opens the screen that holds the press: written waits for Render (D4), rendered waits for
+         Approve (D5) (Garreth, 2026-09-21). */
+      d7openToRender: function () { ctx.open("review", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: ${wRender.req} }, "Opens the written batch, with Render ${wRender.written} decks · D4"); },
+      d7openToApprove: function () { ctx.open("render", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: ${wApprove.req} }, "Opens the finished batch, with Approve ${wApprove.rendered} decks · D5"); },
 
       /* The direction's versions: the same dropdown as the template's (Garreth, 2026-09-15, third review). */
       d7dvName: dv.name,

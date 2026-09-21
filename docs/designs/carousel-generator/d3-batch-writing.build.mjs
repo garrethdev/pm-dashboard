@@ -47,12 +47,23 @@
  *   PhoneStopped        phone, the same, Continue in a bottom bar
  * Imported, `batchScreen({ auto: true })` is the screen the prototype opens.
  *
+ * D12 · Auto mode (Garreth, 2026-09-21) is designed on this same screen and its
+ * pictures sit on this canvas, after D3's own (Garreth, 2026-09-21: no separate
+ * D12 canvas, so a developer finds a screen's states in one place).
+ * `AUTO_MOMENTS` holds the four moments as `init` objects. In Auto the
+ * batch needs nobody: writing runs into rendering, a flagged deck rewrites
+ * itself up to three times and is then Dropped — still on the screen, never
+ * rendered, still regenerable by hand — and no flag rings the bell. Pause hands
+ * the batch back to the person; Resume takes it again. D3's own artboards are
+ * unchanged; the Auto boards are added after them.
+ *
  *   node docs/designs/carousel-generator/d3-batch-writing.build.mjs <out dir>
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { I, icon, artboard, isMain } from "./generator-kit.mjs";
+import { typesScreen } from "./d1-carousel-types.build.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -61,6 +72,8 @@ const D3I = {
   warn: icon("Warning", 14),
   retry: icon("ArrowClockwise", 12, "bold"),
   arrow: icon("ArrowUpRight", 14, "bold"),
+  pause: icon("Pause", 12),
+  play: icon("Play", 12),
 };
 
 /* ── Sample content ────────────────────────────────────────────────────── */
@@ -141,6 +154,11 @@ ${S} .pwarn { display: inline-flex; align-items: center; gap: 6px; font-size: 13
 ${S} .pdeck { font-weight: 500; color: var(--warn); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--warn) 45%, transparent); }
 ${S} .pfail { font-size: 13px; line-height: 20px; color: var(--danger); }
 ${S} .prow .cta { margin-left: auto; }
+/* D12 · Auto mode. Dropped decks are counted like the failed ones, in the muted tone: nothing went wrong,
+   the batch simply moved on without them. The Pause control is the Secondary button, at the row's far end,
+   so the count and the state read first and the control is always under the thumb in the sticky row. */
+${S} .pdrop { font-size: 13px; line-height: 20px; color: var(--text-muted); }
+${S} .prow .a12btn { margin-left: auto; padding: 9px 16px; font-size: 13px; }
 /* design-system.html · Working: a 6px track, the fill turning warn when it stalls. */
 ${S} .track { position: relative; height: 6px; margin-top: 10px; border-radius: 4px; overflow: hidden; background: color-mix(in srgb, var(--text-muted) 20%, transparent); }
 ${S} .track i { position: absolute; inset-block: 0; left: 0; display: block; border-radius: 4px; background: var(--accent); transition: width 300ms var(--ease-out-strong), background-color 200ms var(--ease); }
@@ -204,6 +222,17 @@ ${S} .dfbact { display: flex; align-items: center; justify-content: flex-end; ga
 /* Flagged: never rendered. A subtle red outline marks it, which is where the bell's item lands (Garreth, 2026-09-14). */
 ${S} .deck.is-flagged { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 22%, transparent), var(--sh-card); }
 
+/* D12 · Auto mode on a card. A deck can now carry two pills (Rewriting · Try 2 of 3, Dropped · its reason), so the
+   deck number takes the slack and the pills stay grouped at the right, where a single pill already sits. */
+${S} .dtop .dno { margin-right: auto; }
+/* The dropped deck's reason: the same pill shape in the neutral tone, never red, and it gives way before the card does. */
+${S} .pill--quiet { display: inline-block; min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
+/* Dropped: the copy is still there to read and to regenerate, but dimmed, so the card reads as out of the batch.
+   Regenerate keeps its full strength: it is the way back in. */
+${S} .deck.is-dropped .dbody { opacity: 0.45; }
+/* Light mode dims on white, where the muted copy gives out sooner, so it keeps a little more of itself. */
+.is-light ${S} .deck.is-dropped .dbody { opacity: 0.62; }
+
 /* Failed: the error and Retry take the hook's place, so the card keeps its height. */
 ${S} .derr { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; font-size: 13px; line-height: 20px; color: var(--danger); }
 
@@ -253,6 +282,7 @@ ${S} .bar .status b { display: block; font-size: 13px; line-height: 18px; font-w
 ${S} .bar .cta { margin-left: auto; padding: 15px 26px; }
 /* 44px touch targets: the controls keep their look, the hit area grows. */
 ${S} .dfoot .btn2::after, ${S} .dfb .btn2::after, ${S} .tbtn::after { content: ""; position: absolute; inset: -12px -8px; }
+${S} .prow .a12btn::after { content: ""; position: absolute; inset: -7px 0; }
 ${S} .dact .btn2::after { content: ""; position: absolute; inset: -5px 0; }
 `
     : ""
@@ -283,6 +313,9 @@ const deckCard = `
                 <sc-if value="{{d.pillRewriting}}" hint-placeholder-val="{{ false }}"><span class="pill pill--accent">Rewriting</span></sc-if>
                 <sc-if value="{{d.pillFailed}}" hint-placeholder-val="{{ false }}"><span class="pill pill--danger">Failed</span></sc-if>
                 <sc-if value="{{d.pillUpnext}}" hint-placeholder-val="{{ false }}"><span class="pill">Up next</span></sc-if>
+                <!-- D12 · Auto mode: how many goes Auto has had at this deck, and the deck it gave up on. -->
+                <sc-if value="{{d.a12Dropped}}" hint-placeholder-val="{{ false }}"><span class="pill">Dropped</span><span class="pill pill--quiet">{{d.flag}}</span></sc-if>
+                <sc-if value="{{d.a12Tries}}" hint-placeholder-val="{{ false }}"><span class="pill tnum">{{d.a12TriesText}}</span></sc-if>
               </div>
               <sc-if value="{{d.hasCopy}}" hint-placeholder-val="{{ true }}">
                 <div class="dbody">
@@ -338,9 +371,16 @@ function page() {
           <div class="prog {{progCls}}">
             <div class="prow" role="status" aria-live="polite">
               <span class="pcount tnum">{{progCount}}</span>
+              <!-- D12 · Auto mode: what the batch is doing without anybody, what it dropped, and the way to take it back. -->
+              <sc-if value="{{a12On}}" hint-placeholder-val="{{ false }}"><span class="pill pill--accent">Auto</span></sc-if>
+              <sc-if value="{{a12Paused}}" hint-placeholder-val="{{ false }}"><span class="pill">Auto paused</span></sc-if>
+              <sc-if value="{{a12Drop}}" hint-placeholder-val="{{ false }}"><span class="pdrop tnum">{{a12DropText}}</span></sc-if>
               <sc-if value="{{showStall}}" hint-placeholder-val="{{ false }}"><span class="pwarn">${D3I.warn}<span><button type="button" class="pdeck" onClick="{{stallGo}}">{{stallDeck}}</button> stalled, last moved {{stallAgo}}</span></span></sc-if>
               <sc-if value="{{showFailed}}" hint-placeholder-val="{{ false }}"><span class="pfail tnum">{{failedText}}</span></sc-if>
               <sc-if value="{{isStopped}}" hint-placeholder-val="{{ false }}"><span class="pmeta">{{stoppedText}}</span><button type="button" class="cta" onClick="{{continueBatch}}">Continue</button></sc-if>
+              <!-- The same button as D5's render line: outline, with its icon (icons are markup, not values). -->
+              <sc-if value="{{a12On}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2 btn2--line a12btn" onClick="{{a12Toggle}}">${D3I.pause}Pause auto</button></sc-if>
+              <sc-if value="{{a12Paused}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn2 btn2--line a12btn" onClick="{{a12Toggle}}">${D3I.play}Resume auto</button></sc-if>
             </div>
             <sc-if value="{{showTrack}}" hint-placeholder-val="{{ true }}"><div class="track" aria-hidden="true"><i style="width: {{trackW}}%"></i></div></sc-if>
           </div>
@@ -421,6 +461,9 @@ function vals({ auto, init }) {
   return `
     var P = s.params || {};
     var AUTO = ${auto} || !!s.d3auto;
+    /* D12 · Auto mode — nothing to do with AUTO above, which is the prototype's writer running on timers.
+       "" the batch waits for the person, "on" it carries itself, "paused" the person has taken it back. */
+    var A12 = s.d12auto != null ? s.d12auto : (P.auto || "");
     var HOOKS = ${JSON.stringify(HOOKS)};
     var LINES = ${JSON.stringify(LINES)};
     var CAPTIONS = ${JSON.stringify(CAPTIONS)};
@@ -430,7 +473,7 @@ function vals({ auto, init }) {
     var SLIDES = parseInt(P.slides, 10) || 7;
     var NAME = P.name || "Before & After";
 
-    var blank = function (n) { return { n: n, st: "waiting", prev: "", note: "", flag: "", ver: 0, retried: false, rewritten: false, fresh: false }; };
+    var blank = function (n) { return { n: n, st: "waiting", prev: "", note: "", flag: "", ver: 0, tries: 0, retried: false, rewritten: false, fresh: false }; };
     /* A batch opened from another screen: nothing written, or a running batch part-way (deck 6 already flagged). */
     var seedFrom = function (p) {
       var total = Math.min(50, Math.max(1, parseInt((p || {}).count, 10) || 20));
@@ -447,7 +490,9 @@ function vals({ auto, init }) {
     var decks = s.d3decks || seedFrom(P);
     var current = function () { return (self.state && self.state.d3decks) || decks; };
     var hasFlag = decks.some(function (d) { return d.st === "flagged"; });
-    var notif = s.d3notif || (hasFlag ? "unread" : "none");
+    /* In Auto a flagged deck is a moment, not an errand: it rewrites itself, so it never rings the bell.
+       Paused, the batch is the person's again and a flag calls for them as it does today. */
+    var notif = s.d3notif || (hasFlag && A12 !== "on" ? "unread" : "none");
     var setDeck = function (i, patch, extra) {
       var next = current().slice();
       next[i] = Object.assign({}, next[i], patch);
@@ -506,11 +551,14 @@ function vals({ auto, init }) {
     var total = decks.length;
     var written = decks.filter(function (d) { return d.st === "written" || d.st === "editing" || d.st === "flagged"; }).length;
     var failed = decks.filter(function (d) { return d.st === "failed"; }).length;
+    /* A dropped deck is not written — the count never claims it — but the batch is done with it, so the bar counts it
+       as work behind us and can still reach the end. */
+    var dropped = decks.filter(function (d) { return d.st === "dropped"; }).length;
     var mode = s.d3mode || "writing";
     var firstFlag = decks.filter(function (d) { return d.st === "flagged"; })[0];
 
     var view = decks.map(function (d, i) {
-      var copy = d.st === "written" || d.st === "editing" || d.st === "flagged";
+      var copy = d.st === "written" || d.st === "editing" || d.st === "flagged" || d.st === "dropped";
       var ver = d.ver || 0;
       var o = {
         n: d.n,
@@ -527,10 +575,15 @@ function vals({ auto, init }) {
         pillRewriting: d.st === "writing" && !!d.rewritten,
         pillFailed: d.st === "failed",
         pillUpnext: d.st === "upnext",
+        /* D12: Auto's second and third goes at a deck, and the deck it gave up on. A dropped deck says only that,
+           with its reason beside it in the neutral tone. */
+        a12Tries: (d.tries || 0) > 0 && d.st !== "dropped",
+        a12TriesText: "Try " + (d.tries || 0) + " of 3",
+        a12Dropped: d.st === "dropped",
         flag: d.flag || FLAG,
         hasCopy: copy,
         isEditing: d.st === "editing",
-        showRegen: d.st === "written" || d.st === "flagged",
+        showRegen: d.st === "written" || d.st === "flagged" || d.st === "dropped",
         isSkeleton: !copy,
         isFailed: d.st === "failed",
         notFailed: d.st !== "failed",
@@ -566,7 +619,7 @@ function vals({ auto, init }) {
       progCls: mode === "stalled" ? "is-stalled" : mode === "stopped" ? "is-stopped" : "",
       progCount: written + " of " + total + " written",
       showTrack: mode !== "stopped",
-      trackW: Math.round((written / total) * 100),
+      trackW: Math.round(((written + dropped) / total) * 100),
       showStall: mode === "stalled",
       stallDeck: "Deck " + ${init.stalledDeck || 8},
       stallAgo: "3 min ago",
@@ -575,6 +628,16 @@ function vals({ auto, init }) {
       failedText: failed + " failed",
       isStopped: mode === "stopped",
       stoppedText: "Stopped 2 hours ago",
+
+      /* D12 · Auto mode. Pause hands the batch back (flags wait for the person, rendering waits for the press);
+         Resume takes it again. A stopped batch has nothing to run, so the control stays away. */
+      a12Show: (A12 === "on" || A12 === "paused") && mode !== "stopped",
+      a12On: A12 === "on" && mode !== "stopped",
+      a12Paused: A12 === "paused" && mode !== "stopped",
+      a12Drop: dropped > 0 && mode !== "stopped",
+      a12DropText: dropped + " dropped",
+      a12BtnText: A12 === "paused" ? "Resume auto" : "Pause auto",
+      a12Toggle: function () { self.setState({ d12auto: A12 === "paused" ? "on" : "paused" }); },
       continueBatch: function () {
         var next = current().slice();
         var nx = next.findIndex(function (d) { return d.st === "waiting"; });
@@ -621,11 +684,101 @@ export function batchScreen({ auto = false, tall = 0, init = {} } = {}) {
       d3auto: false,
       d3scroll: 0,
       d3focus: 0,
+      /* D12: "on" or "paused" when the picture is an Auto batch; null lets the batch's own params decide. */
+      d12auto: init.auto || null,
     },
     /* Opened from another screen: a fresh batch from its params, the writer starting. */
-    enter: { d3decks: null, d3mode: "writing", d3notif: null, d3open: false, d3auto: false, d3scroll: 0, d3focus: 0 },
+    enter: { d3decks: null, d3mode: "writing", d3notif: null, d3open: false, d3auto: false, d3scroll: 0, d3focus: 0, d12auto: null },
     vals: vals({ auto, init }),
     didUpdate,
+  };
+}
+
+/* ── The bell on another screen ────────────────────────────────────────── */
+
+/* A batch that needs its person rings the bell wherever they are (Garreth, 2026-09-21); Carousel types stands in for
+   "anywhere". Two items: Batch written, a manual batch waiting for Render (opens D4), and Batch finished, any batch
+   waiting for Approve (opens D5). Each picture lives on the canvas of the screen its item opens. */
+const BELL_ITEMS = {
+  finished: { title: "Batch finished", body: "Before & After · 18 rendered, 2 dropped", waitText: "18 to approve", to: "render", note: "Opens the finished batch, with Approve 18 decks · D5" },
+  written: { title: "Batch written", body: "Before & After · 18 to render, 2 flagged", waitText: "18 to render", to: "review", note: "Opens the written batch, with Render 18 decks · D4" },
+};
+
+/* D3's dot and panel styles, moved onto Carousel types, so the panel here can never drift from the batch's. */
+const bellCss = (phone) =>
+  [
+    ...batchScreen()
+      .css(phone)
+      .matchAll(/^\.screen-batch \.(?:d3-dot|ncatch|npop|nhead|nlist|nitem|nin|ndot|nmain|ntop|ntitle|ncat|nbody|ntime|is-unread)\b[^{]*\{[^}]*\}/gm),
+  ]
+    .map((m) => m[0])
+    .join("\n")
+    .replaceAll(".screen-batch", ".screen-types") + "\n@keyframes d3-pop { from { opacity: 0; transform: scale(0.97) translateY(-4px); } }";
+
+const arrow = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M204,64V168a12,12,0,0,1-24,0V93L72.49,200.49a12,12,0,0,1-17-17L163,76H88a12,12,0,0,1,0-24H192A12,12,0,0,1,204,64Z"/></svg>`;
+
+const bellOverlay = (item) => () => `
+    <sc-if value="{{a12nDot}}" hint-placeholder-val="{{ true }}"><span class="d3-dot" aria-hidden="true"></span></sc-if>
+    <sc-if value="{{a12nOpen}}" hint-placeholder-val="{{ true }}">
+      <div class="ncatch" aria-hidden="true" onClick="{{a12nClose}}"></div>
+      <div class="npop" role="dialog" aria-label="Notifications">
+        <div class="nhead">
+          <b>Notifications</b>
+          <sc-if value="{{a12nUnread}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{a12nMark}}">Mark all read (1)</button></sc-if>
+          <sc-if value="{{a12nAllRead}}" hint-placeholder-val="{{ false }}"><span>All read</span></sc-if>
+        </div>
+        <div class="nlist">
+          <button type="button" class="nitem {{a12nCls}}" onClick="{{a12nGo}}">
+            <span class="nin">
+              <span class="ndot" aria-hidden="true"></span>
+              <span class="nmain">
+                <span class="ntop"><span class="ntitle">${item.title}<span class="ncat">Carousel Generator</span></span>${arrow}</span>
+                <span class="nbody tnum">${item.body.replace("&", "&amp;")}</span>
+                <span class="ntime">Just now</span>
+              </span>
+            </span>
+          </button>
+          <button type="button" class="nitem" onClick="{{a12nClose}}">
+            <span class="nin">
+              <span class="ndot" aria-hidden="true"></span>
+              <span class="nmain">
+                <span class="ntop"><span class="ntitle">Deck 14 flagged<span class="ncat">Carousel Generator</span></span>${arrow}</span>
+                <span class="nbody">Myth vs Fact · Score 5.2</span>
+                <span class="ntime">2h ago</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </sc-if>`;
+
+/** Carousel types with the bell ringing for a batch that needs its person. `kind` is which item; `open` shows the
+    panel; `bell: false` leaves only the card's own state. */
+export function typesWithBell({ kind = "finished", open = true, bell = true, toCard = false } = {}) {
+  const item = BELL_ITEMS[kind];
+  const screen = typesScreen({ waiting: 18, waitText: item.waitText, waitTo: item.to, toCard });
+  return {
+    ...screen,
+    css: (phone) => `${screen.css(phone)}\n${bellCss(phone)}`,
+    colOverlay: bellOverlay(item),
+    state: { ...screen.state, d12nOpen: bell && open, d12nRead: false },
+    vals: `
+    var a12base = (function () {${screen.vals}
+    })();
+    return Object.assign(a12base, {
+      a12nDot: ${bell} && !s.d12nRead,
+      a12nOpen: !!s.d12nOpen,
+      a12nUnread: !s.d12nRead,
+      a12nAllRead: !!s.d12nRead,
+      a12nCls: (s.d12nRead ? "" : "is-unread") + " is-hover",
+      a12nMark: function () { self.setState({ d12nRead: true }); },
+      a12nClose: function () { self.setState({ d12nOpen: false }); },
+      a12nGo: function () {
+        self.setState({ d12nOpen: false, d12nRead: true });
+        ctx.open(${JSON.stringify(item.to)}, { name: "Before & After", count: 20 }, ${JSON.stringify(item.note)});
+      },
+      bell: function () { self.setState({ d12nOpen: !s.d12nOpen }); }
+    });`,
   };
 }
 
@@ -636,7 +789,7 @@ function decks(spec, total = 20) {
   return range(1, total).map((n) => {
     const v = spec[n];
     const o = typeof v === "object" ? v : { st: v || "waiting" };
-    return { n, st: o.st, prev: o.prev || "", note: o.note || "", flag: o.flag || "", ver: o.rewritten ? 1 : 0, retried: false, rewritten: !!o.rewritten, fresh: false };
+    return { n, st: o.st, prev: o.prev || "", note: o.note || "", flag: o.flag || "", ver: o.rewritten ? 1 : 0, tries: o.tries || 0, retried: false, rewritten: !!o.rewritten, fresh: false };
   });
 }
 const writtenTo = (k) => Object.fromEntries(range(1, k).map((n) => [n, "written"]));
@@ -661,7 +814,38 @@ const MOMENTS = {
   stopped: { decks: decks(writtenTo(12)), mode: "stopped" },
 };
 
-const DESK_H = 1620;
+/* ── D12 · Auto mode moments ───────────────────────────────────────────────
+ * The same screen at the four moments an Auto batch has. They are the last two
+ * rows of BOARDS below (Garreth, 2026-09-21: on D3's canvas, no D12 canvas).
+ * `autoDropped` carries `scrollTo: 6`, which puts the first dropped deck in
+ * view on a phone board; a board that passes its own `scrollTo` overrides it. */
+const droppedDeck = (flag) => ({ st: "dropped", flag, tries: 3 });
+
+export const AUTO_MOMENTS = {
+  /* Auto carrying the batch: nothing to do, nothing rung. */
+  autoWriting: { auto: "on", notif: "none", decks: decks({ ...writtenTo(7), 8: "writing" }) },
+  /* Auto putting two decks back through the writer on the gate's suggested fix, one at a time. */
+  autoRetrying: {
+    auto: "on",
+    notif: "none",
+    decks: decks({
+      ...writtenTo(9),
+      3: { st: "upnext", rewritten: true, tries: 1 },
+      6: { st: "writing", rewritten: true, tries: 2 },
+    }),
+  },
+  /* Three goes were not enough for two decks: they stay on screen, dimmed, out of the render. */
+  autoDropped: {
+    auto: "on",
+    notif: "none",
+    scrollTo: 6,
+    decks: decks({ ...writtenTo(13), 6: droppedDeck(FLAG_REASON), 11: droppedDeck("Score 5.2"), 14: "writing" }),
+  },
+  /* Paused: the batch is the person's again, so the flagged deck waits for them and rings the bell. */
+  autoPaused: { auto: "paused", notif: "unread", decks: decks({ ...writtenTo(9), 6: flagged, 10: "writing" }) },
+};
+
+export const DESK_H = 1620;
 
 function build(OUT) {
   fs.mkdirSync(OUT, { recursive: true });
@@ -680,13 +864,20 @@ function build(OUT) {
     { name: "Failed", phone: false, m: "failed", title: "D3 · One deck failed · Desktop", x: 1540, y: ROW * 3 },
     { name: "Stopped", phone: false, m: "stopped", title: "D3 · Stopped, reopened · Desktop", x: 0, y: ROW * 4 },
     { name: "PhoneStopped", phone: true, m: "stopped", title: "D3 · Stopped, reopened · Phone", x: 1540, y: ROW * 4 },
+    /* Auto mode (D12, Garreth 2026-09-21). */
+    { name: "AutoWriting", phone: false, m: "autoWriting", title: "D3 · Auto mode: writing, with Pause auto · Desktop", x: 0, y: ROW * 5 },
+    { name: "AutoRetrying", phone: false, m: "autoRetrying", title: "D3 · Auto mode: flagged decks rewritten by themselves, Try 2 of 3 · Desktop", x: 1540, y: ROW * 5 },
+    { name: "PhoneAutoWriting", phone: true, m: "autoWriting", title: "D3 · Auto mode: writing · Phone", x: 3080, y: ROW * 5 },
+    { name: "AutoDropped", phone: false, m: "autoDropped", title: "D3 · Auto mode: still flagged after three tries, Dropped · Desktop", x: 0, y: ROW * 6 },
+    { name: "AutoPaused", phone: false, m: "autoPaused", title: "D3 · Auto paused: back to manual, the flagged deck waits and rings the bell · Desktop", x: 1540, y: ROW * 6 },
+    { name: "PhoneAutoDropped", phone: true, m: "autoDropped", scrollTo: 6, title: "D3 · Auto mode: a dropped deck · Phone", x: 3080, y: ROW * 6 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
     for (const b of BOARDS) {
       const file = `${b.name}${light ? "Light" : ""}.dc.html`;
       const h = b.phone ? 844 : DESK_H;
-      const screen = batchScreen({ tall: b.phone ? 0 : DESK_H, init: { ...MOMENTS[b.m], scrollTo: b.scrollTo || 0 } });
+      const screen = batchScreen({ tall: b.phone ? 0 : DESK_H, init: { ...(MOMENTS[b.m] || AUTO_MOMENTS[b.m]), scrollTo: b.scrollTo || 0 } });
       const html = artboard({ phone: b.phone, light, screens: [screen], navMode: "note" }).replace('"height":900', `"height":${h}`);
       fs.writeFileSync(path.join(OUT, file), html);
       artboards.push({ file, title: light ? `${b.title} · Light` : b.title, page: light ? "light" : "dark", x: b.x, y: b.y, w: b.phone ? 390 : 1440, h });
