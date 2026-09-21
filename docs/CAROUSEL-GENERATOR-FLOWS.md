@@ -69,23 +69,32 @@ no longer used on a card.
 | Batch | `/carousel-generator/batches/[id]` | 2 | Render (n) decks, once the writing is done; Approve (n) decks on the finished batch | Discard deck, in the More menu |
 | History | `/carousel-generator/history` | 2 | Only in the first-run empty state: Generate | — |
 | Content type | `/carousel-generator/types/[slug]` | 2 | Generate | — |
-| · Writing tab | same, `?tab=direction` | 2 plain, 3 conversation | Save version | — |
-| · Go Live tab | same, `?tab=wiring` | 4 | none; the run is itself a hold | Wire |
+| · Writing tab | same, `?tab=writing` | 2 plain, 3 conversation | Save version | — |
+| · Go Live tab | same, `?tab=go-live` | 4 | none; the run is itself a hold | Wire |
 | Library | `/carousel-generator/library`, `/library/[id]` | 2 read-only, 4 editable | Phase 4: Upload; Generate images in an empty library | Phase 4: Retire image |
 | Studio | `/carousel-generator/studio`, `/studio/[template]` | 3 | Save as content type, or Save version | Discard draft |
 | Trends | `/carousel-generator/trends` | 5 | Analyse on the Digests section, on the newest unanalysed digest; none on the Feed | — |
 | · Details window | over Trends, from a post, a tile or a recent save (F16) | 5 | none | — |
 
-**Renamed 2026-09-21 (Garreth), design ticket D13, awaiting its boards:**
+**Renamed 2026-09-21 (Garreth), design ticket D13, approved 2026-09-22:**
 the **Direction** tab is now the **Writing** tab and the **Wiring** tab is now
 the **Go Live** tab, on every screen and in every flow below. Only the screens
 change: the `direction` column, the table `carousel_lane_directions`, the
 database step `carousel_wire_lane()` and the runbook keep their own names, and
 so does §4.8 of the plan, "Wiring a new content type", which is the process
-rather than the tab. **The two query strings above are deliberately left as
-`?tab=direction` and `?tab=wiring`** until D13 is approved; nothing is built
-yet, so nothing breaks either way, and the new words are a one-line change
-when the boards settle.
+rather than the tab. **The two query strings above moved with the screens on
+approval**, from `?tab=direction` and `?tab=wiring` to `?tab=writing` and
+`?tab=go-live`, because the address bar is something a person reads. Nothing
+is built yet, so nothing broke.
+
+**Writing is required before a type can generate (D13, approved 2026-09-22),
+and the stop is on the Generate form.** A type with nothing written keeps an
+ordinary, pressable Generate on its card and in its header, with a neutral
+**Needs writing** pill beside it; pressing it opens the form as always. The
+form draws its Writing row in the danger stroke and leaves its own Generate
+unavailable until everything required is filled — the same way it already
+handles a missing image library. One rule: *Generate always opens the form;
+the form names what is missing.*
 
 All screens work in dark and light mode, like every other page of the
 dashboard (Garreth, 2026-09-14). Dark is designed first; light uses the same
@@ -134,7 +143,10 @@ width.
      the library the content type points at, with **Change** to repoint it,
      or a required choice when it points at none), **Writing** (the active
      version shown read-only, with its version number and a link to the
-     Writing tab), **Note** (one line, optional), and for Glow Up the
+     Writing tab), **Note** (one line, optional, placeholder *anything
+     specific about this batch?* — D13, so the difference between the
+     standing Writing and the per-batch Note is shown rather than written on
+     the screen), and for Glow Up the
      per-batch choices from the template: **Opening line** (Fixed or Written).
      The form has no datestamp field (Garreth, 2026-09-14); where Glow Up's
      datestamp comes from is open (DEV-15). The closing line is always the
@@ -150,6 +162,15 @@ width.
      carousel type whose last batch was made in Auto opens with it already
      on; after that it is the person's. With it on the batch carries itself
      to the sign-off — see F2 step 7 and F3.
+     **A type with nothing written yet** (D13, approved 2026-09-22) arrives
+     here with its Writing row in the **danger stroke**: the line reads *No
+     writing* in red and **Write** stands in Edit's place, red with it — the
+     one red thing on the page. Generate at the foot of the form is
+     unavailable with *No writing* beside it, as it already is for a missing
+     library. The stroke is there when the form opens, not after a press,
+     because there is no press to fail. Only the Writing row is drawn this
+     way; the library row, just as missing on its own board, was left as
+     approved.
   4. Press Generate. The app creates the brief, the `content_batches` row
      and one empty deck card per requested deck, then opens Batch.
   5. Batch requests decks one at a time. Each card fills in as its copy
@@ -167,7 +188,11 @@ width.
 - **Accent action:** Generate (Carousel types and Generate).
 - **Hold:** none.
 - **Empty:** Carousel types has no first-run state, because lanes always exist. A lane
-  whose type is not wired shows a "Not wired" pill and no Generate button.
+  whose type is not wired shows a **"Not wired" pill and an ordinary Generate**
+  (Garreth, 2026-09-15, replacing "no Generate button"), so its first batch can
+  be made and judged before wiring; its approved decks wait for **Wire** on the
+  type's page (F11). A type that is both unwired and unwritten shows one pill
+  on the card — *Needs writing* — because that is the blocking one (D13).
 - **Fails:**
   - A lane already has a batch generating: its card's Generate becomes
     **Open running batch** (secondary). One active run per lane (plan §4.5).
@@ -179,6 +204,10 @@ width.
   - The tab is closed: nothing is lost; see F4.
   - The chosen library has no images in a set the template draws from:
     Generate is unavailable and the empty sets are named.
+  - The type has no Writing saved: Generate is unavailable with *No writing*
+    beside it, and the Writing row carries the danger stroke with **Write** in
+    it (D13). The card that opened the form was an ordinary button — the form
+    is where the requirement is named.
 - **Writes:** `carousel_briefs` (recording the library the batch used),
   `content_batches`, `carousel_drafts`, `carousel_draft_slides`, and
   `carousel_templates` when the library is repointed.
@@ -329,27 +358,39 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
   instead.
 - **Writes:** as F1, plus `carousel_briefs.rerun_of`.
 
-### F6. Edit the standing direction
+### F6. Edit the Writing — the standing instruction
 
 - **When:** the copy is drifting, or the team wants a new angle for a lane.
   Phase 2 as a plain editor; Phase 3 adds the conversation.
 - **Screens:** Content type, Writing tab.
 - **Steps (Phase 2):**
-  1. The tab shows the active direction, its version and date, and the list
-     of past versions.
+  1. The tab shows the active Writing, its version and date, and the list
+     of past versions. The template's **text-box names** are listed along the
+     foot of the editor card, left of Save version — `hook`, `line`,
+     `closing` — so the instruction is written against the boxes that exist
+     (D14).
   2. Edit the text. **Save version** writes a new version and makes it
      active. Past versions have **Make active**.
 - **Steps (Phase 3):**
-  1. A conversation panel beside the direction. Type what should change. The
-     bot proposes a revised direction, cites any knowledge rules it drew on,
-     asks at most one clarifying question, and says plainly when something
-     cannot be changed by direction.
+  1. A conversation panel beside the Writing, down the right at full
+     height. Type what should change. The bot proposes a revised instruction,
+     cites any knowledge rules it drew on, asks at most one clarifying
+     question, and says plainly when something the Writing cannot change —
+     how the carousel *looks* — belongs in the Studio instead.
   2. The proposal appears as a diff against the active version.
   3. **Save version** saves it. The bot never saves on its own.
 - **Accent action:** Save version.
 - **Hold:** none; nothing is overwritten, versions are kept.
-- **Empty:** first run (a lane with no direction yet): Save version on an
-  empty editor.
+- **Empty:** first run (a lane with nothing written yet): the editor carries
+  a grey placeholder showing the shape of a good instruction rather than an
+  instruction to write one, gone the moment anything is typed — *who is
+  speaking, and to whom · what each slide has to do · the words to use, and
+  the words never to use · how the caption should read*. Save version on an
+  empty editor (D13).
+- **Pre-filled and not saved:** a type saved out of the Studio opens with the
+  AI's draft note already in the editor, under a neutral **Not saved** pill.
+  It does not count as written: the requirement is met by a person having
+  read it and pressed Save version, not by the field being non-empty (D13).
 - **Fails:** the bot call fails: the error sits under the message, with Retry.
 - **Writes:** `carousel_lane_directions`.
 
@@ -511,8 +552,10 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
      beside the canvas). Sign-off happens on the rendered slide, not on the
      HTML canvas.
   8. **Save as content type** asks for a name, a character and a slug, saves
-     version 1 pointing at the chosen library, creates the standing
-     direction, and the type appears on Carousel types as Not wired.
+     version 1 pointing at the chosen library, and opens the Writing with the
+     draft note pre-filled but **not saved**. The type appears on Carousel
+     types as Not wired and carrying a **Needs writing** pill; it can generate
+     once someone has read that draft and pressed Save version (D13).
 - **Accent action:** Save as content type.
 - **Hold:** Discard draft. **Decided (Garreth, 2026-09-15):** Back keeps an
   unsaved draft and the Studio reopens on it next time; Discard draft is the
@@ -1106,8 +1149,8 @@ Nothing is left to decide before the screens.
 13. A template edit does not interrupt a batch already generating (F10).
 14. Unwired types approve and render into drafts; lane rows are written at
     wiring (F11).
-15. The wiring tab checks the n8n media entry against the published workflow
-    (F11).
+15. The Go Live tab checks the n8n media entry against the published
+    workflow (F11).
 16. **The music lookup runs as each deck is written** (Garreth, 2026-09-21,
     replacing "runs at approval", whose approval was dropped on 2026-09-14).
     It is what the screens already assume — D3 flags "Track not found on

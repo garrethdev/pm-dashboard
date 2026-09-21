@@ -89,7 +89,7 @@ and back of the pipeline.
 
 | # | Requirement | Where it lands |
 |---|---|---|
-| B1 | An AI bot where we set the direction and instructions for each carousel type | Directions page (§6.4) |
+| B1 | An AI bot where we set the direction and instructions for each carousel type | Writing tab (§6.4) |
 
 ### C. Remember
 
@@ -103,7 +103,7 @@ and back of the pipeline.
 | # | Requirement | Where it lands |
 |---|---|---|
 | D1 | A trend page that reads the daily study digest (from Virlo), finds patterns, and appends them to a knowledge base | Trends page (§6.5) |
-| D2 | That knowledge base is used when developing a new content type | Directions page reads it; Trends page writes it |
+| D2 | That knowledge base is used when developing a new content type | The Writing tab reads it; Trends page writes it |
 | D3 | Browse the whole reference library as a feed of carousels, best first | Trends page, Feed (§6.5) |
 | D4 | Search that library by text, and by account | Trends page, search bar (§6.5) |
 | D5 | Save a carousel and come back to it later | Trends page, Save on a card; `reference_favourites` (§5.3, §6.5) |
@@ -293,8 +293,9 @@ Two existing tables it leans on that this plan now reuses: `batch_briefs`
   image library in §6.8 should be this shape, not a third one.
 - **`api/direction-chat.js`**: the system prompt (converge fast, one
   clarifying question, at most two alternatives, be honest about what
-  direction cannot change) and the per-lane notes. The Directions page in
-  §6.4 is this endpoint with versions, persistence and citations added.
+  direction cannot change) and the per-lane notes. The Writing tab in
+  §6.4 is this endpoint with versions, persistence and citations added. The
+  endpoint keeps its own name, `direction-chat`; only the screen was renamed.
 - **`carousel-vision-qa.mjs`**: the render QA rubric (cut-off, overflow past
   65% of height, contrast, missing glyphs). Phase 1 runs it, or an in-app
   equivalent, before a deck is marked Ready.
@@ -673,15 +674,18 @@ browser's text layout and the server's are never identical to the pixel.
 Design sign-off happens on the rendered preview, not the HTML one.
 
 **Save as content type** asks for a name, a character and a content-type slug,
-snapshots the template as version 1 pointing at its image library, and
-creates the standing direction. The
-type then appears on the Carousel types page as "not wired", and its first batch can
-be generated and reviewed before anything touches the database schema.
+snapshots the template as version 1 pointing at its image library, and opens
+the **Writing** with the draft note pre-filled but **not saved** — saving it is
+a person's press, so someone has read it (§10 item 57; this corrects an earlier
+sentence here that said the save "creates the standing direction"). The type
+then appears on the Carousel types page as "not wired" and carrying a
+**Needs writing** pill, and its first batch can be generated and reviewed
+before anything touches the database schema — once the Writing is saved.
 
 ### 4.8 Wiring a new content type
 
 **On screen this is the Go Live tab** (Garreth, 2026-09-21, §10 item 56;
-design ticket D13, awaiting its boards). The name below — wiring — stays for
+design ticket D13, **approved 2026-09-22**). The name below — wiring — stays for
 the process, the database function `carousel_wire_lane()` and the runbook.
 
 The runbook `WIRE-NEW-CONTENT-TYPE.md` (workspace root) lists what a lane
@@ -722,7 +726,7 @@ requires a `HoldButton` to run it, writes an audit-log entry, and then
 verifies itself by reading `unified_posts` and `v_scheduler_pool` back and
 showing the new lane's row count. The n8n MEDIA entry and the cadence
 rebalance stay human steps, with the cadence editor that already exists in the
-dashboard linked from the wiring screen.
+dashboard linked from the **Go Live** tab.
 
 **Verified 2026-09-14 (Phase 1).** Option A was checked by reading the live
 definitions of everything downstream. Nothing assumes a fixed list of tables
@@ -1092,23 +1096,49 @@ There is **no "who ran it"** column: the app shows nobody's name anywhere
 Writing 7 of 20, Stopped, Not wired — and a status meaning something went
 wrong is red.
 
-### 6.4 Directions — `/carousel-generator/directions`
+### 6.4 Writing — a tab of the content type's page
 
-**Superseded twice, rewritten on D13's approval.** There is no separate
-Directions page: it is a tab of the content type's page (§6.7, dev tickets
-proposed default 6). And that tab is now called **Writing**, not Direction
-(Garreth, 2026-09-21, §10 item 55), because "direction" reads as how the
-carousel looks and this field only changes how the copy is written. The
-`direction` column and the table `carousel_lane_directions` keep their names.
-Everything this section says about what the field does still holds.
+**Rewritten 2026-09-22 on D13's approval, having been superseded twice.**
+This section was once a page of its own at `/carousel-generator/directions`.
+It is not one. It is the **Writing** tab of the content type's page (§6.7),
+reached at `/carousel-generator/types/[slug]?tab=writing`, and it is called
+Writing rather than Direction (Garreth, 2026-09-21, §10 item 55) because
+"direction" reads as how the carousel *looks*, which is the Studio's job and
+nothing this field can touch. Only the screen changed: the `direction` column
+and the table `carousel_lane_directions` keep their own names. Everything
+below about what the field does still holds.
 
-Left: the lanes. Right: the active direction for the selected lane, its
-version and date, and a conversation panel. The bot's job is narrow: propose
-a revised direction from what Garreth types plus the knowledge rules it cites,
-show the diff, and save a new version only when Garreth presses **Save
-version**. It never edits silently. Past versions are listed and can be made
-active again. Every batch records the direction version it used, so History
-can answer "which instruction produced this".
+The tab is the standing instruction the copy prompt is built from — one text
+column, words only. The editor fills the page, with a conversation panel down
+the right at full height and the template's **text-box names** listed along
+the foot of the editor card, left of Save version (`hook`, `line`, `closing`),
+so the instruction is written against the boxes that actually exist (D14). The
+bot's job is narrow: propose a revised instruction from what Garreth types
+plus the knowledge rules it cites, show the diff, and save a new version only
+when Garreth presses **Save version**. It never edits silently. Past versions
+are listed and can be made active again. Every batch records the version it
+ran under, so History can answer "which instruction produced this".
+
+**Three states** (D13):
+
+- **Empty** — a type saved out of the Studio with nothing written yet. The
+  editor carries a grey placeholder showing the shape of a good instruction
+  rather than an instruction to write one, gone the moment anything is typed:
+  *who is speaking, and to whom · what each slide has to do · the words to
+  use, and the words never to use · how the caption should read*.
+- **Pre-filled and not saved** — when a template was drafted from a reference
+  the AI has already written a note describing the construction. That text
+  opens in the editor as unsaved, under a neutral **Not saved** pill. It does
+  **not** count as written: the requirement is met by a person having read it
+  and pressed Save version, not by the field being non-empty.
+- **Saved** — the ordinary case.
+
+**Writing is required before a type can generate**, and the stop sits on the
+Generate form, not on the buttons that open it (§10 item 57). The type's card
+and header keep an ordinary, pressable Generate with a neutral **Needs
+writing** pill beside it; the Generate form draws its Writing row in the
+danger stroke and leaves the form's own Generate unavailable until everything
+required is filled, the same way it already handles a missing image library.
 
 ### 6.5 Trends — `/carousel-generator/trends`
 
@@ -1336,7 +1366,7 @@ three carousels.
 `content_knowledge_base` browsable by lane and confidence, with proposed rules
 shown as pending until accepted. Accepting appends the rule with
 `source_digest_id` and the session email. Rejecting records nothing. The
-Directions bot reads accepted rules; it never reads raw digests.
+Writing tab's bot reads accepted rules; it never reads raw digests.
 
 **Accepting and rejecting live on the Knowledge tab only.** A rule shown
 under its digest carries a Pending pill and nothing to press: reading what was
@@ -1375,9 +1405,9 @@ listed and can be made active again.
 ### 6.7 Content types — `/carousel-generator/types/[slug]`
 
 One page per content type, imported or studio-made: the active template
-version and its history, the standing direction (the Directions page of §6.4
-folds into this page as a tab), the batches run under it, and the wiring
-status with the wiring flow of §4.8 when the type is not yet a lane. The
+version and its history, the standing instruction (§6.4's Writing folds into
+this page as a tab), the batches run under it, and the **Go Live** tab
+carrying the wiring flow of §4.8 when the type is not yet a lane. The
 Carousel types page (§6.1) becomes the index of this page.
 
 ### 6.8 Library — `/carousel-generator/library`
@@ -1565,8 +1595,8 @@ designs are final.
   Render preview, versions.
 - AI template drafting from scratch and from a reference (vision pass over
   the reference's slides, plus its beats and visual notes from the library).
-- Directions conversation with versions and knowledge-rule citations (§6.4),
-  now inside the content-type page.
+- The Writing conversation with versions and knowledge-rule citations (§6.4),
+  now inside the content-type page as a tab.
 - Save as content type, appearing on Carousel types as "not wired"; a first batch can
   be generated and reviewed before wiring.
 
@@ -1740,7 +1770,7 @@ gets written and wired (design tickets D13, D14 and D15, open):
 | 54 | Does a character need a persona record, so every lane of that character sounds like one person? | **No.** Voice stays in the type's standing instruction and nowhere else. Garreth's reason: half a character's lanes are not that character speaking at all — `celebrity_peptide` is about someone else, `jealousy_quotes` and `mito_hooks` are nobody speaking. The stronger reason found while checking it: the standing instruction is **versioned**, and every deck records the direction version it ran under (§4.3), so voice living anywhere unversioned would make a deck's copy unreproducible from its own record. A shared `characters.persona` would also change every lane of that character at once with nothing to roll back to. The duplication this leaves is answered by **"Start from <type>'s writing"** in the Studio's save dialog — copied once, free to diverge after. `character` stays what it already is: which accounts post the lane, and which image library supplies the likeness. Checked live the same day: `characters` has no persona column (only `notes`, which is admin bookkeeping) and `batch_briefs.voice_profile` and `voice_dims` are null on both rows. |
 | 55 | What the copy instruction is called on screen | **Writing**, replacing Direction, because "direction" reads as how the carousel looks and this field only changes how the copy is written. Over "Copy" (collides with Duplicate) and "Voice" (too narrow). D13. |
 | 56 | What the Wiring tab is called on screen | **Go Live** — *Writing* and *Wiring* are one letter apart and sit in the same tab row, and Go Live says what it does. The database step keeps the name `wire` in the code and the runbook. D13. |
-| 57 | May a type generate with no writing instruction? | **No.** Generate is unavailable until the Writing has been saved, with the reason named the way a missing library already is. The Studio's drafted note pre-fills the editor but does not count as saved, so a person has read it. Supersedes §4.7's "Save as content type … creates the standing direction". D13. |
+| 57 | May a type generate with no writing instruction? | **No — but the stop is on the Generate form, not on the card.** Generate on the Carousel types card and in the type page's header stays an ordinary, pressable button, with a neutral **Needs writing** pill beside it saying what is missing; pressing it opens the Generate form as always. The form is what enforces the requirement: its Writing row is drawn in the danger stroke reading *No writing*, and **Generate at the foot of the form is unavailable until everything required is filled** — exactly as it already behaves for a missing image library or an empty image set. One rule instead of two: *Generate always opens the form; the form names what is missing.* (Garreth, 2026-09-22, after seeing the first round drawn: making the card's button dead created a dead end, because the only screen that could explain the problem was the one you could no longer reach.) The Studio's drafted note pre-fills the editor but does not count as saved, so a person has read it. Supersedes §4.7's "Save as content type … creates the standing direction". D13. |
 | 58 | How does the writer know what goes in each text box? | **The box is named**, and the name is its role in the copy contract, which also carries who writes it (AI, fixed, per batch) and how many characters fit. The Studio gains a Name field; the limit is measured from the box's wrap width and fonts rather than typed. No per-box description — what a box is for is said in the type's Writing, one place not two, with the box names listed beside that editor. D14. |
 
 Decided by Garreth on 2026-09-22, on the generator's front page (design

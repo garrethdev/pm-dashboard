@@ -8,19 +8,32 @@ questions still to answer are listed at the end, each with the ticket it
 holds up; none of them holds up Phase 2. Each ticket is one piece of work a
 developer or a build session can pick up, finish, and verify on its own.
 
-**Two tabs renamed 2026-09-21 (Garreth), design ticket D13, awaiting its
-boards.** The **Direction** tab is the **Writing** tab, and the **Wiring** tab
-is the **Go Live** tab; the tickets below use the new words. Only the screens
-change — the `direction` column, the table `carousel_lane_directions`, the
-database function `carousel_wire_lane()` and the runbook keep their own names,
-and so does plan §4.8, "Wiring a new content type", which is the process and
-not the tab. Three things wait on D13's approval rather than on the rename:
-**DEV-15** gains the required-Writing state and the Note's placeholder,
-**DEV-19b** gains the empty Writing editor with its guiding placeholder and
-the list of the template's text-box names beside it, and **DEV-21** gains the
-text-box Name field (D14). A fourth ticket for the **Rows** tab (D15) is
-written once that design is approved. The flows' `?tab=direction` and
-`?tab=wiring` query strings are deliberately unchanged until then.
+**Two tabs renamed 2026-09-21 (Garreth), design ticket D13, approved
+2026-09-22.** The **Direction** tab is the **Writing** tab, and the **Wiring**
+tab is the **Go Live** tab; the tickets below use the new words. Only the
+screens change — the `direction` column, the table
+`carousel_lane_directions`, the database function `carousel_wire_lane()` and
+the runbook keep their own names, and so does plan §4.8, "Wiring a new
+content type", which is the process and not the tab. The flows' query strings
+moved with the screens on approval: `?tab=writing` and `?tab=go-live`.
+
+**What D13's approval added to the tickets below.** **DEV-15** gained the
+required-Writing state and the Note's placeholder; **DEV-19b** gained the
+empty Writing editor with its guiding placeholder, the not-saved draft state
+and the list of the template's text-box names. Still waiting on designs that
+are open: **DEV-21** gains the text-box Name field when **D14** is approved,
+and a ticket for the **Rows** tab is written when **D15** is.
+
+**Where the Writing requirement is enforced — read this before building
+either ticket.** Generate on a carousel type's card and in its header is an
+**ordinary, pressable button** even when nothing has been written; it carries
+a neutral **Needs writing** pill beside it and opens the Generate form as
+always. The **form** is what enforces the requirement: its own Generate, at
+the foot, is unavailable until everything required is filled. One rule instead
+of two — *Generate always opens the form; the form names what is missing.*
+(Garreth, 2026-09-22. An earlier round made the card's button dead and created
+a dead end: the only screen that could explain the problem was the one you
+could no longer reach.)
 
 **Phase 5 amended 2026-09-17 (Garreth).** D10 was reopened and redesigned in
 place rather than drawn again under a new number, so the Trends page now opens
@@ -599,7 +612,18 @@ promises.
     loop and its own comment rules it out of anything that repeats, so the
     cards use a plain accent pill. A type with a running batch shows **Open
     running batch** (secondary) instead, with its progress as the status pill.
-  - Not wired: the pill and no Generate button.
+  - Not wired: the pill, and **an ordinary Generate** (Garreth, 2026-09-15,
+    replacing "no Generate button"; drawn on the approved D1 and D7 boards).
+    A type's first batch is made and judged before wiring; its approved decks
+    wait for **Wire** on the type's page (DEV-19b, Phase 4).
+  - **Needs writing** (D13, approved 2026-09-22): a type saved out of the
+    Studio with nothing written carries a **neutral** pill reading *Needs
+    writing* — no new pill colour, like *Not wired* — beside an **ordinary,
+    pressable Generate**, which opens the form as always. The form is where
+    the requirement is enforced (DEV-15). A card has room for one pill and
+    shows the blocking one, so a type that is both unwired and unwritten
+    shows *Needs writing*; the type page's header has room for both and shows
+    both (DEV-19b).
   - Read through the existing cached-fetcher pattern (`src/lib/data/cache.ts`)
     with its own tag, refreshed when a batch finishes.
 - **Done when:** the page shows Glow Up and Covered Eye with numbers that
@@ -616,11 +640,21 @@ promises.
   - **Image library** with **Change** and the library picker. A repoint saves
     a new template version with only the library changed.
   - **Writing** read-only with its version and a link to the Writing tab.
-  - **Note**, one line.
+  - **Note**, one line, placeholder *anything specific about this batch?*
+    (D13). No instruction text beside it — the placeholder does the
+    explaining.
+  - **A type with no Writing saved** (D13): the Writing row is drawn in the
+    **danger stroke**, its line reads *No writing* in red, and **Write**
+    stands in Edit's place in the row's corner, red with it — the one red
+    thing on the page. The stroke is there when the form opens, not after a
+    press. Only the Writing row is drawn this way; the library row is left as
+    D2 approved it.
   - The template's `per_batch` choices, rendered from the copy contract, not
     hard-coded per lane.
-  - Generate is unavailable with no library, or while a set the template
-    needs is empty, and the empty sets are named (DEV-06).
+  - Generate is unavailable with no library, while a set the template needs
+    is empty, or with no Writing saved, and the reason is named beside it —
+    *No image library*, *No images in Cover and Before*, *No writing*
+    (DEV-06, D13).
   - From the approved D2 (Garreth, 2026-09-14): **Undo** beside Change puts
     the previous library back after a repoint; the library picker lists each
     library's cover, name and image count, and opens as a centred modal on a
@@ -630,8 +664,10 @@ promises.
     Glow Up template prints a month and year on a slide for each batch. Where
     that value comes from is not decided yet.
   - Submit calls `POST batches` and opens the batch page.
-- **Done when:** a batch can be started for each lane from the form, and a
-  repoint shows up as a new template version by query.
+- **Done when:** a batch can be started for each lane from the form, a
+  repoint shows up as a new template version by query, and a type with
+  nothing written reaches this form from an ordinary Generate press and is
+  stopped here, not earlier.
 
 ### DEV-16. Batch page: writing and resuming
 
@@ -723,11 +759,31 @@ Stacked rows on phones. Adds History to the menu.
 
 **DEV-19b. Content type page, Overview and Writing tab** · M · depends on
 DEV-01 and approved D7 · flow F6 (Phase 2 steps). `/carousel-generator/types/[slug]`:
-details, template versions, its batches, Generate. The Writing tab as a
-plain editor: active version and date, **Save version** writes a new active
-version, past versions with **Make active**. Both writes in one database
-function so there is never zero or two active versions. **Edit template**
-arrives in Phase 3; the Go Live tab in Phase 4.
+details, template versions, its batches, Generate. The tab row reads
+**Overview · Writing · Go Live**. The Writing tab as a plain editor: active
+version and date, **Save version** writes a new active version, past versions
+with **Make active**. Both writes in one database function so there is never
+zero or two active versions. **Edit template** arrives in Phase 3; the Go Live
+tab in Phase 4.
+
+From the approved D13 (Garreth, 2026-09-22):
+- **The empty editor** carries a grey placeholder — the shape of a good
+  instruction, not an instruction to write one — gone the moment anything is
+  typed: *who is speaking, and to whom · what each slide has to do · the
+  words to use, and the words never to use · how the caption should read*.
+- **The Studio's drafted note pre-fills the editor and does not count as
+  saved**, under a neutral **Not saved** pill. The requirement is met by a
+  person having read it and pressed Save version, not by the field being
+  non-empty.
+- **The template's text-box names** are listed along the **foot** of the
+  editor card, left of Save version — `hook`, `line`, `closing` — and at the
+  foot of the card on a phone. Not beside it: the right-hand column is the
+  Conversation at full height, and moving the names to a side would mean
+  moving the Conversation (approved as drawn).
+- **The header shows both pills** when a type is fresh out of the Studio —
+  *Not wired* and *Needs writing* — where the card on Carousel types has room
+  for one and shows the blocking one. **Generate in the header stays an
+  ordinary button.**
 
 **DEV-19c. Image libraries, read-only** · S · depends on DEV-01 and approved
 D8 · flow F7 steps 1 and 2. The grid as boards — a mosaic of three of the
@@ -2103,7 +2159,8 @@ Things the plan and flows left unsettled, found while writing the tickets.
 5. **The template model's `lane jsonb` column is accepted**, since it is how a
    type that is not wired becomes wired by filling one column. DEV-01.
 6. **Plan §6.4's separate Directions page** is the content type page's
-   Writing tab, as in the flows. DEV-19b, DEV-25.
+   Writing tab, as in the flows — §6.4 was rewritten to say so on D13's
+   approval. DEV-19b, DEV-25.
 
 ### Checks built into tickets
 

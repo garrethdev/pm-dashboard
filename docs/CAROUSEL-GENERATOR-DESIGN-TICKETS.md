@@ -2096,6 +2096,19 @@ the edges are tested, not just the happy middle.
   - **Not renamed, deliberately:** the panel ids, the state names, the build
     files' own `dir*` names and `carousel_lane_directions.direction` itself.
     Only the screen changed, as the ticket says.
+  - **The docs were renamed on 2026-09-22**, after approval, as the last
+    bullet of this ticket required. The plan, the flows and the dev tickets
+    now say Writing and Go Live; §6.4 of the plan, which had been marked
+    "rewritten on D13's approval", was rewritten. The flows' query strings
+    moved with the screens, from `?tab=direction` and `?tab=wiring` to
+    **`?tab=writing`** and **`?tab=go-live`** — the flows had held them back
+    "until D13 is approved". Nothing is built, so nothing broke.
+    **§10 item 57 of the plan was corrected at the same time:** it still said
+    Generate is unavailable until the Writing is saved, which is the round
+    that was drawn and then undone. It now says what was approved — the card
+    and header keep an ordinary Generate, and the form's Generate is the one
+    that stays unavailable until everything required is filled (confirmed by
+    Garreth, 2026-09-22).
 - **What it is.** The word *direction* was doing two jobs. On the type page it
   names the standing instruction the copy prompt is built from —
   `carousel_lane_directions.direction`, one text column, words only. But
@@ -2166,9 +2179,8 @@ the edges are tested, not just the happy middle.
   pill colour (*Needs writing* is neutral, like *Not wired*), nobody named.
 - **Done when:** approved in dark and light at both sizes, and no screen in
   the generator says "Direction" or "Wiring" any more.
-- **Follows on approval, not before:** the rename reaches the plan (8 lines
-  saying Direction, 5 saying Wiring), the flows (5 and 3) and the dev tickets
-  (9 and 3). The docs are not renamed until the screens are approved.
+- **Followed on approval:** the rename reached the plan, the flows and the
+  dev tickets on **2026-09-22**. See the Status line. **Done.**
 
 ## D14. Naming a text box in the Studio
 
