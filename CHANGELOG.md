@@ -20,6 +20,138 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-21 — Strangers can no longer create a login account
+
+**Where it came from:** the 2026-09-09 outside code review's one security
+finding. This is the small, separable part of it, written up in `BACKLOG.md` on
+2026-09-11 and done on Garreth's say-so, 2026-09-21.
+
+**What was open.** The login system behind the dashboard would make an account
+for anyone who asked, using their own email. The allowlist (`ALLOWED_EMAILS`)
+still kept them out of the dashboard itself, but they came away with a real,
+valid login for the project. That mattered for the bigger fix still to come:
+when the database is eventually locked down, "signed-in people" has to mean the
+team, not anyone on the internet who registered.
+
+**What changed.** Garreth turned off "Allow new users to sign up" in the
+Supabase dashboard. It is a setting, not code, so nothing in the repo changed
+apart from this entry and the backlog.
+
+**Confirmed live, 2026-09-21.** The project's public settings now report signup
+as off. Two attempts to create an account with a never-seen email, one by magic
+link and one by password, were both refused with "Signups not allowed". The
+account list still holds the same five people and no test account was left
+behind. Checking beforehand showed nothing else uses this login system: all
+five accounts are dashboard people, and the n8n workflows reach the database
+with keys, which this switch does not touch.
+
+**What is different for the team.** Nothing for the five people who already
+have accounts. Adding someone new is now two steps instead of one: add their
+email to `ALLOWED_EMAILS` as before, *and* invite them once from Supabase
+(Authentication → Users → Invite user). Without the invite, their first
+sign-in shows "Couldn't send the link. Try again."
+
+**What this does not fix.** The database itself can still be reached with the
+project's public key, no account needed. That is the main finding, it is still
+open, and it is still on hold by Garreth's 2026-09-11 instruction. See "Close
+the anon-key hole on the database" in `BACKLOG.md`.
+
+## 2026-09-21 — The "data stopped arriving" alarm no longer depends on the public database key
+
+**Where it came from:** the same security finding as the entry above. Before
+the database can be locked down, everything that uses the public key has to be
+found and moved. Garreth asked for that search on 2026-09-21 and picked this
+alarm as the first one to move.
+
+**What the search found.** The public key is in daily use, which nobody knew:
+eleven n8n workflows (the whole Cleora line among them), some Python scripts,
+and the carousel review pages in the browser all have it pasted in. Locking the
+database today would have stopped all of them, and this alarm would have gone
+silent rather than loud. The full list is in `BACKLOG.md`; ten workflows are
+still to move.
+
+**What changed.** In the n8n workflow `[Health] Analytics Freshness Alarm`, the
+step that asks the database whether the feeds are fresh had the public key
+typed into it. It now signs in with the saved `Supabase Service Role`
+credential. Nothing else in the workflow changed, and nothing in this repo
+changed; the workflow lives in n8n.
+
+**How it was checked.** An exact copy of the changed step was run on its own,
+with no email step, so Czedrick did not get a duplicate alarm. It returned the
+same report the live step returns (two feeds stale, which is expected while
+posting is paused), and the database's own request log shows that call arriving
+with the master key and succeeding. The change is published and the live
+version matches the edited one. **Not yet seen:** a real scheduled run. The
+next one is 2026-09-22 at 10:00 ET; if the usual alarm email arrives, it works.
+
+**Nine more moved the same day, on Garreth's instruction.** Cleora Director,
+Cleora Writing Agent, Cleora Story Auto-Vetter, Cleora Story Research, Cleora
+Instagram Scout, Podcast Clips Ingest, the BA Journey Carousel Posting Agent,
+and the Embarrassed Angle Hook Writer and Scriptwriter. Same change in each:
+the pasted public key came out and the saved master-key credential went in.
+Everything else about each step was kept, including the settings that decide
+how a save behaves when the row already exists. One small repair rode along: a
+step in the Embarrassed Angle Scriptwriter had no sign-in attached at all and
+was already failing; it now has one.
+
+**One needed an extra step: the Cleora ASMR Scriptwriter.** It sits in a
+different n8n project from the saved credential and n8n refused the change at
+first. Garreth shared the credential with that project and it was moved later
+the same day. That makes all eleven: no n8n workflow we know of still uses the
+public key.
+
+**Two more workflows had the master key pasted in, and those were moved too**
+(Garreth's go-ahead, same day): the TikTok analytics ingest, six steps, and the
+Unified Posting Agent, six steps. This is a tidier change than the ones above:
+the pasted key and the saved credential are the same master key, confirmed step
+by step before editing, so these workflows can do exactly what they could
+before. What changes is that the key now lives in one place, which is what
+makes replacing it later possible without hunting through workflows. On the
+TikTok ingest, the slow-and-steady save settings that fixed the 2026-09-07
+overload were read back unchanged. First real runs: Posting Agent 2026-09-22
+10:00 ET (with the fleet paused it will read but probably not write), TikTok
+ingest 2026-09-23 08:30 ET.
+
+**A second pass the same day found five more and moved them:** the View-Collapse
+Detector (the account-health check that runs Tuesdays and Fridays), the BA Older
+Woman Hook Generator, the 2-slide BA Scriptwriter, the Pillar A Promoter and the
+Pre-Publish Gate. Same change, same checks, none run by hand. That brings the
+day to nineteen workflows touched; `BACKLOG.md` lists every one.
+
+**The same pass reviewed the nine database tables that already had access
+rules.** Seven of them have a rule that says "anyone with the public key may do
+anything", which is no rule at all, so the lockdown now covers 162 tables rather
+than 155. Two have real, narrow rules and are fine. Nothing was changed; this
+was a read.
+
+**Still open after today.** One public-key caller is not found yet (something
+in n8n reads the `conspiracy_kitchen` table a few times a week). Two workflows
+still read with the public key from inside a code step and would break at the
+lockdown. And one workflow, the Universal Caption Maker, will send the master
+key to whatever database address its caller gives it, which should be fixed
+before anything else in this list.
+
+**Not done, on purpose.** The Smart Scheduler, the Virlo bridge and two
+Embarrassed Angle workflows keep their keys inside code steps, where n8n cannot
+use a saved credential. Each needs a small rebuild rather than a swap. They are
+listed in `BACKLOG.md`.
+
+**Worth knowing.** Moving a key out of a workflow does not make the old key
+safe: n8n keeps every old version of a workflow, pasted key included, and the
+keys have been shown in full to tooling more than once. The old keys stop
+mattering only when they are replaced, which is still parked until Geelark is
+retired.
+
+**How these nine were checked, and what has not been seen yet.** None of them
+was run by hand, because they post, email and spend money. Each was checked for
+someone else's unfinished edits first, published, and read back to confirm the
+live version is the edited one and no public key is left. **No real run has
+happened yet for any of the nine.** The hourly Cleora ones run first; some only
+run weekly. Three of them carry on quietly when a save fails, so their first
+runs need a look at whether rows actually arrived. **If any of these workflows
+misbehaves, `BACKLOG.md` has the table of every workflow touched, with the
+version to restore in n8n's version history.**
+
 ## 2026-09-18 — Phone farm: Cloud and Physical fleets, a Devices page, and Facebook accounts
 
 **Garreth's request, 2026-09-18:** start the first three phone-farm tickets,
