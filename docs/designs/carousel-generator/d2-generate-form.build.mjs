@@ -12,6 +12,24 @@
  * Generate images form for those sets (D8) and comes back (Garreth,
  * 2026-09-15).
  *
+ * D13 (Garreth, 2026-09-21): the read-only Direction row is named **Writing**
+ * on the screen, and a type with no Writing saved cannot generate — the row
+ * reads "No writing" with Write in Edit's place, the reason sits beside
+ * Generate the way a missing library already does, and Generate is
+ * unavailable.
+ *
+ * Garreth's first review, 2026-09-22: **this form is where a missing Writing
+ * is required.** The card and the type page keep an ordinary Generate, so the
+ * form is always reachable; arriving here for a type with nothing written, the
+ * Writing row is drawn in the danger stroke so the requirement is impossible
+ * to walk past, and the way to write it is Write in the row's own corner. The
+ * stroke is on the row from the moment the form opens, not after a press:
+ * Generate here is unavailable, so there is no press to fail. The Note's placeholder now says what a Note is for, so the
+ * difference between the standing Writing and the per-batch Note is shown
+ * rather than written on the screen. Only the screen changes: the field is
+ * still carousel_lane_directions.direction, and this file's own dir* names
+ * are unchanged.
+ *
  * Run directly, it writes D2's review artboards and canvas.json, each screen
  * twice (Dark page, Light page):
  *   Main.dc.html          desktop 1440×900, ready to generate
@@ -20,6 +38,7 @@
  *   Picker.dc.html        desktop, the library picker open
  *   EmptySets.dc.html     desktop, the library has no images in two sets
  *   NoLibrary.dc.html     desktop, the type points at no library
+ *   NoWriting.dc.html     desktop, the type has no Writing saved (D13)
  * Imported, `generateScreen()` is the screen prototype.build.mjs opens from D1.
  *
  *   node docs/designs/carousel-generator/d2-generate-form.build.mjs <out dir>
@@ -111,10 +130,19 @@ function css(phone) {
 /* The empty sets' way out without leaving the form (Garreth, 2026-09-15). Nothing joins the library until Keep. */
 .libai { margin-top: 12px; }
 
-/* Direction — read-only: sunken, no field border, so it never reads as editable. */
+/* Writing — read-only: sunken, no field border, so it never reads as editable.
+   Named Direction until D13; the class names keep the field's own name. */
 .dir { border-radius: 16px; background: var(--card-sunken); border: 1px solid var(--border); padding: 10px 14px 12px; }
 .dirhead { display: flex; align-items: center; gap: 8px; }
 .dirdate { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+/* Nothing written yet: the same muted line the library uses for "No library" (D13). */
+.dirnone { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-muted); }
+/* Required, and not there (Garreth, 2026-09-22). One line at the field's own weight, in the screen's own danger
+   colour — the same red the empty set pills already use — so it reads as the thing standing in the way. */
+.dir.is-missing { border-color: var(--danger); }
+.dir.is-missing .dirnone { color: var(--danger); }
+.dir.is-missing .tbtn { color: var(--danger); }
+.dir.is-missing .tbtn:hover { color: var(--text-primary); }
 .dirhead .tbtn { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
 .dirtext { margin: 8px 0 0; font-size: 13px; line-height: 20px; color: var(--text-muted); text-wrap: pretty; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .dir.open .dirtext { -webkit-line-clamp: unset; }
@@ -281,16 +309,21 @@ function page(phone) {
             </div>
 
             <div class="frow">
-              <span class="flabel">Direction</span>
+              <span class="flabel">Writing</span>
               <div class="fctl">
-                <div class="dir {{dirCls}}">
+                <div class="dir {{dirCls}} {{dirMissingCls}}">
                   <div class="dirhead">
-                    <span class="pill tnum">Version 4</span>
-                    <span class="dirdate tnum">Sep 12</span>
-                    <button type="button" class="tbtn" onClick="{{editDirection}}">Edit${I.caretRightSm}</button>
+                    <sc-if value="{{hasWriting}}" hint-placeholder-val="{{ true }}">
+                      <span class="pill tnum">Version 4</span>
+                      <span class="dirdate tnum">Sep 12</span>
+                    </sc-if>
+                    <sc-if value="{{noWriting}}" hint-placeholder-val="{{ false }}"><span class="dirnone">No writing</span></sc-if>
+                    <button type="button" class="tbtn" onClick="{{editDirection}}">{{writeLabel}}${I.caretRightSm}</button>
                   </div>
-                  <p class="dirtext" id="dirtext">Open on a before-and-after people can picture in their own mirror. Keep every line under twelve words, warm and plain, never clinical. The after slide names one habit, never a product, and the caption ends on a question the viewer wants to answer.</p>
-                  <button type="button" class="tbtn more" aria-expanded="{{dirExpanded}}" aria-controls="dirtext" onClick="{{toggleDir}}">{{dirToggle}}</button>
+                  <sc-if value="{{hasWriting}}" hint-placeholder-val="{{ true }}">
+                    <p class="dirtext" id="dirtext">Open on a before-and-after people can picture in their own mirror. Keep every line under twelve words, warm and plain, never clinical. The after slide names one habit, never a product, and the caption ends on a question the viewer wants to answer.</p>
+                    <button type="button" class="tbtn more" aria-expanded="{{dirExpanded}}" aria-controls="dirtext" onClick="{{toggleDir}}">{{dirToggle}}</button>
+                  </sc-if>
                 </div>
               </div>
             </div>
@@ -298,7 +331,7 @@ function page(phone) {
             <div class="frow">
               <label class="flabel" for="note">Note<span class="opt">Optional</span></label>
               <div class="fctl">
-                <div class="field"><input id="note" type="text" maxlength="140" placeholder="Lean into winter skin" value="{{noteVal}}" onChange="{{typeNote}}" /></div>
+                <div class="field"><input id="note" type="text" maxlength="140" placeholder="anything specific about this batch?" value="{{noteVal}}" onChange="{{typeNote}}" /></div>
               </div>
             </div>
 
@@ -361,7 +394,9 @@ function vals(init) {
     var PHONE = ctx.PHONE;
     /* The carousel type it was opened for; Before & After when seen on its own. */
     var P = s.params || {};
-    var NAME = P.name || "Before & After";
+    var NAME = P.name || ${JSON.stringify(init.name || "Before & After")};
+    var CHARACTER = P.character || ${JSON.stringify(init.character || "Character 2")};
+    var SLIDES = P.slides || ${JSON.stringify(init.slides || "7 slides")};
     var D2AUTO = s.d2auto != null ? !!s.d2auto : !!P.lastAuto;
 
     /* Sample content only — invented libraries, sets and counts. */
@@ -386,14 +421,17 @@ function vals(init) {
     var closeAll = function (focus) { self.setState({ libOpen: false, returnFocus: !!focus }); };
 
     var clamp = function (n) { return Math.min(50, Math.max(1, n)); };
-    var ready = !!cur && empty.length === 0;
+    /* D13: a type with no Writing saved has nothing to write its copy from, so Generate is unavailable and says why,
+       in the same shape as the library's own reasons. The library is named first when both are missing. */
+    var HAS_WRITING = P.nowriting ? false : ${JSON.stringify(init.writing !== "none")};
+    var ready = !!cur && empty.length === 0 && HAS_WRITING;
 
-    var statusText = !cur ? "No image library" : empty.length ? "No images in " + list(empty) : "";
+    var statusText = !cur ? "No image library" : empty.length ? "No images in " + list(empty) : !HAS_WRITING ? "No writing" : "";
 
     return {
       genName: NAME,
-      genCharacter: P.character || "Character 2",
-      genSlides: P.slides || "7 slides",
+      genCharacter: CHARACTER,
+      genSlides: SLIDES,
       backToTypes: function () { ctx.open("types", null, "Back to Carousel types · D1"); },
 
       /* How many: pre-filled at 50 and stopping there as the person types (F1 step 3). */
@@ -438,12 +476,16 @@ function vals(init) {
       catchCls: (s.libOpen ? "on" : "") + (PHONE && s.libOpen ? " modal" : ""),
       closePops: function () { closeAll(false); },
 
-      /* Direction, read-only */
+      /* Writing, read-only. Edit becomes Write when there is nothing to edit, the way Change becomes Choose above. */
+      hasWriting: HAS_WRITING,
+      noWriting: !HAS_WRITING,
+      writeLabel: HAS_WRITING ? "Edit" : "Write",
+      dirMissingCls: HAS_WRITING ? "" : "is-missing",
       dirCls: s.dirOpen ? "open" : "",
       dirExpanded: s.dirOpen ? "true" : "false",
       dirToggle: s.dirOpen ? "Less" : "More",
       toggleDir: function () { self.setState({ dirOpen: !s.dirOpen }); },
-      editDirection: function () { ctx.open("type", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", size: P.size || "4:5", tab: "direction" }, "Opens the Direction tab for " + NAME + " · D7"); },
+      editDirection: function () { ctx.open("type", { name: NAME, character: CHARACTER, slides: SLIDES, size: P.size || "4:5", tab: "direction" }, "Opens the Writing tab for " + NAME + " · D7"); },
 
       noteVal: s.noteVal,
       typeNote: function (e) { self.setState({ noteVal: e.target.value }); },
@@ -471,7 +513,7 @@ function vals(init) {
         clearTimeout(self.busyTimer);
         self.busyTimer = setTimeout(function () {
           self.setState({ busy: false });
-          ctx.open("batch", { name: NAME, character: P.character || "Character 2", slides: P.slides || "7 slides", size: P.size || "4:5", count: s.count, auto: D2AUTO ? "on" : "" }, "Opens the batch: " + s.count + " decks of " + NAME + (D2AUTO ? ", in Auto mode" : "") + " · D3");
+          ctx.open("batch", { name: NAME, character: CHARACTER, slides: SLIDES, size: P.size || "4:5", count: s.count, auto: D2AUTO ? "on" : "" }, "Opens the batch: " + s.count + " decks of " + NAME + (D2AUTO ? ", in Auto mode" : "") + " · D3");
         }, 900);
       },
       submit: function (e) { e.preventDefault(); }
@@ -513,6 +555,11 @@ function build(OUT) {
     { file: "Picker.dc.html", phone: false, init: { libId: "window", libOpen: true }, title: "D2 · Library picker · Desktop", x: 0, y: 1040 },
     { file: "EmptySets.dc.html", phone: false, init: { libId: "kitchen", libOpen: false }, title: "D2 · Library with empty sets · Desktop", x: 1540, y: 1040 },
     { file: "NoLibrary.dc.html", phone: false, init: { libId: null, libOpen: false }, title: "D2 · No library chosen · Desktop", x: 0, y: 2080 },
+    /* D13 (Garreth, 2026-09-21): a type saved out of the Studio with no Writing. Generate is unavailable with the
+       reason beside it, and the Writing row reads No writing with Write in Edit's place. */
+    { file: "NoWriting.dc.html", phone: false, init: { libId: "window", libOpen: false, writing: "none", name: "Quiet Luxury Picks", character: "Character 4", slides: "5 slides" }, title: "D2 · A type with no writing yet: the requirement, in the danger stroke · Desktop", x: 3080, y: 1040 },
+    /* A phone board after a desktop one steps a whole 1540, not the 470 that separates two phone boards. */
+    { file: "PhoneNoWriting.dc.html", phone: true, init: { libId: "window", libOpen: false, writing: "none", name: "Quiet Luxury Picks", character: "Character 4", slides: "5 slides" }, title: "D2 · A type with no writing yet · Phone", x: 4620, y: 1040 },
     /* Auto mode (D12, Garreth 2026-09-21): the form's last row, off as the form opens (every board above), on here. */
     { file: "AutoOn.dc.html", phone: false, init: { libId: "window", libOpen: false, auto: true }, title: "D2 · Auto mode on, the way it opens for a type last generated in Auto · Desktop", x: 1540, y: 2080 },
     { file: "PhoneAutoOn.dc.html", phone: true, init: { libId: "window", libOpen: false, auto: true, toEnd: true }, title: "D2 · Auto mode on, the form's last row · Phone", x: 3080, y: 2080 },
@@ -535,7 +582,7 @@ function build(OUT) {
     }
   }
   const tryNote =
-    "Clickable. Try typing 64 into How many (it stops at 50), Change on the library and pick Kitchen Counter Shots or New library, Undo, More on the direction, Fixed and Written, the Auto mode switch, and Generate.\n\nEscape or a click outside closes a picker.\n\nScreens not designed yet show a Prototype note naming their ticket.";
+    "Clickable. Try typing 64 into How many (it stops at 50), Change on the library and pick Kitchen Counter Shots or New library, Undo, More on Writing, Fixed and Written, the Auto mode switch, and Generate.\n\nEscape or a click outside closes a picker.\n\nScreens not designed yet show a Prototype note naming their ticket.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(
