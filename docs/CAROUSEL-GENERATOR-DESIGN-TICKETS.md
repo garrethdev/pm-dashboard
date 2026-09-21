@@ -2195,7 +2195,13 @@ the edges are tested, not just the happy middle.
   placeholder, which is where format goes), no accent button added, no new
   pill colour (*Needs writing* is neutral, like *Not wired*), nobody named.
 - **Done when:** approved in dark and light at both sizes, and no screen in
-  the generator says "Direction" or "Wiring" any more.
+  the generator **names a tab** "Direction" or "Wiring" any more.
+  **The tabs, not every occurrence of the words** (corrected 2026-09-22, after
+  a check for the old names turned this up). Two D7 boards still read
+  *Wiring*, and correctly: the Go Live tab's button is called **Wire**, which
+  this ticket kept, and *Wiring* is what it says with a spinner while the hold
+  runs. A verb for a button named Wire is right; it is the tab that was
+  renamed. Nothing says *Direction* anywhere.
 - **Followed on approval:** the rename reached the plan, the flows and the
   dev tickets on **2026-09-22**. See the Status line. **Done.**
 - **Left for D13b (Garreth, 2026-09-22).** On the *Writing, nothing written
