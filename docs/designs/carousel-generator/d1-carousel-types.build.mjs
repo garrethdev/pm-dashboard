@@ -189,10 +189,15 @@ function page() {
 function vals(firstRun, waiting, waitText, waitTo) {
   return `
     var FIRST_RUN = ${firstRun};
-    /* How many finished decks of Before & After wait for Approve (D12); 0 on D1's own boards. */
+    /* How many finished decks of Before & After wait for Approve (D12); 0 on D1's own boards, where each waiting
+       state is a board of its own. */
     var WAITING = ${waiting};
     var WAIT_TEXT = ${JSON.stringify(waitText)};
     var WAIT_TO = ${JSON.stringify(waitTo)};
+    /* In the prototype a batch that has just finished says so here, so coming back to this screen shows the same
+       card the boards do, with the count it actually ended on. */
+    var W12 = s.d12waiting;
+    if (W12) { WAITING = W12.count; WAIT_TEXT = W12.text; WAIT_TO = W12.to; }
     var compact = function (v) { return v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? (v / 1e3).toFixed(1) + "k" : String(v); };
     var days = function (n) { return n === 1 ? "1 day" : n + " days"; };
 
@@ -234,7 +239,14 @@ function vals(firstRun, waiting, waitText, waitTo) {
         showLast: !(t.running || t.status === "unwired" || t.status === "retired" || (WAITING && t.id === "before-after")),
         isWaiting: !!WAITING && t.id === "before-after",
         waitText: WAIT_TEXT,
-        openWaiting: function () { ctx.open(WAIT_TO, { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", count: 20 }, WAIT_TO === "review" ? "Opens the written batch, with Render " + WAITING + " decks · D4" : "Opens the finished batch, with Approve " + WAITING + " decks · D5"); },
+        openWaiting: function () {
+          /* Back to the batch that is waiting, on the screen holding the press. A batch this prototype watched
+             finish carries its own shape back with it — how many decks, which ones Auto dropped — so it opens
+             where it was left rather than rendering itself all over again. */
+          var p = { name: t.name, character: t.character, slides: t.slides + " slides", size: t.size || "4:5", count: 20 };
+          if (W12 && WAIT_TO === "render") p = Object.assign(p, { total: W12.total, count: W12.total, dropped: W12.dropped, finished: 1, auto: "on" });
+          ctx.open(WAIT_TO, p, WAIT_TO === "review" ? "Opens the written batch, with Render " + WAITING + " decks · D4" : "Opens the finished batch, with Approve " + WAITING + " decks · D5");
+        },
         lastText: t.last ? "Last batch " + t.last : "No batches yet",
         hasPill: !!t.running || t.status === "unwired" || t.status === "retired",
         pill: t.running ? t.running : t.status === "unwired" ? "Not wired" : "Retired",

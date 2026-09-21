@@ -203,7 +203,7 @@ ${S} .deck.is-waiting .dn, ${S} .deck.is-upnext .dn { opacity: 0.5; }
 ${S} .deck.is-writing .sk { animation: d3-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 @keyframes d3-pulse { 50% { opacity: 0.5; } }
 /* The light theme's raised card is too close to its card for a skeleton to read, so the bar takes the border tone. */
-.is-light ${S} .sk { background: var(--border); }
+.is-light${S} .sk { background: var(--border); }
 
 /* Up next: a deck sent back with feedback, waiting its turn ahead of the unwritten ones. The note stays on it,
    as quoted text rather than a box, so it never reads as a field still open for typing. */
@@ -211,7 +211,7 @@ ${S} .dnote { margin: 0 0 12px; font-size: 13px; line-height: 20px; color: var(-
 
 /* Feedback open: the deck being edited is the same card in .glass (flows §3). */
 ${S} .deck.is-editing { background: var(--glass); border-color: var(--glass-border); box-shadow: var(--glass-highlight), var(--sh-card); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
-.is-light ${S} .deck.is-editing { border-color: color-mix(in srgb, var(--text-muted) 40%, var(--border)); }
+.is-light${S} .deck.is-editing { border-color: color-mix(in srgb, var(--text-muted) 40%, var(--border)); }
 ${S} .dfb { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 ${S} .dfb textarea { display: block; width: 100%; min-height: 84px; resize: none; margin: 0; border-radius: 16px; border: 1px solid var(--border); background: var(--card-sunken); padding: 10px 14px;
   font: inherit; font-size: ${phone ? 16 : 14}px; line-height: 20px; color: var(--text-primary); outline: none; transition: box-shadow 150ms var(--ease); }
@@ -231,7 +231,7 @@ ${S} .pill--quiet { display: inline-block; min-width: 0; flex-shrink: 1; overflo
    Regenerate keeps its full strength: it is the way back in. */
 ${S} .deck.is-dropped .dbody { opacity: 0.45; }
 /* Light mode dims on white, where the muted copy gives out sooner, so it keeps a little more of itself. */
-.is-light ${S} .deck.is-dropped .dbody { opacity: 0.62; }
+.is-light${S} .deck.is-dropped .dbody { opacity: 0.62; }
 
 /* Failed: the error and Retry take the hook's place, so the card keeps its height. */
 ${S} .derr { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; font-size: 13px; line-height: 20px; color: var(--danger); }
@@ -287,7 +287,7 @@ ${S} .dact .btn2::after { content: ""; position: absolute; inset: -5px 0; }
 `
     : ""
 }
-.is-light ${S} .prog { background: color-mix(in srgb, var(--bg) 85%, transparent); }
+.is-light${S} .prog { background: color-mix(in srgb, var(--bg) 85%, transparent); }
 @media (prefers-reduced-motion: reduce) {
   ${S} .deck.is-writing .sk { animation: none; opacity: 0.7; }
   ${S} .deck.is-new .dbody { animation: d3-fade 150ms linear; }
@@ -505,15 +505,34 @@ function vals({ auto, init }) {
       var st = self.state || {};
       if (st.screen !== "batch") { clearInterval(self.d3timer); self.d3timer = null; return; }
       var cur = (st.d3decks || seedFrom(st.params)).slice();
-      var bell = st.d3notif || (cur.some(function (d) { return d.st === "flagged"; }) ? "unread" : "none");
+      /* D12: Auto as it stands right now, not as it stood when the screen last drew. While it is on, nobody is
+         being asked for anything, so the bell stays quiet; paused, the batch is the person's again. */
+      var a12 = st.d12auto != null ? st.d12auto : ((st.params || {}).auto || "");
+      var bell = a12 === "on" ? "none" : (st.d3notif || (cur.some(function (d) { return d.st === "flagged"; }) ? "unread" : "none"));
       var w = -1, nx = -1;
       cur.forEach(function (d, i) { if (d.st === "writing") w = i; });
       if (w >= 0) {
         var d = Object.assign({}, cur[w], { fresh: true });
         if (d.n === 5 && !d.retried) d.st = "failed";
-        else if (d.n === 6 && !d.rewritten) { d.st = "flagged"; d.flag = FLAG; bell = "unread"; }
+        else if (d.n === 6 && !d.rewritten) { d.st = "flagged"; d.flag = FLAG; if (a12 !== "on") bell = "unread"; }
+        /* D12: deck 11 comes back flagged every time, so a run in Auto shows both endings — deck 6 saved on its
+           second try, deck 11 given up on after the third. It is only ever flagged while Auto is running; a
+           person's batch is the one that was approved, untouched. */
+        else if (a12 === "on" && d.n === 11 && (d.tries || 0) < 3) { d.st = "flagged"; d.flag = "Score 5.2"; }
         else { d.st = "written"; d.flag = ""; }
         cur[w] = d;
+      }
+      /* D12: in Auto a flagged deck is not an errand for anybody — the batch has another go at it, three times,
+         and then drops it and carries on. A deck that failed outright is picked up the same way. Paused, both
+         wait for the person, exactly as they do in a batch nobody automated. */
+      if (a12 === "on") {
+        cur.forEach(function (d, i) {
+          if (d.st !== "flagged" && d.st !== "failed") return;
+          var tries = (d.tries || 0) + 1;
+          cur[i] = tries >= 3
+            ? Object.assign({}, d, { st: "dropped", tries: 3, fresh: false })
+            : Object.assign({}, d, { st: "upnext", tries: tries, fresh: false, retried: true, rewritten: d.n === 6 });
+        });
       }
       cur.forEach(function (d, i) { if (nx < 0 && d.st === "upnext") nx = i; });
       if (nx < 0) cur.forEach(function (d, i) { if (nx < 0 && d.st === "waiting") nx = i; });
@@ -528,19 +547,28 @@ function vals({ auto, init }) {
            a moment after the last deck lands, carrying which decks are flagged. */
         var settled = !cur.some(function (d) { return d.st === "failed" || d.st === "editing"; });
         if (settled) {
-          var doneParams = Object.assign({}, st.params || {}, {
-            count: cur.length,
-            flagged: cur.filter(function (d) { return d.st === "flagged"; }).map(function (d) { return d.n; })
+          var flaggedNs = cur.filter(function (d) { return d.st === "flagged"; }).map(function (d) { return d.n; });
+          var droppedNs = cur.filter(function (d) { return d.st === "dropped"; }).map(function (d) { return d.n; });
+          var doneParams = Object.assign({}, st.params || {}, { count: cur.length, flagged: flaggedNs });
+          /* D12: the wait Auto takes away. A batch nobody automated stops here for Render n decks on D4; a batch
+             in Auto goes straight on to the rendering, carrying what it dropped, and stops at the sign-off. */
+          var autoParams = Object.assign({}, doneParams, {
+            total: cur.length, dropped: droppedNs, auto: "on"
           });
           setTimeout(function () {
-            if ((self.state || {}).screen === "batch") ctx.open("review", doneParams, "Every deck written. Review and render · D4");
+            if ((self.state || {}).screen !== "batch") return;
+            if (a12 === "on") ctx.open("render", autoParams, "Every deck written. Auto renders them itself · D5");
+            else ctx.open("review", doneParams, "Every deck written. Review and render · D4");
           }, 1200);
         }
       }
     };
     var busy = decks.some(function (d) { return d.st === "writing" || d.st === "upnext" || d.st === "waiting"; });
     var working = decks.some(function (d) { return d.st === "writing"; }) || decks.some(function (d) { return d.st === "upnext"; });
-    if (AUTO && s.screen === "batch" && s.d3mode !== "stopped" && busy && !self.d3timer && (working || s.d3auto)) {
+    /* D12: Auto still has work when nothing is being written — a flagged or failed deck it can take back. This is
+       what makes Resume pick a paused batch up again, after the writer's timer had stopped with nothing to do. */
+    var a12Work = A12 === "on" && decks.some(function (d) { return d.st === "flagged" || d.st === "failed"; });
+    if (AUTO && s.screen === "batch" && s.d3mode !== "stopped" && (busy || a12Work) && !self.d3timer && (working || s.d3auto || a12Work)) {
       self.d3timer = setInterval(tick, 800);
     }
     if (INIT_SCROLL && !self.d3scrolled) {
@@ -578,8 +606,9 @@ function vals({ auto, init }) {
         pillFailed: d.st === "failed",
         pillUpnext: d.st === "upnext",
         /* D12: Auto's second and third goes at a deck, and the deck it gave up on. A dropped deck says only that,
-           with its reason beside it in the neutral tone. */
-        a12Tries: (d.tries || 0) > 0 && d.st !== "dropped",
+           with its reason beside it in the neutral tone. The count belongs to a deck Auto is still having a go at
+           — Rewriting or Up next — so it goes once the deck lands, rather than following a finished deck around. */
+        a12Tries: (d.tries || 0) > 0 && (d.st === "upnext" || d.st === "writing"),
         a12TriesText: "Try " + (d.tries || 0) + " of 3",
         a12Dropped: d.st === "dropped",
         flag: d.flag || FLAG,

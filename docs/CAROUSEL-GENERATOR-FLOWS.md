@@ -43,10 +43,10 @@ Words used on screen for a deck's state, and their existing Pill tones:
 | Writing | `accent` | The model call for this deck is in flight |
 | Written | `neutral` | Every copy role, the caption and music exist |
 | Flagged | `warn` | Score below 6.0, a compliance hit, a Content Risk Gate rejection (with the gate's reason), a vision-check hit after rendering, or its track could not be found on TikTok or Instagram. Never rendered while flagged; never released. |
-| Approved | `ok` | A person accepted the copy |
 | Rendering | `accent` | The painter has claimed the row |
 | Rendered | `ok` | Every slide uploaded and on the lane row |
-| Approved | `ok` | Approved on the finished batch by Approve (n) decks; in the scheduler's pool (Garreth, 2026-09-15) |
+| Approved | `ok` | Approved on the finished batch by Approve (n) decks; in the scheduler's pool (Garreth, 2026-09-15). **The only approval in the app** — there has been no per-deck Approve since 2026-09-14 |
+| Dropped | `neutral` | Auto gave up after three tries (D12): kept, dimmed, with its reason; never rendered, never approved, still regenerable |
 | Failed | `danger` | The last attempt errored; Retry is on the card |
 
 **Decided (Garreth, 2026-09-14): the last state was "Generated".** The plan
@@ -66,7 +66,7 @@ no longer used on a card.
 | Generate hub | `/generate` | built 2026-09-14 | none; each card opens its generator | — |
 | Carousel types | `/carousel-generator` | 2 | Generate on every card, all the same accent button | — |
 | Generate | `/carousel-generator/generate?lane=` | 2 | Generate | — |
-| Batch | `/carousel-generator/batches/[id]` | 2 | Render approved, once anything is approved | Discard deck; Withdraw approval |
+| Batch | `/carousel-generator/batches/[id]` | 2 | Render (n) decks, once the writing is done; Approve (n) decks on the finished batch | Discard deck, in the More menu |
 | History | `/carousel-generator/history` | 2 | Only in the first-run empty state: Generate | — |
 | Content type | `/carousel-generator/types/[slug]` | 2 | Generate | — |
 | · Direction tab | same, `?tab=direction` | 2 plain, 3 conversation | Save version | — |
@@ -134,11 +134,20 @@ width.
      **Undo** beside Change puts the previous library back. On a phone,
      Generate sits in a bottom bar with the reason it is unavailable beside it
      (D2, approved by Garreth 2026-09-14).
+     **Auto mode** (D12, approved 2026-09-21) is the form's last row: one
+     switch, off by default, its own label and no instruction text. A
+     carousel type whose last batch was made in Auto opens with it already
+     on; after that it is the person's. With it on the batch carries itself
+     to the sign-off — see F2 step 7 and F3.
   4. Press Generate. The app creates the brief, the `content_batches` row
      and one empty deck card per requested deck, then opens Batch.
   5. Batch requests decks one at a time. Each card fills in as its copy
      arrives. The progress line reads "7 of 20 written" and is announced
-     politely to screen readers.
+     politely to screen readers. **In Auto the server drives this, not the
+     page** (DEV-48), the progress line carries an **Auto** pill and **Pause
+     auto**, and a flagged deck is rewritten by the batch itself — three
+     tries, then **Dropped**, which leaves the count and is named beside it:
+     "11 of 18 written" with "2 dropped".
   6. As each deck's copy lands, the app scores it and sends its hook, slide
      copy and caption to the **Content Risk Gate** webhook (the same gate n8n
      runs nightly for the other lanes; Garreth, 2026-09-15). A rejection
@@ -163,52 +172,52 @@ width.
   `content_batches`, `carousel_drafts`, `carousel_draft_slides`, and
   `carousel_templates` when the library is repointed.
 
-### F2. Review and approve
+### F2. Review what was written, and send it to the painter
 
-- **When:** decks are arriving on a batch. Phase 2.
-- **Screens:** Batch.
+*Rewritten 2026-09-21. It still described a per-deck **Approve**, an
+**Approve all unflagged** and a **Withdraw approval**, none of which exist:
+the per-deck approval was dropped on 2026-09-14, and since then the only
+sign-off in the app is **Approve (n) decks** on the finished batch (F3). The
+one press on this screen is **Render (n) decks**. D4 is the approved design.*
+
+- **When:** every deck of a batch has been written. Phase 2.
+- **Screens:** Batch (the review state, D4).
 - **Steps:**
   1. A card shows the hook large, every slide's copy as a numbered list, the
      caption, the music, and the state pill. Flagged cards say why in the pill
      ("Score 5.2", "Compliance: brand name", "Track not found on TikTok").
-  2. **Approve** on a card. **Proposed:** the lane row is written 5 seconds
-     later, not at once; pressing the card's Approve again inside that window
-     cancels it. The card shows Approved immediately. When the window closes,
-     the deck's track is checked against the music library; a track that is
-     new, or missing a link, is found on TikTok and Instagram first (F14). The
-     lane row is written only once both are found.
-  3. **Approve all unflagged** approves every Written card at once and shows
-     a toast with **Undo** for 5 seconds; nothing is written until the toast
-     closes.
-  4. **Redo** on a card writes version 2 of that deck. The previous version
-     stays reachable from a version switcher on the card.
-  5. **Redo slide** on a single slide rewrites that slide with the rest of
-     the deck as context. **Proposed:** this also creates a new version, with
-     only that slide changed, so "which version was approved" is always one
-     row.
-  6. Approve and Redo are pressed dozens of times per batch: press feedback
-     only, no other motion. **Proposed:** keyboard `A` approve, `R` redo,
-     `J` and `K` next and previous card.
-- **Accent action:** none until something is approved; then Render approved
-  (F3).
-- **Hold:**
-  - **Discard deck**, on a card that is not approved.
-  - **Withdraw approval** (**Proposed**), on an approved card whose lane row
-    has not yet been claimed for rendering. It deletes that lane row and
-    returns the card to Written, so Redo is available again. Once rendering
-    has started, withdrawing is not offered; rejection then happens at
-    gatekeeping, outside the app, as today.
-- **Empty:** all clear, once every card is approved or discarded.
+  2. **Regenerate** at the foot of a card opens the feedback box with a
+     picker — **Deck**, **Hook**, or a slide number. A whole deck waits as
+     **Up next**; one slide rewrites in place while the rest stays readable.
+     Either way it is a new version.
+  3. A deck with more than one version carries **Version 2 of 2**: arrows on
+     the card's edges on the desktop, a sideways swipe on the phone. The
+     version showing is the version that counts — there is no separate "use
+     this one".
+  4. **Retry music lookup** is the track's own button, with a caret opening
+     **Change track**, a search of the music library. A changed track is a new
+     version with only the music different.
+  5. **Discard deck** sits in the card's **More** menu, so twenty cards do not
+     each carry a red button.
+  6. **Render (n) decks** is the one press: it names its count and leaves out
+     flagged decks and tracks still being checked. "3 flagged" in the progress
+     line jumps from one flagged deck to the next. Nothing is written to a
+     lane row on this screen.
+  7. **In Auto mode (D12) this screen is skipped**: the batch renders itself
+     and the person meets it again at the finished batch. Pausing hands it
+     back and the press returns.
+- **Accent action:** Render (n) decks.
+- **Hold:** Discard deck, in the More menu.
+- **Empty:** not applicable — the screen exists because there are decks.
 - **Fails:**
-  - The quality gate call fails: the card is Flagged "Not scored" and stays
-    approvable.
+  - The quality gate call fails: the card is Flagged "Not scored" and is left
+    out of Render, like any other flagged deck.
   - Two people open the same batch: the second sees it read-only, with who is
     running it and when it last moved (plan §4.2).
-- **Writes:** `carousel_drafts` (`human_approved`, `approved_by`,
-  `approved_at`, new versions), `carousel_draft_slides`, the lane table on
-  materialise (`glowup_decks` with `render_status = 'queued'`,
-  `covered_eye_carousel` with `status = 'scripted'`, both with
-  `gatekeep_status = 'pending'`, `approved = false`, `scheduler_ready = false`).
+- **Writes:** `carousel_drafts` (new versions) and `carousel_draft_slides`.
+  **The lane row is written when the deck is rendered, not here**, and it
+  carries the gate's verdict on `gatekeep_status` — never `'pending'` — with
+  `approved = false` and `scheduler_ready = false` until F3's Approve.
 
 ### F3. Render and approve
 
@@ -240,6 +249,10 @@ width.
   7. Regenerated decks rewrite (F1 step 6 runs again), render again, and
      rejoin the finished line, where Approve offers them next.
 - **Accent action:** Render, then Approve (n) decks.
+- **In Auto mode (D12):** the rendering starts by itself, with no Render
+  press, and a deck the vision check flags is rewritten and rendered again,
+  three times, then **Dropped**. The batch still stops at **Approve (n)
+  decks** — Auto never approves — and rings the bell once, **Batch finished**.
 - **Hold:** none.
 - **Empty:** all clear once every deck is approved or discarded.
 - **Fails:**
@@ -269,8 +282,9 @@ width.
      column says how far it got (Garreth, 2026-09-16, approving D9).
   2. Opening it shows Batch with everything already done, and **Continue**
      where the progress line was.
-  3. Continue picks up the unwritten decks, or the unrendered approved ones,
-     whichever stage it stopped in.
+  3. Continue picks up the unwritten decks, or the unrendered ones, whichever
+     stage it stopped in. (It used to say "the unrendered **approved** ones";
+     there is no per-deck approval to pick up — corrected 2026-09-21.)
 - **Accent action:** Continue, while the batch is stopped.
 - **Hold:** none.
 - **Empty:** not applicable.
@@ -289,7 +303,9 @@ width.
      Scheduler can see. There is no "who ran it": the app shows nobody's name
      anywhere, and the status column takes that place — Done, Writing 7 of 20,
      Stopped, Not wired, a status meaning something went wrong in red
-     (Garreth, 2026-09-16, approving D9).
+     (Garreth, 2026-09-16, approving D9). **Since D12** it also says what a
+     batch is waiting for — **18 to render**, **18 to approve**, neither of
+     them red — and an Auto batch carries a neutral **Auto** pill.
   2. **Run again** on a row clones lane, count, note and per-batch
      copy choices under the **current** direction version and image library, and opens the new
      batch, generating.
@@ -669,8 +685,14 @@ width.
 
 ### F14. Find a new track on TikTok and Instagram
 
-- **When:** an approved deck's track is not an active `music_library` track
-  with both a TikTok video and an Instagram reel. Phase 2, for every lane.
+- **When:** a deck has just been written and its track is not an active
+  `music_library` track with both a TikTok video and an Instagram reel.
+  Phase 2, for every lane. **Corrected 2026-09-21:** this said "an *approved*
+  deck's track", and the lookup was set to run after approval so discarded
+  decks cost nothing. That approval was dropped on 2026-09-14 and what
+  replaced it happens after the rendering — too late to stop a deck whose
+  track cannot post from being painted. The lookup now runs as each deck is
+  written, which is also the only timing Auto can retry against (D12).
   Garreth's decision, 2026-09-14: the writer may choose any track available
   on TikTok or Instagram, and a track missing from the library has its
   sources found first.
@@ -699,9 +721,14 @@ width.
      matches the song and artist and does not use original audio. Its link
      becomes `same_style_url`.
   6. Both found: the track is added to `music_library` as active (or the
-     existing row's missing link is filled), the deck's `music` column gets
-     the exact `artist - title`, and the lane row is written. The card shows a
-     small "New track" note beside the music.
+     existing row's missing link is filled) and the deck's `music` column
+     gets the exact `artist - title`. The card shows a small "New track" note
+     beside the music. **The lane row is written when the deck is rendered**,
+     not here (corrected 2026-09-21).
+  7. **A track found once is free from then on.** It is in the library, so
+     every later deck that picks it — in this batch and in every future one
+     — matches at step 3 and costs nothing. The lookup is paid per new track,
+     not per deck.
   7. Either not found after 5 checks on that platform (Garreth, 2026-09-14):
      the card is Flagged "Track not found on TikTok" (or Instagram, or both)
      for a person to act on, and the lane row is not written.
@@ -1054,19 +1081,28 @@ Nothing is left to decide before the screens.
 
 **Proposed defaults, accepted unless changed**
 
-8. Approve writes the lane row after a 5-second window, for single and bulk
-   approvals alike (F2).
+8. ~~Approve writes the lane row after a 5-second window~~ — **dead since
+   2026-09-14**: there is no per-deck Approve. The lane row is written when
+   the deck is rendered (F2, F3).
 9. Redo on one slide creates a new version (F2).
-10. Keyboard `A`, `R`, `J`, `K` on the batch page (F2).
-11. Withdraw approval, as a hold, until rendering starts (F2).
+10. Keyboard on the batch page: **J and K** move between cards and **R**
+    opens the focused card's feedback box (D4). The `A` for approve is gone
+    with the press it belonged to.
+11. ~~Withdraw approval, as a hold, until rendering starts~~ — **dead since
+    2026-09-14**, for the same reason. Rejection after rendering happens at
+    gatekeeping, outside the app, as it does today.
 12. The stuck-row sweeper runs on page load and on Render, not on a timer (F3).
 13. A template edit does not interrupt a batch already generating (F10).
 14. Unwired types approve and render into drafts; lane rows are written at
     wiring (F11).
 15. The wiring tab checks the n8n media entry against the published workflow
     (F11).
-16. The music lookup runs at approval, not while the copy is being written,
-    so discarded decks cost no lookups (F14).
+16. **The music lookup runs as each deck is written** (Garreth, 2026-09-21,
+    replacing "runs at approval", whose approval was dropped on 2026-09-14).
+    It is what the screens already assume — D3 flags "Track not found on
+    TikTok" while the batch writes, D4 offers Retry music lookup — and the
+    only timing Auto can retry against. The cost is per new track, not per
+    deck, because a track found once is in the library (F14).
 17. The 26 library tracks with a missing or wrong link are repaired when a
     deck chooses them (F14).
 18. Glow Up's `transition_line` stops being written, since no slide draws it

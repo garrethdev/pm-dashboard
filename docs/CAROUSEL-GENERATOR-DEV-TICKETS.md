@@ -21,7 +21,7 @@ Companion documents, read before starting any ticket:
 |---|---|
 | `CAROUSEL-GENERATOR-PLAN.md` | Why, the architecture (§4), the data model (§5), the phases (§9) |
 | `CAROUSEL-GENERATOR-FLOWS.md` | What every screen does, step by step (F1 to F16), and the deck state words |
-| `CAROUSEL-GENERATOR-DESIGN-TICKETS.md` | The approved screens (D1 to D11); D10 is reopened for its second round, the Trends feed and search (2026-09-17) |
+| `CAROUSEL-GENERATOR-DESIGN-TICKETS.md` | The approved screens (D1 to D12). D10 was reopened for its second round, the Trends feed and search (2026-09-17); **D12, Auto mode, was added and approved on 2026-09-21** and is Phase 6 here |
 | `CAROUSEL-TEMPLATE-MODEL.md` and `carousel-templates/*.v1.json` | The contract the painter and the Studio share |
 | `CAROUSEL-RENDERER-PORT-SPEC.md` | The exact layout numbers, the race guard, the bugs not to port |
 | `WIRE-NEW-CONTENT-TYPE.md` (workspace root) | What a lane needs before the rest of the system can see it |
@@ -41,6 +41,7 @@ comes after everything it depends on.
 | 3. The front | DEV-21 to DEV-26 | A new carousel type made in the Studio, first batch reviewed, not yet wired |
 | 4. The back | DEV-27 to DEV-31, and DEV-41 | That type wired and posting; libraries fillable by upload and Higgsfield |
 | 5. Learning | DEV-32 to DEV-40, DEV-42 to DEV-47 | Trends opens on a searchable, filterable feed of the carousels a person has not seen, opens a post's details, analysis and transcription, reads digests, proposes rules, and opens references in the Studio |
+| 6. Auto mode | DEV-48 to DEV-53 | A batch started in Auto writes, retries its own flagged decks, renders and stops at Approve (n) decks, with the dashboard closed |
 
 **Sizes** are rough guesses for one developer: **S** a day or less, **M** two
 to three days, **L** about a week. They are for planning the order, not
@@ -201,20 +202,31 @@ promises.
 - **Size:** M.
 - **Depends on:** DEV-01.
 - **Flows:** F2 step 2, F3 step 2. **Port spec:** §C.3.
-- **Why a function:** "Approve all unflagged" on 20 decks sends 20 approvals
-  at once. Glow Up ids are `GU-<n>` and Covered Eye `CE-<n>`; two approvals
+- **Why a function:** **Render (n) decks** sends a whole batch to the painter
+  at once, and in Auto the worker does the same without anyone pressing
+  anything. Glow Up ids are `GU-<n>` and Covered Eye `CE-<n>`; two decks
   computing "highest plus one" at the same moment would collide. The id, the
-  lane row and the pointer back to the draft must land together.
+  lane row and the pointer back to the draft must land together. (This used
+  to say "Approve all unflagged on 20 decks sends 20 approvals at once"; that
+  press was dropped on 2026-09-14 — corrected 2026-09-21. The race it
+  describes is the same one, now run by rendering.)
 - **Build:**
   - `carousel_materialise_draft(draft_id, lane_values jsonb)`: takes a lock
     per lane, allocates the next id for that lane's format, inserts the lane
     row with exactly the template's `lane.set_on_materialise`, and stores the
-    lane row id in the draft's `generation_metadata.lane_row_id`. Refuses a
-    draft that is not approved, or already materialised.
+    lane row id in the draft's `generation_metadata.lane_row_id`. **Refuses a
+    draft that is already materialised, flagged, or dropped** — it used to
+    refuse "a draft that is not approved", and there is no per-deck approval
+    to check (corrected 2026-09-21). It is the painter that calls this, when
+    the deck renders.
   - `carousel_withdraw_approval(draft_id)`: deletes the lane row **only if**
     it has not been claimed for rendering (`render_status = 'queued'` for
     Glow Up; `status = 'scripted'` and `rendered_at is null` for Covered Eye),
     and returns the draft to Written. Refuses otherwise.
+    **No screen calls this any more** (2026-09-21): Withdraw approval went
+    with the per-deck approve on 2026-09-14, and rejection after rendering
+    happens at gatekeeping, outside the app. Do not build it unless something
+    asks for it.
   - The render claim stays the conditional update from port spec §C.3; wrap
     both lanes' versions in one `carousel_claim_render(content_type, id)`
     function so the route does not build filter strings.
@@ -428,8 +440,21 @@ promises.
     lookup failed".
   - Every post opened, and why it was accepted or rejected, goes in the
     draft's `generation_metadata`.
-  - Runs **after approval**, not while writing, so discarded decks cost no
-    lookups.
+  - Runs **as each deck is written**, right after the copy lands, so a track
+    that cannot post is flagged on the card while the batch is still writing
+    (D3) and can be fixed on the review screen before anything is rendered
+    (D4's **Retry music lookup** and **Change track**). **Decided
+    2026-09-21**, replacing "runs after approval, not while writing, so
+    discarded decks cost no lookups": the approval it waited for was dropped
+    on 2026-09-14, and it sat after the rendering, which is too late to save
+    the cost of painting a deck whose track cannot post. Auto mode needs this
+    timing too — a missing track is one of the flags it retries three times
+    (DEV-49), and Auto never sees the review screen.
+  - **The cost is per new track, not per deck.** A track found once is
+    written into `music_library`, so every later deck that picks it — in
+    this batch and in every future one — is a database match and free. What
+    this timing spends that the old one did not is the lookups for a new
+    track on a deck later discarded.
 - **Tests:** normalised matching; the fixtures, including the "Karma"
   re-upload that must be rejected; the five-candidate cap.
 - **Done when:** the tests pass and one real new track is found on both
@@ -448,19 +473,20 @@ promises.
   |---|---|
   | `POST batches` | Creates the brief (recording template version, library, direction version, per-batch choices, `rerun_of`), the `content_batches` row named `{type}-{YYYY-MM-DD}-{letter}`, and one empty draft slot per deck. A second running batch on the lane returns the running one's id. |
   | `GET batches/[id]` | Everything the batch page needs, including who is running it and when it last moved |
-  | `POST batches/[id]/decks/[position]/write` | Writes, or retries, one deck; runs the gate |
+  | `POST batches/[id]/decks/[position]/write` | Writes, or retries, one deck; runs the gate and the music lookup (DEV-10), so a bad score or a track that cannot post flags the card while the batch is still writing |
   | `POST batches/[id]/continue` | Returns the next unfinished step, for resuming |
-  | `POST drafts/[id]/approve` and `…/unapprove` | Approve sets `human_approved`, `approved_by`, `approved_at` at once; unapprove is only accepted while the draft is not materialised |
-  | `POST drafts/[id]/materialise` | After the 5-second window: runs the music lookup, then `carousel_materialise_draft` |
+  | `POST batches/[id]/render` | **Render (n) decks**: takes every written, unflagged deck and hands it to the painter (DEV-12), which writes the lane row |
+  | `POST batches/[id]/approve` | **Approve (n) decks** on the finished batch: the one sign-off (DEV-18) |
   | `POST drafts/[id]/redo`, `…/redo-slide`, `…/change-track` | New versions (DEV-08) |
   | `POST drafts/[id]/withdraw` | `carousel_withdraw_approval` |
   | `POST drafts/[id]/discard` | Marks the draft discarded; not offered once approved |
   | `POST batches/[id]/finish` | **Finish here**: closes a stopped batch with what was done, freeing the lane |
 
-  - **The 5-second window lives on the server, not only in the page.** The
-    page calls materialise after five seconds, and the batch page load and
-    Render approved also materialise any approved draft older than five
-    seconds. Closing the tab inside the window does not lose the approval.
+  - **No per-deck approve, and no 5-second window.** Both were dropped on
+    2026-09-14 (corrected here 2026-09-21). A deck is written, checked by the
+    gate and by the music lookup, and then either regenerated or sent to the
+    painter by **Render (n) decks**; the lane row is written when it renders.
+    The only approval is **Approve (n) decks** on the finished batch.
   - **Read-only for a second person:** the brief records which session is
     running it. Anyone else gets the batch read-only, with the runner's name
     and last movement, until it has not moved for 60 seconds.
@@ -511,15 +537,21 @@ promises.
 - **Designs:** D4 (the deck card first), D3, D5.
 - **Build** in `src/components/carousel/`, from the existing `Card`, `Pill`,
   `CtaButton`, `HoldButton`, `Dropdown` and skeletons:
-  - `DeckCard`: every state in D4 (Writing as the empty card, Written, Flagged
-    with reason, Approved with its 5-second undo, Track not found with Retry
-    and Change track, New track, Music lookup failed, Rendering, Rendering
-    elsewhere, Rendered with thumbnails and outlined slides, Generated,
-    Failed with slide number and Retry). Redo deck, Redo slide per slide, the
-    version switcher, Discard deck and Withdraw approval as holds.
+  - `DeckCard`: every state in D4 and D5 (Writing as the empty card, Written,
+    Flagged with reason, Up next and Rewriting, Track not found with Retry
+    music lookup and Change track, New track, Music lookup failed, Rendering,
+    Rendering elsewhere, Rendered with thumbnails and outlined slides,
+    Approved, Dropped with its reason (D12), Failed with slide number and
+    Retry), plus **Try (n) of 3** beside a deck Auto is retrying. Regenerate
+    at the foot of the card, Regenerate per slide, the version switcher, and
+    Discard deck as the hold, inside the More menu. (The old list had
+    "Approved with its 5-second undo" and "Withdraw approval"; both went with
+    the per-deck approve on 2026-09-14 — corrected 2026-09-21.)
   - `ProgressLine`: "7 of 20 written", `aria-live="polite"`, the stalled
     variant in the warn tone naming the deck and when it last moved.
   - `UndoToast`: five seconds, one Undo. No toast component exists yet.
+    **Nothing in the batch screens needs it now** that the per-deck approve
+    and its bulk undo are gone; keep it only if another screen asks for one.
   - `BatchBottomBar` for phone widths.
   - `SlideThumbStrip` filling in as slides land.
 - **Motion:** Approve and Redo get press feedback only (100 to 160 ms); cards
@@ -603,21 +635,42 @@ promises.
 - **Done when:** closing the tab mid-batch and reopening it loses nothing, and
   Continue finishes the batch.
 
-### DEV-17. Batch page: review and approve
+### DEV-17. Batch page: review, and send it to the painter
+
+**Rewritten 2026-09-21.** It described a per-deck **Approve**, an **Approve
+all unflagged**, a 5-second undo and a **Withdraw approval**. None of them
+exist: the per-deck approval was dropped on **2026-09-14**, and the only
+sign-off in the app is **Approve (n) decks** on the finished batch (DEV-18).
+The one press on this screen is **Render (n) decks**. The approved D4 is the
+design; F2 was corrected the same day.
 
 - **Size:** M.
 - **Depends on:** DEV-16, approved D4.
 - **Designs:** D4. **Flows:** F2, F14.
 - **Build:**
-  - Approve, the 5-second undo, Redo deck, Redo slide, version switcher,
-    Change track, Retry on music, Discard deck, Withdraw approval.
-  - **Approve all unflagged** with the undo toast.
-  - **Render approved** appears as the accent once anything is approved.
-  - Keyboard: `A` approve, `R` redo, `J` and `K` next and previous card.
-    Focus visible, no animation.
-  - All clear when every card is approved or discarded.
-- **Done when:** a 20-deck batch can be reviewed with the keyboard alone, and
-  an undone bulk approval writes no lane rows, confirmed by query.
+  - **Regenerate** at the foot of every card, opening the feedback box with
+    its picker (Deck, Hook, or a slide). A whole deck waits as **Up next**;
+    one slide rewrites in place. Either way it is a new version.
+  - The **version switcher**: *Version 2 of 2*, arrows on the card's edges on
+    the desktop, a sideways swipe on the phone. The version showing is the
+    version that counts.
+  - **Retry music lookup**, split with a caret opening **Change track** (the
+    music-library search, F14). A changed track is a new version with only
+    the music different.
+  - **Discard deck** inside the card's **More** menu.
+  - **Render (n) decks** as the accent, naming its count, leaving out flagged
+    decks and tracks still being checked. **"(n) flagged"** in the progress
+    line jumps from one flagged deck to the next.
+  - Keyboard: **`J` and `K`** next and previous card, **`R`** opens the
+    focused card's feedback box. Focus visible, no animation. (`A` went with
+    the approve press.)
+  - **Nothing on this screen writes a lane row**; that happens at rendering
+    (DEV-12).
+  - **In Auto mode the screen is skipped** and the batch renders itself
+    (DEV-48). Pause brings the press back.
+- **Done when:** a 20-deck batch can be reviewed and sent to the painter with
+  the keyboard alone, and a query after **Render (n) decks** shows the lane
+  rows written by the painter, not by this screen.
 
 ### DEV-18. Batch page: render and finish
 
@@ -1016,7 +1069,7 @@ number. The D8 note in the design tickets records the same renumbering.
 **Reopened 2026-09-17 (Garreth).** D10 was approved on 2026-09-16 with two
 tabs, Digests and Knowledge base. It has been reopened and redesigned in
 place — the same design ticket, the same build file, the same canvas pages;
-**there is no D12**. The Trends page now opens on a **Feed** of the carousel
+**there was no D12 for it** (D12 is Auto mode, added 2026-09-21). The Trends page now opens on a **Feed** of the carousel
 library with a search bar over it, and Digests and Knowledge base become the
 second and third tabs, unchanged in substance. DEV-34 and DEV-35 below are
 rewritten for that, and DEV-36 to DEV-40 are new. These tickets are written
@@ -1681,6 +1734,195 @@ history; everything it decided that still holds is restated here.*
 
 ---
 
+## Phase 6 — Auto mode: a batch that runs itself to the sign-off
+
+**Added 2026-09-21**, after Garreth approved **D12** the same day. Everything
+here is one feature: a switch on the Generate form that lets a batch write,
+deal with its own flagged decks, render and stop at **Approve (n) decks**,
+which stays a person's press. It touches screens that already exist rather
+than adding any, so each ticket below extends a Phase 2 one. D12's section in
+the design tickets is the written record of the rules; the states are drawn on
+the D1, D2, D3, D4, D5, D7 and D9 canvases and run in the prototype.
+
+**The wait it removes** is the **Render (n) decks** press on the review screen
+(D4). There has been no per-deck Approve between writing and rendering since
+2026-09-14.
+
+### DEV-48. Auto mode: the worker that keeps going with the tab closed
+
+- **Size:** L.
+- **Depends on:** DEV-11, DEV-12, DEV-18, approved D12. **Blocks DEV-49 to
+  DEV-53.**
+- **Designs:** D12 (D2, D3, D5). **Flows:** F1, F3.
+- **Why it is the big one:** today the open tab drives the batch. The page
+  asks for one deck, gets it, asks for the next; close the tab and the batch
+  stops (that is what *Stopped* means in DEV-11). Auto mode promises the
+  opposite — Garreth, 2026-09-21: **it keeps running with the dashboard
+  closed** — so the loop has to move to the server.
+- **Build:**
+  - `auto_mode boolean not null default false` on the brief, set when the
+    batch is created (DEV-50) and readable by everything below.
+  - A **worker** that owns an Auto batch from creation to the finished state:
+    write the next deck, run the gate, deal with what it flags (DEV-49),
+    render the next deck, run the vision check, deal with what that flags,
+    and stop at the finished batch. It calls the same services DEV-11 and
+    DEV-12 already expose — no second copy of the writing or painting.
+  - **One worker per batch, never two.** Claim the batch the way DEV-12
+    claims a lane row; a second claim is a no-op. A worker that dies mid-deck
+    leaves the batch resumable, and the stopped rule in DEV-11 (nothing for
+    60 seconds) still applies, so a dead worker shows as *Stopped* rather
+    than as a batch that silently stalls.
+  - **The page becomes a viewer, not the driver.** An Auto batch's page polls
+    its state and draws it; it never asks for the next deck. A manual batch
+    keeps working exactly as DEV-16 and DEV-18 describe.
+  - Every step audit-logged with the worker as the actor, not a person: the
+    app names nobody (D9), and Auto is not somebody.
+- **Open:** where the worker runs is not decided. A route the app pings, a
+  scheduled job, or a queue are all possible; whatever is chosen has to
+  survive the tab closing, which is the whole point.
+- **Done when:** a 20-deck Auto batch started in the deployed preview finishes
+  writing **and** rendering with the tab closed from the first deck onwards,
+  and a query shows every lane row rendered with `approved = false` and
+  `scheduler_ready = false` — waiting for its person, exactly like a manual
+  batch that reached the finished screen.
+
+### DEV-49. Auto mode: three tries, then the deck is dropped
+
+- **Size:** M.
+- **Depends on:** DEV-48, DEV-09, DEV-12.
+- **Designs:** D12 (D3, D5). **Flows:** F2, F3.
+- **Why:** in Auto nobody is standing by to fix a flagged deck, so the batch
+  has to have another go by itself — and has to know when to stop trying.
+- **Build:**
+  - **Every kind of flag is retried, three times** (Garreth, 2026-09-21): a
+    copy flag from the gate (score, compliance, the risk gate, too similar) is
+    rewritten with the gate's own suggested fix as the feedback; a track that
+    was not found has its lookup run again; a slide flagged by the vision
+    check after rendering is rewritten and rendered again.
+  - A deck being retried shows **Rewriting** or **Up next** with **Try (n) of
+    3** beside it. The counter belongs to a deck still being worked on: it
+    goes once the deck lands.
+  - After the third try the deck is **Dropped**: it stays in the batch,
+    dimmed, with its reason in a quiet pill, never rendered and never
+    approved. **Regenerate (n) decks** on the finished batch takes it along
+    with the flagged ones, and a person can still regenerate it by hand.
+  - **What the counts say.** A dropped deck leaves the denominator and is
+    named beside it: "18 of 18 rendered" with **2 dropped**, and "11 of 18
+    written" with **2 dropped** while the copy is being written. Both screens
+    count the decks the batch will actually finish (Garreth, 2026-09-21).
+  - `auto_tries` on the draft, so a retry count survives a worker restart and
+    a batch cannot quietly try forever.
+- **Done when:** a batch whose gate flags two decks ends with one of them
+  rewritten and rendered and the other Dropped after three tries; the finished
+  batch reads "(n) of (n) rendered" with "2 dropped"; and **Regenerate (n)
+  decks** picks up the dropped deck.
+
+### DEV-50. Auto mode: the switch, and the type that remembers it
+
+- **Size:** S.
+- **Depends on:** DEV-15, DEV-48.
+- **Designs:** D12 (D2). **Flows:** F1 step 3.
+- **Build:**
+  - One switch on the Generate form, **Auto mode**, off by default, its own
+    label and nothing else: no instruction text (the screen's rule).
+  - Generate with it on sets `auto_mode` on the brief and hands the batch to
+    the worker.
+  - **The switch remembers the type** (Garreth, 2026-09-21): a carousel type
+    whose last batch was made in Auto opens its form with the switch already
+    on. After that it is the person's — a flip is not remembered until the
+    next Generate. Read it off the type's last brief rather than storing a
+    preference.
+- **Done when:** a type generated in Auto opens its form with the switch on
+  the next time, and a type generated manually opens with it off.
+
+### DEV-51. Pause auto and Resume auto
+
+- **Size:** S.
+- **Depends on:** DEV-48, DEV-16, DEV-18.
+- **Designs:** D12 (D3, D5). **Flows:** F2, F3.
+- **Why:** taking the batch back has to be one press, and what you get back
+  has to be the app you already know.
+- **Build:**
+  - While an Auto batch runs, the progress line carries an **Auto** pill and a
+    **Pause auto** button — secondary, not accent, and no new pill colour.
+    Paused, the pill reads **Auto paused** and the button **Resume auto**.
+  - **Pause puts the batch back to manual** (Garreth, 2026-09-21): writing
+    carries on, flagged decks wait for a person and ring the bell as they do
+    today, and the rendering waits for **Render (n) decks**. A deck already
+    queued to render keeps rendering; nothing in flight is thrown away.
+  - **Resume** hands it back to the worker, which picks up whatever is
+    waiting — including decks flagged while it was paused.
+  - Pause is not offered on a stopped batch: there is nothing running to take
+    back.
+- **Done when:** pausing an Auto batch mid-write leaves it behaving exactly
+  like a manual one — flagged decks waiting, the bell ringing, the writing
+  ending at **Render (n) decks** — and Resume takes it the rest of the way to
+  the finished batch without a press.
+
+### DEV-52. The bell: Batch written and Batch finished
+
+- **Size:** M.
+- **Depends on:** DEV-11, DEV-48.
+- **Designs:** D12 (D3, D4, D5). **Flows:** F2, F3.
+- **Why:** a batch that needs its person should say so wherever that person
+  is, and a batch that needs nobody should stay quiet.
+- **Build:** two new kinds on the existing bell (`src/lib/data/notifications.ts`,
+  `notification_reads` for per-person read state), category **Carousel
+  Generator**, neither of them an error, so neither is `critical`:
+  - **Batch written** — a manual batch that has finished writing and waits for
+    **Render (n) decks**. Body: "Before & After · 18 to render, 2 flagged".
+    Opens the review screen (D4), the screen that holds the press.
+  - **Batch finished** — any batch, Auto or not, waiting for **Approve (n)
+    decks**. Body: "Before & After · 18 rendered, 2 dropped". Opens the
+    finished batch (D5).
+  - **In Auto a flagged deck does not ring the bell**, because nobody is being
+    asked to do anything. A flagged deck still rings its own item in a manual
+    or paused batch, as it does today.
+  - Both are raised by the server, not the page, so closing the tab does not
+    lose them.
+- **Done when:** finishing a batch in Auto with the dashboard closed leaves
+  one unread **Batch finished** item that opens the batch on its finished
+  state, and a flagged deck in that same batch raised nothing.
+
+### DEV-53. What a batch is waiting for, on every screen that lists batches
+
+- **Size:** M.
+- **Depends on:** DEV-14, DEV-19a, DEV-19b, DEV-52 (for the wording).
+- **Designs:** D12 (D1, D7, D9). **Flows:** F4, F5, F6.
+- **Why** (Garreth, 2026-09-21): a finished batch must not sit unnoticed on
+  one screen while another calls it done.
+- **Build:** the same two words everywhere, neutral, never red — **(n) to
+  render** and **(n) to approve** — each opening the screen that holds the
+  press:
+  - **Carousel types** (D1): where *Last batch* sits, the type's card carries
+    the count as a small button. **Generate stays** — a batch waiting for its
+    sign-off does not hold up the next one, unlike a running batch, which
+    swaps Generate for *Open running batch*.
+  - **The type's page** (D7): the two words join the column that already
+    carries *Writing 7 of 20* and *Stopped*, and a waiting row beats *(n)
+    flagged* — *(n) flagged* is what a finished batch says once nothing is
+    waiting on it.
+  - **History** (D9): the same two words in the Status column, where such a
+    batch used to read *Done*.
+  - **A batch made in Auto** carries a small neutral **Auto** pill on its
+    History row, running or done. Nothing else changes.
+  - **The rule, and the trap in it.** A batch is waiting for Render when
+    nothing has been rendered, and waiting for Approve when nothing has been
+    approved — **a blank and a nought mean the same thing for the status**
+    (Garreth, 2026-09-21, replacing the 2026-09-16 reading). A batch with
+    *some* approvals is Done: what it did not approve is what the checks
+    caught, which is what *(n) flagged* says. So the query must not report a
+    count of 0 where it means "not yet" **for the numbers** in the columns —
+    those still tell a real nought from a blank — while the status itself
+    treats them alike.
+- **Done when:** a batch that has rendered and approved nothing reads "(n) to
+  approve" on all three screens and opens the finished batch from each; a
+  batch with some approvals still reads Done; and pressing Approve clears the
+  waiting words everywhere without a reload of the other screens' data being
+  needed to make sense.
+
+---
+
 ## Decisions, open questions and proposed defaults
 
 ### Decided (Garreth, 2026-09-14)
@@ -1711,7 +1953,7 @@ On top of D10 as approved on 2026-09-16, and all about the Trends page.
    become the second and third, unchanged in substance. Since the first review
    of round two the sections are a **vertical rail of buttons on the left**, a
    floating bar at the bottom on a phone, rather than underline tabs. DEV-34.
-6. **There is no D12.** D10 is reopened and redesigned in place — the same
+6. **D10 got no new number.** It is reopened and redesigned in place — the same
    design ticket, the same build file, the same canvas pages — and these dev
    tickets are written in parallel with that design rather than after it.
 

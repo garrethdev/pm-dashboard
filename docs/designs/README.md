@@ -7,8 +7,8 @@ its own branch. The tickets themselves are in
 done, or the one Garreth names.
 
 **The design step closed on 2026-09-16** with D1 to D11 approved and in the
-prototype (**D12, Auto mode, was added and approved on 2026-09-21** and is not
-in the prototype yet), and the work moved to `CAROUSEL-GENERATOR-DEV-TICKETS.md`. **D10 was
+prototype (**D12, Auto mode, was added and approved on 2026-09-21**, and is in
+the prototype), and the work moved to `CAROUSEL-GENERATOR-DEV-TICKETS.md`. **D10 was
 reopened on 2026-09-17** (Garreth) for a second round, the feed and the search,
 redesigned in place in its own build file and on its own canvas pages; the dev
 tickets for it were written the same day, in parallel, and **round two was
@@ -60,14 +60,18 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   approval): place without `--theme`, then put the other theme's artboards,
   files and note back from the extracted live canvas, because
   `place-ticket.mjs` drops every page the ticket owns.
-- **The old shared canvases are an archive, not saved to any more**, left
-  exactly as they were on 2026-09-18: Dark (D1 to D5)
-  https://claude.ai/code/artifact/d2004744-5f98-4bfa-bddf-71b0d8edcca8,
-  Light (D1 to D5) https://claude.ai/artifact/APt4THd8a3QoPmPskPJCT4, and
-  (D7 and D8) https://claude.ai/artifact/REki8sN9NFCJZ9FjXUKcAH. "(D9 and
-  D10)" is not among them: its link became D10's dark canvas. The boards were
-  copied off them unchanged. The separate D2 canvas (`815e3cc0-…`) was
-  retired earlier.
+- **The old shared canvases are gone** (Garreth, 2026-09-21). They had been
+  an untouched archive since 2026-09-18 and kept turning up in the gallery
+  looking like current work, so **Dark (D1 to D5)**, **Light (D1 to D5)** and
+  **(D7 and D8)** were deleted, along with two older strays from 2026-09-14:
+  the separate **D2 Generate Form** canvas (`815e3cc0-…`, six boards, all of
+  them on D2's own canvas now) and a drawn **Carousel Generator Flows** page
+  (F1 to F14 as diagrams, drawn before the flows were revised). Every board
+  had been copied to its ticket's own canvas unchanged, and each build file
+  can redraw its boards from scratch, so nothing was lost that the repo does
+  not hold. "(D9 and D10)" was never among them: its link became D10's dark
+  canvas. **The table above is now the whole set** — if a page is not in it,
+  it is not a Carousel Generator canvas.
 - **Reading a canvas without filling the session.** The Artifact tool's plain
   read prints the page's long head into the conversation; reading it with
   `path: "index.html"` saves the same file and prints nothing. Use the plain

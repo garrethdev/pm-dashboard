@@ -9,8 +9,12 @@ canvas D9 made. The design step is closed; what follows is development,
 against `CAROUSEL-GENERATOR-DEV-TICKETS.md`.
 **Reopened since (Garreth, 2026-09-17): D10, Trends, is back open for a second
 round — the feed and the search — redesigned in place on its own build file
-and its own two canvas pages. There is no D12. Everything else stays closed,
-and the dev tickets are being written in parallel with that design.**
+and its own two canvas pages, not drawn again under a new number. Everything
+else stays closed, and the dev tickets are being written in parallel with
+that design.**
+**Reopened again (Garreth, 2026-09-21): D12, Auto mode**, the first ticket
+past D11, added and approved the same day. It adds no screen — its states
+live on D1 to D5, D7 and D9 — and it is in the prototype.
 The canvas D7 and D8 share is full — 14 MB of its 16 MB with both tickets on
 it in both themes — so it was **renamed from "(D7 to D10)" to "(D7 and D8)" on
 2026-09-16** (Garreth), because it is never going to hold the other two. D9
@@ -313,8 +317,11 @@ the edges are tested, not just the happy middle.
   approval step. A written deck counts as accepted unless someone regenerates
   or discards it; gatekeeping outside the app is still the check before
   posting. This replaces Approve, Approve all unflagged, the 5-second undo and
-  Withdraw approval. The flows (F2, F3, F14) are updated to match once D3 is
-  approved.
+  Withdraw approval. **The flows and the dev tickets were finally brought
+  into line on 2026-09-21** — F2 rewritten, F1, F3, F4, F5 and F14
+  corrected, DEV-02, DEV-10, DEV-11, DEV-13 and DEV-17 with them. For seven
+  days they still described the old press, which is what a developer would
+  have built.
 - **You get here from:** D3, once every deck is written.
 - **Flows:** F2, F14 (to be rewritten as above).
 - **Design the deck card first**, since the page is mostly a grid of them. It
@@ -1261,8 +1268,8 @@ the edges are tested, not just the happy middle.
   pages **D10 · Dark** and **D10 · Light** on
   **Carousel Generator Designs - (D10 Trends)**
   (https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1; called "(D9 and D10)"
-  until D9 moved to its own canvas on 2026-09-18). There is no D12: this
-  one ticket carries both rounds.
+  until D9 moved to its own canvas on 2026-09-18). Both rounds are this one
+  ticket; neither got a number of its own.
   **Round two, fifth cut, saved 2026-09-17 after Garreth's fourth review,
   dark and light, 25 boards a theme; approved the same day.** Desktop: the feed, a post
   on its third slide with the arrows and Save pressed, a slide whose link has
@@ -1769,11 +1776,48 @@ the edges are tested, not just the happy middle.
 
 - **Status:** **APPROVED by Garreth, 2026-09-21**, drawn in dark, light and
   phone over four rounds the same day. The boards on D1, D2, D3, D4, D5, D7
-  and D9 are the approved picture; what is left is building, not drawing
-  (Auto's timers in the prototype, DEV-48 and the tickets under it).** Added by Garreth on 2026-09-21, after the
+  and D9 are the approved picture.
+  **In the prototype since 2026-09-21** (canvas version 25): the switch, the
+  retries, the drops, the skipped Render press, the bell and the waiting card
+  all run on their own. What is left is development — DEV-48 and the tickets
+  under it.
+- **What Auto does in the prototype.** Generate with the switch on and the
+  batch carries itself: it writes, takes its own flagged decks back three
+  times, drops what it cannot save, **goes straight to the rendering without
+  the Render press**, rewrites what the after-render check flags, and stops
+  at **Approve n decks**. The bell rings once, **Batch finished**. Going back
+  to Carousel types then shows the card reading **n to approve**, which opens
+  the batch where it was left; Approve clears it. Pause hands the batch back
+  mid-run — flagged decks wait and ring the bell, and the writing ends at D4
+  with *Render n decks*, exactly as a batch nobody automated does — and
+  Resume takes it the rest of the way. A batch with the switch off behaves
+  as it did before, which was checked run for run.
+  **The sample run shows both endings:** deck 6 comes good on its second try
+  and deck 11 never does, so it is dropped; in the rendering, deck 4 is
+  mended and deck 9 dropped. The approved boards draw the moments; the
+  prototype had to pick which decks live them out.
+  **The try counter (Try n of 3) shows only while Auto is having another go**
+  — it went from a deck that had already landed, where it read as though the
+  deck were still being worked on.
+  No board moved: every one of the 14 D1, 38 D3 and 58 D5 boards renders
+  exactly as it did before the timers were built, and every screen still
+  draws on both artboards and both themes. Headless Chrome, not Safari.
+- **The light-mode overrides in D3, D4 and D5 were dead** (found 2026-09-21,
+  fixed with Garreth's approval the same day). Eleven rules were written
+  `.is-light .screen-batch …`, a descendant selector — but the theme class
+  and the screen class sit on the **same** element (`class="app is-light
+  screen-batch"`), so none of them ever matched. The worst of it: **D4's
+  Regenerate-batch popover had no background in light mode**, so the deck
+  card's text read straight through the feedback box. D12's own dropped deck
+  was dimmed to the dark value, 0.45 instead of 0.62. Fixed by closing the
+  space (`.is-light${S}`). Dark mode cannot move — the selector only ever
+  targeted light. Measured board by board before and after: D4's popover
+  35,656 pixels, D4's card states 17,606, D3's dropped deck 6,964, D5's
+  preview 2,293, D3's edited card 1,968, D5's view switch 216, and D3's
+  writing board **zero**. D3, D4, D5 and the prototype were all re-saved. Added by Garreth on 2026-09-21, after the
   design step had closed, so it is the first ticket numbered past D11 (the
-  "There is no D12" note at the top of this file was about D10's second
-  round, not this). **It has no canvas and no build file of its own**
+  "there is no D12" note that used to sit at the top of this file was about
+  D10's second round, not this; it was corrected on 2026-09-21). **It has no canvas and no build file of its own**
   (Garreth, 2026-09-21: a separate canvas would confuse the developer, who
   should find every state of a screen in one place). It is an extension of
   screens that already exist, so its states live in those screens' build

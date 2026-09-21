@@ -34,8 +34,12 @@ trending reference carousel or our own, is turned into a new carousel
 (font, weight, stroke, shadow, position), the image library it draws from
 (chosen or made, then filled by upload or AI generation) and the directions for copy and captions are set by hand,
 then saved as a new content type with a name and a character. **Middle:** a
-content type generates decks in batches, each reviewed and approved before
-rendering. **Back:** an approved new content type is wired into Supabase (its
+content type generates decks in batches; the copy is written and checked by a
+gate as it goes, the batch is reviewed and sent to the painter in one press,
+and the sign-off is **Approve (n) decks** on the finished batch — the app's
+only approval (the per-deck one was dropped 2026-09-14, corrected here
+2026-09-21). With **Auto mode** on (D12, approved 2026-09-21) the batch does
+all of that by itself and stops at that sign-off. **Back:** an approved new content type is wired into Supabase (its
 own lane, registry row, views), captioned, and becomes visible to the Smart
 Scheduler, the Unified Posting Agent and Inventory. The two lanes that are
 live today, **Glow Up** (Character 2) and **Covered Eye** (Character 3), enter
@@ -1657,7 +1661,7 @@ Decided by Garreth on 2026-09-17, reopening the Trends design:
 | 19 | Are favourites personal or the team's | **Personal**, one row per person per carousel, keyed on the session email. The table is shaped so a shared view later is a filter change, not a new table (§5.3). |
 | 20 | Where search results appear | **In place, under the header, as the same feed cards**, with a words-first line saying what was found and a Clear that returns to the feed. Revisited after the first boards are seen (§6.5). |
 | 21 | What the Trends page leads with | **The Feed is the first and default tab**, and the whole page becomes feed-and-search centric. Digests and Knowledge base move to second and third, unchanged in substance (§6.5). |
-| 22 | A new design ticket for this | **No.** There is no D12: the D10 ticket is reopened and redesigned in place, same build file and same two canvas pages. The development tickets for the feed, favourites, search and account search are written now, in parallel with the design, at Garreth's request. |
+| 22 | A new design ticket for this | **No.** D10 is reopened and redesigned in place, same build file and same two canvas pages, rather than drawn again under a new number. (This said "there is no D12", which was about the Trends round; **D12 exists and is Auto mode**, added and approved 2026-09-21.) The development tickets for the feed, favourites, search and account search are written now, in parallel with the design, at Garreth's request. |
 
 Decided by Garreth on 2026-09-17, in the first review of round two's boards:
 

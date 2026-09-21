@@ -175,12 +175,12 @@ ${S} .bpop textarea { display: block; width: 100%; min-height: 84px; resize: non
   font: inherit; font-size: ${phone ? 16 : 14}px; line-height: 20px; color: var(--text-primary); outline: none; transition: box-shadow 150ms var(--ease); }
 ${S} .bpop textarea::placeholder { color: var(--text-muted); }
 ${S} .bpop textarea.is-focus, ${S} .bpop textarea:focus { box-shadow: 0 0 0 2px var(--accent); }
-.is-light ${S} .bpop { background: var(--card); }
+.is-light${S} .bpop { background: var(--card); }
 
 /* Rows carry their own inset, so a picked or hovered slide lights up without moving a word. */
 ${S} .dhook, ${S} .dslides li { position: relative; margin-inline: -6px; padding-inline: 6px; border-radius: 8px; transition: background-color 150ms var(--ease); }
 ${S} .dhook.is-picked, ${S} .dslides li.is-picked { background: var(--card-raised); }
-.is-light ${S} .dhook.is-picked, .is-light ${S} .dslides li.is-picked { background: var(--pill-bg); }
+.is-light${S} .dhook.is-picked, .is-light${S} .dslides li.is-picked { background: var(--pill-bg); }
 /* Regenerate one slide, on the desktop: a small button at the end of the row, shown on hover or focus. */
 ${S} .srg { position: absolute; top: 0; right: 2px; display: flex; align-items: center; justify-content: center; width: 24px; height: 20px; border-radius: 6px;
   background: var(--card-raised); color: var(--text-muted); opacity: 0; transition: opacity 120ms var(--ease), color 150ms var(--ease); }
@@ -205,7 +205,7 @@ ${S} .vnav--prev { left: -14px; }
 ${S} .vnav--next { right: -14px; }
 ${S} .vnav:active { transform: scale(0.94); }
 ${S} .deck:hover .vnav, ${S} .deck:focus-within .vnav, ${S} .deck.is-hover-card .vnav { opacity: 1; pointer-events: auto; }
-.is-light ${S} .vnav { box-shadow: none; }
+.is-light${S} .vnav { box-shadow: none; }
 ${S} .dclip { overflow: hidden; margin-inline: -20px; padding-inline: 20px; }
 ${S} .dpane { touch-action: pan-y; transition: transform 220ms var(--ease-out-strong), opacity 220ms var(--ease-out-strong); }
 ${S} .dpane.is-drag { transition: none; }
@@ -228,7 +228,7 @@ ${S} .sarrow[aria-expanded="true"] svg { transform: rotate(180deg); }
 ${S} .smain { padding: 5px 8px 5px 12px; }
 ${S} .smenu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 12; min-width: 168px; border-radius: 16px; border: 1px solid var(--border); padding: 6px;
   background: var(--card-raised); box-shadow: var(--overlay-rim); transform-origin: top right; animation: d4-drop 150ms var(--ease-out-strong); }
-.is-light ${S} .smenu { background: var(--card); }
+.is-light${S} .smenu { background: var(--card); }
 
 /* Change track: a search of the music library, suggestions narrowing as the person types. */
 ${S} .tsearch { position: relative; flex: 1; min-width: 0; }
@@ -245,7 +245,7 @@ ${S} .topt:hover, ${S} .topt.is-on { background: color-mix(in srgb, var(--text-p
 ${S} .topt b { font-weight: 600; color: var(--text-primary); }
 ${S} .tname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 ${S} .tsep { height: 1px; margin: 4px 6px; background: var(--border); }
-.is-light ${S} .tsug { background: var(--card); }
+.is-light${S} .tsug { background: var(--card); }
 
 /* More: a small round button at the end of the pills, its menu hanging below it. */
 ${S} .dmore { position: relative; display: flex; }
