@@ -8,6 +8,20 @@ questions still to answer are listed at the end, each with the ticket it
 holds up; none of them holds up Phase 2. Each ticket is one piece of work a
 developer or a build session can pick up, finish, and verify on its own.
 
+**Two tabs renamed 2026-09-21 (Garreth), design ticket D13, awaiting its
+boards.** The **Direction** tab is the **Writing** tab, and the **Wiring** tab
+is the **Go Live** tab; the tickets below use the new words. Only the screens
+change — the `direction` column, the table `carousel_lane_directions`, the
+database function `carousel_wire_lane()` and the runbook keep their own names,
+and so does plan §4.8, "Wiring a new content type", which is the process and
+not the tab. Three things wait on D13's approval rather than on the rename:
+**DEV-15** gains the required-Writing state and the Note's placeholder,
+**DEV-19b** gains the empty Writing editor with its guiding placeholder and
+the list of the template's text-box names beside it, and **DEV-21** gains the
+text-box Name field (D14). A fourth ticket for the **Rows** tab (D15) is
+written once that design is approved. The flows' `?tab=direction` and
+`?tab=wiring` query strings are deliberately unchanged until then.
+
 **Phase 5 amended 2026-09-17 (Garreth).** D10 was reopened and redesigned in
 place rather than drawn again under a new number, so the Trends page now opens
 on a feed of the carousel library with a search bar over it. DEV-34 and DEV-35
@@ -189,8 +203,9 @@ promises.
   - The two templates from `docs/carousel-templates/*.v1.json`, as version 1,
     `active`, each pointed at its library, mapped to columns as template model
     §6 says.
-  - Direction version 1 for each lane, carrying the existing prompts (see
-    DEV-08).
+  - A first `carousel_lane_directions` version for each lane, carrying the
+    existing prompts (see DEV-08). This is what the **Writing** tab shows and
+    saves; the table and its `direction` column keep their own names.
 - **Tests:** after applying, run `node scripts/carousel-templates/verify.mjs`
   against the rows read back from the database, not only the files.
 - **Done when:** `list_tables` shows the new shape, the advisors report
@@ -600,7 +615,7 @@ promises.
     2026-09-14), stopping at 50 as the person types.
   - **Image library** with **Change** and the library picker. A repoint saves
     a new template version with only the library changed.
-  - **Direction** read-only with its version and a link to the Direction tab.
+  - **Writing** read-only with its version and a link to the Writing tab.
   - **Note**, one line.
   - The template's `per_batch` choices, rendered from the copy contract, not
     hard-coded per lane.
@@ -706,13 +721,13 @@ the current direction and library, or opens the running batch instead), and a
 re-run shown paired with its original. First run and no-results states.
 Stacked rows on phones. Adds History to the menu.
 
-**DEV-19b. Content type page, Overview and Direction tab** · M · depends on
+**DEV-19b. Content type page, Overview and Writing tab** · M · depends on
 DEV-01 and approved D7 · flow F6 (Phase 2 steps). `/carousel-generator/types/[slug]`:
-details, template versions, its batches, Generate. The Direction tab as a
+details, template versions, its batches, Generate. The Writing tab as a
 plain editor: active version and date, **Save version** writes a new active
 version, past versions with **Make active**. Both writes in one database
 function so there is never zero or two active versions. **Edit template**
-arrives in Phase 3; the Wiring tab in Phase 4.
+arrives in Phase 3; the Go Live tab in Phase 4.
 
 **DEV-19c. Image libraries, read-only** · S · depends on DEV-01 and approved
 D8 · flow F7 steps 1 and 2. The grid as boards — a mosaic of three of the
@@ -890,12 +905,12 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
 - **Done when:** a Studio-made type is saved, appears Not wired, and a version
   change on Glow Up leaves a running batch on its old version, by query.
 
-### DEV-25. Direction conversation
+### DEV-25. Writing conversation
 
 - **Size:** M.
 - **Depends on:** DEV-19b.
 - **Flows:** F6 (Phase 3 steps). **Plan:** §6.4.
-- **Build:** a conversation beside the direction on the Direction tab, ported
+- **Build:** a conversation beside the writing on the Writing tab, ported
   from `direction-chat.js` onto Claude: proposes a revised direction, cites
   accepted rules from `content_knowledge_base` by `rule_key`, asks at most one
   question, says plainly when direction cannot change something. The proposal
@@ -950,11 +965,11 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
   `unified_posts` and `v_scheduler_pool` return every existing lane's count
   unchanged after a wire.
 
-### DEV-28. Wiring tab
+### DEV-28. Go Live tab
 
 - **Size:** M.
 - **Depends on:** DEV-27, DEV-10, approved D7.
-- **Designs:** D7 Wiring tab. **Flows:** F11.
+- **Designs:** D7 Go Live tab (renamed by D13). **Flows:** F11.
 - **Build:**
   - The checklist, each item ticking from a real check, not a checkbox.
   - Cadence per week and the rebalance of sibling types, reusing the rules in
@@ -1254,7 +1269,7 @@ history; everything it decided that still holds is restated here.*
   recent save all open the same details window; a timed-out search says so;
   a post with a null number prints the others and no 0; **View Post** opens
   the original on its platform; and a rule accepted on Knowledge is cited by
-  the Direction conversation (DEV-25).
+  the Writing conversation (DEV-25).
 
 ### DEV-35. Copy to Studio
 
@@ -2067,6 +2082,7 @@ handover's frontend addendum and was then checked against the live database.
 | 7 | **Should a thinly analysed carousel offer "Analyse in full"?** 309 carousels were read by the newer run, which records only the hook, the story and the call to action; their Analysis tab has three rows and stays that way, because Transcribe and analyse is offered only where there is no reading at all. Offering it on these too costs model spend per press (raised 2026-09-19, not drawn). | Nothing; DEV-42 and DEV-46 work without it |
 | 8 | **Should the filters also narrow the plain feed**, not only a search? Today they apply to a search; on the feed they would need `carousel_feed_unseen` to take a topic, a hook and a views floor (raised 2026-09-18). | Nothing; DEV-43 as written |
 | 9 | **Who cleans the search index's topic tags?** The main analysis picks from a fixed list of nine, but the visual scout writes free-text tags (`typography:bold_sans_serif`, about 200 of them) into the same `topics` array, and `glp_1` comes from there too. The dropdown is a fixed list so none of it shows, but the index is another project's to tidy (found 2026-09-18). | Nothing |
+| 10 | **Does the template model still need `image_direction`?** Plan §5.4 gives `carousel_templates` three direction columns — `copy_direction`, `caption_direction`, `image_direction` — while the live table `carousel_lane_directions` has a single `direction`. Images now come from the template's image slots and the library the type points at, so nothing reads an image direction; §6.4's rename to **Writing** (D13) makes the field's name wrong as well as unused. **Proposed: delete it**, and decide whether `caption_direction` folds into the one field or stays a named section inside it. Raised 2026-09-21, not answered. | DEV-01's schema, DEV-19b |
 
 ### Proposed defaults, accepted unless changed
 
@@ -2087,7 +2103,7 @@ Things the plan and flows left unsettled, found while writing the tickets.
 5. **The template model's `lane jsonb` column is accepted**, since it is how a
    type that is not wired becomes wired by filling one column. DEV-01.
 6. **Plan §6.4's separate Directions page** is the content type page's
-   Direction tab, as in the flows. DEV-19b, DEV-25.
+   Writing tab, as in the flows. DEV-19b, DEV-25.
 
 ### Checks built into tickets
 

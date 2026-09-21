@@ -47,6 +47,22 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   and its states live in those screens' own build files. Approved
   2026-09-21. A ticket that extends existing screens is drawn this way; a
   ticket that adds a screen still gets its own canvas.
+- **D13, D14 and D15 have no canvas of their own either** (Garreth,
+  2026-09-21), for the same reason, and are **open — not drawn yet**. They
+  change and extend screens that already exist, so their boards are new last
+  rows on the canvases those screens own:
+  - **D13** (Direction → **Writing**, Wiring → **Go Live**, Writing required)
+    — **D1**, **D2** and **D7**. Boards that already show the old names are
+    redrawn in place on those pages, not added beside.
+  - **D14** (naming a text box) — **D6 · Dark**, **D6 · Light**, and **D11**
+    for the same inspector section on a layered slide.
+  - **D15** (the **Rows** tab) — **D7**.
+- **D16 (Overview) is the exception and does get its own canvas** (2026-09-22):
+  it adds a screen rather than extending one, which is the standing rule two
+  bullets down. Name it "Carousel Generator Designs - (D16 Overview)", build
+  file `d16-overview.build.mjs`. It also reopens **D1**, whose route moves to
+  `/carousel-generator/types`; D1's boards are otherwise unchanged, so its
+  canvas is only re-saved if a board shows the old route.
 - **Saving a ticket.** Steps 3–6 below read and save **that ticket's own
   canvas**. Step 4 runs `place-ticket.mjs --ticket DN` without `--theme` for a
   canvas that holds both themes, and with `--theme dark` or `--theme light`

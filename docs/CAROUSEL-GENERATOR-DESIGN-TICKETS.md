@@ -15,6 +15,20 @@ that design.**
 **Reopened again (Garreth, 2026-09-21): D12, Auto mode**, the first ticket
 past D11, added and approved the same day. It adds no screen — its states
 live on D1 to D5, D7 and D9 — and it is in the prototype.
+**And three more, 2026-09-21: D13, D14 and D15**, out of a session on how a
+new content type gets written and wired. **Open, not drawn yet.** D13 renames
+Direction to **Writing** and Wiring to **Go Live** and makes Writing required;
+D14 gives a text box in the Studio a **name**, which is how the writer knows
+what goes in it; D15 adds a **Rows** tab showing what is sitting in a type's
+lane table and why it cannot post. Like D12, **none of them has a canvas of
+its own** (Garreth, 2026-09-21): their pictures are new rows on the D1, D2,
+D6, D7 and D11 canvases, which are updated in place.
+**And D16, 2026-09-22 (Garreth): an Overview page**, the generator's new
+landing — what is waiting for a person, a short strip of types with Generate,
+and what they saved on Trends. **Open, not drawn yet.** It adds a screen rather than
+changing one, so unlike D13 to D15 it **does** get a canvas of its own, and it
+reopens D1, which moves to `/carousel-generator/types` and stops being the
+landing.
 The canvas D7 and D8 share is full — 14 MB of its 16 MB with both tickets on
 it in both themes — so it was **renamed from "(D7 to D10)" to "(D7 and D8)" on
 2026-09-16** (Garreth), because it is never going to hold the other two. D9
@@ -122,7 +136,14 @@ the edges are tested, not just the happy middle.
   **Reopened during D7's review** (Garreth, 2026-09-15), both pages re-saved:
   a type not wired yet has Generate beside its Not wired pill, so its first
   batch can be made and judged before wiring.
-- **You get here from:** the dashboard's Generate page, Carousel card.
+- **Reopened by D16** (Garreth, 2026-09-22), not yet drawn: this page is no
+  longer the landing. It moves to **`/carousel-generator/types`**, the
+  Generate hub's Carousel card opens the new **Overview** instead, and
+  Overview joins the left menu above Carousel types. The cards, their states
+  and everything else this ticket approved are unchanged; only the route and
+  the menu move.
+- **You get here from:** the dashboard's Generate page, Carousel card (until
+  D16; then from Overview or the menu).
 - **Flows:** F1 steps 1–2; entry point for F8.
 - **Design:**
   - The generator's own left menu with every item: **← Dashboard**,
@@ -192,6 +213,11 @@ the edges are tested, not just the happy middle.
   - The chosen library has no images in a set the template needs:
     Generate unavailable, the empty sets named.
   - Count typed above 50: the field stops at 50.
+- **Renamed by D13** (Garreth, 2026-09-21), not yet drawn: the form's
+  **Direction** field is the **Writing** field, the Note gains the placeholder
+  *"anything specific about this batch?"*, and a type whose Writing has never
+  been saved shows Generate unavailable with the reason named, the way a
+  missing library already is.
 - **Renamed to sets** (Garreth, 2026-09-16): what this form called groups is
   what D8 calls sets, and both now say sets. The screens themselves never
   showed the word, so only the code, the comments and one board title
@@ -848,6 +874,12 @@ the edges are tested, not just the happy middle.
   - Cadence total not matching the budget: Wire unavailable.
   - Media entry missing from the published n8n workflow.
   - All ticked.
+- **Renamed by D13** (Garreth, 2026-09-21), not yet drawn: this page's
+  **Direction** tab is the **Writing** tab and its **Wiring** tab is the **Go
+  Live** tab, and a fourth tab, **Rows**, is added by D15 between them. The
+  Direction tab also gains an empty state with a guiding placeholder, and the
+  template's text-box names beside the editor. Everything this ticket approved
+  otherwise stands; the boards are redrawn in place on D7's own canvas.
 - **Done when:** all three tabs approved in dark at both sizes.
 
 ## D8. Image libraries
@@ -1971,3 +2003,301 @@ the edges are tested, not just the happy middle.
   `d3-batch-writing.build.mjs` (`toWrite = total - dropped`); only D3's
   *Dropped* boards move, the other boards are untouched (checked by
   rendering every writing board before and after).
+
+## D13. Writing, and Go Live — two tabs renamed, and Writing made required
+
+- **Status:** **Open. Raised and decided by Garreth, 2026-09-21**, out of the
+  question of what "direction" actually controls. Not drawn yet.
+  **It has no canvas and no build file of its own** (the D12 rule, Garreth
+  2026-09-21: a separate canvas would confuse the developer, who should find
+  every state of a screen in one place). Its pictures are new rows on the
+  **D1**, **D2** and **D7** canvases, and the boards it changes are redrawn on
+  those same pages. Build files: `d1-carousel-types.build.mjs`,
+  `d2-generate-form.build.mjs`, `d7-type-page.build.mjs`.
+- **What it is.** The word *direction* was doing two jobs. On the type page it
+  names the standing instruction the copy prompt is built from —
+  `carousel_lane_directions.direction`, one text column, words only. But
+  "direction" reads just as naturally as how the carousel *looks*, which is
+  the Studio's job and nothing this field can touch. Renaming it takes the
+  ambiguity away. While the field is being renamed it is also being made a
+  requirement, because a type with no writing instruction is a type whose
+  copy is written out of nothing.
+- **Decided by Garreth, 2026-09-21:**
+  - **Direction is renamed Writing**, everywhere a screen names it: the tab on
+    the type page (D7), the read-only field on the Generate form (D2), and the
+    link that opens it. Chosen over "Copy", which collides with the Studio's
+    Duplicate, and over "Voice", which is too narrow — the field says what to
+    say as well as how to say it.
+  - **The Wiring tab is renamed Go Live.** Two reasons: *Writing* and *Wiring*
+    are one letter apart and would sit side by side in the same tab row, and
+    *Go Live* says what the tab does without the word "wiring" needing
+    explaining. The database step keeps its own name in the docs and the code;
+    only the screen changes.
+  - **Writing is required before a type can generate.** A type saved out of
+    the Studio with no Writing shows **Generate** unavailable — on D1's card
+    and in the type page's header — with the reason named, the way D2 already
+    names a missing library or an empty set. The card carries a neutral pill,
+    **Needs writing**.
+  - **The Note's placeholder does the explaining.** The one-line Note on the
+    Generate form takes the placeholder *"anything specific about this
+    batch?"*, so the difference between the standing Writing and the per-batch
+    Note is shown rather than written on the screen.
+  - **An empty Writing editor carries a guiding placeholder** — the shape of a
+    good instruction, not an instruction to write one. Grey, gone the moment
+    anything is typed:
+    *who is speaking, and to whom · what each slide has to do · the words to
+    use, and the words never to use · how the caption should read*
+  - **The Studio's drafted note pre-fills the editor but does not count as
+    saved.** When a template was drafted from a reference the AI already
+    writes a note describing the construction; that text opens in the Writing
+    editor as unsaved, and **Save version** is still a person's press. The
+    requirement is met by someone having read it, not by a field being
+    non-empty. *(Plan §4.7 says Save as content type "creates the standing
+    direction"; that sentence is superseded by this and is corrected on
+    approval.)*
+- **Flows:** F1 step 3, F6, F11.
+- **Design:**
+  - **D7's tab row** reads Overview · Writing · Go Live, with **Rows** added
+    between them by D15.
+  - **The Writing tab** is D7's Direction tab unchanged but for its name, plus
+    two things: the **empty state** with the placeholder above, and **the
+    template's text-box names listed beside the editor** (D14), so the
+    instruction is written against the boxes that exist.
+  - **The Go Live tab** is D7's Wiring tab unchanged but for its name.
+  - **D2** shows **Writing**, read-only, with its version and the link.
+  - **D1's card** and **D7's header** show Generate unavailable with **Needs
+    writing** beside it.
+- **States:**
+  - A type with no Writing: D1's card, D7's header, the empty editor, and the
+    Generate form reached from elsewhere.
+  - Writing pre-filled from the Studio's draft and not yet saved.
+  - Writing saved — the ordinary case, every board that already exists.
+- **Pictures:** **D2** — the form with Writing named, desktop and phone; the
+  form for a type with no Writing yet. **D7** — the Writing tab empty with its
+  placeholder; the Writing tab pre-filled and unsaved; the tab row carrying Go
+  Live. **D1** — a type that needs writing, desktop and phone.
+- **Screen's own rules kept:** no instruction text (the guidance is a
+  placeholder, which is where format goes), no accent button added, no new
+  pill colour (*Needs writing* is neutral, like *Not wired*), nobody named.
+- **Done when:** approved in dark and light at both sizes, and no screen in
+  the generator says "Direction" or "Wiring" any more.
+- **Follows on approval, not before:** the rename reaches the plan (8 lines
+  saying Direction, 5 saying Wiring), the flows (5 and 3) and the dev tickets
+  (9 and 3). The docs are not renamed until the screens are approved.
+
+## D14. Naming a text box in the Studio
+
+- **Status:** **Open. Raised and decided by Garreth, 2026-09-21**, out of the
+  question of how the writer knows what to put in three text boxes on one
+  slide. Not drawn yet. **No canvas and no build file of its own**: its
+  pictures are new rows on **D6 · Dark** and **D6 · Light**, and the same
+  inspector section on **D11** for a layered slide. Build files:
+  `d6-studio.build.mjs`, `d11-studio-round-two.build.mjs`.
+- **What it is.** The writer knows what goes in a text box from that box's
+  **role** — the name it carries in the template's copy contract, which also
+  records who writes it (AI, fixed, or chosen per batch) and how many
+  characters fit. Three text boxes on a cover slide are three roles, three
+  contract lines and three limits. Today the Studio *shows* a role — a tag
+  above the selected box — but gives no way to set one: the inspector is Font,
+  Weight, Size, Stroke, Shadow, Alignment and Wrap width. In D6's own sample
+  the role is taken from position (slide 1 is `hook`, everything else is
+  `line`), so three boxes on one slide all come out `line`, and a box added by
+  hand from the tool strip has no role at all.
+- **Decided by Garreth, 2026-09-21:**
+  - **A Name field at the top of the text-box inspector**, above Font,
+    pre-filled from the AI's draft. It is the role. A name already used on the
+    same slide is refused the way D6's slug field says **Taken**.
+  - **The character limit is measured, not typed.** The Studio has the box's
+    wrap width and the same bundled fonts as the painter, so it works out what
+    fits and shows it as a read-back. Glow Up's and Covered Eye's limits came
+    from the longest line ever actually painted; a new box has no history, so
+    measuring is the only honest source. Shown, not editable.
+  - **Who writes it sits with the name**: **AI**, **Fixed** or **Per batch**.
+    Fixed opens a box for the words themselves, painted on every deck of that
+    type — Glow Up's closing line and its QUIZ line are exactly this. Per
+    batch means the Generate form asks for it, the way it already asks for the
+    opening line.
+  - **No per-box description field.** What a box is *for* is said in the
+    type's Writing, so there is one place to read to know how a deck is
+    written rather than two. The drift this risks — a box renamed while the
+    Writing still names the old one — is answered by D13 listing the box names
+    beside the Writing editor.
+- **Flows:** F8 steps 4 and 5.
+- **Design:** the inspector gains a section above Font — **Name**, **Written
+  by** (three-way), **Fixed text** when Written by is Fixed, and **Fits n
+  characters** as a read-back. Nothing else in the inspector moves. The tag
+  above the selected box already shows the name and keeps doing so.
+- **States:**
+  - A box named by the AI's draft — the ordinary case.
+  - A box added by hand and not yet named: Generate is unavailable for the
+    type until it is, since an unnamed box is a hole in the copy contract.
+  - A duplicate name on the same slide, refused.
+  - A Fixed box with its words showing.
+  - A cover slide with three named boxes, selected one at a time.
+- **Pictures:** **D6 · Dark** and **D6 · Light** — the inspector with its new
+  section, the three-named-boxes cover, an unnamed box, a refused duplicate, a
+  Fixed box. **D11** — the same section on a layered slide.
+- **Screen's own rules kept:** no instruction text, no accent button added
+  (the section is inspector fields), no new pill colour.
+- **Done when:** approved in dark and light at both sizes, and a cover slide
+  with three text boxes reads as three distinct roles on the canvas and in the
+  template the Studio saves.
+
+## D15. Rows — what is sitting in the lane
+
+- **Status:** **Open. Proposed 2026-09-21 and taken by Garreth the same day.**
+  Not drawn yet. **No canvas of its own**: a new page row on the **D7**
+  canvas, build file `d7-type-page.build.mjs`.
+- **What it is.** A tab on a type's page showing the rows in that type's lane
+  table — the table the Smart Scheduler, the Posting Agent and Inventory read.
+  This is where everything the generator makes ends up: Approve writes the
+  row, rendering fills its slide URLs, **Approve n decks** flips it ready.
+  Nothing in the app shows that table today, and no other screen answers the
+  question this one answers: *this lane says nothing is postable and has 240
+  rows in it — why?* Inventory gives the count. The batch page gives what the
+  generator did. Neither says a row is sitting there with no caption.
+  **It is not a view of the old n8n way.** The lane table is the destination
+  under the new design too; the n8n workflow was only ever the thing that
+  wrote to it.
+- **Decided by Garreth, 2026-09-21:**
+  - **It is called Rows**, not Data Set: it shows rows, and nothing about it
+    is a dump of a table.
+  - **Read-only.** Every change to a row happens where it already happens —
+    the batch page, Approve, the scheduler. The tab has no accent button.
+  - **A fixed set of columns, not the whole table.** These tables are 32 to 66
+    columns wide and no two are alike, so the tab shows slide 1 as a
+    thumbnail, the id, the caption, the music, the posting date and profile
+    where there are any, and the status. A row opens a drawer with every
+    column that row has.
+  - **The status column says why a row cannot post**, in words: **Ready**,
+    **No caption**, **Not gatekept**, **Not rendered**, **Assigned**,
+    **Posted**. This is the point of the tab.
+  - **A line of counts above the table**: "240 rows · 0 ready to post". Data,
+    not instruction text.
+  - **Fifty rows a page**, tabular figures, stacked rows on the phone.
+- **Flows:** F6.
+- **Design:** the tab row reads Overview · Writing · Rows · Go Live. The table
+  fills the width under the counts line, the way D7's batch table does, and a
+  whole row opens the drawer.
+- **States:**
+  - The ordinary case: rows in every state, mixed.
+  - A lane where nothing is postable and the reason differs row to row — the
+    state the tab exists for.
+  - A type that has not gone live: no table to read. The empty state fills the
+    page and names **Go Live**.
+  - A type live with no rows yet.
+  - A row's drawer, desktop and phone.
+- **Screen's own rules kept:** no instruction text, no accent button, tabular
+  figures, the empty state fills the page (the shared `EmptyState`, the card
+  reaching the bottom of the screen).
+- **Done when:** approved in dark and light at both sizes, and the tab row
+  reads Overview · Writing · Rows · Go Live.
+
+## D16. Overview — the generator's front page
+
+- **Status:** **Open. Asked for and shaped by Garreth, 2026-09-22.** Not drawn
+  yet. **This one adds a screen, so by the standing rule it gets a canvas of
+  its own** (`docs/designs/README.md`: a ticket that extends existing screens
+  is drawn on theirs; a ticket that adds a screen still gets its own) — unlike
+  D13, D14 and D15, which change screens that already exist. Name it
+  "Carousel Generator Designs - (D16 Overview)". It also reopens **D1**, whose
+  route moves and which stops being the landing; D1's own boards are unchanged
+  otherwise. New build file `d16-overview.build.mjs`.
+- **What it is.** Today the generator drops you straight into Carousel types,
+  a page of cards. Nothing anywhere gathers **what is running right now**:
+  D12 put a batch's state on its type's card, in the bell, in History's Status
+  column and in D7's batch table, so the words exist and agree with each other
+  — but to learn what is in flight you scan the type cards or wait for the
+  bell to ring. Overview is the page that gathers it, with quick access to
+  generating and to what the person saved on Trends beside it.
+  **Narrowed 2026-09-22 (Garreth):** it gathers what is *waiting for a
+  person*, not everything in motion — see the widget's rule below.
+- **Decided by Garreth, 2026-09-22:**
+  - **Overview becomes the landing.** The Generate hub's Carousel card opens
+    it, at `/carousel-generator`. **Carousel types moves to
+    `/carousel-generator/types`**, which sits properly beside the type page's
+    own `/types/[slug]`, keeps its full card list and stays a menu item. The
+    menu gains **Overview** as its first item under ← Dashboard.
+  - **Three widgets, in this order**, and the same order stacked on a phone:
+    **Waiting for you**, **Carousel types**, **Saved**.
+  - **Saved means saved references** — the carousels the person favourited on
+    Trends (`reference_favourites`, personal, per session email, the
+    2026-09-17 decision). It does **not** mean our own decks; there is no way
+    to save one of those and this ticket does not add one, so the word keeps
+    one meaning across the app.
+- **Flows:** F1 steps 1–2 gain the new landing; a flow of its own (F17) is
+  written on approval, with the screen inventory's route change.
+- **Design:**
+  - **Waiting for you.** One row per batch that needs a person, newest
+    first, each opening the screen that holds its press. It says what a batch
+    is waiting for in **D12's words and no others** — *18 to render*,
+    *18 to approve*, *Stopped*, and a manual or paused batch with flagged
+    decks — with the type's name, the count, and D12's neutral **Auto** pill
+    where it applies. This is a fourth place those words appear; it must not
+    invent a fifth wording.
+    **The rule is the bell's rule** (Garreth, 2026-09-22): the widget lists
+    exactly what would ring the bell, and nothing else. So a batch part-way
+    through writing or rendering is **not** here, because nobody is being
+    asked to do anything yet; nor is a flagged deck inside a running Auto
+    batch, which Auto takes back itself — the same reason D12 keeps the bell
+    quiet for it. Defining it this way means the fourth place cannot drift
+    from the third.
+    **What this costs, noted for the review:** work in flight is no longer
+    gathered anywhere. A batch writing 20 decks shows nothing here until it
+    wants something. That is answered by the bell ringing when it finishes
+    and by the type's card reading *Open running batch*, and it is why the
+    widget is called Waiting for you rather than Running work — the name
+    should not promise a monitor. If the in-flight view turns out to be
+    missed, the fix is a quieter second group under this one, not a change
+    to the rule.
+  - **Carousel types.** A compact row per live type — name, character pill,
+    days of cover, **Generate** — deliberately shorter than D1's cards, since
+    the two pages would otherwise say the same thing twice. **Ordered by the
+    types generated most recently** (Garreth, 2026-09-22), five of them, with
+    **All n types** opening Carousel types. Days of cover still shows on the
+    row, so the supply number is in front of him; it just no longer sets the
+    order, and running low is Inventory's job to raise. A type never
+    generated has no date and sorts last, and fills a spare row when fewer
+    than five have ever been run, so a type made in the Studio yesterday is
+    still reachable from here. Every Generate is the same accent button at
+    the secondary size, none singled out, as on D1.
+  - **Saved.** The most recent saved references as a small grid, the shape
+    D10's Saved section uses, with **All saved** opening Trends on Saved.
+  - No widget carries a count in the menu; the menu stays as it is.
+- **States:**
+  - The ordinary case: work running, types with cover, a few saves.
+  - **Nothing waiting** — the all-clear state in the Waiting for you
+    widget, while the other two widgets carry on as normal. This is the
+    ordinary state of a healthy day, not an edge case: it shows whenever
+    every batch is either finished and approved or quietly getting on with
+    itself.
+  - **First run**, nothing ever generated and nothing saved: the page shows
+    **one** first-run state, not three empty widgets stacked up. Its action is
+    Generate, as D1's first run already is.
+  - A type with a batch already running: its row reads *Open running batch*
+    in Generate's place, as D1's card does.
+  - Nothing saved yet, with work running — the Saved widget's own empty line,
+    worded as D10 words it.
+  - Phone: the three widgets stacked in the same order.
+- **Screen's own rules kept:** no instruction text, tabular figures on every
+  count, the empty states fill the page (the shared `EmptyState`), nobody is
+  named on a waiting row — a batch says what it is waiting for, never who
+  started it.
+- **Settled by Garreth, 2026-09-22, before the page was drawn:**
+  - **Only what still needs him.** Finished batches are not listed; the page
+    is a to-do list, not a log. Hence the widget's name and the bell's rule
+    above.
+  - **The types are the ones generated most recently**, not the ones running
+    out of stock.
+  - **Five rows in the types widget** (Garreth, 2026-09-22, closing the one
+    question this ticket had open). Worth knowing when the board is judged:
+    only **three** carousel types are live today, so at five rows the widget
+    shows every one of them and reads exactly like D1's list. The cap starts
+    doing its job once the Studio has made a few types, which is what it is
+    there for.
+    **Proposed, for the review:** while nothing is hidden, **All n types**
+    is not shown — a link to the same rows already on the screen is a link
+    to nowhere.
+- **Done when:** approved in dark and light at both sizes, and the three
+  widgets say nothing that D1, D9, D10 and the bell do not already say the
+  same way.

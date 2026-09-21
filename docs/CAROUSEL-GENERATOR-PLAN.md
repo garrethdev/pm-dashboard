@@ -680,6 +680,10 @@ be generated and reviewed before anything touches the database schema.
 
 ### 4.8 Wiring a new content type
 
+**On screen this is the Go Live tab** (Garreth, 2026-09-21, §10 item 56;
+design ticket D13, awaiting its boards). The name below — wiring — stays for
+the process, the database function `carousel_wire_lane()` and the runbook.
+
 The runbook `WIRE-NEW-CONTENT-TYPE.md` (workspace root) lists what a lane
 needs before the rest of the system can see it: a source table in the
 standard shape, a `content_type_registry` row, the character's
@@ -1089,6 +1093,14 @@ Writing 7 of 20, Stopped, Not wired — and a status meaning something went
 wrong is red.
 
 ### 6.4 Directions — `/carousel-generator/directions`
+
+**Superseded twice, rewritten on D13's approval.** There is no separate
+Directions page: it is a tab of the content type's page (§6.7, dev tickets
+proposed default 6). And that tab is now called **Writing**, not Direction
+(Garreth, 2026-09-21, §10 item 55), because "direction" reads as how the
+carousel looks and this field only changes how the copy is written. The
+`direction` column and the table `carousel_lane_directions` keep their names.
+Everything this section says about what the field does still holds.
 
 Left: the lanes. Right: the active direction for the selected lane, its
 version and date, and a conversation panel. The bot's job is narrow: propose
@@ -1719,6 +1731,27 @@ Decided by Garreth on 2026-09-18 and 2026-09-19, in D10's third round
 | 51 | A carousel with no reading | **One Transcribe and analyse button**, starting at once, its result kept on the carousel for everyone. |
 | 52 | The details window on a phone | **A sheet that rides up over pinned slides.** |
 | 53 | Where the designs live | **One canvas a ticket** (D6 and D10 one a theme), since 2026-09-18 (`docs/designs/README.md`). |
+
+Decided by Garreth on 2026-09-21, in the session on how a new content type
+gets written and wired (design tickets D13, D14 and D15, open):
+
+| # | Question | Decision |
+|---|---|---|
+| 54 | Does a character need a persona record, so every lane of that character sounds like one person? | **No.** Voice stays in the type's standing instruction and nowhere else. Garreth's reason: half a character's lanes are not that character speaking at all — `celebrity_peptide` is about someone else, `jealousy_quotes` and `mito_hooks` are nobody speaking. The stronger reason found while checking it: the standing instruction is **versioned**, and every deck records the direction version it ran under (§4.3), so voice living anywhere unversioned would make a deck's copy unreproducible from its own record. A shared `characters.persona` would also change every lane of that character at once with nothing to roll back to. The duplication this leaves is answered by **"Start from <type>'s writing"** in the Studio's save dialog — copied once, free to diverge after. `character` stays what it already is: which accounts post the lane, and which image library supplies the likeness. Checked live the same day: `characters` has no persona column (only `notes`, which is admin bookkeeping) and `batch_briefs.voice_profile` and `voice_dims` are null on both rows. |
+| 55 | What the copy instruction is called on screen | **Writing**, replacing Direction, because "direction" reads as how the carousel looks and this field only changes how the copy is written. Over "Copy" (collides with Duplicate) and "Voice" (too narrow). D13. |
+| 56 | What the Wiring tab is called on screen | **Go Live** — *Writing* and *Wiring* are one letter apart and sit in the same tab row, and Go Live says what it does. The database step keeps the name `wire` in the code and the runbook. D13. |
+| 57 | May a type generate with no writing instruction? | **No.** Generate is unavailable until the Writing has been saved, with the reason named the way a missing library already is. The Studio's drafted note pre-fills the editor but does not count as saved, so a person has read it. Supersedes §4.7's "Save as content type … creates the standing direction". D13. |
+| 58 | How does the writer know what goes in each text box? | **The box is named**, and the name is its role in the copy contract, which also carries who writes it (AI, fixed, per batch) and how many characters fit. The Studio gains a Name field; the limit is measured from the box's wrap width and fonts rather than typed. No per-box description — what a box is for is said in the type's Writing, one place not two, with the box names listed beside that editor. D14. |
+
+Decided by Garreth on 2026-09-22, on the generator's front page (design
+ticket D16, open):
+
+| # | Question | Decision |
+|---|---|---|
+| 59 | Does the generator need a front page, and where does it sit? | **Yes: Overview becomes the landing** at `/carousel-generator`, and **Carousel types moves to `/carousel-generator/types`**, beside the type page's own `/types/[slug]`. Overview joins the left menu as its first item; Carousel types keeps its full card list and stays a menu item of its own. Three widgets: **Waiting for you**, **Carousel types**, **Saved**. D16. |
+| 60 | What does the first widget list? | **Only what still needs a person** — not everything in motion. The rule is the bell's rule: the widget lists exactly what would ring the bell and nothing else, so a batch part-way through writing is absent, and so is a flagged deck inside a running Auto batch, which Auto takes back itself (D12). It is named **Waiting for you** rather than Running work so the name does not promise a monitor. The cost, accepted: work in flight is gathered nowhere, answered by the bell and by the type card's *Open running batch*. D16. |
+| 61 | How are the types on the front page ordered, and how many? | **The five generated most recently**, not the five running out of stock — Inventory is what raises a lane running dry, and days of cover still shows on the row. A type never generated sorts last and fills a spare row, so a type made in the Studio yesterday is reachable from the page whose job is quick access to generating. D16. |
+| 62 | What does "saved carousels" mean on the front page? | **The references saved on Trends** (`reference_favourites`, personal, per session email). It does **not** mean our own decks; there is no way to save one of those and D16 does not add one, so "saved" keeps one meaning across the app. D16. |
 
 Open after round three (dev tickets, open questions 7 to 9): whether a thinly
 analysed carousel should offer "Analyse in full"; whether the filters should

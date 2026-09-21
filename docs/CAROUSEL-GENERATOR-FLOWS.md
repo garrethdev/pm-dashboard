@@ -69,12 +69,23 @@ no longer used on a card.
 | Batch | `/carousel-generator/batches/[id]` | 2 | Render (n) decks, once the writing is done; Approve (n) decks on the finished batch | Discard deck, in the More menu |
 | History | `/carousel-generator/history` | 2 | Only in the first-run empty state: Generate | — |
 | Content type | `/carousel-generator/types/[slug]` | 2 | Generate | — |
-| · Direction tab | same, `?tab=direction` | 2 plain, 3 conversation | Save version | — |
-| · Wiring tab | same, `?tab=wiring` | 4 | none; the run is itself a hold | Wire |
+| · Writing tab | same, `?tab=direction` | 2 plain, 3 conversation | Save version | — |
+| · Go Live tab | same, `?tab=wiring` | 4 | none; the run is itself a hold | Wire |
 | Library | `/carousel-generator/library`, `/library/[id]` | 2 read-only, 4 editable | Phase 4: Upload; Generate images in an empty library | Phase 4: Retire image |
 | Studio | `/carousel-generator/studio`, `/studio/[template]` | 3 | Save as content type, or Save version | Discard draft |
 | Trends | `/carousel-generator/trends` | 5 | Analyse on the Digests section, on the newest unanalysed digest; none on the Feed | — |
 | · Details window | over Trends, from a post, a tile or a recent save (F16) | 5 | none | — |
+
+**Renamed 2026-09-21 (Garreth), design ticket D13, awaiting its boards:**
+the **Direction** tab is now the **Writing** tab and the **Wiring** tab is now
+the **Go Live** tab, on every screen and in every flow below. Only the screens
+change: the `direction` column, the table `carousel_lane_directions`, the
+database step `carousel_wire_lane()` and the runbook keep their own names, and
+so does §4.8 of the plan, "Wiring a new content type", which is the process
+rather than the tab. **The two query strings above are deliberately left as
+`?tab=direction` and `?tab=wiring`** until D13 is approved; nothing is built
+yet, so nothing breaks either way, and the new words are a one-line change
+when the boards settle.
 
 All screens work in dark and light mode, like every other page of the
 dashboard (Garreth, 2026-09-14). Dark is designed first; light uses the same
@@ -121,9 +132,9 @@ width.
   3. The form: **How many** (a number, pre-filled with 50 and capped at 50;
      Garreth, 2026-09-14), **Image library** (Garreth, 2026-09-14:
      the library the content type points at, with **Change** to repoint it,
-     or a required choice when it points at none), **Direction** (the active
+     or a required choice when it points at none), **Writing** (the active
      version shown read-only, with its version number and a link to the
-     Direction tab), **Note** (one line, optional), and for Glow Up the
+     Writing tab), **Note** (one line, optional), and for Glow Up the
      per-batch choices from the template: **Opening line** (Fixed or Written).
      The form has no datestamp field (Garreth, 2026-09-14); where Glow Up's
      datestamp comes from is open (DEV-15). The closing line is always the
@@ -322,7 +333,7 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
 
 - **When:** the copy is drifting, or the team wants a new angle for a lane.
   Phase 2 as a plain editor; Phase 3 adds the conversation.
-- **Screens:** Content type, Direction tab.
+- **Screens:** Content type, Writing tab.
 - **Steps (Phase 2):**
   1. The tab shows the active direction, its version and date, and the list
      of past versions.
@@ -575,7 +586,7 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
 
 - **When:** a studio-made type has an approved first batch and should start
   posting. Phase 4.
-- **Screens:** Content type, Wiring tab.
+- **Screens:** Content type, Go Live tab.
 - **Before wiring, a type has no lane table.** **Proposed:** for an unwired
   type, Approve and Render write to the drafts only (rendered slide URLs on
   `carousel_draft_slides`), and the lane rows are written as the last step of
@@ -674,7 +685,7 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
   1. Proposed rules appear as pending on the **Knowledge** tab,
      filterable by lane and confidence, above the rules already accepted.
   2. **Accept** appends the rule with the digest it came from and the session
-     email. The Direction conversation can now cite it.
+     email. The Writing conversation can now cite it.
   3. **Reject** removes it from the pending list and records nothing.
 - **Accent action:** none (Accept and Reject are per rule, secondary).
 - **Hold:** none; rejecting records nothing and accepting overwrites nothing.
