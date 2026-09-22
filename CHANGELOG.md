@@ -20,6 +20,47 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — Posts for real phones now go to a person, not to Geelark
+
+**Where it came from:** ticket PF-06, the last piece of plumbing the phone farm
+needed.
+
+The robot that sends out posts every morning at 10 now looks at each account
+first. If the account is on a Geelark cloud phone, nothing has changed. If it
+is on a real iPhone, the robot uploads nothing and creates no Geelark job — it
+simply writes down that the post has been handed to a person, and it appears on
+the To-do list with its caption and its video ready to download.
+
+**A post that's done is now finished with properly.** Handing a post out leaves
+it marked "ready", because nobody has posted it yet. Ticking it off marks it
+Posted; marking it Failed burns the content with it, the way you asked. Before
+this, a handed-out post would have sat marked "ready" for ever and Inventory
+would have kept counting it as content nobody had used.
+
+**One thing deliberately not copied.** Every other place this workflow writes
+to the database is set to treat a rejection as success. That is how a post can
+vanish with the run still reporting a clean night — something this project has
+been caught by before. The new step does the opposite: it retries, and if it
+still cannot write it says so, while letting the rest of the day's posts carry
+on.
+
+**Built for accounts that will never have had Geelark.** You confirmed future
+accounts may be set up with no Geelark phone at all. The new branch runs before
+every Geelark check for that reason — otherwise those posts would have been
+quietly dropped as "not in Geelark" and never reached anyone.
+
+**Verification.** Published and confirmed live, then proven on a real run with a
+throwaway phone, account and post: the account got a queued item and **no
+Geelark job**, the content row was left untouched, a second run added no
+duplicate, the post showed up on the To-do list with its caption and video,
+ticking it Posted closed the content row, and marking it Failed burned it and
+took it out of the due list for good. Everything was then removed and the
+database confirmed back where it started. **Not yet met by real work:** no real
+phone or account is on Physical, and while every account is paused the 10am run
+does nothing at all.
+
+---
+
 ## 2026-09-22 — The to-do list is the real day's work now
 
 **Where it came from:** ticket PF-07, the next one in the phone-farm build

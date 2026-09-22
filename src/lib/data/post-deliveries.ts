@@ -252,6 +252,69 @@ export async function queueDelivery(
   return { delivery: existing[0], created: false };
 }
 
+/**
+ * Close out the CONTENT row behind a delivery (PF-06).
+ *
+ * The Posting Agent hands a post to a person and deliberately leaves the
+ * content row saying `Ready` — nothing has been posted yet. So when the person
+ * finishes with it, something has to set that row, or it sits there for ever
+ * claiming to be ready: Inventory keeps counting it as content nobody has
+ * used, and nothing downstream ever learns the post went out.
+ *
+ * `posting_status` is the column, the same one the robot sets to Posted or
+ * Failed on the Geelark path. Which COLUMN holds the id differs per content
+ * type (`content_id`, `carousel_id`, `hook_id`), and `content_type_registry`
+ * is the only list of that, so it is read rather than guessed.
+ *
+ * **A failed post takes its content with it** (Garreth, 2026-09-22): Failed
+ * here means the content is burned, not handed back to the pool.
+ *
+ * Best-effort on purpose. The delivery row is the record of what the person
+ * did, and it has already been written by the time this runs; if this fails,
+ * the tick must still stand rather than being rolled back over a bookkeeping
+ * write. A failure is logged loudly instead.
+ */
+export async function closeContentRow(
+  delivery: PostDelivery,
+  status: "Posted" | "Failed" | "Ready",
+): Promise<void> {
+  try {
+    const rows = await (
+      await sbFetch(
+        `content_type_registry?select=source_id_column&content_type=eq.${encodeURIComponent(
+          delivery.contentType,
+        )}&limit=1`,
+        {},
+      )
+    ).json();
+    const idColumn = (rows as { source_id_column: string | null }[])[0]?.source_id_column;
+    if (!idColumn) {
+      console.error(
+        `closing the content row for delivery ${delivery.id}: no source_id_column for ${delivery.contentType}`,
+      );
+      return;
+    }
+    const res = await sbFetch(
+      `${encodeURIComponent(delivery.sourceTable)}?${encodeURIComponent(idColumn)}=eq.${encodeURIComponent(
+        delivery.sourceId,
+      )}`,
+      {
+        method: "PATCH",
+        headers: { ...JSON_HEADERS, Prefer: "return=minimal" },
+        body: JSON.stringify({ posting_status: status }),
+      },
+    );
+    if (!res.ok) {
+      console.error(
+        `closing the content row for delivery ${delivery.id} rejected (HTTP ${res.status}):`,
+        await res.text().catch(() => ""),
+      );
+    }
+  } catch (err) {
+    console.error(`closing the content row for delivery ${delivery.id} failed`, err);
+  }
+}
+
 export interface MarkDeliveryInput {
   status: DeliveryStatus;
   /** Only meaningful on `posted`; left alone when not given. */

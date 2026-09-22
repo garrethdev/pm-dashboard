@@ -4,6 +4,7 @@ import { parseRowId } from "@/lib/data/device-rules";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
 import {
   DeliveryWriteError,
+  closeContentRow,
   getDelivery,
   markDelivery,
   setDeliveryUrl,
@@ -132,6 +133,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         doneBy: userEmail,
       });
     }
+
+    // PF-06: close the CONTENT row behind it. The Posting Agent hands a post
+    // out and leaves that row saying Ready, because nothing has been posted
+    // yet — so finishing with it here is what finally settles it. Without this
+    // it sits at Ready for ever and Inventory keeps counting it as content
+    // nobody has used. Failed burns the content with the post (Garreth,
+    // 2026-09-22); Undo puts it back on the shelf.
+    if (action === "posted") await closeContentRow(delivery, "Posted");
+    else if (action === "failed") await closeContentRow(delivery, "Failed");
+    else if (action === "undo") await closeContentRow(delivery, "Ready");
 
     await auditLog({
       userEmail,

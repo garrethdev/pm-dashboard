@@ -148,7 +148,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-03 | Move to phone button | Immediate | **Ready now** — PF-01 and PF-02 built 2026-09-18; its screen is design ticket P10, not yet designed |
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
-| PF-06 | Posting Agent fork (n8n) | Immediate | **Ready now** — PF-05 landed 2026-09-22 |
+| PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
 | PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. Shows warmups only until PF-06 hands posts out |
 | PF-11 | Post-ban branch for manual accounts | Intermediate | Blocked by PF-01 |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Ready now** — PF-05 landed 2026-09-22 |
@@ -162,6 +162,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
 | PF-19 | Calendar and Content types per fleet | Intermediate | Ready now; needs database changes |
 | PF-20 | Incidents and the bell per fleet | Intermediate | Ready now |
+| PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Ready now.** New 2026-09-22 from Garreth's decision: an account created from scratch on a real phone still gets a "Profile N" name, and it is typed into a setup form. No such form exists — accounts are made by n8n provisioning today |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -328,7 +329,7 @@ deleted. **Not proven with real data**: no phone is registered, no account is
 on Physical, and the fleet is paused, so `device_id` was only exercised as NULL
 and against a phone that does not exist.
 
-## PF-06 · Posting Agent fork — Ready now (PF-05 landed 2026-09-22)
+## PF-06 · Posting Agent fork — Done 2026-09-22
 
 In `[Unified] Posting Agent` (`lioNzkWRocyDvZS5`): for
 `delivery_mode = manual`, write a `queued` delivery row and leave the content
@@ -347,6 +348,45 @@ the workflow is open, because the content tables differ per type and
 *Done when:* a manual-mode test account gets a queued row and no Geelark task,
 on a real 10:00 ET run, **and a delivery marked failed leaves its content row
 closed rather than Ready.**
+
+*2026-09-22: built, published and proven live.* Five edits to
+`[Unified] Posting Agent` (`lioNzkWRocyDvZS5`), all additive:
+
+1. **Read accounts** now selects `id`, `delivery_mode` and `device_id` as well.
+2. **Stage Rows** tags each post with the account behind it and sends a
+   `delivery_mode = manual` one down a new path. That branch sits **before
+   every Geelark check on purpose**: a manual account needs no cloud phone, no
+   music lookup and no scheduleAt, and a future account with no Geelark phone
+   would otherwise be dropped there as "not in Geelark" and never reach
+   anybody's list (Garreth confirmed 2026-09-22 that future accounts may have
+   no Geelark phone).
+3. **Posted by a person?** — the fork, before anything is uploaded.
+4. **Hand Post To Person** — inserts the `queued` row with
+   `resolution=ignore-duplicates`, so an n8n retry cannot put the same post on
+   the list twice or drag a finished one back.
+5. The content row is left `Ready`. Nothing has been posted yet.
+
+**The hand-out node does NOT use `neverError`**, unlike the rest of this
+workflow. That convention reports a rejected insert as success, and here that
+would mean a post silently never reaching anybody — the "silent zero" failure
+this project has been bitten by before. It retries three times and lets the
+loop continue instead.
+
+**Which column closes a post, the question this ticket was left holding:** it
+is the content row's `posting_status`, the same one the robot sets. The APP
+sets it now (`closeContentRow` in `post-deliveries.ts`): Posted on a tick,
+**Failed on a dump — the content is burned with the post** (Garreth,
+2026-09-22) — and back to Ready on an undo. Without it a handed-out post sat
+at `Ready` for ever and Inventory kept counting it as unused content.
+
+*Done when — met:* a real manual run gave a manual-mode account a queued row
+and **no Geelark task**, with the content row untouched at `Ready`; a second
+run added no duplicate; the post appeared on the To-do list with its caption
+and video; marking it posted set the content row to `Posted`, and marking it
+failed set it to `Failed` and took it out of the due list for good. The
+throwaway phone, account and content row were all removed afterwards.
+**Not proven with real work:** no real phone or account is on Physical yet, and
+the 10:00 run does nothing at all while every account is paused.
 
 ## PF-07 · Posting To-Do page — Done 2026-09-22
 
