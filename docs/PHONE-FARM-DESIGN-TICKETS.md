@@ -88,7 +88,7 @@ purpose; the changelog has them.
 | P2 | Add the To-do today page, grouped by device and then by account | **Approved 2026-09-22, and REAL since PF-07** the same day. `?todo=` still draws the placeholder states for review |
 | P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07. **Log warmup is live since PF-04** and **Posted / Failed since PF-07** (both 2026-09-22); the six saving states P3 handed over are built |
 | P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22, and the switch now SAVES** — PF-04 landed the same day. The by-phone view still needs PF-02's real phones to have groups. What an Automated account SHOWS moved to PF-13 |
-| P5 | Rework the device page around the phone's daily work | **Approved 2026-09-22.** Built and on the branch. **Warmup history is real since PF-04** (2026-09-22); Today on this phone still waits on PF-05 and PF-07 |
+| P5 | Rework the device page around the phone's daily work | **Approved and built 2026-09-22.** Warmup history is real since PF-04. **One gap, found 2026-09-22: "Today on this phone" is still demo-only** — `device-detail.tsx` reads `demo?.today ?? null`, so a real phone always shows "Nothing due" however many deliveries it has. PF-05 and PF-07 built the tables and the To-do page but nobody rewired this page to them. Small follow-on, not a redesign |
 | P6 | Track proxy expiry for real phones on Proxies & numbers | Not started |
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
 | P8 | Add the checklist for a ban on a real phone | Not started |
@@ -730,7 +730,16 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   and nothing drifts on the way to the build. **Approval closes the design AND
   the build: the screen is in the app.** What is left is the data behind it —
   PF-04, PF-05 and PF-07 — and two things that could not be checked from here
-  (see "Checked" below). Drawn in the running app
+  (see "Checked" below).
+
+  **Re-checked 2026-09-22, after PF-04/05/07 all landed.** Warmup history is
+  real. The daily-work block is NOT: `device-detail.tsx` still reads
+  `const today = demo?.today ?? null`, so it only ever draws from the invented
+  phone and a real one falls through to "Nothing due" no matter how many posts
+  and warmups it is owed. The tables and the To-do page it needs both exist
+  now; nothing went back and joined them to this page. That is the whole
+  remaining job here, and it is a wiring change rather than a design one.
+  Drawn in the running app
   behind placeholder data, the way P1 to P4 were, so what is reviewed is the
   screen itself. The page is
   `src/app/(dashboard)/devices/[id]/page.tsx` and
