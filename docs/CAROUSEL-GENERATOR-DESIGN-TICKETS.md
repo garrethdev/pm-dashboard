@@ -2439,7 +2439,9 @@ the edges are tested, not just the happy middle.
   (nothing postable, the reason different row to row) · Desktop, Rows (stacked)
   · Phone, Not live yet · Phone, A row's drawer · Phone, A row's drawer (the
   caption column empty) · Desktop, Not live yet · Desktop, and Live with no
-  rows yet · Desktop.
+  rows yet · Desktop. **In the prototype since version 29, 2026-09-22**: the
+  Rows tab rides in on D7's screen, so a type's name on Carousel types reaches
+  it, a row opens its drawer and Open the deck goes on to that deck's batch.
 - **Decided while drawing it** (not in the ticket, so worth saying out loud):
   - **The status pill's tone splits on one question: is anything going to
     happen to this row by itself?** Ready is green; **Not rendered**,
