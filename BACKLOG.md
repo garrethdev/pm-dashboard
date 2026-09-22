@@ -305,8 +305,18 @@ In `[Unified] Posting Agent` (`lioNzkWRocyDvZS5`): for
 row `Ready`; do not call Geelark. Geelark accounts follow the existing path
 unchanged. Save, compare `versionId` vs `activeVersionId`, **publish** — an
 unpublished draft is the classic miss.
+**A dumped post takes its content with it (Garreth, 2026-09-22).** When a
+delivery is marked `failed`, the content row behind it is dumped too, not
+released back to the pool to be offered another day. So Failed is the end of
+both: the delivery row settles at `failed`, and the content row is closed out
+rather than returned to `Ready`. Whichever column PF-06 sets to hand the post
+out is the one it must set back on the way down; write it in this ticket once
+the workflow is open, because the content tables differ per type and
+`content_type_registry` is the only list of them.
+
 *Done when:* a manual-mode test account gets a queued row and no Geelark task,
-on a real 10:00 ET run.
+on a real 10:00 ET run, **and a delivery marked failed leaves its content row
+closed rather than Ready.**
 
 ## PF-07 · Posting To-Do page — Ready now (PF-05 landed 2026-09-22)
 
@@ -374,12 +384,18 @@ well as a piece of work:
    clipboard and Safari can refuse. It fails silently today; it should say
    why, since the fallback is typing a long URL by hand on a phone.
 
-**Settle before building the Failed button (open, 2026-09-22).** PF-05's
-uniqueness rule — one row per post per account, which is what stops an n8n
-retry duplicating an item — means **a failed post cannot be handed out again
-as a second row**. It has to be put back on the first one. Nobody has decided
-whether that is what Failed does, and the answer changes what the button
-writes. Garreth was told on 2026-09-22 and has not ruled.
+**Settled 2026-09-22 (Garreth): "failed posts should be dumped."** Failed is
+the END of a post. The button marks the delivery row `failed` and that is
+all: the post is never handed out again, never re-queued, and does **not**
+carry over to tomorrow, so decision 5's three-day carry-over does not apply
+to it. This also means PF-05's one-row-per-post rule never binds — nothing
+ever needs a second row for the same post. `isItemFinished` was changed to
+treat `failed` as terminal the same day, or a dumped post would have come
+back on the list for three days running.
+
+*Still to decide, smaller:* whether the CONTENT row behind a dumped post goes
+back to the pool to be offered another day, or is burned with the delivery.
+PF-06 writes that row, so it belongs with PF-06.
 
 *Done when:* Yurie can complete a delivery from the iPhone's browser, **and
 each of the six states above behaves as decided** — with the failed save

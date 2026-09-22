@@ -20,6 +20,33 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — A post that fails is finished with, not tried again
+
+**Where it came from:** Garreth, 2026-09-22, settling the one question ticket
+PF-07 could not build its Failed button without: "failed posts should be
+dumped."
+
+When a post cannot be put up, pressing Failed is now the end of that post —
+and of the content behind it, which is dumped with it rather than going back
+in the pool to be offered another day (Garreth, same day). It is not offered
+again, and it does not come back on tomorrow's list. That last
+part is the bit that needed changing: the rule until now was that anything
+unfinished carries over for three days, and the app counted a failed post as
+unfinished — so a post that was meant to be thrown away would have reappeared
+three mornings running. It now settles the moment it is marked failed.
+
+**A knock-on worth watching.** The day's counts read "done" for anything
+nobody has to touch again, so a post that failed now counts towards them. An
+account whose only post failed will say its posts are done, in the same cyan
+as an account that actually posted. Nothing is lost — the To-do page still
+says Failed beside the post itself — but the pill alone no longer tells the
+two apart. Left as is for now; it is a small change to separate them if it
+grates.
+
+**Not proven.** No post has ever been marked failed against real data; there
+are no real deliveries yet. This is the rule written down and the app changed
+to match it, waiting on PF-06 and PF-07.
+
 ## 2026-09-22 — A phone's page now opens on that phone's day
 
 **Where it came from:** ticket P5 in `docs/PHONE-FARM-DESIGN-TICKETS.md`.

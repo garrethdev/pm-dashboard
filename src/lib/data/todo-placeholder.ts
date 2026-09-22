@@ -590,9 +590,22 @@ export function todoEmptyReason(state: TodoState): "noPhones" | "nothingDue" | n
   return null;
 }
 
-/** An item nobody has to touch again. A post still owing its link is NOT done. */
+/**
+ * An item nobody has to touch again. A post still owing its link is NOT done.
+ *
+ * `failed` is terminal (Garreth, 2026-09-22: "failed posts should be dumped").
+ * A failed post is not handed out again and does not carry over to tomorrow,
+ * so it must settle here — otherwise decision 5 brings it back for three days
+ * running. It also means PF-05's one-row-per-post rule never gets in the way:
+ * nothing ever needs a second row for the same post.
+ */
 export function isItemFinished(item: TodoItem): boolean {
-  return item.status === "posted" || item.status === "logged" || item.status === "skipped";
+  return (
+    item.status === "posted" ||
+    item.status === "logged" ||
+    item.status === "skipped" ||
+    item.status === "failed"
+  );
 }
 
 export function isItemOpen(item: TodoItem): boolean {

@@ -53,7 +53,9 @@ Companion documents: `REAL-PHONE-MASTERPLAN.md` (why, and the plan of record),
    the incident feed (2026-09-22). Only the Posting Agent drops out of
    Automation on the Physical side, since posting is by hand.
 5. **An unfinished item carries over to tomorrow** (2026-09-19). It does not
-   close as missed at midnight.
+   close as missed at midnight. **Except a failed post** (Garreth,
+   2026-09-22): "failed posts should be dumped." Failed is the end of it — not
+   handed out again, not carried over.
 6. **Paused accounts are hidden from the to-do list** (2026-09-19).
 7. **A post can be marked Posted without its link, and the link added later,**
    but the item must show which it is: **fully done**, or **posted and still
