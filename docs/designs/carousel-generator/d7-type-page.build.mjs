@@ -284,6 +284,10 @@ const MENTION_DOC = [
    longer a box on the template, so that mention now resolves to nothing. */
 const MENTION_DOC_DEAD = MENTION_DOC.map(([k, v]) => (k === "m" && v === "closing" ? ["x", v] : [k, v]));
 
+/* The same Writing as the plain characters it is stored as. The prototype's editor starts from this, so the
+   click-through opens on exactly what the Mentions board draws. */
+const MENTION_TEXT = MENTION_DOC.map(([k, v]) => (k === "t" ? v : "@" + v)).join("");
+
 /* A template with more boxes than the menu can show at once, for the scrolling state. D14 settled that a box
    added by hand arrives named Text Box 1, so a real template mixes chosen names with those. */
 const MANY_BOXES = ["hook", "line", "closing", "kicker", "caption", "price", "Text Box 1", "Text Box 2"];
@@ -740,6 +744,20 @@ ${S} .atm button .lim { font-family: inherit; font-size: 11px; color: var(--text
 ${S} .atm button.is-on { background: var(--accent-soft); }
 /* The count beside Save version: data, not instruction text — it says a real thing about this Writing. */
 ${S} .edfoot .gone { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+/* D17, the prototype only. The boards draw each state as a picture; in the click-through the editor has to be a
+   surface that both renders a pill and takes typing, which a <textarea> cannot do (DEV-19b says the same). It is
+   the same .edtext box with the browser's own editing turned on: what is stored is still the plain characters
+   \`@hook\`, read back off this element whenever it changes. */
+${S} .edrich { white-space: pre-wrap; cursor: text; }
+${S} .edrich .men { user-select: all; }
+${S} .atm.is-up { transform: translateY(-100%); }
+/* The Conversation's box, the same surface for the same reason: a pill dropped here reads as it does in the
+   Writing, so the exchange and the instruction look alike (D17). It replaces the plain input, so it carries the
+   input's own metrics and its placeholder. */
+${S} .cinbox { flex: 1; min-width: 0; max-height: 96px; overflow-y: auto; font-size: 14px; line-height: 20px; outline: none; white-space: pre-wrap; cursor: text; }
+${S} .cinbox:empty::before { content: attr(data-ph); color: var(--text-muted); }
+/* The @ menu is placed against whichever card the caret is in, so both carry the origin it is measured from. */
+${S} .cin7 { position: relative; }
 /* D13b, the phone: the Conversation is a sheet, so the offer of a first draft sits under the empty editor instead,
    where a writer meets it without opening the sheet (Garreth, 2026-09-22). */
 ${S} .edoffer { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px ${P ? 20 : 24}px 16px; }
@@ -1095,6 +1113,10 @@ function direction(T, init, phone) {
   /* D17: which mention state this board is drawing, if any. */
   const men = init.men || "";
   const dead = men === "dead";
+  /* D17 in the prototype. The boards above are pictures, one per state; `live` is the click-through, where the
+     one editor has to do all of them at once — render a mention as a pill, take typing, take a dropped pill and
+     open the `@` menu. Only prototype.build.mjs passes it, so no review board changes shape. */
+  const live = !!init.live;
   /* The boxes this board's template has. Most show the three the sample carries; `many` is the template whose
      menu has to scroll, `one` the template with nothing to choose between (D17). A renamed box is why the dead
      state has a `closing` in the text and no `closing` in the row. */
@@ -1119,16 +1141,45 @@ function direction(T, init, phone) {
     men === "drag"
       ? menTok(MENTION_DOC.slice(0, 3), 2) + esc(" takes one piece, photographed plainly, and says why it lasts.")
       : menTok(dead ? MENTION_DOC_DEAD : MENTION_DOC);
+  /* The live editor's starting content is the Mentions board's own Writing, written out as the pills it draws.
+     Nothing inside it is a {{hole}}: the runtime must never redraw these children, or a caret would be thrown
+     away mid-word. Everything after the first paint is done to the element itself, and the plain characters are
+     read back off it. */
+  /* A mention is one thing, not five letters that can be typed into: the browser's own editing has to treat the
+     pill as a single character, or a caret finds its way inside and the next mention nests in it. That is what
+     contenteditable="false" on the span buys — and Backspace then takes the whole name away, which is how a
+     mention reads to a person anyway. The characters it stands for are unchanged. */
+  const liveDoc = menTok(MENTION_DOC).replace(/<span class="men"/g, '<span contenteditable="false" class="men"');
   const text = proposal
     ? `<div class="edtext diff" role="textbox" aria-multiline="true" aria-label="Writing">${DIFF.map(([k, t]) => (k === "add" ? `<ins>${esc(t)}</ins>` : k === "del" ? `<del>${esc(t)}</del>` : esc(t))).join("")}</div>`
-    : men
-      ? `<div class="edtext" role="textbox" aria-multiline="true" aria-label="Writing">${menDoc}${men === "menu" ? ` @l<span class="caret7" aria-hidden="true"></span>` : men === "many" || men === "one" ? ` @<span class="caret7" aria-hidden="true"></span>` : ""}</div>`
-      : `<textarea class="edtext" aria-label="Writing" placeholder="${esc(WRITING_PLACEHOLDER)}" value="{{d7dirText}}" onChange="{{d7typeDir}}"></textarea>`;
+    : live
+      ? `<div class="edtext edrich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Writing" onInput="{{d7edInput}}" onKeyDown="{{d7edKey}}" onBlur="{{d7edBlur}}" onFocus="{{d7edFocus}}" onDragOver="{{d7edOver}}" onDrop="{{d7edDrop}}">${liveDoc}</div>`
+      : men
+        ? `<div class="edtext" role="textbox" aria-multiline="true" aria-label="Writing">${menDoc}${men === "menu" ? ` @l<span class="caret7" aria-hidden="true"></span>` : men === "many" || men === "one" ? ` @<span class="caret7" aria-hidden="true"></span>` : ""}</div>`
+        : `<textarea class="edtext" aria-label="Writing" placeholder="${esc(WRITING_PLACEHOLDER)}" value="{{d7dirText}}" onChange="{{d7typeDir}}"></textarea>`;
   /* The boxes the instruction is written against, listed under the editor (D13). D17 makes them the way the
      name gets into the text: dragged in, or pressed, which is the only route a phone has. */
   const boxes = `<span class="boxes7"><span class="bxl">Text boxes</span>${boxList
-    .map((b) => `<span class="pill${men ? " is-grab" : ""}${men === "drag" && b === "line" ? " is-lift" : ""}">${esc(b)}</span>`)
+    .map((b, i) =>
+      live
+        ? `<span class="pill is-grab {{d7pillCls.b${i}}}" role="button" tabindex="0" aria-label="Put ${esc(b)} in the writing" draggable="true" onMouseDown="{{d7pillHold}}" onDragStart="{{d7pillDrag.b${i}}}" onDragEnd="{{d7pillEnd}}" onClick="{{d7pillTap.b${i}}}" onKeyDown="{{d7pillKey.b${i}}}">${esc(b)}</span>`
+        : `<span class="pill${men ? " is-grab" : ""}${men === "drag" && b === "line" ? " is-lift" : ""}">${esc(b)}</span>`,
+    )
     .join("")}</span>`;
+  /* The menu `@` opens, in the click-through. It sits on the card the caret is in, at the caret, and holds only
+     the boxes whose name still matches what has been typed — which is what keeps it out of the way of someone
+     writing "never @ anyone" (D17). */
+  const liveMenu = (where) => `
+                <sc-if value="{{d7at${where}}}" hint-placeholder-val="{{ false }}">
+                  <div class="atm {{d7atUp}}" role="listbox" aria-label="Text boxes" style="left: {{d7atX}}px; top: {{d7atY}}px;">
+                    <span class="atl">Text boxes</span>
+                    <div class="ats">
+                      <sc-for list="{{d7atList}}" as="o" hint-placeholder-count="3">
+                        <button type="button" role="option" aria-selected="{{o.selected}}" class="{{o.cls}}" onMouseDown="{{d7pillHold}}" onClick="{{o.pick}}">{{o.at}}<span class="lim tnum">{{o.lim}}</span></button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>`;
   /* The pill under the cursor, and the menu `@` opens. Both sit over the editor, so they are drawn on the card. */
   const dragGhost = men === "drag" ? `<span class="pill drag7" style="left: ${phone ? 96 : 256}px; top: ${phone ? 150 : 122}px;">line</span>` : "";
   const atMenu =
@@ -1172,7 +1223,7 @@ function direction(T, init, phone) {
                 <div class="c7h">${saved ? versions : noVersions}
                 </div>
                 <div class="edbody">${text}</div>
-                ${dragGhost}${atMenu}
+                ${dragGhost}${atMenu}${live ? liveMenu("Ed") : ""}
                 ${
                   phone
                     ? `${noneYet ? `<div class="edoffer">${offer}${offerSub}</div>` : ""}<div class="edboxes">${boxes}</div>`
@@ -1214,7 +1265,13 @@ function direction(T, init, phone) {
   /* empty-state.tsx's shape: a muted circle over one quiet line, filling the card, with the offer under it. */
   const empty = `<div class="cempty"><span class="eic" aria-hidden="true">${D7I.note}</span><p>Nothing written for this type yet.</p>${offer}${offerSub}</div>`;
   const body = `<div class="msgs7">${noneYet ? empty : `${me}${reply}`}</div>`;
-  const box = `<div class="cin7"><div class="ai7"><span class="aitile7" aria-hidden="true">${D7I.spark}</span><input type="text" aria-label="Message" placeholder="${esc(boxAsk)}" /><button type="button" class="aisend7" aria-label="Send" onClick="{{d7send}}">${D7I.send}</button></div></div>`;
+  /* D17: dropping a pill on the Conversation's box does nothing different — it inserts the same mention — so in
+     the click-through the box is the same kind of surface as the editor, and "make @hook shorter" asks about a
+     box rather than about a word. */
+  const liveBox = `<div class="cinbox" contenteditable="true" role="textbox" aria-label="Message" data-ph="${esc(boxAsk)}" onInput="{{d7cinInput}}" onKeyDown="{{d7cinKey}}" onBlur="{{d7cinBlur}}" onFocus="{{d7cinFocus}}" onDragOver="{{d7edOver}}" onDrop="{{d7cinDrop}}"></div>`;
+  const box = `<div class="cin7"><div class="ai7"><span class="aitile7" aria-hidden="true">${D7I.spark}</span>${
+    live ? liveBox : `<input type="text" aria-label="Message" placeholder="${esc(boxAsk)}" />`
+  }<button type="button" class="aisend7" aria-label="Send" onClick="{{d7send}}">${D7I.send}</button></div>${live ? liveMenu("Cin") : ""}</div>`;
   const chat = `
               <section class="c7 chat7" aria-label="Conversation">
                 <div class="c7h"><div class="who"><span class="markv">${MARK}</span><h2>Conversation</h2></div></div>
@@ -1455,7 +1512,16 @@ function vals(T, init) {
     /* D13: no Writing saved means no version to pick and Generate unavailable. The Studio's draft counts as not
        saved — the requirement is met by someone having read it and pressed Save version, not by a full field. */
     var NOWRITING = ${init.writing !== "saved"};
-    var DIRS = ${JSON.stringify(init.writing === "saved" ? T.directions : [])};
+    /* D17: in the click-through the newest Writing is the one the Mentions board draws — the same instruction,
+       naming its boxes rather than spelling them. The older versions are left as they were: they were written
+       before a mention was a thing you could put in, which is what an older version looks like. */
+    var DIRS = ${JSON.stringify(
+      init.writing === "saved"
+        ? init.live
+          ? T.directions.map((d, n) => (n === 0 ? { ...d, text: MENTION_TEXT } : d))
+          : T.directions
+        : [],
+    )};
     var TPL = ${JSON.stringify(TPL)};
     var LINES = ${JSON.stringify(T.lines)};
     /* A link may name the tab to open on (the Generate form's Edit opens Direction) until a tab is pressed. */
@@ -1474,7 +1540,255 @@ function vals(T, init) {
     var R = s.d7row == null || s.d7row < 0 ? null : ROWS[s.d7row];
     var cur = TPL[s.d7tv] || TPL[0];
     var dv = DIRS[s.d7dv] || DIRS[0] || { name: "", date: "", active: false, text: "" };
-    return {
+
+    /* ── D17, the click-through ──────────────────────────────────────────────────────────────────────────────
+       The review boards are pictures, one per state. Here one editor has to do all of them at once, so it is the
+       browser's own editing surface rather than a <textarea>: a pill cannot be drawn inside one, which is the
+       whole of DEV-19b's note. What is STORED never changes — d7dir holds the plain characters, the "@hook" and
+       all, read back off the element whenever it changes, and Save version compares those characters. The pills
+       are only the drawing, rebuilt from the active template's box names, which is why a name that is not a box
+       stays ordinary prose and "never @ anyone" is left alone. */
+    var LIVE = ${!!init.live};
+    var BOXES = ${JSON.stringify(T.boxes)};
+    var LIMS = ${JSON.stringify(BOX_LIMITS)};
+    var live = {};
+    if (LIVE) {
+      var $ed = function () { return document.querySelector(".edrich"); };
+      var $cin = function () { return document.querySelector(".cinbox"); };
+      var escHtml = function (t) { return String(t).replace(/&/g, "&amp;").replace(/[<]/g, "&lt;").replace(/>/g, "&gt;"); };
+      /* What the element says, as the characters the Writing column would hold. */
+      var plainOf = function (host) {
+        var out = "";
+        var walk = function (n) {
+          for (var i = 0; i < n.childNodes.length; i++) {
+            var c = n.childNodes[i];
+            if (c.nodeType === 3) out += c.data;
+            else if (c.nodeName === "BR") out += "\\n";
+            else {
+              if (/^(DIV|P)$/.test(c.nodeName) && out && out.charAt(out.length - 1) !== "\\n") out += "\\n";
+              walk(c);
+            }
+          }
+        };
+        walk(host);
+        return out.replace(/\\u00a0/g, " ");
+      };
+      /* And the same characters drawn: a name that is still a box becomes a pill, anything else stays prose. */
+      var htmlOf = function (text) {
+        var names = BOXES.slice().sort(function (a, b) { return b.length - a.length; });
+        var out = "";
+        var i = 0;
+        while (i < text.length) {
+          var hit = null;
+          if (text.charAt(i) === "@") {
+            for (var k = 0; k < names.length; k++) {
+              if (text.substr(i + 1, names[k].length).toLowerCase() === names[k].toLowerCase()) { hit = names[k]; break; }
+            }
+          }
+          if (hit) { out += '<span contenteditable="false" class="men">@' + escHtml(hit) + "</span>"; i += hit.length + 1; }
+          else { var ch = text.charAt(i); out += ch === "\\n" ? "<br>" : escHtml(ch); i++; }
+        }
+        return out;
+      };
+      self.d7html = htmlOf;
+      var caretRange = function (host) {
+        var sel = window.getSelection();
+        if (sel && sel.rangeCount) { var r = sel.getRangeAt(0); if (host.contains(r.startContainer)) return r; }
+        var end = document.createRange();
+        end.selectNodeContents(host);
+        end.collapse(false);
+        return end;
+      };
+      var putCaretAfter = function (node) {
+        var r = document.createRange();
+        r.setStartAfter(node);
+        r.collapse(true);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+      };
+      /* The characters are the record, so every change ends here. d7edText is what the element was last known to
+         say, which is how componentDidUpdate tells a change made in the editor from one made to it. */
+      var readBack = function (host) {
+        var text = plainOf(host);
+        if (host.className.indexOf("edrich") >= 0) { self.d7edText = text; self.setState({ d7dir: text }); }
+        else self.setState({ d7cinText: text });
+      };
+      /* A mention goes in as the pill it is drawn as, with a space either side of it where there is not one
+         already — the pill's own padding would hide "price.@closing", but the characters are what the prompt
+         reads, and there the two words have to come apart. */
+      /* Never start inside a mention: a caret that found its way in would nest one pill in another. */
+      var outOfPill = function (host, range) {
+        var node = range.startContainer;
+        var el = node.nodeType === 3 ? node.parentNode : node;
+        var pill = el && el.closest ? el.closest(".men") : null;
+        if (!pill || !host.contains(pill)) return range;
+        var out = document.createRange();
+        out.setStartAfter(pill);
+        out.collapse(true);
+        return out;
+      };
+      var insertMention = function (host, range, name) {
+        range = outOfPill(host, range);
+        range.deleteContents();
+        var at = range.startContainer;
+        if (at.nodeType === 3 && range.startOffset > 0 && !/[\\s\\u00a0]/.test(at.data.charAt(range.startOffset - 1))) {
+          at.insertData(range.startOffset, "\\u00a0");
+          range.setStart(at, range.startOffset + 1);
+          range.collapse(true);
+        }
+        var span = document.createElement("span");
+        span.className = "men";
+        span.contentEditable = "false";
+        span.textContent = "@" + name;
+        range.insertNode(span);
+        var sp = document.createTextNode("\\u00a0");
+        span.parentNode.insertBefore(sp, span.nextSibling);
+        putCaretAfter(sp);
+        readBack(host);
+      };
+      var hits = function (q) {
+        return BOXES.filter(function (b) { return b.toLowerCase().indexOf(String(q).toLowerCase()) === 0; });
+      };
+      /* The menu opens only while what follows the @ still matches a box name, and it is placed at the caret, on
+         whichever card the caret is in. On the phone it opens above the caret: the editor is short and a menu
+         below it would hang off the bottom of the card (D17). */
+      var lookAt = function (host, isCin) {
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount || !host.contains(sel.anchorNode)) { self.setState({ d7at: null }); return; }
+        var r = sel.getRangeAt(0);
+        if (r.startContainer.nodeType !== 3) { self.setState({ d7at: null }); return; }
+        var before = r.startContainer.data.slice(0, r.startOffset).replace(/\\u00a0/g, " ");
+        var m = /@([A-Za-z0-9 _-]*)$/.exec(before);
+        if (!m || !hits(m[1]).length) { self.setState({ d7at: null }); return; }
+        var card = host.closest(isCin ? ".cin7" : ".edcard");
+        var box = r.getBoundingClientRect();
+        if (!card || !box || (!box.left && !box.top)) { self.setState({ d7at: null }); return; }
+        var cr = card.getBoundingClientRect();
+        self.setState({
+          d7at: { q: m[1], cin: !!isCin },
+          d7atSel: 0,
+          d7atX: Math.round(box.left - cr.left),
+          d7atY: Math.round(PHONE ? box.top - cr.top - 8 : box.bottom - cr.top + 6)
+        });
+      };
+      /* Picking takes back the "@" and whatever was typed after it, and puts the mention in its place. */
+      var pickName = function (name) {
+        var at = s.d7at;
+        if (!at) return;
+        var host = at.cin ? $cin() : $ed();
+        if (!host) return;
+        var r = caretRange(host);
+        if (r.startContainer.nodeType === 3) {
+          var start = r.startOffset - (String(at.q).length + 1);
+          if (start >= 0) r.setStart(r.startContainer, start);
+        }
+        insertMention(host, r, name);
+        self.setState({ d7at: null });
+      };
+      /* Pressing a pill is the fast way and the only way a phone has; dragging is the discoverable one and the
+         way to place a mention exactly. Both end in the same insert (D17). */
+      var tapName = function (name) {
+        var host = self.d7host === "cin" ? $cin() : $ed();
+        if (!host) return;
+        var r = caretRange(host);
+        host.focus();
+        insertMention(host, r, name);
+        self.setState({ d7at: null });
+      };
+      var dropOn = function (isCin) {
+        return function (e) {
+          e.preventDefault();
+          var host = isCin ? $cin() : $ed();
+          if (!host) return;
+          var name = self.d7dragName;
+          if (!name) { try { name = String(e.dataTransfer.getData("text/plain") || "").replace(/^@/, ""); } catch (err) {} }
+          if (!name || BOXES.indexOf(name) < 0) { self.d7dragName = null; self.setState({ d7drag: null }); return; }
+          var r = null;
+          if (document.caretRangeFromPoint) r = document.caretRangeFromPoint(e.clientX, e.clientY);
+          else if (document.caretPositionFromPoint) {
+            var pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+            if (pos) { r = document.createRange(); r.setStart(pos.offsetNode, pos.offset); r.collapse(true); }
+          }
+          if (!r || !host.contains(r.startContainer)) r = caretRange(host);
+          insertMention(host, r, name);
+          self.d7dragName = null;
+          self.setState({ d7drag: null, d7at: null });
+        };
+      };
+      /* Escape dismisses the menu and leaves the plain characters alone — the other half of what keeps @ out of
+         the way of ordinary writing (D17). */
+      var keyOn = function (isCin) {
+        return function (e) {
+          if (e.key === "Escape") {
+            if (s.d7at) { e.preventDefault(); e.stopPropagation(); self.setState({ d7at: null }); }
+            return;
+          }
+          if (!s.d7at) return;
+          var list = hits(s.d7at.q);
+          if (!list.length) return;
+          var at = s.d7atSel || 0;
+          if (e.key === "ArrowDown") { e.preventDefault(); self.setState({ d7atSel: (at + 1) % list.length }); }
+          else if (e.key === "ArrowUp") { e.preventDefault(); self.setState({ d7atSel: (at - 1 + list.length) % list.length }); }
+          else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pickName(list[at] || list[0]); }
+        };
+      };
+      /* A name typed by hand becomes a pill when the writing is put down: the screen matches the names against
+         the template's boxes each time it is shown, which is exactly what it does here. */
+      var blurOn = function (isCin) {
+        return function () {
+          var host = isCin ? $cin() : $ed();
+          if (!host) return;
+          var text = plainOf(host);
+          host.innerHTML = htmlOf(text);
+          if (!isCin) self.d7edText = text;
+          self.setState({ d7at: null });
+        };
+      };
+      live = {
+        d7pillCls: {}, d7pillDrag: {}, d7pillTap: {}, d7pillKey: {},
+        /* The press must not take the caret out of the editor, or the mention would have nowhere to land. */
+        d7pillHold: function (e) { e.preventDefault(); },
+        d7pillEnd: function () { self.d7dragName = null; self.setState({ d7drag: null }); },
+        d7edInput: function () { var h = $ed(); if (h) { readBack(h); lookAt(h, false); } },
+        d7cinInput: function () { var h = $cin(); if (h) { readBack(h); lookAt(h, true); } },
+        d7edKey: keyOn(false), d7cinKey: keyOn(true),
+        d7edBlur: blurOn(false), d7cinBlur: blurOn(true),
+        d7edFocus: function () { self.d7host = "ed"; },
+        d7cinFocus: function () { self.d7host = "cin"; },
+        d7edOver: function (e) { e.preventDefault(); try { e.dataTransfer.dropEffect = "copy"; } catch (err) {} },
+        d7edDrop: dropOn(false), d7cinDrop: dropOn(true),
+        d7atEd: !!(s.d7at && !s.d7at.cin),
+        d7atCin: !!(s.d7at && s.d7at.cin),
+        d7atUp: PHONE ? "is-up" : "",
+        d7atX: s.d7atX || 0,
+        d7atY: s.d7atY || 0,
+        /* The menu's one second column is the box's character limit, which D14 measures: it is the same number
+           the thing building the copy prompt sends on, so what a mention resolves to is on screen (D17). */
+        d7atList: (s.d7at ? hits(s.d7at.q) : []).map(function (b, i) {
+          var on = i === (s.d7atSel || 0);
+          return {
+            at: "@" + b,
+            lim: (LIMS[b] == null ? 60 : LIMS[b]) + " chars",
+            selected: on ? "true" : "false",
+            cls: on ? "is-on" : "",
+            pick: function () { pickName(b); }
+          };
+        })
+      };
+      BOXES.forEach(function (b, i) {
+        live.d7pillCls["b" + i] = s.d7drag === b ? "is-lift" : "";
+        live.d7pillDrag["b" + i] = function (e) {
+          try { e.dataTransfer.setData("text/plain", "@" + b); e.dataTransfer.effectAllowed = "copy"; } catch (err) {}
+          self.d7dragName = b;
+          self.setState({ d7drag: b });
+        };
+        live.d7pillTap["b" + i] = function () { tapName(b); };
+        live.d7pillKey["b" + i] = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tapName(b); } };
+      });
+    }
+
+    var out = {
       d7is: d7is, d7sel: d7sel, d7go: d7go,
       d7name: NAME,
       d7character: params.character,
@@ -1575,7 +1889,9 @@ function vals(T, init) {
       d7openDeck: function () { ctx.open("render", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: 20 }, "Opens " + (R ? R.id : "that deck") + " in its " + (R ? R.batch : "") + " batch \u00b7 D5"); },
       d7closeRow: function () { self.setState({ d7row: null }); },
       d7rowKey: function (e) { if (e.key === "Escape") self.setState({ d7row: null }); }
-    };`;
+    };
+    /* D17's handlers only exist in the click-through, so they are merged rather than written in above. */
+    return Object.assign(out, live);`;
 }
 
 /**
@@ -1588,12 +1904,14 @@ function vals(T, init) {
  * tab reads, D15) and row (the index of the row whose drawer is open, D15).
  * `tall` lengthens a review board so the whole page shows.
  */
-export function typeScreen({ init = {}, tall = 0 } = {}) {
-  const i = { type: "before", tab: "overview", tv: 0, tvOpen: false, dv: 0, dvOpen: false, dir: "plain", wire: "done", writing: "saved", preview: false, sheet: false, pre: false, rows: "mixed", row: null, ...init };
+export function typeScreen({ init = {}, tall = 0, live = false } = {}) {
+  const i = { type: "before", tab: "overview", tv: 0, tvOpen: false, dv: 0, dvOpen: false, dir: "plain", wire: "done", writing: "saved", preview: false, sheet: false, pre: false, rows: "mixed", row: null, live, ...init };
   const T = TYPES[i.type];
   /* What the editor opens on: a saved version, the Studio's drafted note or the Conversation's first draft (both
-     unsaved, D13b), or nothing at all (D13). */
-  const startText = i.writing === "none" ? "" : i.writing === "draft" ? DRAFTED_NOTE : i.writing === "first" ? FIRST_DRAFT : T.directions[i.dv].text;
+     unsaved, D13b), or nothing at all (D13). In the click-through the newest version is the Writing that names
+     its boxes, which is what D17's Mentions board draws. */
+  const savedText = i.live && !i.dv ? MENTION_TEXT : T.directions[i.dv].text;
+  const startText = i.writing === "none" ? "" : i.writing === "draft" ? DRAFTED_NOTE : i.writing === "first" ? FIRST_DRAFT : savedText;
   return {
     id: "type",
     nav: "types",
@@ -1601,9 +1919,22 @@ export function typeScreen({ init = {}, tall = 0 } = {}) {
     markup: (phone) => page(T, i, phone),
     appOverlay: () => appOverlay(T, i),
     colOverlay: (phone) => (phone ? phoneBar(T, i) : ""),
-    state: { d7tab: i.tab, d7tabSet: false, d7tv: i.tv, d7tvOpen: i.tvOpen, d7dv: i.dv, d7dvOpen: i.dvOpen, d7dir: startText, d7preview: i.preview, d7chat: i.sheet, d7row: i.row },
-    enter: { d7tab: "overview", d7tabSet: false, d7tv: 0, d7tvOpen: false, d7dv: 0, d7dvOpen: false, d7dir: T.directions[0].text, d7preview: false, d7chat: false, d7row: null },
+    state: { d7tab: i.tab, d7tabSet: false, d7tv: i.tv, d7tvOpen: i.tvOpen, d7dv: i.dv, d7dvOpen: i.dvOpen, d7dir: startText, d7preview: i.preview, d7chat: i.sheet, d7row: i.row, d7at: null, d7atSel: 0, d7atX: 0, d7atY: 0, d7drag: null, d7cinText: "" },
+    enter: { d7tab: "overview", d7tabSet: false, d7tv: 0, d7tvOpen: false, d7dv: 0, d7dvOpen: false, d7dir: i.live ? MENTION_TEXT : T.directions[0].text, d7preview: false, d7chat: false, d7row: null, d7at: null, d7drag: null },
     vals: vals(T, i),
+    /* D17: the editor is the one element the runtime must never redraw — its children are plain markup with no
+       {{hole}} in them, so React leaves them alone and a caret survives a render. That means a Writing changed
+       from somewhere ELSE (another version picked from the dropdown, or the screen opened again) has to be
+       written into it here. d7edText is what the element was last known to say, so a change made IN the editor
+       is not written back over the person's caret. */
+    didUpdate: i.live
+      ? `
+    var d7ed = document.querySelector(".edrich");
+    if (d7ed && this.d7html) {
+      var d7want = (this.state || {}).d7dir;
+      if (d7want != null && d7want !== this.d7edText) { d7ed.innerHTML = this.d7html(d7want); this.d7edText = d7want; }
+    }`
+      : "",
   };
 }
 

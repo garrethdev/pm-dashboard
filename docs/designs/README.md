@@ -103,7 +103,12 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
     AI which text slot it is writing. **Every question it raised is settled**: the last one —
     how a mention of a box that no longer exists reads — was drawn both ways
     and decided the same day, and it says so twice, muted in the sentence and
-    counted beside Save version.
+    counted beside Save version. **In the prototype since 2026-09-22**
+    (version 32): the pills drag, press and `@`-type for real, in the Writing
+    and in the Conversation's box, on the desktop and on the phone. It is the
+    first ticket whose behaviour needed something passed into a screen —
+    `typeScreen({ live: true })` — because the editor has to stop being a
+    `<textarea>` before a pill can sit inside it, which is DEV-19b's own note.
 - **D7's canvas was split by theme on 2026-09-22**, into **Dark (D7 Type
   page)** — which kept the original link, so every reference to it still
   works — and a new **Light (D7 Type page)**. 34 boards each, 9.1 MB each
@@ -214,21 +219,41 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   headless Chrome (`--headless=new --screenshot=... --window-size=1440,900`,
   run against the file inside the build folder so its images resolve) gives a
   picture of it. D10's second round was checked that way.
+- **Borrowing the real runtime** (2026-09-22). The filler above only fills
+  holes; it cannot run a screen. But a saved canvas page carries the editor's
+  whole bundle, and inside that bundle is an object
+  `{ reactUmd, reactDomUmd, supportJs }` holding `support.js` and React as
+  plain strings. Pull the three out into a folder beside a built artboard,
+  rewrite its `<script src="./support.js">` into the two vendor scripts
+  followed by `support.js`, serve the folder (`python3 -m http.server`) and
+  open `Main.dc.html`: **the prototype then runs locally, for real**, and can
+  be clicked with the DevTools protocol — which is what the note about the
+  canvas swallowing clicks had ruled out. D17 was checked this way, and so was
+  the question it turned on (whether the editor can be a live editing surface
+  at all). Headless Chrome will not start a native drag, so a drag is proved
+  by dispatching the page's own `dragstart` / `dragover` / `drop` events
+  instead; D6's library images are the standing proof that the real one works.
 - **D11** is built by `d11-studio-round-two.build.mjs`, which draws its
   pictures from D6's Studio: round two was brought into `d6-studio.build.mjs`
   on 2026-09-15, so that file holds the whole screen and D11's keeps only its
   own review moments and image names.
 - **The prototype** is the click-through of every approved screen (a desktop
   artboard and a phone artboard; holds D1 to D10 and **D16**, with D11, D12,
-  D13, D13b, D14 and D15 riding in on the screens they extend — **version 31,
-  2026-09-22, which opens on Overview**; the older
-  `claude.ai/code/artifact/94d569f8-…` form opens the same artifact). Two
-  states stay pictures on their own canvases rather than clicks here (Garreth,
-  2026-09-22): a type with **nothing written** (D13b), because the prototype
-  holds one sample type page and that one has its Writing saved, and a text box
-  **added from the Studio's tool strip** (D14), which keeps D6's pictures-first
-  rule. Both name their board in a note, the way a type that is not wired yet
-  already does. Its
+  D13, D13b, D14, D15 and **D17** riding in on the screens they extend —
+  **version 32, 2026-09-22, which opens on Overview**; the older
+  `claude.ai/code/artifact/94d569f8-…` form opens the same artifact). Four
+  states stay pictures on their own canvases rather than clicks here. Two were
+  Garreth's call on 2026-09-22: a type with **nothing written** (D13b), because
+  the prototype holds one sample type page and that one has its Writing saved,
+  and a text box **added from the Studio's tool strip** (D14), which keeps D6's
+  pictures-first rule. Two more came with **D17** and are limits of the
+  click-through rather than decisions: a **mention of a box that no longer
+  exists** — quiet in the sentence and counted beside Save version — because
+  nothing here renames a text box, which happens in the Studio, where naming a
+  box is itself a picture; and the **Conversation answering with the same
+  mentions back**, because Send on that screen has always reported itself
+  rather than posting a message. All four name their board in a note, the way a
+  type that is not wired yet already does. Its
   Studio is D6's own build with round two included, and a type's slide size
   travels from Carousel types through Generate, the batch and review to D5,
   so Quiet Luxury Picks renders at 9:16. It is built only from `main`, by one
