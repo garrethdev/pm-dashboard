@@ -2230,7 +2230,14 @@ the edges are tested, not just the happy middle.
   and Fails lines — and **F8** step 8, which is no longer the only route to a
   first draft; F11 needed nothing, it never described the drafted note) and
   the dev tickets (**DEV-25** gained the whole of it; DEV-19b is untouched).
-  What is left is development and the prototype.
+  **In the prototype since version 28, 2026-09-22**, rebuilt whole from `main`:
+  the screen came along with the rebuild, but the click-through does not reach
+  it. Both ways to a type with nothing written — Sunday Reset's card on
+  Carousel types, and Write on the Generate form — name D7's board in a note
+  instead of opening it, because the prototype holds one sample type page and
+  that one has its Writing saved. Garreth decided on 2026-09-22 to leave it
+  that way rather than add a second type page. **What is left is
+  development.**
   Raised by Garreth, 2026-09-22, off the back of D13,
   from looking at its own *Writing, nothing written yet* board.
   **Taken before D14**, because it finishes the screen D13 just made required.
@@ -2347,6 +2354,15 @@ the edges are tested, not just the happy middle.
   - **Both D6 canvases are now 15.9 MB against a 16 MB ceiling** — the five
     boards took each from 13.9 MB. The next ticket that adds a Studio board
     will not fit and will need a canvas of its own.
+  - **In the prototype since version 28, 2026-09-22**, rebuilt whole from
+    `main`. Press any text box in the Studio and the three rows are there:
+    Name pre-filled from the AI's draft, Written by as AI / Fixed / Per batch
+    with Fixed opening the words, and Fits n characters following the Wrap
+    width and Size steppers. Typing a name another box on the slide already
+    has is refused with **Taken** and is not saved. The three-named-box cover
+    and a box arriving named **Text Box 1** stay pictures on D6's canvas: the
+    tool strip's Text box button names what it would do rather than adding one,
+    which keeps D6's pictures-first rule (Garreth, 2026-09-22).
   - **Written by sits across the panel's width**, rather than beside its
     label like Shadow and Alignment. Three options fit beside an 84px label
     and four do not, and a layered slide needs four because of **Set**, so the
