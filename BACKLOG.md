@@ -140,28 +140,37 @@ accounts are already `posting_paused` (2026-09-14).
 PF-xx* = needs that ticket merged first. *Blocked by hardware* = needs the
 phones or the Air in Yurie's hands. Order within the list is build order.
 
+**Cross-references audited 2026-09-22.** Ten tickets landed in four days and
+the "blocked by" and "waits on" lines did not keep up: two were actively
+wrong and eight described a world that had moved on. Every one has been
+checked against the code and the database and corrected in place, with the
+old wording struck through rather than deleted so the history still reads.
+Anything a row now claims about a table, a column or a count was looked at on
+2026-09-22, not inferred. **Worth repeating whenever a run of tickets lands
+together** — a wrong "blocked by" costs somebody a morning.
+
 | # | Ticket | Phase | Status |
 |---|---|---|---|
 | PF-01 | `accounts.delivery_mode` switch | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
-| PF-03 | Move to phone button | Immediate | **Ready now** — PF-01 and PF-02 built 2026-09-18; its screen is design ticket P10, not yet designed |
+| PF-03 | Move to phone button | Immediate | **READY TO BUILD 2026-09-22** — its screen, design ticket P10, is APPROVED. The dialog already asks for the phone; what is left is the write: `/api/accounts/delivery-mode` must also set `device_id` and `moved_to_device_at`, and `MOVE_WRITE_READY` in `delivery-mode-control.tsx` flipped in the same change |
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
-| PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. Shows warmups only until PF-06 hands posts out |
+| PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. ~~Shows warmups only until PF-06 hands posts out.~~ **PF-06 landed the same day**; a seeded delivery was seen on the list as "1 post and 2 warmups" (2026-09-22) |
 | PF-11 | Post-ban branch for manual accounts | Intermediate | **Unblocked by PF-01 since 2026-09-18** (this row was stale until 2026-09-22). Waiting on its SCREEN instead: the ban checklist is design ticket P8, not started |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
 | PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
 | PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
-| PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional |
+| PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional. Its screen is designed 2026-09-22 (P10) — the batch dialog exists and plans the moves; only the write is missing |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
 | PF-19 | Calendar and Content types per fleet | Intermediate | **Built 2026-09-22** as four new `_fleet` functions beside the untouched originals; no Physical data to show yet |
-| PF-20 | Incidents and the bell per fleet | Intermediate | Ready now |
+| PF-20 | Incidents and the bell per fleet | Intermediate | **Done 2026-09-22.** Incidents had followed the switch since 2026-09-18; the bell half was settled by Garreth — it shows BOTH fleets and names which on every item. Proven in the running app, dark and light, desktop and phone, against a temporary phone/account/post that was deleted afterwards. No real phone or post has used it |
 | PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
@@ -171,9 +180,15 @@ editable on the account page, audit-logged like the pause toggle.
 *Done when:* an account can be flipped from the app and the row in
 `dashboard_audit_log` says who and when.
 
-*2026-09-18:* built, column live (default `geelark`). The flip has not been
-run on a real account yet, so the audit row has not been seen. The switch does
-nothing to posting until PF-06 makes the Posting Agent read it.
+*2026-09-18:* built, column live (default `geelark`). ~~The switch does
+nothing to posting until PF-06 makes the Posting Agent read it.~~ **PF-06
+landed 2026-09-22, so the switch now decides where a post goes**: a `manual`
+account gets a `post_deliveries` row and no Geelark task.
+
+*Re-checked 2026-09-22:* the flip still has not been run on a real account —
+`dashboard_audit_log` holds zero `delivery_mode_change` rows — so the audit row
+has never been seen. It is also HELD at the moment: P10 made a move require a
+phone, and no phone is registered (see PF-03).
 
 *Redesigned the same day (Garreth):* no pill on the Accounts table or the
 account page, so the Geelark screens stay as they were. Instead the app has
@@ -192,7 +207,7 @@ Cloud account page.
 
 One row per physical phone: name, model, iOS version, proxy, timezone,
 whoer.net proof screenshot, `is_active`, notes. `accounts.device_id` nullable
-FK. Rule enforced in the app: at most three accounts per device.
+FK. **No limit on accounts per phone** — the app enforced three until 2026-09-22, when Garreth removed it: three is today's arrangement, not a rule, and a phone will carry more later. `ACCOUNTS_PER_PHONE` survives as the number the batch move fills a phone to before starting the next.
 `geelark_profile` stays as-is for the old fleet.
 *Done when:* Yurie can register a phone with its proof screenshot and see
 which accounts it holds.
@@ -223,10 +238,14 @@ because the app names accounts by that label. No Facebook row exists yet.
 - **Create it paused.** `v_scheduler_account_config` has no platform filter
   (judged from a pattern search, not a full read), so an active, unpaused
   Facebook row would most likely be planned like any other and the Posting
-  Agent would look for a Geelark phone named after its label. Keep
-  `posting_paused = true` until PF-05 to PF-07 exist. How the n8n workflows
-  (Smart Scheduler, Posting Agent, warmups, digest) treat a Facebook row has
-  not been checked.
+  Agent would look for a Geelark phone named after its label. ~~Keep
+  `posting_paused = true` until PF-05 to PF-07 exist.~~ **All three exist as of
+  2026-09-22**, so a Facebook account on Physical would now get a
+  `post_deliveries` row rather than be sent to Geelark. Keep it paused anyway:
+  every account is paused for the Geelark exit. How the n8n workflows (Smart
+  Scheduler, Posting Agent, warmups, digest) treat a Facebook row still has not
+  been checked. *Re-checked 2026-09-22: zero Facebook accounts exist, so none
+  of this has been seen.*
 - **Handles are matched without the platform in two places.**
   `v_account_view_health` joins views on the handle alone, and
   `analytics_rollup` joins `accounts` on the handle alone in three places. A
@@ -239,11 +258,25 @@ because the app names accounts by that label. No Facebook row exists yet.
   platforms. They will simply never see Facebook, which is right until
   Facebook performance ingest is decided.
 
-## PF-03 · Move to phone — Ready now (PF-01, PF-02 built 2026-09-18); screen is P10, undesigned
+## PF-03 · Move to phone — Screen designed 2026-09-22 (P10); the write is what is left
 
-Button on the account page: pick a device, set `delivery_mode = manual`, record
-`moved_to_device_at`, write an audit row. Does **not** unpause. That date is
-what the comparison view (PF-10) splits on.
+Pick a device, set `delivery_mode = manual`, record `moved_to_device_at`, write
+an audit row. Does **not** unpause. That date is what the comparison view
+(PF-10) splits on.
+
+**Not the account page.** The ticket said "button on the account page", which
+predates Garreth's 2026-09-18 decision that the account page and the Accounts
+table carry no sign of the fleet. P10 put it in Settings → Account management,
+where the fleet flip already lives.
+
+**What P10 already built:** the dialog, the phone picker with its refusals, and
+the rules in `src/lib/data/move-rules.ts`. **What is left:** the route. Today
+`/api/accounts/delivery-mode` sets the fleet and ignores the `deviceId` the
+dialog sends, so a press would half-move an account. A constant named
+`MOVE_WRITE_READY` in `delivery-mode-control.tsx` holds the save shut until
+that is fixed — flip it in the same change, and `moved_to_device_at` needs
+adding to `accounts` (it does not exist yet).
+
 *Done when:* one click does all four and the account shows its phone.
 
 ## PF-04 · `warmup_sessions` + log form — Done 2026-09-22
@@ -499,9 +532,12 @@ and an empty clipboard reads differently from a refused one (6).
 *Done when — met:* proven end to end against the real database with a
 throwaway phone and two throwaway accounts, all since removed, **including the
 failed save proven by a real failure** (the row deleted out from under an open
-sheet). **Not proven with real work:** no phone is registered, no account is
-on Physical, and PF-06 does not exist yet, so nothing hands a post out — the
-list shows warmups only until it does.
+sheet). **Not proven with real work:** no phone is registered and no account is
+on Physical, so nothing real has ever been handed out. ~~PF-06 does not exist
+yet, so nothing hands a post out — the list shows warmups only until it
+does.~~ **PF-06 landed later the same day (2026-09-22)**, and a seeded
+delivery was seen on the list as "1 post and 2 warmups", so the posts half is
+no longer theoretical.
 
 ## PF-11 · Post-ban branch for manual accounts — Waiting on its screen (design ticket P8)
 
@@ -541,9 +577,12 @@ His decisions, all 2026-09-22:
 - **Dismissible, and back tomorrow.** The read-key carries the New York date.
 - **The stuck post is its own item, in red**, not folded into the reminder.
 - **Posts and warmups counted together** as one number, matching the page.
-- **Physical only**, both items — the fleet switch hides them in Cloud. Note
-  this contradicts PF-20's proposal that the bell shows both fleets and names
-  which; PF-20 should settle the two together.
+- **Physical only**, both items — the fleet switch hides them in Cloud.
+  ~~Note this contradicts PF-20's proposal that the bell shows both fleets and
+  names which; PF-20 should settle the two together.~~ **Settled the other way
+  the same day (Garreth, 2026-09-22): "bell shows both fleets and names which."**
+  Both items are still only ever ABOUT Physical, but they are now shown to
+  everyone and carry a Physical label. See PF-20.
 
 Two things the build decided, both written up in the code:
 - **Automated warmups are left out of the count** (P4/PF-13): nobody can tick
@@ -572,7 +611,11 @@ cohort of the same character. This is what the week-6 review reads.
 *Done when:* Garreth and Yurie can read one moved account's before/after on
 one screen.
 
-## PF-13 · Write path for the warmup script — Blocked by PF-04
+## PF-13 · Write path for the warmup script — Ready now; waits on the script being decided
+
+*Heading corrected 2026-09-22: it read "Blocked by PF-04", which the summary
+table above already contradicted. PF-04 landed 2026-09-22 and `warmup_sessions`
+accepts `mode = 'script'` today.*
 
 The script lives on the Air, outside this repo. It needs a way to insert
 `warmup_sessions` rows with `mode = 'script'`: a service-role key kept on the
@@ -616,10 +659,18 @@ handling, not the app. Blocked until the Air has Xcode signed in and the agent
 installed on at least one phone.
 *Done when:* Czedrick sees both phones live from his own Mac and can tap one.
 
-## PF-15 · Batch flips — Blocked by PF-03; optional
+## PF-15 · Batch flips — Screen designed 2026-09-22 (P10); blocked by PF-03; optional
 
 Multi-select Move to phone by character, for when phones arrive in batches.
 Not needed for the pilot.
+
+**P10 built the screen**: Select mode on Account management, and a dialog that
+plans which phone each account goes on, fills one phone before starting the
+next so a character stays together, lets every row be changed, and shows the
+accounts it has no room for rather than dropping them. "By character" is the
+existing search plus Select all — no character control was added. **What is
+left** is one write that moves several accounts at once, which wants PF-03's
+single write first so the two cannot disagree.
 
 ## PF-16 · Retire Geelark — Blocked by the last account moving
 
@@ -703,16 +754,56 @@ limited to the accounts currently in that fleet".
 **PF-19 · Calendar and Content types per fleet — Built 2026-09-22, no Physical data to show yet.**
 `calendar_month_rollup`, `calendar_month_days` and `calendar_day_detail` join
 `accounts` and can take an optional fleet. They read delivery from
-`geelark_tasks`, so Physical will look empty until PF-05 gives manual posts a
-delivery record; do this after PF-05, with PF-09. `content_type_stats` does not
+~~`geelark_tasks`, so Physical will look empty until PF-05 gives manual posts a
+delivery record; do this after PF-05, with PF-09.~~ **both sources since
+2026-09-22** — PF-05 and PF-09 landed together. Physical still looks empty, but
+for a different reason now: no hand-made post exists, not because the calendar
+cannot see one. `content_type_stats` does not
 join `accounts` and needs the join added.
 
-**PF-20 · Incidents and the bell per fleet — Ready now.** Both are assembled
-in the app (`src/lib/data/incidents.ts`, `notifications.ts`), so this is an app
-change: filter by the account's fleet. Worth deciding before building: a ban on
-a Physical account is news even to someone sitting in Cloud. Suggested: the
-Incidents page follows the switch; the bell keeps showing both and names the
-fleet on each item.
+**PF-20 · Incidents and the bell per fleet — Done 2026-09-22.** Both are
+assembled in the app (`src/lib/data/incidents.ts`, `notifications.ts`), so this
+was an app change with no database work. The open question — a ban on a
+Physical account is news even to someone sitting in Cloud — was put to Garreth
+and he took the suggested split: **the Incidents page follows the switch, the
+bell shows both fleets and names which on each item.**
+
+- **The Incidents half was already built** on 2026-09-18, as `limitIncidents`
+  in `src/lib/data/fleet-accounts.ts`, and is used by all three places that
+  show incidents (the dashboard card, the page, and the range endpoint). An
+  incident about an account follows that account; anything about the machinery
+  stays with Cloud.
+- **The bell half is what this ticket built.** `getNotifications` no longer
+  takes a fleet at all, and every item carries the fleet it is about, or none
+  when it is about no single account. PF-12's two to-do items are always
+  `physical` and are now shown to everyone.
+- **A warmup cohort is split per fleet**, so each line can name one. A cohort
+  can genuinely straddle the two: only Geelark warmups can fail, but an account
+  that moved keeps its failures, and an account's history follows the account.
+  Read state is keyed per account, so the split does not resurface a dismissed
+  alert.
+- **Two things the build had to add.** Opening a notification about the other
+  fleet switches the fleet first, because `/todo` redirects to the dashboard
+  unless the switch is on Physical — without it the decision would have created
+  a dead row. And `FleetSwitch` now follows its prop, because it read the fleet
+  once at mount and so could sit on "Cloud" while showing the Physical To-do
+  page.
+
+*Done when — met:* both fleets seen showing the same four items with the right
+labels, against a seeded phone, account and stuck post plus one real account
+moved to Physical and back; the cohort split seen with one account on each
+side; the cross-fleet click seen switching the fleet and landing on `/todo`;
+checked in dark and light mode and at phone width. All fixtures deleted and
+the database checked back to empty afterwards. **Not proven with real work:**
+no real phone, account or hand-made post exists. Checked in Chrome, not Safari.
+
+**Found here, not fixed here — the stale-post alert blames the wrong thing for
+a paused account.** `todo.ts` drops paused accounts from the board, and every
+account is paused today for the Geelark exit, so a queued post for one is never
+"on the list". The overdue alert reads that absence as the three-day carry-over
+having expired and says so, when the real reason is the pause. It is PF-12's
+wording, it only misleads while a queued post belongs to a paused account, and
+it was left alone rather than widened into this ticket.
 
 **Not tickets, but on the sheet:** Tailscale + Screen Sharing on the Air,
 installing Xcode and the developer Apple ID (Yurie), installing WebDriverAgent

@@ -20,6 +20,208 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — A phone can now carry as many accounts as you want, and two buttons read properly
+
+**Where it came from:** five pieces of feedback from Garreth on the P10
+screens, 2026-09-22.
+
+### A phone is no longer capped at three accounts
+
+**"Do not limit the number of accounts in one phone to 3. For now, we will only
+have 3 accounts per phone but in the future there will be more in one phone."**
+
+The app used to refuse the fourth account outright, and said so: "iPhone 1
+already holds 3 accounts, which is the most a phone can carry." That refusal is
+gone everywhere — adding an account on the phone's own page, creating an
+account with a phone already chosen, and the new move screens. The database
+never enforced it; it was only ever the app.
+
+Three has not disappeared, it has just stopped being a rule. It is now the
+number the bulk move fills a phone up to before it starts on the next one,
+which is what keeps one character's accounts together on one phone. Change the
+number in one place and everything follows.
+
+**What you will see differently.** The Devices page and the phone's own page
+used to show "2/3" and turn amber at three; they now just say how many accounts
+a phone holds. The move screens say "3 accounts" rather than "2 of 3". The
+"Add account" box on a phone no longer disappears once the phone has three. And
+nothing is ever "full" — the only phone that refuses an account now is one that
+is switched off.
+
+**One consequence worth knowing.** The bulk move can no longer run out of room,
+so it no longer tells you that accounts have nowhere to go. Selecting all 32
+accounts now reads "32 accounts onto 3 phones" where yesterday it said 4 could
+move and 28 could not. You can still set any row to "Not moving" by hand, and
+the button still names the number that will actually happen.
+
+### Two buttons that were hard to read
+
+**The blue "Move onto phones" button was wrong in three ways at once** — the
+text colour was hard to read in dark mode, hard to read in light mode, and
+bolder than the rest of the app. All three had one cause: I had hand-built a
+button instead of using the one the app already has. It now IS that button —
+the same "Add phone" uses on the Devices page — so it takes its weight and its
+colour from there rather than from anything I set. Black text on blue in dark
+mode, white on blue in light, and the normal weight, measured as identical to
+"Add phone" in both modes.
+
+The press-and-hold buttons inside the dialogs were left alone: their heavier
+text already matches Retire and Replace proxy, so changing those would have
+made them the odd ones out instead.
+
+**The phone dropdowns in the bulk move were cramped.** The browser draws its own
+little arrow inside the box, and the longest option — "iPhone 2 · 2 accounts" —
+ran underneath it. The box now uses the app's own arrow, the same way the phone
+form and the device page already do, with room set aside for it.
+
+### Checked
+
+All four seen in the running app, dark and light, at desktop and phone width, in
+Chrome. The button colours were measured rather than eyeballed. 173 tests pass;
+the ones that asserted the three-account refusal now assert the opposite, and
+the bulk-move tests cover a batch larger than the phones can hold going round
+again instead of stranding anyone.
+
+## 2026-09-22 — Moving an account onto a phone is one step, and can be done in bulk
+
+**Where it came from:** design ticket P10, which you asked for next after PF-20.
+
+**This is a design put up for you to look at, not finished plumbing.** Nothing
+saves yet. The screens are real and running, so you can press through them and
+say what is wrong; the writes behind them are tickets PF-03 and PF-15, built
+once you approve. Everything below is at **Settings**, and
+**`/settings?demo=1`** draws four invented phones, because no real phone exists
+to design against.
+
+**The problem it fixes.** Moving an account onto a real phone is two steps in
+two different places today: flip the account to Physical in Settings, then go
+to the phone's page and add the account to it. Nothing joins them. Between the
+two the account is on the Physical fleet with no phone — and that is the one
+state the To-do list cannot show. The day's work for that account simply does
+not appear, and nothing anywhere says why.
+
+**So the move asks which phone, in the dialog that already flips the fleet.**
+No new screen. Every phone is listed, including the ones that cannot take the
+account, with the reason where the count would be — "iPhone 1 is full at 3
+accounts", "iPhone 4 is switched off". A phone that was hidden would just send
+somebody looking for it on the Devices page.
+
+**Moving an account back to Cloud has nothing to pick.** It says which phone
+the account comes off, and that is the whole decision.
+
+**Both dialogs say "Posting stays paused",** because moving an account and
+starting it posting are two different decisions and the ticket asked for that
+to be said out loud.
+
+**Several at once, for the day a box of phones arrives.** A **Select** button
+next to the search turns on checkboxes; the toolbar becomes the batch bar. The
+app then suggests which phone each account goes on, filling one phone before
+starting the next so a character's accounts stay together. Every row can be
+changed by hand, because you know which phone is on which desk and the app does
+not.
+
+**It never quietly moves only some of them.** Select all 32 accounts today and
+it says: "4 accounts onto 2 phones. 28 accounts have nowhere to go and will
+stay on Cloud." The ones that cannot move stay in the list marked "Not moving",
+and the button says "Move 4 accounts" — the number that will actually happen.
+
+**"By character" needed no new control.** The search already matches the
+character, so typing "Character 3" and pressing Select all is exactly that. A
+character dropdown was considered and left out rather than add a second way to
+do what search already does.
+
+**One thing that changed on the live screen, which you should know about.**
+Because a move now needs a phone, and no phone is registered yet, **moving an
+account from Cloud to Physical is currently held** — the button is there and
+will not complete, and the dialog says "No phones yet. Add one on the Devices
+page." That is the design working as intended: an account should never land on
+the Physical fleet with nowhere to be worked on. But it does mean a control
+that worked yesterday does not today. Nothing has actually been lost — no
+account has ever been moved this way, the fleet is still 32 Cloud and 0
+Physical — and moving an account back to Cloud is untouched.
+
+**What was checked.** Both dialogs seen in the running app, dark and light, on
+a desktop screen and at phone width, against the invented phones and against
+the real empty state. No sideways scrolling on a phone; the batch list scrolls
+inside its own dialog. Sixteen tests cover the rules underneath — how a batch
+is spread, what counts as a full phone, and the exact sentences. Checked in
+Chrome, not Safari.
+
+**Found while drawing it and deliberately left alone.** The press-and-hold
+button's amber colouring measures 3.6 to 1 against its background in light
+mode, where 4.5 to 1 is the accepted floor for readable text. It is the shared
+hold button, so Retire and the existing fleet switch have always looked like
+this; changing it would touch every one of them at once. That belongs to P13,
+the ticket for reviewing everything already built in both modes.
+
+## 2026-09-22 — The bell now shows both fleets, and every item says which one it is about
+
+**Where it came from:** ticket PF-20, and the decision Garreth made when asked
+to settle it (2026-09-22): "bell shows both fleets and names which."
+
+**The question this answers.** Every screen in the dashboard shows one fleet at
+a time — flip the Cloud / Physical switch in the top right and the accounts,
+the numbers and the incidents all change with it. The bell was the one place
+where that rule was in doubt. Earlier the same day, PF-12's two new items (the
+day's work, and the post that has gone stale) were built to appear in Physical
+only, and hidden from anyone sitting in Cloud. The worry written down at the
+time was that somebody would miss a stuck post simply because their switch
+happened to be on the other side. Garreth settled it the other way: the bell
+shows everything, and each line says which fleet it came from.
+
+**So the bell no longer follows the switch at all.** Whichever side you are on,
+you see the same bell. A warmup problem on the cloud phones and a post stuck on
+a real phone now sit in the same list, and each carries a small label — a cloud
+saying **Cloud**, or a phone saying **Physical** — so there is no guessing which
+half of the operation a line is talking about. Lines that are not about any one
+account, such as a robot job that errored or a data feed that has gone quiet,
+carry no label, because inventing one for them would be a guess.
+
+**Accounts that have moved keep their history.** If a group of accounts is
+failing its warmup and some of them have since moved onto real phones, the bell
+now splits that into two lines, one per fleet, rather than one line that could
+only name one of them. This follows the rule Garreth set for every per-fleet
+number on 2026-09-18: an account's history follows the account, with no
+split by the date it moved. Dismissing a notification still works exactly as it
+did — it is remembered per account, so a group that splits or shrinks does not
+come back unread.
+
+**Clicking an item now takes the switch with it.** This was the one thing the
+decision broke. The To-do page only exists on the Physical side, so a stuck-post
+alert read from Cloud would have dropped you on the dashboard with no
+explanation at all. Opening a notification about the other fleet now moves the
+switch for you and lands you on the right page.
+
+**And the switch itself no longer lies.** It used to read which fleet you were
+on once, when the page first loaded, which was fine while it was the only way to
+change fleets. Now that a notification can change it too, it was possible to be
+looking at the Physical To-do page with the switch still showing Cloud. It
+follows along properly now. Found by using it, not by reading the code.
+
+**The other half of PF-20 was already done.** The ticket also covered the
+Incidents page, and that has followed the switch since 2026-09-18.
+
+**What was checked.** All of the above was seen working in the running app, in
+dark mode and light mode, on a desktop screen and at phone width, against a
+temporary set-up: one made-up phone, one made-up account, one post left sitting
+for thirty hours, and one real account moved to the Physical side and back. Both
+fleets were confirmed to show the same four notifications with the right labels,
+and clicking the Physical one from the Cloud side was confirmed to switch over
+and open the To-do page. **Everything made up for the test was deleted
+afterwards, and the database was checked back to where it started** — no
+phones, no accounts on phones, no posts. Checked in Chrome, not Safari.
+
+**Not proven with real work:** there is still no real phone, no account on one
+and no hand-made post, so the only notification the bell shows today is the
+genuine Cloud warmup one. The day-rollover has not been watched happen.
+
+**One thing this uncovered and did not fix.** When a post is queued for an
+account whose posting is paused — which is every account today, deliberately,
+while the fleet moves off Geelark — the stale-post alert says the post is "past
+the three-day carry-over", when the real reason it is off the to-do list is the
+pause. The wording predates this ticket and is logged in `BACKLOG.md` rather
+than changed here.
+
 ## 2026-09-22 — The bell now tells you the day's work, and shouts about a stuck post
 
 **Where it came from:** ticket PF-12, and a decision Garreth made while it was

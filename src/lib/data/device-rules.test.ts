@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   assignRefusal,
-  MAX_ACCOUNTS_PER_DEVICE,
   parseDeviceFields,
   proofRefusal,
   proxyForDisplay,
 } from "@/lib/data/device-rules";
 
 /**
- * The three-accounts rule lives only in the app — the database will happily
- * take a fourth — so this function is the whole guard. A phone carrying more
- * accounts than planned is exactly the pattern the move to real phones is
- * meant to get away from.
+ * What may NOT go on a phone. There used to be a three-accounts rule here,
+ * enforced only in the app; Garreth removed it on 2026-09-22 ("do not limit
+ * the number of accounts in one phone to 3"). What is left refuses mistakes —
+ * a phone that is off, a retired account, an account already placed — rather
+ * than arrangements.
  */
 describe("assignRefusal", () => {
   const base = {
@@ -27,17 +27,13 @@ describe("assignRefusal", () => {
     expect(assignRefusal(base)).toBeNull();
   });
 
-  it("allows the third account", () => {
-    expect(assignRefusal({ ...base, heldCount: MAX_ACCOUNTS_PER_DEVICE - 1 })).toBeNull();
+  it("allows a fourth account, and a tenth: a phone has no maximum", () => {
+    // Garreth, 2026-09-22: three is today's arrangement, not a rule.
+    expect(assignRefusal({ ...base, heldCount: 3 })).toBeNull();
+    expect(assignRefusal({ ...base, heldCount: 10 })).toBeNull();
   });
 
-  it("refuses a fourth and names the phone", () => {
-    const why = assignRefusal({ ...base, heldCount: 3 });
-    expect(why).toContain("iPhone 3");
-    expect(why).toContain("3 accounts");
-  });
-
-  it("refuses a phone that is switched off, even when it has room", () => {
+  it("refuses a phone that is switched off", () => {
     expect(assignRefusal({ ...base, deviceActive: false })).toContain("switched off");
   });
 

@@ -88,14 +88,14 @@ purpose; the changelog has them.
 | P2 | Add the To-do today page, grouped by device and then by account | **Approved 2026-09-22, and REAL since PF-07** the same day. `?todo=` still draws the placeholder states for review |
 | P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07. **Log warmup is live since PF-04** and **Posted / Failed since PF-07** (both 2026-09-22); the six saving states P3 handed over are built |
 | P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22, and the switch now SAVES** — PF-04 landed the same day. The by-phone view still needs PF-02's real phones to have groups. What an Automated account SHOWS moved to PF-13 |
-| P5 | Rework the device page around the phone's daily work | **Approved 2026-09-22.** Built and on the branch. **Warmup history is real since PF-04** (2026-09-22); Today on this phone still waits on PF-05 and PF-07 |
+| P5 | Rework the device page around the phone's daily work | **Approved and built 2026-09-22.** Warmup history is real since PF-04. **One gap, found 2026-09-22: "Today on this phone" is still demo-only** — `device-detail.tsx` reads `demo?.today ?? null`, so a real phone always shows "Nothing due" however many deliveries it has. PF-05 and PF-07 built the tables and the To-do page but nobody rewired this page to them. Small follow-on, not a redesign |
 | P6 | Track proxy expiry for real phones on Proxies & numbers | Not started |
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
 | P8 | Add the checklist for a ban on a real phone | Not started |
 | P9 | Add the Live view page and link to it from the dashboard | Not started |
-| P10 | Move accounts onto phones in one step, and several at once | Not started |
+| P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. Building is PF-03 then PF-15 |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
-| P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Part done 2026-09-22.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. Still open: how a stale item looks ON the to-do list, and the fleet label on a bell item (PF-20) |
+| P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Part done 2026-09-22.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. Still open: how a stale item looks ON the to-do list |
 | P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | Not started |
 
 Each of these has its full ticket further down. **A ticket moves through four
@@ -206,8 +206,12 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   Garreth took it as it stands.
   The placeholder list lives in `src/lib/data/todo-placeholder.ts` and the card
   in `src/components/dashboard/todo-today-card.tsx`; `?todo=work|done|empty|`
-  `noPhones|phoneOff` on the dashboard picks which state draws. Both files go
-  when PF-07 makes the list real.
+  `noPhones|phoneOff` on the dashboard picks which state draws. ~~Both files go
+  when PF-07 makes the list real.~~ **Kept (2026-09-22).** They turned out to
+  be the review harness rather than a stopgap: `?todo=` and `?demo=` are how a
+  screen is judged in states live data will not produce on demand, and P10
+  leans on the same invented phones. They go when the designs stop being
+  reviewed, not when the tables arrive.
 - **Decided in this pass, for Garreth to accept or change:**
   - **Round two, 2026-09-22 (Garreth's feedback):** the card is titled **To-do**,
     and **every phone is one collapsed line until it is opened**. Six phones'
@@ -609,14 +613,20 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   — four phones, one of them off, and two accounts not yet on a phone — since
   no account has been moved to Physical yet and the real view is empty;
   without it the page reads live rows as it always has
-  (`src/lib/data/accounts-phone-placeholder.ts`, deleted when PF-02 and PF-04
-  make this real). **Nothing saves:** `accounts` has no warmup-mode column
-  until PF-04, so a press moves the switch in the browser and forgets.
+  (`src/lib/data/accounts-phone-placeholder.ts`, ~~deleted when PF-02 and PF-04
+  make this real~~ — kept; see P1). ~~**Nothing saves:** `accounts` has no
+  warmup-mode column until PF-04, so a press moves the switch in the browser
+  and forgets.~~
+  **It saves since PF-04 (2026-09-22):** `accounts.warmup_mode` is live and a
+  press writes to it. Re-checked 2026-09-22 — the column exists and holds 0
+  accounts on `script`, because nothing is automated yet.
   **What an Automated account SHOWS in place of a log form moved to PF-13**
   (Garreth, 2026-09-22), to be designed and built with the warmup script
   itself: it cannot be drawn while what a scripted session IS remains
   undecided. With that gone, **everything P4 still owns is drawn** — what is
-  left is Garreth's review, light mode, and PF-04's column so a press saves.
+  left is ~~Garreth's review, light mode, and PF-04's column so a press saves~~
+  **the by-phone view having real phones to group by** — the review, light mode
+  and the saving column all landed 2026-09-22.
 - **Where it lives — the Accounts page, in Physical (Garreth, 2026-09-22).**
   This answers the question the ticket used to leave open. The switch is a
   per-account setting, and Accounts is where per-account settings are read and
@@ -730,7 +740,16 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   and nothing drifts on the way to the build. **Approval closes the design AND
   the build: the screen is in the app.** What is left is the data behind it —
   PF-04, PF-05 and PF-07 — and two things that could not be checked from here
-  (see "Checked" below). Drawn in the running app
+  (see "Checked" below).
+
+  **Re-checked 2026-09-22, after PF-04/05/07 all landed.** Warmup history is
+  real. The daily-work block is NOT: `device-detail.tsx` still reads
+  `const today = demo?.today ?? null`, so it only ever draws from the invented
+  phone and a real one falls through to "Nothing due" no matter how many posts
+  and warmups it is owed. The tables and the To-do page it needs both exist
+  now; nothing went back and joined them to this page. That is the whole
+  remaining job here, and it is a wiring change rather than a design one.
+  Drawn in the running app
   behind placeholder data, the way P1 to P4 were, so what is reviewed is the
   screen itself. The page is
   `src/app/(dashboard)/devices/[id]/page.tsx` and
@@ -898,16 +917,103 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P10. Move accounts onto phones in one step, and several at once
 
-- **Status:** not started. Today the move is two steps in two places: flip the
-  account to Physical in Settings, then add it to a phone on the device page.
+- **Status:** **APPROVED 2026-09-22.** Drawn in the running app, not on a
+  canvas, and approved after five rounds of feedback. Nothing saves yet:
+  PF-03 builds the single write, PF-15 the batch. Next step is building, not
+  designing.
 - **Backlog:** PF-03, PF-15.
+- **Where to look:** `/settings?demo=1`. The invented phones are the same four
+  the Accounts by-phone view and the To-do screens use, so the three screens
+  describe one farm. Without `?demo=1` the picker says "No phones yet", which
+  is the true state today and is worth seeing too.
 - **Design:** one action that does both: pick the account, pick the phone,
   confirm with a hold. Then the same for several accounts at once, by
   character, for the day a batch of phones arrives. What it says when the
   phone is full, and that it never unpauses anything.
-- **Done when:** a single move and a batch move are approved.
-  Then built in the app to match, and looked at in the running app at both
-  sizes.
+
+### What was drawn, and the decisions behind it
+
+- **The move stays in Settings → Account management**, which already calls
+  itself the one place an account crosses between fleets (Garreth,
+  2026-09-18). PF-03's text says "button on the account page", but that
+  predates the decision that the account page and the Accounts table carry no
+  sign of the fleet at all. No new screen was added.
+- **The phone is picked in the dialog that already flips the fleet.** The two
+  steps were never really two decisions — nobody moves an account to Physical
+  and then wonders which phone. Between them the account sat on the Physical
+  fleet with no phone, and that is the state the To-do list cannot show: the
+  work simply does not appear and nothing says why.
+- **Every phone is listed with how many accounts it holds** — "3 accounts",
+  "0 accounts". A phone that is switched off says so in place of the count and
+  cannot be chosen. Hiding it would leave somebody hunting for a phone that is
+  on the Devices page and not here.
+- **No phone is ever full** (Garreth, 2026-09-22). The first draft refused a
+  fourth account and showed "2 of 3"; he removed the limit, so the count is a
+  count and the only refusal left is a phone that is switched off.
+- **Moving back to Cloud has no picker.** It names the phone the account comes
+  off, and that is all there is to decide.
+- **"Posting stays paused" is on both dialogs**, because the ticket asked for
+  it in as many words. It is the one line of explanation on the screen.
+- **Selecting several is off until asked for.** A checkbox on all thirty-odd
+  cards would be permanent clutter on a screen whose everyday job is moving
+  one account, and the batch matters on the handful of days a box of phones
+  arrives. "Select" turns it on and the toolbar becomes the batch bar.
+- **"By character" needs no new control.** The search already matches the
+  character, so typing "Character 3" and pressing Select all is exactly that.
+  A character dropdown was considered and left out as a second way to do what
+  the search already does.
+- **The batch plan fills one phone before starting the next**, rather than
+  dealing accounts out round-robin, so a character's accounts land together —
+  which is the arrangement the three-per-phone rule exists to produce.
+- **The plan is a suggestion.** Every row has a dropdown, because the person
+  doing the move knows which phone is on which desk and the app does not. A
+  phone over-filled by hand is named and the move is refused, rather than
+  letting the save fail one row at a time.
+- **Nothing runs out of room.** Once every phone has taken its usual three the
+  plan starts again at the first, so a batch bigger than the box still lands.
+  Select all 32 today reads: "32 accounts onto 3 phones." (Three, not four —
+  iPhone 4 is switched off.) The only account that gets no phone is one with
+  no phone to go on at all.
+- **A row can still be set to "Not moving" by hand**, and then the sentence and
+  the button both say so. The button always names the number that will actually
+  happen, never the number selected.
+
+### Seen in the running app
+
+Dark and light, desktop and phone width, in Chrome — not Safari. No horizontal
+scroll at 390px; the batch list scrolls inside its dialog. The empty picker was
+checked on the real page as well as the invented one.
+
+**Found while drawing it, and NOT fixed here:** the hold button's `warn` tone
+measures 3.6:1 against its background in light mode, under the 4.5:1 it needs.
+It is the shared `HoldButton`, so Retire and the existing fleet flip have
+always looked like this; changing it touches every hold in the app. That is
+P13's job, not this ticket's.
+
+- **Done when:** ~~a single move and a batch move are approved.~~ **Met
+  2026-09-22.** Then built in the app to match, and looked at in the running
+  app at both sizes — that half is PF-03 and PF-15.
+
+### Garreth's feedback on the drawn screens, and what it changed
+
+All 2026-09-22, in one pass over the running app:
+
+1. **"The font color here should be black. If white it is hard to read."** —
+   the Move onto phones button in dark mode.
+2. **"The dropdown button contents is not properly inside the container"** —
+   the browser's own arrow was sitting on top of the longest option.
+3. **"Do not limit the number of accounts in one phone to 3. For now, we will
+   only have 3 accounts per phone but in the future there will be more in one
+   phone."** — the cap was removed from every screen and both write paths, not
+   just from this design. See `BACKLOG.md` and the changelog.
+4. **"In light mode, the font color here should be white."** — the same button.
+5. **"The text should not be bold. Just make it the same text as similar
+   buttons we have."**
+
+1, 4 and 5 turned out to be one fault: the button was hand-built rather than
+being the app's own `CtaButton`, the one "Add phone" uses. Using it made all
+three go away at once. **The lesson for the rest of these tickets: a primary
+action is `CtaButton`, never a hand-rolled `bg-accent` button.**
 
 ## P11. Show hand-made posts on the calendar, and prepare the app for retiring Cloud
 
@@ -925,9 +1031,9 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P12. Add the day's-work reminder, overdue items, and bell items that name their fleet
 
-- **Status:** **part done 2026-09-22.** The bell half is built (PF-12); the
-  to-do list half and the fleet label are not.
-- **Backlog:** PF-12 (done), PF-20 (not started).
+- **Status:** **part done 2026-09-22.** The bell half is built (PF-12) and now
+  names its fleet (PF-20); the to-do list half is not.
+- **Backlog:** PF-12 (done), PF-20 (done).
 - **The email is gone.** Asked who the morning email should go to, Garreth
   answered: no email, a notification in the dashboard instead (2026-09-22).
   There is no n8n workflow in this ticket any more.
@@ -940,11 +1046,15 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   - **How a stale item looks ON the to-do list.** The bell now says a post is
     overdue; the row itself still looks like any other. This is the half that
     needs drawing.
-  - **A bell item that names its fleet** (PF-20), because the bell is the one
+  - ~~**A bell item that names its fleet** (PF-20), because the bell is the one
     place that shows both. Note the tension to settle here: PF-12's two items
-    were made Physical-only, which is the opposite rule.
-- **Done when:** the stale row on the to-do list and the fleet label are
-  approved, then built and looked at in the running app.
+    were made Physical-only, which is the opposite rule.~~ **Done 2026-09-22.**
+    Garreth settled the tension himself: "bell shows both fleets and names
+    which." Every item now carries a Cloud or Physical label, PF-12's two are
+    shown to everyone, and opening an item about the other fleet switches you
+    over. See `BACKLOG.md` PF-20.
+- **Done when:** the stale row on the to-do list is approved, then built and
+  looked at in the running app. The fleet label is done.
 
 ## P13. Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode
 

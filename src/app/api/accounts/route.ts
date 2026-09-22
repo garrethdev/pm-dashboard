@@ -11,12 +11,11 @@ import {
 import {
   AccountWriteError,
   createAccount,
-  detachDevice,
   getActiveCharacters,
   profileHolder,
   usernameTaken,
 } from "@/lib/data/account-writes";
-import { assignRefusal, MAX_ACCOUNTS_PER_DEVICE } from "@/lib/data/device-rules";
+import { assignRefusal } from "@/lib/data/device-rules";
 import { countDeviceAccounts, getDeviceState } from "@/lib/data/device-writes";
 import { PLATFORM_LABEL } from "@/lib/platform";
 
@@ -104,17 +103,9 @@ export async function POST(request: Request) {
 
     const account = await createAccount(fields, { userEmail, today });
 
-    // Re-count after the write, for the same reason the device page does: two
-    // people filling in the same phone each saw room for one more.
-    let deviceError: string | null = null;
-    if (fields.deviceId !== null) {
-      const held = await countDeviceAccounts(fields.deviceId);
-      if (held > MAX_ACCOUNTS_PER_DEVICE) {
-        await detachDevice(account.id);
-        account.device_id = null;
-        deviceError = `The phone filled up while you were typing, so ${account.geelark_profile} was added without one.`;
-      }
-    }
+    // No re-count: a phone has no maximum any more (Garreth, 2026-09-22), so
+    // there is no longer such a thing as it filling up while you typed.
+    const deviceError: string | null = null;
 
     await auditLog({
       userEmail,

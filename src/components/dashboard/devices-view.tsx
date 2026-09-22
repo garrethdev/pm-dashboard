@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { CtaButton } from "@/components/ui/cta-button";
 import { StatusPill } from "@/components/ui/pill";
 import { AddDeviceModal } from "@/components/dashboard/add-device-modal";
-import { MAX_ACCOUNTS_PER_DEVICE, proxyForDisplay } from "@/lib/data/device-rules";
+import { proxyForDisplay } from "@/lib/data/device-rules";
 import type { Device } from "@/lib/data/devices";
 import { cn } from "@/lib/utils";
 
@@ -92,11 +92,11 @@ export function DevicesView({
                       <StatusPill tone={d.isActive ? "ok" : "neutral"}>
                         {d.isActive ? "Active" : "Off"}
                       </StatusPill>
-                      <StatusPill
-                        tone={d.accounts.length >= MAX_ACCOUNTS_PER_DEVICE ? "warn" : "gray"}
-                        className="tnum"
-                      >
-                        {d.accounts.length}/{MAX_ACCOUNTS_PER_DEVICE} accounts
+                      {/* A count, not a fraction: a phone has no maximum
+                          (Garreth, 2026-09-22), so "3/3" would go on claiming
+                          one. Nothing is "full" any more, so no warn tone. */}
+                      <StatusPill tone="gray" className="tnum">
+                        {d.accounts.length} account{d.accounts.length === 1 ? "" : "s"}
                       </StatusPill>
                     </div>
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-2">

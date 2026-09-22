@@ -16,7 +16,7 @@ import type { Platform } from "@/lib/platform";
  *
  * The phones and handles are the same invented world as
  * `todo-placeholder.ts`, so the two screens describe one farm rather than two.
- * Both files go when PF-02 and PF-04 make this real.
+ * NOT deleted when PF-02 and PF-04 landed (2026-09-22), as first planned: they are now the review harness rather than a stopgap: `?demo=` and `?todo=` are how a design is judged in states live data will not produce on demand, and P10 leans on the same phones (2026-09-22). They go when the designs stop being reviewed, not when the tables arrive.
  */
 
 export interface PlaceholderPhone {
