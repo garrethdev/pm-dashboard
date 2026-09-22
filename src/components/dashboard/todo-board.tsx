@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CtaButton } from "@/components/ui/cta-button";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { HoldButton } from "@/components/ui/hold-button";
@@ -16,6 +16,7 @@ import {
   type TodoItemStatus,
   type TodoState,
 } from "@/lib/data/todo-placeholder";
+import { parseWarmupItemId, type TodoExtras } from "@/lib/data/todo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -27,9 +28,15 @@ import { cn } from "@/lib/utils";
  * behind it is P3's three forms brought forward, because the tick cannot be
  * judged without the thing it opens.
  *
- * Nothing is saved anywhere. The ticks live in this component's own state for
- * the length of the review, so the screens can actually be used; PF-05 and
- * PF-07 are what make them real.
+ * SINCE PF-07 THE TICKS ARE REAL. A post writes back to its `post_deliveries`
+ * row and a warmup writes a `warmup_sessions` row, and the board is re-read
+ * from the server afterwards rather than patched here — so what the screen
+ * shows is what the database says, and two people on the same list see the
+ * same thing.
+ *
+ * The design states (`?todo=`) still run on `todo-placeholder.ts` and still
+ * save nothing, so the screens can be judged in states live data will not
+ * produce on demand — a phone switched off, a day already finished.
  */
 
 type Override = {
@@ -39,8 +46,15 @@ type Override = {
   reason?: string;
 };
 
-/** Where a sheet was opened from, so its title can name the account. */
-export type SheetTarget = { item: TodoItem; handle: string };
+/** Where a sheet was opened from, so its title can name the account — and,
+ *  since PF-07, so a warmup logged from it knows which account and phone it
+ *  belongs to. */
+export type SheetTarget = {
+  item: TodoItem;
+  handle: string;
+  /** The phone this item sits under, for the row a warmup writes. */
+  deviceId?: number;
+};
 
 function nowHHMM(): string {
   const d = new Date();
@@ -68,30 +82,151 @@ function applyOverrides(devices: TodoDevice[], overrides: Record<string, Overrid
   }));
 }
 
-export function useTodoBoard(state: TodoState, day: TodoDay) {
+/**
+ * The board, live or drawn.
+ *
+ * `live` is the real list: `initial` is the server's answer for the day the
+ * page opened on, and stepping to another day or finishing an item re-reads
+ * from `/api/todo`. Without it the board is one of the placeholder states, the
+ * same as before PF-07, and every tick stays in this component.
+ */
+export function useTodoBoard(
+  state: TodoState,
+  day: TodoDay,
+  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: TodoDay },
+) {
   const [overrides, setOverrides] = useState<Record<string, Override>>({});
   const [target, setTarget] = useState<SheetTarget | null>(null);
+  const [fetched, setFetched] = useState<{ day: TodoDay; devices: TodoDevice[]; extras: TodoExtras } | null>(
+    null,
+  );
+  const [readError, setReadError] = useState<string | null>(null);
 
-  const base = todoPlaceholder(state, day);
-  const devices = useMemo(() => applyOverrides(base, overrides), [base, overrides]);
+  const placeholder = todoPlaceholder(state, day);
 
-  const save = useCallback((id: string, o: Override) => {
-    setOverrides((prev) => ({ ...prev, [id]: o }));
-    setTarget(null);
-  }, []);
+  // The live board for the day being looked at: the server's first answer
+  // while that is still the day, then whatever the last fetch returned.
+  //
+  // MEMOISED, and it must stay that way. A fresh object every render would
+  // change the fetching effect's dependencies every render, so a read still in
+  // flight would be aborted and started again on each one — the list would
+  // never settle.
+  const liveBoard = useMemo(
+    () =>
+      live
+        ? fetched && fetched.day === day
+          ? fetched
+          : day === live.initialDay
+            ? { day, devices: live.initial, extras: live.extras }
+            : null
+        : null,
+    [live, fetched, day],
+  );
 
-  const undo = useCallback((id: string) => {
-    setOverrides((prev) => ({ ...prev, [id]: { status: "todo" } }));
-    setTarget(null);
-  }, []);
+  // Nothing to show for this day yet IS the loading state, so it is derived
+  // rather than held: a second flag could disagree with the board it
+  // describes, and there is no moment where it usefully would.
+  const loading = Boolean(live) && liveBoard === null;
+
+  const read = useCallback(
+    async (which: TodoDay, signal?: AbortSignal) => {
+      const res = await fetch(`/api/todo?day=${which}`, { cache: "no-store", signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return (await res.json()) as { devices: TodoDevice[]; extras: TodoExtras };
+    },
+    [],
+  );
+
+  // Stepping to a day we have not read yet. The state is set when the answer
+  // ARRIVES, never while the effect is running: a synchronous setState here
+  // would re-render before the fetch had even left.
+  useEffect(() => {
+    if (!live || liveBoard) return;
+    const controller = new AbortController();
+    read(day, controller.signal)
+      .then((body) => setFetched({ day, devices: body.devices, extras: body.extras }))
+      .catch((err: unknown) => {
+        if ((err as { name?: string })?.name === "AbortError") return;
+        setReadError("Couldn't read the list. It may be out of date.");
+      });
+    // Stepping again before the answer lands drops the one now in flight, so
+    // a fast tap through three days cannot land on the wrong one.
+    return () => controller.abort();
+  }, [live, liveBoard, day, read]);
+
+  /** Re-read the day being looked at. Called after a write, never from an
+   *  effect, so setting state here is exactly what is wanted. */
+  const reload = useCallback(
+    async (which: TodoDay) => {
+      if (!live) return;
+      setReadError(null);
+      try {
+        const body = await read(which);
+        setFetched({ day: which, devices: body.devices, extras: body.extras });
+      } catch {
+        setReadError("Couldn't read the list. It may be out of date.");
+      }
+    },
+    [live, read],
+  );
+
+  const devices = useMemo(
+    () => applyOverrides(live ? (liveBoard?.devices ?? []) : placeholder, overrides),
+    [live, liveBoard, placeholder, overrides],
+  );
+
+  /**
+   * Record what happened to an item.
+   *
+   * On the live board the write goes to the server and the board is re-read,
+   * so nothing on screen claims something the database did not agree to. It
+   * resolves with a sentence when the save failed and `null` when it landed;
+   * the sheet stays open on a sentence (PF-07's state 3).
+   */
+  const save = useCallback(
+    async (id: string, o: Override, request?: () => Promise<string | null>): Promise<string | null> => {
+      if (live && request) {
+        const why = await request();
+        if (why) return why;
+        await reload(day);
+        setTarget(null);
+        return null;
+      }
+      setOverrides((prev) => ({ ...prev, [id]: o }));
+      setTarget(null);
+      return null;
+    },
+    [live, reload, day],
+  );
+
+  const undo = useCallback(
+    async (id: string, request?: () => Promise<string | null>): Promise<string | null> => {
+      if (live && request) {
+        const why = await request();
+        if (why) return why;
+        await reload(day);
+        setTarget(null);
+        return null;
+      }
+      setOverrides((prev) => ({ ...prev, [id]: { status: "todo" } }));
+      setTarget(null);
+      return null;
+    },
+    [live, reload, day],
+  );
 
   return {
     devices,
+    extras: liveBoard?.extras ?? {},
+    live: Boolean(live),
+    loading,
+    readError,
     target,
     open: setTarget,
     close: useCallback(() => setTarget(null), []),
     save,
     undo,
+    reload: useCallback(() => reload(day), [reload, day]),
   };
 }
 
@@ -215,14 +350,21 @@ const FAIL_REASONS = [
  */
 export function TodoLogSheet({
   target,
+  extras,
+  live = false,
   onClose,
   onSave,
   onUndo,
 }: {
   target: SheetTarget;
+  /** The delivery behind each post item, so a tick knows what to write to. */
+  extras?: TodoExtras;
+  /** True when the board is the real list; false for a `?todo=` design state,
+   *  where nothing is written and nothing can fail. */
+  live?: boolean;
   onClose: () => void;
-  onSave: (id: string, o: Override) => void;
-  onUndo: (id: string) => void;
+  onSave: (id: string, o: Override, request?: () => Promise<string | null>) => Promise<string | null>;
+  onUndo: (id: string, request?: () => Promise<string | null>) => Promise<string | null>;
 }) {
   const { item, handle } = target;
   const isPost = item.kind === "post";
@@ -236,39 +378,168 @@ export function TodoLogSheet({
   const [note, setNote] = useState("");
   const [minutes, setMinutes] = useState(item.loggedMinutes || item.targetMinutes || 15);
 
+  // PF-07's states around a save that can fail. `busy` holds the sheet open
+  // with a spinner rather than closing it optimistically (state 1): a post
+  // believed logged and not logged comes back tomorrow as carried over, which
+  // is the failure worth designing against. `error` keeps what was typed and
+  // offers Try again (state 3); `pasteNote` says why Paste did nothing
+  // (state 6); `linkWarning` is a link that is clearly not one (state 4).
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pasteNote, setPasteNote] = useState<string | null>(null);
+
   const targetMinutes = item.targetMinutes ?? 15;
 
-  function submit() {
+  /**
+   * STATE 4: a link that is clearly not a link.
+   *
+   * It WARNS rather than refusing. The link is optional (decision 7), so
+   * refusing a field that may be left blank is far too strong — and the one
+   * thing that must never happen is somebody unable to record a post they
+   * actually made because the app dislikes the text they pasted. A pasted
+   * caption is the case this catches, and saying so is enough.
+   */
+  const trimmedLink = link.trim();
+  const linkWarning =
+    trimmedLink.length > 0 && !/^https?:\/\/\S+$/i.test(trimmedLink)
+      ? "That does not look like a link. It will be saved as it is."
+      : null;
+
+  /** POST some JSON and turn whatever comes back into a sentence, or null. */
+  async function send(url: string, body: unknown): Promise<string | null> {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) return null;
+      const parsed = (await res.json().catch(() => null)) as { error?: string } | null;
+      return parsed?.error ?? `Couldn't save that (HTTP ${res.status}). Nothing was changed.`;
+    } catch {
+      return "Couldn't reach the server. Nothing was changed.";
+    }
+  }
+
+  /** What this sheet's Save writes, when the board is the real one. */
+  function request(): (() => Promise<string | null>) | undefined {
+    if (!live) return undefined;
+
+    if (!isPost) {
+      const parsed = parseWarmupItemId(item.id);
+      if (!parsed) return () => Promise.resolve("This warmup cannot be saved from here.");
+      return () =>
+        send("/api/warmups", {
+          accountId: parsed.accountId,
+          deviceId: target.deviceId ?? null,
+          minutes,
+          sessionNo: parsed.sessionNo,
+          note: note.trim() || null,
+        });
+    }
+
+    const deliveryId = extras?.[item.id]?.deliveryId;
+    if (deliveryId === undefined) {
+      return () => Promise.resolve("This post is no longer on the list.");
+    }
+    if (outcome === "failed") {
+      return () =>
+        send(`/api/deliveries/${deliveryId}`, {
+          action: "failed",
+          note: note.trim() || reason,
+          // What the screen believed when the sheet opened, so the server can
+          // refuse rather than overwrite somebody else's answer (state 5).
+          expect: item.status,
+        });
+    }
+    // Pasting the link onto a post already marked done is its own action, so
+    // it cannot reset who finished it or when.
+    if (item.status === "postedNoLink") {
+      return () =>
+        send(`/api/deliveries/${deliveryId}`, {
+          action: "link",
+          postUrl: trimmedLink,
+          expect: item.status,
+        });
+    }
+    return () =>
+      send(`/api/deliveries/${deliveryId}`, {
+        action: "posted",
+        postUrl: trimmedLink || null,
+        expect: item.status,
+      });
+  }
+
+  function override(): Override {
     if (!isPost) {
       const reached = minutes >= targetMinutes;
-      onSave(item.id, {
+      return {
         // Short of the target it stays open, and says how far it got.
         status: reached ? "logged" : "todo",
         doneAt: reached ? nowHHMM() : undefined,
         loggedMinutes: minutes,
-      });
-      return;
+      };
     }
     if (outcome === "failed") {
-      onSave(item.id, { status: "failed", doneAt: nowHHMM(), reason: note.trim() || reason });
-      return;
+      return { status: "failed", doneAt: nowHHMM(), reason: note.trim() || reason };
     }
     // The link is optional: saving without it leaves the item owing one.
-    onSave(item.id, { status: link.trim() ? "posted" : "postedNoLink", doneAt: nowHHMM() });
+    return { status: trimmedLink ? "posted" : "postedNoLink", doneAt: nowHHMM() };
   }
 
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    const why = await onSave(item.id, override(), request());
+    setBusy(false);
+    // STATE 3: the sheet stays open, holding what was typed, and says so.
+    if (why) setError(why);
+    // STATE 2 is the sheet closing over a list that has re-read itself: the
+    // item is struck through with the time it was finished. That IS the
+    // confirmation, and a second one would be noise on a screen used standing
+    // up.
+  }
+
+  async function undo() {
+    setBusy(true);
+    setError(null);
+    const deliveryId = extras?.[item.id]?.deliveryId;
+    const why = await onUndo(
+      item.id,
+      live && isPost && deliveryId !== undefined
+        ? () => send(`/api/deliveries/${deliveryId}`, { action: "undo", expect: item.status })
+        : undefined,
+    );
+    setBusy(false);
+    if (why) setError(why);
+  }
+
+  /**
+   * STATE 6: Paste did nothing.
+   *
+   * Safari can refuse the clipboard outright, and it fails silently today.
+   * The fallback is typing a long URL by hand on a phone, so the reason has
+   * to be on screen — and an empty clipboard is a different answer from a
+   * refused one.
+   */
   async function pasteLink() {
+    setPasteNote(null);
     try {
-      setLink(await navigator.clipboard.readText());
+      const text = await navigator.clipboard.readText();
+      if (!text.trim()) {
+        setPasteNote("Nothing to paste — the clipboard is empty.");
+        return;
+      }
+      setLink(text.trim());
     } catch {
-      // No clipboard permission: the field is still typed into by hand.
+      setPasteNote("Your browser would not hand over the clipboard. Paste or type it here.");
     }
   }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4"
-      onClick={onClose}
+      onClick={busy ? undefined : onClose}
     >
       <div
         className="flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-card border border-border glass-overlay sm:max-h-[85vh] sm:rounded-card"
@@ -320,12 +591,20 @@ export function TodoLogSheet({
                     />
                     {/* The link was just copied on the other phone. */}
                     <button
-                      onClick={pasteLink}
+                      onClick={() => void pasteLink()}
                       className="shrink-0 rounded-nested border border-border px-3 text-sm font-medium text-text-muted hover:text-text-primary"
                     >
                       Paste
                     </button>
                   </div>
+                  {/* Why Paste did nothing (state 6), and a link that does not
+                      look like one (state 4). Neither stops the save. */}
+                  {pasteNote && (
+                    <span role="alert" className="text-xs text-warn">
+                      {pasteNote}
+                    </span>
+                  )}
+                  {linkWarning && <span className="text-xs text-warn">{linkWarning}</span>}
                 </label>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -385,21 +664,37 @@ export function TodoLogSheet({
               <p className="text-xs text-text-muted">
                 {item.status === "failed" ? "Failed" : "Done"} {item.doneAt}
               </p>
-              <HoldButton tone="warn" onConfirm={() => onUndo(item.id)}>
+              <HoldButton tone="warn" onConfirm={() => void undo()}>
                 Undo
               </HoldButton>
             </div>
           )}
         </div>
 
+        {/* STATE 3: could not save, and NOTHING was changed. The sheet stays
+            open holding what was typed, says what happened, and Save becomes
+            Try again — which the server answers as "already done" if the
+            first attempt actually landed, so it cannot save twice. */}
+        {error && (
+          <p
+            role="alert"
+            className="mx-5 rounded-nested bg-danger/10 px-3 py-2 text-sm text-danger sm:mx-6"
+          >
+            {error}
+          </p>
+        )}
+
         <div className="flex justify-end gap-2 border-t border-border p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
           <button
             onClick={onClose}
-            className="rounded-full px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary"
+            disabled={busy}
+            className="rounded-full px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary disabled:opacity-50"
           >
             Cancel
           </button>
-          <CtaButton onClick={submit}>Save</CtaButton>
+          <CtaButton onClick={() => void submit()} disabled={busy}>
+            {busy ? "Saving…" : error ? "Try again" : "Save"}
+          </CtaButton>
         </div>
       </div>
     </div>

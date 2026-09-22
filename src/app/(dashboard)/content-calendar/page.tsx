@@ -34,7 +34,10 @@ async function CalendarLive() {
   // catch anyway and the guard would be a lie.
   let data, fetchedAt, stale;
   try {
-    ({ data, fetchedAt, stale } = await getCalendarMonth(year, month1));
+    // The fleet the person is looking at (PF-19). Read here rather than passed
+    // in, so the run pill below can read the same cookie and share the request
+    // dedupe on getCalendarMonth.
+    ({ data, fetchedAt, stale } = await getCalendarMonth(year, month1, await getFleet()));
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     return (
@@ -63,7 +66,11 @@ async function RunPill() {
   const today = etToday();
   let data;
   try {
-    ({ data } = await getCalendarMonth(Number(today.slice(0, 4)), Number(today.slice(5, 7))));
+    ({ data } = await getCalendarMonth(
+      Number(today.slice(0, 4)),
+      Number(today.slice(5, 7)),
+      await getFleet(),
+    ));
   } catch {
     return null;
   }

@@ -26,6 +26,7 @@ import {
   TodoCheck,
   TodoLogSheet,
   useTodoBoard,
+  type SheetTarget,
 } from "@/components/dashboard/todo-board";
 import {
   accountProgress,
@@ -41,6 +42,7 @@ import {
   type TodoItem,
   type TodoState,
 } from "@/lib/data/todo-placeholder";
+import type { TodoExtras } from "@/lib/data/todo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -89,15 +91,34 @@ import { cn } from "@/lib/utils";
  *
  * Runs on placeholder data (`todo-placeholder.ts`) until PF-05 and PF-07 exist.
  */
-export function TodoView({ state, initialDay }: { state: TodoState; initialDay: TodoDay }) {
+export function TodoView({
+  state,
+  initialDay,
+  live,
+}: {
+  state: TodoState;
+  initialDay: TodoDay;
+  /** The server's answer for `initialDay`. Absent on a `?todo=` design state,
+   *  where the page draws `todo-placeholder.ts` and saves nothing. */
+  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: TodoDay };
+}) {
   const [day, setDay] = useState<TodoDay>(initialDay);
   /** Empty means every phone. */
   const [picked, setPicked] = useState<string[]>([]);
   const [layout, setLayout] = useState<TodoLayout>("list");
-  const board = useTodoBoard(state, day);
+  const board = useTodoBoard(state, day, live);
 
   const all = board.devices;
-  const emptyReason = todoEmptyReason(state);
+  // On the real list the reason comes from the list itself: no phones at all
+  // reads differently from a phone with nothing due. The placeholder states
+  // keep saying which one they are drawing.
+  const emptyReason = board.live
+    ? board.devices.length === 0
+      ? "noPhones"
+      : board.devices.every((d) => d.accounts.every((a) => a.items.length === 0))
+        ? "nothingDue"
+        : null
+    : todoEmptyReason(state);
 
   const devices = picked.length === 0 ? all : all.filter((d) => picked.includes(d.id));
 
@@ -162,6 +183,8 @@ export function TodoView({ state, initialDay }: { state: TodoState; initialDay: 
 
       {board.target && (
         <TodoLogSheet
+          extras={board.extras}
+          live={board.live}
           target={board.target}
           onClose={board.close}
           onSave={board.save}
@@ -322,7 +345,7 @@ function DeviceCard({
   onOpenItem,
 }: {
   device: TodoDevice;
-  onOpenItem: (t: { item: TodoItem; handle: string }) => void;
+  onOpenItem: (t: SheetTarget) => void;
 }) {
   // Open by default: this page is the work, not a summary of it.
   const [open, setOpen] = useState(true);
@@ -388,7 +411,12 @@ function DeviceCard({
       {open && (
         <div className="flex flex-col gap-2">
           {device.accounts.map((account) => (
-            <AccountGroup key={account.id} account={account} onOpenItem={onOpenItem} />
+            <AccountGroup
+              key={account.id}
+              account={account}
+              deviceId={Number(device.id)}
+              onOpenItem={onOpenItem}
+            />
           ))}
         </div>
       )}
@@ -398,10 +426,14 @@ function DeviceCard({
 
 function AccountGroup({
   account,
+  deviceId,
   onOpenItem,
 }: {
   account: TodoAccount;
-  onOpenItem: (t: { item: TodoItem; handle: string }) => void;
+  /** The phone this account sits on, carried into the sheet so a warmup
+   *  logged from the list records where it was done (PF-04). */
+  deviceId?: number;
+  onOpenItem: (t: SheetTarget) => void;
 }) {
   const progress = accountProgress(account);
 
@@ -435,7 +467,7 @@ function AccountGroup({
           <ItemRow
             key={item.id}
             item={item}
-            onOpen={() => onOpenItem({ item, handle: account.handle })}
+            onOpen={() => onOpenItem({ item, handle: account.handle, deviceId })}
           />
         ))}
       </ul>

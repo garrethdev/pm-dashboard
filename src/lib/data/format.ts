@@ -46,6 +46,29 @@ export function formatEtDate(iso: string | null): string {
   }).format(new Date(iso));
 }
 
+/**
+ * "Today 08:41", "Yesterday 21:05", "Sep 18 08:41" — a moment as the warmup
+ * history reads it (PF-04), always in New York, which is the day every other
+ * number on these screens is counted in.
+ *
+ * The day is compared as a New York calendar date rather than by subtracting
+ * hours, so a warmup logged at 11pm is "Today" right up to midnight ET and not
+ * a minute past it.
+ */
+export function etDateTime(iso: string | null): string {
+  if (!iso) return "—";
+  const day = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(d);
+  const at = new Date(iso);
+  const today = day(new Date());
+  const yesterday = day(new Date(Date.now() - 86_400_000));
+  const when = day(at);
+  const time = formatEtShort(iso);
+  if (when === today) return `Today ${time}`;
+  if (when === yesterday) return `Yesterday ${time}`;
+  return `${formatEtDate(iso)} ${time}`;
+}
+
 /** "2026-09-03" → "September 3, 2026". The input is a plain calendar date that
  *  upstream already anchored to ET, so it is formatted in UTC on purpose:
  *  `new Date("2026-09-03")` is UTC midnight, and rendering that in ET would

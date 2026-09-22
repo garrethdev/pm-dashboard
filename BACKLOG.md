@@ -146,22 +146,23 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-03 | Move to phone button | Immediate | **Ready now** — PF-01 and PF-02 built 2026-09-18; its screen is design ticket P10, not yet designed |
-| PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Ready now** — PF-02 built 2026-09-18, and its screens are approved (P3, P4) |
+| PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
-| PF-06 | Posting Agent fork (n8n) | Immediate | **Ready now** — PF-05 landed 2026-09-22 |
-| PF-07 | Posting To-Do page | Immediate | **Ready now** — PF-05 landed 2026-09-22. Screens approved (P1–P3); needs the re-queue decision below settled first |
-| PF-11 | Post-ban branch for manual accounts | Intermediate | Blocked by PF-01 |
-| PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Ready now** — PF-05 landed 2026-09-22 |
-| PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | Blocked by PF-07 (PF-05 landed 2026-09-22) |
-| PF-10 | Comparison view | Intermediate | Blocked by PF-03, PF-04 (PF-05 landed 2026-09-22) |
-| PF-13 | Write path for the warmup script | Long term | Blocked by PF-04 |
+| PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
+| PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. Shows warmups only until PF-06 hands posts out |
+| PF-11 | Post-ban branch for manual accounts | Intermediate | **Unblocked by PF-01 since 2026-09-18** (this row was stale until 2026-09-22). Waiting on its SCREEN instead: the ban checklist is design ticket P8, not started |
+| PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
+| PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | **Ready now** — PF-07 landed 2026-09-22 |
+| PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
+| PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
-| PF-19 | Calendar and Content types per fleet | Intermediate | Ready now; needs database changes |
+| PF-19 | Calendar and Content types per fleet | Intermediate | **Built 2026-09-22** as four new `_fleet` functions beside the untouched originals; no Physical data to show yet |
 | PF-20 | Incidents and the bell per fleet | Intermediate | Ready now |
+| PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -245,7 +246,7 @@ Button on the account page: pick a device, set `delivery_mode = manual`, record
 what the comparison view (PF-10) splits on.
 *Done when:* one click does all four and the account shows its phone.
 
-## PF-04 · `warmup_sessions` + log form — Ready now (PF-02 built 2026-09-18)
+## PF-04 · `warmup_sessions` + log form — Done 2026-09-22
 
 Columns: `device_id`, `account_id`, `started_at`, `minutes`, `mode`
 (`manual` | `script`), `note`. A quick log form on the device page and on the
@@ -270,6 +271,36 @@ toward (first or second of the day) and, for the script, a finished-at time.
 A manual session is about 15 to 20 minutes (Garreth, 2026-09-19), so 15 is
 the done line; the automated session waits on the new warmup script, which is
 not decided. To-do items carry over for 3 days, for now.
+
+*2026-09-22: built and applied live* (`20260922161739_warmup_sessions`). The
+table holds `session_no` (which of the day's two) and `finished_at` (the
+script's, always NULL by hand), and it deliberately has **no unique index over
+(account, day, session)**: several rows adding up to one session is the
+ordinary case, not a duplicate, because the log form lets somebody record ten
+minutes now and eight more later. Minutes are summed per (account, New York
+day, session) and 15 is the done line, in the view and in
+`src/lib/data/warmup-sessions.ts` both — move one and you must move the other.
+`accounts.warmup_mode` defaults to `manual`, so no backfill.
+
+`v_account_warmup_health` is a UNION rather than a rewrite: it stays keyed on
+`geelark_profile`, which is what `v_account_health_v3`, `notifications.ts` and
+`accounts.ts` all join on, and the manual rows come in through
+`accounts.geelark_profile`. Its 52 existing rows were proven **identical** to
+the old definition after the change. **Type 90 was NOT folded in** despite this
+ticket's wording: that is the phone booting, not the account being warmed, and
+conflating them is a bug this codebase already fixed.
+
+On screen: the Manual / Automated switch now saves (`POST
+/api/accounts/warmup-mode`, which takes a list so the phone-wide press is one
+request and cannot half-land), a **Log warmup** form sits on the phone's page
+and the account's (`POST /api/warmups`), and the phone's warmup history reads
+real rows. The `?demo=1` farm deliberately does not save, because its invented
+accounts reuse real profile names.
+
+*Done when — met:* a warmup logged through the screen turned the dot for an
+account with no Geelark warmup behind it at all, proven live with a throwaway
+phone that was removed afterwards. **Not proven with real work:** no phone is
+registered and no account is on Physical.
 
 ## PF-05 · `post_deliveries` — Done 2026-09-22
 
@@ -298,7 +329,7 @@ deleted. **Not proven with real data**: no phone is registered, no account is
 on Physical, and the fleet is paused, so `device_id` was only exercised as NULL
 and against a phone that does not exist.
 
-## PF-06 · Posting Agent fork — Ready now (PF-05 landed 2026-09-22)
+## PF-06 · Posting Agent fork — Done 2026-09-22
 
 In `[Unified] Posting Agent` (`lioNzkWRocyDvZS5`): for
 `delivery_mode = manual`, write a `queued` delivery row and leave the content
@@ -318,7 +349,46 @@ the workflow is open, because the content tables differ per type and
 on a real 10:00 ET run, **and a delivery marked failed leaves its content row
 closed rather than Ready.**
 
-## PF-07 · Posting To-Do page — Ready now (PF-05 landed 2026-09-22)
+*2026-09-22: built, published and proven live.* Five edits to
+`[Unified] Posting Agent` (`lioNzkWRocyDvZS5`), all additive:
+
+1. **Read accounts** now selects `id`, `delivery_mode` and `device_id` as well.
+2. **Stage Rows** tags each post with the account behind it and sends a
+   `delivery_mode = manual` one down a new path. That branch sits **before
+   every Geelark check on purpose**: a manual account needs no cloud phone, no
+   music lookup and no scheduleAt, and a future account with no Geelark phone
+   would otherwise be dropped there as "not in Geelark" and never reach
+   anybody's list (Garreth confirmed 2026-09-22 that future accounts may have
+   no Geelark phone).
+3. **Posted by a person?** — the fork, before anything is uploaded.
+4. **Hand Post To Person** — inserts the `queued` row with
+   `resolution=ignore-duplicates`, so an n8n retry cannot put the same post on
+   the list twice or drag a finished one back.
+5. The content row is left `Ready`. Nothing has been posted yet.
+
+**The hand-out node does NOT use `neverError`**, unlike the rest of this
+workflow. That convention reports a rejected insert as success, and here that
+would mean a post silently never reaching anybody — the "silent zero" failure
+this project has been bitten by before. It retries three times and lets the
+loop continue instead.
+
+**Which column closes a post, the question this ticket was left holding:** it
+is the content row's `posting_status`, the same one the robot sets. The APP
+sets it now (`closeContentRow` in `post-deliveries.ts`): Posted on a tick,
+**Failed on a dump — the content is burned with the post** (Garreth,
+2026-09-22) — and back to Ready on an undo. Without it a handed-out post sat
+at `Ready` for ever and Inventory kept counting it as unused content.
+
+*Done when — met:* a real manual run gave a manual-mode account a queued row
+and **no Geelark task**, with the content row untouched at `Ready`; a second
+run added no duplicate; the post appeared on the To-do list with its caption
+and video; marking it posted set the content row to `Posted`, and marking it
+failed set it to `Failed` and took it out of the due list for good. The
+throwaway phone, account and content row were all removed afterwards.
+**Not proven with real work:** no real phone or account is on Physical yet, and
+the 10:00 run does nothing at all while every account is paused.
+
+## PF-07 · Posting To-Do page — Done 2026-09-22
 
 Built for a phone screen. Per account: today's queued items with a video
 download button, a caption copy button, **Posted** (asks for the post link) and
@@ -401,7 +471,39 @@ PF-06 writes that row, so it belongs with PF-06.
 each of the six states above behaves as decided** — with the failed save
 proven by a real failure, not just written.
 
-## PF-11 · Post-ban branch for manual accounts — Blocked by PF-01
+*2026-09-22: built.* `src/lib/data/todo.ts` is the live answer that
+`todo-placeholder.ts` used to give: posts from `post_deliveries` joined to
+`unified_posts` for the caption, the media and the hour they were meant to go
+out; warmups DERIVED from `warmup_sessions` rather than stored, so nothing has
+to be created at midnight and a day nobody opened still reads correctly.
+`GET /api/todo?day=N` is how the page steps days and re-reads after a tick;
+`POST /api/deliveries/:id` is the tick itself.
+
+**A post belongs to the day it was HANDED OUT**, not the day the content row
+was once planned for — reading it from `unified_posts.posting_date` hid a post
+from the very list it had just been given to, because content written months
+ago still carries its old date. A FINISHED post instead belongs to the day it
+was finished, so one carried over from Monday and ticked on Wednesday stays on
+Wednesday's list rather than vanishing the instant it is ticked.
+
+**The six states**, and what was decided for each: the sheet HOLDS while
+saving rather than closing hopefully (1); the re-read item struck through with
+its time IS the confirmation (2); a failed save keeps the sheet open with what
+was typed and offers Try again, which the server answers "already there" if
+the first attempt landed, so it cannot write twice (3); a link that is not a
+link WARNS rather than refuses, because the link is optional (4); a row that
+moved on since the sheet opened refuses the write and says what somebody else
+did, via an `expect` field the sheet sends (5); Paste says why it did nothing,
+and an empty clipboard reads differently from a refused one (6).
+
+*Done when — met:* proven end to end against the real database with a
+throwaway phone and two throwaway accounts, all since removed, **including the
+failed save proven by a real failure** (the row deleted out from under an open
+sheet). **Not proven with real work:** no phone is registered, no account is
+on Physical, and PF-06 does not exist yet, so nothing hands a post out — the
+list shows warmups only until it does.
+
+## PF-11 · Post-ban branch for manual accounts — Waiting on its screen (design ticket P8)
 
 `[Ops] Post-Ban System` (`WmichajTDXL0pT1z`) deletes a Geelark phone; for
 `delivery_mode = manual` skip that and surface a checklist instead: sign out
@@ -410,7 +512,7 @@ trail.
 *Done when:* dry-run on a manual account shows the checklist and touches no
 Geelark endpoint.
 
-## PF-09 · Health detector + Incidents read both sources — Ready now (PF-05 landed 2026-09-22)
+## PF-09 · Health detector + Incidents read both sources — Built 2026-09-22, awaiting a real hand-posted row
 
 The delivery-failure guard in `v_account_health_v3` and the failed-deliveries
 source in `src/lib/data/incidents.ts` read `geelark_tasks` only; add
@@ -564,7 +666,7 @@ chose the simpler rule. The before/after comparison in PF-10 still has its own
 date to split on.) In practice: every per-fleet number is "the same number,
 limited to the accounts currently in that fleet".
 
-**PF-19 · Calendar and Content types per fleet — Ready now.**
+**PF-19 · Calendar and Content types per fleet — Built 2026-09-22, no Physical data to show yet.**
 `calendar_month_rollup`, `calendar_month_days` and `calendar_day_detail` join
 `accounts` and can take an optional fleet. They read delivery from
 `geelark_tasks`, so Physical will look empty until PF-05 gives manual posts a

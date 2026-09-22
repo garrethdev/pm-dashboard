@@ -172,7 +172,10 @@ export function AccountsTable({
   fleet,
   viewSwitch,
   groupByPhone = false,
+  demo = false,
   phones = [],
+  notice,
+  headerAction,
   className,
 }: {
   rows: AccountRow[];
@@ -183,8 +186,15 @@ export function AccountsTable({
   viewSwitch?: React.ReactNode;
   /** Draw the accounts grouped under their phone instead of as one list (P4). */
   groupByPhone?: boolean;
+  /** True on `?demo=1`: the rows are invented, so nothing may be saved. */
+  demo?: boolean;
   /** The registered phones, so one with no accounts is still listed. */
   phones?: PhoneOption[];
+  /** A line to say above the table that something just landed — a newly added
+   *  account (PF-21), whose row is somewhere down a list of sixty. */
+  notice?: string | null;
+  /** The page's one accent button, on the title row: Add account (PF-21). */
+  headerAction?: React.ReactNode;
   /** "page" = full detail table with action buttons; "card" = compact homepage card. */
   mode?: "page" | "card";
   /** Selectable content types per character. Page mode only. */
@@ -212,10 +222,86 @@ export function AccountsTable({
 
   // Posting settings (pause + per-account schedule) live in one modal — the
   // bare Pause button hid the fact that an account could also be throttled.
-  // P4's warmup mode, in Physical only. `accounts` has no column for it until
-  // PF-04, so a press moves the switch and forgets; everything starts Manual.
+  //
+  // P4's warmup mode, in Physical only. The saved answer is on the row
+  // (`accounts.warmup_mode`, PF-04); this map holds only the presses made
+  // since the page loaded, so the switch moves the instant it is pressed
+  // rather than waiting for the round trip. A write that fails takes its entry
+  // back out, which drops the switch to the saved answer underneath.
   const [warmupModes, setWarmupModes] = useState<Record<string, WarmupMode>>({});
   const showWarmupMode = fullColumns && fleet === "physical";
+  const [warmupError, setWarmupError] = useState<string | null>(null);
+
+  /** What the switch shows for a row: the press, else what is saved. */
+  const warmupModeOf = (row: AccountRow): WarmupMode =>
+    warmupModes[row.profile] ?? row.warmupMode;
+
+  /**
+   * Set the warmup mode for one account or for a whole phone.
+   *
+   * The switch moves first and the write follows, because on a phone held in
+   * one hand a control that waits for the network reads as broken. If the
+   * write is refused the presses are rolled back and the reason is shown —
+   * never left looking saved.
+   */
+  const applyWarmupMode = async (subset: AccountRow[], m: WarmupMode) => {
+    const targets = subset.filter((r) => warmupModeOf(r) !== m);
+    if (targets.length === 0) return;
+
+    setWarmupError(null);
+    setWarmupModes((prev) => {
+      const next = { ...prev };
+      for (const r of targets) next[r.profile] = m;
+      return next;
+    });
+
+    // The invented farm reuses real profile names ("Profile 21" and up), so a
+    // press here would set a LIVE account's warmup mode. On `?demo=1` the
+    // switch moves and forgets, exactly as it did before PF-04 wired it up.
+    if (demo) return;
+
+    const rollback = () =>
+      setWarmupModes((prev) => {
+        const next = { ...prev };
+        for (const r of targets) delete next[r.profile];
+        return next;
+      });
+
+    try {
+      const res = await fetch("/api/accounts/warmup-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profiles: targets.map((r) => r.profile), mode: m }),
+      });
+      if (!res.ok) {
+        const detail = (await res.json().catch(() => null)) as { error?: string } | null;
+        rollback();
+        setWarmupError(detail?.error ?? `Couldn't save that (HTTP ${res.status}).`);
+        return;
+      }
+      // An account the server left alone (retired, or gone) must not keep
+      // showing the press that never landed.
+      const body = (await res.json().catch(() => null)) as
+        | { skipped?: { profile: string; why: string }[] }
+        | null;
+      const skipped = body?.skipped ?? [];
+      if (skipped.length > 0) {
+        setWarmupModes((prev) => {
+          const next = { ...prev };
+          for (const s of skipped) delete next[s.profile];
+          return next;
+        });
+        setWarmupError(
+          skipped.length === 1
+            ? `${skipped[0]!.profile} was left alone (${skipped[0]!.why}).`
+            : `${skipped.length} accounts were left alone.`,
+        );
+      }
+    } catch {
+      rollback();
+      setWarmupError("Couldn't reach the server. Nothing was changed.");
+    }
+  };
 
   const [settingsFor, setSettingsFor] = useState<AccountRow | null>(null);
   const [reviewing, setReviewing] = useState<AccountRow | null>(null);
@@ -652,10 +738,8 @@ export function AccountsTable({
                           </span>
                           {showWarmupMode && (
                             <WarmupModeSwitch
-                              mode={warmupModes[row.profile] ?? "manual"}
-                              onChange={(m) =>
-                                setWarmupModes((prev) => ({ ...prev, [row.profile]: m }))
-                              }
+                              mode={warmupModeOf(row)}
+                              onChange={(m) => void applyWarmupMode([row], m)}
                             />
                           )}
                         </span>
@@ -781,13 +865,6 @@ export function AccountsTable({
   }));
   const noPhone = rows.filter((r) => r.deviceId == null);
 
-  const setWarmupMany = (subset: AccountRow[], m: WarmupMode) =>
-    setWarmupModes((prev) => {
-      const next = { ...prev };
-      for (const r of subset) next[r.profile] = m;
-      return next;
-    });
-
   // Compact homepage card: no page header, no action columns, scrollable body.
   if (mode === "card") {
     return (
@@ -828,15 +905,29 @@ export function AccountsTable({
           {/* The page's name, and — in Physical — the view of it opposite
               (Garreth, 2026-09-22). On Cloud, which has no view to choose,
               this row is for a phone only; on a desktop the name goes back
-              inline with the filters, where it has always been. */}
+              inline with the filters, where it has always been.
+
+              Add account joined this row for PF-21, and on a phone three
+              things do not fit: the name, the switch, and the button clipping
+              the switch to "By pho…". So on a phone the button sits opposite
+              the name and the switch takes the whole line below it, which is
+              the shape a segmented control is built for anyway. From `sm:` up
+              all three are back on the one line. */}
           <div
             className={cn(
-              "flex items-center justify-between gap-3",
+              "flex flex-wrap items-center gap-3",
               !viewSwitch && "sm:hidden",
             )}
           >
-            <h1 className="text-xl font-semibold">Accounts</h1>
-            {viewSwitch}
+            <h1 className="order-1 text-xl font-semibold">Accounts</h1>
+            {headerAction && (
+              <div className="order-2 ml-auto shrink-0 sm:order-3 sm:ml-0">{headerAction}</div>
+            )}
+            {viewSwitch && (
+              <div className="order-3 w-full min-w-0 sm:order-2 sm:ml-auto sm:w-auto">
+                {viewSwitch}
+              </div>
+            )}
           </div>
 
           {/* On a phone this is TWO rows and the search comes first (Garreth,
@@ -894,6 +985,28 @@ export function AccountsTable({
           </div>
         </div>
 
+        {/* Something that just landed and would otherwise be invisible — an
+            account added from the form above. */}
+        {notice && (
+          <p
+            role="status"
+            className="rounded-nested bg-accent-soft px-3 py-2 text-sm text-accent"
+          >
+            {notice}
+          </p>
+        )}
+
+        {/* A warmup switch that could not be saved. It sits above both views
+            because the press it belongs to can come from either. */}
+        {warmupError && (
+          <p
+            role="alert"
+            className="rounded-nested bg-danger/10 px-3 py-2 text-sm text-danger"
+          >
+            {warmupError}
+          </p>
+        )}
+
         {groupByPhone ? (
           phones.length === 0 && noPhone.length === 0 ? (
             <NoAccountsByPhone empty={allRows.length === 0} />
@@ -910,8 +1023,8 @@ export function AccountsTable({
                   warmup={
                     accounts.length > 0 && (
                       <WarmupModeSwitch
-                        mode={phoneWarmupMode(accounts, warmupModes)}
-                        onChange={(m) => setWarmupMany(accounts, m)}
+                        mode={phoneWarmupMode(accounts, warmupModeOf)}
+                        onChange={(m) => void applyWarmupMode(accounts, m)}
                       />
                     )
                   }
@@ -990,9 +1103,8 @@ export function AccountsTable({
  */
 function phoneWarmupMode(
   accounts: AccountRow[],
-  modes: Record<string, WarmupMode>,
+  mode: (row: AccountRow) => WarmupMode,
 ): WarmupMode | "mixed" {
-  const mode = (r: AccountRow) => modes[r.profile] ?? "manual";
   if (accounts.every((a) => mode(a) === "manual")) return "manual";
   if (accounts.every((a) => mode(a) === "script")) return "script";
   return "mixed";

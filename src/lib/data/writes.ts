@@ -1,6 +1,6 @@
 import { authBypassed, isEmailAllowed } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { DeliveryMode } from "@/lib/data/accounts";
+import type { DeliveryMode, WarmupMode } from "@/lib/data/accounts";
 
 /**
  * Server-side write helpers for dashboard actions (plan §9). Every write is
@@ -130,9 +130,16 @@ export function validDeliveryMode(m: unknown): m is DeliveryMode {
   return m === "geelark" || m === "manual";
 }
 
+/** Who does the warming: a person, or the script on the Air (PF-04). */
+export function validWarmupMode(m: unknown): m is WarmupMode {
+  return m === "manual" || m === "script";
+}
+
 export interface AccountState {
   posting_paused: boolean | null;
   delivery_mode: DeliveryMode;
+  /** Who warms it: a person, or the script (PF-04). */
+  warmup_mode: WarmupMode;
   is_active: boolean;
   status_note: string | null;
   /** "Character 3" — the outer bound on which content types may be selected. */
@@ -144,13 +151,14 @@ export interface AccountState {
 /** Read one account's current state (for old_value + guardrails). */
 export async function getAccountState(profile: string): Promise<AccountState | null> {
   const res = await sbFetch(
-    `accounts?select=posting_paused,delivery_mode,is_active,status_note,character&geelark_profile=eq.${encodeURIComponent(profile)}`,
+    `accounts?select=posting_paused,delivery_mode,warmup_mode,is_active,status_note,character&geelark_profile=eq.${encodeURIComponent(profile)}`,
     { method: "GET" },
   );
   if (!res.ok) throw new Error(`Supabase read failed (HTTP ${res.status})`);
   const rows = (await res.json()) as {
     posting_paused: boolean | null;
     delivery_mode: string | null;
+    warmup_mode: string | null;
     is_active: boolean;
     status_note: string | null;
     character: string | null;
@@ -162,6 +170,7 @@ export async function getAccountState(profile: string): Promise<AccountState | n
     // Anything the column could not be (it is NOT NULL with a check) still
     // reads as the default rather than as a third state.
     delivery_mode: row.delivery_mode === "manual" ? "manual" : "geelark",
+    warmup_mode: row.warmup_mode === "script" ? "script" : "manual",
     cleanedUp: /post-ban cleanup/i.test(row.status_note ?? ""),
   };
 }
@@ -230,6 +239,26 @@ export async function setDeliveryMode(
     }),
   });
   if (!res.ok) throw new Error(`Could not change who posts (HTTP ${res.status}). Nothing was changed`);
+}
+
+/**
+ * PF-04 warmup mode: who warms this account up.
+ *
+ * Writes that one column and nothing else. Unlike the delivery-mode flip it
+ * appends NOTHING to status_note: that note is read on screen, and a switch
+ * that is a single press with no hold (Garreth, 2026-09-22) is too light an
+ * act to keep adding a line to it. Who and when live in dashboard_audit_log,
+ * written by the route.
+ */
+export async function setWarmupMode(profile: string, mode: WarmupMode): Promise<void> {
+  const res = await sbFetch(`accounts?geelark_profile=eq.${encodeURIComponent(profile)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ warmup_mode: mode, updated_at: new Date().toISOString() }),
+  });
+  if (!res.ok) {
+    throw new Error(`Could not change who warms it up (HTTP ${res.status}). Nothing was changed`);
+  }
 }
 
 /**

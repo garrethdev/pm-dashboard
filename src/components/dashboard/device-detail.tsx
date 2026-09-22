@@ -35,6 +35,8 @@ import {
   type TodoAccount,
   type WarmupSession,
 } from "@/lib/data/todo-placeholder";
+import { WarmupLogSheet } from "@/components/dashboard/warmup-log-sheet";
+import { SESSIONS_PER_DAY, type SessionProgress } from "@/lib/data/warmup-sessions";
 import { healthTone } from "@/lib/health";
 import { cn } from "@/lib/utils";
 
@@ -207,6 +209,8 @@ export function DeviceDetail({
   proofUrl,
   assignable,
   initialNotice,
+  warmups: realWarmups = [],
+  warmupProgress = {},
   demo = null,
 }: {
   device: Device;
@@ -215,6 +219,10 @@ export function DeviceDetail({
   assignable: DeviceAccount[];
   /** Carried over from "Add phone" when the phone saved but its picture did not. */
   initialNotice?: string | null;
+  /** This phone's recent warmup sessions, newest first (PF-04). */
+  warmups?: WarmupSession[];
+  /** How today's two sessions stand, per account id (PF-04). */
+  warmupProgress?: Record<number, SessionProgress[]>;
   /** The invented phone for the P5 review, or null for a real one. */
   demo?: DevicePagePlaceholder | null;
 }) {
@@ -228,6 +236,11 @@ export function DeviceDetail({
     initialNotice ? { where: "proof", message: initialNotice } : null,
   );
   const [picked, setPicked] = useState("");
+  // The account whose warmup is being logged, or null when the sheet is shut.
+  // PF-04: a warmup done outside the to-do list, which is what this page is
+  // for — it shows the phone's day, and this records one that happened away
+  // from the list. The day's own block stays read-only (Garreth, 2026-09-22).
+  const [loggingFor, setLoggingFor] = useState<DeviceAccount | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   // The invented phone is not in the database, so nothing on it can save.
@@ -242,7 +255,7 @@ export function DeviceDetail({
   const progress = today ? deviceProgress(today) : null;
 
   const lines = demo ? demoLines(demo) : realLines(device);
-  const warmups: WarmupSession[] = demo?.warmups ?? [];
+  const warmups: WarmupSession[] = demo ? demo.warmups : realWarmups;
 
   const dirty = (Object.keys(saved) as (keyof DeviceFormValues)[]).some(
     (k) => values[k].trim() !== saved[k],
@@ -433,7 +446,21 @@ export function DeviceDetail({
             </div>
           </DashCard>
 
-          <DashCard title="Warmup history">
+          <DashCard
+            title="Warmup history"
+            actions={
+              // "A warmup done outside the list" (design ticket P3). It logs a
+              // session; it does not tick anything off the day, which stays
+              // read-only on this page. Hidden on the invented phone, whose
+              // accounts are not in the database, and on a phone with none.
+              !inert && device.accounts.length > 0 ? (
+                <LogWarmupButton
+                  accounts={device.accounts}
+                  onPick={(a) => setLoggingFor(a)}
+                />
+              ) : null
+            }
+          >
             {warmups.length === 0 ? (
               <EmptyState icon={ListChecks} compact>
                 No warmups yet
@@ -552,7 +579,108 @@ export function DeviceDetail({
         </div>
       </div>
 
+      {loggingFor && (
+        <WarmupLogSheet
+          handle={accountName(loggingFor)}
+          subtitle={device.name}
+          progress={
+            warmupProgress[loggingFor.id] ??
+            Array.from({ length: SESSIONS_PER_DAY }, (_, i) => ({
+              sessionNo: i + 1,
+              minutes: 0,
+              done: false,
+            }))
+          }
+          onClose={() => setLoggingFor(null)}
+          onSaved={() => {
+            setLoggingFor(null);
+            // The history list and today's progress are both read on the
+            // server, so the page is asked again rather than patched here —
+            // which also means the health dot moves in the same breath.
+            router.refresh();
+          }}
+          save={async (minutes, note) => {
+            try {
+              const res = await fetch("/api/warmups", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  accountId: loggingFor.id,
+                  deviceId: device.id,
+                  minutes,
+                  note: note || null,
+                }),
+              });
+              if (!res.ok) return await errorFrom(res, "Saving the warmup failed.");
+              return null;
+            } catch {
+              return "Couldn't reach the server. Nothing was saved.";
+            }
+          }}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * "Log warmup" on the history card.
+ *
+ * One account and it is a button; more than one and it asks which first,
+ * because a phone carries up to three and a warmup belongs to an account
+ * rather than to the phone.
+ */
+function LogWarmupButton({
+  accounts,
+  onPick,
+}: {
+  accounts: DeviceAccount[];
+  onPick: (account: DeviceAccount) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (accounts.length === 1) {
+    return (
+      <button
+        onClick={() => onPick(accounts[0]!)}
+        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary"
+      >
+        Log warmup
+      </button>
+    );
+  }
+
+  return (
+    <span className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary"
+      >
+        Log warmup
+      </button>
+      {open && (
+        <>
+          {/* A press anywhere else shuts it, the way the app's other small
+              menus behave. */}
+          <span className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <span className="absolute right-0 z-20 mt-1.5 flex w-52 flex-col rounded-nested border border-border bg-card p-1 shadow-card">
+            {accounts.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => {
+                  setOpen(false);
+                  onPick(a);
+                }}
+                className="truncate rounded-nested px-2.5 py-2 text-left text-sm hover:bg-card-raised"
+              >
+                {accountName(a)}
+              </button>
+            ))}
+          </span>
+        </>
+      )}
+    </span>
   );
 }
 

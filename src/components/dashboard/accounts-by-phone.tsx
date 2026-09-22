@@ -10,6 +10,10 @@ export interface PhoneOption {
   name: string;
   model: string | null;
   isActive: boolean;
+  /** How many accounts it holds right now. Only the Add account form reads it,
+   *  to leave out a phone with no room (PF-21); the groups below count their
+   *  own rows, so it is optional and the invented phones go without. */
+  held?: number;
 }
 
 /**

@@ -20,6 +20,279 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — Posts made by hand now count everywhere they should
+
+**Where it came from:** tickets PF-09 and PF-19, built together because they
+read the same thing.
+
+**The health dot and the Incidents page can see hand-posted work (PF-09).**
+Everything the dashboard knew about whether a post actually went out came from
+Geelark: the cloud phone posted, and it told us. A real iPhone tells us
+nothing, so an account moved to a real phone would have read as one that had
+simply stopped — nothing posted, nothing failed, nothing tried, for ever. The
+two calculations underneath the health dot now read the hand-posting record as
+well, so an account on a real phone is judged by exactly the same rules as one
+on Geelark, with a real "last posted" date instead of a blank. The Incidents
+page gained a matching entry: a post somebody could not put up appears there
+beside the ones Geelark could not deliver, with whatever note they left.
+
+**One thing deliberately left alone.** The "system error" verdict still reads
+Geelark only. It means the posting machinery is broken, and it is matched
+against Geelark's own failure codes — captcha, account banned — which a
+hand-posted row has no equivalent of. A person who could not post something is
+a failed delivery, which the app already reports; folding it in would put a red
+"broken machinery" verdict on a human typo.
+
+**The Content Calendar and Content Types follow the Cloud / Physical switch
+(PF-19).** Both were fleet-wide, so Physical showed Cloud's numbers. They now
+show the fleet you are looking at, following the rule that an account's data
+follows the account. Every content lane still appears on both fleets showing no
+posts, rather than vanishing, so Content Types is readable on Physical from day
+one. The scheduler run and its shortfalls stay fleet-wide on purpose: one run
+plans everything, and splitting it would invent two runs that never happened.
+
+**Today's numbers did not move.** Every existing calculation was proven
+unchanged, in both directions, row by row: the account statistics (64
+accounts), last-post dates (55 accounts), the calendar month grid (667 rows),
+day totals (100 days), three expanded days (208 rows) and the content-type
+numbers over three windows (25 lanes each). Zero differences everywhere. I
+checked the two health views myself, separately from the agent that built
+them, by fingerprinting them before and after — identical.
+
+**Verification.** Both database changes are applied live. The four new calendar
+and content-type functions are executable by the app's own key only — not by
+the public key — which was read back rather than assumed, because this project
+has been caught before by a revoke that left the public key still named. Both
+pages were loaded in a real browser on both fleets with no console errors, and
+Cloud still shows the numbers it showed before. **Not proven with real work:**
+nothing has ever been posted by hand and no account is on a real phone, so the
+new half of every one of these calculations has never had a real row through
+it. The first honest test is the day the first account moves to a phone.
+
+**One thing to decide.** On Physical the calendar grid is empty but each day
+still carries its amber "N short" badge, because a shortfall belongs to the
+scheduler run, which is fleet-wide. It is working as designed, but on an empty
+grid it reads as though Physical itself fell short. Changing it is a display
+tweak, not a number.
+
+---
+
+## 2026-09-22 — Accounts can be added from the app, with their Profile name typed in
+
+**Where it came from:** ticket PF-21, opened the same day off Garreth's
+decision that an account made from scratch on a real iPhone still gets a
+"Profile N" name, typed into a form rather than handed out by a robot.
+
+Until today an account row only ever came from the n8n provisioning workflow,
+and it arrived half-blank — the handle, the character, the day the account was
+made and the active flag were all typed into the database afterwards by hand.
+Accounts on real iPhones are not provisioned by anything, so there was no way
+to create one at all.
+
+The Accounts page in Physical now has an **Add account** button, opening the
+same kind of sheet as Add phone. It asks for the Profile name, the handle, the
+character, the platform, which fleet it is on, the phone it lives on, the day
+the account was made, and whether it starts paused. The row it writes is
+complete, with nothing left to fill in by hand.
+
+**Why the Profile name gets this much care.** It is what ties an account to its
+posts, its health verdict, its analytics and its calendar — several database
+views join on it — so the form guards it three ways. A name already in use is
+refused by name ("Profile 19 already exists — it is @mayas_journey0, retired").
+The spelling is settled before saving, because "profile 019", "Profile19" and
+"PROFILE 19" are one account to a person and three to a database; the form
+shows "Saves as Profile 19" first, so nothing is changed behind your back. And
+the number it suggests counts on from the HIGHEST rather than filling a gap:
+the fleet runs 8 to 78 with fourteen numbers missing, and those deleted
+accounts still have posts and tasks filed under their old names, so reusing a
+number would quietly graft a dead account's history onto a new one.
+
+**A new account starts paused** unless you switch it. One that goes live the
+moment it is written is picked up by the next planning run, and a day-zero
+account has not been warmed.
+
+**Confirmed live.** A real account was written through the finished form, seen
+in the Physical list, and deleted again within the minute — the table is back
+to its 64 rows. Every refusal above was tried against the live database and
+came back with the sentence quoted. **Not checked:** the phone dropdown has
+never been seen with a real phone in it, because none is registered; and the
+screens were looked at in headless Chrome, not Safari.
+
+---
+
+## 2026-09-22 — Posts for real phones now go to a person, not to Geelark
+
+**Where it came from:** ticket PF-06, the last piece of plumbing the phone farm
+needed.
+
+The robot that sends out posts every morning at 10 now looks at each account
+first. If the account is on a Geelark cloud phone, nothing has changed. If it
+is on a real iPhone, the robot uploads nothing and creates no Geelark job — it
+simply writes down that the post has been handed to a person, and it appears on
+the To-do list with its caption and its video ready to download.
+
+**A post that's done is now finished with properly.** Handing a post out leaves
+it marked "ready", because nobody has posted it yet. Ticking it off marks it
+Posted; marking it Failed burns the content with it, the way you asked. Before
+this, a handed-out post would have sat marked "ready" for ever and Inventory
+would have kept counting it as content nobody had used.
+
+**One thing deliberately not copied.** Every other place this workflow writes
+to the database is set to treat a rejection as success. That is how a post can
+vanish with the run still reporting a clean night — something this project has
+been caught by before. The new step does the opposite: it retries, and if it
+still cannot write it says so, while letting the rest of the day's posts carry
+on.
+
+**Built for accounts that will never have had Geelark.** You confirmed future
+accounts may be set up with no Geelark phone at all. The new branch runs before
+every Geelark check for that reason — otherwise those posts would have been
+quietly dropped as "not in Geelark" and never reached anyone.
+
+**Verification.** Published and confirmed live, then proven on a real run with a
+throwaway phone, account and post: the account got a queued item and **no
+Geelark job**, the content row was left untouched, a second run added no
+duplicate, the post showed up on the To-do list with its caption and video,
+ticking it Posted closed the content row, and marking it Failed burned it and
+took it out of the due list for good. Everything was then removed and the
+database confirmed back where it started. **Not yet met by real work:** no real
+phone or account is on Physical, and while every account is paused the 10am run
+does nothing at all.
+
+---
+
+## 2026-09-22 — The to-do list is the real day's work now
+
+**Where it came from:** ticket PF-07, the next one in the phone-farm build
+order after PF-04. Its screens were approved on 2026-09-22 (design tickets P1,
+P2 and P3); what was missing was the data behind them and the six states P3
+deliberately handed over.
+
+The To-do card on the dashboard and the To-do page have been showing an
+invented farm since they were designed — made-up phones, made-up handles,
+ticks that were forgotten the moment the page reloaded. They now show the real
+day, and a tick is written down.
+
+**What the list is made of.** Posts come from the rows the Posting Agent hands
+out. Warmups are not stored at all: every account owes two a day, so the list
+works them out from what has actually been logged each time it is drawn.
+Nothing has to be created at midnight, and a day nobody looked at still reads
+correctly afterwards.
+
+**The rules it now keeps, all yours.** Paused accounts stay off the list. An
+unfinished post carries over for three days and then stops. A failed post is
+dumped — finished, never carried over, never handed out again. An account set
+to Automated still shows its two warmups, as items nobody can tick, so a
+script that has stopped shows up as work that never gets done rather than as
+silence.
+
+**The six states around a save.** These were the real work, and each was a
+decision:
+
+1. **While it saves** the sheet holds, with the button reading "Saving…". It
+   does not close hopefully. A post believed logged and not logged comes back
+   tomorrow as carried over, and that is the failure worth guarding against.
+2. **Knowing it took** is the item itself: it re-reads from the database and
+   appears struck through with the time. No second message on a screen used
+   standing up with a phone in the other hand.
+3. **A save that failed** leaves the sheet open holding what you typed, says
+   what went wrong, and offers Try again. Try again cannot save twice: if the
+   first attempt actually landed and only the reply was lost, the app answers
+   "already done" instead of writing again.
+4. **A link that is clearly not a link** is warned about, not refused. The
+   link is optional, so refusing what somebody pasted could leave them unable
+   to record a post they really made.
+5. **Somebody else finishing it while your sheet is open** is now caught. The
+   save is refused with what they did — "Somebody else already marked this
+   posted, with its link" — instead of quietly replacing their answer.
+6. **Paste doing nothing** now says why. Safari can refuse the clipboard
+   outright, and an empty clipboard is a different answer from a refused one;
+   before, both were silence, with a long URL to type by hand as the fallback.
+
+**Two bugs found and fixed while proving it.** Every day the list asked for
+came back a day early, because of how the day boundary was built. And a post
+carried over from an earlier day vanished the instant it was ticked, instead
+of staying struck through for the rest of the day — which on screen looks
+exactly like a save that did not work.
+
+**One thing to know.** Until the Posting Agent is forked (PF-06) nothing hands
+posts out, so the list will show warmups and nothing else. With no phones
+registered it says "No phones yet", which is the true answer today.
+
+**Verification.** Proven against the real database with a throwaway phone and
+two throwaway accounts: a post marked posted, the same save repeated to prove
+it cannot write twice, a stale save refused as somebody else's, a post marked
+posted without its link and the link pasted afterwards, a failed post refusing
+to be un-failed, a post carried over from two days earlier appearing and one
+from five days earlier correctly not. **The failed save was proven by a real
+failure**, not written: the row was deleted out from under an open sheet, and
+the sheet stayed open saying "That post is no longer on the list." with Try
+again. Every test row, both accounts and the phone were then removed and the
+database confirmed back to exactly where it started. Looked at in the running
+app in dark mode at 1440 in **headless Chrome, not Safari**; light mode and
+phone width have not been looked at for this screen yet.
+
+---
+
+## 2026-09-22 — Warming an account up by hand now counts for something
+
+**Where it came from:** ticket PF-04, the next one in the phone-farm build
+order. Its screens were approved on 2026-09-22 (design tickets P3, P4 and P5);
+what was missing was everything behind them.
+
+Until today the app had no idea a real phone had been warmed up. Geelark cloud
+phones write their own record every time they scroll and like an account, and
+the health dot beside every account is read from those records — so an account
+moved onto a real iPhone, warmed by hand every morning, would have gone on
+looking like an account nobody had touched for weeks. That is now fixed: a
+warmup done by hand is recorded, and it counts exactly the same as one a cloud
+phone did.
+
+**What you can do that you could not yesterday.**
+
+- **Log a warmup.** There is a **Log warmup** button on a phone's page, beside
+  that phone's warmup history, and on an account's own page. It asks for the
+  minutes and an optional note, and shows how today's two sessions stand so
+  you can see what the minutes are being added to.
+- **A warmup can be logged in two goes.** Ten minutes now and eight more after
+  the phone has been put down is one session of eighteen, not two failed ones.
+  A session counts as done at fifteen minutes, which is the line Garreth set
+  on 2026-09-19.
+- **See a phone's warmup history.** Each session says which account, when, how
+  long, and whether a person or the script did it. It was showing invented
+  sessions; now it shows real ones.
+- **The Manual / Automated switch remembers.** The hand-and-robot switch on
+  the Accounts page has been on screen since 2026-09-22 but forgot the moment
+  the page was reloaded — there was nowhere to put the answer. Now a press
+  saves, one account at a time or every account on a phone at once. If a save
+  is refused the switch goes back where it was and says why, rather than
+  sitting there claiming something that never happened.
+
+**One thing worth knowing.** The invented farm on `/accounts?demo=1` uses real
+profile names, so now that the switch saves, a press there would have changed
+a live account. It deliberately does not save, exactly as it did not before.
+
+**Two things were deliberately NOT done.** The backlog asked for Geelark's
+type-90 records to be counted as warmups too; they are the phone *booting*, not
+the account being warmed, and treating them as the same thing is a bug this
+codebase already fixed once, so the Geelark half is untouched. And the to-do
+list still runs on invented data — making it real is the next ticket, PF-07,
+and doing half of it here would have collided with that work.
+
+**Verification.** The database change was applied live and checked both ways.
+The 52 accounts the health view already answered for come back **byte for byte
+identical** to before, so nothing about a Geelark account's dot moved. Then a
+throwaway phone and two retired accounts were parked on it, a warmup was logged
+through the screen itself, and the health view picked it up for an account that
+had never been warmed on Geelark at all — after which every test row, the test
+phone and the parked accounts were removed and the view was confirmed back to
+exactly 52. Looked at in the running app in dark and light, at 1440 and at 390,
+with no console errors — **in headless Chrome, not Safari**, which is what
+Garreth uses. **Not yet met by real work:** no phone is registered and no
+account is on Physical, so the first genuine warmup has still to be logged.
+
+---
+
 ## 2026-09-22 — A post that fails is finished with, not tried again
 
 **Where it came from:** Garreth, 2026-09-22, settling the one question ticket

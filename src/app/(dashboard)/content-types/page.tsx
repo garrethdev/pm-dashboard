@@ -2,6 +2,7 @@ import { DashCard } from "@/components/ui/card";
 import { ContentTypesView } from "@/components/dashboard/content-types-view";
 import { CT_DEFAULT_RANGE, getContentTypes } from "@/lib/data/content-types";
 import { getFleetDefaults } from "@/lib/data/scheduler-config";
+import { getFleet } from "@/lib/fleet-server";
 
 /*
  * Content Types — the registry as a catalogue.
@@ -19,8 +20,10 @@ import { getFleetDefaults } from "@/lib/data/scheduler-config";
 async function ContentTypesLive() {
   let data;
   try {
-    const { data: fleet } = await getFleetDefaults();
-    ({ data } = await getContentTypes(CT_DEFAULT_RANGE, fleet.glpWeek));
+    // `defaults` is the scheduler's fleet-wide cadence settings; `fleet` is
+    // which of Cloud / Physical this person is looking at (PF-19).
+    const [{ data: defaults }, fleet] = await Promise.all([getFleetDefaults(), getFleet()]);
+    ({ data } = await getContentTypes(CT_DEFAULT_RANGE, defaults.glpWeek, fleet));
   } catch (err) {
     return (
       <DashCard title="Content types">

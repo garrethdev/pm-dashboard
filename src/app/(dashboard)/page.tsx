@@ -8,7 +8,8 @@ import { ProxiesCardLive } from "@/components/dashboard/proxies-card-live";
 import { TodoTodayCard } from "@/components/dashboard/todo-today-card";
 import { TopPostsCard } from "@/components/dashboard/top-posts-card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
-import { parseTodoState } from "@/lib/data/todo-placeholder";
+import { parseTodoState, type TodoDevice } from "@/lib/data/todo-placeholder";
+import { getTodoBoard, type TodoExtras } from "@/lib/data/todo";
 import { getFleet } from "@/lib/fleet-server";
 
 /*
@@ -33,10 +34,18 @@ export default async function Home({
 }) {
   const fleet = await getFleet();
   if (fleet === "physical") {
-    // `?todo=` only picks which placeholder state the P1 card draws, for the
-    // design review. It goes when PF-07 makes the list real.
-    const todoState = parseTodoState((await searchParams).todo);
-    return <PhysicalHome todoState={todoState} />;
+    // `?todo=` draws one of the placeholder states, which is how the card is
+    // judged in states live data will not produce on demand (a phone switched
+    // off, a day already finished). WITHOUT it the card is the real list
+    // (PF-07) — a failed read costs the card its contents, not the homepage.
+    const params = await searchParams;
+    const drawn = params.todo !== undefined;
+    const live = drawn
+      ? undefined
+      : await getTodoBoard()
+          .then((b) => ({ initial: b.devices, extras: b.extras, initialDay: 0 }))
+          .catch(() => undefined);
+    return <PhysicalHome todoState={parseTodoState(params.todo)} live={live} />;
   }
   return <CloudHome />;
 }
@@ -50,7 +59,13 @@ export default async function Home({
  * above Accounts, because it is the reason the app was opened at all. On a
  * desktop the eye starts left, so Accounts keeps the lead there.
  */
-function PhysicalHome({ todoState }: { todoState: ReturnType<typeof parseTodoState> }) {
+function PhysicalHome({
+  todoState,
+  live,
+}: {
+  todoState: ReturnType<typeof parseTodoState>;
+  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: number };
+}) {
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-12 gap-3 xl:h-[calc(100vh-6.5rem)] xl:min-h-[620px] xl:grid-rows-[minmax(0,5fr)_minmax(0,7fr)]">
@@ -58,6 +73,7 @@ function PhysicalHome({ todoState }: { todoState: ReturnType<typeof parseTodoSta
         <div className="relative order-1 col-span-12 min-h-0 xl:order-none xl:col-span-4 xl:col-start-9 xl:row-start-1 2xl:col-span-3 2xl:col-start-10">
           <TodoTodayCard
             state={todoState}
+            live={live}
             className="flex xl:absolute xl:inset-0 xl:overflow-auto"
           />
         </div>

@@ -18,6 +18,7 @@ import {
   TodoCheck,
   TodoLogSheet,
   useTodoBoard,
+  type SheetTarget,
 } from "@/components/dashboard/todo-board";
 import {
   deviceProgress,
@@ -25,9 +26,9 @@ import {
   todoEmptyReason,
   type TodoAccount,
   type TodoDevice,
-  type TodoItem,
   type TodoState,
 } from "@/lib/data/todo-placeholder";
+import type { TodoExtras } from "@/lib/data/todo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -48,12 +49,24 @@ import { cn } from "@/lib/utils";
 export function TodoTodayCard({
   state = "work",
   className,
+  live,
 }: {
   state?: TodoState;
   className?: string;
+  /** The server's answer for today. Absent on a `?todo=` design state. */
+  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: number };
 }) {
-  const board = useTodoBoard(state, 0);
-  const emptyReason = todoEmptyReason(state);
+  const board = useTodoBoard(state, 0, live);
+  // On the real list the reason comes from the list itself: no phones at all
+  // reads differently from a phone with nothing due. The placeholder states
+  // keep saying which one they are drawing.
+  const emptyReason = board.live
+    ? board.devices.length === 0
+      ? "noPhones"
+      : board.devices.every((d) => d.accounts.every((a) => a.items.length === 0))
+        ? "nothingDue"
+        : null
+    : todoEmptyReason(state);
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const allDone =
@@ -93,6 +106,8 @@ export function TodoTodayCard({
 
       {board.target && (
         <TodoLogSheet
+          extras={board.extras}
+          live={board.live}
           target={board.target}
           onClose={board.close}
           onSave={board.save}
@@ -112,7 +127,7 @@ function DeviceRow({
   device: TodoDevice;
   open: boolean;
   onToggle: () => void;
-  onOpenItem: (t: { item: TodoItem; handle: string }) => void;
+  onOpenItem: (t: SheetTarget) => void;
 }) {
   const progress = deviceProgress(device);
 
@@ -164,7 +179,12 @@ function DeviceRow({
       {open && (
         <div className="flex flex-col gap-5 px-3 pt-1 pb-4">
           {device.accounts.map((account) => (
-            <AccountGroup key={account.id} account={account} onOpenItem={onOpenItem} />
+            <AccountGroup
+              key={account.id}
+              account={account}
+              deviceId={Number(device.id)}
+              onOpenItem={onOpenItem}
+            />
           ))}
         </div>
       )}
@@ -174,10 +194,14 @@ function DeviceRow({
 
 function AccountGroup({
   account,
+  deviceId,
   onOpenItem,
 }: {
   account: TodoAccount;
-  onOpenItem: (t: { item: TodoItem; handle: string }) => void;
+  /** The phone this account sits on, carried into the sheet so a warmup
+   *  logged from the list records where it was done (PF-04). */
+  deviceId?: number;
+  onOpenItem: (t: SheetTarget) => void;
 }) {
   return (
     <div className="min-w-0">
@@ -199,7 +223,7 @@ function AccountGroup({
             <TodoCheck
               compact
               item={item}
-              onOpen={() => onOpenItem({ item, handle: account.handle })}
+              onOpen={() => onOpenItem({ item, handle: account.handle, deviceId })}
             />
             {/* Every leading mark — the phone icon, the platform mark and this
                 tick — is 24px wide, so the phone name, the handle and the times

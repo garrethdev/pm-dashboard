@@ -3,9 +3,12 @@
 import { Hand, Robot } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { WarmupMode } from "@/lib/data/accounts";
 
-/** Who warms an account up: a person, or the script on the Air (PF-04). */
-export type WarmupMode = "manual" | "script";
+// The type lives in the data layer beside DeliveryMode, so server modules can
+// read it without importing this client component. Re-exported here because
+// every screen that draws the switch also needs the type.
+export type { WarmupMode };
 
 /**
  * The Manual / Automated warmup switch — design ticket P4.
@@ -22,9 +25,10 @@ export type WarmupMode = "manual" | "script";
  * would be a lie about the third, and the tooltip changes to "Set ALL to…" so
  * the press says plainly that it is about to make them agree.
  *
- * Nothing is saved. `accounts` has no warmup-mode column until PF-04 adds one,
- * so the switch moves in the browser and forgets; it is here to be judged, not
- * used.
+ * The press saves (PF-04): `accounts.warmup_mode` holds it, the switch moves
+ * at once and the row is written behind it, and a write that fails puts the
+ * switch back where it was rather than leaving the screen claiming something
+ * the database never agreed to.
  */
 export function WarmupModeSwitch({
   mode,

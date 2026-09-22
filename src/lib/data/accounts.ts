@@ -19,6 +19,8 @@ import { type Platform, hasAnalytics, toPlatform } from "@/lib/platform";
 // components); re-exported here because the data layer is where it is read.
 export { type Platform, toPlatform };
 export type DeliveryMode = "geelark" | "manual";
+/** Who warms an account up: a person, or the script on the Air (PF-04). */
+export type WarmupMode = "manual" | "script";
 
 export interface AccountRow {
   profile: string;
@@ -29,6 +31,10 @@ export interface AccountRow {
   deliveryMode: DeliveryMode;
   /** The physical phone this account lives on; null while it is still on Geelark (PF-02). */
   deviceId: number | null;
+  /** Who warms this account up: a person, or the script on the Air (PF-04).
+   *  Only meaningful on the Physical fleet; a Geelark account is warmed by the
+   *  Geelark RPA whatever this says. */
+  warmupMode: WarmupMode;
   isActive: boolean;
   paused: boolean;
   healthStatus: string;
@@ -97,6 +103,7 @@ interface RawAccount {
   platform: string;
   delivery_mode: string | null;
   device_id: number | null;
+  warmup_mode: string | null;
   is_active: boolean;
   posting_paused: boolean | null;
   health_status: string | null;
@@ -134,7 +141,7 @@ async function fetchAccounts(): Promise<AccountRow[]> {
     effective,
   ] = await Promise.all([
     sbRest<RawAccount[]>(
-      "accounts?select=geelark_profile,username,character,platform,delivery_mode,device_id,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
+      "accounts?select=geelark_profile,username,character,platform,delivery_mode,device_id,warmup_mode,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
     ),
     sbRest<{ platform: string; account: string; median_views_last5: number; posts_counted: number }[]>(
       "v_dashboard_last5_views?select=platform,account,median_views_last5,posts_counted",
@@ -259,6 +266,9 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       platform,
       deliveryMode: a.delivery_mode === "manual" ? "manual" : "geelark",
       deviceId: a.device_id,
+      // Anything the column could not be (it is NOT NULL with a check) still
+      // reads as the default rather than as a third state.
+      warmupMode: a.warmup_mode === "script" ? "script" : "manual",
       isActive: a.is_active,
       paused: a.posting_paused === true,
       healthStatus: health,
