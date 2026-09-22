@@ -53,7 +53,9 @@ Companion documents: `REAL-PHONE-MASTERPLAN.md` (why, and the plan of record),
    the incident feed (2026-09-22). Only the Posting Agent drops out of
    Automation on the Physical side, since posting is by hand.
 5. **An unfinished item carries over to tomorrow** (2026-09-19). It does not
-   close as missed at midnight.
+   close as missed at midnight. **Except a failed post** (Garreth,
+   2026-09-22): "failed posts should be dumped." Failed is the end of it — not
+   handed out again, not carried over.
 6. **Paused accounts are hidden from the to-do list** (2026-09-19).
 7. **A post can be marked Posted without its link, and the link added later,**
    but the item must show which it is: **fully done**, or **posted and still
@@ -86,7 +88,7 @@ purpose; the changelog has them.
 | P2 | Add the To-do today page, grouped by device and then by account | **Approved 2026-09-22.** As P1: built, still on placeholder data |
 | P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07 |
 | P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22.** Both views and both switches are built, on placeholder data until PF-04 and PF-02. What an Automated account SHOWS moved to PF-13, to be done with the warmup script |
-| P5 | Rework the device page around the phone's daily work | Not started |
+| P5 | Rework the device page around the phone's daily work | **Approved 2026-09-22.** Built and on the branch; it still draws an invented phone (`?demo=`) until PF-04, PF-05 and PF-07 |
 | P6 | Track proxy expiry for real phones on Proxies & numbers | Not started |
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
 | P8 | Add the checklist for a ban on a real phone | Not started |
@@ -721,9 +723,94 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P5. Rework the device page around the phone's daily work
 
-- **Status:** not started. A working page already exists (PF-02): details,
-  proof screenshot, accounts, in-use switch. This ticket designs what it
-  becomes once the phone has daily work.
+- **Status:** **approved (Garreth, 2026-09-22)**, after three rounds of his
+  feedback in one day, all recorded below. Drawn in the running app rather than
+  on a canvas, the way P1 to P4 were, so what he approved is the screen itself
+  and nothing drifts on the way to the build. **Approval closes the design AND
+  the build: the screen is in the app.** What is left is the data behind it —
+  PF-04, PF-05 and PF-07 — and two things that could not be checked from here
+  (see "Checked" below). Drawn in the running app
+  behind placeholder data, the way P1 to P4 were, so what is reviewed is the
+  screen itself. The page is
+  `src/app/(dashboard)/devices/[id]/page.tsx` and
+  `src/components/dashboard/device-detail.tsx`; **`?demo=full|new|off`** on a
+  phone's address draws the invented phone (a phone carrying three accounts,
+  a phone registered this morning with none, a phone switched off that still
+  owes its day). Without it the page reads live rows exactly as it always has
+  and the three new blocks show their empty state — the same rule the Accounts
+  page's by-phone view follows, because the data behind them is PF-04, PF-05
+  and PF-07 and none of it exists yet. Nothing on the invented phone saves.
+  The placeholder lives at the end of `src/lib/data/todo-placeholder.ts` and
+  goes with the rest of that file.
+- **Decided in this pass, for Garreth to accept or change:**
+  - **The order is the phone's day, then the things set once.** Today on this
+    phone, then Accounts and Warmup history side by side, then Details and the
+    whoer.net proof. The page used to open on the registration form.
+  - **Today on this phone is two pills per account, not a list** (Garreth,
+    2026-09-22, three rounds in one day). Round one, on it being P2's own
+    block, ticks and sheet included: "Why does it feel like the device page is
+    a duplicate of the to do list page? ... the ability to mark an activity
+    done should only be in the dashboard and the to do page." Round two, on
+    the read-only version that still had a mark down one side: "This today on
+    this phone should not be a checklist at all." Round three, on the
+    done/still-to-do summary that replaced it: "we should simplify this.
+    Remove the detailed list. And the posts and warmup pills on the right
+    side, if that is done, make it cyan. If not done, make it a clickable gray
+    pill that when clicked, the user will be led to the to do list page for
+    that account."
+    So each account is ONE line — platform, handle, character, and the two
+    count pills. **Done is cyan and inert; not done is a grey pill that links
+    to that account on the To-do page.** No item list, so nothing on this page
+    says "Link needed" or "Failed" any more; the To-do page carries that.
+    *How the link lands:* `todoAnchor()` in `todo-placeholder.ts` spells the
+    id once, the To-do page's account panel carries it, and the pill links to
+    it. The device placeholder's third account was renumbered a3 to a4 to
+    match the same handle on the To-do page — two invented accounts sharing an
+    id sent the link to the wrong one. Real account ids make that moot.
+    *Verified:* all five grey pills drive to the right account's panel and
+    scroll it into view (headless Chrome, 1440).
+    *Consequence:* the block no longer shares a component with the To-do page,
+    so the two can drift; the counts come from the same placeholder, which is
+    what keeps them honest for now.
+  - **Health is the app's own pill, not a bare dot.** The ticket says "health
+    dot"; the app has no such thing and every other screen says the word on the
+    health ladder's colour. Using the pill reuses what exists and the word is
+    there to read. Worth a look at whether it is too loud on this page.
+  - **"All phones" goes back with the tailed arrow.** Tried as a caret and
+    put back (Garreth, 2026-09-22, round one): the app already splits the two
+    marks cleanly, and changing this one alone would have broken it. A tailed
+    arrow is every "back to the parent page" link — "All accounts",
+    "Analytics", the way out of a forensics report, and this. A caret is the
+    steppers: the calendar's previous month, the content-type carousel, the
+    to-do day before. Leave that split alone.
+  - **The warmup mode is shown, never set.** P4 settled that it changes on
+    Accounts, so here it is the same hand and robot as a mark you read.
+  - **Accounts does not repeat the day** (Garreth, 2026-09-22, round one).
+    The row carried "Last post ... · Last warmup ..."; he had it removed. The
+    block above already says how the day stands, so the account row is down to
+    health and who warms it.
+  - **Live view sits at the top right, where the In use switch was,** and is
+    inert until PF-14 builds the page it opens on the MacBook Air. Drawn rather
+    than left out so its place can be judged now.
+  - **A registered phone with no accounts shows three empty states** — nothing
+    due, no accounts, no warmups — rather than hiding the blocks. A phone that
+    owes nothing is a fact worth seeing.
+- **Not shown yet:** the proof card with a picture in it. The invented phone
+  has no screenshot, and no real phone has been registered, so only the "No
+  proof yet" half of that card could be looked at. The card itself is unchanged
+  apart from where it now sits.
+- **Checked:** the running app in dark mode at 390 and at 1440, in all three
+  states, with no console errors, in **headless Chrome**. The five grey pills
+  were driven and each lands on the right account's panel on the To-do page.
+  **Not checked in Safari**, which is what Garreth uses, and **light mode was
+  not reviewed** — P5's done-when asks for dark only, unlike P4, which he took
+  with light included. Both are open against this screen even though the
+  ticket is approved.
+- **Left open on approval:** cyan now carries two meanings on this page —
+  "this half of the day is finished" in the To-do block, and the `warming`
+  health state in Accounts, which has used the accent since 2026-09-07.
+  Garreth was told and approved anyway; changing "done" to green is a one-line
+  change if it ever grates.
 - **Design:**
   - **Today on this phone:** the same device block as P2, for this phone only.
   - **Accounts:** each with its warmup mode (P4), health dot, last post and

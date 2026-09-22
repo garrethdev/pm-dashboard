@@ -145,15 +145,15 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-01 | `accounts.delivery_mode` switch | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
-| PF-03 | Move to phone button | Immediate | Blocked by PF-01, PF-02 |
-| PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | Blocked by PF-02 |
-| PF-05 | `post_deliveries` table | Immediate | Blocked by PF-01, PF-02 |
-| PF-06 | Posting Agent fork (n8n) | Immediate | Blocked by PF-05 |
-| PF-07 | Posting To-Do page | Immediate | Blocked by PF-05 |
+| PF-03 | Move to phone button | Immediate | **Ready now** — PF-01 and PF-02 built 2026-09-18; its screen is design ticket P10, not yet designed |
+| PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Ready now** — PF-02 built 2026-09-18, and its screens are approved (P3, P4) |
+| PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
+| PF-06 | Posting Agent fork (n8n) | Immediate | **Ready now** — PF-05 landed 2026-09-22 |
+| PF-07 | Posting To-Do page | Immediate | **Ready now** — PF-05 landed 2026-09-22. Screens approved (P1–P3); needs the re-queue decision below settled first |
 | PF-11 | Post-ban branch for manual accounts | Intermediate | Blocked by PF-01 |
-| PF-09 | Health detector + Incidents read both delivery sources | Intermediate | Blocked by PF-05 |
-| PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | Blocked by PF-05, PF-07 |
-| PF-10 | Comparison view | Intermediate | Blocked by PF-03, PF-04, PF-05 |
+| PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Ready now** — PF-05 landed 2026-09-22 |
+| PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | Blocked by PF-07 (PF-05 landed 2026-09-22) |
+| PF-10 | Comparison view | Intermediate | Blocked by PF-03, PF-04 (PF-05 landed 2026-09-22) |
 | PF-13 | Write path for the warmup script | Long term | Blocked by PF-04 |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional |
@@ -238,14 +238,14 @@ because the app names accounts by that label. No Facebook row exists yet.
   platforms. They will simply never see Facebook, which is right until
   Facebook performance ingest is decided.
 
-## PF-03 · Move to phone — Blocked by PF-01, PF-02
+## PF-03 · Move to phone — Ready now (PF-01, PF-02 built 2026-09-18); screen is P10, undesigned
 
 Button on the account page: pick a device, set `delivery_mode = manual`, record
 `moved_to_device_at`, write an audit row. Does **not** unpause. That date is
 what the comparison view (PF-10) splits on.
 *Done when:* one click does all four and the account shows its phone.
 
-## PF-04 · `warmup_sessions` + log form — Blocked by PF-02
+## PF-04 · `warmup_sessions` + log form — Ready now (PF-02 built 2026-09-18)
 
 Columns: `device_id`, `account_id`, `started_at`, `minutes`, `mode`
 (`manual` | `script`), `note`. A quick log form on the device page and on the
@@ -271,7 +271,7 @@ A manual session is about 15 to 20 minutes (Garreth, 2026-09-19), so 15 is
 the done line; the automated session waits on the new warmup script, which is
 not decided. To-do items carry over for 3 days, for now.
 
-## PF-05 · `post_deliveries` — Blocked by PF-01, PF-02
+## PF-05 · `post_deliveries` — Done 2026-09-22
 
 One row per post handed to a person: content row (source table + id, same
 shape `content_type_registry` uses), `account_id`, `device_id`, `status`
@@ -281,17 +281,44 @@ shape `content_type_registry` uses), `account_id`, `device_id`, `status`
 *Done when:* the table exists with RLS matching the other app-written tables
 and a row can be inserted and flipped from the app.
 
-## PF-06 · Posting Agent fork — Blocked by PF-05
+*2026-09-22:* built and applied live (`20260922054249_post_deliveries`, plus `20260922054723_post_deliveries_account_index` the same day, after Supabase's performance linter flagged the account foreign key as uncovered). The
+table holds `content_type` as well as `source_table` + `source_id`, because
+`divorce_story_content` is registered twice and the id pair alone cannot say
+which lane an item belongs to. `device_id` is kept on the row rather than read
+back through `accounts.device_id`, so history stays true after an account moves
+phones. Two rules are enforced by the database: one hand-out per content row
+per account (so an n8n retry in PF-06 cannot duplicate an item or un-finish a
+done one), and a row is finished exactly when it carries a `done_at`. RLS on
+with no policies and `anon`/`authenticated` revoked by name — `relacl` reads
+identically to `devices`, and the anon key was refused 401 on both select and
+insert. `src/lib/data/post-deliveries.ts` is the read/write module; reads are
+deliberately uncached, because a cached to-do list would show a just-ticked
+item as still outstanding. Proven live end to end with a test row, since
+deleted. **Not proven with real data**: no phone is registered, no account is
+on Physical, and the fleet is paused, so `device_id` was only exercised as NULL
+and against a phone that does not exist.
+
+## PF-06 · Posting Agent fork — Ready now (PF-05 landed 2026-09-22)
 
 In `[Unified] Posting Agent` (`lioNzkWRocyDvZS5`): for
 `delivery_mode = manual`, write a `queued` delivery row and leave the content
 row `Ready`; do not call Geelark. Geelark accounts follow the existing path
 unchanged. Save, compare `versionId` vs `activeVersionId`, **publish** — an
 unpublished draft is the classic miss.
-*Done when:* a manual-mode test account gets a queued row and no Geelark task,
-on a real 10:00 ET run.
+**A dumped post takes its content with it (Garreth, 2026-09-22).** When a
+delivery is marked `failed`, the content row behind it is dumped too, not
+released back to the pool to be offered another day. So Failed is the end of
+both: the delivery row settles at `failed`, and the content row is closed out
+rather than returned to `Ready`. Whichever column PF-06 sets to hand the post
+out is the one it must set back on the way down; write it in this ticket once
+the workflow is open, because the content tables differ per type and
+`content_type_registry` is the only list of them.
 
-## PF-07 · Posting To-Do page — Blocked by PF-05
+*Done when:* a manual-mode test account gets a queued row and no Geelark task,
+on a real 10:00 ET run, **and a delivery marked failed leaves its content row
+closed rather than Ready.**
+
+## PF-07 · Posting To-Do page — Ready now (PF-05 landed 2026-09-22)
 
 Built for a phone screen. Per account: today's queued items with a video
 download button, a caption copy button, **Posted** (asks for the post link) and
@@ -357,6 +384,19 @@ well as a piece of work:
    clipboard and Safari can refuse. It fails silently today; it should say
    why, since the fallback is typing a long URL by hand on a phone.
 
+**Settled 2026-09-22 (Garreth): "failed posts should be dumped."** Failed is
+the END of a post. The button marks the delivery row `failed` and that is
+all: the post is never handed out again, never re-queued, and does **not**
+carry over to tomorrow, so decision 5's three-day carry-over does not apply
+to it. This also means PF-05's one-row-per-post rule never binds — nothing
+ever needs a second row for the same post. `isItemFinished` was changed to
+treat `failed` as terminal the same day, or a dumped post would have come
+back on the list for three days running.
+
+*Still to decide, smaller:* whether the CONTENT row behind a dumped post goes
+back to the pool to be offered another day, or is burned with the delivery.
+PF-06 writes that row, so it belongs with PF-06.
+
 *Done when:* Yurie can complete a delivery from the iPhone's browser, **and
 each of the six states above behaves as decided** — with the failed save
 proven by a real failure, not just written.
@@ -370,7 +410,7 @@ trail.
 *Done when:* dry-run on a manual account shows the checklist and touches no
 Geelark endpoint.
 
-## PF-09 · Health detector + Incidents read both sources — Blocked by PF-05
+## PF-09 · Health detector + Incidents read both sources — Ready now (PF-05 landed 2026-09-22)
 
 The delivery-failure guard in `v_account_health_v3` and the failed-deliveries
 source in `src/lib/data/incidents.ts` read `geelark_tasks` only; add
@@ -380,7 +420,7 @@ spot.
 *Done when:* a manual account with two failed deliveries in 7 days shows the
 same delivery-failure reason a Geelark account would.
 
-## PF-12 · Morning reminder + stale-item alert — Blocked by PF-05, PF-07
+## PF-12 · Morning reminder + stale-item alert — Blocked by PF-07 (PF-05 landed 2026-09-22)
 
 n8n: the day's queued deliveries per device each morning; an alert when a
 delivery sits `queued` past 24 h. A human queue strands more easily than a
@@ -388,7 +428,7 @@ robot.
 *Done when:* one morning email received and one stale alert fired on a test
 row.
 
-## PF-10 · Comparison view — Blocked by PF-03, PF-04, PF-05
+## PF-10 · Comparison view — Blocked by PF-03, PF-04 (PF-05 landed 2026-09-22)
 
 Each moved account before and after `moved_to_device_at`: views per post,
 share under 10 views, warmup dot, restrictions and bans; plus the Geelark

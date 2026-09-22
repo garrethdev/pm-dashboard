@@ -20,6 +20,144 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — A post that fails is finished with, not tried again
+
+**Where it came from:** Garreth, 2026-09-22, settling the one question ticket
+PF-07 could not build its Failed button without: "failed posts should be
+dumped."
+
+When a post cannot be put up, pressing Failed is now the end of that post —
+and of the content behind it, which is dumped with it rather than going back
+in the pool to be offered another day (Garreth, same day). It is not offered
+again, and it does not come back on tomorrow's list. That last
+part is the bit that needed changing: the rule until now was that anything
+unfinished carries over for three days, and the app counted a failed post as
+unfinished — so a post that was meant to be thrown away would have reappeared
+three mornings running. It now settles the moment it is marked failed.
+
+**A knock-on worth watching.** The day's counts read "done" for anything
+nobody has to touch again, so a post that failed now counts towards them. An
+account whose only post failed will say its posts are done, in the same cyan
+as an account that actually posted. Nothing is lost — the To-do page still
+says Failed beside the post itself — but the pill alone no longer tells the
+two apart. Left as is for now; it is a small change to separate them if it
+grates.
+
+**Not proven.** No post has ever been marked failed against real data; there
+are no real deliveries yet. This is the rule written down and the app changed
+to match it, waiting on PF-06 and PF-07.
+
+## 2026-09-22 — A phone's page now opens on that phone's day
+
+**Where it came from:** ticket P5 in `docs/PHONE-FARM-DESIGN-TICKETS.md`.
+**Garreth approved it on 2026-09-22**, after three rounds of his feedback on
+the day it was drawn. All three changes are in below.
+
+Until now, opening a phone showed you the form you filled in when you
+registered it — its name, its model, its proxy — and you had to scroll past
+all of that to find out what the phone actually owed today. The order is now the
+other way round. A phone’s page opens on **Today on this phone**: a short
+overview of how that phone’s day is going, account by account, saying what is
+done and what is still owed. Under it, **Accounts** now says for each account
+how healthy it is and whether a person or the script warms it up — what you
+want to know before you pick the phone up. Under that, **Warmup history** lists
+the phone’s recent warmup sessions, with a hand beside the ones a person did
+and a robot beside the ones the script did. The phone’s details, its
+whoer.net screenshot and its In use switch have moved below all of that,
+because they are set once and then left alone.
+
+**That block says how each account stands, and nothing more.** It went through
+three rounds in a day. As first drawn it was the To-do page’s own list, ticks
+and all, which quietly made a phone’s page a second place to do the same day’s
+work; marking something done belongs on the dashboard and the To-do page and
+nowhere else. Making it unpressable was not enough — rows with a tick or an
+empty box down one side still read as a checklist. So the list is gone
+altogether. Each account is now one line: its handle, and how the two halves
+of its day stand. **A finished half is cyan and sits still. An unfinished one
+is a grey pill you can press, and it takes you to that account on the To-do
+page**, which is where the work is actually done. See it here, do it there.
+
+A **Live view** button sits at the top right, where the In use switch used to
+be. It does nothing yet on purpose: the page it will open on the MacBook Air is
+a separate job (PF-14), and it is drawn now only so its place can be judged.
+
+**Nothing on the screen is real yet.** The tables behind today's work, the
+warmup log and the warmup mode do not exist (PF-04, PF-05, PF-07), so the page
+is judged against an invented phone: add `?demo=full`, `?demo=new` or
+`?demo=off` to a phone's web address to see a phone with three accounts, a
+phone registered this morning with none, or a phone that is switched off and
+still owes its day. Without that, the page reads the real database exactly as
+it always has, and the three new blocks say they have nothing to show — which
+is the truth until those tables are built. The invented phone saves nothing: no
+button on it writes anything anywhere.
+
+**What was checked:** the page was looked at in the running app, in dark mode,
+at 390 pixels wide (a phone) and 1440 (a laptop), in all three states, in
+**headless Chrome**. Garreth uses Safari, and Safari was not checked. Light
+mode was glanced at and looks right, but P5 only asks for dark. The version
+that shows a real whoer.net screenshot could not be seen at all, because the
+invented phone has no picture to show and no real phone has been registered
+yet; that part of the page is unchanged apart from where it sits.
+
+## 2026-09-22 — The dashboard can now record a post that a person made by hand
+
+**Where it came from:** ticket PF-05 in `BACKLOG.md`, part of moving the fleet
+off Geelark's cloud phones onto real iPhones.
+
+**The problem it solves.** On the old fleet, the dashboard knows a post really
+went out because the cloud phone tells it so — every screen that says "posted",
+every count, every performance number ultimately rests on that one report back.
+A real iPhone in somebody's hand reports nothing. So as accounts move across,
+there was no way for the dashboard to know whether a post actually happened.
+
+**What is new.** A place to keep that record: one line per post handed to a
+person, saying which post it is, which account and which phone it was handed
+to, whether it is still waiting, done, failed or skipped, the link to the live
+post once it exists, a note, and who finished it and when. That line is now the
+"this actually went out" answer for the real-phone fleet, exactly as the cloud
+phone's report is for the old one.
+
+**Nothing on screen changes yet, and nothing posts differently.** This is the
+record itself and the code that reads and writes it. The to-do list that shows
+these to Yurie is PF-07, and the change that makes the posting robot write them
+is PF-06. Until those land, the to-do screens keep drawing their made-up
+example data.
+
+**Two deliberate safeguards.** The same post can only be handed to the same
+account once — hand it out twice and the second attempt quietly changes
+nothing. That matters because the robot that will create these lines is n8n,
+which retries when it is unsure, and a retry must not put the same post on
+somebody's list twice or drag a post already marked done back onto it. And a
+line can only be marked done if it carries the time it was done, so nothing can
+sit there reading as finished with no date against it. The first of those has a
+consequence still to be decided: a post that failed cannot be handed out again
+as a second line, it has to be put back on the first one. PF-07 needs that
+settled before it builds the Failed button.
+
+**Who can see it.** Only the dashboard's own server, the same as the accounts
+and phones tables. The public key that some of our other tools use was checked
+against it directly and is refused.
+
+**Confirmed live.** The table was created on the live database, and then a test
+line was put through its whole life using the dashboard's own code: handed out,
+handed out a second time (which correctly did nothing), marked posted, given
+its link, put back on the list, and finally marked skipped. Each step was read
+back and was right. Handing a post to a phone that does not exist, or to an
+account that does not exist, was refused. The public key was refused on both
+reading and writing. The test line was then deleted and the table is empty.
+
+**One thing was tightened straight after.** Supabase's own performance check
+pointed out that looking up a person's posts by account would have meant
+reading the whole record every time. A second small change the same day fixed
+that while the table is still empty, which is the cheap moment to do it. The
+check now comes back clean for this table.
+
+**What has not been proved.** No real post has been through this yet — no phone
+has been registered, no account has been moved to the real-phone fleet, and the
+whole fleet is still paused. The "which phone" part in particular was only
+tested with no phone attached and with a made-up one, because there is no real
+phone on file to attach.
+
 ## 2026-09-22 — Accounts can be read by phone, and each one says who warms it
 
 **Where it came from:** Garreth, 2026-09-22, working through design ticket P4
