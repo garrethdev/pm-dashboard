@@ -25,3 +25,14 @@ Three rules it is easy to get wrong:
 
 Write it for Garreth, who is not a developer: plain English, no jargon, and say
 what the user-visible consequence was rather than which function moved.
+
+# Commit messages are short
+
+When Garreth asks for a commit message, give a **short, precise** one
+(Garreth, 2026-09-22). A subject line, and at most a few lines of body when
+something genuinely needs saying. Not an essay.
+
+The detail belongs in `CHANGELOG.md`, which is written for reading. The commit
+message only has to say what changed and which ticket it was. Do not repeat the
+changelog entry, do not restate the reasoning, do not list what was and was not
+verified — that is already in the changelog and the ticket.
