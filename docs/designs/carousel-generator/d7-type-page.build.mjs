@@ -60,6 +60,27 @@
  * the screen changes: the panel ids, the state names and the field itself keep
  * the names the docs and the database use.
  *
+ * D13b (Garreth, 2026-09-22): D13 made the Writing required and drew the empty
+ * editor, but left the Conversation beside it a blank card asking "What should
+ * change?" — a screen that asks for a standing instruction from a blank page
+ * while the one thing that could help says nothing. So on a type with nothing
+ * written:
+ *   - The Conversation fills its card (the empty-state rule of 2026-09-19) and
+ *     carries **one quiet offer**, Write a first draft, from the active
+ *     template and its slides. It is secondary; Save version stays the tab's
+ *     one accent.
+ *   - The draft lands in the editor **unsaved**, under the same "Not saved"
+ *     pill the Studio's own note gets, so a type saved out of the Studio and a
+ *     type made any other way reach a first Writing the same way. Save version
+ *     is still a person's press, so the requirement does not move.
+ *   - The box asks **"What should this type sound like?"** until a first
+ *     version is saved, and "What should change?" after. One box, two states.
+ *   - On the phone the Conversation is a sheet behind the floating button, so
+ *     an empty panel is never on screen: the offer sits under the editor too,
+ *     and the sheet carries the same one.
+ * Nothing else on the tab moves — a Conversation with a saved Writing and no
+ * messages is left exactly as it was.
+ *
  * From Garreth's decision on 2026-09-21: a batch that has finished a stage and
  * is waiting for a person to press something says so in the batch table, in the
  * same words the Carousel types card (D1) and the bell already use — "18 to
@@ -87,8 +108,13 @@
  *   WritingEmpty     desktop, no writing saved: the guiding placeholder (D13)
  *   WritingEmptyPhone phone, the same
  *   WritingDraft     desktop, the Studio's drafted note, unsaved (D13)
- *   NeedsWriting     desktop, Overview with Generate unavailable (D13)
+ *   NeedsWriting     desktop, Overview, the Needs writing pill beside Generate (D13)
  *   NeedsWritingPhone phone, the same
+ *   WritingBefore    desktop, the blank Conversation D13 left, for comparison (D13b)
+ *   WritingFirstDraft desktop, the Conversation's first draft in the editor, unsaved (D13b)
+ *   WritingOfferFailed desktop, the first draft did not arrive, Retry (D13b)
+ *   WritingSheetPhone phone, the Conversation's sheet with the same offer (D13b)
+ *   WritingFirstDraftPhone phone, the first draft arrived, unsaved (D13b)
  *   GoLive           desktop, Quiet Luxury Picks just saved, arriving on Go Live
  *   GoLivePhone      phone, the same
  *   Mismatch         desktop, the cadence does not add up: Wire unavailable
@@ -123,6 +149,9 @@ const D7I = {
   spark: icon("Sparkle", 15),
   book: icon("BookOpen", 12),
   x: icon("X", 16, "bold"),
+  /* D13b: the empty Conversation's circle, and the sparkle on the offer itself. */
+  note: icon("NotePencil", 24),
+  spark13: icon("Sparkle", 13),
 };
 
 /* The Peptide Miracles mark, read from the app the way the kit and D6 read it. */
@@ -224,6 +253,12 @@ const WRITING_PLACEHOLDER =
    opens in the editor unsaved, so the requirement is met by someone having read it (Garreth, 2026-09-21). */
 const DRAFTED_NOTE =
   "Five slides at 9:16. Slide 1 carries the hook over the cover photo. Slides 2 to 4 each show one piece, plainly photographed, with a line under ten words saying why it lasts. Slide 5 closes on where it was worn. No prices and no brand names anywhere.";
+
+/* D13b: what the Conversation writes when it is asked for a first draft. Its source is the same as the Studio's
+   note — the active template and its slides — so the two agree; it lands in the same place, unsaved (Garreth,
+   2026-09-22). It carries the voice as well as the construction, because the Writing is what the copy sounds like. */
+const FIRST_DRAFT =
+  "Spoken by someone who buys little and keeps it for years. Five slides at 9:16: the first opens on a piece being worn, with the hook under eight words. Slides 2 to 4 take one piece each, photographed plainly, and say in a line why it lasts. Slide 5 closes on where it was worn, and the caption ends there. No prices, no brand names, and never the word luxury.";
 
 /* The suggested change, against Version 4 (removed words struck through, added words marked). */
 const DIFF = [
@@ -410,6 +445,10 @@ ${S} .boxes7 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; mi
 ${S} .boxes7 .bxl { font-size: 12px; line-height: 16px; color: var(--text-muted); }
 ${S} .boxes7 .pill { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
 ${P ? `${S} .edboxes { padding: 0 20px 16px; }` : ""}
+/* D13b, the phone: the Conversation is a sheet, so the offer of a first draft sits under the empty editor instead,
+   where a writer meets it without opening the sheet (Garreth, 2026-09-22). */
+${S} .edoffer { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px ${P ? 20 : 24}px 16px; }
+${S} .edoffer .sub { font-size: 12px; line-height: 16px; color: var(--text-muted); }
 
 /* The conversation: D6's messages and chat box, at the panel's full height. */
 ${S} .chat7 { min-height: 0; }
@@ -427,6 +466,13 @@ ${S} .msg7.ai .bub { display: flex; min-width: 0; flex-direction: column; align-
 ${S} .msg7 .bub.is-err { color: var(--danger); }
 ${S} .rules { display: flex; flex-wrap: wrap; gap: 6px; }
 ${S} .rules .pill svg { opacity: 0.8; }
+/* D13b: nothing written, so the panel carries empty-state.tsx's shape — a muted circle over one quiet line —
+   and the one offer under it. It fills the card rather than leaving a void (the rule of 2026-09-19). The offer is
+   secondary: Save version stays the tab's only accent. */
+${S} .cempty { display: flex; flex: 1; min-height: 0; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px 20px; text-align: center; }
+${S} .cempty .eic { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 999px; background: var(--pill-bg); color: var(--text-muted); }
+${S} .cempty p { font-size: 14px; line-height: 20px; color: var(--text-muted); }
+${S} .cempty .sub { max-width: 240px; font-size: 12px; line-height: 16px; color: var(--text-muted); text-wrap: pretty; }
 ${S} .cin7 { flex-shrink: 0; padding: 0 12px 12px; }
 ${S} .ai7 { display: flex; align-items: center; gap: 10px; width: 100%; border-radius: 16px; border: 1px solid var(--border); background: var(--card-sunken); padding: 10px; transition: border-color 200ms var(--ease); }
 ${S} .ai7:focus-within { border-color: color-mix(in srgb, var(--text-muted) 60%, var(--border)); }
@@ -514,6 +560,12 @@ ${S} .dlg7 { position: absolute; left: 0; right: 0; bottom: 0; z-index: 81; disp
   border-radius: 24px; border: 1px solid var(--border); background: var(--card); box-shadow: var(--overlay-rim); animation: d7-in 200ms var(--ease-out-strong); }`
 }
 .is-light ${S} .dlg7 { box-shadow: 0 16px 40px rgba(27, 29, 33, 0.18); }
+/* D13b: the Conversation opens as the same sheet as Preview's and stops short of the top, so the tab it belongs to
+   is still read behind it. */
+${S} .dlg7.chats7 { height: 72%; }
+${S} .dlg7.chats7 .c7h { gap: 8px; }
+${S} .dlg7.chats7 .who { display: flex; flex: 1; align-items: center; gap: 10px; }
+${S} .dlg7.chats7 .msgs7 { flex: 1; min-height: 0; }
 @keyframes d7-fade { from { opacity: 0; } }
 @keyframes d7-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.97); } }
 ${S} .dlg7 .c7h { border-bottom: 1px solid var(--border); }
@@ -650,10 +702,26 @@ function overview(T, init, phone) {
 function direction(T, init, phone) {
   const proposal = init.dir === "proposal";
   const failed = init.dir === "failed";
+  /* D13b: the first draft was asked for and did not arrive. The same shape as any failed reply, with Retry. */
+  const offerFailed = init.dir === "offerfail";
   /* D13: a type can have no Writing at all, or the Studio's drafted note sitting in the editor unsaved. Neither has
-     a saved version yet, so neither shows the version dropdown. */
-  const draft = init.writing === "draft";
+     a saved version yet, so neither shows the version dropdown. D13b adds a third, the first draft the Conversation
+     wrote itself: it lands in the same place as the Studio's note, under the same Not saved pill. */
+  const draft = init.writing === "draft" || init.writing === "first";
   const saved = init.writing !== "none" && !draft;
+  /* What was asked. An offer pressed says so in the offer's own words, so the transcript reads back (D13b). */
+  const asked = proposal || failed ? "Lean into winter skin, make the hook shorter, and put the hook in a bigger font." : init.writing === "first" || offerFailed ? "Write a first draft" : "";
+  /* D13b: nothing written and nothing asked, so the panel carries the empty state and the one offer. Once the offer
+     has been pressed the panel holds the exchange instead, even when the reply failed and the editor is still
+     empty. `pre` holds a board back at the state D13 left it in, for the comparison the ticket asks for. */
+  const noneYet = init.writing === "none" && !init.pre && !asked;
+  /* One box, two states (Garreth, 2026-09-22): "What should change?" reads wrong on a blank page, so until a first
+     version is saved the box asks what the type should sound like. */
+  const boxAsk = init.writing !== "saved" && !init.pre ? "What should this type sound like?" : "What should change?";
+  /* The offer itself: secondary, because Save version stays the tab's one accent. It shows in the Conversation's
+     empty state, and again under the phone's editor, where the Conversation is a sheet and would be missed. */
+  const offer = `<button type="button" class="btn2" onClick="{{d7firstDraft}}">${D7I.spark13}Write a first draft</button>`;
+  const offerSub = `<span class="sub">from the active template and its ${T.slides} slides</span>`;
   const text = proposal
     ? `<div class="edtext diff" role="textbox" aria-multiline="true" aria-label="Writing">${DIFF.map(([k, t]) => (k === "add" ? `<ins>${esc(t)}</ins>` : k === "del" ? `<del>${esc(t)}</del>` : esc(t))).join("")}</div>`
     : `<textarea class="edtext" aria-label="Writing" placeholder="${esc(WRITING_PLACEHOLDER)}" value="{{d7dirText}}" onChange="{{d7typeDir}}"></textarea>`;
@@ -689,24 +757,31 @@ function direction(T, init, phone) {
                 <div class="edbody">${text}</div>
                 ${
                   phone
-                    ? `<div class="edboxes">${boxes}</div>`
+                    ? `${noneYet ? `<div class="edoffer">${offer}${offerSub}</div>` : ""}<div class="edboxes">${boxes}</div>`
                     : `<div class="edfoot">${boxes}<button type="button" class="cta" disabled="{{d7saveDisabled}}" onClick="{{d7saveVersion}}">Save version</button></div>`
                 }
               </section>`;
-  const me = proposal || failed ? `<div class="msg7 me"><div class="bub">Lean into winter skin, make the hook shorter, and put the hook in a bigger font.</div></div>` : "";
+  const me = asked ? `<div class="msg7 me"><div class="bub">${esc(asked)}</div></div>` : "";
   const reply = proposal
     ? `<div class="msg7 ai"><span class="aiv">${MARK}</span><div class="bub"><span>Changed two lines: winter in the opening, and the hook held to eight words. The hook's font size belongs to the template, not the direction, so that part is in Edit template.</span><div class="rules"><span class="pill">${D7I.book}Hooks under 8 words</span></div></div></div>`
-    : failed
-      ? `<div class="msg7 ai"><span class="aiv">${MARK}</span><div class="bub is-err"><span>The reply didn't arrive.</span><button type="button" class="btn2" onClick="{{d7retry}}">${D7I.retry}Retry</button></div></div>`
-      : "";
+    : init.writing === "first"
+      ? `<div class="msg7 ai"><span class="aiv">${MARK}</span><div class="bub"><span>A first draft is in the editor, not saved. It reads the ${T.slides} slides as they stand, so it says what each one is for; the voice is a guess, and changing it is the next thing to ask for.</span><div class="rules"><span class="pill">${D7I.book}${esc(T.templates[0].name)}</span><span class="pill tnum">${T.slides} slides</span></div></div></div>`
+      : failed || offerFailed
+        ? `<div class="msg7 ai"><span class="aiv">${MARK}</span><div class="bub is-err"><span>The reply didn't arrive.</span><button type="button" class="btn2" onClick="{{d7retry}}">${D7I.retry}Retry</button></div></div>`
+        : "";
+  /* empty-state.tsx's shape: a muted circle over one quiet line, filling the card, with the offer under it. */
+  const empty = `<div class="cempty"><span class="eic" aria-hidden="true">${D7I.note}</span><p>Nothing written for this type yet.</p>${offer}${offerSub}</div>`;
+  const body = `<div class="msgs7">${noneYet ? empty : `${me}${reply}`}</div>`;
+  const box = `<div class="cin7"><div class="ai7"><span class="aitile7" aria-hidden="true">${D7I.spark}</span><input type="text" aria-label="Message" placeholder="${esc(boxAsk)}" /><button type="button" class="aisend7" aria-label="Send" onClick="{{d7send}}">${D7I.send}</button></div></div>`;
   const chat = `
               <section class="c7 chat7" aria-label="Conversation">
                 <div class="c7h"><div class="who"><span class="markv">${MARK}</span><h2>Conversation</h2></div></div>
-                <div class="msgs7">${me}${reply}</div>
-                <div class="cin7"><div class="ai7"><span class="aitile7" aria-hidden="true">${D7I.spark}</span><input type="text" aria-label="Message" placeholder="What should change?" /><button type="button" class="aisend7" aria-label="Send" onClick="{{d7send}}">${D7I.send}</button></div></div>
+                ${body}
+                ${box}
               </section>`;
-  if (phone) return `<div class="dir7">${editor}</div>`;
-  return `<div class="dir7">${editor}${chat}</div>`;
+  /* The phone's Conversation is the sheet in appOverlay, built from these same two pieces (D13b). */
+  if (phone) return { markup: `<div class="dir7">${editor}</div>`, body, box };
+  return { markup: `<div class="dir7">${editor}${chat}</div>`, body, box };
 }
 
 function wiring(T, mode, phone) {
@@ -820,14 +895,16 @@ function page(T, init, phone) {
           <!-- D13: the panel ids keep the names the docs and the database use; only the labels changed. -->
           <div class="tabs7" role="tablist" aria-label="Carousel type">${tab("overview", "Overview")}${tab("direction", "Writing")}${tab("wiring", "Go Live")}</div>
           ${panel("overview", overview(T, init, phone))}
-          ${panel("direction", direction(T, init, phone))}
+          ${panel("direction", direction(T, init, phone).markup)}
           ${panel("wiring", wiring(T, mode, phone))}
         </div>
       </main>`;
 }
 
-/* At the app's level: the click-away layer for the version dropdown, and Preview's dialog. */
+/* At the app's level: the click-away layer for the version dropdown, Preview's dialog, and on the phone the
+   Conversation as a sheet (D13b). */
 function appOverlay(T, init) {
+  const conv = direction(T, init, true);
   const lanes = T.lanes.map((l) => `${l.name.padEnd(20)} ${l.was} → ${l.now}`).join("\n");
   const secs = [
     ["Lane table", `create table ${T.short}_decks (\n  id text primary key,\n  slide_1 text, slide_2 text, slide_3 text,\n  slide_4 text, slide_5 text,\n  caption text,\n  music text,\n  approved boolean default false,\n  scheduler_ready boolean default false\n);`],
@@ -845,6 +922,16 @@ function appOverlay(T, init) {
     <div class="dlg7" role="dialog" aria-modal="true" aria-labelledby="d7-preview-title" onKeyDown="{{d7previewKey}}">
       <div class="c7h"><h2 id="d7-preview-title">Preview</h2><button type="button" class="icon-btn" aria-label="Close" onClick="{{d7closePreview}}">${D7I.x}</button></div>
       <div class="pbody">${secs.map(([h, code]) => `<section class="psec"><h3>${h}</h3><pre class="mono">${esc(code)}</pre></section>`).join("")}</div>
+    </div>
+  </sc-if>
+  <!-- D13b: the phone's Conversation, the same sheet as Preview's. It holds the same empty state and the same
+       offer as the desktop panel, so a phone writer meets the offer twice and never a third wording. -->
+  <sc-if value="{{d7chatOn}}" hint-placeholder-val="{{ ${!!init.sheet} }}">
+    <div class="scrim7" aria-hidden="true" onClick="{{d7closeChat}}"></div>
+    <div class="dlg7 chats7" role="dialog" aria-modal="true" aria-label="Conversation" onKeyDown="{{d7chatKey}}">
+      <div class="c7h"><div class="who"><span class="markv">${MARK}</span><h2>Conversation</h2></div><button type="button" class="icon-btn" aria-label="Close" onClick="{{d7closeChat}}">${D7I.x}</button></div>
+      ${conv.body}
+      ${conv.box}
     </div>
   </sc-if>`;
 }
@@ -864,7 +951,7 @@ function phoneBar(T, init) {
   return `
     <sc-if value="{{d7is.overview}}" hint-placeholder-val="{{ ${init.tab === "overview"} }}"><div class="bar7"><button type="button" class="btn2" onClick="{{d7editTemplate}}">${D7I.pencil}Edit template</button><button type="button" class="cta" onClick="{{d7generate}}">Generate</button></div></sc-if>
     <sc-if value="{{d7is.direction}}" hint-placeholder-val="{{ ${init.tab === "direction"} }}">
-      <button type="button" class="fab7" aria-label="Open the conversation" onClick="{{d7openChat}}">${MARK}${init.dir === "proposal" ? `<span class="dot" aria-hidden="true"></span>` : ""}</button>
+      <button type="button" class="fab7" aria-label="Open the conversation" onClick="{{d7openChat}}">${MARK}${init.dir === "proposal" || init.writing === "first" ? `<span class="dot" aria-hidden="true"></span>` : ""}</button>
       <div class="bar7">${init.dir === "proposal" ? `<button type="button" class="btn2" onClick="{{d7dropSuggestion}}">Discard suggestion</button>` : ""}<button type="button" class="cta" disabled="{{d7saveDisabled}}" onClick="{{d7saveVersion}}">Save version</button></div>
     </sc-if>
     <sc-if value="{{d7is.wiring}}" hint-placeholder-val="{{ ${init.tab === "wiring"} }}"><div class="bar7">${wireBar}</div></sc-if>`;
@@ -965,7 +1052,14 @@ function vals(T, init) {
       d7dropSuggestion: say("Drops the suggestion; Version 4 stays as it is"),
       d7send: say("Sends the message"),
       d7retry: say("Asks again"),
-      d7openChat: say("Opens the conversation as a sheet, as in D6"),
+      /* D13b: the one offer. It fills the editor and leaves it unsaved, exactly where the Studio's note lands, so
+         Save version stays the press that meets the requirement (Garreth, 2026-09-22). */
+      d7firstDraft: say("Writes a first draft from the active template and its ${T.slides} slides; it opens in the editor, not saved"),
+      /* The phone's Conversation opens and closes for real, as Preview's sheet does. */
+      d7chatOn: !!s.d7chat,
+      d7openChat: function () { self.setState({ d7chat: true }); },
+      d7closeChat: function () { self.setState({ d7chat: false }); },
+      d7chatKey: function (e) { if (e.key === "Escape") self.setState({ d7chat: false }); },
       d7copy: say("Copied the media line"),
       d7check: say("Reads the published Smart Scheduler again"),
       d7wire: say("Wire is a press and hold"),
@@ -978,15 +1072,19 @@ function vals(T, init) {
 
 /**
  * D7 as a screen. `init`: type ("before" wired, "quiet" not wired), tab, tv (the template version showing, 0 is
- * the newest), tvOpen (its dropdown open), dv and dvOpen (the same for the writing), dir ("plain" | "proposal" | "failed"), wire ("fresh" | "mismatch" |
- * "running" | "failed" | "media" | "done"), writing ("saved" | "none" | "draft", D13), preview (the dialog open).
+ * the newest), tvOpen (its dropdown open), dv and dvOpen (the same for the writing), dir ("plain" | "proposal" |
+ * "failed" | "offerfail", D13b), wire ("fresh" | "mismatch" |
+ * "running" | "failed" | "media" | "done"), writing ("saved" | "none" | "draft", D13; "first", the Conversation's
+ * own first draft, D13b), sheet (the phone's Conversation open, D13b), pre (a board held at the state D13 left it
+ * in, for comparison, D13b), preview (the dialog open).
  * `tall` lengthens a review board so the whole page shows.
  */
 export function typeScreen({ init = {}, tall = 0 } = {}) {
-  const i = { type: "before", tab: "overview", tv: 0, tvOpen: false, dv: 0, dvOpen: false, dir: "plain", wire: "done", writing: "saved", preview: false, ...init };
+  const i = { type: "before", tab: "overview", tv: 0, tvOpen: false, dv: 0, dvOpen: false, dir: "plain", wire: "done", writing: "saved", preview: false, sheet: false, pre: false, ...init };
   const T = TYPES[i.type];
-  /* What the editor opens on: a saved version, the Studio's drafted note (unsaved), or nothing at all (D13). */
-  const startText = i.writing === "none" ? "" : i.writing === "draft" ? DRAFTED_NOTE : T.directions[i.dv].text;
+  /* What the editor opens on: a saved version, the Studio's drafted note or the Conversation's first draft (both
+     unsaved, D13b), or nothing at all (D13). */
+  const startText = i.writing === "none" ? "" : i.writing === "draft" ? DRAFTED_NOTE : i.writing === "first" ? FIRST_DRAFT : T.directions[i.dv].text;
   return {
     id: "type",
     nav: "types",
@@ -994,8 +1092,8 @@ export function typeScreen({ init = {}, tall = 0 } = {}) {
     markup: (phone) => page(T, i, phone),
     appOverlay: () => appOverlay(T, i),
     colOverlay: (phone) => (phone ? phoneBar(T, i) : ""),
-    state: { d7tab: i.tab, d7tabSet: false, d7tv: i.tv, d7tvOpen: i.tvOpen, d7dv: i.dv, d7dvOpen: i.dvOpen, d7dir: startText, d7preview: i.preview },
-    enter: { d7tab: "overview", d7tabSet: false, d7tv: 0, d7tvOpen: false, d7dv: 0, d7dvOpen: false, d7dir: T.directions[0].text, d7preview: false },
+    state: { d7tab: i.tab, d7tabSet: false, d7tv: i.tv, d7tvOpen: i.tvOpen, d7dv: i.dv, d7dvOpen: i.dvOpen, d7dir: startText, d7preview: i.preview, d7chat: i.sheet },
+    enter: { d7tab: "overview", d7tabSet: false, d7tv: 0, d7tvOpen: false, d7dv: 0, d7dvOpen: false, d7dir: T.directions[0].text, d7preview: false, d7chat: false },
     vals: vals(T, i),
   };
 }
@@ -1035,6 +1133,14 @@ function build(OUT) {
     { file: "NeedsWriting", init: { type: "quiet", tab: "overview", wire: "fresh", writing: "none" }, title: "A type that needs writing: the pill, and Generate still opens the form · Desktop", x: D * 2, y: R0 + R * 5 },
     { file: "WritingEmptyPhone", phone: true, init: { type: "quiet", tab: "direction", wire: "fresh", writing: "none" }, title: "Writing, nothing written yet · Phone", x: D * 3, y: R0 + R * 5 },
     { file: "NeedsWritingPhone", phone: true, init: { type: "quiet", tab: "overview", wire: "fresh", writing: "none" }, title: "A type that needs writing: the pill, and Generate still opens the form · Phone", x: D * 3 + 470, y: R0 + R * 5 },
+    /* D13b (Garreth, 2026-09-22): on a type with nothing written the Conversation offers one first draft, and the
+       box asks what the type should sound like rather than what should change. The before board is kept beside
+       them so the change can be read off the canvas. */
+    { file: "WritingBefore", init: { type: "quiet", tab: "direction", wire: "fresh", writing: "none", pre: true }, title: "Before D13b: nothing written, the Conversation blank · Desktop", x: 0, y: R0 + R * 6 },
+    { file: "WritingFirstDraft", init: { type: "quiet", tab: "direction", wire: "fresh", writing: "first" }, title: "The first draft arrived from the Conversation, not saved · Desktop", x: D, y: R0 + R * 6 },
+    { file: "WritingOfferFailed", init: { type: "quiet", tab: "direction", wire: "fresh", writing: "none", dir: "offerfail" }, title: "The first draft didn't arrive, Retry · Desktop", x: D * 2, y: R0 + R * 6 },
+    { file: "WritingSheetPhone", phone: true, init: { type: "quiet", tab: "direction", wire: "fresh", writing: "none", sheet: true }, title: "The Conversation's sheet, with the same offer · Phone", x: D * 3, y: R0 + R * 6 },
+    { file: "WritingFirstDraftPhone", phone: true, init: { type: "quiet", tab: "direction", wire: "fresh", writing: "first" }, title: "The first draft arrived, not saved · Phone", x: D * 3 + 470, y: R0 + R * 6 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
@@ -1046,7 +1152,7 @@ function build(OUT) {
     }
   }
   const note =
-    "Pictures, one per state. The tabs switch, the template's version dropdown works, the Writing text can be typed into, and Preview opens its dialog (Escape or X closes either).\n\nBefore & After is wired and posting. Quiet Luxury Picks was just saved from the Studio and is not wired yet. The Overview boards are taller than a screen so the whole page shows.\n\nFrom the first review: the template's slides lead Overview across the full width, one version at a time with Make active; the four numbers are tiles beside the details; the batch table is left-aligned without Ran by, and a row opens that batch; panels side by side end on the same line.\n\nFrom the second review: narrower tiles in the analytics style beside a wider details card, the version showing tinted instead of ticked, and Preview on the phone as a sheet from the bottom. From the third review: the writing's versions use the same dropdown.\n\nNew in D13 (Garreth, 2026-09-21), the bottom row: Direction is named Writing and Wiring is named Go Live, and a type cannot generate until its Writing is saved.\n· Nothing written: the editor carries a guiding placeholder and the header the neutral pill Needs writing. Generate stays available and opens the Generate form, which is where the missing Writing is marked in red and required (Garreth, 2026-09-22).\n· The Studio's drafted note opens in the editor as Not saved; Save version is still a person's press.\n· The template's text boxes are listed under the editor, so the instruction is written against the boxes that exist. D14 is what gives the Studio a way to name them.\n\nStill proposed:\n· Generate stays in the header on every tab; on Direction it steps back to secondary, so Save version is that tab's one accent.\n· The suggestion shows inside the direction itself: removed words struck through, added words underlined.\n· The cadence rebalance is the cadence editor's rule, with its running total and \"too many\" wording.\n· Wire is a hold in the amber tone: it changes the database but deletes nothing.";
+    "Pictures, one per state. The tabs switch, the template's version dropdown works, the Writing text can be typed into, and Preview opens its dialog (Escape or X closes either).\n\nBefore & After is wired and posting. Quiet Luxury Picks was just saved from the Studio and is not wired yet. The Overview boards are taller than a screen so the whole page shows.\n\nFrom the first review: the template's slides lead Overview across the full width, one version at a time with Make active; the four numbers are tiles beside the details; the batch table is left-aligned without Ran by, and a row opens that batch; panels side by side end on the same line.\n\nFrom the second review: narrower tiles in the analytics style beside a wider details card, the version showing tinted instead of ticked, and Preview on the phone as a sheet from the bottom. From the third review: the writing's versions use the same dropdown.\n\nNew in D13 (Garreth, 2026-09-21), the bottom row: Direction is named Writing and Wiring is named Go Live, and a type cannot generate until its Writing is saved.\n· Nothing written: the editor carries a guiding placeholder and the header the neutral pill Needs writing. Generate stays available and opens the Generate form, which is where the missing Writing is marked in red and required (Garreth, 2026-09-22).\n· The Studio's drafted note opens in the editor as Not saved; Save version is still a person's press.\n· The template's text boxes are listed under the editor, so the instruction is written against the boxes that exist. D14 is what gives the Studio a way to name them.\n\nNew in D13b (Garreth, 2026-09-22), the last row: a type with nothing written can ask the Conversation for a first draft.\n· The empty Conversation fills its card — a muted circle, one line, and one offer, Write a first draft, from the active template and its 5 slides. It is secondary; Save version stays the tab's one accent.\n· The draft lands in the editor unsaved, under the same Not saved pill the Studio's note gets, so a type made in the Studio and a type made any other way both have a way to a first Writing.\n· The box asks What should this type sound like? until a first version is saved, then goes back to What should change?\n· On the phone the Conversation is a sheet, so the offer sits under the editor as well, where it is met without opening the sheet. The sheet carries the same one.\n· Before D13b is the first board of the row, for comparison: the panel was blank and the box asked what should change.\n\nStill proposed:\n· Generate stays in the header on every tab; on Direction it steps back to secondary, so Save version is that tab's one accent.\n· The suggestion shows inside the direction itself: removed words struck through, added words underlined.\n· The cadence rebalance is the cadence editor's rule, with its running total and \"too many\" wording.\n· Wire is a hold in the amber tone: it changes the database but deletes nothing.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

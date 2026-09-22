@@ -2212,15 +2212,48 @@ the edges are tested, not just the happy middle.
 
 ## D13b. Writing a first draft — the Conversation on a type that has none
 
-- **Status:** **Open. Raised by Garreth, 2026-09-22**, off the back of D13,
-  from looking at its own *Writing, nothing written yet* board. Not drawn yet.
+- **Status:** **APPROVED by Garreth, 2026-09-22**, dark and light, desktop and
+  phone, in one round — drawn and approved the same day it was raised. The
+  four decisions below were settled by him before it was drawn, and drawn as
+  settled: the Conversation offers one first draft, the box has two wordings,
+  the empty panel fills its card, and on the phone the offer sits in the
+  editor as well as in the sheet. **The documents were brought up to date on
+  approval**: the plan (§6.4's three states, and a new §10 item 57b), the
+  flows (**F6** rewritten around the offer — a new Phase 3 step 0, the Empty
+  and Fails lines — and **F8** step 8, which is no longer the only route to a
+  first draft; F11 needed nothing, it never described the drafted note) and
+  the dev tickets (**DEV-25** gained the whole of it; DEV-19b is untouched).
+  What is left is development and the prototype.
+  Raised by Garreth, 2026-09-22, off the back of D13,
+  from looking at its own *Writing, nothing written yet* board.
   **Taken before D14**, because it finishes the screen D13 just made required.
   **It has no canvas of its own**: its pictures are new rows on the **D7**
-  canvas, dark and light, desktop and phone. Build file:
-  `d7-type-page.build.mjs`. Numbered **13b** rather than 17 so the order of
+  canvas (https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp), pages **D7 ·
+  Dark** and **D7 · Light**, built by
+  `docs/designs/carousel-generator/d7-type-page.build.mjs`. Numbered **13b**
+  rather than 17 so the order of
   work reads off the numbers — it is D13's loose end, not a new subject, and
   renumbering D14 to D16 would break every reference the dev tickets, the
   plan and the canvases already make to them.
+- **What was drawn** (five new boards a theme, the last row of the canvas,
+  plus D13's own two *nothing written yet* boards redrawn in place):
+  - *Before D13b: nothing written, the Conversation blank* — the state D13
+    left, kept for the comparison.
+  - *Nothing written* (desktop and phone, redrawn) — the panel now carries a
+    muted circle, the line **Nothing written for this type yet.**, the
+    secondary offer **Write a first draft** and, under it, *from the active
+    template and its 5 slides*. The box asks **What should this type sound
+    like?**
+  - *The first draft arrived from the Conversation, not saved* (desktop and
+    phone) — the draft in the editor under the **Not saved** pill, the
+    exchange in the panel, and Save version live.
+  - *The first draft didn't arrive, Retry* — D7's existing failed shape, the
+    editor still empty.
+  - *The Conversation's sheet, with the same offer* (phone) — the sheet opens
+    and closes for real on the boards, as Preview's does.
+  Checked on desktop and phone in both themes with the local harness
+  (`render-board.mjs` + headless Chrome), not on the canvas; the close look on
+  the canvas is Garreth's.
 - **What it is.** D13 made the Writing required and drew the empty editor with
   a guiding placeholder. Beside it sits the **Conversation**, the panel that
   on a type with a saved Writing does real work: you ask for a change, the AI
@@ -2250,6 +2283,8 @@ the edges are tested, not just the happy middle.
     reads wrong on an empty Writing. Something like *What should this type
     sound like?* until the first version is saved, then back to the existing
     wording. One box, two states, no new control.
+  - *(All four were settled by Garreth on 2026-09-22, before the drawing, and
+    approved as drawn. Kept here because they are the reasoning.)*
   - **Whether the empty panel gets an empty state at all**, or stays blank.
     The standing rule since 2026-09-19 is that an empty state fills its card
     rather than leaving a void, and these boards were redrawn on 2026-09-22,

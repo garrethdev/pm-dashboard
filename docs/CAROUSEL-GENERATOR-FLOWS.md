@@ -372,6 +372,13 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
   2. Edit the text. **Save version** writes a new version and makes it
      active. Past versions have **Make active**.
 - **Steps (Phase 3):**
+  0. **On a type with nothing written** (D13b, approved 2026-09-22) the panel
+     is not a blank card: it carries one offer, **Write a first draft**, made
+     from the active template and its slides. The draft opens in the editor
+     **unsaved**, under the same **Not saved** pill a Studio-made type's note
+     gets, so the two routes to a first Writing end in the same place. The
+     box asks *What should this type sound like?* until a first version is
+     saved, and *What should change?* after it. The bot never saves.
   1. A conversation panel beside the Writing, down the right at full
      height. Type what should change. The bot proposes a revised instruction,
      cites any knowledge rules it drew on, asks at most one clarifying
@@ -385,13 +392,22 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
   a grey placeholder showing the shape of a good instruction rather than an
   instruction to write one, gone the moment anything is typed — *who is
   speaking, and to whom · what each slide has to do · the words to use, and
-  the words never to use · how the caption should read*. Save version on an
-  empty editor (D13).
+  the words never to use · how the caption should read*. Save version is
+  unavailable on an empty editor (D13). The conversation beside it **fills
+  its card** rather than leaving a void: a muted circle, the line *Nothing
+  written for this type yet.*, and the one offer above, with *from the active
+  template and its n slides* under it (D13b). The offer is **secondary** —
+  Save version stays the tab's one accent. **On the phone** the conversation
+  is a sheet behind the floating button, so the same offer also sits under
+  the empty editor, where it is met without opening the sheet; the sheet
+  carries the same one, and never a third wording (D13b).
 - **Pre-filled and not saved:** a type saved out of the Studio opens with the
   AI's draft note already in the editor, under a neutral **Not saved** pill.
   It does not count as written: the requirement is met by a person having
   read it and pressed Save version, not by the field being non-empty (D13).
 - **Fails:** the bot call fails: the error sits under the message, with Retry.
+  A first draft that does not arrive fails the same way, and the editor is
+  left as it was — empty (D13b).
 - **Writes:** `carousel_lane_directions`.
 
 ### F7. Browse and manage the image libraries
@@ -555,7 +571,11 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
      version 1 pointing at the chosen library, and opens the Writing with the
      draft note pre-filled but **not saved**. The type appears on Carousel
      types as Not wired and carrying a **Needs writing** pill; it can generate
-     once someone has read that draft and pressed Save version (D13).
+     once someone has read that draft and pressed Save version (D13). **This
+     is not the only route to a first draft** (D13b): a type made any other
+     way arrives with nothing written, and asks its own conversation for one
+     on the Writing tab (F6). Both end with an unsaved draft under the same
+     **Not saved** pill.
 - **Accent action:** Save as content type.
 - **Hold:** Discard draft. **Decided (Garreth, 2026-09-15):** Back keeps an
   unsaved draft and the Studio reopens on it next time; Discard draft is the
