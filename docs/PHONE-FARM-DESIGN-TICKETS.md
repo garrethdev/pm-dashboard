@@ -95,7 +95,7 @@ purpose; the changelog has them.
 | P9 | Add the Live view page and link to it from the dashboard | Not started |
 | P10 | Move accounts onto phones in one step, and several at once | Not started |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
-| P12 | Add the morning reminder email, overdue items, and bell items that name their fleet | Not started |
+| P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Part done 2026-09-22.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. Still open: how a stale item looks ON the to-do list, and the fleet label on a bell item (PF-20) |
 | P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | Not started |
 
 Each of these has its full ticket further down. **A ticket moves through four
@@ -122,7 +122,7 @@ the design ticket that covers it:
 | PF-09 Health + incidents read both sources | nothing new (same screens, more data) | — |
 | PF-10 Comparison view | Before and after the move, per account | P7 |
 | PF-11 Post-ban for manual accounts | The checklist | P8 |
-| PF-12 Morning reminder + stale alert | The email, and how a stale item looks in the app | P12 |
+| PF-12 Day's work + stale-post alert | The two bell items (built 2026-09-22), and how a stale item looks on the to-do list (still open) | P12 |
 | PF-13 Script write path | nothing (data only); what it logs shows in P4, P5 | — |
 | PF-14 Live view | The page on the Air, and the link to it | P9 |
 | PF-15 Batch moves | Moving several accounts at once | P10 |
@@ -923,17 +923,28 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   Then built in the app to match, and looked at in the running app at both
   sizes.
 
-## P12. Add the morning reminder email, overdue items, and bell items that name their fleet
+## P12. Add the day's-work reminder, overdue items, and bell items that name their fleet
 
-- **Status:** not started.
-- **Backlog:** PF-12, PF-20.
-- **Design:** the morning email listing the day's work per device; how an item
-  left undone for more than a day looks in the to-do list and on the bell;
-  and a bell item that says which fleet it is about, because the bell is the
-  one place that shows both.
-- **Done when:** the email, the stale state and the bell item are approved.
-  Then built: the n8n reminder and alert published and seen to fire once on a
-  test item, and the stale state and bell item looked at in the running app.
+- **Status:** **part done 2026-09-22.** The bell half is built (PF-12); the
+  to-do list half and the fleet label are not.
+- **Backlog:** PF-12 (done), PF-20 (not started).
+- **The email is gone.** Asked who the morning email should go to, Garreth
+  answered: no email, a notification in the dashboard instead (2026-09-22).
+  There is no n8n workflow in this ticket any more.
+- **Built:** the day's-work reminder and the overdue-post alert, as two
+  recomputed bell items. One reminder for the whole day, opening the to-do
+  list; dismissible and back tomorrow; posts and warmups as one count; the
+  stuck post its own item in red. Physical only. See `BACKLOG.md` PF-12 for
+  the decisions and what was proven.
+- **Still to design and build:**
+  - **How a stale item looks ON the to-do list.** The bell now says a post is
+    overdue; the row itself still looks like any other. This is the half that
+    needs drawing.
+  - **A bell item that names its fleet** (PF-20), because the bell is the one
+    place that shows both. Note the tension to settle here: PF-12's two items
+    were made Physical-only, which is the opposite rule.
+- **Done when:** the stale row on the to-do list and the fleet label are
+  approved, then built and looked at in the running app.
 
 ## P13. Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode
 

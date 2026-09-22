@@ -58,6 +58,8 @@ const CATEGORY: Record<string, string> = {
   retire: "Post-Ban",
   warmup_fail: "Warmup",
   proxy_replace: "Proxies",
+  todo_today: "To-do",
+  todo_overdue: "To-do",
 };
 
 export function categoryLabel(type: string): string {

@@ -304,12 +304,22 @@ export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet
                       const inner = (
                         <div className="flex gap-2 py-2.5">
                           {/* Unread marker holds its column either way, so titles
-                            stay aligned as items are read. */}
+                            stay aligned as items are read. Red when the item is
+                            critical: PF-12's overdue post had to read as a fault
+                            rather than as news (Garreth, 2026-09-22), and the dot
+                            is the one mark every row already carries. It colours
+                            the older critical items too — a warmup cohort failing
+                            fleet-wide has always been critical and never looked
+                            it. */}
                           <span
                             aria-hidden
                             className={cn(
                               "mt-1.5 size-1.5 shrink-0 rounded-full",
-                              isUnread ? "bg-accent" : "bg-transparent",
+                              !isUnread
+                                ? "bg-transparent"
+                                : item.severity === "critical"
+                                  ? "bg-danger-deep"
+                                  : "bg-accent",
                             )}
                           />
                           <div className="flex min-w-0 flex-1 flex-col gap-1">
