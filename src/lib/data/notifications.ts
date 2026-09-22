@@ -3,6 +3,7 @@ import { sbRest } from "@/lib/data/supabase";
 import { getOpenDeliveries } from "@/lib/data/post-deliveries";
 import { getTodoBoard } from "@/lib/data/todo";
 import { dayRangeET } from "@/lib/data/warmup-sessions";
+import { fleetOfEntity, getPhysicalProfiles } from "@/lib/data/fleet-accounts";
 import type { Fleet } from "@/lib/fleet";
 import {
   categoryLabel,
@@ -30,6 +31,20 @@ export interface NotificationItem {
   target: string | null;
   href?: string;
   at: string;
+  /**
+   * Which fleet this item is about, named on the row (PF-20).
+   *
+   * The bell shows BOTH fleets whatever the switch is set to (Garreth,
+   * 2026-09-22) — it is the one surface that does, because a ban or a stuck
+   * post is news to whoever is looking, not only to whoever happens to have
+   * the right fleet selected. That only works if each row says which fleet it
+   * came from, which is what this is.
+   *
+   * `undefined` means the item is about no single account — an n8n workflow, a
+   * dead data feed, a scheduled job — and names no fleet, because inventing one
+   * for it would be a guess.
+   */
+  fleet?: Fleet;
   /** Whether THIS viewer has seen it. Per person, not fleet-wide. */
   read: boolean;
   /**
@@ -75,10 +90,20 @@ const FAIL_REASON: Record<string, string> = {
 
 /**
  * Warmup-failing accounts (handover): active, last 2 resolved warmups both
- * failed, and no recent success. Grouped by fail_code so a fleet-wide cause is
+ * failed, and no recent success. Grouped by fail_code so a shared cause is
  * obvious (e.g. a cluster of 29997 = empty wallet). Stateless recompute.
+ *
+ * Grouped by FLEET as well as by fail code (PF-20), so every item can name one
+ * fleet. A cohort can genuinely straddle the two: only Geelark warmups can
+ * fail — there is no such thing as a failed manual session — but an account
+ * that moved to a real phone keeps the Geelark failures behind it, and the
+ * rule for every per-fleet number is that an account's history follows the
+ * account (Garreth, 2026-09-18). Read state is unaffected by the split, because
+ * it is keyed per account rather than per cohort.
  */
-async function warmupFailNotifications(): Promise<NotificationItem[]> {
+async function warmupFailNotifications(
+  physical: ReadonlySet<string>,
+): Promise<NotificationItem[]> {
   // Pull active-account warmup health; the view already resolves outcomes.
   const rows = await sbRest<WarmupFailRow[]>(
     "v_account_warmup_health?select=geelark_profile,last_resolved_fail_code,last_resolved_fail_desc,recent_resolved_failures,days_since_success&recent_resolved_failures=gte.2",
@@ -99,26 +124,30 @@ async function warmupFailNotifications(): Promise<NotificationItem[]> {
       (r.days_since_success === null || r.days_since_success >= 3),
   );
 
-  // Group by fail_code.
+  // Group by fail_code, then by the fleet the account sits in today.
   const byCode = new Map<string, WarmupFailRow[]>();
   for (const r of failing) {
     const code = r.last_resolved_fail_code ?? "unknown";
-    (byCode.get(code) ?? byCode.set(code, []).get(code)!).push(r);
+    const fleet = fleetOfEntity(r.geelark_profile, physical) ?? "cloud";
+    const key = `${code}|${fleet}`;
+    (byCode.get(key) ?? byCode.set(key, []).get(key)!).push(r);
   }
 
   const items: NotificationItem[] = [];
-  for (const [code, group] of byCode) {
+  for (const [key, group] of byCode) {
+    const [code, fleet] = key.split("|") as [string, Fleet];
     const reason = FAIL_REASON[code] ?? group[0]?.last_resolved_fail_desc ?? "warmup failing";
     const profiles = group.map((g) => g.geelark_profile.replace("Profile ", "P")).sort();
     const fleetWide = group.length >= 3;
     items.push({
+      fleet,
       // The cohort is part of the identity, not just the payload. These alerts
       // are recomputed rather than stored, so a bare `warmup_fail:29997` would
       // stay read forever once dismissed — including when a different set of
       // accounts starts failing for the same reason. That was survivable while
       // read state was per-browser and easily lost; now that it is durable, a
       // changed cohort has to read as a new alert.
-      id: `warmup_fail:${code}:${createHash("sha1").update(profiles.join(",")).digest("hex").slice(0, 8)}`,
+      id: `warmup_fail:${code}:${fleet}:${createHash("sha1").update(profiles.join(",")).digest("hex").slice(0, 8)}`,
       // One key per account, not one per cohort — see markKeys on the
       // interface. The id stays cohort-shaped because React needs a key that
       // changes when the row's content does.
@@ -185,11 +214,17 @@ function plural(n: number, one: string, many = `${one}s`): string {
  * warmup cohort, so a newly stuck post reopens it and one that gets posted
  * does not drag the others back.
  *
- * PHYSICAL ONLY (Garreth, 2026-09-22). Both items are hidden from anyone with
- * the switch on Cloud, including the overdue one. Worth knowing that this is
- * the opposite of what PF-20 proposes for the bell in general — that the bell
- * is the one place showing both fleets — so if a stuck post is ever missed
- * because somebody was sitting in Cloud, this is the decision to revisit.
+ * ABOUT Physical, SHOWN in both (Garreth, 2026-09-22, settling PF-20). These
+ * were built Physical-only that morning and hidden from anyone with the switch
+ * on Cloud. PF-20 asked whether the bell should follow the switch at all, and
+ * he chose the other way: the bell shows both fleets and names which. So the
+ * work still only ever happens on real phones — these two items are always
+ * `fleet: "physical"` — but sitting in Cloud no longer hides a stuck post from
+ * you, which was the risk the Physical-only version carried.
+ *
+ * The cost is that both reads now run for every viewer rather than only for
+ * Physical ones. Both are already guarded, and they run alongside the other
+ * sources rather than after them, so a slow to-do read delays nobody's bell.
  */
 async function todoNotifications(): Promise<NotificationItem[]> {
   const now = new Date();
@@ -236,6 +271,8 @@ async function todoNotifications(): Promise<NotificationItem[]> {
     if (posts > 0) parts.push(plural(posts, "post"));
     if (warmups > 0) parts.push(plural(warmups, "warmup"));
     items.push({
+      // The work itself is only ever on real phones, whoever is looking.
+      fleet: "physical",
       id: `todo_today:${day}`,
       // Dated, so today's can be dismissed and tomorrow's still arrives.
       markKeys: [`todo_today:${day}`],
@@ -284,6 +321,7 @@ async function todoNotifications(): Promise<NotificationItem[]> {
     }
     const ids = overdue.map((d) => String(d.id)).sort();
     items.push({
+      fleet: "physical",
       id: `todo_overdue:${createHash("sha1").update(ids.join(",")).digest("hex").slice(0, 8)}`,
       // One key per delivery, the same reasoning as the warmup cohort above:
       // a shrinking set stays read, a genuinely new stuck post re-alerts.
@@ -308,7 +346,9 @@ function profileNum(target: string | null): string {
   return String(target ?? "").replace(/\D/g, "");
 }
 
-async function storedNotifications(): Promise<NotificationItem[]> {
+async function storedNotifications(
+  physical: ReadonlySet<string>,
+): Promise<NotificationItem[]> {
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const rows = await sbRest<StoredRow[]>(
     `dashboard_notifications?select=id,at,type,severity,title,body,target,read&at=gte.${since}&order=at.desc&limit=50`,
@@ -322,6 +362,10 @@ async function storedNotifications(): Promise<NotificationItem[]> {
       severity: (r.severity as NotificationItem["severity"]) ?? "info",
       target: r.target,
       at: r.at,
+      // A retire or a proxy swap is about one account, and `target` names it,
+      // so the row can say which fleet it happened on. A row whose target is
+      // not a profile names nothing (PF-20).
+      fleet: fleetOfEntity(r.target, physical),
       read: false,
     };
 
@@ -376,26 +420,36 @@ async function readKeys(userEmail: string): Promise<Set<string>> {
 }
 
 /**
- * Combined bell feed: stored retire completions, recomputed warmup failures
- * and — in Physical only — the phone farm's day (PF-12), each flagged with
- * whether THIS person has seen it.
+ * Combined bell feed: stored retire completions, recomputed warmup failures and
+ * the phone farm's day (PF-12), each flagged with whether THIS person has seen
+ * it and which fleet it is about.
+ *
+ * THE BELL DOES NOT FOLLOW THE FLEET SWITCH (Garreth, 2026-09-22, settling
+ * PF-20). Every other screen shows one fleet at a time; this one shows both and
+ * names which on each row. A ban on a real phone is news to whoever is looking,
+ * and hiding it behind a switch is how it goes unseen. So there is no fleet
+ * argument here any more — the same person sees the same bell whichever side
+ * they are on.
+ *
+ * The profiles on real phones are read once and handed to every source, so the
+ * whole feed agrees on which fleet an account is in even if somebody moves one
+ * while this is running.
  *
  * A failed read of the read-state is not a failed feed — the bell still shows
- * the items, just all unread. Louder than the truth beats an empty bell.
+ * the items, just all unread. Louder than the truth beats an empty bell. A
+ * failed read of the fleet list is treated the same way: an empty set reads
+ * every account as Cloud, which mislabels rather than hides.
  */
-export async function getNotifications(
-  userEmail: string,
-  fleet: Fleet = "cloud",
-): Promise<NotificationItem[]> {
+export async function getNotifications(userEmail: string): Promise<NotificationItem[]> {
+  const physical = new Set(
+    await getPhysicalProfiles()
+      .then((r) => r.data)
+      .catch(() => [] as string[]),
+  );
   const [stored, warmup, todo, seen] = await Promise.all([
-    storedNotifications().catch(() => [] as NotificationItem[]),
-    warmupFailNotifications().catch(() => [] as NotificationItem[]),
-    // Physical only (Garreth, 2026-09-22) — see todoNotifications. Not even
-    // attempted in Cloud, so a broken to-do read cannot slow the bell down for
-    // people who would never have seen these items anyway.
-    fleet === "physical"
-      ? todoNotifications().catch(() => [] as NotificationItem[])
-      : ([] as NotificationItem[]),
+    storedNotifications(physical).catch(() => [] as NotificationItem[]),
+    warmupFailNotifications(physical).catch(() => [] as NotificationItem[]),
+    todoNotifications().catch(() => [] as NotificationItem[]),
     readKeys(userEmail).catch(() => new Set<string>()),
   ]);
   return (

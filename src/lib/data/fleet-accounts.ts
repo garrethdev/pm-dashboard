@@ -27,12 +27,32 @@ export const getPhysicalProfiles = cachedFetcher(
 
 const PROFILE_RE = /^Profile \d+$/;
 
+/** The fleet a profile's things belong to. Anything not on a real phone today,
+ *  including a profile with no accounts row at all, is Cloud. */
+export function fleetOfProfile(profile: string, physical: ReadonlySet<string>): Fleet {
+  return physical.has(profile) ? "physical" : "cloud";
+}
+
 export function profileInFleet(
   profile: string,
   fleet: Fleet,
   physical: ReadonlySet<string>,
 ): boolean {
-  return physical.has(profile) === (fleet === "physical");
+  return fleetOfProfile(profile, physical) === fleet;
+}
+
+/**
+ * The fleet something is about, or `undefined` when it is about no single
+ * account — an n8n workflow, a data feed, a scheduled job, a character running
+ * dry. The bell uses this to decide whether an item can name a fleet at all
+ * (PF-20); the incident feed uses the same split to decide what to hide.
+ */
+export function fleetOfEntity(
+  entity: string | null | undefined,
+  physical: ReadonlySet<string>,
+): Fleet | undefined {
+  if (!entity || !PROFILE_RE.test(entity)) return undefined;
+  return fleetOfProfile(entity, physical);
 }
 
 /**

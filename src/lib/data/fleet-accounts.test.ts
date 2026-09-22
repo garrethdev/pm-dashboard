@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { limitIncidents, limitProxyData, profileInFleet } from "@/lib/data/fleet-accounts";
+import {
+  fleetOfEntity,
+  limitIncidents,
+  limitProxyData,
+  profileInFleet,
+} from "@/lib/data/fleet-accounts";
 import type { Incident } from "@/lib/data/incidents";
 import type { ProxyPhoneData } from "@/lib/data/proxies";
 
@@ -61,5 +66,22 @@ describe("limitProxyData", () => {
     expect(c.rows.map((r) => r.profile)).toEqual(["Profile 20"]);
     expect(c.orphanSubscriptions).toHaveLength(1);
     expect(c.unmatchedRentals).toHaveLength(1);
+  });
+});
+
+describe("fleetOfEntity", () => {
+  it("names the fleet an account's things belong to", () => {
+    expect(fleetOfEntity("Profile 31", physical)).toBe("physical");
+    expect(fleetOfEntity("Profile 20", physical)).toBe("cloud");
+  });
+
+  it("names no fleet for anything that is not one account", () => {
+    // The bell hangs a pill off this, so a guess here would label an n8n
+    // failure as somebody's fleet (PF-20).
+    expect(fleetOfEntity("Smart Scheduler", physical)).toBeUndefined();
+    expect(fleetOfEntity("Character 3", physical)).toBeUndefined();
+    expect(fleetOfEntity("29997", physical)).toBeUndefined();
+    expect(fleetOfEntity(null, physical)).toBeUndefined();
+    expect(fleetOfEntity(undefined, physical)).toBeUndefined();
   });
 });

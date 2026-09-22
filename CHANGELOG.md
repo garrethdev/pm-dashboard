@@ -20,6 +20,74 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — The bell now shows both fleets, and every item says which one it is about
+
+**Where it came from:** ticket PF-20, and the decision Garreth made when asked
+to settle it (2026-09-22): "bell shows both fleets and names which."
+
+**The question this answers.** Every screen in the dashboard shows one fleet at
+a time — flip the Cloud / Physical switch in the top right and the accounts,
+the numbers and the incidents all change with it. The bell was the one place
+where that rule was in doubt. Earlier the same day, PF-12's two new items (the
+day's work, and the post that has gone stale) were built to appear in Physical
+only, and hidden from anyone sitting in Cloud. The worry written down at the
+time was that somebody would miss a stuck post simply because their switch
+happened to be on the other side. Garreth settled it the other way: the bell
+shows everything, and each line says which fleet it came from.
+
+**So the bell no longer follows the switch at all.** Whichever side you are on,
+you see the same bell. A warmup problem on the cloud phones and a post stuck on
+a real phone now sit in the same list, and each carries a small label — a cloud
+saying **Cloud**, or a phone saying **Physical** — so there is no guessing which
+half of the operation a line is talking about. Lines that are not about any one
+account, such as a robot job that errored or a data feed that has gone quiet,
+carry no label, because inventing one for them would be a guess.
+
+**Accounts that have moved keep their history.** If a group of accounts is
+failing its warmup and some of them have since moved onto real phones, the bell
+now splits that into two lines, one per fleet, rather than one line that could
+only name one of them. This follows the rule Garreth set for every per-fleet
+number on 2026-09-18: an account's history follows the account, with no
+split by the date it moved. Dismissing a notification still works exactly as it
+did — it is remembered per account, so a group that splits or shrinks does not
+come back unread.
+
+**Clicking an item now takes the switch with it.** This was the one thing the
+decision broke. The To-do page only exists on the Physical side, so a stuck-post
+alert read from Cloud would have dropped you on the dashboard with no
+explanation at all. Opening a notification about the other fleet now moves the
+switch for you and lands you on the right page.
+
+**And the switch itself no longer lies.** It used to read which fleet you were
+on once, when the page first loaded, which was fine while it was the only way to
+change fleets. Now that a notification can change it too, it was possible to be
+looking at the Physical To-do page with the switch still showing Cloud. It
+follows along properly now. Found by using it, not by reading the code.
+
+**The other half of PF-20 was already done.** The ticket also covered the
+Incidents page, and that has followed the switch since 2026-09-18.
+
+**What was checked.** All of the above was seen working in the running app, in
+dark mode and light mode, on a desktop screen and at phone width, against a
+temporary set-up: one made-up phone, one made-up account, one post left sitting
+for thirty hours, and one real account moved to the Physical side and back. Both
+fleets were confirmed to show the same four notifications with the right labels,
+and clicking the Physical one from the Cloud side was confirmed to switch over
+and open the To-do page. **Everything made up for the test was deleted
+afterwards, and the database was checked back to where it started** — no
+phones, no accounts on phones, no posts. Checked in Chrome, not Safari.
+
+**Not proven with real work:** there is still no real phone, no account on one
+and no hand-made post, so the only notification the bell shows today is the
+genuine Cloud warmup one. The day-rollover has not been watched happen.
+
+**One thing this uncovered and did not fix.** When a post is queued for an
+account whose posting is paused — which is every account today, deliberately,
+while the fleet moves off Geelark — the stale-post alert says the post is "past
+the three-day carry-over", when the real reason it is off the to-do list is the
+pause. The wording predates this ticket and is logged in `BACKLOG.md` rather
+than changed here.
+
 ## 2026-09-22 — The bell now tells you the day's work, and shouts about a stuck post
 
 **Where it came from:** ticket PF-12, and a decision Garreth made while it was

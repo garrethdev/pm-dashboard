@@ -27,6 +27,25 @@ export function FleetSwitch({ fleet }: { fleet: Fleet }) {
   const router = useRouter();
   // Shown immediately on press; the server's answer arrives with the refresh.
   const [shown, setShown] = useState<Fleet>(fleet);
+  /**
+   * Follow the fleet when something OTHER than this switch changes it.
+   *
+   * The switch used to be the only way to change fleets, so reading the prop
+   * once was enough. Since PF-20 the bell shows both fleets, and opening an
+   * item that belongs to the other one takes the switch with it — which left
+   * this reading "Cloud" on a page that was plainly showing Physical. The
+   * switch exists so it is never a mystery which fleet a page is showing, so
+   * that is the one thing it must not get wrong.
+   *
+   * Assigning during render rather than in an effect: React re-runs this
+   * component immediately with the new state, before anything is painted, so
+   * the wrong side is never on screen.
+   */
+  const [seen, setSeen] = useState<Fleet>(fleet);
+  if (seen !== fleet) {
+    setSeen(fleet);
+    setShown(fleet);
+  }
   const [pending, startTransition] = useTransition();
 
   function choose(next: Fleet) {

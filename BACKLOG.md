@@ -161,7 +161,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
 | PF-19 | Calendar and Content types per fleet | Intermediate | **Built 2026-09-22** as four new `_fleet` functions beside the untouched originals; no Physical data to show yet |
-| PF-20 | Incidents and the bell per fleet | Intermediate | Ready now |
+| PF-20 | Incidents and the bell per fleet | Intermediate | **Done 2026-09-22.** Incidents had followed the switch since 2026-09-18; the bell half was settled by Garreth — it shows BOTH fleets and names which on every item. Proven in the running app, dark and light, desktop and phone, against a temporary phone/account/post that was deleted afterwards. No real phone or post has used it |
 | PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
@@ -541,9 +541,12 @@ His decisions, all 2026-09-22:
 - **Dismissible, and back tomorrow.** The read-key carries the New York date.
 - **The stuck post is its own item, in red**, not folded into the reminder.
 - **Posts and warmups counted together** as one number, matching the page.
-- **Physical only**, both items — the fleet switch hides them in Cloud. Note
-  this contradicts PF-20's proposal that the bell shows both fleets and names
-  which; PF-20 should settle the two together.
+- **Physical only**, both items — the fleet switch hides them in Cloud.
+  ~~Note this contradicts PF-20's proposal that the bell shows both fleets and
+  names which; PF-20 should settle the two together.~~ **Settled the other way
+  the same day (Garreth, 2026-09-22): "bell shows both fleets and names which."**
+  Both items are still only ever ABOUT Physical, but they are now shown to
+  everyone and carry a Physical label. See PF-20.
 
 Two things the build decided, both written up in the code:
 - **Automated warmups are left out of the count** (P4/PF-13): nobody can tick
@@ -707,12 +710,49 @@ limited to the accounts currently in that fleet".
 delivery record; do this after PF-05, with PF-09. `content_type_stats` does not
 join `accounts` and needs the join added.
 
-**PF-20 · Incidents and the bell per fleet — Ready now.** Both are assembled
-in the app (`src/lib/data/incidents.ts`, `notifications.ts`), so this is an app
-change: filter by the account's fleet. Worth deciding before building: a ban on
-a Physical account is news even to someone sitting in Cloud. Suggested: the
-Incidents page follows the switch; the bell keeps showing both and names the
-fleet on each item.
+**PF-20 · Incidents and the bell per fleet — Done 2026-09-22.** Both are
+assembled in the app (`src/lib/data/incidents.ts`, `notifications.ts`), so this
+was an app change with no database work. The open question — a ban on a
+Physical account is news even to someone sitting in Cloud — was put to Garreth
+and he took the suggested split: **the Incidents page follows the switch, the
+bell shows both fleets and names which on each item.**
+
+- **The Incidents half was already built** on 2026-09-18, as `limitIncidents`
+  in `src/lib/data/fleet-accounts.ts`, and is used by all three places that
+  show incidents (the dashboard card, the page, and the range endpoint). An
+  incident about an account follows that account; anything about the machinery
+  stays with Cloud.
+- **The bell half is what this ticket built.** `getNotifications` no longer
+  takes a fleet at all, and every item carries the fleet it is about, or none
+  when it is about no single account. PF-12's two to-do items are always
+  `physical` and are now shown to everyone.
+- **A warmup cohort is split per fleet**, so each line can name one. A cohort
+  can genuinely straddle the two: only Geelark warmups can fail, but an account
+  that moved keeps its failures, and an account's history follows the account.
+  Read state is keyed per account, so the split does not resurface a dismissed
+  alert.
+- **Two things the build had to add.** Opening a notification about the other
+  fleet switches the fleet first, because `/todo` redirects to the dashboard
+  unless the switch is on Physical — without it the decision would have created
+  a dead row. And `FleetSwitch` now follows its prop, because it read the fleet
+  once at mount and so could sit on "Cloud" while showing the Physical To-do
+  page.
+
+*Done when — met:* both fleets seen showing the same four items with the right
+labels, against a seeded phone, account and stuck post plus one real account
+moved to Physical and back; the cohort split seen with one account on each
+side; the cross-fleet click seen switching the fleet and landing on `/todo`;
+checked in dark and light mode and at phone width. All fixtures deleted and
+the database checked back to empty afterwards. **Not proven with real work:**
+no real phone, account or hand-made post exists. Checked in Chrome, not Safari.
+
+**Found here, not fixed here — the stale-post alert blames the wrong thing for
+a paused account.** `todo.ts` drops paused accounts from the board, and every
+account is paused today for the Geelark exit, so a queued post for one is never
+"on the list". The overdue alert reads that absence as the three-day carry-over
+having expired and says so, when the real reason is the pause. It is PF-12's
+wording, it only misleads while a queued post belongs to a paused account, and
+it was left alone rather than widened into this ticket.
 
 **Not tickets, but on the sheet:** Tailscale + Screen Sharing on the Air,
 installing Xcode and the developer Apple ID (Yurie), installing WebDriverAgent

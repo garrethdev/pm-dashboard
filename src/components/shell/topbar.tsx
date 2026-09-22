@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 // The shape the bell endpoint returns, imported rather than restated. It was a
 // second copy of the interface here until 2026-09-12, which is how `markKeys`
 // could be added server-side and silently not exist on the client. `import
 // type` is erased at build, so nothing from the server module reaches the
 // bundle.
 import type { NotificationItem } from "@/lib/data/notifications";
-import { ArrowUpRight, Bell, CheckCircle2 } from "@/components/ui/icons";
+import { ArrowUpRight, Bell, CheckCircle2, Cloud, Smartphone } from "@/components/ui/icons";
 import { FleetSwitch } from "@/components/shell/fleet-switch";
 import { MobileNavTrigger } from "@/components/shell/mobile-nav";
-import type { Fleet } from "@/lib/fleet";
+import { FLEET_LABEL, type Fleet } from "@/lib/fleet";
 import { displayNameOf } from "@/lib/people";
 import { cn } from "@/lib/utils";
 
@@ -84,8 +84,35 @@ function timeAgo(iso: string): string {
   return `${Math.floor(days / 30)}mo`;
 }
 
+/** The same two icons the fleet switch uses, so the pill and the switch read
+ *  as the same idea. */
+const FLEET_ICON = { cloud: Cloud, physical: Smartphone } as const;
+
+/**
+ * Which fleet a bell item came from (PF-20).
+ *
+ * The bell is the one surface that shows both fleets (Garreth, 2026-09-22), so
+ * every row that belongs to one has to say so — otherwise a stuck post on a
+ * real phone and a ban on a cloud phone look alike. Items about the machinery
+ * rather than an account carry no fleet and get no pill.
+ *
+ * The icon alone would match the switch, but the switch is always on screen to
+ * be read against a page; a row in a list has nothing to compare itself to, so
+ * the word is there as well.
+ */
+function FleetPill({ fleet }: { fleet: Fleet }) {
+  const Icon = FLEET_ICON[fleet];
+  return (
+    <span className="ml-1.5 inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 align-[1px] text-[11px] font-medium whitespace-nowrap text-text-muted">
+      <Icon className="size-3" />
+      {FLEET_LABEL[fleet]}
+    </span>
+  );
+}
+
 export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   // Read state comes from the server, per person. It used to live in
@@ -177,6 +204,36 @@ export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet
         });
       });
   }, []);
+
+  /**
+   * Open a bell item, switching fleet first when it belongs to the other one.
+   *
+   * The bell shows both fleets (PF-20), which creates a click the app could not
+   * previously serve: /todo redirects to the dashboard unless the switch is on
+   * Physical, so an overdue-post alert read from Cloud would have dropped you
+   * on the homepage with no explanation. Rather than hide the item — the thing
+   * Garreth ruled against — the click takes the switch with it.
+   *
+   * The navigation happens whether or not the switch saved. A cookie that did
+   * not write leaves the destination showing the wrong fleet, which is visible
+   * and recoverable; refusing to navigate would look like a dead row.
+   */
+  const openItem = useCallback(
+    async (item: NotificationItem, href: string) => {
+      markRead([item]);
+      setOpen(false);
+      if (item.fleet && fleet && item.fleet !== fleet) {
+        await fetch("/api/fleet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fleet: item.fleet }),
+        }).catch((err: unknown) => console.error("Could not switch fleet", err));
+      }
+      router.push(href as never);
+      router.refresh();
+    },
+    [fleet, markRead, router],
+  );
 
   const load = useCallback(async () => {
     try {
@@ -337,6 +394,7 @@ export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet
                                 <span className="ml-2 inline-block rounded-full bg-text-muted/10 px-2 py-0.5 align-[1px] text-[11px] font-medium whitespace-nowrap text-text-muted">
                                   {item.category}
                                 </span>
+                                {item.fleet && <FleetPill fleet={item.fleet} />}
                               </span>
                               {item.href && (
                                 <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-accent" />
@@ -349,13 +407,18 @@ export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet
                           </div>
                         </div>
                       );
-                      return item.href ? (
+                      const href = item.href;
+                      return href ? (
                         <Link
                           key={item.id}
-                          href={item.href as never}
-                          onClick={() => {
-                            markRead([item]);
-                            setOpen(false);
+                          href={href as never}
+                          onClick={(e) => {
+                            // Kept as a real link — middle-click and "open in
+                            // new tab" still work, and they land on whatever
+                            // fleet that tab already has, which is the same
+                            // answer the app gives anywhere else.
+                            e.preventDefault();
+                            void openItem(item, href);
                           }}
                           className="rounded-[10px] px-3 transition-colors hover:bg-card-raised"
                         >
