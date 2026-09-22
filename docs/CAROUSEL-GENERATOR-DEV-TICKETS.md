@@ -29,9 +29,11 @@ slides, the draft lands unsaved in the same place the Studio's note does, the
 box asks *What should this type sound like?* until a first version is saved,
 and on the phone the offer also sits under the editor because the conversation
 there is a sheet. Nothing moved in DEV-19b: the editor, Save version, the
-version dropdown and the text-box names are exactly as D13 left them. Still
-waiting on designs that
-are open: a ticket for the **Rows** tab is written when **D15** is. **DEV-21
+version dropdown and the text-box names are exactly as D13 left them. **D15's approval on
+2026-09-22 added DEV-54 and DEV-55**, the Rows tab and a row's drawer: a
+read-only fourth tab on a type's page showing what is sitting in its lane
+table and, in words, why each row cannot post. Nothing on it writes, and the
+drawer's one button only opens the deck in the batch it came from. **DEV-21
 gained its text-box copy contract on 2026-09-22**, when D14 was approved in
 dark and light: Name, Written by and a measured character limit above Font, a
 box added by hand arriving named **Text Box 1** rather than unnamed, and the
@@ -79,7 +81,7 @@ comes after everything it depends on.
 | Phase | Tickets | Ends with |
 |---|---|---|
 | 0. Prerequisites | DEV-00 | Keys, access and dependencies in place |
-| 2. The middle | DEV-01 to DEV-20 | A generator-made batch for each of Glow Up and Covered Eye, posted live |
+| 2. The middle | DEV-01 to DEV-20, and DEV-54 to DEV-55 | A generator-made batch for each of Glow Up and Covered Eye, posted live |
 | 3. The front | DEV-21 to DEV-26 | A new carousel type made in the Studio, first batch reviewed, not yet wired |
 | 4. The back | DEV-27 to DEV-31, and DEV-41 | That type wired and posting; libraries fillable by upload and Higgsfield |
 | 5. Learning | DEV-32 to DEV-40, DEV-42 to DEV-47 | Trends opens on a searchable, filterable feed of the carousels a person has not seen, opens a post's details, analysis and transcription, reads digests, proposes rules, and opens references in the Studio |
@@ -810,6 +812,99 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
 
 - **Done when:** each screen matches its design in both themes at both
   widths, with numbers that match a direct query.
+
+### DEV-54. The Rows tab: what is sitting in the lane
+
+- **Size:** M.
+- **Depends on:** DEV-19a (the type page and its tabs).
+- **Designs:** D15 (D7). **Flows:** F18.
+- **Why** (Garreth, 2026-09-21): a lane says nothing is postable and has 240
+  rows in it, and no screen answers *why*. Inventory gives the number; the
+  batch page says what the generator did in one run; neither says a row is
+  sitting there with no caption.
+- **Read-only.** Nothing on this tab writes. There is no accent button, no
+  hold, no delete. If a ticket ever wants to change a row from here, it is a
+  new decision by Garreth, not an extension of this one.
+- **Build:**
+  - A fourth tab, **Rows**, between Writing and Go Live, at `?tab=rows`. The
+    panel ids and state names keep the words the docs and the database use.
+  - One query per page against the type's lane table, named from
+    `content_type_registry` — **never** an interpolated table name from the
+    URL. Fifty rows a page, newest first, with a total and a count of the
+    rows that are ready to post. Two numbers, one round trip.
+  - **A fixed set of columns**, because these tables are 32 to 66 columns wide
+    and no two are alike: slide 1 as a thumbnail, the id, the caption, the
+    music, the posting date and the profile where there are any, and the
+    status. Stacked rows on the phone, with the date and the profile leading
+    the quiet line and the music taking what room is left. Tabular figures.
+  - **The status is derived, not stored**, and its words are fixed:
+    **Ready**, **No caption**, **Not gatekept**, **Not rendered**,
+    **Assigned**, **Posted**. Derive in SQL, in one place, so the list and the
+    counts line can never disagree:
+    - `posted_at` present → **Posted**
+    - else assigned to a profile with a date → **Assigned**
+    - else no slide 1 → **Not rendered**
+    - else no caption → **No caption**
+    - else `gatekeep_status` is not the gate's pass verdict → **Not gatekept**
+    - else → **Ready**, and only these count in *n ready to post*
+  - **Tone:** Ready is the ok green; **No caption** and **Not gatekept** are
+    the warn amber; the rest are the plain neutral pill. No new colour. The
+    split is *is anything going to move this row by itself?* — see F18.
+  - A row with no slide 1 shows an **empty dashed frame** where the thumbnail
+    goes, not a broken image and not a spinner.
+- **Two empty states**, both filling the card to the bottom of the screen with
+  the shared `EmptyState` (every ancestor a flex column; `FillAncestors` for
+  Safari):
+  - **Not wired:** no lane table exists. *No rows until this type goes live*,
+    with a secondary **Go Live** that switches tabs. No counts line.
+  - **Wired and empty:** the counts line reads *0 rows · 0 ready to post*, and
+    the state under it says *No rows yet*.
+- **Fails:** the lane table cannot be read — a type wired outside the app, or
+  a table since renamed. Say so where the counts line goes, with **Retry**.
+  **Never fall back to an empty table**, which reads as "nothing here" and is
+  the opposite of the truth.
+- **Watch:** the two amber states cannot be produced by the generator — a deck
+  that fails at writing is flagged in its batch and no lane row is written
+  (F2), and the lane row carries the gate's verdict, never `'pending'`. Every
+  row in those states came from the old n8n path. Do not "fix" this by hiding
+  them; they are the reason the tab exists.
+- **Done when:** a wired type with rows shows them fifty a page in both themes
+  at both widths, the counts line and the status column agree with a direct
+  query against the lane table, both empty states reach the bottom of the
+  screen, and nothing on the tab issues a write.
+
+### DEV-55. A row's drawer, and the way back to its deck
+
+- **Size:** S.
+- **Depends on:** DEV-54.
+- **Designs:** D15 (D7). **Flows:** F18 steps 4 and 5.
+- **Why** (Garreth, 2026-09-21): the fixed columns are a readable summary; the
+  drawer is the whole truth, and an empty column is the answer to why a row
+  cannot post.
+- **Build:**
+  - A whole row opens a drawer: **every column that row has, in the table's
+    own order** — the only order a lane table reliably gives — with an empty
+    one shown as a dash rather than left out. Read the column list from the
+    table itself, so a lane with 66 columns needs no code change. The head
+    carries the id, the column count and the status pill.
+  - **Desktop:** in from the side, so the table is still read behind it.
+    **Phone:** the sheet Preview and the Conversation already use, with each
+    column's **name over its value** — side by side, a URL breaks across three
+    lines at 390px. Escape and X close it either way.
+  - A strip of the deck's slides across the top; a row with nothing rendered
+    gets the same empty dashed frames as the table.
+  - **One secondary button, Open the deck**, pinned under the scrolling
+    columns so it survives thirty-six of them. It opens that deck in the batch
+    it came from — always a finished batch, since a lane row exists only after
+    render and approve. **It changes nothing**; it points at the screen that
+    already owns the fixing.
+  - **A row with no batch has no button** — the old n8n rows have nowhere to
+    go. Do not disable it and do not explain it: the `batch` column in the
+    list reads as a dash, which says why. This tab carries no instruction text.
+- **Done when:** a row with 36 columns and one with 66 both open a drawer
+  listing every column in table order in both themes at both widths; the
+  caption column of a **No caption** row reads as a dash; **Open the deck**
+  lands on that deck in its batch; and a row with no batch shows no button.
 
 ### DEV-20. Phase 2 live proof
 

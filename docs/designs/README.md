@@ -50,8 +50,8 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
 - **D13, D13b, D14, D15 and D17 have no canvas of their own either**
   (Garreth, 2026-09-21), for the same reason. They change and extend screens that
   already exist, so their boards are new last rows on the canvases those
-  screens own. **D13, D13b and D14 were all approved on 2026-09-22;
-  D15 and D17 are still open, and D15 is next.**
+  screens own. **D13, D13b, D14 and D15 were all approved on 2026-09-22;
+  D17 is still open.**
   - **D13** (Direction → **Writing**, Wiring → **Go Live**, Writing required)
     — **D1**, **D2** and **D7**, all three saved in dark and light. Boards
     that showed the old names were redrawn in place on those pages, not added
@@ -79,7 +79,15 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
     full**: the five new boards took each from 13.9 MB to 15.9 MB, against a
     16 MB ceiling, so the next ticket that *adds* a Studio board cannot go on
     them and needs a canvas of its own.
-  - **D15** (the **Rows** tab) — **D7**.
+  - **D15** (the **Rows** tab) — **D7**, dark and light, desktop and phone.
+    **APPROVED in dark and light 2026-09-22**, drawn the same day as the last
+    two rows of D7's canvas (version 7), eight boards a theme. Placed **without `--theme`**, the way D13
+    and D13b were, because the new tab appears in both themes at once.
+    **D7's canvas is now full**: those boards took it from 10.4 MB to 15.5 MB
+    against a 16 MB ceiling, so one extra board was left off (a drawer on a
+    row that has everything) and **D17, which also targets D7, cannot simply
+    add to it** — it needs the canvas split by theme, "Dark (D7 Type page)"
+    and "Light (D7 Type page)", the way D6's and D10's are.
   - **D17** (dragging and `@`-typing a text box's name into the Writing and
     the Conversation) — **D7**. Raised 2026-09-22; it extends D13's own
     text-box row, and leans on **D14** for the names it points at.
