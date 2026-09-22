@@ -2536,10 +2536,21 @@ the edges are tested, not just the happy middle.
   four counts, the Carousel types section — and **DEV-60** in Phase 5 for
   Trending Carousels and Saved, which read the reference library. DEV-14 moved
   to the new address.
-  **What is left is on `main`, after this branch is merged:** the shared-shell
-  job — the menu gained **Overview**, so every other ticket's canvas is
-  re-placed and the prototype rebuilt — and the Overview screen added to the
-  prototype as the landing. **This one adds a screen, so by
+  **The `main` work is done, 2026-09-22:** the shared-shell job — the menu
+  gained **Overview**, so all thirteen other canvases were re-placed from their
+  build files and now show the six-item menu — and the Overview screen added to
+  the **prototype as its landing** (version 31). The click-through was run over
+  every screen, not just the new one: each board's own component was driven in
+  Node, pressing 22,287 controls a board, opening every menu item from every
+  screen, the phone drawer and the desktop Collapse; nothing threw and no screen
+  took a name the shell needs. Each screen was then drawn twice, once with every
+  screen's CSS present and once with only its own, and nine of the eleven came
+  out identical to the pixel on both sizes; the batch screen animates, so its
+  two pictures never match (the same board drawn twice differs from itself), and
+  Overview's own two differ by 529 pixels of 1.3 million, none by more than
+  4/255, in one 64×93 box over two card titles — invisible side by side, and on
+  **no screen Garreth has already approved**. The rule behind those pixels was
+  not tracked down. **This one adds a screen, so by
   the standing rule it gets a canvas of its own** (`docs/designs/README.md`: a ticket that extends existing screens
   is drawn on theirs; a ticket that adds a screen still gets its own) — unlike
   D13, D14 and D15, which change screens that already exist. Name it

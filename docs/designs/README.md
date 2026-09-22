@@ -121,6 +121,18 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   other ticket's boards show the old five-item menu until they are re-placed.
   By the rule below that is a `main` job of its own: once D16 is approved,
   re-place every ticket and rebuild the prototype.
+  **That job was done on 2026-09-22**: all thirteen canvases re-placed from
+  their build files (D6 and D10 a theme at a time, the other nine in one pass)
+  and the prototype rebuilt with Overview as its landing. The Overview row
+  costs about **830 bytes an artboard**, which is what the two full canvases
+  had to absorb: **D6 dark and D6 light each went to 15.96 MiB of the 16 MiB
+  a canvas may hold — about 45 KB spare, so neither will take another board**,
+  and D7 went to 15.7 MiB with about 320 KB spare. Re-placing **D10 also
+  brought its canvas up to its build file**, which had moved on since the
+  canvas was last saved: round three's `t10railCls` renaming and the phone
+  sheet's drag handler were in the repo but not on the boards. That is what a
+  re-place is for — the build file is the drawing, the canvas is a copy of
+  it — but it means D10's boards changed by more than the menu row.
 - **Saving a ticket.** Steps 3–6 below read and save **that ticket's own
   canvas**. Step 4 runs `place-ticket.mjs --ticket DN` without `--theme` for a
   canvas that holds both themes, and with `--theme dark` or `--theme light`
@@ -174,9 +186,9 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   on 2026-09-15, so that file holds the whole screen and D11's keeps only its
   own review moments and image names.
 - **The prototype** is the click-through of every approved screen (a desktop
-  artboard and a phone artboard; holds D1 to D10, with D11, D12, D13, D13b,
-  D14 and D15 riding in on the screens they extend — version 29, 2026-09-22;
-  the older
+  artboard and a phone artboard; holds D1 to D10 and **D16**, with D11, D12,
+  D13, D13b, D14 and D15 riding in on the screens they extend — **version 31,
+  2026-09-22, which opens on Overview**; the older
   `claude.ai/code/artifact/94d569f8-…` form opens the same artifact). Two
   states stay pictures on their own canvases rather than clicks here (Garreth,
   2026-09-22): a type with **nothing written** (D13b), because the prototype

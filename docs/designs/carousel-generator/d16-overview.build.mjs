@@ -721,6 +721,12 @@ export function overviewScreen({ firstRun = false, noTasks = false, noSaved = fa
   };
 }
 
+/** D8's library shots under D16's names, so this ticket owns every image key it uses. The prototype
+    calls this the way it calls D2's, D5's and D10's; the review build below copies the same files. */
+export function copyOverviewImages(OUT) {
+  for (const id of IMAGES) fs.copyFileSync(path.join(HERE, "assets", `d8-img-${id}.jpg`), path.join(OUT, `d16-img-${id}.jpg`));
+}
+
 /* ── Review artboards ──────────────────────────────────────────────────── */
 
 function build(OUT) {
@@ -732,7 +738,7 @@ function build(OUT) {
   if (clash.length) throw new Error(`D16 takes names the shell uses: ${clash.join(", ")}`);
 
   fs.mkdirSync(OUT, { recursive: true });
-  for (const id of IMAGES) fs.copyFileSync(path.join(HERE, "assets", `d8-img-${id}.jpg`), path.join(OUT, `d16-img-${id}.jpg`));
+  copyOverviewImages(OUT);
 
   const BOARDS = [
     { file: "Main.dc.html", title: "D16 · Overview: Today, Running Tasks, Carousel types · Desktop", x: 0, y: 0 },
