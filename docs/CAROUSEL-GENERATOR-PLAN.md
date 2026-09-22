@@ -1121,16 +1121,25 @@ ran under, so History can answer "which instruction produced this".
 
 **Three states** (D13):
 
-- **Empty** — a type saved out of the Studio with nothing written yet. The
+- **Empty** — a type with nothing written yet. The
   editor carries a grey placeholder showing the shape of a good instruction
   rather than an instruction to write one, gone the moment anything is typed:
   *who is speaking, and to whom · what each slide has to do · the words to
-  use, and the words never to use · how the caption should read*.
+  use, and the words never to use · how the caption should read*. **The
+  conversation beside it is not a blank card** (D13b, approved 2026-09-22):
+  it fills its own card and carries one offer, **Write a first draft**, made
+  from the active template and its slides. Its box asks *What should this
+  type sound like?* until a first version is saved, and *What should change?*
+  after. On a phone the conversation is a sheet, so the same offer also sits
+  under the editor.
 - **Pre-filled and not saved** — when a template was drafted from a reference
   the AI has already written a note describing the construction. That text
   opens in the editor as unsaved, under a neutral **Not saved** pill. It does
   **not** count as written: the requirement is met by a person having read it
-  and pressed Save version, not by the field being non-empty.
+  and pressed Save version, not by the field being non-empty. **A first draft
+  asked for in the conversation lands in exactly this state** (D13b), so a
+  type made in the Studio and a type made any other way reach a first Writing
+  the same way.
 - **Saved** — the ordinary case.
 
 **Writing is required before a type can generate**, and the stop sits on the
@@ -1763,7 +1772,8 @@ Decided by Garreth on 2026-09-18 and 2026-09-19, in D10's third round
 | 53 | Where the designs live | **One canvas a ticket** (D6 and D10 one a theme), since 2026-09-18 (`docs/designs/README.md`). |
 
 Decided by Garreth on 2026-09-21, in the session on how a new content type
-gets written and wired (design tickets D13, D14 and D15, open):
+gets written and wired (design tickets D13 and D13b, **both approved
+2026-09-22**; D14 and D15 still open):
 
 | # | Question | Decision |
 |---|---|---|
@@ -1771,6 +1781,7 @@ gets written and wired (design tickets D13, D14 and D15, open):
 | 55 | What the copy instruction is called on screen | **Writing**, replacing Direction, because "direction" reads as how the carousel looks and this field only changes how the copy is written. Over "Copy" (collides with Duplicate) and "Voice" (too narrow). D13. |
 | 56 | What the Wiring tab is called on screen | **Go Live** — *Writing* and *Wiring* are one letter apart and sit in the same tab row, and Go Live says what it does. The database step keeps the name `wire` in the code and the runbook. D13. |
 | 57 | May a type generate with no writing instruction? | **No — but the stop is on the Generate form, not on the card.** Generate on the Carousel types card and in the type page's header stays an ordinary, pressable button, with a neutral **Needs writing** pill beside it saying what is missing; pressing it opens the Generate form as always. The form is what enforces the requirement: its Writing row is drawn in the danger stroke reading *No writing*, and **Generate at the foot of the form is unavailable until everything required is filled** — exactly as it already behaves for a missing image library or an empty image set. One rule instead of two: *Generate always opens the form; the form names what is missing.* (Garreth, 2026-09-22, after seeing the first round drawn: making the card's button dead created a dead end, because the only screen that could explain the problem was the one you could no longer reach.) The Studio's drafted note pre-fills the editor but does not count as saved, so a person has read it. Supersedes §4.7's "Save as content type … creates the standing direction". D13. |
+| 57b | Where does a type that was not made in the Studio get a first Writing? | **From the conversation on the Writing tab, which offers one first draft** built from the active template and its slides — the same offer, whatever made the type. It lands in the editor **unsaved**, under the same **Not saved** pill the Studio's own note gets, so item 57 is untouched: Save version is still the press a person makes, and the requirement is still met by someone having read the text. The alternative considered and dropped was leaving the panel blank until something is written, which is what D13 shipped: it asks a person to write a standing instruction from a blank page while the one thing on the screen that could help says nothing. The box is given a second wording for that state (*What should this type sound like?*), and on a phone — where the conversation is a sheet behind a floating button, so an empty panel is never on screen — the offer is repeated under the editor rather than hidden a press away. (Garreth, 2026-09-22.) D13b. |
 | 58 | How does the writer know what goes in each text box? | **The box is named**, and the name is its role in the copy contract, which also carries who writes it (AI, fixed, per batch) and how many characters fit. The Studio gains a Name field; the limit is measured from the box's wrap width and fonts rather than typed. No per-box description — what a box is for is said in the type's Writing, one place not two, with the box names listed beside that editor. D14. |
 
 Decided by Garreth on 2026-09-22, on the generator's front page (design

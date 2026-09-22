@@ -50,8 +50,8 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
 - **D13, D13b, D14 and D15 have no canvas of their own either** (Garreth,
   2026-09-21), for the same reason. They change and extend screens that
   already exist, so their boards are new last rows on the canvases those
-  screens own. **D13 was approved on 2026-09-22; D13b, D14 and D15 are still
-  open, and D13b is taken first.**
+  screens own. **D13 and D13b were both approved on 2026-09-22;
+  D14 and D15 are still open, and D14 is next.**
   - **D13** (Direction → **Writing**, Wiring → **Go Live**, Writing required)
     — **D1**, **D2** and **D7**, all three saved in dark and light. Boards
     that showed the old names were redrawn in place on those pages, not added
@@ -63,7 +63,11 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
     dark and light, desktop and phone. Added 2026-09-22 off D13's own *Writing,
     nothing written yet* board, where the Conversation is a blank card. It is
     numbered 13b so the queue reads off the numbers without renumbering D14 to
-    D16.
+    D16. **Approved 2026-09-22**, drawn and placed the same day (version 5 of
+    D7's canvas): five new
+    boards a theme in a last row, and D13's two *nothing written yet* boards
+    redrawn in place rather than added beside. Placed **without `--theme`**,
+    the way D13 was, because both themes were drawn together.
   - **D14** (naming a text box) — **D6 · Dark**, **D6 · Light**, and **D11**
     for the same inspector section on a layered slide.
   - **D15** (the **Rows** tab) — **D7**.

@@ -20,7 +20,17 @@ moved with the screens on approval: `?tab=writing` and `?tab=go-live`.
 **What D13's approval added to the tickets below.** **DEV-15** gained the
 required-Writing state and the Note's placeholder; **DEV-19b** gained the
 empty Writing editor with its guiding placeholder, the not-saved draft state
-and the list of the template's text-box names. Still waiting on designs that
+and the list of the template's text-box names.
+
+**What D13b's approval added (Garreth, 2026-09-22).** **DEV-25**, the Writing
+conversation, gained the whole of it: on a type with nothing written the panel
+fills its card and offers **one first draft** from the active template and its
+slides, the draft lands unsaved in the same place the Studio's note does, the
+box asks *What should this type sound like?* until a first version is saved,
+and on the phone the offer also sits under the editor because the conversation
+there is a sheet. Nothing moved in DEV-19b: the editor, Save version, the
+version dropdown and the text-box names are exactly as D13 left them. Still
+waiting on designs that
 are open: **DEV-21** gains the text-box Name field when **D14** is approved,
 and a ticket for the **Rows** tab is written when **D15** is.
 
@@ -973,8 +983,33 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
   shows as a difference against the active text. **Save version** saves it,
   recording the cited rule keys; the bot never saves. A failed call shows
   under the message with Retry.
+- **From the approved D13b (Garreth, 2026-09-22) — a type with nothing
+  written:**
+  - **The empty panel fills its card**, in `EmptyState`'s shape: a muted
+    circle, the line *Nothing written for this type yet.*, and under it one
+    **secondary** button, **Write a first draft**, with *from the active
+    template and its n slides* beneath. Secondary matters: Save version is
+    the tab's only accent.
+  - **The offer sends one prompt** built from the type's active template and
+    its slides — how many there are, their size, and what each box is for —
+    and the answer lands in the editor **unsaved**, under the same **Not
+    saved** pill DEV-19b draws for the Studio's note. The same code path, so
+    a Studio-made type and any other type end in the same state. Save version
+    stays a person's press, so the Writing requirement does not move.
+  - **The box has two placeholders**, on whether a version has ever been
+    saved: *What should this type sound like?* before the first, *What should
+    change?* after. One input, no new control.
+  - **The offer's own failure** is the existing failed shape — the message
+    with **Retry** — and the editor is left empty.
+  - **On the phone** the conversation is a sheet behind the floating button,
+    so the same offer also renders under the empty editor, above the
+    text-box names. One wording in both places. The button's dot means
+    something new is waiting in the conversation, a suggestion or a first
+    draft.
 - **Done when:** a direction change proposed in the chat is saved as a new
-  version with its cited rules, by query.
+  version with its cited rules, by query; and a type with no Writing reaches
+  a saved first version through the offer alone, on desktop and on a phone,
+  without the field ever being filled by anything but a person's press.
 
 ### DEV-26. First batches for types that are not wired
 
