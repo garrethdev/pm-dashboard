@@ -20,6 +20,71 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — The bell now tells you the day's work, and shouts about a stuck post
+
+**Where it came from:** ticket PF-12, and a decision Garreth made while it was
+being scoped.
+
+**It was going to be an email; it is a notification instead.** PF-12 was
+written as a robot job that would send a reminder email each morning and a
+second email whenever a post got stuck. Garreth replaced both with the bell in
+the top right of the dashboard (2026-09-22). That turned out to suit the work
+better than the email would have, because neither of these is really an event
+worth mailing about — they are conditions. The bell works them out fresh every
+time it is opened, so they correct themselves: the moment the last post is
+ticked off, both disappear on their own, with nothing left to tidy up and
+nothing sitting in an inbox saying something that stopped being true an hour
+ago. No robot job was built and nothing new is stored.
+
+**"8 things to do today."** One notification for the whole day, not one per
+phone, counting the posts waiting to go out and the warmups owed together —
+the same number you see when you open the To-do page. Underneath it says what
+those are made of and how many phones they are spread over. Clicking it opens
+the To-do list. It can be marked read like anything else in the bell, which
+clears it for the rest of the day; tomorrow's arrives as a new one, because
+the thing that remembers it was read is stamped with the date. Warmups on an
+account set to Automated are left out of the count on purpose: those are the
+script's work, and asking Yurie for something she cannot do would make the
+number a lie.
+
+**"2 posts overdue," in red.** A post that has sat untouched for a full day
+gets its own notification rather than being folded into the daily one, because
+"here is today's work" is routine and "this has been sitting for a day" is a
+fault, and folding the second into the first is how a fault gets skimmed past.
+The day is measured from when the post was handed out; the Posting Agent hands
+the day's posts out at 10:00 ET, so anything untouched at the same hour the
+next day has had a full working day go by.
+
+**The case that would otherwise be invisible.** An unfinished post drops off
+the To-do list after three days and stops being offered. Until now, a post that
+got that far simply vanished — still waiting to go out, still counted as unused
+content, and shown nowhere in the app. The overdue notification counts those
+too, and says so in its own words when it has one: "past the three-day
+carry-over, so it is no longer on the to-do list." That way the notification
+does not send somebody to a page the post is missing from.
+
+**Both are Physical only.** Neither appears while the switch at the top right
+is on Cloud (Garreth's call). Worth writing down that this is the opposite of
+what PF-20 proposes for the bell in general — that the bell should be the one
+place showing both fleets — so if a stuck post is ever missed because somebody
+was sitting in Cloud, this is the decision to revisit.
+
+**One change outside the ticket.** The bell's unread dot is now red on anything
+critical instead of always blue. It had to be, for the overdue post to read as
+red at all — the bell had never used the seriousness of an item to colour it.
+It also colours the alert that was already there: a group of accounts failing
+warmup has always been marked critical and has never once looked it.
+
+**How much of this has been proven:** all of it, against test phones and posts
+created for the purpose and deleted afterwards — each wording checked with real
+rows behind it, including a post pushed past the three-day carry-over, and both
+notifications watched disappearing when the work was marked done. The database
+is back to exactly the state it started in. **What has not happened:** no real
+phone, no real account and no real post has ever been through this, because
+none exists yet. And the daily reminder has not yet been seen to roll over a
+real midnight — that it will is a matter of the date stamped on it changing,
+not of anything that was run.
+
 ## 2026-09-22 — Posts made by hand now count everywhere they should
 
 **Where it came from:** tickets PF-09 and PF-19, built together because they

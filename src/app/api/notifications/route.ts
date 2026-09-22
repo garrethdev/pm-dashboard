@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { getNotifications, markNotificationsRead } from "@/lib/data/notifications";
 import { actingUserEmail } from "@/lib/data/writes";
+import { getFleet } from "@/lib/fleet-server";
 
 /**
  * GET  → the bell feed for the signed-in person, each item flagged read/unread.
@@ -16,7 +17,10 @@ export async function GET() {
   const denied = await requireSession();
   if (denied) return denied;
   try {
-    const items = await getNotifications(await actingUserEmail());
+    // The fleet comes from this person's own cookie: PF-12's two to-do items
+    // are shown in Physical only, so the same bell differs per viewer.
+    const [email, fleet] = await Promise.all([actingUserEmail(), getFleet()]);
+    const items = await getNotifications(email, fleet);
     return NextResponse.json({
       items,
       count: items.length,

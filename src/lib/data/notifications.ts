@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
 import { sbRest } from "@/lib/data/supabase";
+import { getOpenDeliveries } from "@/lib/data/post-deliveries";
+import { getTodoBoard } from "@/lib/data/todo";
+import { dayRangeET } from "@/lib/data/warmup-sessions";
+import type { Fleet } from "@/lib/fleet";
 import {
   categoryLabel,
   joinList,
@@ -141,6 +145,164 @@ async function warmupFailNotifications(): Promise<NotificationItem[]> {
   return items;
 }
 
+/**
+ * How long a post may sit `queued` before the bell calls it overdue.
+ *
+ * A day, measured from the hand-out (Garreth, 2026-09-22). The Posting Agent
+ * hands the day's posts out at 10:00 ET, so anything still untouched at the
+ * same hour tomorrow has had a full working day pass it by.
+ */
+const OVERDUE_HOURS = 24;
+
+/** The New York calendar date of an instant, as YYYY-MM-DD. */
+function etDayOf(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(d);
+}
+
+function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/**
+ * The phone farm's two bell items — PF-12.
+ *
+ * PF-12 was written as an n8n job that emailed a morning reminder and a
+ * stuck-post alert. Garreth replaced the email with the bell (2026-09-22), and
+ * that turned out to suit the work better: both of these are CONDITIONS rather
+ * than events, so they belong with the recomputed half of this file, next to
+ * the warmup failures, not in `dashboard_notifications`. Neither needs a row
+ * written at midnight, and both clear themselves the moment the work is done —
+ * there is nothing to tidy up when Yurie finishes her list.
+ *
+ * ONE — today's work. A single item for the whole day (Garreth, 2026-09-22),
+ * not one per phone, counting posts and warmups together because that is the
+ * number she sees when the page opens. Its key carries the New York date, so
+ * marking it read clears it for today and tomorrow's arrives as a new item.
+ *
+ * TWO — posts gone stale. Its own item, in red, because "here is today's work"
+ * is routine and "this has sat for a day" is a fault, and folding the second
+ * into the first is how a fault gets skimmed past. Keyed per delivery like the
+ * warmup cohort, so a newly stuck post reopens it and one that gets posted
+ * does not drag the others back.
+ *
+ * PHYSICAL ONLY (Garreth, 2026-09-22). Both items are hidden from anyone with
+ * the switch on Cloud, including the overdue one. Worth knowing that this is
+ * the opposite of what PF-20 proposes for the bell in general — that the bell
+ * is the one place showing both fleets — so if a stuck post is ever missed
+ * because somebody was sitting in Cloud, this is the decision to revisit.
+ */
+async function todoNotifications(): Promise<NotificationItem[]> {
+  const now = new Date();
+  const { from: dayStart } = dayRangeET(0, now);
+  const day = etDayOf(dayStart);
+
+  const [board, open] = await Promise.all([
+    getTodoBoard(0, now),
+    getOpenDeliveries().catch(() => []),
+  ]);
+
+  const items: NotificationItem[] = [];
+
+  // --- One: what is still outstanding today -------------------------------
+  let posts = 0;
+  let warmups = 0;
+  const phones = new Set<string>();
+  // Every delivery the list is actually showing today, so the overdue item
+  // below can tell a stuck post apart from a stranded one.
+  const onList = new Set<string>();
+
+  for (const device of board.devices) {
+    for (const account of device.accounts) {
+      for (const item of account.items) {
+        if (item.kind === "post") onList.add(item.id);
+        if (item.status !== "todo") continue;
+        // An Automated account's warmups sit on the list as items nobody can
+        // tick (P4). They are the script's work, not a person's, so counting
+        // them here would ask Yurie for something she cannot do.
+        if (item.automated) continue;
+        if (item.kind === "post") posts += 1;
+        else warmups += 1;
+        phones.add(device.id);
+      }
+    }
+  }
+
+  const total = posts + warmups;
+  if (total > 0) {
+    // The count is one number because that is what the page shows; the
+    // breakdown goes in the body, where it explains the number without
+    // splitting the item in two.
+    const parts: string[] = [];
+    if (posts > 0) parts.push(plural(posts, "post"));
+    if (warmups > 0) parts.push(plural(warmups, "warmup"));
+    items.push({
+      id: `todo_today:${day}`,
+      // Dated, so today's can be dismissed and tomorrow's still arrives.
+      markKeys: [`todo_today:${day}`],
+      type: "todo_today",
+      category: categoryLabel("todo_today"),
+      severity: "info",
+      title: `${plural(total, "thing")} to do today`,
+      body: `${joinList(parts)}, across ${plural(phones.size, "phone")}`,
+      target: null,
+      href: "/todo",
+      // The start of the New York day rather than the moment this ran: a
+      // timestamp that moved on every read would reshuffle the feed under
+      // somebody reading it.
+      at: dayStart.toISOString(),
+      read: false,
+    });
+  }
+
+  // --- Two: posts that have gone stale ------------------------------------
+  const cutoff = now.getTime() - OVERDUE_HOURS * 3_600_000;
+  const overdue = open
+    .filter((d) => Date.parse(d.createdAt) <= cutoff)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  if (overdue.length > 0) {
+    const oldest = overdue[0]!;
+    const hours = Math.floor((now.getTime() - Date.parse(oldest.createdAt)) / 3_600_000);
+    const waited = hours >= 48 ? plural(Math.floor(hours / 24), "day") : plural(hours, "hour");
+    // A post stops carrying over after three days (todo.ts), so it can be
+    // queued, overdue, and no longer on the list at all. That is the worst
+    // case, not an edge case — nothing else in the app would show it — so the
+    // body says so rather than sending somebody to a page it is missing from.
+    const stranded = overdue.filter((d) => !onList.has(`d${d.id}`)).length;
+    const waiting = `The oldest has been waiting ${waited}`;
+    let body: string;
+    if (stranded === 0) {
+      body = waiting;
+    } else if (stranded < overdue.length) {
+      body =
+        `${waiting}. ${stranded} of them ${stranded === 1 ? "is" : "are"} past the ` +
+        "three-day carry-over and no longer on the to-do list";
+    } else if (overdue.length === 1) {
+      body = `Waiting ${waited}, and past the three-day carry-over, so it is no longer on the to-do list`;
+    } else {
+      body = `${waiting}, and all are past the three-day carry-over, so the to-do list no longer shows them`;
+    }
+    const ids = overdue.map((d) => String(d.id)).sort();
+    items.push({
+      id: `todo_overdue:${createHash("sha1").update(ids.join(",")).digest("hex").slice(0, 8)}`,
+      // One key per delivery, the same reasoning as the warmup cohort above:
+      // a shrinking set stays read, a genuinely new stuck post re-alerts.
+      markKeys: overdue.map((d) => `todo_overdue:${d.id}`),
+      type: "todo_overdue",
+      category: categoryLabel("todo_overdue"),
+      severity: "critical",
+      title: `${plural(overdue.length, "post")} overdue`,
+      body,
+      target: null,
+      href: "/todo",
+      at: oldest.createdAt,
+      read: false,
+    });
+  }
+
+  return items;
+}
+
 /** "Profile 34" -> "34". Empty when the target is not a numbered profile. */
 function profileNum(target: string | null): string {
   return String(target ?? "").replace(/\D/g, "");
@@ -214,20 +376,30 @@ async function readKeys(userEmail: string): Promise<Set<string>> {
 }
 
 /**
- * Combined bell feed: stored retire completions + recomputed warmup failures,
- * each flagged with whether THIS person has seen it.
+ * Combined bell feed: stored retire completions, recomputed warmup failures
+ * and — in Physical only — the phone farm's day (PF-12), each flagged with
+ * whether THIS person has seen it.
  *
  * A failed read of the read-state is not a failed feed — the bell still shows
  * the items, just all unread. Louder than the truth beats an empty bell.
  */
-export async function getNotifications(userEmail: string): Promise<NotificationItem[]> {
-  const [stored, warmup, seen] = await Promise.all([
+export async function getNotifications(
+  userEmail: string,
+  fleet: Fleet = "cloud",
+): Promise<NotificationItem[]> {
+  const [stored, warmup, todo, seen] = await Promise.all([
     storedNotifications().catch(() => [] as NotificationItem[]),
     warmupFailNotifications().catch(() => [] as NotificationItem[]),
+    // Physical only (Garreth, 2026-09-22) — see todoNotifications. Not even
+    // attempted in Cloud, so a broken to-do read cannot slow the bell down for
+    // people who would never have seen these items anyway.
+    fleet === "physical"
+      ? todoNotifications().catch(() => [] as NotificationItem[])
+      : ([] as NotificationItem[]),
     readKeys(userEmail).catch(() => new Set<string>()),
   ]);
   return (
-    [...stored, ...warmup]
+    [...stored, ...warmup, ...todo]
       // Read once every key behind it has been seen. For a single-key item that
       // is the old behaviour exactly; for a grouped warmup alert it means a new
       // failing account reopens it and a recovering one does not.

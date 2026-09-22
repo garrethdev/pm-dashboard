@@ -152,7 +152,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. Shows warmups only until PF-06 hands posts out |
 | PF-11 | Post-ban branch for manual accounts | Intermediate | **Unblocked by PF-01 since 2026-09-18** (this row was stale until 2026-09-22). Waiting on its SCREEN instead: the ban checklist is design ticket P8, not started |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
-| PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | **Ready now** — PF-07 landed 2026-09-22 |
+| PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
 | PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
 | PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
@@ -522,13 +522,47 @@ spot.
 *Done when:* a manual account with two failed deliveries in 7 days shows the
 same delivery-failure reason a Geelark account would.
 
-## PF-12 · Morning reminder + stale-item alert — Blocked by PF-07 (PF-05 landed 2026-09-22)
+## PF-12 · Day's work + stale-post alert — Done 2026-09-22
 
-n8n: the day's queued deliveries per device each morning; an alert when a
-delivery sits `queued` past 24 h. A human queue strands more easily than a
-robot.
-*Done when:* one morning email received and one stale alert fired on a test
-row.
+Was: n8n emails the day's queued deliveries per device each morning, plus an
+alert when a delivery sits `queued` past 24 h. A human queue strands more
+easily than a robot.
+
+**No email (Garreth, 2026-09-22): the bell instead.** Asked who the morning
+email should go to, he answered "there should be no email, and instead just a
+notification in the dashboard app." So no n8n workflow was built and nothing
+is stored — both halves are recomputed bell items in `notifications.ts`,
+beside the warmup-failure alert, because each is a CONDITION rather than an
+event and clears itself when the work is done.
+
+His decisions, all 2026-09-22:
+- **One reminder for the whole day**, not one per phone, and clicking it opens
+  the to-do list.
+- **Dismissible, and back tomorrow.** The read-key carries the New York date.
+- **The stuck post is its own item, in red**, not folded into the reminder.
+- **Posts and warmups counted together** as one number, matching the page.
+- **Physical only**, both items — the fleet switch hides them in Cloud. Note
+  this contradicts PF-20's proposal that the bell shows both fleets and names
+  which; PF-20 should settle the two together.
+
+Two things the build decided, both written up in the code:
+- **Automated warmups are left out of the count** (P4/PF-13): nobody can tick
+  them, so counting them asks for work that cannot be done.
+- **A post past the three-day carry-over still alerts**, and the wording says
+  it is no longer on the list. That post is invisible everywhere else in the
+  app, so it is the case the alert exists for.
+
+Also needed, and outside the ticket: the bell's unread dot is red on a
+critical item. It had never coloured by severity, so "in red" was not
+achievable without it.
+
+*Done when — met:* both items seen in the running app against seeded phones,
+accounts, deliveries and warmup sessions; every branch of the wording
+exercised with real rows, including a stranded post; dismissal proven to
+persist; both proven to vanish when the work is marked done; and proven absent
+in Cloud. All fixtures deleted afterwards — `devices` and `post_deliveries` are
+back to empty. **Not proven with real work:** no phone, account or post
+exists, and the day-rollover has not been watched happen.
 
 ## PF-10 · Comparison view — Blocked by PF-03, PF-04 (PF-05 landed 2026-09-22)
 
