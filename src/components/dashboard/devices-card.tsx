@@ -3,7 +3,6 @@ import { DashCard } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Smartphone } from "@/components/ui/icons";
 import { StatusPill } from "@/components/ui/pill";
-import { MAX_ACCOUNTS_PER_DEVICE } from "@/lib/data/device-rules";
 import { getDevices } from "@/lib/data/devices";
 import { upstreamMessage } from "@/lib/data/upstream-error";
 
@@ -60,8 +59,8 @@ export async function DevicesCard({ className }: { className?: string }) {
                     )}
                   </span>
                   {!d.proofPath && <StatusPill tone="warn">No proof</StatusPill>}
-                  <StatusPill tone={d.accounts.length >= MAX_ACCOUNTS_PER_DEVICE ? "neutral" : "gray"}>
-                    {d.accounts.length}/{MAX_ACCOUNTS_PER_DEVICE}
+                  <StatusPill tone="gray" className="tnum">
+                    {d.accounts.length}
                   </StatusPill>
                 </Link>
               </li>

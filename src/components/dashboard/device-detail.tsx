@@ -25,7 +25,7 @@ import {
   type DeviceFormValues,
 } from "@/components/dashboard/device-fields";
 import type { Platform } from "@/lib/data/accounts";
-import { MAX_ACCOUNTS_PER_DEVICE, proofRefusal } from "@/lib/data/device-rules";
+import { proofRefusal } from "@/lib/data/device-rules";
 import type { Device, DeviceAccount } from "@/lib/data/devices";
 import {
   accountProgress,
@@ -260,7 +260,6 @@ export function DeviceDetail({
   const dirty = (Object.keys(saved) as (keyof DeviceFormValues)[]).some(
     (k) => values[k].trim() !== saved[k],
   );
-  const full = lines.length >= MAX_ACCOUNTS_PER_DEVICE;
 
   async function run(where: string, request: () => Promise<Response>, fallback: string) {
     if (busy) return false;
@@ -369,8 +368,8 @@ export function DeviceDetail({
           <DashCard
             title="Accounts"
             headerAction={
-              <StatusPill tone={full ? "warn" : "gray"} className="tnum">
-                {lines.length}/{MAX_ACCOUNTS_PER_DEVICE}
+              <StatusPill tone="gray" className="tnum">
+                {lines.length}
               </StatusPill>
             }
           >
@@ -401,7 +400,7 @@ export function DeviceDetail({
                 </ul>
               )}
 
-              {!full && device.isActive && (
+              {device.isActive && (
                 <div className="flex gap-2">
                   <select
                     aria-label="Account to add"

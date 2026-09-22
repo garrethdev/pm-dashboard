@@ -93,7 +93,7 @@ purpose; the changelog has them.
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
 | P8 | Add the checklist for a ban on a real phone | Not started |
 | P9 | Add the Live view page and link to it from the dashboard | Not started |
-| P10 | Move accounts onto phones in one step, and several at once | Not started |
+| P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. Building is PF-03 then PF-15 |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
 | P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Part done 2026-09-22.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. Still open: how a stale item looks ON the to-do list |
 | P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | Not started |
@@ -898,16 +898,103 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P10. Move accounts onto phones in one step, and several at once
 
-- **Status:** not started. Today the move is two steps in two places: flip the
-  account to Physical in Settings, then add it to a phone on the device page.
+- **Status:** **APPROVED 2026-09-22.** Drawn in the running app, not on a
+  canvas, and approved after five rounds of feedback. Nothing saves yet:
+  PF-03 builds the single write, PF-15 the batch. Next step is building, not
+  designing.
 - **Backlog:** PF-03, PF-15.
+- **Where to look:** `/settings?demo=1`. The invented phones are the same four
+  the Accounts by-phone view and the To-do screens use, so the three screens
+  describe one farm. Without `?demo=1` the picker says "No phones yet", which
+  is the true state today and is worth seeing too.
 - **Design:** one action that does both: pick the account, pick the phone,
   confirm with a hold. Then the same for several accounts at once, by
   character, for the day a batch of phones arrives. What it says when the
   phone is full, and that it never unpauses anything.
-- **Done when:** a single move and a batch move are approved.
-  Then built in the app to match, and looked at in the running app at both
-  sizes.
+
+### What was drawn, and the decisions behind it
+
+- **The move stays in Settings → Account management**, which already calls
+  itself the one place an account crosses between fleets (Garreth,
+  2026-09-18). PF-03's text says "button on the account page", but that
+  predates the decision that the account page and the Accounts table carry no
+  sign of the fleet at all. No new screen was added.
+- **The phone is picked in the dialog that already flips the fleet.** The two
+  steps were never really two decisions — nobody moves an account to Physical
+  and then wonders which phone. Between them the account sat on the Physical
+  fleet with no phone, and that is the state the To-do list cannot show: the
+  work simply does not appear and nothing says why.
+- **Every phone is listed with how many accounts it holds** — "3 accounts",
+  "0 accounts". A phone that is switched off says so in place of the count and
+  cannot be chosen. Hiding it would leave somebody hunting for a phone that is
+  on the Devices page and not here.
+- **No phone is ever full** (Garreth, 2026-09-22). The first draft refused a
+  fourth account and showed "2 of 3"; he removed the limit, so the count is a
+  count and the only refusal left is a phone that is switched off.
+- **Moving back to Cloud has no picker.** It names the phone the account comes
+  off, and that is all there is to decide.
+- **"Posting stays paused" is on both dialogs**, because the ticket asked for
+  it in as many words. It is the one line of explanation on the screen.
+- **Selecting several is off until asked for.** A checkbox on all thirty-odd
+  cards would be permanent clutter on a screen whose everyday job is moving
+  one account, and the batch matters on the handful of days a box of phones
+  arrives. "Select" turns it on and the toolbar becomes the batch bar.
+- **"By character" needs no new control.** The search already matches the
+  character, so typing "Character 3" and pressing Select all is exactly that.
+  A character dropdown was considered and left out as a second way to do what
+  the search already does.
+- **The batch plan fills one phone before starting the next**, rather than
+  dealing accounts out round-robin, so a character's accounts land together —
+  which is the arrangement the three-per-phone rule exists to produce.
+- **The plan is a suggestion.** Every row has a dropdown, because the person
+  doing the move knows which phone is on which desk and the app does not. A
+  phone over-filled by hand is named and the move is refused, rather than
+  letting the save fail one row at a time.
+- **Nothing runs out of room.** Once every phone has taken its usual three the
+  plan starts again at the first, so a batch bigger than the box still lands.
+  Select all 32 today reads: "32 accounts onto 3 phones." (Three, not four —
+  iPhone 4 is switched off.) The only account that gets no phone is one with
+  no phone to go on at all.
+- **A row can still be set to "Not moving" by hand**, and then the sentence and
+  the button both say so. The button always names the number that will actually
+  happen, never the number selected.
+
+### Seen in the running app
+
+Dark and light, desktop and phone width, in Chrome — not Safari. No horizontal
+scroll at 390px; the batch list scrolls inside its dialog. The empty picker was
+checked on the real page as well as the invented one.
+
+**Found while drawing it, and NOT fixed here:** the hold button's `warn` tone
+measures 3.6:1 against its background in light mode, under the 4.5:1 it needs.
+It is the shared `HoldButton`, so Retire and the existing fleet flip have
+always looked like this; changing it touches every hold in the app. That is
+P13's job, not this ticket's.
+
+- **Done when:** ~~a single move and a batch move are approved.~~ **Met
+  2026-09-22.** Then built in the app to match, and looked at in the running
+  app at both sizes — that half is PF-03 and PF-15.
+
+### Garreth's feedback on the drawn screens, and what it changed
+
+All 2026-09-22, in one pass over the running app:
+
+1. **"The font color here should be black. If white it is hard to read."** —
+   the Move onto phones button in dark mode.
+2. **"The dropdown button contents is not properly inside the container"** —
+   the browser's own arrow was sitting on top of the longest option.
+3. **"Do not limit the number of accounts in one phone to 3. For now, we will
+   only have 3 accounts per phone but in the future there will be more in one
+   phone."** — the cap was removed from every screen and both write paths, not
+   just from this design. See `BACKLOG.md` and the changelog.
+4. **"In light mode, the font color here should be white."** — the same button.
+5. **"The text should not be bold. Just make it the same text as similar
+   buttons we have."**
+
+1, 4 and 5 turned out to be one fault: the button was hand-built rather than
+being the app's own `CtaButton`, the one "Add phone" uses. Using it made all
+three go away at once. **The lesson for the rest of these tickets: a primary
+action is `CtaButton`, never a hand-rolled `bg-accent` button.**
 
 ## P11. Show hand-made posts on the calendar, and prepare the app for retiring Cloud
 

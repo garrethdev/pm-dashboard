@@ -7,7 +7,6 @@ import { FilterPills } from "@/components/ui/filter-pills";
 import { DEVICE_INPUT, errorFrom } from "@/components/dashboard/device-fields";
 import type { PhoneOption } from "@/components/dashboard/accounts-by-phone";
 import { normaliseProfile, normaliseUsername } from "@/lib/data/account-rules";
-import { MAX_ACCOUNTS_PER_DEVICE } from "@/lib/data/device-rules";
 import { PLATFORMS, PLATFORM_LABEL, type Platform } from "@/lib/platform";
 import { deliveryModeOfFleet, type Fleet } from "@/lib/fleet";
 import { cn } from "@/lib/utils";
@@ -90,10 +89,9 @@ export function AddAccountModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, busy]);
 
-  const withRoom = useMemo(
-    () => phones.filter((p) => p.isActive && (p.held ?? 0) < MAX_ACCOUNTS_PER_DEVICE),
-    [phones],
-  );
+  // Every phone that is switched on. It used to be only phones under three
+  // accounts; nothing caps a phone now (Garreth, 2026-09-22).
+  const switchedOn = useMemo(() => phones.filter((p) => p.isActive), [phones]);
 
   const cleanProfile = normaliseProfile(profile);
   const cleanUsername = normaliseUsername(username);
@@ -240,11 +238,11 @@ export function AddAccountModal({
                 <select
                   value={deviceId}
                   onChange={(e) => setDeviceId(e.target.value)}
-                  disabled={busy || withRoom.length === 0}
+                  disabled={busy || switchedOn.length === 0}
                   className={cn(DEVICE_INPUT, "appearance-none")}
                 >
-                  <option value="">{withRoom.length === 0 ? "No phone with room" : "Not yet"}</option>
-                  {withRoom.map((p) => (
+                  <option value="">{switchedOn.length === 0 ? "No phone switched on" : "Not yet"}</option>
+                  {switchedOn.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.model ? `${p.name} · ${p.model}` : p.name}
                     </option>

@@ -1,5 +1,4 @@
 import {
-  MAX_ACCOUNTS_PER_DEVICE,
   PROOF_TYPES,
   type DeviceFields,
 } from "@/lib/data/device-rules";
@@ -238,14 +237,10 @@ export async function assignAccountToDevice(
   if (!changed) {
     throw new DeviceWriteError("That account was just put on a phone by someone else. Refresh and look again.", 409);
   }
-  const held = await countDeviceAccounts(device.id);
-  if (held > MAX_ACCOUNTS_PER_DEVICE) {
-    await patchAccountDevice(accountId, null, device.id);
-    throw new DeviceWriteError(
-      `${device.name} already holds ${MAX_ACCOUNTS_PER_DEVICE} accounts, which is the most a phone can carry. Nothing was changed.`,
-      409,
-    );
-  }
+  // There used to be a re-count here that undid the write when the phone had
+  // gone over three while two people were both adding to it. Nothing caps a
+  // phone any more (Garreth, 2026-09-22 — see ACCOUNTS_PER_PHONE), so the
+  // race it guarded against is no longer a fault: both accounts simply go on.
 }
 
 /** Take an account off a phone. False when it was not on that phone any more. */

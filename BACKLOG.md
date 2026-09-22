@@ -145,7 +145,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-01 | `accounts.delivery_mode` switch | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
-| PF-03 | Move to phone button | Immediate | **Ready now** — PF-01 and PF-02 built 2026-09-18; its screen is design ticket P10, not yet designed |
+| PF-03 | Move to phone button | Immediate | **READY TO BUILD 2026-09-22** — its screen, design ticket P10, is APPROVED. The dialog already asks for the phone; what is left is the write: `/api/accounts/delivery-mode` must also set `device_id` and `moved_to_device_at`, and `MOVE_WRITE_READY` in `delivery-mode-control.tsx` flipped in the same change |
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
@@ -156,7 +156,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
 | PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
-| PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional |
+| PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional. Its screen is designed 2026-09-22 (P10) — the batch dialog exists and plans the moves; only the write is missing |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
@@ -192,7 +192,7 @@ Cloud account page.
 
 One row per physical phone: name, model, iOS version, proxy, timezone,
 whoer.net proof screenshot, `is_active`, notes. `accounts.device_id` nullable
-FK. Rule enforced in the app: at most three accounts per device.
+FK. **No limit on accounts per phone** — the app enforced three until 2026-09-22, when Garreth removed it: three is today's arrangement, not a rule, and a phone will carry more later. `ACCOUNTS_PER_PHONE` survives as the number the batch move fills a phone to before starting the next.
 `geelark_profile` stays as-is for the old fleet.
 *Done when:* Yurie can register a phone with its proof screenshot and see
 which accounts it holds.
@@ -239,11 +239,25 @@ because the app names accounts by that label. No Facebook row exists yet.
   platforms. They will simply never see Facebook, which is right until
   Facebook performance ingest is decided.
 
-## PF-03 · Move to phone — Ready now (PF-01, PF-02 built 2026-09-18); screen is P10, undesigned
+## PF-03 · Move to phone — Screen designed 2026-09-22 (P10); the write is what is left
 
-Button on the account page: pick a device, set `delivery_mode = manual`, record
-`moved_to_device_at`, write an audit row. Does **not** unpause. That date is
-what the comparison view (PF-10) splits on.
+Pick a device, set `delivery_mode = manual`, record `moved_to_device_at`, write
+an audit row. Does **not** unpause. That date is what the comparison view
+(PF-10) splits on.
+
+**Not the account page.** The ticket said "button on the account page", which
+predates Garreth's 2026-09-18 decision that the account page and the Accounts
+table carry no sign of the fleet. P10 put it in Settings → Account management,
+where the fleet flip already lives.
+
+**What P10 already built:** the dialog, the phone picker with its refusals, and
+the rules in `src/lib/data/move-rules.ts`. **What is left:** the route. Today
+`/api/accounts/delivery-mode` sets the fleet and ignores the `deviceId` the
+dialog sends, so a press would half-move an account. A constant named
+`MOVE_WRITE_READY` in `delivery-mode-control.tsx` holds the save shut until
+that is fixed — flip it in the same change, and `moved_to_device_at` needs
+adding to `accounts` (it does not exist yet).
+
 *Done when:* one click does all four and the account shows its phone.
 
 ## PF-04 · `warmup_sessions` + log form — Done 2026-09-22
@@ -619,10 +633,18 @@ handling, not the app. Blocked until the Air has Xcode signed in and the agent
 installed on at least one phone.
 *Done when:* Czedrick sees both phones live from his own Mac and can tap one.
 
-## PF-15 · Batch flips — Blocked by PF-03; optional
+## PF-15 · Batch flips — Screen designed 2026-09-22 (P10); blocked by PF-03; optional
 
 Multi-select Move to phone by character, for when phones arrive in batches.
 Not needed for the pilot.
+
+**P10 built the screen**: Select mode on Account management, and a dialog that
+plans which phone each account goes on, fills one phone before starting the
+next so a character stays together, lets every row be changed, and shows the
+accounts it has no room for rather than dropping them. "By character" is the
+existing search plus Select all — no character control was added. **What is
+left** is one write that moves several accounts at once, which wants PF-03's
+single write first so the two cannot disagree.
 
 ## PF-16 · Retire Geelark — Blocked by the last account moving
 

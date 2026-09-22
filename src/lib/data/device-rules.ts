@@ -3,10 +3,22 @@
  * without a database and shared between the routes and the screens.
  */
 
-/** One character's Instagram + Facebook and another character's TikTok. The
- *  database does not enforce this; the assign route does, so the refusal can
- *  name the phone that is full. */
-export const MAX_ACCOUNTS_PER_DEVICE = 3;
+/**
+ * How many accounts a phone is EXPECTED to carry today — not a limit.
+ *
+ * Three is the current arrangement: one character's Instagram and Facebook and
+ * another character's TikTok. It used to be enforced, and a fourth account was
+ * refused outright. Garreth removed that on 2026-09-22: "do not limit the
+ * number of accounts in one phone to 3. For now, we will only have 3 accounts
+ * per phone but in the future there will be more in one phone."
+ *
+ * So nothing refuses on this number any more. It survives as the number the
+ * screens count against, and as the number the batch move fills a phone to
+ * before it starts on the next — which is what keeps a character's accounts
+ * together. Put five on a phone and the app will let you, and say it holds
+ * five.
+ */
+export const ACCOUNTS_PER_PHONE = 3;
 
 export const PROOF_MAX_BYTES = 5 * 1024 * 1024;
 /** Matches the device-proofs bucket's allowed types; value is the file extension. */
@@ -24,8 +36,10 @@ export function assignRefusal(args: {
   deviceId: number;
   deviceName: string;
   deviceActive: boolean;
-  /** How many accounts the phone holds right now. */
-  heldCount: number;
+  /** How many accounts the phone holds right now. Kept on the signature
+   *  although nothing refuses on it: the callers already count, and a future
+   *  cap would land here rather than anywhere new. */
+  heldCount?: number;
   accountActive: boolean;
   /** The phone the account is on now, if any. */
   accountDeviceId: number | null;
@@ -40,9 +54,10 @@ export function assignRefusal(args: {
   if (args.accountDeviceId !== null) {
     return "That account is already on another phone. Remove it from that phone first.";
   }
-  if (args.heldCount >= MAX_ACCOUNTS_PER_DEVICE) {
-    return `${args.deviceName} already holds ${MAX_ACCOUNTS_PER_DEVICE} accounts, which is the most a phone can carry. Remove one before adding another.`;
-  }
+  // No refusal on how many the phone already holds (Garreth, 2026-09-22) —
+  // see ACCOUNTS_PER_PHONE. A phone that is switched off, a retired account and
+  // an account already on a phone are still refused; those are mistakes, not
+  // arrangements.
   return null;
 }
 
