@@ -75,7 +75,8 @@ off them unchanged. The `docs/designs/README.md` how-to has the steps.
 | D5 | Carousel Generator Designs - (D5 Batch render) | D5 · Dark, D5 · Light | https://claude.ai/artifact/4h66j2MEbBPzuJzRujwuXp | 🎠5️⃣ |
 | D6 dark | Carousel Generator Designs - Dark (D6 Studio) | D6 · Dark | https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p | 🎠🎨 |
 | D6 light | Carousel Generator Designs - Light (D6 Studio) | D6 · Light | https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p | 🎨☀️ |
-| D7 | Carousel Generator Designs - (D7 Type page) | D7 · Dark, D7 · Light | https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp | 🎠7️⃣ |
+| D7 dark | Carousel Generator Designs - Dark (D7 Type page) | D7 · Dark | https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp | 🎠7️⃣ |
+| D7 light | Carousel Generator Designs - Light (D7 Type page) | D7 · Light | https://claude.ai/artifact/RBKLtvW9f8BLoZAC17bEsd | 7️⃣☀️ |
 | D8 | Carousel Generator Designs - (D8 Image libraries) | D8 · Dark, D8 · Light | https://claude.ai/artifact/WqEfhNzEiUiTieUAU14qms | 🎠8️⃣ |
 | D9 | Carousel Generator Designs - (D9 History) | D9 · Dark, D9 · Light | https://claude.ai/artifact/2EjoB77uj9C8qXriiUmRxT | 🎠📜 |
 | D10 dark | Carousel Generator Designs - Dark (D10 Trends) | D10 · Dark | https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1 | 🎠📈 |
@@ -2242,9 +2243,10 @@ the edges are tested, not just the happy middle.
   Raised by Garreth, 2026-09-22, off the back of D13,
   from looking at its own *Writing, nothing written yet* board.
   **Taken before D14**, because it finishes the screen D13 just made required.
-  **It has no canvas of its own**: its pictures are new rows on the **D7**
-  canvas (https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp), pages **D7 ·
-  Dark** and **D7 · Light**, built by
+  **It has no canvas of its own**: its pictures are new rows on D7's two
+  canvases — **Dark** (https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp) and
+  **Light** (https://claude.ai/artifact/RBKLtvW9f8BLoZAC17bEsd), which were
+  one canvas until it was split by theme on 2026-09-22 — built by
   `docs/designs/carousel-generator/d7-type-page.build.mjs`. Numbered **13b**
   rather than 17 so the order of
   work reads off the numbers — it is D13's loose end, not a new subject, and
@@ -2435,11 +2437,12 @@ the edges are tested, not just the happy middle.
   last two rows of the **D7** canvas (version 7), pages **D7 · Dark** and
   **D7 · Light**, built by `d7-type-page.build.mjs`. Dark and light were drawn
   together, because the tab is new in both at once; the review is still dark
-  first. Eight boards a theme: Rows (the ordinary case) · Desktop, Rows
+  first. Ten boards a theme: Rows (the ordinary case) · Desktop, Rows
   (nothing postable, the reason different row to row) · Desktop, Rows (stacked)
   · Phone, Not live yet · Phone, A row's drawer · Phone, A row's drawer (the
-  caption column empty) · Desktop, Not live yet · Desktop, and Live with no
-  rows yet · Desktop. **In the prototype since version 29, 2026-09-22**: the
+  caption column empty) · Desktop, Not live yet · Desktop, Live with no
+  rows yet · Desktop, and — added 2026-09-22 — a row that has everything,
+  Desktop and Phone. **In the prototype since version 29, 2026-09-22**: the
   Rows tab rides in on D7's screen, so a type's name on Carousel types reaches
   it, a row opens its drawer and Open the deck goes on to that deck's batch.
 - **Decided while drawing it** (not in the ticket, so worth saying out loud):
@@ -2469,12 +2472,16 @@ the edges are tested, not just the happy middle.
     as a dash, which says why.
   - **The boards draw the first twelve of the fifty**, and the pager says
     `1–50 of 240`. A fifty-row board would be 3,500px tall.
-  - **A drawer on a row that has everything** was drawn and then left off:
-    **D7's canvas is full** at 15.5 MB against a 16 MB ceiling, so the space
-    went to the states the ticket asks for. It is one line in the build file
-    (`{ rows: "mixed", row: 10 }`) whenever it is wanted. **D17 also targets
-    D7**, so the canvas will need splitting by theme the way D6's and D10's
-    are before much more goes on it.
+  - **A drawer on a row that has everything** was drawn, left off for space
+    when D7's canvas hit its 16 MB ceiling, and **restored on 2026-09-22**
+    (Garreth) once the canvas was split by theme. It is the Sep 20 posted row,
+    all 36 columns, on desktop and phone. It earns its place as the control
+    case: the empty-caption drawer only reads as *this row is missing
+    something* next to one that is complete, and it is the only board showing
+    the drawer scrolled to its end, where **Open the deck** is pinned. Its one
+    dash is `gatekeep_note`, which a row that passed the gate has no reason to
+    carry — so the pair also says a dash is not by itself a fault; it is only
+    an answer when the column was needed.
 - **What it is.** A tab on a type's page showing the rows in that type's lane
   table — the table the Smart Scheduler, the Posting Agent and Inventory read.
   This is where everything the generator makes ends up: Approve writes the
@@ -2817,16 +2824,29 @@ the edges are tested, not just the happy middle.
 
 ## D17. Naming a text box while you write — drag it, or type `@`
 
-- **Status:** **Open. Raised by Garreth, 2026-09-22**, from looking at D13's
-  own *Writing* board. Not drawn yet. **No canvas and no build file of its
-  own**: it changes one screen that already exists, so its pictures are new
-  rows on the **D7** canvas
-  (https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp), pages **D7 · Dark** and
-  **D7 · Light**, built by `docs/designs/carousel-generator/d7-type-page.build.mjs`.
-  **Depends on D14**, which is what gives a text box a name a person chose;
-  until then the names come from position, so the sample's `hook`, `line`,
-  `closing` are all D17 has to point at. It can be drawn before D14 is
-  approved, but it should not be built first.
+- **Status:** **Raised by Garreth, 2026-09-22**, from looking at D13's own
+  *Writing* board. **APPROVED in dark and light by Garreth, 2026-09-22** — drawn
+  and approved the same day it was raised. Ten boards a theme in the last
+  three rows of D7's canvases (dark version 12, light version 4), which puts
+  each canvas at 11.7 MB of its 16 MB. Every question the ticket raised was
+  settled before approval. **This was the last open design ticket**, so the
+  design step closes again with it; what follows is development. **No
+  canvas and no build file of its own**: it changes one screen that already
+  exists, so its pictures are new
+  rows on D7's two canvases — **Dark**
+  (https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp) and **Light**
+  (https://claude.ai/artifact/RBKLtvW9f8BLoZAC17bEsd) — built by
+  `docs/designs/carousel-generator/d7-type-page.build.mjs` and placed a theme
+  at a time. Those were one canvas until **2026-09-22**, when it was split by
+  theme to make room for this ticket; there is about 7 MB spare a theme now.
+  **D14 is approved** (2026-09-22), so the names this ticket points at are
+  real ones: a text box carries the name a person chose in the Studio, and one
+  added by hand arrives named **Text Box 1**. That is what the pills under the
+  editor list and what the `@` menu offers, so the sample's `hook`, `line`,
+  `closing` are no longer the only names available — the states below should
+  be drawn against a template that has a hand-named box and a `Text Box 1`,
+  and a mention of a renamed box is now a real case rather than a
+  thought experiment.
 - **What it is.** D13 put the template's text boxes under the Writing editor
   as a row of pills — **Text boxes** `hook` `line` `closing` — so the
   instruction is written against the boxes that exist. They are read-only
@@ -2862,7 +2882,45 @@ the edges are tested, not just the happy middle.
   Writing, it does not add a field). Not a change to Save version, the version
   dropdown, the guiding placeholder or D13b's first-draft offer. The pills
   stay where D13 put them, under the editor; no new row on the card.
-- **To decide (Garreth):**
+- **Decided, and what was drawn on each:**
+  - **A mention is stored as plain text — DECIDED (Garreth, 2026-09-22).** The
+    editor holds the characters `@hook`, and the screen highlights it by
+    matching the name against the active template's boxes each time it is
+    shown. Nothing that reads `carousel_lane_directions.direction` raw breaks,
+    and the column stays words only.
+    **But storing it plainly is only half of it, and the other half is the
+    point of the ticket (his words).** The thing building the copy prompt
+    **must resolve** each mention to that box's real role and, now that D14
+    measures it, its character limit — so the AI is told *which slot it is
+    writing*, rather than left to work it out from the surrounding prose. That
+    is a requirement of this ticket, not a follow-on: a mention that is stored
+    but never resolved buys nothing over typing the word by hand. The boards
+    show the resolution where a person can see it — the `@` menu names each
+    box's limit, and the Conversation's reply carries the hook's `42 chars`.
+  - **A mention that matches nothing says so twice — DECIDED (Garreth,
+    2026-09-22)**, after the two versions were drawn and looked at. The
+    mention goes quiet in the sentence — the pill drops its fill and takes a
+    dotted underline, muted and never red, because a Writing that names a
+    renamed box is stale rather than broken — **and** a count sits beside Save
+    version: **1 text box no longer exists**. The quiet mention alone was the
+    cleaner screen and the stricter reading of the tab's no-instruction rule,
+    but a Writing runs several paragraphs and a dead name can sit in the
+    middle of one, so on its own it is easy to scroll past and press Generate
+    regardless. The count is data about this Writing, not instruction text,
+    which is what lets it past that rule. It matters because a dead mention is
+    exactly where the prompt resolves to nothing and the AI is told about a
+    box that is not there — this is the only warning that failure ever gets.
+    The variant board was dropped once the choice was made, so the canvas
+    carries the decision, not the argument.
+  - **`@` is the character — taken as drawn.** It is what the idea asked for
+    and what every AI tool uses. The collision with *never @ anyone* is
+    answered by the menu only opening while what follows still matches a box
+    name, and by Escape dismissing it and leaving the plain characters alone.
+    `/` remains the alternative if `@` turns out wrong in review.
+  - **Dropping a pill on the Conversation's box does nothing different — taken
+    as drawn.** It inserts the same mention, and the AI's reply uses the same
+    mentions back, so the exchange and the Writing read alike.
+- **Was to decide, kept for the record:**
   - **What a mention is when it is stored.** Two honest options. **Plain
     text** — the editor stores `@hook`, and the screen highlights it by
     matching the name against the active template's boxes each time it is
@@ -2922,5 +2980,7 @@ the edges are tested, not just the happy middle.
   put a text box's name into the Writing and into the Conversation without
   typing it, on desktop and on the phone.
 - **Followed on approval:** **DEV-19b** gains the editor's side of it and
-  **DEV-25** the Conversation's; whether the prompt builder resolves mentions
-  is written into the copy-prompt ticket at the same time.
+  **DEV-25** the Conversation's. The copy-prompt ticket gains mention
+  resolution as a **requirement** — Garreth, 2026-09-22, settled that pointing
+  the AI at the right text slot is the whole point of the feature, so it is
+  not a question the prompt ticket gets to answer with no.
