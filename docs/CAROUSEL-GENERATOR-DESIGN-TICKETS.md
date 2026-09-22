@@ -2526,14 +2526,183 @@ the edges are tested, not just the happy middle.
 
 ## D16. Overview — the generator's front page
 
-- **Status:** **Open. Asked for and shaped by Garreth, 2026-09-22.** Not drawn
-  yet. **This one adds a screen, so by the standing rule it gets a canvas of
-  its own** (`docs/designs/README.md`: a ticket that extends existing screens
+- **Status:** **APPROVED in dark and light by Garreth, 2026-09-22**, over eight
+  rounds the same day it was asked for. Version 9 of its canvas is the approved
+  picture, ten boards a theme.
+  **The flows and the dev tickets were written the same day.** **F17** is the
+  Overview flow; F1's first step starts a screen earlier; the screen inventory,
+  the menu table and plan §6 carry the route move. The build is **DEV-56** to
+  **DEV-59** in Phase 2 — the landing and the route move, Running Tasks, the
+  four counts, the Carousel types section — and **DEV-60** in Phase 5 for
+  Trending Carousels and Saved, which read the reference library. DEV-14 moved
+  to the new address.
+  **What is left is on `main`, after this branch is merged:** the shared-shell
+  job — the menu gained **Overview**, so every other ticket's canvas is
+  re-placed and the prototype rebuilt — and the Overview screen added to the
+  prototype as the landing. **This one adds a screen, so by
+  the standing rule it gets a canvas of its own** (`docs/designs/README.md`: a ticket that extends existing screens
   is drawn on theirs; a ticket that adds a screen still gets its own) — unlike
   D13, D14 and D15, which change screens that already exist. Name it
-  "Carousel Generator Designs - (D16 Overview)". It also reopens **D1**, whose
-  route moves and which stops being the landing; D1's own boards are unchanged
-  otherwise. New build file `d16-overview.build.mjs`.
+  "Carousel Generator Designs - (D16 Overview)" — made 2026-09-22,
+  https://claude.ai/artifact/Q1oX7DZunxyEaVCS2SRTHq, favicon 🎠🏠, version 9, 5.1 MB.
+  It also reopens **D1**, whose route moves and which stops being the landing;
+  D1's own boards are unchanged otherwise. New build file
+  `d16-overview.build.mjs`.
+  **Round one, drawn 2026-09-22.** Three widgets — Waiting for you across the
+  width of the page, with Carousel types and Saved side by side under it — on
+  eight boards a theme. Superseded by round two the same day.
+  **Round two, drawn 2026-09-22, to four notes from Garreth.** Ten boards a
+  theme, dark and light placed together because light is the same build read
+  through the light tokens. The page is now four sections, top to bottom, and
+  the same order stacked on a phone:
+  - **Today**, four stat boxes — *Written today*, *Rendered today*, *Approved
+    today*, *Needs input*. They are the dashboard's own `MetricTile`, copied
+    value for value out of `src/components/dashboard/analytics-charts.tsx`: the
+    dithered corner (`.dot-fade`), the 16px nested radius, `--card-raised`, the
+    small label over a 24px tabular figure, the green or red delta with its
+    arrow, and the sparkline running edge to edge under it (drawn as one SVG
+    path here, since a board has no recharts). **Needs input carries no delta**
+    — a backlog is a state, not a trend, and a green "+50%" on a growing one
+    would read as good news — and its number is the count of cards in the
+    section below that are waiting for a person, so the box and the section
+    cannot disagree.
+  - **Running Tasks beside Carousel types.**
+  - **Trending Carousels beside Saved**, at the foot of the page. Trending is
+    the top of what Trends scraped today, with the newest scrape instead when
+    there is nothing from today; the line beside the heading says which. The
+    posts and the saved covers are D10's own sample feed.
+  The page is taller than one screen, so the review has two boards a size: the
+  top of the page and the same page scrolled to the bottom row.
+  **Round three, 2026-09-22**, to three more notes from Garreth:
+  - **The stat boxes lose their sparklines**, and the figure takes the room:
+    24px to 40px. The tiles keep everything else of the dashboard's
+    `MetricTile` — the dithered corner, the small label, the green or red
+    delta with its arrow.
+  - **The ring is a loading circle.** Round two rotated an arc whose *length*
+    was the batch's progress; it read as a dial rather than as loading. It is
+    now a quarter-arc chasing round the track at the speed the top bar's own
+    refresh spinner turns. How far a batch has got stays in its line of text,
+    which is where it was already — *Writing 7 of 20*, *Rendering 12 of 18*.
+  - **A flagged deck's icon is red.** Something has gone wrong with it and the
+    eye should find it down the column. **Its words stay neutral**: History's
+    rule is that only a status meaning something went wrong is red, and
+    *Stopped* is still the only status that does, so the red flag marks the
+    card without adding a second red status to the app.
+  **Round four, 2026-09-22**, to two more notes from Garreth:
+  - **The four boxes lose the percentage too.** They answer "what has today
+    done"; a delta against yesterday made each of them a second question. What
+    is left is the label and the figure.
+  - **A working batch carries a pixel-grid loader**, not a spinner (Garreth
+    sent the pattern). Nine cells in a 3×3, with a chevron wavefront driving to
+    the right on a 650ms cycle — shorter than the sweep, so two fronts are
+    always in the air and the grid never looks stalled. The cells are the
+    accent, this page's one colour for work actually in motion. Beside it the
+    batch's own line **shimmers**, and it is the line that says which stage it
+    is at: *Writing 7 of 20* or *Rendering 12 of 18*, D12's wording untouched
+    and only its treatment changed. The elapsed time takes the place *Started
+    11:40* had at the right of the card — **6m 12.4s** — in tabular figures, so
+    it does not jitter as it counts; it stands still on a board and ticks in
+    the prototype, like every other moving part here.
+    A batch **waiting** for a person keeps its still ring and its icon, so the
+    two kinds of card still read apart at a glance.
+    Under `prefers-reduced-motion` the grid holds still and the line stops
+    shimmering; the grid stays readable rather than dropping to its dim state,
+    so a working batch can still be picked out.
+  **Round five, 2026-09-22.** **The two sections at the foot of the page end
+  level** (Garreth). Their natural heights do not meet — Saved is three 4:5
+  tiles across and two deep, Trending is four across with a handle and a view
+  count under each — so one of them has to give. **Saved keeps D10's own 4:5**,
+  because those are the same tiles the Trends screen shows, and it sets the
+  height; **Trending stretches its covers to meet it**, a taller crop on the
+  section that is the featured one anyway. Trending keeps a floor at the 4:5
+  height of its own row, so when Saved is the shorter of the two — nothing saved
+  yet — Trending holds its size and Saved's empty box grows to fill instead,
+  which is the standing rule for an empty state. Desktop only: on the phone the
+  sections stack and every tile keeps 4:5.
+  **Round six, 2026-09-22**, two more from Garreth:
+  - **The loader's colour is the stage.** White while a batch is **writing**,
+    the accent once it is **rendering**. The two stages are now told apart
+    across the room without reading a word, and the cyan comes to mean the
+    pictures are being made — which is also where the accent is spent
+    everywhere else on this screen.
+  - **Auto, Auto paused and how long ago sit together at the right of the
+    card**, so a batch's own line is the state and nothing else, and the pills
+    read straight down the section instead of starting wherever the state
+    happens to end. On the phone the pair takes the line under the state.
+  **Round seven, 2026-09-22**, on the Carousel types section (Garreth):
+  - **Days of cover comes off the row.** A type is now its name, its character
+    and Generate. Cover is Inventory's number, and this widget is the way to
+    generate rather than the way to judge supply — which also settles the note
+    two bullets down about keeping the supply number in front of him here.
+  - **The link is now "All Carousel Types", beside the heading**, opposite the
+    section's name, exactly as *All trends* and *All saved* sit. **That retires
+    the proposal below to hide it while nothing is hidden**: that was about a
+    label carrying a count (*All 7 types*) reading as "there are more". A plain
+    section link in the heading is navigation, and the three sections that have
+    one should not disagree about whether it is there. Say the word if it
+    should still vanish when every type is on screen.
+  - Every section heading is now the height of a secondary button whether or
+    not it carries one, so Running Tasks and Carousel types start level, and so
+    do Trending Carousels and Saved.
+  - The board that showed three live types is kept and renamed: three is the
+    real number today, so the five rows show every one of them and the widget
+    reads exactly like D1's list.
+  **Round eight, 2026-09-22.** **Carousel types ends level with Running Tasks**
+  (Garreth), which puts every pair of columns on this page under one rule:
+  whichever section is the taller sets the height and the other fills down to
+  meet it. Running Tasks is the taller of the top pair, so the types card
+  reaches the bottom and its five rows share the height between them — the rows
+  grow rather than the card gaining a gap. It works the other way round too: on
+  the all-clear board the types card is the taller one and the *Nothing
+  running, nothing waiting* box grows to meet it, which is the standing rule
+  for an empty state anyway.
+  **A row stops growing at 104px**, a little under twice what one holds, so a
+  short list becomes an airier card with room to spare rather than a
+  stretched-out ladder; on the three-type board the space left over sits at the
+  foot of the card, which is honest — there is room for the types the Studio
+  has not made yet. A row also keeps its name and its controls together as one
+  block however tall it gets; without that they drift to the ends of the row
+  and stop reading as one type.
+  **Version 2's stat tiles were full of markup** (Garreth, 2026-09-22, who asked
+  why the four cards on top were showing weird codes). The delta arrows and the
+  sparklines had been handed to the boards as values, and the canvas escapes a
+  value as text, so each tile printed its own SVG source; they are written into
+  the template now. `render-board.mjs` could not have shown it — it fills the
+  holes by string substitution, so the boards looked right locally — so the kit
+  gained `markupInValues()` and this build refuses to write boards that hand any
+  markup over as a value. Fixed in version 3.
+  **"Waiting for you" is now "Running Tasks", and it is a monitor.** Round one
+  followed this ticket's bell rule — only what needs a person — and the
+  paragraph below says in as many words that the widget "should not promise a
+  monitor". **Garreth asked on 2026-09-22 for the opposite**: work in flight
+  belongs on the front page, with its own animated icon. So a batch part-way
+  through writing or rendering is now a card here, above the ones that need
+  him. That reverses the narrowing recorded in this ticket, and the reason it
+  moved is written here so the old rule is not read as still standing.
+  **Each task is its own horizontal card**, not a row in a table. The ring at
+  its left is the whole visual language of the section: a ring that **turns**
+  means the batch is working and nobody is needed, and the length of its arc is
+  how far it has got — 7 of 20, 12 of 18 — so one element carries both. A ring
+  that is **still** means it is waiting for him. The icon inside names the
+  stage: a pencil while writing, slides while rendering, a seal to approve, a
+  play to render, a flag for a flagged deck, a pause for a stopped batch, which
+  is the one red one. Nothing else on the page moves, and under
+  `prefers-reduced-motion` the ring stops turning and leaves the arc where it
+  is, so it still says how far the batch has got.
+  **It changes the shared shell**: the menu gains Overview as its first item
+  (`generator-kit.mjs`, `NAV`), so once this is approved every other ticket's
+  canvas is re-placed from `main` and the prototype rebuilt.
+  **Two things put to Garreth with the boards:**
+  - A manual or paused batch with flagged decks is worded **"1 flagged"** — the
+    words D4's bell body and D7's table already use ("18 to render, 2
+    flagged"). The ticket named that case but left the wording open, and D12
+    warns that *n flagged* is what a **finished** batch says once nothing is
+    waiting on it, so this needs his word.
+  - The ticket lists **Stopped** among the widget's words, but the bell has no
+    Stopped item today — so "exactly what would ring the bell" and the listed
+    words disagree on that one row. It is drawn included; if the bell's rule
+    wins, the stopped batch comes off the widget and History stays its only
+    home.
 - **What it is.** Today the generator drops you straight into Carousel types,
   a page of cards. Nothing anywhere gathers **what is running right now**:
   D12 put a batch's state on its type's card, in the bell, in History's Status
@@ -2628,7 +2797,9 @@ the edges are tested, not just the happy middle.
     there for.
     **Proposed, for the review:** while nothing is hidden, **All n types**
     is not shown — a link to the same rows already on the screen is a link
-    to nowhere.
+    to nowhere. **Drawn that way**, with a board of its own (*Every type fits*)
+    showing three live types and no link, beside the ordinary board where seven
+    types exist and *All 7 types* shows.
 - **Done when:** approved in dark and light at both sizes, and the three
   widgets say nothing that D1, D9, D10 and the bell do not already say the
   same way.

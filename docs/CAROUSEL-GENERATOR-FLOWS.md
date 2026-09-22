@@ -13,6 +13,12 @@ what the person has not seen, Saved is a grid, and a post carries thumbs and
 (Details, Analysis, Transcription, and analysis on demand). Everything in it
 was checked against the live database on 2026-09-18 and 2026-09-19.
 
+**Revised 2026-09-22 (D16, approved by Garreth in dark and light):** the
+generator gains a front page. **Overview** takes `/carousel-generator` and
+**Carousel types moves to `/carousel-generator/types`**; the menu gains
+Overview as its first item; F1's first two steps start a screen earlier, and
+**F17** is written below.
+
 Companion documents: the plan (why and what), `CAROUSEL-TEMPLATE-MODEL.md`
 (the contract the painter and studio share), `CAROUSEL-RENDERER-PORT-SPEC.md`
 (the numbers).
@@ -64,7 +70,8 @@ no longer used on a card.
 | Screen | Route | Phase | Accent action | Hold |
 |---|---|---|---|---|
 | Generate hub | `/generate` | built 2026-09-14 | none; each card opens its generator | — |
-| Carousel types | `/carousel-generator` | 2 | Generate on every card, all the same accent button | — |
+| Overview | `/carousel-generator` | 2; its two lower sections 5 | Generate on a Carousel types row | — |
+| Carousel types | `/carousel-generator/types` | 2 | Generate on every card, all the same accent button | — |
 | Generate | `/carousel-generator/generate?lane=` | 2 | Generate | — |
 | Batch | `/carousel-generator/batches/[id]` | 2 | Render (n) decks, once the writing is done; Approve (n) decks on the finished batch | Discard deck, in the More menu |
 | History | `/carousel-generator/history` | 2 | Only in the first-run empty state: Generate | — |
@@ -97,6 +104,14 @@ unavailable until everything required is filled — the same way it already
 handles a missing image library. One rule: *Generate always opens the form;
 the form names what is missing.*
 
+**Overview is the landing, and Carousel types moved (D16, approved
+2026-09-22).** The Generate hub's **Carousel** card opens Overview at
+`/carousel-generator`; Carousel types keeps its full card list and its menu
+item at **`/carousel-generator/types`**, which sits properly beside the type
+page's own `/types/[slug]`. Nothing is built yet, so nothing broke. Overview is
+**read-only**: it gathers what the other screens already say, and every press
+on it opens the screen that owns the work. See F17.
+
 **The Rows tab is new (D15, proposed 2026-09-21, approved 2026-09-22).** It
 sits between Writing and Go Live, and it is the **only read-only screen in the
 generator**: it shows what is sitting in the type's lane table and, in words,
@@ -113,17 +128,22 @@ scrolls sideways.
 
 The generator does not use the dashboard sidebar (Garreth, 2026-09-14). The
 dashboard's **Generate** item opens the Generate hub (`/generate`), one card
-per kind of content; the **Carousel** card opens Carousel types. From there
+per kind of content; the **Carousel** card opens **Overview** (D16, approved
+2026-09-22; it opened Carousel types until then). From there
 every generator screen shares a left menu of its own, in the same shell and
 top bar. Its top row, **← Dashboard**, returns to the Generate hub.
 
 | Menu item | Opens | Phase |
 |---|---|---|
+| Overview | Overview, the generator's front page | 2 |
 | Carousel types | Carousel types; a type's page and Generate keep it lit | 2 |
 | History | History | 2 |
 | Image libraries | Library | 2 |
 | Studio | Studio, empty | 3 |
 | Trends | Trends | 5 |
+
+No menu item carries a count, Overview included (D16): the bell rings, and
+Overview's own Running Tasks section is where work in flight is gathered.
 
 An item appears once its screen is built; nothing sits in the menu disabled.
 There is no separate database page: History, Carousel types and Image
@@ -139,12 +159,22 @@ width.
 
 - **When:** a lane is running low. Phase 2, for Glow Up and Covered Eye.
 - **Screens:** the sidebar's Generate item opens the Generate hub; its
-  Carousel card opens Carousel types; then Generate, then Batch.
+  Carousel card opens **Overview**; then either Generate straight from a
+  Carousel types row there, or Carousel types for the full list; then Generate,
+  then Batch.
 - **Steps:**
-  1. Carousel types shows one card per lane: name, character, postable count and days
+  1. **Overview** opens (D16, approved 2026-09-22; before it, the Carousel card
+     opened Carousel types). Its **Carousel types** section lists the five
+     types generated most recently, each with **Generate** — so the common
+     case, generating again for a type already in use, is one press from the
+     landing. **All Carousel Types** opens the full list, **Carousel types**,
+     which shows one card per lane: name, character, postable count and days
      of cover (from `v_scheduler_pool` and cadence), last batch date, 28-day
-     median views. Live lanes first, retired lanes in a collapsed group.
-  2. Press Generate on a card. Generate opens with the lane filled in.
+     median views. Live lanes first, retired lanes in a collapsed group. Days
+     of cover is on those cards and not on Overview's rows (D16): that is the
+     screen for judging supply.
+  2. Press Generate, on Overview's row or on a card. Generate opens with the
+     lane filled in.
   3. The form: **How many** (a number, pre-filled with 50 and capped at 50;
      Garreth, 2026-09-14), **Image library** (Garreth, 2026-09-14:
      the library the content type points at, with **Change** to repoint it,
@@ -1074,6 +1104,115 @@ is restated here, so this section reads on its own.*
   and analyse, a job for the analysis worker, whose results land in
   `reference_beats`, `reference_analysis` and `carousel_search_documents` as
   they do for every other carousel.
+
+### F17. Overview — what is running, and what needs you
+
+*Written 2026-09-22, when Garreth approved D16 in dark and light. The number
+was reserved for it when F18 was added.*
+
+- **When:** opening the generator, and coming back to it through the day.
+  Phase 2 for the three sections at the top; **Trending Carousels** and
+  **Saved** read the reference library, so they arrive with Trends in Phase 5
+  and until then the page is three sections.
+- **Screens:** **Overview** (`/carousel-generator`), the landing.
+- **Read-only.** Nothing on Overview writes. It gathers what other screens
+  already say, and every press opens the screen that owns the work.
+- **Steps:**
+  1. The dashboard's **Generate** item opens the Generate hub; its **Carousel**
+     card opens Overview. The generator's menu carries **Overview** as its
+     first item, under ← Dashboard.
+  2. **Today**, four boxes across the top: *Written today*, *Rendered today*,
+     *Approved today*, *Needs input*. They are the dashboard's own stat tile —
+     the dithered corner, the small label over the figure — **with no
+     percentage and no sparkline** (Garreth, 2026-09-22): the four answer
+     *what has today done*, and a change against yesterday made each of them a
+     second question. *Needs input* is the count of cards in Running Tasks
+     waiting for a person, read off the same query, so the box and the section
+     under it cannot disagree.
+  3. **Running Tasks**, one horizontal card per batch, the ones working first
+     and then the ones that need a person, newest first. A card carries the
+     type's name, what the batch is doing, and at its right the **Auto** or
+     **Auto paused** pill with how long ago. The whole card opens the screen
+     holding its press: the batch page for a writing, stopped or flagged
+     batch, the review screen for *n to render*, the finished batch for *n to
+     approve* and for one that is rendering. **Nobody is named on a card** — a
+     batch says what it is doing, never who started it.
+  4. **Moving means the batch is getting on with it; still means it is yours.**
+     A working batch carries a pixel grid — nine cells with the wavefront
+     driving right — **white while writing, accent while rendering** — and its
+     line shimmers: *Writing 7 of 20*, *Rendering 12 of 18*, with the elapsed
+     time where the date sits on the other cards. A waiting batch carries a
+     still ring with the stage's icon inside: a seal for *n to approve*, a play
+     for *n to render*, a **red** flag for *n flagged*, a red pause for
+     *Stopped*.
+  5. **Carousel types**, five rows, **ordered by the types generated most
+     recently** (Garreth, 2026-09-22), each the name, the character and
+     **Generate** — the same accent button at the secondary size D1's cards
+     carry, none singled out. A type never generated has no date and sorts
+     last, so one made in the Studio yesterday is still reachable from here.
+     **Days of cover is not on these rows**: it is Inventory's number, and this
+     section is the way to generate rather than the way to judge supply —
+     Carousel types itself still carries it (F1 step 1). A type whose batch is
+     **writing or rendering** reads **Open running batch**, as its card does; a
+     **stopped** batch does not, because it is not writing into the lane.
+     **All Carousel Types** sits opposite the heading and opens Carousel types.
+  6. **Trending Carousels** (Phase 5): the top of what the library scraped
+     **today**, four covers with the handle and the views under each. When
+     there is nothing from today it shows the newest scrape instead, and the
+     line beside the heading says so and gives its date — a quiet day must not
+     read as today's winners. **All trends** opens Trends on the Feed.
+  7. **Saved** (Phase 5): the references favourited on Trends, newest saved
+     first, as a small grid of covers. **All saved** opens Trends on Saved.
+     **Saved means saved references, never our own decks** (the 2026-09-17
+     decision): there is no way to save one of ours, and this flow does not add
+     one, so the word keeps one meaning across the app.
+  8. On a phone the five sections stack in that same order.
+- **What Running Tasks holds, and what it does not.** Every batch that is
+  **working**, and every batch **waiting for a person**. Not a batch that is
+  finished and approved — the section is a monitor and a to-do list, not a
+  log. Not a flagged deck inside a **running** Auto batch, which Auto takes
+  back itself; that is the same reason the bell stays quiet for it (F2, D12).
+  Pause the batch and the deck appears here, because then it is a person's.
+  **It says what a batch is waiting for in D12's words and no others** —
+  *Writing 7 of 20*, *Rendering 12 of 18*, *n to render*, *n to approve*,
+  *n flagged*, *Stopped*. This is the fourth place those words appear, after
+  the bell, the type's card and History's Status column, and it must not
+  invent a fifth.
+  **Written into the ticket on 2026-09-22, and reversed the same day.** D16
+  first narrowed this section to what would ring the bell, called it *Waiting
+  for you*, and said in as many words that it should not promise a monitor.
+  Garreth then asked for the opposite: work in flight belongs on the front
+  page. The section is **Running Tasks**, and the old rule does not stand.
+- **Accent action:** **Generate**, on a Carousel types row. The first-run
+  state's Generate is the same button.
+- **Hold:** none.
+- **Empty:**
+  - **First run**, nothing ever generated and nothing saved: **one** state for
+    the whole page, not five empty sections stacked up. It fills the screen and
+    its action is **Generate**.
+  - **Nothing running, nothing waiting**: the all-clear, and the ordinary state
+    of a healthy day rather than an edge case. Running Tasks says so in one
+    line and the other sections carry on as normal. *Needs input* reads 0, and
+    no type reads *Open running batch*, because nothing is running.
+  - **Nothing saved yet**: Saved's own line, worded as Trends words it.
+  - **Nothing scraped today**: Trending shows the newest scrape, named.
+- **The two columns of a row end level.** Running Tasks beside Carousel types,
+  and Trending Carousels beside Saved: whichever section is the taller sets the
+  height and the other fills down to meet it, whichever way round it falls —
+  on the all-clear the types card is the taller one and the empty line grows to
+  meet it. A types row stops growing at 104px, so a short list becomes an
+  airier card with room to spare rather than a stretched-out ladder.
+- **Fails:**
+  - A count cannot be read: that box shows a **dash**, not 0. A nought is an
+    answer and a dash is not — the same distinction D12 made on Rendered and
+    Approved.
+  - The library has never been scraped: Trending Carousels shows its own empty
+    line rather than an old date dressed as news.
+  - A batch has gone while the page was open: the card says so on the press
+    rather than opening an empty screen.
+- **Writes:** nothing.
+
+---
 
 ### F18. Read the lane — what is sitting there, and why it cannot post
 
