@@ -167,6 +167,44 @@ export function startOfDayET(now: Date = new Date()): Date {
   return new Date(utcMidnight.getTime() - minutes * 60_000);
 }
 
+/**
+ * The New York day `offset` days from today, as the half-open instant range
+ * [start, end). The to-do list steps to any day, so every read of a day's work
+ * goes through this rather than assuming today.
+ */
+export function dayRangeET(offset = 0, now: Date = new Date()): { from: Date; to: Date } {
+  const today = startOfDayET(now);
+  // Move by whole days on the calendar, not by 86,400,000 milliseconds: the
+  // two days a year the clocks move are 23 and 25 hours long.
+  const shift = (d: Date, days: number) => {
+    const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(d);
+    const [y, m, day] = ymd.split("-").map(Number);
+    // NOON UTC, not midnight: midnight UTC is 7 or 8pm in New York on the day
+    // BEFORE, so building the instant that way walked every day back one.
+    const moved = new Date(Date.UTC(y!, m! - 1, day! + days, 12));
+    return startOfDayET(moved);
+  };
+  return { from: shift(today, offset), to: shift(today, offset + 1) };
+}
+
+/** Sessions logged on one New York day, for an account or a whole phone. */
+export function getSessionsOnDay(
+  filter: { accountId?: number; deviceId?: number } = {},
+  dayOffset = 0,
+  now: Date = new Date(),
+): Promise<WarmupSession[]> {
+  const { from, to } = dayRangeET(dayOffset, now);
+  const parts = [
+    `select=${COLS}`,
+    `started_at=gte.${from.toISOString()}`,
+    `started_at=lt.${to.toISOString()}`,
+    "order=started_at.asc",
+  ];
+  if (filter.accountId !== undefined) parts.push(`account_id=eq.${filter.accountId}`);
+  if (filter.deviceId !== undefined) parts.push(`device_id=eq.${filter.deviceId}`);
+  return readRows(`warmup_sessions?${parts.join("&")}`, "that day's warmups");
+}
+
 /** Sessions logged today (New York), for an account or a whole phone. */
 export function getSessionsToday(
   filter: { accountId?: number; deviceId?: number } = {},

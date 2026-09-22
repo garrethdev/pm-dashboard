@@ -84,9 +84,9 @@ purpose; the changelog has them.
 
 | # | Task | Status |
 |---|---|---|
-| P1 | Put To-do on the Physical dashboard, above Inventory | **Approved 2026-09-22.** The screen is built and on `main`; it still draws placeholder data until PF-05 and PF-07 |
-| P2 | Add the To-do today page, grouped by device and then by account | **Approved 2026-09-22.** As P1: built, still on placeholder data |
-| P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07. **Log warmup is live since PF-04** (2026-09-22) on the phone's page and the account's — it writes a real row; Posted and Failed still wait on PF-07 |
+| P1 | Put To-do on the Physical dashboard, above Inventory | **Approved 2026-09-22, and REAL since PF-07** the same day: the card reads live deliveries and warmups. `?todo=` still draws the placeholder states for review |
+| P2 | Add the To-do today page, grouped by device and then by account | **Approved 2026-09-22, and REAL since PF-07** the same day. `?todo=` still draws the placeholder states for review |
+| P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07. **Log warmup is live since PF-04** and **Posted / Failed since PF-07** (both 2026-09-22); the six saving states P3 handed over are built |
 | P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22, and the switch now SAVES** — PF-04 landed the same day. The by-phone view still needs PF-02's real phones to have groups. What an Automated account SHOWS moved to PF-13 |
 | P5 | Rework the device page around the phone's daily work | **Approved 2026-09-22.** Built and on the branch. **Warmup history is real since PF-04** (2026-09-22); Today on this phone still waits on PF-05 and PF-07 |
 | P6 | Track proxy expiry for real phones on Proxies & numbers | Not started |

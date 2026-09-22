@@ -20,6 +20,79 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — The to-do list is the real day's work now
+
+**Where it came from:** ticket PF-07, the next one in the phone-farm build
+order after PF-04. Its screens were approved on 2026-09-22 (design tickets P1,
+P2 and P3); what was missing was the data behind them and the six states P3
+deliberately handed over.
+
+The To-do card on the dashboard and the To-do page have been showing an
+invented farm since they were designed — made-up phones, made-up handles,
+ticks that were forgotten the moment the page reloaded. They now show the real
+day, and a tick is written down.
+
+**What the list is made of.** Posts come from the rows the Posting Agent hands
+out. Warmups are not stored at all: every account owes two a day, so the list
+works them out from what has actually been logged each time it is drawn.
+Nothing has to be created at midnight, and a day nobody looked at still reads
+correctly afterwards.
+
+**The rules it now keeps, all yours.** Paused accounts stay off the list. An
+unfinished post carries over for three days and then stops. A failed post is
+dumped — finished, never carried over, never handed out again. An account set
+to Automated still shows its two warmups, as items nobody can tick, so a
+script that has stopped shows up as work that never gets done rather than as
+silence.
+
+**The six states around a save.** These were the real work, and each was a
+decision:
+
+1. **While it saves** the sheet holds, with the button reading "Saving…". It
+   does not close hopefully. A post believed logged and not logged comes back
+   tomorrow as carried over, and that is the failure worth guarding against.
+2. **Knowing it took** is the item itself: it re-reads from the database and
+   appears struck through with the time. No second message on a screen used
+   standing up with a phone in the other hand.
+3. **A save that failed** leaves the sheet open holding what you typed, says
+   what went wrong, and offers Try again. Try again cannot save twice: if the
+   first attempt actually landed and only the reply was lost, the app answers
+   "already done" instead of writing again.
+4. **A link that is clearly not a link** is warned about, not refused. The
+   link is optional, so refusing what somebody pasted could leave them unable
+   to record a post they really made.
+5. **Somebody else finishing it while your sheet is open** is now caught. The
+   save is refused with what they did — "Somebody else already marked this
+   posted, with its link" — instead of quietly replacing their answer.
+6. **Paste doing nothing** now says why. Safari can refuse the clipboard
+   outright, and an empty clipboard is a different answer from a refused one;
+   before, both were silence, with a long URL to type by hand as the fallback.
+
+**Two bugs found and fixed while proving it.** Every day the list asked for
+came back a day early, because of how the day boundary was built. And a post
+carried over from an earlier day vanished the instant it was ticked, instead
+of staying struck through for the rest of the day — which on screen looks
+exactly like a save that did not work.
+
+**One thing to know.** Until the Posting Agent is forked (PF-06) nothing hands
+posts out, so the list will show warmups and nothing else. With no phones
+registered it says "No phones yet", which is the true answer today.
+
+**Verification.** Proven against the real database with a throwaway phone and
+two throwaway accounts: a post marked posted, the same save repeated to prove
+it cannot write twice, a stale save refused as somebody else's, a post marked
+posted without its link and the link pasted afterwards, a failed post refusing
+to be un-failed, a post carried over from two days earlier appearing and one
+from five days earlier correctly not. **The failed save was proven by a real
+failure**, not written: the row was deleted out from under an open sheet, and
+the sheet stayed open saying "That post is no longer on the list." with Try
+again. Every test row, both accounts and the phone were then removed and the
+database confirmed back to exactly where it started. Looked at in the running
+app in dark mode at 1440 in **headless Chrome, not Safari**; light mode and
+phone width have not been looked at for this screen yet.
+
+---
+
 ## 2026-09-22 — Warming an account up by hand now counts for something
 
 **Where it came from:** ticket PF-04, the next one in the phone-farm build

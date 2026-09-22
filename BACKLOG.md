@@ -149,10 +149,10 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Ready now** — PF-05 landed 2026-09-22 |
-| PF-07 | Posting To-Do page | Immediate | **Ready now** — PF-05 landed 2026-09-22. Screens approved (P1–P3); needs the re-queue decision below settled first |
+| PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. Shows warmups only until PF-06 hands posts out |
 | PF-11 | Post-ban branch for manual accounts | Intermediate | Blocked by PF-01 |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Ready now** — PF-05 landed 2026-09-22 |
-| PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | Blocked by PF-07 (PF-05 landed 2026-09-22) |
+| PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | **Ready now** — PF-07 landed 2026-09-22 |
 | PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
 | PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
@@ -348,7 +348,7 @@ the workflow is open, because the content tables differ per type and
 on a real 10:00 ET run, **and a delivery marked failed leaves its content row
 closed rather than Ready.**
 
-## PF-07 · Posting To-Do page — Ready now (PF-05 landed 2026-09-22)
+## PF-07 · Posting To-Do page — Done 2026-09-22
 
 Built for a phone screen. Per account: today's queued items with a video
 download button, a caption copy button, **Posted** (asks for the post link) and
@@ -430,6 +430,38 @@ PF-06 writes that row, so it belongs with PF-06.
 *Done when:* Yurie can complete a delivery from the iPhone's browser, **and
 each of the six states above behaves as decided** — with the failed save
 proven by a real failure, not just written.
+
+*2026-09-22: built.* `src/lib/data/todo.ts` is the live answer that
+`todo-placeholder.ts` used to give: posts from `post_deliveries` joined to
+`unified_posts` for the caption, the media and the hour they were meant to go
+out; warmups DERIVED from `warmup_sessions` rather than stored, so nothing has
+to be created at midnight and a day nobody opened still reads correctly.
+`GET /api/todo?day=N` is how the page steps days and re-reads after a tick;
+`POST /api/deliveries/:id` is the tick itself.
+
+**A post belongs to the day it was HANDED OUT**, not the day the content row
+was once planned for — reading it from `unified_posts.posting_date` hid a post
+from the very list it had just been given to, because content written months
+ago still carries its old date. A FINISHED post instead belongs to the day it
+was finished, so one carried over from Monday and ticked on Wednesday stays on
+Wednesday's list rather than vanishing the instant it is ticked.
+
+**The six states**, and what was decided for each: the sheet HOLDS while
+saving rather than closing hopefully (1); the re-read item struck through with
+its time IS the confirmation (2); a failed save keeps the sheet open with what
+was typed and offers Try again, which the server answers "already there" if
+the first attempt landed, so it cannot write twice (3); a link that is not a
+link WARNS rather than refuses, because the link is optional (4); a row that
+moved on since the sheet opened refuses the write and says what somebody else
+did, via an `expect` field the sheet sends (5); Paste says why it did nothing,
+and an empty clipboard reads differently from a refused one (6).
+
+*Done when — met:* proven end to end against the real database with a
+throwaway phone and two throwaway accounts, all since removed, **including the
+failed save proven by a real failure** (the row deleted out from under an open
+sheet). **Not proven with real work:** no phone is registered, no account is
+on Physical, and PF-06 does not exist yet, so nothing hands a post out — the
+list shows warmups only until it does.
 
 ## PF-11 · Post-ban branch for manual accounts — Blocked by PF-01
 
