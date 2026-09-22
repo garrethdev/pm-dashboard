@@ -5,7 +5,12 @@ design step (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`, D1 to D10) is finished
 and signed off — true everywhere but Phase 5, where D10 was reopened on
 2026-09-17 and the note below applies. **Nothing here is built.** The
 questions still to answer are listed at the end, each with the ticket it
-holds up; none of them holds up Phase 2. Each ticket is one piece of work a
+holds up. **Two of them do hold up Phase 2** (corrected 2026-09-22, having
+read as "none of them holds up Phase 2" since this file was written):
+question 3, Czedrick's sign-in email, holds up **DEV-00**, and question 10,
+whether the template model still needs `image_direction`, holds up
+**DEV-01's schema** — the first build ticket of all. Both were raised after
+that sentence was. Each ticket is one piece of work a
 developer or a build session can pick up, finish, and verify on its own.
 
 **Two tabs renamed 2026-09-21 (Garreth), design ticket D13, approved
@@ -38,11 +43,11 @@ gained its text-box copy contract on 2026-09-22**, when D14 was approved in
 dark and light: Name, Written by and a measured character limit above Font, a
 box added by hand arriving named **Text Box 1** rather than unnamed, and the
 names showing on the canvas. Two knock-ons for other tickets: a **Per batch**
-box adds a field to the Generate form (**DEV-06**), and renaming a box renames
+box adds a field to the Generate form (**DEV-15**), and renaming a box renames
 the key the writer writes against (**DEV-08**).
 
 **What D16's approval added (Garreth, 2026-09-22, dark and light).** The
-generator gains a **front page**: **DEV-56** to **DEV-59** in Phase 2 and
+generator gains a **front page**: **DEV-56** and **DEV-57** in Phase 2 and
 **DEV-60** in Phase 5. Overview takes `/carousel-generator`, **Carousel types
 moves to `/carousel-generator/types`**, and the menu gains Overview as its
 first item. Nothing in the tickets below changes except the address and the
@@ -93,10 +98,10 @@ comes after everything it depends on.
 | Phase | Tickets | Ends with |
 |---|---|---|
 | 0. Prerequisites | DEV-00 | Keys, access and dependencies in place |
-| 2. The middle | DEV-01 to DEV-20, and DEV-54 to DEV-55 | A generator-made batch for each of Glow Up and Covered Eye, posted live |
+| 2. The middle | DEV-01 to DEV-20 (DEV-19 is now DEV-19a, DEV-19b and DEV-19c), DEV-54 to DEV-55, DEV-56 and DEV-57 (Overview), DEV-61 and DEV-62 | A generator-made batch for each of Glow Up and Covered Eye, posted live |
 | 3. The front | DEV-21 to DEV-26 | A new carousel type made in the Studio, first batch reviewed, not yet wired |
 | 4. The back | DEV-27 to DEV-31, and DEV-41 | That type wired and posting; libraries fillable by upload and Higgsfield |
-| 5. Learning | DEV-32 to DEV-40, DEV-42 to DEV-47 | Trends opens on a searchable, filterable feed of the carousels a person has not seen, opens a post's details, analysis and transcription, reads digests, proposes rules, and opens references in the Studio |
+| 5. Learning | DEV-32 to DEV-39, DEV-42 to DEV-47, and DEV-60 | Trends opens on a searchable, filterable feed of the carousels a person has not seen, opens a post's details, analysis and transcription, reads digests, proposes rules, and opens references in the Studio |
 | 6. Auto mode | DEV-48 to DEV-53 | A batch started in Auto writes, retries its own flagged decks, renders and stops at Approve (n) decks, with the dashboard closed |
 
 **Sizes** are rough guesses for one developer: **S** a day or less, **M** two
@@ -221,6 +226,13 @@ promises.
   - `carousel_drafts`: widen `status` with `flagged`. Add a unique constraint
     on `(brief_id, position, version)` so a double click cannot write the same
     version twice.
+  - **A place to record that a deck was sent to the painter** (Garreth,
+    2026-09-22, deciding what **Render (n) decks** does): the press marks the
+    decks it sent and the mark is saved, so a batch closed mid-render reopens
+    knowing what it had already sent. Widen `status` with a `rendering`
+    value for the deck, or carry the stamp in `generation_metadata` —
+    whichever DEV-11 and DEV-12 find cleaner when they are built; this
+    migration has to leave room for it either way.
   - **One running batch per lane:** a partial unique index on
     `carousel_briefs (content_type)` where `status in ('generating',
     'rendering')`. The database enforces plan §4.5, not the page.
@@ -245,9 +257,12 @@ promises.
   - The two templates from `docs/carousel-templates/*.v1.json`, as version 1,
     `active`, each pointed at its library, mapped to columns as template model
     §6 says.
-  - A first `carousel_lane_directions` version for each lane, carrying the
-    existing prompts (see DEV-08). This is what the **Writing** tab shows and
-    saves; the table and its `direction` column keep their own names.
+  - **`carousel_lane_directions` is created empty. DEV-08 writes version 1**
+    (Garreth, 2026-09-22): both tickets claimed the seed, and the prompts are
+    DEV-08's subject — it is the ticket that reads them closely, so pinning
+    their text in this migration would fix it before anyone had looked. The
+    table and its `direction` column keep their own names, and it is what the
+    **Writing** tab shows and saves.
 - **Tests:** after applying, run `node scripts/carousel-templates/verify.mjs`
   against the rows read back from the database, not only the files.
 - **Done when:** `list_tables` shows the new shape, the advisors report
@@ -434,7 +449,9 @@ promises.
     honour; the screen has already said so beside Save version (DEV-19b), and
     a dropped mention is recorded in `generation_metadata` so a deck written
     against a stale Writing can be explained afterwards.
-  - Port the existing prompts into direction version 1 and the prompt
+  - **Write direction version 1 for each lane** — this ticket owns that seed,
+    not DEV-01, which leaves the table empty (Garreth, 2026-09-22). Port the
+    existing prompts into it and into the prompt
     templates: Glow Up's seven-slide grammar, Covered Eye's five-beat arc, the
     Caption Maker's voice rules. Keep the "Harden Config" step as code: brand
     and molecule names are stripped from the caption whatever the model
@@ -548,10 +565,10 @@ promises.
   | `GET batches/[id]` | Everything the batch page needs, including who is running it and when it last moved |
   | `POST batches/[id]/decks/[position]/write` | Writes, or retries, one deck; runs the gate and the music lookup (DEV-10), so a bad score or a track that cannot post flags the card while the batch is still writing |
   | `POST batches/[id]/continue` | Returns the next unfinished step, for resuming |
-  | `POST batches/[id]/render` | **Render (n) decks**: takes every written, unflagged deck and hands it to the painter (DEV-12), which writes the lane row |
+  | `POST batches/[id]/render` | **Render (n) decks**: marks every written, unflagged deck as going to the painter, moves the brief to `rendering`, and returns the count. It paints nothing itself |
+  | `POST batches/[id]/render/next` | Hands back the next marked deck still to paint, so the page renders one at a time (DEV-12). The painter writes the lane row |
   | `POST batches/[id]/approve` | **Approve (n) decks** on the finished batch: the one sign-off (DEV-18) |
   | `POST drafts/[id]/redo`, `…/redo-slide`, `…/change-track` | New versions (DEV-08) |
-  | `POST drafts/[id]/withdraw` | `carousel_withdraw_approval` |
   | `POST drafts/[id]/discard` | Marks the draft discarded; not offered once approved |
   | `POST batches/[id]/finish` | **Finish here**: closes a stopped batch with what was done, freeing the lane |
 
@@ -570,9 +587,11 @@ promises.
   - **Unwired types** (no `lane` on the template) approve and render into the
     drafts only. That branch is built in DEV-26; here it returns "not wired".
   - Every write is audit-logged.
-- **Tests:** unit tests for the batch-name letter sequence, the stopped rule
-  and the approval window; a branch run of a three-deck batch from creation
-  to materialised rows.
+- **Tests:** unit tests for the batch-name letter sequence and the stopped
+  rule; a branch run of a three-deck batch from creation to materialised
+  rows. (This asked for a test of "the approval window" until 2026-09-22;
+  there is no window — the per-deck approve and its five seconds went on
+  2026-09-14.)
 - **Done when:** a three-deck Glow Up batch runs end to end through the routes
   (no page yet) and the lane rows read back with `render_status = 'queued'`,
   `gatekeep_status = 'approved'` (the gate's verdict, with `gatekeep_notes`
@@ -595,13 +614,65 @@ promises.
     reason and the slide number to outline. It does not undo the render.
   - Rendered: the lane row is complete with art, caption and music, still
     `scheduler_ready = false` until Approve (DEV-18).
-  - `POST /api/carousel-generator/batches/[id]/render` returns the next deck
-    to render, so the page asks for one at a time.
+  - `POST /api/carousel-generator/batches/[id]/render/next` returns the next
+    **marked** deck to render, so the page asks for one at a time.
+    **Decided 2026-09-22 (Garreth).** This address and DEV-11's
+    `batches/[id]/render` were the same one, described two different ways —
+    one handing the whole batch to the painter, the other handing back a deck
+    at a time. They are now two: the press **marks** the set and saves that,
+    and this one **hands them out**. Writing already works this way (DEV-16),
+    so the screen behaves the same on both halves; a failure is one deck
+    rather than the batch; and because the mark is saved, a batch closed
+    mid-render reopens knowing what it had already sent, instead of guessing
+    from whatever happens to be painted.
 - **Tests:** unit tests for the flag reasons; a branch run rendering the
   DEV-11 batch.
 - **Done when:** three Glow Up decks render in the deployed preview, their
   URLs open, and a query shows them rendered with the gate's verdict on
   `gatekeep_status` and `scheduler_ready` still false.
+
+### DEV-61. What a batch is waiting for, worked out in one place
+
+**Added 2026-09-22 (Garreth).** Four tickets each turn a batch's state into
+words: the type's card (DEV-14), the bell (DEV-52), History and the type page
+(DEV-53) and Running Tasks (DEV-57). The head of this file already warns that
+*a fifth wording is a bug* — but until now no ticket owned the one wording, so
+each screen derived it again from the same counts. This ticket owns it, and
+those four become readers of it. It also takes Overview off Phase 6: DEV-57
+waited on DEV-53 only for the words, and now waits on this instead.
+
+- **Size:** S.
+- **Depends on:** DEV-11.
+- **Designs:** D12's states, and the deck-state table at the top of the flows
+  document, which stays the vocabulary.
+- **Build:** one server-side function in `src/lib/carousel/` that takes a brief
+  and its deck counts and returns the batch's state, the words for it, the
+  tone, and which screen holds the press:
+  - **The words, and no others:** *Writing n of m*, *Rendering n of m*,
+    *(n) to render*, *(n) to approve*, *(n) flagged*, *Stopped*, *Done*, with
+    *n dropped* beside the count where Auto dropped decks (DEV-49).
+  - **The tone rule:** only a status meaning something went wrong is red, and
+    *Stopped* is still the only one. Waiting words are neutral. No new colour.
+  - **The blank-and-nought rule** (Garreth, 2026-09-21, written out in
+    DEV-53): for the **status**, nothing rendered and nought rendered mean the
+    same thing — *not yet*. For the **numbers** in a column, a real nought and
+    a blank stay different. Both readings come from here, so no screen has to
+    remember which it wanted.
+  - **Where it opens:** waiting for Render opens the review screen (D4),
+    waiting for Approve opens the finished batch (D5), running opens the batch
+    (D3). The screens ask this function where to go rather than each deciding.
+  - It reads; it writes nothing.
+- **Read by:** DEV-14 (the type's card), DEV-52 (the bell), DEV-53 (History
+  and the type page) and DEV-57 (Running Tasks, Today's *Needs input*, and
+  whether a type reads *Open running batch*). **No screen derives these words for itself.**
+- **Tests:** a table of fixtures — one batch shape per row (writing, rendering,
+  written and nothing rendered, rendered and nothing approved, rendered with
+  some approved, stopped, flagged, Auto with drops) against the expected words,
+  tone and destination. This is the whole ticket's value: the table is the
+  contract the four screens share.
+- **Done when:** the fixtures pass, and every screen that names a batch's
+  state calls this function — searching the repo finds no second place working
+  the words out.
 
 ### DEV-13. Generator components
 
@@ -622,9 +693,6 @@ promises.
     the per-deck approve on 2026-09-14 — corrected 2026-09-21.)
   - `ProgressLine`: "7 of 20 written", `aria-live="polite"`, the stalled
     variant in the warn tone naming the deck and when it last moved.
-  - `UndoToast`: five seconds, one Undo. No toast component exists yet.
-    **Nothing in the batch screens needs it now** that the per-deck approve
-    and its bulk undo are gone; keep it only if another screen asks for one.
   - `BatchBottomBar` for phone widths.
   - `SlideThumbStrip` filling in as slides land.
 - **Motion:** Approve and Redo get press feedback only (100 to 160 ms); cards
@@ -637,7 +705,7 @@ promises.
 ### DEV-14. Carousel types screen
 
 - **Size:** M.
-- **Depends on:** DEV-01, approved D1.
+- **Depends on:** DEV-01, DEV-61, approved D1.
 - **Designs:** D1. **Flows:** F1 steps 1 and 2.
 - **Build:** this screen lives at **`/carousel-generator/types`** (D16, approved
   2026-09-22 — Overview took `/carousel-generator`, where the `SectionStub`
@@ -711,7 +779,9 @@ promises.
     unavailable beside it.
   - **Open:** the form has no datestamp field (Garreth, 2026-09-14), but the
     Glow Up template prints a month and year on a slide for each batch. Where
-    that value comes from is not decided yet.
+    that value comes from is not decided yet — **open question 11** at the end
+    of this document, where it was added on 2026-09-22, having been raised
+    here and nowhere else since the file was written.
   - Submit calls `POST batches` and opens the batch page.
 - **Done when:** a batch can be started for each lane from the form, a
   repoint shows up as a new template version by query, and a type with
@@ -791,32 +861,91 @@ design; F2 was corrected the same day.
 - **Done when:** a batch renders from the page, and running the old Python
   painter against the same rows at the same time picks none of them up.
 
-### DEV-19. History, the content type page, and image libraries (read-only)
+### DEV-19a. History
 
-Three screens, each its own piece of work; grouped here because none blocks
-the others.
+**Split out on 2026-09-22 (Garreth).** DEV-19 was three unrelated screens under
+one number with a single "Done when", while six other tickets already pointed
+at 19a, 19b and 19c as though they were tickets. Now they are.
 
-**DEV-19a. History** · S · depends on DEV-11 and approved D9 · flows F4, F5.
-The table of briefs (date, type, requested, written, rendered, approved, and a
-status — approved is last, being the sign-off on the finished batch; no "who
-ran it" column, the app names nobody), filter pills by type, a date-range
-dropdown, stopped rows with
-Continue, **Run again** (clones type, count, note and per-batch choices under
-the current direction and library, or opens the running batch instead), and a
-re-run shown paired with its original. First run and no-results states.
-Stacked rows on phones. Adds History to the menu.
+- **Size:** S.
+- **Depends on:** DEV-11, DEV-61 (the Status column's words), approved D9.
+- **Designs:** D9. **Flows:** F4, F5.
+- **Build:** the table of briefs — date, type, requested, written, rendered,
+  approved, and a status. Approved is last, being the sign-off on the finished
+  batch; there is **no "who ran it" column**, because the app names nobody.
+  Filter pills by type and a date-range dropdown. Stopped rows carry
+  **Continue**. **Run again** clones type, count, note and per-batch choices
+  under the current Writing and library, or opens the running batch instead,
+  and a re-run is shown paired with its original. First-run and no-results
+  states. Stacked rows on phones. Adds History to the menu.
+  - The Status column's words come from **DEV-61**, not from this screen.
+- **Done when:** the table matches D9 in both themes at both widths with
+  numbers that match a direct query, and Run again on a finished batch starts
+  another under the current Writing.
 
-**DEV-19b. Content type page, Overview and Writing tab** · M · depends on
-DEV-01 and approved D7 · flow F6 (Phase 2 steps). `/carousel-generator/types/[slug]`:
-details, template versions, its batches, Generate. The tab row reads
-**Overview · Writing · Go Live**. The Writing tab as a plain editor: active
-version and date, **Save version** writes a new active version, past versions
-with **Make active**. Both writes in one database function so there is never
-zero or two active versions. **Edit template** arrives in Phase 3; the Go Live
-tab in Phase 4.
-- **From the approved D17 (Garreth, 2026-09-22) — naming a text box while you
-  write.** The text-box names listed under the editor stop being labels and
-  become how a name gets into the Writing:
+### DEV-19b. The type page: Overview and the Writing tab
+
+- **Size:** M. **D17's mention editor came out of this ticket on 2026-09-22**
+  and is **DEV-62**; without it this is the M it was always sized as.
+- **Depends on:** DEV-01, DEV-61, approved D7.
+- **Designs:** D7. **Flows:** F6 (Phase 2 steps).
+- **Build:** `/carousel-generator/types/[slug]`: details, template versions,
+  its batches, Generate. The tab row reads **Overview · Writing · Rows · Go
+  Live** — Rows is D15's tab and arrives with **DEV-54**, which builds it;
+  this ticket builds the row it sits in. (It read "Overview · Writing · Go
+  Live" until 2026-09-22, which would have built the wrong tab row.) The
+  Writing tab as a plain editor: active version and date, **Save version**
+  writes a new active version, past versions with **Make active**. Both writes
+  in one database function so there is never zero or two active versions.
+  **Edit template** arrives in Phase 3; the Go Live tab in Phase 4.
+  - The batch rows' waiting words come from **DEV-61**.
+
+From the approved D13 (Garreth, 2026-09-22):
+- **The empty editor** carries a grey placeholder — the shape of a good
+  instruction, not an instruction to write one — gone the moment anything is
+  typed: *who is speaking, and to whom · what each slide has to do · the
+  words to use, and the words never to use · how the caption should read*.
+- **The Studio's drafted note pre-fills the editor and does not count as
+  saved**, under a neutral **Not saved** pill. The requirement is met by a
+  person having read it and pressed Save version, not by the field being
+  non-empty.
+- **The template's text-box names** are listed along the **foot** of the
+  editor card, left of Save version — `hook`, `line`, `closing` — and at the
+  foot of the card on a phone. Not beside it: the right-hand column is the
+  Conversation at full height, and moving the names to a side would mean
+  moving the Conversation (approved as drawn). **They are read-only labels
+  here**; DEV-62 is what makes them the way a name gets into the writing.
+- **The header shows both pills** when a type is fresh out of the Studio —
+  *Not wired* and *Needs writing* — where the card on Carousel types has room
+  for one and shows the blocking one. **Generate in the header stays an
+  ordinary button.**
+
+- **Done when:** the page matches D7 in both themes at both widths with
+  numbers that match a direct query; Save version leaves exactly one active
+  version by query; and a type fresh out of the Studio shows both pills with
+  an ordinary Generate.
+
+### DEV-62. The Writing editor becomes a surface that can hold a mention
+
+**Split out of DEV-19b on 2026-09-22 (Garreth), from the approved D17.** It is
+a different job from building a page of tabs and version dropdowns, it is the
+one piece of the type page with real risk in it, and the file already said so
+in DEV-19b's own words: *this changes the editor itself, and that is the bulk
+of the work*.
+
+- **Size:** M.
+- **Depends on:** DEV-19b. It reads the **active template's** box names and
+  their length limits from the copy contract, which the template already
+  carries; D14's measured limit (DEV-21, Phase 3) makes that number better but
+  is not needed for this to be built.
+- **Designs:** D17 (D7), dark and light, desktop and phone. **Flows:** F6, and
+  F8 steps 4 and 5 where the names being pointed at are set.
+- **Why:** a mention is the difference between an instruction the writer can
+  follow and one it has to guess at. It is also what lets **DEV-08** resolve a
+  name to that box's role and character limit instead of sending the word on
+  as prose — which is the point of the whole feature, not a follow-on.
+- **Build:** the text-box names under the editor stop being labels and become
+  how a name gets into the Writing:
   - **Drag a pill into the editor** and it drops in at the point it was
     dropped, with the caret line showing where that is while the drag is in
     flight. **Pressing a pill** inserts it at the caret — the fast route on
@@ -832,11 +961,13 @@ tab in Phase 4.
     single `carousel_lane_directions.direction` column, which nothing else has
     to learn to read. The screen highlights a mention by matching the name
     against the **active template's** boxes each time the Writing is shown.
-  - **This changes the editor itself, and that is the bulk of the work.** A
-    mention is drawn as the mono pill inline in the sentence, and a pill
-    cannot live inside a plain `<textarea>`; the editor becomes a rendered
-    surface, the way the suggested-change view already is. The *field* stays
-    words — that promise is about what is saved, not about what is typed into.
+  - **The editor becomes a rendered surface.** A mention is drawn as the mono
+    pill inline in the sentence, and a pill cannot live inside a plain
+    `<textarea>`; it becomes a rendered surface, the way the suggested-change
+    view already is. The *field* stays words — that promise is about what is
+    saved, not about what is typed into. **A mention behaves as one thing**:
+    the caret does not go inside it and a backspace takes the whole name, or a
+    second mention nests inside the first (found in the prototype, 2026-09-22).
   - **A mention that matches no box says so twice** (Garreth's decision after
     seeing both): the mention goes muted in the sentence — fill dropped, dotted
     underline, never red, because such a Writing is stale rather than broken —
@@ -844,41 +975,39 @@ tab in Phase 4.
     It is not decoration: a dead mention is exactly where the prompt resolves
     to nothing (DEV-08) and the model is told about a box that is not there,
     and this is the only warning that ever surfaces.
+  - **Build the surface so the Conversation can reuse it.** D17 gives the
+    Conversation's box the same behaviour, and that box is **DEV-25** in
+    Phase 3. One surface, used twice — not a second implementation.
+- **Tests:** a name typed by hand becomes a mention when the writing is put
+  down; a word that is not a box stays prose; *never @ anyone* opens no menu;
+  Escape leaves the characters as typed; a mention dropped mid-sentence lands
+  where it was dropped and not at the end; and what is read back out of the
+  editor is the plain characters, unchanged.
+- **Done when:** a mention can be put into a saved Writing by dragging, by
+  pressing and by typing `@`, on the desktop and on a phone, in both themes;
+  what is saved to `carousel_lane_directions.direction` is plain words by
+  query; and a Writing naming a box the active template no longer has shows
+  the muted mention and the count.
 
-From the approved D13 (Garreth, 2026-09-22):
-- **The empty editor** carries a grey placeholder — the shape of a good
-  instruction, not an instruction to write one — gone the moment anything is
-  typed: *who is speaking, and to whom · what each slide has to do · the
-  words to use, and the words never to use · how the caption should read*.
-- **The Studio's drafted note pre-fills the editor and does not count as
-  saved**, under a neutral **Not saved** pill. The requirement is met by a
-  person having read it and pressed Save version, not by the field being
-  non-empty.
-- **The template's text-box names** are listed along the **foot** of the
-  editor card, left of Save version — `hook`, `line`, `closing` — and at the
-  foot of the card on a phone. Not beside it: the right-hand column is the
-  Conversation at full height, and moving the names to a side would mean
-  moving the Conversation (approved as drawn).
-- **The header shows both pills** when a type is fresh out of the Studio —
-  *Not wired* and *Needs writing* — where the card on Carousel types has room
-  for one and shows the blocking one. **Generate in the header stays an
-  ordinary button.**
+### DEV-19c. Image libraries, read-only
 
-**DEV-19c. Image libraries, read-only** · S · depends on DEV-01 and approved
-D8 · flow F7 steps 1 and 2. The grid as boards — a mosaic of three of the
-library's own images, its name and its image count, and nothing else — and one
-library showing its sets as folder cards with the images in no set under **Not
-in a set**, covers marked. Opening a set goes a level down with a breadcrumb
-back. Adds Image libraries to the menu. Read-only here: the image modal, Tag
-with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
-
-- **Done when:** each screen matches its design in both themes at both
-  widths, with numbers that match a direct query.
+- **Size:** S.
+- **Depends on:** DEV-01, approved D8.
+- **Designs:** D8. **Flows:** F7 steps 1 and 2.
+- **Build:** the grid as boards — a mosaic of three of the library's own
+  images, its name and its image count, and nothing else — and one library
+  showing its sets as folder cards with the images in no set under **Not in a
+  set**, covers marked. Opening a set goes a level down with a breadcrumb
+  back. Adds Image libraries to the menu. Read-only here: the image modal, Tag
+  with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
+- **Done when:** the grid and one library's sets match D8 in both themes at
+  both widths, with counts that match a direct query.
 
 ### DEV-54. The Rows tab: what is sitting in the lane
 
 - **Size:** M.
-- **Depends on:** DEV-19a (the type page and its tabs).
+- **Depends on:** DEV-19b (the type page and its tabs). (This read DEV-19a
+  until 2026-09-22; DEV-19a is History.)
 - **Designs:** D15 (D7). **Flows:** F18.
 - **Why** (Garreth, 2026-09-21): a lane says nothing is postable and has 240
   rows in it, and no screen answers *why*. Inventory gives the number; the
@@ -1001,14 +1130,29 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
   and both pairs of columns start and end level in both themes at both widths,
   including the states where the shorter section is the other one.
 
-### DEV-57. Overview: Running Tasks
+### DEV-57. Overview: Running Tasks, Today, and the Carousel types section
+
+**DEV-58 and DEV-59 were folded in here on 2026-09-22 (Garreth).** Both were
+S, both read this ticket's one query, and neither could be started on its own
+— *Needs input* is a count of the cards below it, and whether a type reads
+*Open running batch* is the same fact Running Tasks draws. Overview is now two
+tickets: **DEV-56** moves the addresses and lays the page out, and this one
+builds what is on it.
 
 - **Size:** L.
-- **Depends on:** DEV-56, DEV-11, DEV-14; and DEV-48, DEV-52 and DEV-53 for
-  Auto and for the wording.
-- **Designs:** D16. **Flows:** F17 steps 3 and 4.
+- **Depends on:** DEV-56, DEV-11, DEV-12, DEV-14, and **DEV-61** for the words.
+- **It no longer waits on Phase 6** (Garreth, 2026-09-22). It depended on
+  DEV-48, DEV-52 and DEV-53, which made this Phase 2 ticket — and what were
+  then DEV-58 and DEV-59 behind it — unfinishable until the last phase. The
+  words come from DEV-61 instead, and **the Auto parts arrive with DEV-53**:
+  the Auto and Auto paused pills, and the rule that a flagged deck inside a
+  running Auto batch stays off this section. Until then the section draws
+  every other state, and no batch is an Auto one because Auto does not exist
+  yet.
+- **Designs:** D16. **Flows:** F17 steps 2, 3, 4 and 5.
 - **Build:**
-  - **One query**, and the same one DEV-58 and DEV-59 read: every batch that
+  - **One query**, and the same one Today's *Needs input* tile and the
+    Carousel types section below read: every batch that
     is **working** or **waiting for a person**, working first, then waiting,
     newest first. Working is writing or rendering. Waiting is written and not
     rendered (*n to render*), rendered and not approved (*n to approve*), a
@@ -1042,19 +1186,8 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
     its dim 0.12, and the shimmer stops. The timer still ticks.
   - **Empty:** *Nothing running, nothing waiting*, one line in a quiet dashed
     box that fills down to meet the column beside it.
-- **Done when:** a batch moving from writing to rendering changes its grid's
-  colour and its line without the card being rebuilt; a finished and approved
-  batch never appears; a flagged deck in a running Auto batch never appears
-  and the same deck appears the moment the batch is paused; and for any one
-  batch the words here, in the bell and in History's Status column are the
-  same words.
 
-### DEV-58. Overview: Today, the four counts
-
-- **Size:** S.
-- **Depends on:** DEV-56, DEV-57, DEV-11, DEV-12.
-- **Designs:** D16. **Flows:** F17 step 2.
-- **Build:**
+**Today, the four counts** (F17 step 2; was DEV-58):
   - Four tiles — *Written today*, *Rendered today*, *Approved today*, *Needs
     input* — each the dashboard's own `MetricTile` from
     `analytics-charts.tsx`: the `.dot-fade` corner, `rounded-nested`,
@@ -1065,19 +1198,11 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
     own day boundary (America/New_York, as every other *today* in the app).
     Pin the zone in the query; the instance's own default is not it.
   - ***Needs input* is the count of Running Tasks cards waiting for a person**,
-    read from DEV-57's query and never a second one, so the box and the
-    section under it cannot disagree.
+    read from this ticket's own query and never a second one, so the box and
+    the section under it cannot disagree.
   - **A count that cannot be read shows a dash, not 0.** A nought is an answer.
-- **Done when:** the four figures match a direct query; *Needs input* equals
-  the number of still-ringed cards below it in every state, including 0 on the
-  all-clear; and a count that errors shows a dash rather than a nought.
 
-### DEV-59. Overview: the Carousel types section
-
-- **Size:** S.
-- **Depends on:** DEV-56, DEV-14, DEV-57 (for what is running).
-- **Designs:** D16. **Flows:** F17 step 5.
-- **Build:**
+**The Carousel types section** (F17 step 5; was DEV-59):
   - **Five rows, ordered by the type's most recent batch**, newest first. A
     type never generated has no date and sorts last, so one made in the Studio
     yesterday is still reachable from here. Retired types are not in this
@@ -1089,16 +1214,25 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
     it.
   - A type whose batch is **writing or rendering** reads **Open running
     batch**; a **stopped** batch does not, because it is not writing into the
-    lane. Read it from DEV-57's query, so this section and Running Tasks
-    cannot disagree about what is running.
+    lane. Read it from this ticket's own query, so this section and Running
+    Tasks cannot disagree about what is running.
   - The name opens the type's page. **Generate opens the Generate form**,
     which is where a missing Writing is named and marked (DEV-15, D13) — the
     row never blocks the press.
   - **All Carousel Types** sits opposite the heading, as *All trends* and *All
     saved* do, and opens Carousel types. It always shows.
-- **Done when:** the order follows the most recent batch with never-generated
-  types last; a type with a writing batch reads *Open running batch* both here
-  and on its own card; and Generate opens the form for the right type.
+- **Done when:** a batch moving from writing to rendering changes its grid's
+  colour and its line without the card being rebuilt; a finished and approved
+  batch never appears; and for any one batch the words here, in the bell and
+  in History's Status column are the same words (DEV-61). **Today:** the four
+  figures match a direct query, *Needs input* equals the number of
+  still-ringed cards below it in every state including 0 on the all-clear, and
+  a count that errors shows a dash rather than a nought. **Carousel types:**
+  the order follows the most recent batch with never-generated types last, a
+  type with a writing batch reads *Open running batch* both here and on its
+  own card, and Generate opens the form for the right type. **In Auto**
+  (DEV-53): a flagged deck in a running Auto batch never appears, and the same
+  deck appears the moment the batch is paused.
 
 ### DEV-20. Phase 2 live proof
 
@@ -1155,7 +1289,7 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
       four options do not fit beside an 84px label: **AI**, **Fixed**, **Per
       batch**, and on a layered slide also **Set**. Fixed opens a sub-row for
       the words themselves, stored on the template and painted on every deck
-      of the type. **Per batch** means the Generate form (DEV-06) asks for it,
+      of the type. **Per batch** means the Generate form (DEV-15) asks for it,
       the way it already asks for the opening line, so adding a Per batch box
       adds a field to that form. Set keeps D11's existing behaviour and its
       **Fact** dropdown, which moved into this row.
@@ -1177,7 +1311,7 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
     showed only on the selected box and its text came from the box's position,
     so three boxes on one slide all read the same.
   - **No per-box description field.** What a box is for is said in the type's
-    Writing (DEV-19), one place to read rather than two; the box names are
+    Writing (DEV-19b), one place to read rather than two; the box names are
     listed beside that editor (DEV-19b).
   - Every change edits the template object and is saved as a draft template
     row (`status = 'draft'`) a moment after the last change, so a closed tab
@@ -1341,7 +1475,8 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
 - **From the approved D17 (Garreth, 2026-09-22):** the conversation's box
   takes the same mentions as the editor. A pill dropped or pressed there
   inserts exactly what it inserts in the editor — there is no second
-  behaviour — and `@` opens the same menu. **The reply uses the mentions
+  behaviour — and `@` opens the same menu. **Use DEV-62's surface**, which is
+  built for two uses; do not write a second one. **The reply uses the mentions
   back**, so the exchange and the Writing read alike and *make @hook shorter*
   is a question about a box rather than about a word. On the phone the
   conversation is a sheet, so the pill row is carried inside the sheet too;
@@ -1361,11 +1496,14 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
 - **Depends on:** DEV-11, DEV-12, DEV-24.
 - **Flows:** F11 "Before wiring". **Plan:** §4.7.
 - **Build:** the branch DEV-11 left open. For a template with no `lane`:
-  approval does not materialise; rendering paints into a generator-owned
-  Storage path and writes the slide URLs onto `carousel_draft_slides`; the
-  card's last state is Rendered, not Generated. The music lookup still runs.
-- **Done when:** a Studio-made type's first batch is written, approved and
-  rendered with no lane table, and nothing appears in `unified_posts`.
+  **rendering does not materialise a lane row** — there is none to write to —
+  and paints into a generator-owned Storage path instead, writing the slide
+  URLs onto `carousel_draft_slides`; the card's last state is Rendered, not
+  Generated. The music lookup still runs. (This said "approval does not
+  materialise" until 2026-09-22, which was the old vocabulary: materialising
+  hangs off rendering, not off an approval, since 2026-09-14.)
+- **Done when:** a Studio-made type's first batch is written, rendered and
+  approved with no lane table, and nothing appears in `unified_posts`.
 
 ---
 
@@ -1522,7 +1660,8 @@ place — the same design ticket, the same build file, the same canvas pages;
 **there was no D12 for it** (D12 is Auto mode, added 2026-09-21). The Trends page now opens on a **Feed** of the carousel
 library with a search bar over it, and Digests and Knowledge base become the
 second and third tabs, unchanged in substance. DEV-34 and DEV-35 below are
-rewritten for that, and DEV-36 to DEV-40 are new. These tickets are written
+rewritten for that, and DEV-36 to DEV-40 are new (DEV-40 was folded into
+DEV-36 on 2026-09-22). These tickets are written
 now, in parallel with the design rather than after it, at Garreth's request,
 so the screen wording here follows the brief the design is being drawn from.
 
@@ -1539,7 +1678,9 @@ on it, with the date it was read.
 
 **Build order inside this phase (round three, 2026-09-19):** DEV-32 → DEV-33
 as before, then **DEV-36 → DEV-45 → DEV-37 → DEV-44 → DEV-34 → DEV-42 →
-DEV-47 → DEV-39 → DEV-43 → DEV-38 → DEV-35 → DEV-46 → DEV-40**. The feed's
+DEV-47 → DEV-39 → DEV-43 → DEV-38 → DEV-35 → DEV-46 → DEV-60**.
+(DEV-60, Overview's two library sections, was left out of this order until
+2026-09-22; it comes last because it reads what everything before it builds.) The feed's
 order, what has been seen, saves and votes exist before the page that shows
 them; the details window comes with the page; the search needs its embedding
 before it is wired, and its filters after; analysis on demand is last because
@@ -1728,7 +1869,7 @@ history; everything it decided that still holds is restated here.*
   where the link gets aimed: the design prototype lands on the deck picked
   since 2026-09-17 (it opened the Studio at its start before, because the
   Studio took a type's name and character rather than a reference). Only carousels
-  carry it — videos never reach the page (DEV-40), and the Studio drafts a
+  carry it — videos never reach the page (DEV-36), and the Studio drafts a
   template from slides.
 - **Done when:** the button opens the Studio from a feed post, from the
   details window **and** from a digest's carousel list, all on the same
@@ -1779,10 +1920,22 @@ history; everything it decided that still holds is restated here.*
     carousels; **every one has `views`, and `published_at` is still null on
     all of them**. A null `likes` or `saves` must reach the page as null, not
     0 (DEV-34 leaves a null number off the line).
+- **Videos stay out of the feed — this is where that is enforced** (Garreth,
+  2026-09-17, carrying forward what D10 decided on 2026-09-16; folded in from
+  DEV-40 on 2026-09-22, which built nothing and was the fifth place the rule
+  was written down rather than the one place it claimed to be).
+  - Filter on `references_unified.format`, **never on the address**: a TikTok
+    carousel and a TikTok video share the `/video/<id>` shape, so the format
+    is the only thing that tells them apart. DEV-33 filters a digest the same
+    way, and DEV-39 filters the search results the same way; both point here.
+  - Revisit when video analysis lands. There were 235 `video_enrich` jobs
+    queued on 2026-09-17 and nothing on this page reads them.
 - **Tests:** paging from the top to the end returns each reference id exactly
   once.
 - **Done when:** the Feed scrolls the whole library in pages of twenty, with
-  no card repeated and none missed, in the order this function sets.
+  no card repeated and none missed, in the order this function sets, and a
+  direct query of the function returns no row whose format is anything but
+  carousel.
 
 ### DEV-37. Favourites: Save on a card
 
@@ -1853,7 +2006,10 @@ history; everything it decided that still holds is restated here.*
 ### DEV-39. Carousel search wiring
 
 - **Size:** M.
-- **Depends on:** DEV-34.
+- **Depends on:** DEV-34, and **DEV-47**, which says it blocks this one: the
+  search function raises without a query embedding, so only keyword mode
+  works until DEV-47 lands. (Only DEV-47's end of that link was written down
+  until 2026-09-22.)
 - **Build:**
   - `POST /api/carousel-generator/search`, **one route handler for the one
     search box**: it takes a single query and runs **both** database functions
@@ -1904,7 +2060,7 @@ history; everything it decided that still holds is restated here.*
       in the feed and never turn up in a search until it is read (DEV-46).
     - **Filter the results to carousels.** The function does not take a
       format; join the returned reference ids to `references_unified` and keep
-      `format = 'carousel'` (DEV-40), asking for a few more than 25 so that a
+      `format = 'carousel'` (DEV-36), asking for a few more than 25 so that a
       page is still full after the videos drop out.
     - **The count line:** the function returns at most `p_limit`. When 25 come
       back, the page says **"The 25 best matches for …"**; it never prints 25
@@ -1919,22 +2075,6 @@ history; everything it decided that still holds is restated here.*
   lists and a picture for every carousel it returns, and renders as the
   matching accounts above a grid of tiles in place of the
   feed, with the words-first count line above them.
-
-### DEV-40. Videos stay out of the feed
-
-- **Size:** S. A decision and the check that it holds.
-- **Depends on:** DEV-36.
-- **Build:** nothing new. **The feed shows carousels only** (Garreth,
-  2026-09-17, carrying forward what D10 decided on 2026-09-16). DEV-36's
-  format filter is what enforces it, and DEV-33 already filters a digest the
-  same way, so the decision is written down once here and held in one place.
-  - Filter on `references_unified.format`, **never on the address**: a TikTok
-    carousel and a TikTok video share the `/video/<id>` shape, so the format
-    is the only thing that tells them apart.
-  - Revisit when video analysis lands. There were 235 `video_enrich` jobs
-    queued on 2026-09-17 and nothing on this page reads them.
-- **Done when:** the decision is recorded here, and a direct query of the feed
-  function returns no row whose format is anything but carousel.
 
 ### DEV-42. The details window: details, analysis, transcription
 
@@ -2345,7 +2485,7 @@ the D1, D2, D3, D4, D5, D7 and D9 canvases and run in the prototype.
 ### DEV-52. The bell: Batch written and Batch finished
 
 - **Size:** M.
-- **Depends on:** DEV-11, DEV-48.
+- **Depends on:** DEV-11, DEV-48, DEV-61 (the words).
 - **Designs:** D12 (D3, D4, D5). **Flows:** F2, F3.
 - **Why:** a batch that needs its person should say so wherever that person
   is, and a batch that needs nobody should stay quiet.
@@ -2370,7 +2510,11 @@ the D1, D2, D3, D4, D5, D7 and D9 canvases and run in the prototype.
 ### DEV-53. What a batch is waiting for, on every screen that lists batches
 
 - **Size:** M.
-- **Depends on:** DEV-14, DEV-19a, DEV-19b, DEV-52 (for the wording).
+- **Depends on:** DEV-14, DEV-19a, DEV-19b, DEV-52, and **DEV-61**, which
+  owns the words themselves; this ticket puts them on the screens. **Overview's
+  Running Tasks (DEV-57) is the fourth of those screens** and gains the Auto
+  pill and the Auto rules here, which is why DEV-57 no longer waits on Phase 6
+  (Garreth, 2026-09-22).
 - **Designs:** D12 (D1, D7, D9). **Flows:** F4, F5, F6.
 - **Why** (Garreth, 2026-09-21): a finished batch must not sit unnoticed on
   one screen while another calls it done.
@@ -2420,7 +2564,9 @@ the D1, D2, D3, D4, D5, D7 and D9 canvases and run in the prototype.
 On top of D10 as approved on 2026-09-16, and all about the Trends page.
 
 1. **The feed shows carousels only**; videos stay filtered out. DEV-36,
-   DEV-40.
+   which is where the format filter lives. (This also named DEV-40 until
+   2026-09-22, when that ticket — which built nothing — was folded into
+   DEV-36.)
 2. **"Trending" in v1 is the library's own ranking** — `total_score`, then
    `views_normalized` — because `published_at` is null on every carousel
    today. It was labelled **Trending in the library** on the screen until
@@ -2551,6 +2697,7 @@ handover's frontend addendum and was then checked against the live database.
 | 8 | **Should the filters also narrow the plain feed**, not only a search? Today they apply to a search; on the feed they would need `carousel_feed_unseen` to take a topic, a hook and a views floor (raised 2026-09-18). | Nothing; DEV-43 as written |
 | 9 | **Who cleans the search index's topic tags?** The main analysis picks from a fixed list of nine, but the visual scout writes free-text tags (`typography:bold_sans_serif`, about 200 of them) into the same `topics` array, and `glp_1` comes from there too. The dropdown is a fixed list so none of it shows, but the index is another project's to tidy (found 2026-09-18). | Nothing |
 | 10 | **Does the template model still need `image_direction`?** Plan §5.4 gives `carousel_templates` three direction columns — `copy_direction`, `caption_direction`, `image_direction` — while the live table `carousel_lane_directions` has a single `direction`. Images now come from the template's image slots and the library the type points at, so nothing reads an image direction; §6.4's rename to **Writing** (D13) makes the field's name wrong as well as unused. **Proposed: delete it**, and decide whether `caption_direction` folds into the one field or stays a named section inside it. Raised 2026-09-21, not answered. | DEV-01's schema, DEV-19b |
+| 11 | **Where does the Glow Up datestamp come from?** The template prints a month and year on a slide for every batch, and the Generate form has no field for it (Garreth, 2026-09-14). Today's Python path takes it from the run. Three honest answers: the date the batch is made, a per-batch choice like the opening line, or a value on the template. Raised in DEV-15 when the tickets were written and never listed here until 2026-09-22. | DEV-15, and DEV-08's per-batch choices |
 
 ### Proposed defaults, accepted unless changed
 
@@ -2559,12 +2706,18 @@ Things the plan and flows left unsettled, found while writing the tickets.
 1. **Finish here.** A stopped batch still counts as the lane's running batch,
    so without a way to close it the lane could never run another. A
    **Finish here** hold closes it with what was done. DEV-11, DEV-16.
-2. **Approval is saved at once and written to the lane later.** The flows
-   write the lane row five seconds after Approve. If only the page waited,
-   closing the tab would lose approvals silently, so the server saves the
-   approval and the page or the next load finishes the write. DEV-11.
-3. **New deck ids are handed out inside the database.** Twenty approvals at
-   once would otherwise collide on `GU-<n>`. DEV-02.
+2. **The lane row is written by the painter, not by a screen.** This read
+   "Approval is saved at once and written to the lane later… five seconds
+   after Approve" until 2026-09-22 — the five-second window went with the
+   per-deck approve on 2026-09-14. The rule it was protecting still holds in
+   its new place: the server writes the row as the deck renders, so closing
+   the tab loses nothing. DEV-11, DEV-12.
+3. **New deck ids are handed out inside the database.** **Render (n) decks**
+   sends a whole batch to the painter at once, and in Auto the worker does
+   the same, so twenty decks would otherwise compute "highest plus one"
+   together and collide on `GU-<n>`. (This said "twenty approvals at once"
+   until 2026-09-22; DEV-02 had already been corrected to the rendering.)
+   DEV-02.
 4. **Rejecting a proposed rule marks it dismissed** inside the digest's
    analysis and writes nothing to the knowledge base. Writing nothing at all
    would bring the rule back on the next page load. DEV-34.
