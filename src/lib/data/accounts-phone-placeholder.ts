@@ -1,4 +1,4 @@
-import type { AccountRow } from "@/lib/data/accounts";
+import type { AccountRow, WarmupMode } from "@/lib/data/accounts";
 import type { Platform } from "@/lib/platform";
 
 /**
@@ -47,6 +47,7 @@ function account(partial: {
   daysSinceWarmup?: number | null;
   daysSincePost?: number | null;
   paused?: boolean;
+  warmupMode?: WarmupMode;
 }): AccountRow {
   const health = partial.healthStatus ?? "healthy";
   return {
@@ -56,6 +57,7 @@ function account(partial: {
     platform: partial.platform,
     deliveryMode: "manual",
     deviceId: partial.deviceId,
+    warmupMode: partial.warmupMode ?? "manual",
     isActive: true,
     paused: partial.paused ?? false,
     healthStatus: health,
@@ -110,6 +112,11 @@ export const PLACEHOLDER_ACCOUNTS: AccountRow[] = [
     platform: "instagram",
     deviceId: 1,
     daysSinceWarmup: 1,
+    // One account set to Automated, so iPhone 1's phone-wide switch shows the
+    // "mixed" state P4 asks for. Before PF-04 that state could be reached by
+    // pressing; now that a press on the invented farm deliberately saves
+    // nothing, it has to be here to be seen at all.
+    warmupMode: "script",
   }),
   account({
     profile: "Profile 23",

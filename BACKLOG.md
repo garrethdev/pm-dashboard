@@ -146,15 +146,15 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-03 | Move to phone button | Immediate | **Ready now** — PF-01 and PF-02 built 2026-09-18; its screen is design ticket P10, not yet designed |
-| PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Ready now** — PF-02 built 2026-09-18, and its screens are approved (P3, P4) |
+| PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Ready now** — PF-05 landed 2026-09-22 |
 | PF-07 | Posting To-Do page | Immediate | **Ready now** — PF-05 landed 2026-09-22. Screens approved (P1–P3); needs the re-queue decision below settled first |
 | PF-11 | Post-ban branch for manual accounts | Intermediate | Blocked by PF-01 |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Ready now** — PF-05 landed 2026-09-22 |
 | PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | Blocked by PF-07 (PF-05 landed 2026-09-22) |
-| PF-10 | Comparison view | Intermediate | Blocked by PF-03, PF-04 (PF-05 landed 2026-09-22) |
-| PF-13 | Write path for the warmup script | Long term | Blocked by PF-04 |
+| PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
+| PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
@@ -245,7 +245,7 @@ Button on the account page: pick a device, set `delivery_mode = manual`, record
 what the comparison view (PF-10) splits on.
 *Done when:* one click does all four and the account shows its phone.
 
-## PF-04 · `warmup_sessions` + log form — Ready now (PF-02 built 2026-09-18)
+## PF-04 · `warmup_sessions` + log form — Done 2026-09-22
 
 Columns: `device_id`, `account_id`, `started_at`, `minutes`, `mode`
 (`manual` | `script`), `note`. A quick log form on the device page and on the
@@ -270,6 +270,36 @@ toward (first or second of the day) and, for the script, a finished-at time.
 A manual session is about 15 to 20 minutes (Garreth, 2026-09-19), so 15 is
 the done line; the automated session waits on the new warmup script, which is
 not decided. To-do items carry over for 3 days, for now.
+
+*2026-09-22: built and applied live* (`20260922161739_warmup_sessions`). The
+table holds `session_no` (which of the day's two) and `finished_at` (the
+script's, always NULL by hand), and it deliberately has **no unique index over
+(account, day, session)**: several rows adding up to one session is the
+ordinary case, not a duplicate, because the log form lets somebody record ten
+minutes now and eight more later. Minutes are summed per (account, New York
+day, session) and 15 is the done line, in the view and in
+`src/lib/data/warmup-sessions.ts` both — move one and you must move the other.
+`accounts.warmup_mode` defaults to `manual`, so no backfill.
+
+`v_account_warmup_health` is a UNION rather than a rewrite: it stays keyed on
+`geelark_profile`, which is what `v_account_health_v3`, `notifications.ts` and
+`accounts.ts` all join on, and the manual rows come in through
+`accounts.geelark_profile`. Its 52 existing rows were proven **identical** to
+the old definition after the change. **Type 90 was NOT folded in** despite this
+ticket's wording: that is the phone booting, not the account being warmed, and
+conflating them is a bug this codebase already fixed.
+
+On screen: the Manual / Automated switch now saves (`POST
+/api/accounts/warmup-mode`, which takes a list so the phone-wide press is one
+request and cannot half-land), a **Log warmup** form sits on the phone's page
+and the account's (`POST /api/warmups`), and the phone's warmup history reads
+real rows. The `?demo=1` farm deliberately does not save, because its invented
+accounts reuse real profile names.
+
+*Done when — met:* a warmup logged through the screen turned the dot for an
+account with no Geelark warmup behind it at all, proven live with a throwaway
+phone that was removed afterwards. **Not proven with real work:** no phone is
+registered and no account is on Physical.
 
 ## PF-05 · `post_deliveries` — Done 2026-09-22
 

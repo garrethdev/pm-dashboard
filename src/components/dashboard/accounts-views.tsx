@@ -33,12 +33,15 @@ export function AccountsViews({
   contentTypeOptions,
   fleet,
   phones,
+  demo = false,
 }: {
   rows: AccountRow[];
   contentTypeOptions: Record<string, ContentTypeOption[]>;
   fleet: Fleet;
   /** Registered phones, in Physical only. */
   phones: PhoneOption[];
+  /** True on `?demo=1`: the rows are invented, so nothing may be saved. */
+  demo?: boolean;
 }) {
   const [view, setView] = useState<AccountsView>("account");
 
@@ -53,6 +56,7 @@ export function AccountsViews({
       fleet={fleet}
       groupByPhone={view === "phone"}
       phones={phones}
+      demo={demo}
       viewSwitch={
         <FilterPills
           inline

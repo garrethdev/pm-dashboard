@@ -63,6 +63,11 @@ async function AccountsLive({ demo }: { demo: boolean }) {
       rows={showDemo ? PLACEHOLDER_ACCOUNTS : rows}
       contentTypeOptions={options.data}
       fleet={fleet}
+      // The invented farm reuses REAL profile names, so with PF-04 wired up a
+      // press on its warmup switch would write to a live account. Demo rows
+      // move the switch and forget, the way every switch on this page did
+      // before PF-04.
+      demo={showDemo}
       phones={
         showDemo
           ? PLACEHOLDER_PHONES

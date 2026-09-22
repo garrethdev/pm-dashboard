@@ -20,6 +20,65 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — Warming an account up by hand now counts for something
+
+**Where it came from:** ticket PF-04, the next one in the phone-farm build
+order. Its screens were approved on 2026-09-22 (design tickets P3, P4 and P5);
+what was missing was everything behind them.
+
+Until today the app had no idea a real phone had been warmed up. Geelark cloud
+phones write their own record every time they scroll and like an account, and
+the health dot beside every account is read from those records — so an account
+moved onto a real iPhone, warmed by hand every morning, would have gone on
+looking like an account nobody had touched for weeks. That is now fixed: a
+warmup done by hand is recorded, and it counts exactly the same as one a cloud
+phone did.
+
+**What you can do that you could not yesterday.**
+
+- **Log a warmup.** There is a **Log warmup** button on a phone's page, beside
+  that phone's warmup history, and on an account's own page. It asks for the
+  minutes and an optional note, and shows how today's two sessions stand so
+  you can see what the minutes are being added to.
+- **A warmup can be logged in two goes.** Ten minutes now and eight more after
+  the phone has been put down is one session of eighteen, not two failed ones.
+  A session counts as done at fifteen minutes, which is the line Garreth set
+  on 2026-09-19.
+- **See a phone's warmup history.** Each session says which account, when, how
+  long, and whether a person or the script did it. It was showing invented
+  sessions; now it shows real ones.
+- **The Manual / Automated switch remembers.** The hand-and-robot switch on
+  the Accounts page has been on screen since 2026-09-22 but forgot the moment
+  the page was reloaded — there was nowhere to put the answer. Now a press
+  saves, one account at a time or every account on a phone at once. If a save
+  is refused the switch goes back where it was and says why, rather than
+  sitting there claiming something that never happened.
+
+**One thing worth knowing.** The invented farm on `/accounts?demo=1` uses real
+profile names, so now that the switch saves, a press there would have changed
+a live account. It deliberately does not save, exactly as it did not before.
+
+**Two things were deliberately NOT done.** The backlog asked for Geelark's
+type-90 records to be counted as warmups too; they are the phone *booting*, not
+the account being warmed, and treating them as the same thing is a bug this
+codebase already fixed once, so the Geelark half is untouched. And the to-do
+list still runs on invented data — making it real is the next ticket, PF-07,
+and doing half of it here would have collided with that work.
+
+**Verification.** The database change was applied live and checked both ways.
+The 52 accounts the health view already answered for come back **byte for byte
+identical** to before, so nothing about a Geelark account's dot moved. Then a
+throwaway phone and two retired accounts were parked on it, a warmup was logged
+through the screen itself, and the health view picked it up for an account that
+had never been warmed on Geelark at all — after which every test row, the test
+phone and the parked accounts were removed and the view was confirmed back to
+exactly 52. Looked at in the running app in dark and light, at 1440 and at 390,
+with no console errors — **in headless Chrome, not Safari**, which is what
+Garreth uses. **Not yet met by real work:** no phone is registered and no
+account is on Physical, so the first genuine warmup has still to be logged.
+
+---
+
 ## 2026-09-22 — A post that fails is finished with, not tried again
 
 **Where it came from:** Garreth, 2026-09-22, settling the one question ticket

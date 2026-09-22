@@ -167,6 +167,21 @@ any-outcome pair, because it needs to know whether posting was ATTEMPTED, not
 whether it worked; pointing it at the success-only pair inverts it and makes a
 broken account look like a new one. Do not "tidy" the two into one.
 
+**`v_account_warmup_health` reads two fleets at once (PF-04, 09-22).** It still
+answers per `geelark_profile`, and `v_account_health_v3` still joins it on that
+column — nothing about how it is read changed. What changed is where its
+answers come from: Geelark account-warmup tasks as before, UNION the
+`warmup_sessions` rows logged on real phones, joined in through
+`accounts.geelark_profile`. Two things to know before touching it. The manual
+side counts a session DONE at 15 minutes SUMMED over its rows, because a
+session can be logged in two goes — the same 15 lives in
+`src/lib/data/warmup-sessions.ts`, and the two must move together. And the
+Geelark side reads `task_type = 42` only, NOT the type 90 `device-warmup`
+rows: type 90 is the phone booting, not the account being warmed, and merging
+them is the bug that once made a bootup read as a warmup on the account page.
+An account with no `geelark_profile` at all would be invisible here; every
+account has one today, and that is a question for PF-16 when Geelark goes.
+
 **`v_scheduler_account_config_all` is display only.** It is the same view
 without the `posting_paused IS FALSE` filter, and `v_scheduler_account_config`
 is now a thin filter over it, so the age ramp and the
