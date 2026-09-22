@@ -1020,13 +1020,27 @@ handlers do, with the service role, after `requireSession()`.
 All under `/carousel-generator`. The way in is the sidebar's **Generate**
 item, first in the *Content* group above Content calendar and Content types:
 `/generate` shows one card per kind of content the dashboard can generate
-(only Carousel today), and the Carousel card opens Carousel types (Garreth,
-2026-09-14). Inside, the generator has its own left menu instead of the
+(only Carousel today), and the Carousel card opens **Overview** (D16, approved
+2026-09-22; it opened Carousel types from 2026-09-14 until then). Inside, the
+generator has its own left menu instead of the
 dashboard's, topped by **← Dashboard** back to `/generate`; the items and the
 rules for them are in `CAROUSEL-GENERATOR-FLOWS.md` §1. Both routes exist
 already; `/carousel-generator` is a placeholder until Phase 2. Sub-pages use the same shell; the Topbar breadcrumb shows where you are.
 
-### 6.1 Carousel types — `/carousel-generator`
+### 6.0 Overview — `/carousel-generator`
+
+The generator's front page, and the landing (D16, approved in dark and light
+2026-09-22). Four sections, and the same order stacked on a phone: **Today**,
+four counts of what the day has done and what needs a person; **Running
+Tasks** beside **Carousel types**; **Trending Carousels** beside **Saved**.
+Nothing on it writes — it gathers what the other screens already say, and
+every press opens the screen that owns the work. Running Tasks is a monitor as
+well as a to-do list: a batch part-way through writing or rendering is on it,
+above the ones needing a person. The two lower sections read the reference
+library, so they arrive with Trends in Phase 5; until then the page is its
+three upper sections. F17; DEV-56 to DEV-60.
+
+### 6.1 Carousel types — `/carousel-generator/types`
 
 One card per carousel lane, live lanes first, retired ones in a collapsed
 group. Each card: display name and character, postable count with days of
@@ -1575,7 +1589,7 @@ designs are final.
 
 | Deliverable | State |
 |---|---|
-| Flows | Drafted: `docs/CAROUSEL-GENERATOR-FLOWS.md`, 17 flows and the screen inventory (F15 browse and search the library and F16 open a post, added 2026-09-17; F18 read the lane, added 2026-09-22 with D15; F17 is reserved for D16's Overview). Awaiting sign-off; its §4 lists the answers needed. |
+| Flows | Drafted: `docs/CAROUSEL-GENERATOR-FLOWS.md`, 18 flows and the screen inventory (F15 browse and search the library and F16 open a post, added 2026-09-17; F18 read the lane, added 2026-09-22 with D15; F17 Overview, added 2026-09-22 with D16, which also moved Carousel types to `/carousel-generator/types`). Awaiting sign-off; its §4 lists the answers needed. |
 | Template model | Written: `docs/CAROUSEL-TEMPLATE-MODEL.md` and `docs/carousel-templates/*.v1.json`. `scripts/carousel-templates/verify.mjs` confirms both reproduce their Python painters (134 checks). Four questions in its §5. |
 | Wiring decision | Verified; see §4.8. |
 | Screens | Not started. They are designed from the flows once the flows are signed off. |
@@ -1793,7 +1807,12 @@ ticket D16, open):
 
 | # | Question | Decision |
 |---|---|---|
-| 59 | Does the generator need a front page, and where does it sit? | **Yes: Overview becomes the landing** at `/carousel-generator`, and **Carousel types moves to `/carousel-generator/types`**, beside the type page's own `/types/[slug]`. Overview joins the left menu as its first item; Carousel types keeps its full card list and stays a menu item of its own. Three widgets: **Waiting for you**, **Carousel types**, **Saved**. D16. |
+| 59 | Does the generator need a front page, and where does it sit? | **Yes: Overview becomes the landing** at `/carousel-generator`, and **Carousel types moves to `/carousel-generator/types`**, beside the type page's own `/types/[slug]`. Overview joins the left menu as its first item; Carousel types keeps its full card list and stays a menu item of its own. **Approved in dark and light 2026-09-22.** Four sections as built: **Today**
+(four counts), **Running Tasks** beside **Carousel types**, **Trending
+Carousels** beside **Saved**. The first section was *Waiting for you* and held
+only what needed a person; Garreth asked the same day for work in flight to be
+on it too, so it is **Running Tasks** and a monitor. D16, F17, DEV-56 to
+DEV-60. |
 | 60 | What does the first widget list? | **Only what still needs a person** — not everything in motion. The rule is the bell's rule: the widget lists exactly what would ring the bell and nothing else, so a batch part-way through writing is absent, and so is a flagged deck inside a running Auto batch, which Auto takes back itself (D12). It is named **Waiting for you** rather than Running work so the name does not promise a monitor. The cost, accepted: work in flight is gathered nowhere, answered by the bell and by the type card's *Open running batch*. D16. |
 | 61 | How are the types on the front page ordered, and how many? | **The five generated most recently**, not the five running out of stock — Inventory is what raises a lane running dry, and days of cover still shows on the row. A type never generated sorts last and fills a spare row, so a type made in the Studio yesterday is reachable from the page whose job is quick access to generating. D16. |
 | 62 | What does "saved carousels" mean on the front page? | **The references saved on Trends** (`reference_favourites`, personal, per session email). It does **not** mean our own decks; there is no way to save one of those and D16 does not add one, so "saved" keeps one meaning across the app. D16. |

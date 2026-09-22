@@ -41,6 +41,18 @@ names showing on the canvas. Two knock-ons for other tickets: a **Per batch**
 box adds a field to the Generate form (**DEV-06**), and renaming a box renames
 the key the writer writes against (**DEV-08**).
 
+**What D16's approval added (Garreth, 2026-09-22, dark and light).** The
+generator gains a **front page**: **DEV-56** to **DEV-59** in Phase 2 and
+**DEV-60** in Phase 5. Overview takes `/carousel-generator`, **Carousel types
+moves to `/carousel-generator/types`**, and the menu gains Overview as its
+first item. Nothing in the tickets below changes except the address and the
+menu; every screen keeps what it does. Overview writes nothing — it gathers
+what the other screens already say.
+**One word of warning for whoever builds DEV-57:** Running Tasks is the
+**fourth** place a batch's state is put into words, after the bell (DEV-52),
+the type's card (DEV-14) and History's Status column (DEV-53). It must read
+from the same state and use the same words. A fifth wording is a bug.
+
 **Where the Writing requirement is enforced — read this before building
 either ticket.** Generate on a carousel type's card and in its header is an
 **ordinary, pressable button** even when nothing has been written; it carries
@@ -611,7 +623,11 @@ promises.
 - **Size:** M.
 - **Depends on:** DEV-01, approved D1.
 - **Designs:** D1. **Flows:** F1 steps 1 and 2.
-- **Build:** replace the `SectionStub` at `/carousel-generator`.
+- **Build:** this screen lives at **`/carousel-generator/types`** (D16, approved
+  2026-09-22 — Overview took `/carousel-generator`, where the `SectionStub`
+  still is; DEV-56 replaces that one and moves this one). Its card list, its
+  numbers and its Generate are exactly as D1 left them; only the address and
+  the menu's order changed.
   - One card per carousel type (Garreth, 2026-09-14): the name; neutral
     `StatusPill`s for the character and the template's slide count; a **View
     details** row with a caret on the right, between `border-border` rules,
@@ -905,6 +921,138 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
   listing every column in table order in both themes at both widths; the
   caption column of a **No caption** row reads as a dash; **Open the deck**
   lands on that deck in its batch; and a row with no batch shows no button.
+
+### DEV-56. Overview becomes the landing, and Carousel types moves
+
+- **Size:** M.
+- **Depends on:** DEV-13, DEV-14.
+- **Designs:** D16. **Flows:** F17, F1 step 1, the screen inventory and the
+  menu table.
+- **Build:**
+  - **Overview at `/carousel-generator`**, and **Carousel types at
+    `/carousel-generator/types`**, beside the type page's own
+    `/types/[slug]`. The Generate hub's **Carousel** card points at Overview.
+    Repoint every in-app link to Carousel types. Nothing is built yet, so no
+    redirect is owed; add one anyway if anything outside the app has the old
+    address.
+  - The menu gains **Overview** as its first item under ← Dashboard, with
+    `SquaresFour` — the icon `icons.tsx` already exports as `LayoutDashboard`.
+    Carousel types keeps its item, under it. **No item carries a count.**
+  - The page's shape: the title, then **Today**; then **Running Tasks beside
+    Carousel types**; then **Trending Carousels beside Saved**. On a phone all
+    five stack in that order. The right-hand column is 380px, so Carousel
+    types and Saved share one spine down the page.
+  - **Each pair of columns ends level:** whichever section is the taller sets
+    the height and the other fills down to meet it. It has to work both ways
+    round — on the all-clear board the types card is the taller one and
+    Running Tasks' empty line grows to meet it.
+  - **A section heading is the height of a secondary button** whether or not
+    it carries one, so the two columns of a row start level as well as end
+    level.
+  - Nothing on this page writes.
+- **Done when:** the Carousel card opens Overview with the menu's first item
+  lit; Carousel types answers at its new address with its card list unchanged;
+  and both pairs of columns start and end level in both themes at both widths,
+  including the states where the shorter section is the other one.
+
+### DEV-57. Overview: Running Tasks
+
+- **Size:** L.
+- **Depends on:** DEV-56, DEV-11, DEV-14; and DEV-48, DEV-52 and DEV-53 for
+  Auto and for the wording.
+- **Designs:** D16. **Flows:** F17 steps 3 and 4.
+- **Build:**
+  - **One query**, and the same one DEV-58 and DEV-59 read: every batch that
+    is **working** or **waiting for a person**, working first, then waiting,
+    newest first. Working is writing or rendering. Waiting is written and not
+    rendered (*n to render*), rendered and not approved (*n to approve*), a
+    manual or paused batch with a flagged deck (*n flagged*), or a batch that
+    stopped (*Stopped*).
+  - **Read the state off the counts, the way History does** (DEV-53): a dash
+    and a nought both mean the press has not happened.
+  - **A finished and approved batch is not here.** Neither is a flagged deck
+    inside a **running** Auto batch — Auto takes it back itself, which is why
+    the bell stays quiet for it too (DEV-52). Pause the batch and it appears.
+  - **The words are D12's and no others** (see the warning at the head of this
+    file).
+  - **The card:** the ring or the grid at the left, the name and the state,
+    then the **Auto** / **Auto paused** pill and the time together at the
+    right, then a caret. The whole card is the press. **Nobody is named on it.**
+  - **The loader a working batch carries:** a 3×3 grid of 6px cells 2px apart,
+    delays `(column + |row − 1|) × 90ms`, a 650ms `ease-in-out` cycle between
+    0.12 and 1 opacity — shorter than the sweep, so two fronts are always in
+    the air and it never looks stalled. **White while writing, `--accent`
+    while rendering.** Its line shimmers: a 90° gradient muted → primary →
+    muted at 200% width, `background-clip: text`, 1.4s linear.
+  - **The elapsed time ticks** where the date sits on the other cards, in
+    tabular figures so it does not jitter: `6m 12.4s`, to a tenth under a
+    minute.
+  - **A waiting batch carries a still ring** — a track at 18% of the text
+    colour — with the stage's icon inside: `SealCheck`, `Play`, `Flag`,
+    `Pause`. **The flag and the pause are `--danger`.** The flag's **words
+    stay neutral**: History's rule is that only a status meaning something
+    went wrong is red, and *Stopped* is still the only one.
+  - **Reduced motion:** the grid holds still at a readable opacity rather than
+    its dim 0.12, and the shimmer stops. The timer still ticks.
+  - **Empty:** *Nothing running, nothing waiting*, one line in a quiet dashed
+    box that fills down to meet the column beside it.
+- **Done when:** a batch moving from writing to rendering changes its grid's
+  colour and its line without the card being rebuilt; a finished and approved
+  batch never appears; a flagged deck in a running Auto batch never appears
+  and the same deck appears the moment the batch is paused; and for any one
+  batch the words here, in the bell and in History's Status column are the
+  same words.
+
+### DEV-58. Overview: Today, the four counts
+
+- **Size:** S.
+- **Depends on:** DEV-56, DEV-57, DEV-11, DEV-12.
+- **Designs:** D16. **Flows:** F17 step 2.
+- **Build:**
+  - Four tiles — *Written today*, *Rendered today*, *Approved today*, *Needs
+    input* — each the dashboard's own `MetricTile` from
+    `analytics-charts.tsx`: the `.dot-fade` corner, `rounded-nested`,
+    `--card-raised`, the small label over the figure. **No delta and no
+    sparkline** (Garreth, 2026-09-22), and the figure at 40px, which is what
+    the room bought.
+  - The three "today" counts are **decks, not batches**, on the dashboard's
+    own day boundary (America/New_York, as every other *today* in the app).
+    Pin the zone in the query; the instance's own default is not it.
+  - ***Needs input* is the count of Running Tasks cards waiting for a person**,
+    read from DEV-57's query and never a second one, so the box and the
+    section under it cannot disagree.
+  - **A count that cannot be read shows a dash, not 0.** A nought is an answer.
+- **Done when:** the four figures match a direct query; *Needs input* equals
+  the number of still-ringed cards below it in every state, including 0 on the
+  all-clear; and a count that errors shows a dash rather than a nought.
+
+### DEV-59. Overview: the Carousel types section
+
+- **Size:** S.
+- **Depends on:** DEV-56, DEV-14, DEV-57 (for what is running).
+- **Designs:** D16. **Flows:** F17 step 5.
+- **Build:**
+  - **Five rows, ordered by the type's most recent batch**, newest first. A
+    type never generated has no date and sorts last, so one made in the Studio
+    yesterday is still reachable from here. Retired types are not in this
+    section.
+  - A row is the **name**, the **character** pill and **Generate** — the
+    accent button at the secondary size D1's cards carry, none singled out.
+    **No days of cover** (Garreth, 2026-09-22): it is Inventory's number, and
+    this section is the way to generate. Carousel types itself still carries
+    it.
+  - A type whose batch is **writing or rendering** reads **Open running
+    batch**; a **stopped** batch does not, because it is not writing into the
+    lane. Read it from DEV-57's query, so this section and Running Tasks
+    cannot disagree about what is running.
+  - The name opens the type's page. **Generate opens the Generate form**,
+    which is where a missing Writing is named and marked (DEV-15, D13) — the
+    row never blocks the press.
+  - **All Carousel Types** sits opposite the heading, as *All trends* and *All
+    saved* do, and opens Carousel types. It always shows.
+- **Done when:** the order follows the most recent batch with never-generated
+  types last; a type with a writing batch reads *Open running batch* both here
+  and on its own card; and Generate opens the form for the right type.
 
 ### DEV-20. Phase 2 live proof
 
@@ -1975,6 +2123,39 @@ history; everything it decided that still holds is restated here.*
 - **Done when:** a meaning search for "tired eyes" returns a carousel about
   under-eye bags that does not contain the words, and a failed embedding call
   still returns keyword results.
+
+### DEV-60. Overview: Trending Carousels and Saved
+
+- **Size:** M.
+- **Depends on:** DEV-56, DEV-34, DEV-36, DEV-37, DEV-42.
+- **Designs:** D16. **Flows:** F17 steps 6 and 7.
+- **Why it is here and not in Phase 2:** these two sections read the reference
+  library. Until Phase 5 the page is its three upper sections and nothing is
+  missing from it — it is not a stub with two empty boxes.
+- **Build:**
+  - **Trending Carousels:** the top of what the library scraped **today**,
+    best-scored first, four covers with the handle and the view count under
+    each. When nothing was scraped today, show the **newest scrape** instead
+    and say so beside the heading, with its date. A quiet day must never read
+    as today's winners.
+  - **Saved:** the viewer's own `reference_favourites`, newest saved first, as
+    a small grid of covers. **Saved means saved references, never our own
+    decks** (Garreth, 2026-09-17): there is no way to save one of ours, this
+    ticket does not add one, and the word keeps one meaning across the app.
+  - A cover opens the **details window** over Trends (DEV-42), at the post it
+    came from. **All trends** opens Trends on the Feed, **All saved** on Saved.
+  - Views read **Unknown**, never 0 — DEV-42's rule, and the same numbers.
+  - **The two sections end level** (DEV-56): Saved keeps the 4:5 tiles Trends
+    itself uses and sets the height; Trending fills its covers down to meet
+    it, with a floor at its own 4:5 height so a short Saved cannot squash them.
+    When Saved is the shorter — nothing saved yet — its empty box grows
+    instead.
+  - **Carousels only.** Videos never reach the feed and must not reach here;
+    filter on `format`, never on the address (DEV-34's rule).
+- **Done when:** a day with a scrape shows today's carousels and says so, a
+  day without shows the newest and names its date, a saved cover opens the
+  details window at that post, and the two sections end level in both
+  directions in both themes.
 
 ---
 

@@ -54,6 +54,8 @@ export const I = {
   // Every back button is the outline "<": icons.tsx's ChevronLeft (CaretLeft, bold) (Garreth, 2026-09-14).
   arrowLeft: icon("CaretLeft", 16, "bold"),
   backSm: icon("CaretLeft", 14, "bold"),
+  // D16: Overview is the generator's front page. SquaresFour is icons.tsx's own LayoutDashboard.
+  overview: icon("SquaresFour"),
   cards: icon("Cards"),
   history: icon("ClockCounterClockwise"),
   images: icon("Images"),
@@ -105,6 +107,11 @@ const font = fs.readFileSync(path.join(REPO, "src/app/fonts/GeneralSans-Variable
 
 /** The generator's own menu. `ticket` designs the screen the item opens. */
 export const NAV = [
+  /* D16 (Garreth, 2026-09-22): Overview is the landing, first under ← Dashboard, and
+     Carousel types moves to /carousel-generator/types. Adding it here changes the menu on
+     EVERY ticket's boards, so once D16 is approved every canvas is re-placed from `main`
+     and the prototype rebuilt — the standing rule for a shared-shell change. */
+  { id: "overview", label: "Overview", icon: I.overview, ticket: "D16" },
   { id: "types", label: "Carousel types", icon: I.cards, ticket: "D1" },
   { id: "history", label: "History", icon: I.history, ticket: "D9" },
   { id: "libraries", label: "Image libraries", icon: I.images, ticket: "D8" },
@@ -495,6 +502,36 @@ export function shellClashes(screens, { start = screens[0].id, allow = ["bell"] 
   );
   const { shell, mine } = sandbox.__p;
   return Object.entries(mine).flatMap(([id, vals]) => Object.keys(vals).filter((k) => shell.includes(k) && !allow.includes(k)).map((k) => `${id}: ${k}`));
+}
+
+/**
+ * Values a screen hands over that carry markup, as "screen: name". The canvas escapes a value as text, so an icon
+ * or an SVG passed through renderVals prints its own source on the board rather than drawing — D6 hit it with a
+ * `{{hole}}` icon on 2026-09-19, and D16's four stat tiles came back full of markup on 2026-09-22 (the local
+ * render-board fills holes by string substitution, so it cannot catch this; only the canvas can). Anything
+ * shaped like a tag belongs in the template, not in `vals`.
+ */
+export function markupInValues(screens, { start = screens[0].id } = {}) {
+  const noop = () => 0;
+  const sandbox = {
+    setTimeout: noop, clearTimeout: noop, setInterval: noop, clearInterval: noop,
+    document: { getElementById: () => null, querySelectorAll: () => [], querySelector: () => null, addEventListener: noop, removeEventListener: noop },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    `class DCLogic { constructor() { this.state = {}; } setState() {} }\n${logic({ phone: false, light: false, screens, start, navMode: "page", probe: true })}\nglobalThis.__p = new Component().renderVals().__probe;`,
+    sandbox,
+  );
+  const bad = [];
+  const looksLikeMarkup = (v) => typeof v === "string" && /<[a-zA-Z/]/.test(v);
+  const walk = (id, where, v, depth = 0) => {
+    if (depth > 3) return;
+    if (looksLikeMarkup(v)) bad.push(`${id}: ${where}`);
+    else if (Array.isArray(v)) v.forEach((item, i) => walk(id, `${where}[${i}]`, item, depth + 1));
+    else if (v && typeof v === "object") for (const [k, item] of Object.entries(v)) walk(id, `${where}.${k}`, item, depth + 1);
+  };
+  for (const [id, vals] of Object.entries(sandbox.__p.mine)) for (const [k, v] of Object.entries(vals)) walk(id, k, v);
+  return bad;
 }
 
 /**

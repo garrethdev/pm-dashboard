@@ -37,6 +37,7 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
 | D10 dark | Carousel Generator Designs - Dark (D10 Trends) | D10 · Dark | https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1 | 🎠📈 |
 | D10 light | Carousel Generator Designs - Light (D10 Trends) | D10 · Light | https://claude.ai/artifact/8vc8Sv7TRCi5Xqbhxqi1Sp | 📈☀️ |
 | D11 | Carousel Generator Designs - (D6 pt. 2 Studio) | D11 · Dark, D11 · Light | https://claude.ai/artifact/DdWFJ1M8acjehQbj36Wtr5 | 🎠🧩 |
+| D16 | Carousel Generator Designs - (D16 Overview) | D16 · Dark, D16 · Light | https://claude.ai/artifact/Q1oX7DZunxyEaVCS2SRTHq | 🎠🏠 |
 | Prototype | Carousel Generator Prototype | desktop, phone | https://claude.ai/artifact/KNxf22ERryEbTmr2tRuzF6 | 🕹️ |
 
 - **D12 (Auto mode) has no canvas of its own** (Garreth, 2026-09-21: a
@@ -93,10 +94,33 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
     text-box row, and leans on **D14** for the names it points at.
 - **D16 (Overview) is the exception and does get its own canvas** (2026-09-22):
   it adds a screen rather than extending one, which is the standing rule two
-  bullets down. Name it "Carousel Generator Designs - (D16 Overview)", build
-  file `d16-overview.build.mjs`. It also reopens **D1**, whose route moves to
+  bullets down. Canvas made 2026-09-22 and **APPROVED in dark and light the same
+  day** at version 9 (5.1 MB, ten boards a theme: Today's stat boxes, Running
+  Tasks beside Carousel types, Trending Carousels beside Saved), build file
+  `d16-overview.build.mjs`.
+  The page is taller than one screen, so two boards a size carry it — the top,
+  and the same page scrolled to the bottom row, which a screen's `didUpdate`
+  does by scrolling `.col` to the section's `offsetTop`.
+  **Its four stat tiles printed their own SVG source on version 2** (Garreth,
+  2026-09-22): the arrows and the sparklines were handed over as **values**, and
+  the canvas escapes a value as text, so the board filled with markup. It is the
+  same trap D6 hit on 2026-09-19 with an icon in a `{{hole}}`, and
+  `render-board.mjs` cannot catch it — it fills holes by string substitution, so
+  a board that is broken on the canvas looks right locally. The kit now has
+  **`markupInValues(screens)`** beside `shellClashes`: it runs a screen's
+  `renderVals` and returns every value, at any depth, that looks like a tag. A
+  ticket's build should refuse to write boards when it reports anything, the way
+  `d16-overview.build.mjs` does. Placed **without
+  `--theme`**: the canvas holds both pages, and light mode here is the same
+  build read through the light tokens, so a change to the dark boards carries
+  straight over. It also reopens **D1**, whose route moves to
   `/carousel-generator/types`; D1's boards are otherwise unchanged, so its
   canvas is only re-saved if a board shows the old route.
+  **D16 changes the shared shell.** The menu gains **Overview** as its first
+  item under ← Dashboard, which lives in `generator-kit.mjs`'s `NAV`, so every
+  other ticket's boards show the old five-item menu until they are re-placed.
+  By the rule below that is a `main` job of its own: once D16 is approved,
+  re-place every ticket and rebuild the prototype.
 - **Saving a ticket.** Steps 3–6 below read and save **that ticket's own
   canvas**. Step 4 runs `place-ticket.mjs --ticket DN` without `--theme` for a
   canvas that holds both themes, and with `--theme dark` or `--theme light`
