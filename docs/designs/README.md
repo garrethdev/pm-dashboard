@@ -31,7 +31,8 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
 | D5 | Carousel Generator Designs - (D5 Batch render) | D5 · Dark, D5 · Light | https://claude.ai/artifact/4h66j2MEbBPzuJzRujwuXp | 🎠5️⃣ |
 | D6 dark | Carousel Generator Designs - Dark (D6 Studio) | D6 · Dark | https://claude.ai/artifact/MtsnyvaJPznX6Kg4JaKb2p | 🎠🎨 |
 | D6 light | Carousel Generator Designs - Light (D6 Studio) | D6 · Light | https://claude.ai/artifact/3gbDBA71hV5agEfU4ywa8p | 🎨☀️ |
-| D7 | Carousel Generator Designs - (D7 Type page) | D7 · Dark, D7 · Light | https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp | 🎠7️⃣ |
+| D7 dark | Carousel Generator Designs - Dark (D7 Type page) | D7 · Dark | https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp | 🎠7️⃣ |
+| D7 light | Carousel Generator Designs - Light (D7 Type page) | D7 · Light | https://claude.ai/artifact/RBKLtvW9f8BLoZAC17bEsd | 7️⃣☀️ |
 | D8 | Carousel Generator Designs - (D8 Image libraries) | D8 · Dark, D8 · Light | https://claude.ai/artifact/WqEfhNzEiUiTieUAU14qms | 🎠8️⃣ |
 | D9 | Carousel Generator Designs - (D9 History) | D9 · Dark, D9 · Light | https://claude.ai/artifact/2EjoB77uj9C8qXriiUmRxT | 🎠📜 |
 | D10 dark | Carousel Generator Designs - Dark (D10 Trends) | D10 · Dark | https://claude.ai/artifact/2Cs5YYqwJHC6qSPzBrZ1b1 | 🎠📈 |
@@ -51,8 +52,8 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
 - **D13, D13b, D14, D15 and D17 have no canvas of their own either**
   (Garreth, 2026-09-21), for the same reason. They change and extend screens that
   already exist, so their boards are new last rows on the canvases those
-  screens own. **D13, D13b, D14 and D15 were all approved on 2026-09-22;
-  D17 is still open.**
+  screens own. **D13, D13b, D14, D15 and D17 were all approved on
+  2026-09-22.**
   - **D13** (Direction → **Writing**, Wiring → **Go Live**, Writing required)
     — **D1**, **D2** and **D7**, all three saved in dark and light. Boards
     that showed the old names were redrawn in place on those pages, not added
@@ -84,14 +85,46 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
     **APPROVED in dark and light 2026-09-22**, drawn the same day as the last
     two rows of D7's canvas (version 7), eight boards a theme. Placed **without `--theme`**, the way D13
     and D13b were, because the new tab appears in both themes at once.
-    **D7's canvas is now full**: those boards took it from 10.4 MB to 15.5 MB
+    **D7's canvas filled up**: those boards took it from 10.4 MB to 15.5 MB
     against a 16 MB ceiling, so one extra board was left off (a drawer on a
-    row that has everything) and **D17, which also targets D7, cannot simply
-    add to it** — it needs the canvas split by theme, "Dark (D7 Type page)"
-    and "Light (D7 Type page)", the way D6's and D10's are.
+    row that has everything). **Split by theme on 2026-09-22** the way D6's
+    and D10's are — see the bullet below — and **the left-off drawer board
+    was restored the same day**, desktop and phone, so D15 now stands at ten
+    boards a theme.
   - **D17** (dragging and `@`-typing a text box's name into the Writing and
-    the Conversation) — **D7**. Raised 2026-09-22; it extends D13's own
-    text-box row, and leans on **D14** for the names it points at.
+    the Conversation) — **D7**, dark and light, desktop and phone. Raised
+    2026-09-22 and **drawn and APPROVED in dark and light the same day**: ten
+    boards a theme in the last three rows (dark version 12, light version 4),
+    taking each canvas to 11.7 MB of its 16 MB. **It was the last open design
+    ticket**, so the design step closes again with it. It extends D13's own text-box row and
+    leans on **D14** for the names it points at. Garreth settled the storage
+    question — a mention is the plain characters `@hook` — and made prompt
+    resolution a requirement rather than a follow-on: the point is to tell the
+    AI which text slot it is writing. **Every question it raised is settled**: the last one —
+    how a mention of a box that no longer exists reads — was drawn both ways
+    and decided the same day, and it says so twice, muted in the sentence and
+    counted beside Save version.
+- **D7's canvas was split by theme on 2026-09-22**, into **Dark (D7 Type
+  page)** — which kept the original link, so every reference to it still
+  works — and a new **Light (D7 Type page)**. 34 boards each, 9.1 MB each
+  against the 16 MB ceiling, so there is about 7 MB of room a theme. Nothing
+  was redrawn: both halves were rebuilt from `d7-type-page.build.mjs` and
+  placed with `place-ticket.mjs --theme dark` / `--theme light`, which is the
+  same pair of commands D6 and D10 are maintained with. **From here D7 is
+  placed a theme at a time**, like D6 and D10, not in one pass.
+  - **Why a canvas fills up, and what does not fix it.** Nearly half of a
+    canvas is its stylesheet, copied into every board: D7's 68 boards carried
+    6.3 MB of CSS between them, of which only 668 KB was distinct. Pulling it
+    into one shared `.css` file that the boards link to **does not work**, and
+    it is worth knowing why before someone tries it again. Boards render in a
+    sandboxed `srcdoc` iframe, and only two things reach them: an inliner that
+    rewrites `./x.jpg` into an embedded image — it matches image extensions
+    only, with no branch for `.css` — and a patched `fetch` that serves
+    sibling files, which a `<link rel="stylesheet">` never calls, because a
+    stylesheet is a browser load rather than a `fetch()`. Inline is the only
+    way styles get into a board, so the duplication is structural. Splitting
+    by theme is the real lever; folding several states into one interactive
+    board would be the next one, at the cost of reading them side by side.
 - **D16 (Overview) is the exception and does get its own canvas** (2026-09-22):
   it adds a screen rather than extending one, which is the standing rule two
   bullets down. Canvas made 2026-09-22 and **APPROVED in dark and light the same

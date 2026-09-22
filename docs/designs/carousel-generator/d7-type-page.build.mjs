@@ -264,6 +264,35 @@ const DRAFTED_NOTE =
 const FIRST_DRAFT =
   "Spoken by someone who buys little and keeps it for years. Five slides at 9:16: the first opens on a piece being worn, with the hook under eight words. Slides 2 to 4 take one piece each, photographed plainly, and say in a line why it lasts. Slide 5 closes on where it was worn, and the caption ends there. No prices, no brand names, and never the word luxury.";
 
+/* D17 (Garreth, 2026-09-22): a saved Writing that names its text boxes by mention rather than by spelling them.
+   Stored as plain words — `@hook` is the characters, not a code (his decision) — and the screen highlights a
+   mention by matching the name against the active template's boxes each time it is shown. The point of the
+   feature is downstream: the thing building the copy prompt resolves each mention to that box's role and, once
+   D14 has measured it, its character limit, so the AI is told which slot it is writing. A name that matches no
+   box resolves to nothing, which is why the dead state below has to be visible.
+   ["t", text] is prose, ["m", name] a live mention, ["x", name] one that matches no box. */
+const MENTION_DOC = [
+  ["t", "Spoken by someone who buys little and keeps it for years. "],
+  ["m", "hook"],
+  ["t", " stays under eight words and never names a product. Each "],
+  ["m", "line"],
+  ["t", " takes one piece, photographed plainly, and says why it lasts. "],
+  ["m", "closing"],
+  ["t", " ends on where it was worn, never on a price."],
+];
+/* The same Writing after the box was renamed in the Studio: the instruction still names `closing`, which is no
+   longer a box on the template, so that mention now resolves to nothing. */
+const MENTION_DOC_DEAD = MENTION_DOC.map(([k, v]) => (k === "m" && v === "closing" ? ["x", v] : [k, v]));
+
+/* A template with more boxes than the menu can show at once, for the scrolling state. D14 settled that a box
+   added by hand arrives named Text Box 1, so a real template mixes chosen names with those. */
+const MANY_BOXES = ["hook", "line", "closing", "kicker", "caption", "price", "Text Box 1", "Text Box 2"];
+
+/* What a mention resolves to. D14 measures a box, so the menu can say how much room the writer is naming — the
+   same number the prompt builder sends on. It is the menu's only second column, and it is data about the
+   template, not advice about the Writing. */
+const BOX_LIMITS = { hook: 42, line: 68, closing: 54, kicker: 28, caption: 180, price: 12, "Text Box 1": 60, "Text Box 2": 60 };
+
 /* The suggested change, against Version 4 (removed words struck through, added words marked). */
 const DIFF = [
   ["", "Open on a "],
@@ -680,6 +709,37 @@ ${S} .boxes7 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; mi
 ${S} .boxes7 .bxl { font-size: 12px; line-height: 16px; color: var(--text-muted); }
 ${S} .boxes7 .pill { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
 ${P ? `${S} .edboxes { padding: 0 20px 16px; }` : ""}
+/* D17. A pill in the row is now something you pick up or press, so it says so on hover; a mention inside the
+   Writing is the same mono pill, sitting inline in the sentence. No new colour: a live mention is the pill the
+   row already draws, and a dead one is the same shape gone quiet. */
+${S} .boxes7 .pill.is-grab { cursor: grab; border: 1px solid transparent; }
+${S} .boxes7 .pill.is-grab:hover { border-color: var(--border); color: var(--text-primary); }
+${S} .boxes7 .pill.is-lift { opacity: 0.4; }
+${S} .men { display: inline-flex; align-items: center; border-radius: 999px; padding: 1px 8px; background: var(--pill-bg); color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 18px; white-space: nowrap; }
+/* Muted, not alarming (the ticket's word): the fill drops away and the name goes quiet, with a dotted underline
+   so it still reads as a mention that is not working rather than as ordinary prose. */
+${S} .men.is-dead { background: none; color: var(--text-muted); border-bottom: 1px dotted var(--text-muted); border-radius: 0; padding: 1px 0; }
+/* The pill riding under the cursor mid-drag, and the line showing where it would land. */
+${S} .edcard { position: relative; }
+${S} .drag7 { position: absolute; z-index: 30; pointer-events: none; box-shadow: var(--sh-card); }
+${S} .dropc { display: inline-block; width: 2px; height: 16px; vertical-align: -3px; margin: 0 1px; background: var(--accent); }
+/* The writing caret, so the half-typed "@l" reads as something being typed rather than a mention already made:
+   a mention only becomes a pill once it is picked. */
+${S} .caret7 { display: inline-block; width: 1.5px; height: 16px; vertical-align: -3px; background: var(--text-primary); }
+/* The @ menu. It only opens while what follows the @ still matches a box name, so it is never in the way of
+   someone writing "never @ anyone"; Escape closes it and leaves the plain characters alone. On the phone it
+   opens *above* the caret: the caret is on the last line of a short editor, and a menu below it would hang off
+   the bottom of the card. */
+${S} .atm { position: absolute; z-index: 30; width: 208px; padding: 6px; border-radius: 14px; border: 1px solid var(--border); background: var(--card); box-shadow: var(--sh-card); }
+${S} .atm .atl { display: block; padding: 4px 8px 6px; font-size: 11px; line-height: 14px; color: var(--text-muted); }
+${S} .atm .ats { max-height: 132px; overflow-y: auto; }
+${S} .atm button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 8px; border-radius: 9px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 16px; color: var(--text-primary); text-align: left; }
+${S} .atm button .lim { font-family: inherit; font-size: 11px; color: var(--text-muted); }
+${S} .atm button.is-on { background: var(--accent-soft); }
+/* The count beside Save version: data, not instruction text — it says a real thing about this Writing. */
+${S} .edfoot .gone { font-size: 12px; line-height: 16px; color: var(--text-muted); }
 /* D13b, the phone: the Conversation is a sheet, so the offer of a first draft sits under the empty editor instead,
    where a writer meets it without opening the sheet (Garreth, 2026-09-22). */
 ${S} .edoffer { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px ${P ? 20 : 24}px 16px; }
@@ -1032,11 +1092,58 @@ function direction(T, init, phone) {
      empty state, and again under the phone's editor, where the Conversation is a sheet and would be missed. */
   const offer = `<button type="button" class="btn2" onClick="{{d7firstDraft}}">${D7I.spark13}Write a first draft</button>`;
   const offerSub = `<span class="sub">from the active template and its ${T.slides} slides</span>`;
+  /* D17: which mention state this board is drawing, if any. */
+  const men = init.men || "";
+  const dead = men === "dead";
+  /* The boxes this board's template has. Most show the three the sample carries; `many` is the template whose
+     menu has to scroll, `one` the template with nothing to choose between (D17). A renamed box is why the dead
+     state has a `closing` in the text and no `closing` in the row. */
+  const boxList = men === "many" ? MANY_BOXES : men === "one" ? ["hook"] : dead ? ["hook", "line", "ending"] : T.boxes;
+  /* A mention is drawn as the same mono pill the row uses, sitting inline. The editor stops being a plain
+     textarea for these states for the same reason the suggested change does: a pill cannot be drawn inside a
+     <textarea>. What is stored is still the plain characters `@hook` — only the drawing is rich (Garreth). */
+  const menTok = (toks, caretAfter = -1) =>
+    toks
+      .map(([k, v], i) => {
+        const piece =
+          k === "m"
+            ? `<span class="men">@${esc(v)}</span>`
+            : k === "x"
+              ? `<span class="men is-dead">@${esc(v)}</span>`
+              : esc(v);
+        return i === caretAfter ? `${piece}<span class="dropc" aria-hidden="true"></span>` : piece;
+      })
+      .join("");
+  /* Mid-drag the sentence shows where the pill would land, so the drop is aimed rather than guessed. */
+  const menDoc =
+    men === "drag"
+      ? menTok(MENTION_DOC.slice(0, 3), 2) + esc(" takes one piece, photographed plainly, and says why it lasts.")
+      : menTok(dead ? MENTION_DOC_DEAD : MENTION_DOC);
   const text = proposal
     ? `<div class="edtext diff" role="textbox" aria-multiline="true" aria-label="Writing">${DIFF.map(([k, t]) => (k === "add" ? `<ins>${esc(t)}</ins>` : k === "del" ? `<del>${esc(t)}</del>` : esc(t))).join("")}</div>`
-    : `<textarea class="edtext" aria-label="Writing" placeholder="${esc(WRITING_PLACEHOLDER)}" value="{{d7dirText}}" onChange="{{d7typeDir}}"></textarea>`;
-  /* The boxes the instruction is written against, listed under the editor (D13). */
-  const boxes = `<span class="boxes7"><span class="bxl">Text boxes</span>${T.boxes.map((b) => `<span class="pill">${esc(b)}</span>`).join("")}</span>`;
+    : men
+      ? `<div class="edtext" role="textbox" aria-multiline="true" aria-label="Writing">${menDoc}${men === "menu" ? ` @l<span class="caret7" aria-hidden="true"></span>` : men === "many" || men === "one" ? ` @<span class="caret7" aria-hidden="true"></span>` : ""}</div>`
+      : `<textarea class="edtext" aria-label="Writing" placeholder="${esc(WRITING_PLACEHOLDER)}" value="{{d7dirText}}" onChange="{{d7typeDir}}"></textarea>`;
+  /* The boxes the instruction is written against, listed under the editor (D13). D17 makes them the way the
+     name gets into the text: dragged in, or pressed, which is the only route a phone has. */
+  const boxes = `<span class="boxes7"><span class="bxl">Text boxes</span>${boxList
+    .map((b) => `<span class="pill${men ? " is-grab" : ""}${men === "drag" && b === "line" ? " is-lift" : ""}">${esc(b)}</span>`)
+    .join("")}</span>`;
+  /* The pill under the cursor, and the menu `@` opens. Both sit over the editor, so they are drawn on the card. */
+  const dragGhost = men === "drag" ? `<span class="pill drag7" style="left: ${phone ? 96 : 256}px; top: ${phone ? 150 : 122}px;">line</span>` : "";
+  const atMenu =
+    men === "menu" || men === "many" || men === "one"
+      ? `<div class="atm" role="listbox" aria-label="Text boxes" style="left: ${phone ? 24 : 464}px; top: ${phone ? 176 : 152}px;">
+                  <span class="atl">Text boxes</span>
+                  <div class="ats">${(men === "many" ? MANY_BOXES : men === "one" ? ["hook"] : ["line"]).map((b, i) => `<button type="button" role="option" aria-selected="${i === 0}" class="${i === 0 ? "is-on" : ""}">@${esc(b)}<span class="lim tnum">${BOX_LIMITS[b] ?? 60} chars</span></button>`).join("")}</div>
+                </div>`
+      : "";
+  /* DECIDED (Garreth, 2026-09-22), after seeing it drawn both ways: a Writing that names a box which no longer
+     exists says so twice — the mention goes quiet in the sentence, and a count sits beside Save version. The
+     quiet mention alone was the cleaner screen, but a Writing runs several paragraphs and a dead name can sit in
+     the middle of one, so on its own it is easy to scroll past and press Generate anyway. The count is data
+     about this Writing, not instruction text, which is what lets it past the tab's no-instruction rule. */
+  const gone = dead ? `<span class="gone">1 text box no longer exists</span>` : "";
   /* The versions are a dropdown, the same as the template's (Garreth, 2026-09-15, third review): the version picked
      is the one in the editor, with Make active beside it when it is not the active one. */
   const versions = `
@@ -1065,14 +1172,39 @@ function direction(T, init, phone) {
                 <div class="c7h">${saved ? versions : noVersions}
                 </div>
                 <div class="edbody">${text}</div>
+                ${dragGhost}${atMenu}
                 ${
                   phone
                     ? `${noneYet ? `<div class="edoffer">${offer}${offerSub}</div>` : ""}<div class="edboxes">${boxes}</div>`
-                    : `<div class="edfoot">${boxes}<button type="button" class="cta" disabled="{{d7saveDisabled}}" onClick="{{d7saveVersion}}">Save version</button></div>`
+                    : `<div class="edfoot">${boxes}${gone}<button type="button" class="cta" disabled="{{d7saveDisabled}}" onClick="{{d7saveVersion}}">Save version</button></div>`
                 }
               </section>`;
-  const me = asked ? `<div class="msg7 me"><div class="bub">${esc(asked)}</div></div>` : "";
-  const reply = proposal
+  /* D17: the same mentions work in the Conversation's box, so "make @hook shorter" asks about a box rather than
+     about a word — and the AI answers with the same mentions back, so the exchange and the Writing read alike.
+     Dropping a pill here inserts exactly what dropping it in the editor does; there is no second behaviour. */
+  const askedTok = [
+    ["t", "Make "],
+    ["m", "hook"],
+    ["t", " shorter, and keep "],
+    ["m", "closing"],
+    ["t", " off price."],
+  ];
+  const replyTok = [
+    ["t", "Held "],
+    ["m", "hook"],
+    ["t", " to eight words and took the price out of "],
+    ["m", "closing"],
+    ["t", ". The other lines are unchanged."],
+  ];
+  const me =
+    men === "conv"
+      ? `<div class="msg7 me"><div class="bub">${menTok(askedTok)}</div></div>`
+      : asked
+        ? `<div class="msg7 me"><div class="bub">${esc(asked)}</div></div>`
+        : "";
+  const reply = men === "conv"
+    ? `<div class="msg7 ai"><span class="aiv">${MARK}</span><div class="bub"><span>${menTok(replyTok)}</span><div class="rules"><span class="pill">${D7I.book}${esc(T.templates[0].name)}</span><span class="pill tnum">${BOX_LIMITS.hook} chars</span></div></div></div>`
+    : proposal
     ? `<div class="msg7 ai"><span class="aiv">${MARK}</span><div class="bub"><span>Changed two lines: winter in the opening, and the hook held to eight words. The hook's font size belongs to the template, not the direction, so that part is in Edit template.</span><div class="rules"><span class="pill">${D7I.book}Hooks under 8 words</span></div></div></div>`
     : init.writing === "first"
       ? `<div class="msg7 ai"><span class="aiv">${MARK}</span><div class="bub"><span>A first draft is in the editor, not saved. It reads the ${T.slides} slides as they stand, so it says what each one is for; the voice is a guess, and changing it is the next thing to ask for.</span><div class="rules"><span class="pill">${D7I.book}${esc(T.templates[0].name)}</span><span class="pill tnum">${T.slides} slides</span></div></div></div>`
@@ -1489,6 +1621,8 @@ function build(OUT) {
      pager; the drawer spans that same height, so most of a row's columns are read without scrolling. */
   const T15 = 1240;
   const R15 = R0 + R * 7;
+  /* D17's three rows start below D15's, clear of the restored drawer row at R15 + 3560. */
+  const R17 = R15 + 5340;
   const BOARDS = [
     { file: "Overview", tall: TALL, init: { type: "before", tab: "overview" }, title: "Overview · Desktop", x: 0, y: 0 },
     { file: "OverviewVersions", tall: TALL, init: { type: "before", tab: "overview", tv: 1, tvOpen: true }, title: "Overview, picking a template version · Desktop", x: D, y: 0 },
@@ -1534,10 +1668,30 @@ function build(OUT) {
     { file: "RowsDrawer", tall: T15, init: { type: "before", tab: "rows", rows: "mixed", row: 2 }, title: "A row's drawer: the caption column is empty · Desktop", x: 0, y: R15 + 1780 },
     { file: "RowsNotLive", init: { type: "quiet", tab: "rows", wire: "fresh", writing: "none" }, title: "Not live yet: no table to read · Desktop", x: D, y: R15 + 1780 },
     { file: "RowsNone", init: { type: "quiet", tab: "rows", wire: "done", rows: "none" }, title: "Live, with no rows yet · Desktop", x: D * 2, y: R15 + 1780 },
-    /* A drawer on a row that has everything — `{ rows: "mixed", row: 10 }`, the Sep 20 posted row — reads well
-       beside the one above and was drawn during the ticket, but D7's canvas is at its 16 MB ceiling, so it is
-       left out rather than a state the ticket actually asks for. It comes back if the canvas is split by theme
-       the way D6's and D10's are. */
+    /* The drawer on a row that has everything — the Sep 20 posted row, all 36 columns, seven slides, posted.
+       It is the control case for the two boards above it: the empty-caption drawer only reads as "this row is
+       missing something" if a reader knows what a complete one looks like, and this is also the only board
+       that shows the drawer scrolled to its end, where Open the deck is pinned. Its one dash is
+       `gatekeep_note`, which a row that passed the gate has no reason to carry — so the pair also says that a
+       dash is not by itself a fault; it is only an answer when the column was needed. Drawn during D15 and
+       then left off for space — D7's canvas was at its 16 MB ceiling — and restored on 2026-09-22 once the
+       canvas was split by theme (Garreth). */
+    { file: "RowsDrawerFull", tall: T15, init: { type: "before", tab: "rows", rows: "mixed", row: 10 }, title: "A row's drawer: a row that has everything · Desktop", x: 0, y: R15 + 3560 },
+    { file: "RowsDrawerFullPhone", phone: true, init: { type: "before", tab: "rows", rows: "mixed", row: 10 }, title: "A row's drawer: a row that has everything · Phone", x: D, y: R15 + 3560 },
+    /* D17 (Garreth, 2026-09-22), the last three rows: the text-box pills become how a box's name gets into the
+       Writing — dragged in, pressed, or typed with `@`. The name is stored as the plain characters `@hook`; what
+       makes it worth doing is that the copy prompt resolves it to that box's role and character limit, so the AI
+       is told which slot it is writing rather than left to infer it from prose. */
+    { file: "Mentions", init: { type: "before", tab: "direction", men: "saved" }, title: "A saved Writing that names its boxes · Desktop", x: 0, y: R17 },
+    { file: "MentionDrag", init: { type: "before", tab: "direction", men: "drag" }, title: "A pill mid-drag, and where it would land · Desktop", x: D, y: R17 },
+    { file: "MentionMenu", init: { type: "before", tab: "direction", men: "menu" }, title: "Typing @ opens the names, filtered · Desktop", x: D * 2, y: R17 },
+    { file: "MentionConv", init: { type: "before", tab: "direction", men: "conv" }, title: "The Conversation: asked with mentions, answered with them · Desktop", x: D * 3, y: R17 },
+    { file: "MentionDead", init: { type: "before", tab: "direction", men: "dead" }, title: "A mention of a box that no longer exists, and the count beside Save version · Desktop", x: 0, y: R17 + R },
+    { file: "MentionMany", init: { type: "before", tab: "direction", men: "many" }, title: "A template with enough boxes that the menu scrolls · Desktop", x: D, y: R17 + R },
+    { file: "MentionOne", init: { type: "before", tab: "direction", men: "one" }, title: "A template with one box: nothing to choose between · Desktop", x: D * 2, y: R17 + R },
+    { file: "MentionPhone", phone: true, init: { type: "before", tab: "direction", men: "saved" }, title: "A pill pressed into the Writing · Phone", x: 0, y: R17 + R * 2 },
+    { file: "MentionMenuPhone", phone: true, init: { type: "before", tab: "direction", men: "menu" }, title: "The @ menu on the phone · Phone", x: 470, y: R17 + R * 2 },
+    { file: "MentionSheetPhone", phone: true, init: { type: "before", tab: "direction", men: "conv", sheet: true }, title: "The Conversation's sheet, with the same mentions · Phone", x: 940, y: R17 + R * 2 },
   ];
   const artboards = [];
   for (const light of [false, true]) {

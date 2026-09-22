@@ -421,6 +421,19 @@ promises.
     choices (Glow Up opening line and datestamp), any active `batch_briefs`
     row for the lane as extra context, and the fixed lines filled in, not
     written.
+  - **Mentions in the direction are resolved, not passed through as words**
+    (Garreth, 2026-09-22, approving D17 — this is a requirement, not an
+    option). The Writing stores the plain characters `@hook`; before the
+    prompt is sent, each mention is matched against the **active template's**
+    boxes and replaced with what that box actually is — its role and its
+    character limit — so the model is told *which text slot the instruction is
+    about* instead of having to infer it from the surrounding prose. That is
+    the whole point of the feature: stored plainly, resolved deliberately. A
+    mention matching no box **resolves to nothing and is dropped from the
+    prompt** rather than sent as a literal `@closing` the model will try to
+    honour; the screen has already said so beside Save version (DEV-19b), and
+    a dropped mention is recorded in `generation_metadata` so a deck written
+    against a stale Writing can be explained afterwards.
   - Port the existing prompts into direction version 1 and the prompt
     templates: Glow Up's seven-slide grammar, Covered Eye's five-beat arc, the
     Caption Maker's voice rules. Keep the "Harden Config" step as code: brand
@@ -437,7 +450,10 @@ promises.
   - Covered Eye's slide 1 is the hook, so `hook_text` is always slide 1's
     text. Glow Up's `transition_line` is not written.
 - **Tests:** prompt-builder snapshots per lane; the length-limit retry; the
-  caption strip removes a brand and a molecule name that the model put in.
+  caption strip removes a brand and a molecule name that the model put in; a
+  direction carrying `@hook` resolves to that box's role and limit in the
+  built prompt, and one carrying a renamed box's name drops the mention
+  instead of sending it as a word.
 - **Done when:** a script run writes three decks per lane into drafts, and
   Garreth reads them.
 
@@ -798,6 +814,36 @@ version and date, **Save version** writes a new active version, past versions
 with **Make active**. Both writes in one database function so there is never
 zero or two active versions. **Edit template** arrives in Phase 3; the Go Live
 tab in Phase 4.
+- **From the approved D17 (Garreth, 2026-09-22) — naming a text box while you
+  write.** The text-box names listed under the editor stop being labels and
+  become how a name gets into the Writing:
+  - **Drag a pill into the editor** and it drops in at the point it was
+    dropped, with the caret line showing where that is while the drag is in
+    flight. **Pressing a pill** inserts it at the caret — the fast route on
+    the desktop and the only one a phone has, so both are built, not one.
+  - **Typing `@` opens the names**, filtered as more is typed, one highlighted,
+    Enter or a press to choose. The menu **only stays open while what follows
+    the `@` still matches a box name**, so writing *never @ anyone* is not
+    interfered with, and **Escape closes it and leaves the plain characters
+    alone**. On the phone it opens above the caret, which sits on the last
+    line of a short editor. Each row names the box's character limit, which is
+    the number D14 measures.
+  - **What is stored is plain text** — the characters `@hook`, in the same
+    single `carousel_lane_directions.direction` column, which nothing else has
+    to learn to read. The screen highlights a mention by matching the name
+    against the **active template's** boxes each time the Writing is shown.
+  - **This changes the editor itself, and that is the bulk of the work.** A
+    mention is drawn as the mono pill inline in the sentence, and a pill
+    cannot live inside a plain `<textarea>`; the editor becomes a rendered
+    surface, the way the suggested-change view already is. The *field* stays
+    words — that promise is about what is saved, not about what is typed into.
+  - **A mention that matches no box says so twice** (Garreth's decision after
+    seeing both): the mention goes muted in the sentence — fill dropped, dotted
+    underline, never red, because such a Writing is stale rather than broken —
+    **and** a count sits beside Save version, *n text boxes no longer exist*.
+    It is not decoration: a dead mention is exactly where the prompt resolves
+    to nothing (DEV-08) and the model is told about a box that is not there,
+    and this is the only warning that ever surfaces.
 
 From the approved D13 (Garreth, 2026-09-22):
 - **The empty editor** carries a grey placeholder — the shape of a good
@@ -1292,8 +1338,20 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
     text-box names. One wording in both places. The button's dot means
     something new is waiting in the conversation, a suggestion or a first
     draft.
+- **From the approved D17 (Garreth, 2026-09-22):** the conversation's box
+  takes the same mentions as the editor. A pill dropped or pressed there
+  inserts exactly what it inserts in the editor — there is no second
+  behaviour — and `@` opens the same menu. **The reply uses the mentions
+  back**, so the exchange and the Writing read alike and *make @hook shorter*
+  is a question about a box rather than about a word. On the phone the
+  conversation is a sheet, so the pill row is carried inside the sheet too;
+  otherwise the names are out of reach exactly where they are being discussed,
+  which is the shape of problem D13b already solved by putting its offer in
+  two places.
 - **Done when:** a direction change proposed in the chat is saved as a new
-  version with its cited rules, by query; and a type with no Writing reaches
+  version with its cited rules, by query; a mention put into the box by drag,
+  press and `@` reaches the model resolved, and the reply names the same box
+  the person did; and a type with no Writing reaches
   a saved first version through the offer alone, on desktop and on a phone,
   without the field ever being filled by anything but a person's press.
 
