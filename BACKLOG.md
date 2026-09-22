@@ -140,6 +140,15 @@ accounts are already `posting_paused` (2026-09-14).
 PF-xx* = needs that ticket merged first. *Blocked by hardware* = needs the
 phones or the Air in Yurie's hands. Order within the list is build order.
 
+**Cross-references audited 2026-09-22.** Ten tickets landed in four days and
+the "blocked by" and "waits on" lines did not keep up: two were actively
+wrong and eight described a world that had moved on. Every one has been
+checked against the code and the database and corrected in place, with the
+old wording struck through rather than deleted so the history still reads.
+Anything a row now claims about a table, a column or a count was looked at on
+2026-09-22, not inferred. **Worth repeating whenever a run of tickets lands
+together** — a wrong "blocked by" costs somebody a morning.
+
 | # | Ticket | Phase | Status |
 |---|---|---|---|
 | PF-01 | `accounts.delivery_mode` switch | Immediate | Built and on `main` 2026-09-18; first live write still to come |
@@ -149,7 +158,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
-| PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. Shows warmups only until PF-06 hands posts out |
+| PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. ~~Shows warmups only until PF-06 hands posts out.~~ **PF-06 landed the same day**; a seeded delivery was seen on the list as "1 post and 2 warmups" (2026-09-22) |
 | PF-11 | Post-ban branch for manual accounts | Intermediate | **Unblocked by PF-01 since 2026-09-18** (this row was stale until 2026-09-22). Waiting on its SCREEN instead: the ban checklist is design ticket P8, not started |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
@@ -171,9 +180,15 @@ editable on the account page, audit-logged like the pause toggle.
 *Done when:* an account can be flipped from the app and the row in
 `dashboard_audit_log` says who and when.
 
-*2026-09-18:* built, column live (default `geelark`). The flip has not been
-run on a real account yet, so the audit row has not been seen. The switch does
-nothing to posting until PF-06 makes the Posting Agent read it.
+*2026-09-18:* built, column live (default `geelark`). ~~The switch does
+nothing to posting until PF-06 makes the Posting Agent read it.~~ **PF-06
+landed 2026-09-22, so the switch now decides where a post goes**: a `manual`
+account gets a `post_deliveries` row and no Geelark task.
+
+*Re-checked 2026-09-22:* the flip still has not been run on a real account —
+`dashboard_audit_log` holds zero `delivery_mode_change` rows — so the audit row
+has never been seen. It is also HELD at the moment: P10 made a move require a
+phone, and no phone is registered (see PF-03).
 
 *Redesigned the same day (Garreth):* no pill on the Accounts table or the
 account page, so the Geelark screens stay as they were. Instead the app has
@@ -223,10 +238,14 @@ because the app names accounts by that label. No Facebook row exists yet.
 - **Create it paused.** `v_scheduler_account_config` has no platform filter
   (judged from a pattern search, not a full read), so an active, unpaused
   Facebook row would most likely be planned like any other and the Posting
-  Agent would look for a Geelark phone named after its label. Keep
-  `posting_paused = true` until PF-05 to PF-07 exist. How the n8n workflows
-  (Smart Scheduler, Posting Agent, warmups, digest) treat a Facebook row has
-  not been checked.
+  Agent would look for a Geelark phone named after its label. ~~Keep
+  `posting_paused = true` until PF-05 to PF-07 exist.~~ **All three exist as of
+  2026-09-22**, so a Facebook account on Physical would now get a
+  `post_deliveries` row rather than be sent to Geelark. Keep it paused anyway:
+  every account is paused for the Geelark exit. How the n8n workflows (Smart
+  Scheduler, Posting Agent, warmups, digest) treat a Facebook row still has not
+  been checked. *Re-checked 2026-09-22: zero Facebook accounts exist, so none
+  of this has been seen.*
 - **Handles are matched without the platform in two places.**
   `v_account_view_health` joins views on the handle alone, and
   `analytics_rollup` joins `accounts` on the handle alone in three places. A
@@ -513,9 +532,12 @@ and an empty clipboard reads differently from a refused one (6).
 *Done when — met:* proven end to end against the real database with a
 throwaway phone and two throwaway accounts, all since removed, **including the
 failed save proven by a real failure** (the row deleted out from under an open
-sheet). **Not proven with real work:** no phone is registered, no account is
-on Physical, and PF-06 does not exist yet, so nothing hands a post out — the
-list shows warmups only until it does.
+sheet). **Not proven with real work:** no phone is registered and no account is
+on Physical, so nothing real has ever been handed out. ~~PF-06 does not exist
+yet, so nothing hands a post out — the list shows warmups only until it
+does.~~ **PF-06 landed later the same day (2026-09-22)**, and a seeded
+delivery was seen on the list as "1 post and 2 warmups", so the posts half is
+no longer theoretical.
 
 ## PF-11 · Post-ban branch for manual accounts — Waiting on its screen (design ticket P8)
 
@@ -589,7 +611,11 @@ cohort of the same character. This is what the week-6 review reads.
 *Done when:* Garreth and Yurie can read one moved account's before/after on
 one screen.
 
-## PF-13 · Write path for the warmup script — Blocked by PF-04
+## PF-13 · Write path for the warmup script — Ready now; waits on the script being decided
+
+*Heading corrected 2026-09-22: it read "Blocked by PF-04", which the summary
+table above already contradicted. PF-04 landed 2026-09-22 and `warmup_sessions`
+accepts `mode = 'script'` today.*
 
 The script lives on the Air, outside this repo. It needs a way to insert
 `warmup_sessions` rows with `mode = 'script'`: a service-role key kept on the
@@ -728,8 +754,11 @@ limited to the accounts currently in that fleet".
 **PF-19 · Calendar and Content types per fleet — Built 2026-09-22, no Physical data to show yet.**
 `calendar_month_rollup`, `calendar_month_days` and `calendar_day_detail` join
 `accounts` and can take an optional fleet. They read delivery from
-`geelark_tasks`, so Physical will look empty until PF-05 gives manual posts a
-delivery record; do this after PF-05, with PF-09. `content_type_stats` does not
+~~`geelark_tasks`, so Physical will look empty until PF-05 gives manual posts a
+delivery record; do this after PF-05, with PF-09.~~ **both sources since
+2026-09-22** — PF-05 and PF-09 landed together. Physical still looks empty, but
+for a different reason now: no hand-made post exists, not because the calendar
+cannot see one. `content_type_stats` does not
 join `accounts` and needs the join added.
 
 **PF-20 · Incidents and the bell per fleet — Done 2026-09-22.** Both are

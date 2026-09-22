@@ -206,8 +206,12 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   Garreth took it as it stands.
   The placeholder list lives in `src/lib/data/todo-placeholder.ts` and the card
   in `src/components/dashboard/todo-today-card.tsx`; `?todo=work|done|empty|`
-  `noPhones|phoneOff` on the dashboard picks which state draws. Both files go
-  when PF-07 makes the list real.
+  `noPhones|phoneOff` on the dashboard picks which state draws. ~~Both files go
+  when PF-07 makes the list real.~~ **Kept (2026-09-22).** They turned out to
+  be the review harness rather than a stopgap: `?todo=` and `?demo=` are how a
+  screen is judged in states live data will not produce on demand, and P10
+  leans on the same invented phones. They go when the designs stop being
+  reviewed, not when the tables arrive.
 - **Decided in this pass, for Garreth to accept or change:**
   - **Round two, 2026-09-22 (Garreth's feedback):** the card is titled **To-do**,
     and **every phone is one collapsed line until it is opened**. Six phones'
@@ -609,14 +613,20 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   — four phones, one of them off, and two accounts not yet on a phone — since
   no account has been moved to Physical yet and the real view is empty;
   without it the page reads live rows as it always has
-  (`src/lib/data/accounts-phone-placeholder.ts`, deleted when PF-02 and PF-04
-  make this real). **Nothing saves:** `accounts` has no warmup-mode column
-  until PF-04, so a press moves the switch in the browser and forgets.
+  (`src/lib/data/accounts-phone-placeholder.ts`, ~~deleted when PF-02 and PF-04
+  make this real~~ — kept; see P1). ~~**Nothing saves:** `accounts` has no
+  warmup-mode column until PF-04, so a press moves the switch in the browser
+  and forgets.~~
+  **It saves since PF-04 (2026-09-22):** `accounts.warmup_mode` is live and a
+  press writes to it. Re-checked 2026-09-22 — the column exists and holds 0
+  accounts on `script`, because nothing is automated yet.
   **What an Automated account SHOWS in place of a log form moved to PF-13**
   (Garreth, 2026-09-22), to be designed and built with the warmup script
   itself: it cannot be drawn while what a scripted session IS remains
   undecided. With that gone, **everything P4 still owns is drawn** — what is
-  left is Garreth's review, light mode, and PF-04's column so a press saves.
+  left is ~~Garreth's review, light mode, and PF-04's column so a press saves~~
+  **the by-phone view having real phones to group by** — the review, light mode
+  and the saving column all landed 2026-09-22.
 - **Where it lives — the Accounts page, in Physical (Garreth, 2026-09-22).**
   This answers the question the ticket used to leave open. The switch is a
   per-account setting, and Accounts is where per-account settings are read and

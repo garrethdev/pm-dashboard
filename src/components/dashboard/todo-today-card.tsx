@@ -44,7 +44,8 @@ import { cn } from "@/lib/utils";
  * Each phone sits in its own quiet container (Garreth, 2026-09-22), so an
  * opened phone reads as one block rather than running into the next.
  *
- * Runs on placeholder data (`todo-placeholder.ts`) until PF-05 and PF-07 exist.
+ * Real since PF-07 (2026-09-22): the dashboard hands it `getTodoBoard()` and
+ * `?todo=` is the only thing that draws `todo-placeholder.ts` now.
  */
 export function TodoTodayCard({
   state = "work",
