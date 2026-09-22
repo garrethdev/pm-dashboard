@@ -82,10 +82,10 @@ purpose; the changelog has them.
 
 | # | Task | Status |
 |---|---|---|
-| P1 | Put To-do on the Physical dashboard, above Inventory | **Designed, waiting for review** (2026-09-22) |
-| P2 | Add the To-do today page, grouped by device and then by account | **Designed, waiting for review** (2026-09-22) |
-| P3 | Add the Posted, Failed and Log warmup forms | **Drawn early inside P2, waiting for review** (2026-09-22) |
-| P4 | Add a Manual / Automated warmup switch per account | Not started. The automated side waits on the warmup script decision |
+| P1 | Put To-do on the Physical dashboard, above Inventory | **Approved 2026-09-22.** The screen is built and on `main`; it still draws placeholder data until PF-05 and PF-07 |
+| P2 | Add the To-do today page, grouped by device and then by account | **Approved 2026-09-22.** As P1: built, still on placeholder data |
+| P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07 |
+| P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22.** Both views and both switches are built, on placeholder data until PF-04 and PF-02. What an Automated account SHOWS moved to PF-13, to be done with the warmup script |
 | P5 | Rework the device page around the phone's daily work | Not started |
 | P6 | Track proxy expiry for real phones on Proxies & numbers | Not started |
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
@@ -115,7 +115,7 @@ the design ticket that covers it:
 | PF-04 Warmup log | Log form, warmup mode, warmup history | P3, P4, P5 |
 | PF-05 Deliveries table | nothing (data only) | — |
 | PF-06 Posting Agent fork | nothing (n8n) | — |
-| PF-07 Posting To-Do | The to-do list, on the dashboard and as a page | P1, P2, P3 |
+| PF-07 Posting To-Do | The to-do list, on the dashboard and as a page | P1, P2, P3 (all approved 2026-09-22; PF-07 also inherits P3's six saving states) |
 | PF-08 Facebook | Facebook on the account screens | B6 (built); review in P13 |
 | PF-09 Health + incidents read both sources | nothing new (same screens, more data) | — |
 | PF-10 Comparison view | Before and after the move, per account | P7 |
@@ -191,10 +191,17 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P1. Put To-do on the Physical dashboard, above Inventory
 
-- **Status:** designed, waiting for review (2026-09-22). Drawn in the running
+- **Status:** **approved (Garreth, 2026-09-22)**, after thirteen rounds of his
+  feedback recorded below. Drawn in the running
   app rather than on a canvas (Garreth's choice that day): the card and the new
   dashboard layout are real screens behind placeholder data, so what is
   approved is the screen itself and nothing drifts on the way to the build.
+  **Because of that, approval closes the design AND most of the build: the
+  screen is in the app and on `main`.** What is left is the data behind it —
+  the card shows invented phones and tasks until PF-05 and PF-07 exist.
+  **Light mode approved the same day** on the strength of what the tokens
+  already give it: it was not designed separately, it was looked at, and
+  Garreth took it as it stands.
   The placeholder list lives in `src/lib/data/todo-placeholder.ts` and the card
   in `src/components/dashboard/todo-today-card.tsx`; `?todo=work|done|empty|`
   `noPhones|phoneOff` on the dashboard picks which state draws. Both files go
@@ -249,7 +256,10 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   - **Round five, 2026-09-22 (Garreth's feedback):** the collapsed phone row
     shows **the count only** — no "1 to add" warning. A link still owed shows
     as the yellow box on its own row once the phone is opened, and that is
-    enough.
+    enough. **Extended in round fourteen:** no warning line still, but the
+    phone's own icon becomes a **yellow link** when an account on it owes
+    one, exactly as on the To-do page. The icon was already carrying a cyan
+    tick for a finished phone, so it was the natural place for this too.
   - **To-do today comes first on a phone, above Accounts.** It is the reason
     the app was opened. On a desktop the eye starts left, so Accounts keeps the
     lead there and To-do heads the right column.
@@ -305,9 +315,13 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P2. Add the To-do today page, grouped by device and then by account
 
-- **Status:** designed, waiting for review (2026-09-22). Drawn in the running
+- **Status:** **approved (Garreth, 2026-09-22)**, at the same time as P1 and
+  after the same thirteen rounds. Drawn in the running
   app alongside P1, at Garreth's request, so both can be given feedback
-  together. The page is `/todo` (`src/app/(dashboard)/todo/page.tsx` and
+  together. As with P1, the screen itself is built and on `main`; what is left
+  is the real data (PF-05, PF-07, and PF-04 for the warmup items) and the
+  freshness behaviour left to the build. **Light mode approved the same day**,
+  as P1: looked at rather than designed, and taken as it stands. The page is `/todo` (`src/app/(dashboard)/todo/page.tsx` and
   `src/components/dashboard/todo-view.tsx`), Physical only, with a **To-do**
   menu item second in the Physical menu. `?todo=work|done|empty|noPhones|`
   `phoneOff|stress` picks the state and `?day=tomorrow` the day. The controls
@@ -327,19 +341,22 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
     is the work and the card is only a summary of it. The row of phone pills is
     a **dropdown that takes more than one phone at a time** ("All phones" by
     default) — two phones side by side on the desk is the ordinary case, and
-    six pills never fitted a phone screen. **"n links to add" moved to the far
-    end** of the filter row, away from the phone picker, since it is a
-    different question. The post and warmup marks are **one circle of one
+    six pills never fitted a phone screen. ~~**"n links to add" moved to the
+    far end** of the filter row, away from the phone picker, since it is a
+    different question.~~ **Superseded by round ten:** the filter is gone and
+    the phone itself carries the mark. The post and warmup marks are **one circle of one
     size**, no longer stretched to the row. **Download video and Copy caption
     sit at the right-hand end** of their row.
   - **Round five, 2026-09-22 (Garreth's feedback):** each account carries **a
     general picture of its day** beside its handle — "Posts 1 of 2" and
-    "Warmup done" — so the account can be read without reading every row. The
-    status and the two fetch buttons are **one group on the row's centre
-    line**; the pill used to ride the first line of text while the buttons were
-    centred against a two-line block. And **an automated warmup is now a list
-    item like any other**, with an **Automated** label beside its name and a
-    dashed box nobody can tick — which also means a script that has stopped
+    "Warmup done" — so the account can be read without reading every row.
+    ~~The status and the two fetch buttons are **one group on the row's centre
+    line**; the pill used to ride the first line of text while the buttons
+    were centred against a two-line block.~~ **Superseded by round twelve:**
+    they are not a group at all — the status moved up beside the name and only
+    the buttons are left at the right-hand end. And **an automated warmup is now a list
+    item like any other**, with an **Automated** label beside its name (a
+    robot badge since round thirteen) and a dashed box nobody can tick — which also means a script that has stopped
     running shows up as an item that never completes, instead of as silence.
     This replaces the quiet "Warmup: automated · last ran 09:14" line that P4
     asked for, on both screens.
@@ -348,26 +365,114 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
     panel** inside the phone's card, so two accounts on one phone do not run
     together; the day label sits **closer to its two arrows**; and the phone
     header shows **the count only** here too — a link still owed is the yellow
-    box on its row and the filter at the top of the page.
+    box on its row and, since round ten, a yellow link icon in place of the
+    phone's own icon.
   - **Round seven, 2026-09-22 (Garreth's feedback), phone width:** a task is
     **four columns** — the tick, the mark, the time it is due, and then
     everything about the task itself (its name, its detail, its status, its
     buttons) stacked in one left-aligned column, rather than strung out beside
     the name. Each of the first three sits in the row's 36px first band so they
     line up with the name. An account's verdict pills **flow left with the
-    handle** on a phone. From `sm:` up the last column opens back out into a
-    row and the status and buttons return to the right-hand end.
+    handle** on a phone. Once there is room the last column opens back out
+    into a row and the status and buttons return to the right-hand end — room
+    measured on **the phone's own card** since round nine, not on the window,
+    because in Grid that card is only a third of the page wide.
   - **Round eight, 2026-09-22 (Garreth's feedback):** the account's own line —
     handle, character and its two verdict pills — has room above and below it
     before the divider its tasks start under, at every width and on every
     phone's card.
+  - **Round nine, 2026-09-22 (Garreth's request):** the page offers **two
+    views**. **List** is what the
+    page already was — one phone per full-width row — and stays the default.
+    **Grid** stands the phones side by side as cards, three across on a wide
+    screen and two on a smaller one, for the morning look at how the whole
+    farm stands rather than working down it. The switch uses **the same two
+    symbols as the Carousel Generator's render screen** (D5's Grid / Rows), at
+    Garreth's instruction, so one control means one thing across the app; it
+    is the app's existing segmented pill, which gained an optional icon for
+    this. It **is not shown below `md:`**: a phone has no room for a second
+    column, so the switch would change nothing there. A phone's card now sizes
+    its own contents against **its own width** (a container query) instead of
+    the window's, which is what lets the same card read correctly full-width
+    and at a third of the page; in a narrow column a task's rows stack exactly
+    as they do on a phone. Still to judge: whether an uneven bottom edge —
+    cards are as tall as their work, not stretched to match — is right, and
+    whether Grid should also be reachable on a phone.
+  - **Round ten, 2026-09-22 (Garreth's feedback):** three changes to the top
+    of the page.
+    - **The day arrows are 28px**, the height of the Grid / List pills, so the
+      page's two switches read as one weight of control. Their tap area stays
+      44px, invisibly.
+    - **The "n links to add" filter is gone.** A phone with an account owing a
+      link now shows **a yellow mark where its phone icon goes** (a dot at
+      first; a link icon from round eleven), on the same
+      principle as the cyan tick a finished phone already carries: the phone
+      that needs going back to points at itself, instead of a control at the
+      top of the page offering to find it. The yellow box on the item's own
+      row is unchanged, and the dot cannot clash with the tick — an item
+      without its link is not counted done, so a phone is never both.
+    - **The Grid / List switch takes the filter's place**, at the far end of
+      the filter row. The day arrows are alone on the title row again.
+  - **Round eleven, 2026-09-22 (Garreth's feedback):** three fixes found by
+    looking at the built screen.
+    - **The status and the two fetch buttons sit on the row's centre line**,
+      not on the first line of a two-line task. This is what round five asked
+      for and never actually got: the group was pinned to the row's first
+      36px band, so beside a task carrying a "Due yesterday" line it rode
+      high. Measured: both the task block and the group now share one centre.
+      (Round twelve then moved the status out of that group; the buttons
+      still centre.)
+    - **In Grid the two fetch buttons share one full-width line**, half each,
+      instead of stacking one above the other and making every card taller.
+      Half of that column is 79px and "Download video" needs 116px, so on a
+      narrow card the label shortens to its noun — **Video** and **Caption** —
+      with a download and a copy icon carrying the verb. At full width the
+      buttons are untouched: their own width, their own words, no icon.
+    - **The phone's link mark is a yellow link icon**, not a plain dot, so it
+      says what is owed rather than only that something is.
+  - **Round twelve, 2026-09-22 (Garreth's feedback):** two more.
+    - **A task's status is said beside its name**, in the place the
+      **Automated** badge already holds — Link needed, Failed, Skipped — and
+      no longer at the far right of the row. What happened to a task is part
+      of reading the task. **And a failed post turns its own mark red**: the
+      circle beside the tick that says whether the item is a post or a
+      warmup. The right-hand end of a row is now only the two things you
+      fetch before going to post.
+    - **On a narrow card the two fetch buttons fill the WHOLE row**, edge to
+      edge, not just the column beside the name. The row wraps and they take
+      a line of their own under it, which both makes them properly tappable
+      and takes another step of height out of a Grid card. At full width
+      nothing about them changed.
+  - **Round fourteen, 2026-09-22 (Garreth):** **light mode approved** for both
+    screens, taken as the tokens already render it rather than designed in its
+    own pass. Both were looked at in the running app at 1440 and 390 before
+    he took it. And the **dashboard card's phone icon now carries the yellow
+    link** as well, so the card and the page say the same three things in the
+    same place: a cyan tick when the phone is finished, a yellow link when an
+    account on it owes one, the phone itself otherwise.
+  - **Round thirteen, 2026-09-22 (Garreth's feedback):** the **Automated**
+    label is now a **robot badge** rather than the word, on the To-do page and
+    on the dashboard card alike. The word was as wide as some of the tasks it
+    sat beside, and it is glanced at rather than read. The badge is one shared
+    component (`AutomatedMark` in `todo-board.tsx`) so the two screens cannot
+    drift apart. **Hovering it says "Automated task"** in the app's own
+    tooltip, not the browser's. Nothing depends on that hover — these screens
+    have to work from a phone, where there is none — it only spells out a
+    badge already understood from its shape, and a screen reader is given the
+    same words. On the dashboard card the tooltip sits to the LEFT of the
+    badge: the phone blocks there clip what leaves them, and a centred
+    tooltip lost its last word over the card's edge.
   - **Carried-over items sit above today's** inside their account. They are the
     oldest work and the only work with a deadline of its own, since an item
     stops carrying over after three days. The line reads "Due yesterday" or
     "Due 2 days ago".
-  - **Links still owed get a filter, not a section of their own** — a count you
-    can press ("1 link to add") beside the phone filter. A second copy of the
-    item elsewhere on the page would be a second thing to keep straight.
+  - ~~**Links still owed get a filter, not a section of their own** — a count
+    you can press ("1 link to add") beside the phone filter.~~ **Superseded
+    2026-09-22 (round ten):** no filter and no section — **the phone that owes
+    a link says so itself**, with a yellow link icon where its phone icon
+    goes. A second
+    copy of the item elsewhere on the page would still be a second thing to
+    keep straight, and now there is not even a control to press.
   - ~~One filled accent button on the whole page, on the next thing to do.~~
     **Superseded 2026-09-22:** with ticking as the action there are no outcome
     buttons on a row at all, so the only accent left on the page is Save inside
@@ -417,8 +522,9 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
     under its device and account, marked as carried over and showing the day
     it was due. Decide whether carried-over items sit above today's.
   - **Links still to add:** posts marked Posted without a link stay findable
-    after the day ends, since nothing else will ask for them. A filter or a
-    short section of their own.
+    after the day ends, since nothing else will ask for them. ~~A filter or a
+    short section of their own.~~ **Answered in round ten:** neither — the
+    phone holding one wears a yellow link icon.
   - A way to look at **tomorrow**, so the load can be seen.
   - Filter by device, for someone holding one phone.
 - **States:**
@@ -444,7 +550,8 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P3. Add the Posted, Failed and Log warmup forms
 
-- **Status:** **drawn early, waiting for review** (2026-09-22). Garreth asked
+- **Status:** **approved (Garreth, 2026-09-22)** — approved on the strength of
+  a day of using it, since every tick on both screens opens it. Garreth asked
   for ticking an item to open a form, so the form had to exist for the tick to
   be judged. The three forms are **one sheet**, not three
   (`src/components/dashboard/todo-board.tsx`): ticking a post offers
@@ -452,9 +559,12 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   It failed takes a reason from a short list plus a note; ticking a warmup
   takes minutes on a stepper that starts at the target, plus a note. A finished
   item's sheet shows when it was done and a **hold-to-undo**. Saving a post
-  without its link leaves the item owing one, exactly as decision 7 says. What
-  is still P3's own work is the saving states — saving, saved, could not save,
-  and an item someone else finished while the sheet was open.
+  without its link leaves the item owing one, exactly as decision 7 says.
+  **The saving states moved to PF-07** (Garreth, 2026-09-22), where they are
+  written out in full as that ticket's done-when. Nothing can fail against
+  placeholder data, so drawing them here would have invented behaviour the
+  real save may contradict; they are decisions to take against a save that can
+  actually go wrong.
 - **You get here from:** the buttons on a to-do item (P2).
 - **Build tickets this unblocks:** PF-07's Posted / Failed, PF-04's log form.
 - **Design:** three small bottom sheets, in the style of Add phone.
@@ -473,40 +583,139 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
     account page, for a warmup done outside the list.
   - **Undo.** A wrong tap on Posted must be reversible for a while. A hold
     button, no warning text.
-- **States:** saving, saved, could not save (nothing was changed), a link that
-  is clearly not a link, an item someone else finished while the sheet was
-  open.
-- **Done when:** the three sheets and their states are approved in dark mode
-  at phone width (desktop is the same sheet centred).
-  Then built in the app to match, and looked at in the running app at both
-  sizes.
+- **States:** ~~saving, saved, could not save (nothing was changed), a link
+  that is clearly not a link, an item someone else finished while the sheet
+  was open.~~ **Moved to PF-07 on 2026-09-22**, along with a sixth found in
+  the build: **Paste did nothing**, because the one-tap Paste asks the browser
+  for the clipboard and Safari can refuse, and it fails silently today.
+- **Done when:** ~~the three sheets and their states are approved~~ **Met
+  2026-09-22:** the three sheets are approved, built, and were looked at in
+  the running app in dark and light at phone and desktop width. The states
+  around saving are PF-07's.
 
-## P4. Add a Manual / Automated warmup switch per account
+## P4. Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts
 
-- **Status:** not started.
-- **You get here from:** the account's row on its device page (P5). Decide
-  whether the same switch also appears on the account's own page in Physical.
+- **Status:** **approved (Garreth, 2026-09-22)**, light mode included — both
+  views were looked at in dark and light, at 1440 and at 390, before he took
+  it. What P4 owns is designed and built; what is left is not design but
+  data: **PF-04's warmup-mode column**, so a press saves, and **PF-02's real
+  phones**, so the by-phone view stops needing `?demo=1`. The Accounts page in Physical now has both views and
+  both switches: `src/components/dashboard/accounts-views.tsx` (the switcher),
+  `accounts-by-phone.tsx` (the by-phone view) and `warmup-mode-switch.tsx`
+  (the hand / robot pair). **`?demo=1`** on `/accounts` draws an invented farm
+  — four phones, one of them off, and two accounts not yet on a phone — since
+  no account has been moved to Physical yet and the real view is empty;
+  without it the page reads live rows as it always has
+  (`src/lib/data/accounts-phone-placeholder.ts`, deleted when PF-02 and PF-04
+  make this real). **Nothing saves:** `accounts` has no warmup-mode column
+  until PF-04, so a press moves the switch in the browser and forgets.
+  **What an Automated account SHOWS in place of a log form moved to PF-13**
+  (Garreth, 2026-09-22), to be designed and built with the warmup script
+  itself: it cannot be drawn while what a scripted session IS remains
+  undecided. With that gone, **everything P4 still owns is drawn** — what is
+  left is Garreth's review, light mode, and PF-04's column so a press saves.
+- **Where it lives — the Accounts page, in Physical (Garreth, 2026-09-22).**
+  This answers the question the ticket used to leave open. The switch is a
+  per-account setting, and Accounts is where per-account settings are read and
+  changed; that page already carries a **Warmup** column and a per-row
+  **Posting** pause, so a per-row Manual / Automated control belongs in the
+  same row.
+- **And the Accounts page gains two views (Garreth, 2026-09-22),** switched
+  by the same control the To-do page uses. **The page takes two lines in
+  Physical** (Garreth, 2026-09-22): the page's name and the view of it on the
+  first, opposite each other; everything that narrows what is listed — the
+  health pills, Filters, Show retired, the search and Select multiple
+  profiles — on the second, arranged as Cloud's single row already arranges
+  them. Cloud, having no phones and so no switch, keeps that single row on a
+  desktop.
+- **The page was simplified for a phone in the same pass (Garreth,
+  2026-09-22), on BOTH fleets** — one page should not behave two ways at
+  390px. Under `sm:`: the **health pills move inside Filters** (three more
+  pills across the top left no room for the search), **Select multiple
+  profiles becomes its icon**, beside the search it belongs with, and the
+  order is **title, then search, then Filters and Show retired** — searching
+  is what you came to do; filtering is a step you take afterwards. **Show
+  retired sits at the far end of its row**, opposite Filters (Garreth,
+  2026-09-22): a checkbox pressed against that button reads as part of it. Nothing
+  above `sm:` changed, on either fleet.
+  - **By account** — the table exactly as it is today, one row per account,
+    the same as Cloud's. **This stays the default**, so nothing changes for
+    anyone who is not thinking about phones.
+  - **By phone** — the same accounts grouped under the phone they sit on,
+    **each group keeping every column the flat list has** (Garreth,
+    2026-09-22): it is the same table cut into blocks, not a summary of it, so
+    grouping never sends you back to the other view to read something. The
+    column widths are fixed in this view so the blocks line up with one
+    another, over a minimum width so a phone scrolls each block sideways as it
+    does the flat table rather than crushing eleven columns into 390px. This view carries a **phone-wide Manual / Automated switch**: one
+    press sets every account on that phone. It replaces the bulk flip that this
+    ticket used to put on the device page, and it is the view you use on the
+    day the script is switched on for a phone.
+  - **Physical only.** Cloud has no phones, so it never sees the switcher and
+    its Accounts page is untouched — the same rule the rest of this work
+    follows.
+- **What the to-do list already decided.** P4 was written on the rule that an
+  Automated account puts **nothing** on the to-do list. **P2's round five
+  overturned that** (Garreth, 2026-09-22): an automated warmup appears as a
+  list item like any other, with the robot badge and a dashed box nobody can
+  tick, precisely so a script that has stopped shows up as an item that never
+  completes rather than as silence. That is most of P4's hardest state solved
+  already, and this ticket must be reconciled with it rather than designed as
+  first written.
 - **Build tickets this changes:** PF-04 gains a per-account setting
   (`manual` | `script`, default `manual`); PF-13 (the script's write path) is
   what an Automated account relies on.
 - **Design:**
-  - A two-way switch per account: **Manual / Automated**. Changing it is a
-    hold, like moving an account between fleets, because switching to
-    Automated removes that account's warmups from everyone's to-do list.
-  - What an Automated account shows where a Manual one shows its log form:
+  - A two-way switch per account: **Manual / Automated**, on the **Accounts
+    page in Physical**, in the row with that account's other settings — built
+    into the **Warmup column**, beside how long since the last one, because
+    they are one question. **Two icons and no words** (Garreth, 2026-09-22): a
+    hand for the work a person does, the same robot the to-do list already
+    uses for the work the script does. The days-since-warmup figure beside it
+    has a fixed width, so **every switch in the column starts at the same x**
+    instead of trailing however long that row's word is, and the Warmup column
+    is wide enough for both the days and the switch so the switch keeps clear
+    of Last Post beside it (Garreth, 2026-09-22). The words are in the hover tooltip —
+    "Set to manual", "Set to automated" — and in what a screen reader is
+    given. ~~Changing it is a hold, like moving an account between fleets.~~
+    **Settled 2026-09-22 (Garreth): a single press, no hold.** The hold was
+    borrowed from moving an account between fleets, which is a far heavier
+    act; this one is undone by the press beside it.
+  - ~~What an Automated account shows where a Manual one shows its log form:
     the two sessions for today, each done once the script has finished its
-    run, with when it finished and how long it ran.
-  - A way to set every account on one phone at once, for the day the script is
-    switched on for that phone.
+    run, with when it finished and how long it ran.~~ **Moved to PF-13 on
+    2026-09-22** (Garreth), where it is written out in full: it waits on the
+    warmup script, and a design drawn before the script exists would be a
+    guess at what it does.
+  - A way to set every account on one phone at once, for the day the script
+    is switched on for that phone: the **phone-wide switch in the by-phone
+    view** above — the same hand and robot, on the phone's own line. When its
+    accounts disagree neither icon lights, because lighting one would be a lie
+    about the rest, and the tooltip becomes **"Set all to manual" / "Set all
+    to automated"** so the press says plainly that it is about to make them
+    agree (Garreth, 2026-09-22). The device page (P5) still SHOWS which way each of its
+    accounts is set, because that is how a phone's day is read, but the
+    setting is changed on Accounts.
 - **States:**
-  - Automated, script logging normally.
-  - Automated, but nothing logged for longer than expected. This is the
-    failure that matters: the to-do list no longer asks a person to warm the
-    account, so a dead script is silent unless the design makes it loud.
-  - Manual with today's warmup done / not done.
-  - An account flipped back from Automated to Manual mid-day.
-- **Done when:** the switch, its confirm and the silent-script state are
-  approved.
+  - ~~Automated, script logging normally.~~ **PF-13.**
+  - ~~Automated, but nothing logged for longer than expected.~~ **PF-13**, and
+    note that P2 already shows a stopped script as a to-do item that never
+    completes.
+  - Manual with today's warmup done / not done — the Warmup column, which says
+    how long since the last one.
+  - ~~An account flipped back from Automated to Manual mid-day.~~ **PF-13.**
+  - In the by-phone view: **a phone whose accounts are not all the same** —
+    two Manual and one Automated — so the phone-wide switch has to show a
+    third, in-between state rather than lying about one of them.
+  - In the by-phone view: **an account not on a phone yet.** A Physical
+    account that has not been put on a device has no group to sit in, and it
+    must not simply vanish from the page.
+- **Done when:** ~~the two views and their switcher, the per-account switch
+  and the phone-wide switch are approved (no confirm on either — a single
+  press, settled above), in dark and light at both widths.~~ **Met
+  2026-09-22:** all of it approved, after being looked at in the running app
+  in dark and light at 1440 and 390. ~~and the silent-script
+  state~~ — that went to PF-13 with the rest of the Automated side.
   Then built in the app to match, and looked at in the running app at both
   sizes.
 

@@ -328,6 +328,39 @@ approved, then built, and this PF ticket is the detail of its build half. They g
 (P1 to P13) on 2026-09-19, with a table mapping every PF ticket that shows
 something on screen to the design ticket that covers it.
 
+*2026-09-22:* **P1, P2 and P3 are approved and their screens are in the app**,
+on placeholder data. So the screen half of this ticket is largely done; what
+is left is the data behind it and the six states below.
+
+**What P3 handed over.** Its forms were approved on the strength of using
+them, but every state around a save that can FAIL was left here, because
+nothing can fail against placeholder data and drawing those states first would
+have invented behaviour this build may contradict. Each one is a decision as
+well as a piece of work:
+
+1. **Saving.** Between pressing Save and the row being stored. Decide whether
+   the sheet holds with a spinner or closes at once and the item shows as
+   pending.
+2. **Saved.** How the person knows it took. Today the sheet simply vanishes.
+3. **Could not save, and nothing was changed.** The one that matters: if a
+   save fails silently, a post is believed logged when it is not and comes
+   back tomorrow as carried over. The sheet stays open, says so, and offers
+   Try again — and Try again must not double-save if the first attempt
+   actually landed.
+4. **A link that is clearly not a link** — a pasted caption, or an empty
+   clipboard. Refuse, warn, or accept: remember the link is optional, so
+   refusing is strong for a field that may be left blank.
+5. **An item someone else finished while your sheet was open.** Two people on
+   one list is the ordinary case. Either the sheet notices and says so, or
+   your Save quietly overwrites theirs.
+6. **Paste did nothing.** The one-tap Paste asks the browser for the
+   clipboard and Safari can refuse. It fails silently today; it should say
+   why, since the fallback is typing a long URL by hand on a phone.
+
+*Done when:* Yurie can complete a delivery from the iPhone's browser, **and
+each of the six states above behaves as decided** — with the failed save
+proven by a real failure, not just written.
+
 ## PF-11 · Post-ban branch for manual accounts — Blocked by PF-01
 
 `[Ops] Post-Ban System` (`WmichajTDXL0pT1z`) deletes a Geelark phone; for
@@ -367,9 +400,33 @@ one screen.
 
 The script lives on the Air, outside this repo. It needs a way to insert
 `warmup_sessions` rows with `mode = 'script'`: a service-role key kept on the
-Air, or a small authenticated endpoint. Nothing else in the app changes.
+Air, or a small authenticated endpoint.
+
+**What P4 handed over (Garreth, 2026-09-22).** ~~Nothing else in the app
+changes.~~ Design ticket P4 drew the Manual / Automated switch and everything
+around it, but **what an Automated account SHOWS** could not be drawn: it
+depends on what a scripted session actually is, and no decision on the new
+warmup script exists. Garreth deferred it here rather than leave P4 open on
+it. What has to be designed and built alongside the write path:
+
+- **Today's two sessions for an Automated account**, in the place a Manual one
+  shows its log form: each done once the script has finished its run, with
+  when it finished and how long it ran. On the Accounts page, the device page
+  (P5) and the account's own page.
+- **Automated, but nothing logged for longer than expected.** The failure that
+  matters, because an Automated account is off everyone's to-do list, so a
+  dead script is silent unless the design makes it loud. Decide how long
+  "longer than expected" is. NOTE: **P2 already solved most of this** — an
+  automated warmup appears on the to-do list with the robot badge and a box
+  nobody can tick, so a stopped script shows as an item that never completes.
+  Whatever is designed here must agree with that rather than duplicate it.
+- **An account flipped back from Automated to Manual mid-day** — what happens
+  to the session the script had already started, and whether the day's warmup
+  is asked for again.
+
 *Done when:* a row inserted from the Air shows on the dashboard within a
-minute.
+minute, **and an Automated account reads correctly on the screens above —
+including a script that has stopped, proven by stopping one.**
 
 ## PF-14 · Live view page — Blocked by hardware
 

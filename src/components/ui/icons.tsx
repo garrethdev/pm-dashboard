@@ -21,17 +21,22 @@ import {
   CheckCircle as PhCheckCircle,
   CircleNotch as PhCircleNotch,
   Cloud as PhCloud,
+  Copy as PhCopy,
   CloudSlash as PhCloudSlash,
   DeviceMobile as PhDeviceMobile,
+  DeviceMobileSlash as PhDeviceMobileSlash,
+  DownloadSimple as PhDownloadSimple,
   FacebookLogo as PhFacebookLogo,
   FileMagnifyingGlass as PhFileMagnifyingGlass,
   FilmSlate as PhFilmSlate,
   FlowArrow as PhFlowArrow,
   Gear as PhGear,
   Globe as PhGlobe,
+  Hand as PhHand,
   House as PhHouse,
   Images as PhImages,
   List as PhList,
+  LinkSimple as PhLinkSimple,
   ListChecks as PhListChecks,
   MagnifyingGlass as PhMagnifyingGlass,
   Minus as PhMinus,
@@ -41,6 +46,8 @@ import {
   Play as PhPlay,
   PlayCircle as PhPlayCircle,
   Plus as PhPlus,
+  Robot as PhRobot,
+  Rows as PhRows,
   ShieldWarning as PhShieldWarning,
   Sidebar as PhSidebar,
   SidebarSimple as PhSidebarSimple,
@@ -163,3 +170,28 @@ export const ChartBar = icon(PhChartBar, "ChartBar");
 export const Sparkle = icon(PhSparkle, "Sparkle");
 export const Gear = icon(PhGear, "Gear");
 export const SignOut = icon(PhSignOut, "SignOut");
+/* The layout switch on a list of cards. Bold, not the house fill, and the
+ * same two glyphs the Carousel Generator's render screen uses for Grid and
+ * Rows (D5) — one switch should look the same wherever it appears. Fill turns
+ * Rows' three bars into solid slabs, the same reason Menu is bold. */
+export const SquaresFour = icon(PhSquaresFour, "SquaresFour", "bold");
+export const Rows = icon(PhRows, "Rows", "bold");
+/* A link that is still owed. Bold: at 16px a filled chain closes up into a
+ * blob, where the outline still reads as two links. */
+export const LinkSimple = icon(PhLinkSimple, "LinkSimple", "bold");
+/* The two things you fetch before going to post. They stand in for the words
+ * on a narrow card, where "Download video" will not fit beside "Copy
+ * caption" (Garreth, 2026-09-22). */
+export const Download = icon(PhDownloadSimple, "Download", "bold");
+export const Copy = icon(PhCopy, "Copy", "bold");
+/* Work the script does, not a person: it stands in for the word "Automated"
+ * on a to-do row, where the label was wider than the task it described
+ * (Garreth, 2026-09-22). Fill, the house weight — at 12px the outline robot
+ * loses its face. */
+export const Robot = icon(PhRobot, "Robot");
+/* The other half of the warmup switch: work a person does. Fill, to match
+ * the robot it sits beside. */
+export const Hand = icon(PhHand, "Hand");
+/* An account that is on no phone at all — the group at the end of the
+ * by-phone view. A plain phone icon there would say the opposite. */
+export const SmartphoneOff = icon(PhDeviceMobileSlash, "SmartphoneOff");

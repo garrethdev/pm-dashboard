@@ -3,10 +3,22 @@
 import { useState } from "react";
 import { DashCard } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Check, ChevronDown, ChevronRight, ListChecks, Smartphone } from "@/components/ui/icons";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  LinkSimple,
+  ListChecks,
+  Smartphone,
+} from "@/components/ui/icons";
 import { StatusPill } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
-import { TodoCheck, TodoLogSheet, useTodoBoard } from "@/components/dashboard/todo-board";
+import {
+  AutomatedMark,
+  TodoCheck,
+  TodoLogSheet,
+  useTodoBoard,
+} from "@/components/dashboard/todo-board";
 import {
   deviceProgress,
   sortItems,
@@ -111,15 +123,30 @@ function DeviceRow({
         aria-expanded={open}
         className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:text-text-primary"
       >
+        {/* The phone's own icon carries how it stands, the same three ways as
+            on the To-do page (Garreth, 2026-09-22): a cyan tick when the day
+            is finished, a yellow link when an account on it has a post that
+            owes one, the phone itself otherwise. */}
         <span
           className={cn(
-            "flex size-6 shrink-0 items-center justify-center rounded-nested bg-pill-bg",
-            // A phone that is finished for the day says so in the accent
-            // colour (Garreth, 2026-09-22).
-            progress.finished ? "text-accent" : "text-text-muted",
+            "flex size-6 shrink-0 items-center justify-center rounded-nested",
+            progress.linksToAdd > 0
+              ? "bg-pill-yellow/15 text-pill-yellow"
+              : cn("bg-pill-bg", progress.finished ? "text-accent" : "text-text-muted"),
           )}
         >
-          {progress.finished ? <Check className="size-3.5" /> : <Smartphone className="size-3.5" />}
+          {progress.linksToAdd > 0 ? (
+            <>
+              <LinkSimple className="size-3.5" />
+              <span className="sr-only">
+                {progress.linksToAdd} {progress.linksToAdd === 1 ? "link" : "links"} to add
+              </span>
+            </>
+          ) : progress.finished ? (
+            <Check className="size-3.5" />
+          ) : (
+            <Smartphone className="size-3.5" />
+          )}
         </span>
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{device.name}</span>
         {!device.isActive && <StatusPill tone="warn">Off</StatusPill>}
@@ -191,11 +218,7 @@ function AccountGroup({
                 <span className="no-underline"> · from {item.carriedOverFrom}</span>
               )}
             </span>
-            {item.automated && (
-              <span className="shrink-0 rounded-full bg-pill-bg px-2 py-0.5 text-[10px] font-medium text-text-muted">
-                Automated
-              </span>
-            )}
+            {item.automated && <AutomatedMark side="left" />}
             {item.status === "postedNoLink" && <StatusPill tone="warn">Link</StatusPill>}
             {item.status === "failed" && <StatusPill tone="danger">Failed</StatusPill>}
           </li>

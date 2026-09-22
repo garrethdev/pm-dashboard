@@ -20,6 +20,86 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — Accounts can be read by phone, and each one says who warms it
+
+**Where it came from:** Garreth, 2026-09-22, working through design ticket P4
+(`docs/PHONE-FARM-DESIGN-TICKETS.md`). **He approved it the same day**, light
+mode included — both views were looked at in dark and light, at desktop and
+phone width, before he took it.
+
+**One part of P4 was deferred rather than guessed at.** What an *Automated*
+account shows in place of a log form — today's two sessions, each done once the
+script has finished, and the loud version of "this script has stopped" — cannot
+be drawn while nobody has decided what the new warmup script actually does.
+Garreth moved it to PF-13 in `BACKLOG.md` (2026-09-22), to be designed and
+built with the script itself. Everything else in P4 is drawn.
+
+**The Accounts page has two views now, in Physical only.** **By account** is
+the table exactly as it was, one row per account, and it stays what you land
+on — nothing changes for anyone who is not thinking about phones. **By phone**
+groups the same accounts under the phone they sit on, **and each group keeps
+every column the flat list has**: it is the same table cut into blocks, not a
+summary of it, so grouping never sends you back to the other view to read
+something. The column widths are fixed there so the blocks line up, with a
+minimum width under them so that on a phone each block scrolls sideways — the
+same as the flat table — instead of crushing eleven columns into 390px.
+
+**The page takes two lines in Physical:** its name and the view of it on the
+first, opposite each other; the filters, Show retired, the search and Select
+multiple profiles on the second, arranged as they already are on Cloud. Cloud
+has no phones, so it never sees the switcher and keeps its single row on a
+desktop.
+
+**On a phone the page is simpler now, on both fleets** (Garreth, 2026-09-22).
+The health pills — All, Healthy, Needs attention — moved inside Filters, since
+three more pills across the top of a 390px screen left no room for the search.
+**Select multiple profiles** is its icon alone, beside the search it belongs
+with. And the order reads the way the job runs: the page's name, then the
+search, then Filters and Show retired — with **Show retired at the far end of
+that line**, opposite Filters, since a checkbox pressed up against the button
+reads as part of it. Nothing changed above phone width on
+either fleet. This one does touch Cloud, unlike the rest of the phone-farm
+work, because one page behaving two different ways at 390px would be worse
+than the rule it breaks.
+
+**Every account now says who warms it up: a person, or the script.** A small
+pair of icons — a hand and the same robot the To-do list already uses — sits in
+the Warmup column beside how long since the last warmup, because they are one
+question. Hovering says "Set to manual" or "Set to automated"; there are no
+words on screen, because the lit icon already says which way it is set. The
+days-since-warmup figure beside it has a fixed width, so **every switch in the
+column starts at the same place** rather than trailing however long that row's
+word happens to be, and the Warmup column was widened so the switch keeps clear
+of Last Post beside it. **One press does it, with no hold to confirm** (Garreth, 2026-09-22) — the press
+beside it puts the account straight back.
+
+**A phone can be switched all at once.** In the by-phone view the same pair
+sits on the phone's own line, for the day the warmup script is switched on for
+that phone. If that phone's accounts disagree — two by hand, one by script —
+**neither icon lights**, since lighting one would be a lie about the rest, and
+the hover changes to "Set all to manual" / "Set all to automated" so the press
+says plainly that it is about to make them agree.
+
+**Accounts not yet on a phone get a group of their own** at the end of the
+by-phone view. An account moved to Physical and not yet put on a device would
+otherwise simply vanish from the page.
+
+**Nothing here saves yet, and the page says nothing that isn't true.** There is
+no warmup-mode column in the database until PF-04, so a press moves the switch
+in the browser and forgets it. And because no account has been moved to
+Physical and no phone is registered, the by-phone view is genuinely empty —
+**`/accounts?demo=1`** draws an invented farm so the design can be judged.
+That is never the default: Accounts is a working screen on live rows, and a
+placeholder that quietly replaced them would be a lie the day the first account
+moves over.
+
+**What was checked:** it compiles, types and lint are clean, 134 tests pass,
+and both views were looked at in the running app at 1440 and 390, in dark and
+in light. Checked in headless Chrome, so anything Safari-specific was not seen.
+No part of this has met real data.
+
+---
+
 ## 2026-09-22 — A To-do list for the phone farm, and Automation stays on the Physical side
 
 **Where it came from:** Garreth asked on 2026-09-22 to start the phone-farm
@@ -33,8 +113,12 @@ screen Yurie will live in: the day's posts and warmups, grouped by phone and
 then by account, because she works phone by phone. On the dashboard each phone
 is one line saying how it stands; opening it shows that phone's work. The page
 itself shows everything, with a day-stepper to look back at a day that was
-missed or forward at the load coming, a picker for one phone or several, and a
-filter for posts that were marked done but still owe their link.
+missed or forward at the load coming, and a picker for one phone or several.
+**A phone holding a post that was marked done but still owes its link shows a
+yellow link icon where its phone icon goes**, the same way a phone finished for
+the day shows a tick there. That replaced a "1 link to add" filter at the top of
+the page (Garreth, 2026-09-22): the phone to go back to points at itself,
+rather than a control offering to go and find it.
 
 **An item is ticked off, and the app then asks what happened.** Ticking a post
 opens a small sheet: the link (optional — saving without it leaves the item
@@ -43,9 +127,52 @@ minutes. A wrong tap is undone by holding a button in the same sheet. This is
 design ticket P3, brought forward, because a tick cannot be judged without the
 thing it opens.
 
-**Warmups done by the script stay on the list**, marked "Automated" and with no
-tick anyone can press. That way a warmup script that has stopped running shows
+**Warmups done by the script stay on the list**, marked with a small robot
+badge and with no tick anyone can press. That way a warmup script that has stopped running shows
 up as an item that never completes, instead of as silence.
+
+**The To-do page can stand the phones side by side** (Garreth, 2026-09-22).
+The page still opens as it did, one phone per full-width row. A **Grid / List**
+switch at the end of the filter row now offers a second way to read it: the
+phones as cards three across on a wide screen, two on a smaller one, so the
+whole farm can be taken in at a glance in the morning rather than scrolled
+through. The switch carries the same two symbols as the Carousel Generator's
+render screen, so the same control means the same thing in both places, and it
+only appears on a screen wide enough for a second column — on a phone there is
+no room for one, and a switch that changes nothing would be a broken switch.
+A phone's card now measures **itself** rather than the window when it decides
+whether to spread its rows out or stack them, which is what lets the same card
+be right at full width and in a third of the page. The **day arrows shrank** to
+the height of that switch, so the two controls at the top of the page read as
+the same weight; the tap area around them is unchanged. On a card in Grid the
+task's two fetch buttons **sit side by side and fill the width** rather than
+stacking, which took a lot of height out of a card; there is no room for
+"Download video" beside "Copy caption" at that width, so they shorten to
+**Video** and **Caption** with an icon each. At full width they are unchanged.
+And a task's status and buttons now sit on **the centre line of their row**
+rather than riding the first line of a two-line task.
+
+**What happened to a task is now said beside its name** (Garreth, 2026-09-22),
+where the Automated badge already sat — Link needed, Failed, Skipped —
+instead of at the far right of the row, because it is part of reading the task
+rather than something to look for at the other end. **A failed post also turns
+its own mark red**, the little circle beside the tick that says whether the
+item is a post or a warmup, so the row that went wrong is findable at a glance.
+The right-hand end of a row is now only the two things you fetch before going
+to post, and on a narrow card those two fill the row from edge to edge. And
+**the word "Automated" became a robot badge** on both screens (Garreth,
+2026-09-22): the label was as wide as some of the tasks it sat beside, and it
+is glanced at rather than read. Both screens draw it from one shared piece, so
+they cannot drift apart, and the word is still read out to a screen reader.
+Hovering the badge spells out **"Automated task"**; nothing depends on that,
+since these screens have to work from a phone, where there is no hover.
+
+**What was checked for this part:** it compiles, types and lint are clean, and
+both views were looked at in the running app at 1440 and at phone width, in
+dark and in light. Checked in headless Chrome, so anything Safari-specific was
+not seen. In a narrow column a task's two buttons sit on their own lines, the
+same as they already do on a phone; that is the approved phone layout doing its
+job, not new breakage.
 
 **Automation stays on the Physical side** (Garreth, 2026-09-22, reversing an
 earlier decision). Plenty still runs by robot for real phones — the scheduler,
@@ -72,11 +199,31 @@ empty data, not a fault.
 
 **What was checked:** it compiles, types and lint are clean, and both screens
 were looked at in the running app at phone width (390) and desktop (1440) in
-dark mode, including the empty, all-done, no-phones, switched-off-phone and
-long-content cases. Checked in headless Chrome, so anything Safari-specific was
-not seen. **Light mode has not been designed or looked at yet**, and no part of
-this has met real data. The screens are **waiting for Garreth's review**; the
-tickets are not closed.
+dark AND light mode, including the empty, all-done, no-phones,
+switched-off-phone and long-content cases. Checked in headless Chrome, so
+anything Safari-specific was not seen. No part of this has met real data.
+
+**Garreth approved both screens on 2026-09-22**, after fourteen rounds of
+feedback that day, **light mode included** — that was taken as the app's
+colours already render it, looked at rather than designed in a pass of its own.
+A last change went in with the approval: **the dashboard card's phone icon now
+carries the yellow link** as well as the page's does, so both say the same
+three things in the same place — a cyan tick when the phone is finished, a
+yellow link when an account on it owes one, the phone itself otherwise.
+
+**P3 is approved too** — the sheet that every tick opens, which was built early
+inside P2 because a tick cannot be judged without the thing it opens. What it
+does NOT yet cover is everything around a save that can go wrong: saving,
+saved, could not save and nothing was changed, a link that is clearly not a
+link, an item someone else finished while your sheet was open, and a Paste the
+browser refused. Those are now written out in `BACKLOG.md` as PF-07's
+done-when, because nothing can fail against invented data — a save has to be
+real before its failure can be designed. Because they were drawn in the running app rather than on a
+canvas, approving them closes the design and most of the build at once: the
+screens are in the app and on `main`. What they still lack is real data —
+`post_deliveries` (PF-05) and the page behind the list (PF-07), plus
+`warmup_sessions` (PF-04) for the warmup items — so until those exist the
+screens go on showing invented phones and tasks.
 
 **Also corrected:** this file, `BACKLOG.md` and the phone-farm ticket list all
 still said the earlier phone-farm work (the Cloud/Physical switch, Devices,
