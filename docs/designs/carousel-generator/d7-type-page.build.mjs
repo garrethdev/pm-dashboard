@@ -152,6 +152,10 @@ const D7I = {
   /* D13b: the empty Conversation's circle, and the sparkle on the offer itself. */
   note: icon("NotePencil", 24),
   spark13: icon("Sparkle", 13),
+  /* D15: the lane table's rows — the empty states' mark, and the pager. */
+  table: icon("Table", 24),
+  prev: icon("CaretLeft", 13, "bold"),
+  next: icon("CaretRight", 13, "bold"),
 };
 
 /* The Peptide Miracles mark, read from the app the way the kit and D6 read it. */
@@ -304,6 +308,144 @@ function itemState(mode, key, i) {
   return { st: "todo" };
 }
 
+/* ── D15. Rows: what is sitting in the lane table ───────────────────────── */
+
+/*
+ * The table the Smart Scheduler, the Posting Agent and Inventory read, and where everything the generator makes
+ * ends up: Approve writes the row, rendering fills its slide URLs, Approve n decks flips it ready. Nothing in the
+ * app shows it today, so no screen answers "this lane says nothing is postable and has 240 rows in it — why?".
+ *
+ * Read-only (Garreth, 2026-09-21): every change to a row happens where it already happens — the batch page,
+ * Approve, the scheduler. The tab has no accent button.
+ *
+ * Six statuses, and the word is the point of the column. Their tone splits on one question: is anything going to
+ * happen to this row by itself?
+ *   Ready         green — the one that counts, and the one the line above the table counts
+ *   Not rendered  neutral — the renderer has it; it will move on its own
+ *   Assigned      neutral — the scheduler has taken it, with a date and a profile
+ *   Posted        neutral — done, and gone
+ *   No caption    amber — stuck. Nothing will fill it but a person
+ *   Not gatekept  amber — stuck. The nightly gate reads NULL rows only, so a pending one strands forever
+ * No new pill colour: green, amber and neutral are the screen's own (Garreth's rule for this tab).
+ */
+const ST_TONE = {
+  Ready: "pill--ok",
+  "No caption": "pill--warn",
+  "Not gatekept": "pill--warn",
+  "Not rendered": "",
+  Assigned: "",
+  Posted: "",
+};
+
+const MUSIC = [
+  "Halden Ross – Slow Morning",
+  "Mira Vale – Paper Windows",
+  "The Otterlys – Kitchen Light",
+  "Nal Fontaine – Ten Years On",
+  "Bright Harbour – Same Mirror",
+];
+
+/* Sample rows, newest first, the way the table comes back. `img` is slide 1; a row that has not been rendered has
+   no slide 1 at all, which is why its thumbnail is an empty frame rather than a picture. One caption is long on
+   purpose, to see the two lines a caption gets. */
+const LANE_ROWS = {
+  /* The ordinary case: rows in every state, mixed. */
+  mixed: [
+    { id: "ba_0261", st: "Not rendered", cap: "Month one looked like nothing at all. Month six looked like this.", music: null },
+    { id: "ba_0260", st: "Not rendered", cap: "Six months, one habit, and the same bathroom mirror — here is every month of it, in order, with nothing skipped and nothing smoothed over.", music: null },
+    { id: "ba_0259", img: "mug", st: "No caption", cap: null, music: MUSIC[0] },
+    { id: "ba_0258", img: "journal", st: "Not gatekept", cap: "Water before coffee. That was the whole change.", music: MUSIC[1] },
+    { id: "ba_0257", img: "yoga", st: "Ready", cap: "The same mirror, six months apart. Which habit would you start with?", music: MUSIC[2] },
+    { id: "ba_0256", img: "oats", st: "Ready", cap: "No new products. Sleep and water, every day.", music: MUSIC[3] },
+    { id: "ba_0255", img: "shower", st: "Ready", cap: "Month three is when people started asking.", music: MUSIC[4] },
+    { id: "ba_0254", img: "dock", st: "Assigned", cap: "One habit, six months, no filters.", music: MUSIC[0], date: "Sep 24", time: "09:40", profile: "Profile 12" },
+    { id: "ba_0253", img: "vanity", st: "Assigned", cap: "What six months of one habit did.", music: MUSIC[1], date: "Sep 23", time: "18:10", profile: "Profile 27" },
+    { id: "ba_0252", img: "mug", st: "Assigned", cap: "Before and after: six months of the same routine.", music: MUSIC[2], date: "Sep 22", time: "07:55", profile: "Profile 41" },
+    { id: "ba_0251", img: "journal", st: "Posted", cap: "Month one: nothing looked different.", music: MUSIC[3], date: "Sep 20", time: "08:15", profile: "Profile 12", views: "42.1k", likes: "3,180", comments: "204" },
+    { id: "ba_0250", img: "yoga", st: "Posted", cap: "The habit was boring. The six months were not.", music: MUSIC[4], date: "Sep 19", time: "17:30", profile: "Profile 27", views: "12.6k", likes: "914", comments: "63" },
+    { id: "ba_0249", img: "oats", st: "Posted", cap: "Same mirror, same light, six months apart.", music: MUSIC[0], date: "Sep 18", time: "09:05", profile: "Profile 41", views: "88.4k", likes: "7,042", comments: "511" },
+    { id: "ba_0248", img: "shower", st: "Posted", cap: "I changed one thing. Here is month six.", music: MUSIC[1], date: "Sep 17", time: "19:20", profile: "Profile 12", views: "9.3k", likes: "602", comments: "38" },
+    { id: "ba_0247", img: "dock", st: "Posted", cap: "Six months without filters.", music: MUSIC[2], date: "Sep 16", time: "08:40", profile: "Profile 27", views: "31.7k", likes: "2,466", comments: "159" },
+    { id: "ba_0246", img: "vanity", st: "Posted", cap: "Start with water. That is the whole post.", music: MUSIC[3], date: "Sep 15", time: "18:00", profile: "Profile 41", views: "21.0k", likes: "1,604", comments: "97" },
+    { id: "ba_0245", img: "mug", st: "Posted", cap: "Month three: people started asking.", music: MUSIC[4], date: "Sep 14", time: "07:45", profile: "Profile 12", views: "54.8k", likes: "4,309", comments: "372" },
+    { id: "ba_0244", img: "journal", st: "Posted", cap: "The after slide is not a product.", music: MUSIC[0], date: "Sep 13", time: "17:50", profile: "Profile 27", views: "17.2k", likes: "1,188", comments: "74" },
+  ],
+  /* The state the tab exists for: 240 rows and nothing postable, and the reason differs row to row. Newest first,
+     so the whole of page one is rows that will never move by themselves. */
+  stuck: [
+    { id: "ba_0261", st: "Not rendered", cap: "Month one looked like nothing at all. Month six looked like this.", music: null },
+    { id: "ba_0260", st: "Not rendered", cap: "Six months, one habit, and the same bathroom mirror — here is every month of it, in order, with nothing skipped and nothing smoothed over.", music: null },
+    { id: "ba_0259", img: "mug", st: "No caption", cap: null, music: MUSIC[0] },
+    { id: "ba_0258", img: "journal", st: "No caption", cap: null, music: MUSIC[1] },
+    { id: "ba_0257", img: "yoga", st: "Not gatekept", cap: "The same mirror, six months apart. Which habit would you start with?", music: MUSIC[2] },
+    { id: "ba_0256", img: "oats", st: "No caption", cap: null, music: MUSIC[3] },
+    { id: "ba_0255", img: "shower", st: "Not gatekept", cap: "Month three is when people started asking.", music: MUSIC[4] },
+    { id: "ba_0254", img: "dock", st: "Not gatekept", cap: "One habit, six months, no filters.", music: MUSIC[0] },
+    { id: "ba_0253", img: "vanity", st: "No caption", cap: null, music: MUSIC[1] },
+    { id: "ba_0252", st: "Not rendered", cap: "Before and after: six months of the same routine.", music: null },
+    { id: "ba_0251", img: "mug", st: "Not gatekept", cap: "Month one: nothing looked different.", music: MUSIC[3] },
+    { id: "ba_0250", img: "journal", st: "No caption", cap: null, music: MUSIC[4] },
+    { id: "ba_0249", img: "yoga", st: "Not gatekept", cap: "Same mirror, same light, six months apart.", music: MUSIC[0] },
+    { id: "ba_0248", img: "oats", st: "No caption", cap: null, music: MUSIC[1] },
+    { id: "ba_0247", st: "Not rendered", cap: "Six months without filters.", music: null },
+    { id: "ba_0246", img: "shower", st: "Not gatekept", cap: "Start with water. That is the whole post.", music: MUSIC[2] },
+    { id: "ba_0245", img: "dock", st: "No caption", cap: null, music: MUSIC[3] },
+    { id: "ba_0244", img: "vanity", st: "Not gatekept", cap: "The after slide is not a product.", music: MUSIC[4] },
+  ],
+  none: [],
+};
+
+/* The line above the table: data, not instruction text (Garreth, 2026-09-21). */
+const LANE_COUNTS = { mixed: { total: 240, ready: 62 }, stuck: { total: 240, ready: 0 }, none: { total: 0, ready: 0 } };
+const PAGE_SIZE = 50;
+
+/*
+ * Every column the row has, in the table's own order — which is the only order a lane table reliably gives, since
+ * no two of them are alike. Shown whole in the drawer, an empty one as a dash: an empty column IS the answer to
+ * why a row cannot post, so it is never hidden.
+ */
+function laneColumns(T, r) {
+  const posted = r.st === "Posted";
+  const assigned = posted || r.st === "Assigned";
+  const rendered = !!r.img;
+  const ready = assigned || r.st === "Ready";
+  const gate = ready ? "passed" : r.st === "Not gatekept" ? "pending" : null;
+  const slides = Array.from({ length: T.slides }, (_, i) => [`slide_${i + 1}`, rendered ? `…/renders/${r.id}/slide-${i + 1}.jpg` : null]);
+  const day = r.date ? `2026-${r.date.replace("Sep ", "09-").padStart(5, "0")}` : null;
+  return [
+    ["id", r.id],
+    ["created_at", "2026-09-12 14:22"],
+    ["batch", "Sep 11"],
+    ["template_version", "Version 4"],
+    ["writing_version", "Version 4"],
+    ["hook", "Six months, one habit, no filters"],
+    ...slides,
+    ["caption", r.cap],
+    ["hashtags", r.cap ? "#sixmonths #onehabit #nofilter" : null],
+    ["music", r.music],
+    ["music_source", r.music ? "First batch" : null],
+    ["music_url", r.music ? `…/music/${r.id}.mp3` : null],
+    ["gatekeep_status", gate],
+    ["gatekeep_note", null],
+    ["gatekept_at", gate === "passed" ? "2026-09-12 14:31" : null],
+    ["approved", "true"],
+    ["approved_at", "2026-09-12 14:20"],
+    ["approved_by", "Alex"],
+    ["rendered_at", rendered ? "2026-09-12 14:28" : null],
+    ["render_job", rendered ? `rj_${r.id.slice(3)}` : null],
+    ["scheduler_ready", ready ? "true" : "false"],
+    ["assigned_profile", r.profile ?? null],
+    ["posting_date", day],
+    ["posting_time", r.time ?? null],
+    ["posted_at", posted ? `${day} ${r.time}` : null],
+    ["post_url", posted ? `…/video/${r.id}` : null],
+    ["views", r.views ?? null],
+    ["likes", r.likes ?? null],
+    ["comments", r.comments ?? null],
+    ["error", null],
+  ];
+}
+
 /* Everything above a tab's panel on the desktop (top bar, padding, title, tabs), so side-by-side panels can fill
    the rest of the 900px screen and end on the same line (Garreth, 2026-09-15). */
 const PANEL_H = 900 - 229 - 24;
@@ -420,6 +562,99 @@ ${S} .brow .bstate { display: flex; min-width: 0; }
 ${S} .chev7 { display: flex; color: var(--text-muted); }
 ${S} .bcounts { font-size: 12px; line-height: 16px; color: var(--text-muted); }
 ${S} .es7 { display: flex; min-height: 120px; align-items: center; justify-content: center; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
+
+/* ── Rows (D15) ── */
+/* What is sitting in the lane table. A fixed set of columns, not the whole table: slide 1, the id, the caption,
+   the music, the posting date and profile where there are any, and the status. These tables are 32 to 66 columns
+   wide and no two are alike, so the rest is in the drawer (Garreth, 2026-09-21). */
+${S} .rows15 { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+${S} .rows15 > .c7 { flex: 1; }
+${S} .counts15 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; }
+${S} .counts15 .rest { font-weight: 500; color: var(--text-muted); }
+${S} .tbl15 { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+/* The table fills the width under the counts line, the way the batch table does. A whole row opens the drawer. */
+${S} .rgrid { display: grid; grid-template-columns: 40px 104px minmax(0, 1fr) 170px 96px 96px 118px 12px; align-items: center; column-gap: 16px; text-align: left; }
+${S} .rhead { padding: 0 24px 8px; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .rrow15 { width: 100%; min-height: 64px; padding: 9px 24px; border-top: 1px solid var(--border); font-size: 13px; line-height: 18px; transition: background-color 150ms var(--ease); }
+${S} .rrow15:hover { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+/* Slide 1 as it will post — or, on a row nothing has rendered yet, the empty frame that says so before the status
+   column is read. */
+${S} .thumb15 { width: 40px; aspect-ratio: ${size === "9:16" ? "9 / 16" : "4 / 5"}; border-radius: 6px; background-size: cover; background-position: center; background-color: var(--card-raised); }
+${S} .thumb15.is-none { border: 1px dashed var(--border); background: var(--card-sunken); }
+${S} .rid { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--text-muted); }
+${S} .rcap { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-wrap: pretty; }
+${S} .rmus, ${S} .rprof { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .rdate { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .rst { display: flex; min-width: 0; }
+${S} .rnone { color: var(--text-muted); }
+/* Fifty rows a page (Garreth, 2026-09-21). */
+${S} .pager15 { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; margin-top: auto; padding: 12px 24px; border-top: 1px solid var(--border);
+  font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .pbtns { display: flex; gap: 8px; }
+${S} .pbtns .btn2 { padding: ${P ? 8 : 5}px ${P ? 14 : 10}px; }
+/* Nothing to list: the shared empty state, filling the card so it reaches the bottom of the screen rather than
+   floating above a blank page (the rule of 2026-09-19). */
+${S} .main:has(> .page.is-fill) { display: flex; flex-direction: column; }
+${S} .page.is-fill { flex: 1; min-height: 0; }
+${S} .page.is-fill [role="tabpanel"] { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+${S} .rows15 .cempty { padding: 40px 24px; }
+${S} .rows15 .cempty.has-head { border-top: 1px solid var(--border); }
+${S} .rows15 .cempty .btn2 { margin-top: 2px; }
+
+/* A row's drawer: every column that row has. It comes in from the side so the table it was opened from is still
+   read behind it; on the phone it is the sheet Preview and the Conversation already use. */
+${
+  P
+    ? `${S} .dlg7.drw15 { max-height: 88%; }`
+    : `${S} .dlg7.drw15 { left: auto; right: 0; top: 0; bottom: 0; width: 500px; max-height: none; transform: none; border-radius: 24px 0 0 24px; border-right: 0;
+  animation: d7-drw 260ms cubic-bezier(0.32, 0.72, 0, 1); }
+@keyframes d7-drw { from { transform: translateX(100%); } }`
+}
+${S} .drwh { gap: 10px; }
+${S} .drwh .dwho { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+${S} .drwh h2 { overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; line-height: 20px; }
+${S} .drwh .dsub { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .drwh .dend { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+${S} .dslides { display: flex; gap: 8px; flex-shrink: 0; padding: 14px ${P ? 16 : 20}px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+${S} .dsl { width: 52px; flex-shrink: 0; aspect-ratio: ${size === "9:16" ? "9 / 16" : "4 / 5"}; border-radius: 8px; background-size: cover; background-position: center; background-color: var(--card-raised); }
+${S} .dsl.is-none { border: 1px dashed var(--border); background: var(--card-sunken); }
+${S} .cols15 { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: ${P ? 20 : 12}px; }
+${S} .crow15 { display: grid; grid-template-columns: 160px minmax(0, 1fr); align-items: baseline; column-gap: 16px; padding: 9px ${P ? 16 : 20}px; border-top: 1px solid var(--border); font-size: 13px; line-height: 18px; }
+${S} .crow15:first-child { border-top: 0; }
+${S} .ck15 { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 18px; color: var(--text-muted); }
+${S} .cv15 { min-width: 0; overflow-wrap: anywhere; text-wrap: pretty; }
+${S} .cv15.is-none { color: var(--text-muted); }
+/* The drawer ends on the one way out: the deck this row was made from, in the batch it came from (Garreth,
+   2026-09-22). The table stays read-only and points at the screen where the fixing happens. It is pinned under
+   the scrolling columns, so it is still there at the end of thirty-six of them, and it is secondary — this tab
+   has no accent button. A row from the old n8n pile has no batch to open, so it has no button; the batch column
+   reads as a dash, which says why. */
+${S} .drwfoot { display: flex; flex-shrink: 0; padding: 12px ${P ? 16 : 20}px ${P ? 20 : 16}px; border-top: 1px solid var(--border); }
+${S} .drwfoot .btn2 { width: 100%; justify-content: center; padding: ${P ? 12 : 8}px 14px; }
+${
+  P
+    ? `
+/* Phone: stacked rows (Garreth, 2026-09-21) — slide 1 down the left, the id and the status on the first line, the
+   caption under it, and the music, date and profile on one quiet line. The tab is read-only, so it is the one tab
+   with no bottom bar; the page ends where the pager does. */
+${S} .rhead { display: none; }
+${S} .rgrid { display: grid; grid-template-columns: 44px minmax(0, 1fr) 12px; align-items: start; column-gap: 12px; row-gap: 4px; text-align: left; }
+${S} .rrow15 { min-height: 0; padding: 14px 20px; }
+${S} .thumb15 { width: 44px; grid-column: 1; grid-row: 1 / 4; }
+${S} .rtop15 { grid-column: 2; grid-row: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+${S} .rcap { grid-column: 2; grid-row: 2; }
+${S} .rmeta15 { grid-column: 2; grid-row: 3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+${S} .rrow15 .chev7 { grid-column: 3; grid-row: 1; padding-top: 3px; }
+${S} .pager15 { padding: 12px 20px; }
+/* The drawer on a phone: the column's name over its value, not beside it — a 390px sheet cannot hold both without
+   breaking a url across three lines. */
+${S} .crow15 { grid-template-columns: minmax(0, 1fr); row-gap: 1px; padding: 10px 16px; }
+${S} .main:has(.rows15) { padding-bottom: 16px; }
+${S} .colwrap:has(.rows15) .note { bottom: 24px; }
+${S} .rows15 .cempty { padding: 32px 20px; }
+`
+    : ""
+}
 
 /* ── Direction ── */
 /* The editor column and the conversation fill the panel and end on the same line (Garreth, 2026-09-15). */
@@ -699,6 +934,81 @@ function overview(T, init, phone) {
           </div>`;
 }
 
+/*
+ * D15. The Rows tab: what is sitting in this type's lane table.
+ *
+ * `wired` decides whether there is a table to read at all. A type that has not gone live has none, and says so in
+ * the empty state that names Go Live; a type that is live with nothing in it says "No rows yet". Both fill the
+ * card down to the bottom of the screen (the rule of 2026-09-19).
+ */
+const SHOWN = 12;
+
+function rowsPanel(T, init, phone, wired) {
+  const lane = init.rows || "mixed";
+  const all = LANE_ROWS[lane] || [];
+  const rows = all.slice(0, SHOWN);
+  const counts = LANE_COUNTS[lane] || { total: 0, ready: 0 };
+
+  if (!wired) {
+    return `
+          <div class="rows15 is-empty">
+            <section class="c7" aria-label="Rows">
+              <div class="cempty">
+                <span class="eic">${D7I.table}</span>
+                <p>No rows until this type goes live</p>
+                <button type="button" class="btn2" onClick="{{d7go.wiring}}">Go Live</button>
+              </div>
+            </section>
+          </div>`;
+  }
+
+  const head = `
+              <div class="c7h"><p class="counts15 tnum">${counts.total} rows<span class="rest"> · ${counts.ready} ready to post</span></p><span class="tbl15">${T.short}_decks</span></div>`;
+
+  if (!rows.length) {
+    return `
+          <div class="rows15 is-empty">
+            <section class="c7" aria-label="Rows">${head}
+              <div class="cempty has-head">
+                <span class="eic">${D7I.table}</span>
+                <p>No rows yet</p>
+              </div>
+            </section>
+          </div>`;
+  }
+
+  const body = rows
+    .map((r, i) => {
+      const thumb = `<span class="thumb15${r.img ? ` p7-${r.img}` : " is-none"}" aria-hidden="true"></span>`;
+      const pill = `<span class="pill ${ST_TONE[r.st]}">${r.st}</span>`;
+      const cap = r.cap ? `<span class="rcap">${esc(r.cap)}</span>` : `<span class="rcap rnone">—</span>`;
+      if (phone) {
+        const meta = [r.date, r.profile, r.music].filter(Boolean).join(" · ");
+        return `
+              <button type="button" class="rrow15 rgrid" onClick="{{d7openRow.r${i}}}">${thumb}<span class="rtop15"><span class="rid">${r.id}</span>${pill}</span>${cap}${meta ? `<span class="rmeta15 tnum">${esc(meta)}</span>` : ""}<span class="chev7">${I.caretRightSm}</span></button>`;
+      }
+      return `
+              <button type="button" class="rrow15 rgrid" onClick="{{d7openRow.r${i}}}">${thumb}<span class="rid">${r.id}</span>${cap}<span class="rmus">${r.music ? esc(r.music) : "—"}</span><span class="rdate tnum">${r.date || "—"}</span><span class="rprof tnum">${r.profile || "—"}</span><span class="rst">${pill}</span><span class="chev7">${I.caretRightSm}</span></button>`;
+    })
+    .join("");
+
+  const from = 1;
+  const to = Math.min(PAGE_SIZE, counts.total);
+  return `
+          <div class="rows15">
+            <section class="c7" aria-label="Rows">${head}
+              ${phone ? "" : `<div class="rhead rgrid"><span></span><span>Id</span><span>Caption</span><span>Music</span><span>Posting date</span><span>Profile</span><span>Status</span><span></span></div>`}${body}
+              <div class="pager15">
+                <span class="tnum">${from}–${to} of ${counts.total}</span>
+                <div class="pbtns">
+                  <button type="button" class="btn2" aria-label="Previous page" disabled="{{ true }}">${D7I.prev}</button>
+                  <button type="button" class="btn2" aria-label="Next page" onClick="{{d7nextPage}}">${D7I.next}</button>
+                </div>
+              </div>
+            </section>
+          </div>`;
+}
+
 function direction(T, init, phone) {
   const proposal = init.dir === "proposal";
   const failed = init.dir === "failed";
@@ -890,12 +1200,14 @@ function page(T, init, phone) {
     `<sc-if value="{{d7is.${id}}}" hint-placeholder-val="{{ ${init.tab === id} }}"><div role="tabpanel" id="d7-panel-${id}" aria-labelledby="d7-tab-${id}">${html}</div></sc-if>`;
   return `
       <main class="main">
-        <div class="page">
+        <div class="page {{d7pageCls}}">
           ${header(T, wired, mode, phone, init)}
-          <!-- D13: the panel ids keep the names the docs and the database use; only the labels changed. -->
-          <div class="tabs7" role="tablist" aria-label="Carousel type">${tab("overview", "Overview")}${tab("direction", "Writing")}${tab("wiring", "Go Live")}</div>
+          <!-- D13: the panel ids keep the names the docs and the database use; only the labels changed.
+               D15 adds Rows between Writing and Go Live. -->
+          <div class="tabs7" role="tablist" aria-label="Carousel type">${tab("overview", "Overview")}${tab("direction", "Writing")}${tab("rows", "Rows")}${tab("wiring", "Go Live")}</div>
           ${panel("overview", overview(T, init, phone))}
           ${panel("direction", direction(T, init, phone).markup)}
+          ${panel("rows", rowsPanel(T, init, phone, wired))}
           ${panel("wiring", wiring(T, mode, phone))}
         </div>
       </main>`;
@@ -933,6 +1245,30 @@ function appOverlay(T, init) {
       ${conv.body}
       ${conv.box}
     </div>
+  </sc-if>
+  <!-- D15: a row's drawer — every column that row has, in the table's own order. An empty column reads as a dash
+       rather than being left out, because an empty column is the answer to why the row cannot post. It comes in
+       from the side so the table it was opened from is still read behind it; on the phone it is the same sheet as
+       Preview's. -->
+  <sc-if value="{{d7rowOn}}" hint-placeholder-val="{{ ${init.row != null} }}">
+    <div class="scrim7" aria-hidden="true" onClick="{{d7closeRow}}"></div>
+    <div class="dlg7 drw15" role="dialog" aria-modal="true" aria-label="Row" onKeyDown="{{d7rowKey}}">
+      <div class="c7h drwh">
+        <div class="dwho"><h2>{{d7rowId}}</h2><span class="dsub tnum">{{d7rowCount}} columns</span></div>
+        <div class="dend"><span class="pill {{d7rowStCls}}">{{d7rowSt}}</span><button type="button" class="icon-btn" aria-label="Close" onClick="{{d7closeRow}}">${D7I.x}</button></div>
+      </div>
+      <div class="dslides" aria-hidden="true">
+        <sc-for list="{{d7rowSlides}}" as="sl" hint-placeholder-count="${T.slides}"><span class="dsl {{sl.cls}}"></span></sc-for>
+      </div>
+      <div class="cols15">
+        <sc-for list="{{d7rowCols}}" as="c" hint-placeholder-count="14">
+          <div class="crow15"><span class="ck15">{{c.k}}</span><span class="cv15 {{c.cls}}">{{c.v}}</span></div>
+        </sc-for>
+      </div>
+      <sc-if value="{{d7rowHasBatch}}" hint-placeholder-val="{{ true }}">
+        <div class="drwfoot"><button type="button" class="btn2" onClick="{{d7openDeck}}">Open the deck${I.caretRightSm}</button></div>
+      </sc-if>
+    </div>
   </sc-if>`;
 }
 
@@ -961,6 +1297,22 @@ function phoneBar(T, init) {
 
 function vals(T, init) {
   const TPL = T.templates.map((v) => ({ name: v.name, date: v.date, active: !!v.active, hook: v.hook, imgs: v.imgs.slice(0, T.slides) }));
+  /* D15: the rows on the page, and for each one every column it has. A row that has not been rendered has no
+     slide URLs at all, so its thumbnails are empty frames — which is the same fact its status says in words. */
+  const wired15 = T === TYPES.before || WIRED_MODES.has(init.wire);
+  const lane15 = (LANE_ROWS[init.rows || "mixed"] || []).slice(0, SHOWN);
+  const ROWS15 = lane15.map((r) => ({
+    id: r.id,
+    st: r.st,
+    tone: ST_TONE[r.st],
+    /* Which batch the row was made from, so the drawer can open that deck. A row the old n8n path wrote has
+       none, and then the drawer has no button (Garreth, 2026-09-22). */
+    batch: laneColumns(T, r).find(([k]) => k === "batch")[1] || "",
+    slides: r.img
+      ? rotate(PHOTOS, PHOTOS.indexOf(r.img)).slice(0, T.slides).map((img) => ({ cls: `p7-${img}` }))
+      : Array.from({ length: T.slides }, () => ({ cls: "is-none" })),
+    cols: laneColumns(T, r).map(([k, v]) => ({ k, v: v == null || v === "" ? "\u2014" : String(v), cls: v == null || v === "" ? "is-none" : "" })),
+  }));
   /* The two batches waiting for a person (Garreth, 2026-09-21): their rows open the screen that holds the press. */
   const wRender = T.batches.find((b) => !b.state && (b.rendered == null || b.rendered === 0)) || { req: 20, written: 0 };
   const wApprove = T.batches.find((b) => !b.state && b.rendered && (b.approved == null || b.approved === 0)) || { req: 20, rendered: 0 };
@@ -977,13 +1329,17 @@ function vals(T, init) {
     /* A link may name the tab to open on (the Generate form's Edit opens Direction) until a tab is pressed. */
     var tab = s.d7tabSet ? s.d7tab : P.tab || s.d7tab;
     var d7is = {}, d7sel = {}, d7go = {};
-    ["overview", "direction", "wiring"].forEach(function (t) {
+    ["overview", "direction", "rows", "wiring"].forEach(function (t) {
       d7is[t] = tab === t;
       d7sel[t] = tab === t ? "true" : "false";
-      d7go[t] = function () { self.setState({ d7tab: t, d7tabSet: true, d7tvOpen: false, d7dvOpen: false }); };
+      d7go[t] = function () { self.setState({ d7tab: t, d7tabSet: true, d7tvOpen: false, d7dvOpen: false, d7row: null }); };
     });
     var say = function (text) { return function () { self.note(text); }; };
     var params = { name: NAME, character: P.character || ${JSON.stringify(T.character)}, slides: P.slides || ${JSON.stringify(`${T.slides} slides`)}, size: P.size || ${JSON.stringify(T.size || "4:5")} };
+    var ROWS = ${JSON.stringify(ROWS15)};
+    var OPENROW = {};
+    ROWS.forEach(function (r, i) { OPENROW["r" + i] = function () { self.setState({ d7row: i }); }; });
+    var R = s.d7row == null || s.d7row < 0 ? null : ROWS[s.d7row];
     var cur = TPL[s.d7tv] || TPL[0];
     var dv = DIRS[s.d7dv] || DIRS[0] || { name: "", date: "", active: false, text: "" };
     return {
@@ -1066,7 +1422,27 @@ function vals(T, init) {
       d7previewOn: !!s.d7preview,
       d7openPreview: function () { self.setState({ d7preview: true }); },
       d7closePreview: function () { self.setState({ d7preview: false }); },
-      d7previewKey: function (e) { if (e.key === "Escape") self.setState({ d7preview: false }); }
+      d7previewKey: function (e) { if (e.key === "Escape") self.setState({ d7preview: false }); },
+
+      /* D15: Rows. Read-only — the only presses are the tab, the pager and a row, and a row only opens the drawer.
+         With nothing to list, the page grows so the card reaches the bottom of the screen (the rule of
+         2026-09-19); with rows in it the page is its own length. */
+      d7pageCls: tab === "rows" && ${!wired15 || !lane15.length} ? "is-fill" : "",
+      d7nextPage: say("Shows rows 51 to 100"),
+      d7openRow: OPENROW,
+      d7rowOn: !!R,
+      d7rowId: R ? R.id : "",
+      d7rowSt: R ? R.st : "",
+      d7rowStCls: R ? R.tone : "",
+      d7rowCount: R ? R.cols.length : 0,
+      d7rowSlides: R ? R.slides : [],
+      d7rowCols: R ? R.cols : [],
+      d7rowHasBatch: !!(R && R.batch),
+      /* The one way out of a read-only table: that deck, in the batch it came from. A lane row exists only once
+         the batch was rendered and approved, so it is always a finished batch (D5). */
+      d7openDeck: function () { ctx.open("render", { name: NAME, character: params.character, slides: params.slides, size: params.size, count: 20 }, "Opens " + (R ? R.id : "that deck") + " in its " + (R ? R.batch : "") + " batch \u00b7 D5"); },
+      d7closeRow: function () { self.setState({ d7row: null }); },
+      d7rowKey: function (e) { if (e.key === "Escape") self.setState({ d7row: null }); }
     };`;
 }
 
@@ -1076,11 +1452,12 @@ function vals(T, init) {
  * "failed" | "offerfail", D13b), wire ("fresh" | "mismatch" |
  * "running" | "failed" | "media" | "done"), writing ("saved" | "none" | "draft", D13; "first", the Conversation's
  * own first draft, D13b), sheet (the phone's Conversation open, D13b), pre (a board held at the state D13 left it
- * in, for comparison, D13b), preview (the dialog open).
+ * in, for comparison, D13b), preview (the dialog open), rows ("mixed" | "stuck" | "none", which lane the Rows
+ * tab reads, D15) and row (the index of the row whose drawer is open, D15).
  * `tall` lengthens a review board so the whole page shows.
  */
 export function typeScreen({ init = {}, tall = 0 } = {}) {
-  const i = { type: "before", tab: "overview", tv: 0, tvOpen: false, dv: 0, dvOpen: false, dir: "plain", wire: "done", writing: "saved", preview: false, sheet: false, pre: false, ...init };
+  const i = { type: "before", tab: "overview", tv: 0, tvOpen: false, dv: 0, dvOpen: false, dir: "plain", wire: "done", writing: "saved", preview: false, sheet: false, pre: false, rows: "mixed", row: null, ...init };
   const T = TYPES[i.type];
   /* What the editor opens on: a saved version, the Studio's drafted note or the Conversation's first draft (both
      unsaved, D13b), or nothing at all (D13). */
@@ -1092,8 +1469,8 @@ export function typeScreen({ init = {}, tall = 0 } = {}) {
     markup: (phone) => page(T, i, phone),
     appOverlay: () => appOverlay(T, i),
     colOverlay: (phone) => (phone ? phoneBar(T, i) : ""),
-    state: { d7tab: i.tab, d7tabSet: false, d7tv: i.tv, d7tvOpen: i.tvOpen, d7dv: i.dv, d7dvOpen: i.dvOpen, d7dir: startText, d7preview: i.preview, d7chat: i.sheet },
-    enter: { d7tab: "overview", d7tabSet: false, d7tv: 0, d7tvOpen: false, d7dv: 0, d7dvOpen: false, d7dir: T.directions[0].text, d7preview: false, d7chat: false },
+    state: { d7tab: i.tab, d7tabSet: false, d7tv: i.tv, d7tvOpen: i.tvOpen, d7dv: i.dv, d7dvOpen: i.dvOpen, d7dir: startText, d7preview: i.preview, d7chat: i.sheet, d7row: i.row },
+    enter: { d7tab: "overview", d7tabSet: false, d7tv: 0, d7tvOpen: false, d7dv: 0, d7dvOpen: false, d7dir: T.directions[0].text, d7preview: false, d7chat: false, d7row: null },
     vals: vals(T, i),
   };
 }
@@ -1108,6 +1485,10 @@ function build(OUT) {
   const TALL_PHONE = 1640;
   const R0 = TALL_PHONE + 140;
   const R = 1040;
+  /* D15's own two rows, below everything D13b left. A Rows board is tall enough to show the card down to its
+     pager; the drawer spans that same height, so most of a row's columns are read without scrolling. */
+  const T15 = 1240;
+  const R15 = R0 + R * 7;
   const BOARDS = [
     { file: "Overview", tall: TALL, init: { type: "before", tab: "overview" }, title: "Overview · Desktop", x: 0, y: 0 },
     { file: "OverviewVersions", tall: TALL, init: { type: "before", tab: "overview", tv: 1, tvOpen: true }, title: "Overview, picking a template version · Desktop", x: D, y: 0 },
@@ -1141,6 +1522,22 @@ function build(OUT) {
     { file: "WritingOfferFailed", init: { type: "quiet", tab: "direction", wire: "fresh", writing: "none", dir: "offerfail" }, title: "The first draft didn't arrive, Retry · Desktop", x: D * 2, y: R0 + R * 6 },
     { file: "WritingSheetPhone", phone: true, init: { type: "quiet", tab: "direction", wire: "fresh", writing: "none", sheet: true }, title: "The Conversation's sheet, with the same offer · Phone", x: D * 3, y: R0 + R * 6 },
     { file: "WritingFirstDraftPhone", phone: true, init: { type: "quiet", tab: "direction", wire: "fresh", writing: "first" }, title: "The first draft arrived, not saved · Phone", x: D * 3 + 470, y: R0 + R * 6 },
+    /* D15 (Garreth, 2026-09-21), the last two rows: the Rows tab — what is sitting in the type's lane table, and
+       why a row cannot post. Read-only, a fixed set of columns, fifty rows a page, and a whole row opens the
+       drawer. Before & After is the live lane, on a good day and on a bad one; Quiet Luxury Picks is the type
+       that has not gone live, and the same type once it has, with nothing in it yet. */
+    { file: "Rows", tall: T15, init: { type: "before", tab: "rows", rows: "mixed" }, title: "Rows, the ordinary case · Desktop", x: 0, y: R15 },
+    { file: "RowsStuck", tall: T15, init: { type: "before", tab: "rows", rows: "stuck" }, title: "Rows, nothing postable and the reason different row to row · Desktop", x: D, y: R15 },
+    { file: "RowsPhone", phone: true, tall: 1580, init: { type: "before", tab: "rows", rows: "mixed" }, title: "Rows, stacked · Phone", x: D * 2, y: R15 },
+    { file: "RowsNotLivePhone", phone: true, init: { type: "quiet", tab: "rows", wire: "fresh", writing: "none" }, title: "Not live yet: no table to read · Phone", x: D * 2 + 470, y: R15 },
+    { file: "RowsDrawerPhone", phone: true, init: { type: "before", tab: "rows", rows: "mixed", row: 2 }, title: "A row's drawer · Phone", x: D * 2 + 940, y: R15 },
+    { file: "RowsDrawer", tall: T15, init: { type: "before", tab: "rows", rows: "mixed", row: 2 }, title: "A row's drawer: the caption column is empty · Desktop", x: 0, y: R15 + 1780 },
+    { file: "RowsNotLive", init: { type: "quiet", tab: "rows", wire: "fresh", writing: "none" }, title: "Not live yet: no table to read · Desktop", x: D, y: R15 + 1780 },
+    { file: "RowsNone", init: { type: "quiet", tab: "rows", wire: "done", rows: "none" }, title: "Live, with no rows yet · Desktop", x: D * 2, y: R15 + 1780 },
+    /* A drawer on a row that has everything — `{ rows: "mixed", row: 10 }`, the Sep 20 posted row — reads well
+       beside the one above and was drawn during the ticket, but D7's canvas is at its 16 MB ceiling, so it is
+       left out rather than a state the ticket actually asks for. It comes back if the canvas is split by theme
+       the way D6's and D10's are. */
   ];
   const artboards = [];
   for (const light of [false, true]) {
@@ -1152,7 +1549,7 @@ function build(OUT) {
     }
   }
   const note =
-    "Pictures, one per state. The tabs switch, the template's version dropdown works, the Writing text can be typed into, and Preview opens its dialog (Escape or X closes either).\n\nBefore & After is wired and posting. Quiet Luxury Picks was just saved from the Studio and is not wired yet. The Overview boards are taller than a screen so the whole page shows.\n\nFrom the first review: the template's slides lead Overview across the full width, one version at a time with Make active; the four numbers are tiles beside the details; the batch table is left-aligned without Ran by, and a row opens that batch; panels side by side end on the same line.\n\nFrom the second review: narrower tiles in the analytics style beside a wider details card, the version showing tinted instead of ticked, and Preview on the phone as a sheet from the bottom. From the third review: the writing's versions use the same dropdown.\n\nNew in D13 (Garreth, 2026-09-21), the bottom row: Direction is named Writing and Wiring is named Go Live, and a type cannot generate until its Writing is saved.\n· Nothing written: the editor carries a guiding placeholder and the header the neutral pill Needs writing. Generate stays available and opens the Generate form, which is where the missing Writing is marked in red and required (Garreth, 2026-09-22).\n· The Studio's drafted note opens in the editor as Not saved; Save version is still a person's press.\n· The template's text boxes are listed under the editor, so the instruction is written against the boxes that exist. D14 is what gives the Studio a way to name them.\n\nNew in D13b (Garreth, 2026-09-22), the last row: a type with nothing written can ask the Conversation for a first draft.\n· The empty Conversation fills its card — a muted circle, one line, and one offer, Write a first draft, from the active template and its 5 slides. It is secondary; Save version stays the tab's one accent.\n· The draft lands in the editor unsaved, under the same Not saved pill the Studio's note gets, so a type made in the Studio and a type made any other way both have a way to a first Writing.\n· The box asks What should this type sound like? until a first version is saved, then goes back to What should change?\n· On the phone the Conversation is a sheet, so the offer sits under the editor as well, where it is met without opening the sheet. The sheet carries the same one.\n· Before D13b is the first board of the row, for comparison: the panel was blank and the box asked what should change.\n\nStill proposed:\n· Generate stays in the header on every tab; on Direction it steps back to secondary, so Save version is that tab's one accent.\n· The suggestion shows inside the direction itself: removed words struck through, added words underlined.\n· The cadence rebalance is the cadence editor's rule, with its running total and \"too many\" wording.\n· Wire is a hold in the amber tone: it changes the database but deletes nothing.";
+    "Pictures, one per state. The tabs switch, the template's version dropdown works, the Writing text can be typed into, and Preview opens its dialog (Escape or X closes either).\n\nBefore & After is wired and posting. Quiet Luxury Picks was just saved from the Studio and is not wired yet. The Overview boards are taller than a screen so the whole page shows.\n\nFrom the first review: the template's slides lead Overview across the full width, one version at a time with Make active; the four numbers are tiles beside the details; the batch table is left-aligned without Ran by, and a row opens that batch; panels side by side end on the same line.\n\nFrom the second review: narrower tiles in the analytics style beside a wider details card, the version showing tinted instead of ticked, and Preview on the phone as a sheet from the bottom. From the third review: the writing's versions use the same dropdown.\n\nNew in D13 (Garreth, 2026-09-21), the bottom row: Direction is named Writing and Wiring is named Go Live, and a type cannot generate until its Writing is saved.\n· Nothing written: the editor carries a guiding placeholder and the header the neutral pill Needs writing. Generate stays available and opens the Generate form, which is where the missing Writing is marked in red and required (Garreth, 2026-09-22).\n· The Studio's drafted note opens in the editor as Not saved; Save version is still a person's press.\n· The template's text boxes are listed under the editor, so the instruction is written against the boxes that exist. D14 is what gives the Studio a way to name them.\n\nNew in D13b (Garreth, 2026-09-22), the last row: a type with nothing written can ask the Conversation for a first draft.\n· The empty Conversation fills its card — a muted circle, one line, and one offer, Write a first draft, from the active template and its 5 slides. It is secondary; Save version stays the tab's one accent.\n· The draft lands in the editor unsaved, under the same Not saved pill the Studio's note gets, so a type made in the Studio and a type made any other way both have a way to a first Writing.\n· The box asks What should this type sound like? until a first version is saved, then goes back to What should change?\n· On the phone the Conversation is a sheet, so the offer sits under the editor as well, where it is met without opening the sheet. The sheet carries the same one.\n· Before D13b is the first board of the row, for comparison: the panel was blank and the box asked what should change.\n\nNew in D15 (Garreth, 2026-09-21), the last two rows: a fourth tab, Rows, between Writing and Go Live. It shows what is sitting in the type's lane table — the table the Smart Scheduler, the Posting Agent and Inventory read, and where everything the generator makes ends up.\n\u00b7 Read-only. Every change to a row happens where it already happens: the batch page, Approve, the scheduler. The tab has no accent button of its own; the header's Generate is the page's, as on every tab.\n\u00b7 A fixed set of columns, not the whole table: slide 1, the id, the caption, the music, the posting date and profile where there are any, and the status. These tables are 32 to 66 columns wide and no two are alike.\n\u00b7 The status column says why a row cannot post, in words. The tone splits on one question \u2014 is anything going to happen to this row by itself? Ready is green; Not rendered, Assigned and Posted are neutral because something else is already moving them; No caption and Not gatekept are amber because nothing but a person will move them. No new colour.\n\u00b7 A row that has not been rendered has no slide 1 at all, so its thumbnail is an empty frame \u2014 the same fact the status says in words.\n\u00b7 The counts line above the table is data, not instruction text: \"240 rows \u00b7 0 ready to post\". The table's own name sits quietly on the right, so the tab and Go Live's checklist name the same thing.\n\u00b7 Fifty rows a page, tabular figures, stacked rows on the phone, where the date and the profile lead the quiet line and the music takes what room is left. The boards draw the first twelve of the fifty.\n\u00b7 A whole row opens the drawer: every column it has, in the table's own order, an empty one as a dash \u2014 an empty column is the answer to why the row cannot post, so it is never left out. It comes in from the side on the desktop so the table is still read behind it, and is the phone sheet Preview and the Conversation already use, with each column's name over its value. Escape or X closes it.\n\u00b7 The drawer ends on one secondary button, Open the deck, which opens that deck in the batch it came from (Garreth, 2026-09-22). The table stays read-only; the button only points at the screen where the fixing already happens. It is pinned under the scrolling columns, so it is still there at the end of thirty-six of them. A row the old n8n path wrote has no batch, so it has no button \u2014 its batch column reads as a dash.\n\u00b7 Two empty states, and both fill the card down to the bottom of the screen (the rule of 2026-09-19): a type that has not gone live has no table to read and names Go Live; a type that is live with nothing in it says No rows yet, under its own 0 rows line.\n\n\nStill proposed:\n· Generate stays in the header on every tab; on Direction it steps back to secondary, so Save version is that tab's one accent.\n· The suggestion shows inside the direction itself: removed words struck through, added words underlined.\n· The cadence rebalance is the cadence editor's rule, with its running total and \"too many\" wording.\n· Wire is a hold in the amber tone: it changes the database but deletes nothing.";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

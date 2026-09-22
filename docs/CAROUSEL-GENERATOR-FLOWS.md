@@ -70,6 +70,7 @@ no longer used on a card.
 | History | `/carousel-generator/history` | 2 | Only in the first-run empty state: Generate | — |
 | Content type | `/carousel-generator/types/[slug]` | 2 | Generate | — |
 | · Writing tab | same, `?tab=writing` | 2 plain, 3 conversation | Save version | — |
+| · Rows tab | same, `?tab=rows` | 2 | none; the tab is read-only | — |
 | · Go Live tab | same, `?tab=go-live` | 4 | none; the run is itself a hold | Wire |
 | Library | `/carousel-generator/library`, `/library/[id]` | 2 read-only, 4 editable | Phase 4: Upload; Generate images in an empty library | Phase 4: Retire image |
 | Studio | `/carousel-generator/studio`, `/studio/[template]` | 3 | Save as content type, or Save version | Discard draft |
@@ -95,6 +96,12 @@ form draws its Writing row in the danger stroke and leaves its own Generate
 unavailable until everything required is filled — the same way it already
 handles a missing image library. One rule: *Generate always opens the form;
 the form names what is missing.*
+
+**The Rows tab is new (D15, proposed 2026-09-21, approved 2026-09-22).** It
+sits between Writing and Go Live, and it is the **only read-only screen in the
+generator**: it shows what is sitting in the type's lane table and, in words,
+why each row cannot post, and every repair happens on the screen that already
+owns it. See F18.
 
 All screens work in dark and light mode, like every other page of the
 dashboard (Garreth, 2026-09-14). Dark is designed first; light uses the same
@@ -1067,6 +1074,79 @@ is restated here, so this section reads on its own.*
   and analyse, a job for the analysis worker, whose results land in
   `reference_beats`, `reference_analysis` and `carousel_search_documents` as
   they do for every other carousel.
+
+### F18. Read the lane — what is sitting there, and why it cannot post
+
+- **When:** a lane says nothing is postable and the count does not explain it.
+  Inventory gives the number; the batch page says what the generator did in
+  one run; neither says a row is sitting there with no caption. Phase 2 — it
+  reads a table that already exists, and it is most useful on the pile that is
+  already there.
+- **Screens:** Content type, **Rows** tab (`?tab=rows`).
+- **Read-only** (Garreth, 2026-09-21, reaffirmed at approval 2026-09-22).
+  Every change to a row happens where it already happens: the batch page,
+  Approve (n) decks, the scheduler. The tab has no accent button, and nothing
+  on it writes.
+- **Steps:**
+  1. The tab lists the rows of this type's lane table, newest first, fifty a
+     page, with a line of counts above them — *240 rows · 0 ready to post*.
+     The table's own name sits quietly to the right of the counts, so this tab
+     and Go Live's checklist name the same thing.
+  2. **A fixed set of columns, not the whole table**: slide 1 as a thumbnail,
+     the id, the caption, the music, the posting date and the profile where
+     there are any, and the status. These tables are 32 to 66 columns wide and
+     no two are alike, so the rest waits in the drawer.
+  3. **The status column says why a row cannot post, in words**: **Ready**,
+     **No caption**, **Not gatekept**, **Not rendered**, **Assigned**,
+     **Posted**. This is the point of the tab.
+  4. A whole row opens a **drawer** with every column that row has, in the
+     table's own order, an empty one shown as a dash — an empty column is the
+     answer to why the row cannot post, so it is never left out. The drawer
+     comes in from the side on the desktop, so the table is still read behind
+     it; on the phone it is the sheet Preview and the Conversation use, with
+     each column's name over its value.
+  5. The drawer ends on one secondary button, **Open the deck**, pinned under
+     the scrolling columns. It opens that deck in the batch it came from — a
+     lane row exists only once its batch was rendered and approved, so that is
+     always a finished batch (F3). **The button changes nothing**; it points
+     at the screen that already owns the fixing.
+- **What the status means, and why its tone is what it is.** The colour splits
+  on one question: *is anything going to happen to this row by itself?*
+  - **Ready** — green. Nothing is wrong. This is the number the counts line
+    counts.
+  - **Not rendered** — neutral. The renderer has it. A row with no slide 1 has
+    an empty dashed frame where its thumbnail would be, so the picture says
+    the same thing one column earlier.
+  - **Assigned** — neutral. The Smart Scheduler has taken it, with a date and
+    a profile.
+  - **Posted** — neutral. Done, and gone.
+  - **No caption** — amber. Stuck. Nothing but a person will fill it.
+  - **Not gatekept** — amber. Stuck. The nightly Pre-Publish Gate audits only
+    rows whose `gatekeep_status` is NULL, so a `'pending'` row is invisible to
+    it forever (73 of them on Covered Eye, 2026-09-15).
+  No new pill colour: green, amber and neutral are the screen's own.
+- **The two amber ones are inherited, not made here.** Under the new design a
+  deck that fails at writing is **flagged in its batch and no lane row is
+  written** (F2), and the lane row carries the gate's verdict, never
+  `'pending'` (§3). So the generator cannot add a row in either state. The
+  rows that are in them came from the old n8n path, and those rows have **no
+  batch**, so their drawer has no **Open the deck** button — their `batch`
+  column reads as a dash, which says why.
+- **Accent action:** none. The header's Generate is the page's, as on every
+  tab.
+- **Hold:** none. Nothing here deletes or changes a row.
+- **Empty:**
+  - **A type that has not gone live** has no lane table to read. The empty
+    state fills the card down to the bottom of the screen: *No rows until this
+    type goes live*, with a secondary **Go Live** that switches tabs. No
+    counts line, because there is no table to count.
+  - **A type that is live with nothing in it yet**: the counts line reads
+    *0 rows · 0 ready to post*, and the empty state under it says *No rows
+    yet*. The difference between the two reads at a glance.
+- **Fails:** the lane table cannot be read (a type wired outside the app, or a
+  table renamed): the tab says so where the counts line goes, with **Retry**.
+  It never falls back to an empty table, which would read as "nothing here".
+- **Writes:** nothing. This flow is read-only.
 
 ---
 

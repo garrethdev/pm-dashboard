@@ -1575,7 +1575,7 @@ designs are final.
 
 | Deliverable | State |
 |---|---|
-| Flows | Drafted: `docs/CAROUSEL-GENERATOR-FLOWS.md`, 15 flows and the screen inventory (F15, browse and search the library, added 2026-09-17). Awaiting sign-off; its §4 lists the answers needed. |
+| Flows | Drafted: `docs/CAROUSEL-GENERATOR-FLOWS.md`, 17 flows and the screen inventory (F15 browse and search the library and F16 open a post, added 2026-09-17; F18 read the lane, added 2026-09-22 with D15; F17 is reserved for D16's Overview). Awaiting sign-off; its §4 lists the answers needed. |
 | Template model | Written: `docs/CAROUSEL-TEMPLATE-MODEL.md` and `docs/carousel-templates/*.v1.json`. `scripts/carousel-templates/verify.mjs` confirms both reproduce their Python painters (134 checks). Four questions in its §5. |
 | Wiring decision | Verified; see §4.8. |
 | Screens | Not started. They are designed from the flows once the flows are signed off. |

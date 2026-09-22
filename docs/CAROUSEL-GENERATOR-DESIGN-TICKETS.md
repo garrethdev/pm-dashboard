@@ -17,7 +17,8 @@ past D11, added and approved the same day. It adds no screen — its states
 live on D1 to D5, D7 and D9 — and it is in the prototype.
 **And three more, 2026-09-21: D13, D14 and D15**, out of a session on how a
 new content type gets written and wired. **D13 was drawn and approved on
-2026-09-22; D14 and D15 are open and not drawn yet.** D13 renames
+2026-09-22; D14 was approved the same day, and D15 was drawn that day and is
+awaiting review.** D13 renames
 Direction to **Writing** and Wiring to **Go Live** and makes Writing required;
 D14 gives a text box in the Studio a **name**, which is how the writer knows
 what goes in it; D15 adds a **Rows** tab showing what is sitting in a type's
@@ -2428,9 +2429,50 @@ the edges are tested, not just the happy middle.
 
 ## D15. Rows — what is sitting in the lane
 
-- **Status:** **Open. Proposed 2026-09-21 and taken by Garreth the same day.**
-  Not drawn yet. **No canvas of its own**: a new page row on the **D7**
-  canvas, build file `d7-type-page.build.mjs`.
+- **Status:** **APPROVED in dark and light by Garreth on 2026-09-22.**
+  Proposed 2026-09-21 and
+  taken by Garreth the same day. **No canvas of its own**: the boards are the
+  last two rows of the **D7** canvas (version 7), pages **D7 · Dark** and
+  **D7 · Light**, built by `d7-type-page.build.mjs`. Dark and light were drawn
+  together, because the tab is new in both at once; the review is still dark
+  first. Eight boards a theme: Rows (the ordinary case) · Desktop, Rows
+  (nothing postable, the reason different row to row) · Desktop, Rows (stacked)
+  · Phone, Not live yet · Phone, A row's drawer · Phone, A row's drawer (the
+  caption column empty) · Desktop, Not live yet · Desktop, and Live with no
+  rows yet · Desktop.
+- **Decided while drawing it** (not in the ticket, so worth saying out loud):
+  - **The status pill's tone splits on one question: is anything going to
+    happen to this row by itself?** Ready is green; **Not rendered**,
+    **Assigned** and **Posted** are neutral, because the renderer, the
+    scheduler and the past are already moving them; **No caption** and **Not
+    gatekept** are amber, because nothing but a person will move them. No new
+    colour — green, amber and neutral are already the screen's.
+  - **A row that has not been rendered has no slide 1**, so its thumbnail is an
+    empty dashed frame. The picture says the same thing the status says, one
+    column earlier.
+  - **The lane table's own name sits quietly in the card head** on the right
+    (`before_after_decks`), so the tab and Go Live's checklist name the same
+    thing.
+  - **The drawer comes in from the side on the desktop**, not as a centred
+    dialog, so the table it was opened from is still read behind it; on the
+    phone it is the sheet Preview and the Conversation already use, with each
+    column's **name over its value** — a 390px sheet cannot hold both side by
+    side without breaking a URL across three lines.
+  - **The drawer ends on one secondary button, Open the deck** (Garreth,
+    2026-09-22, at review), pinned under the scrolling columns so it is still
+    there at the end of thirty-six of them. It opens that deck in the batch it
+    came from. **The table stays read-only** — the button changes nothing, it
+    only points at the screen where the fixing already happens. A row the old
+    n8n path wrote has no batch, so it has no button; its batch column reads
+    as a dash, which says why.
+  - **The boards draw the first twelve of the fifty**, and the pager says
+    `1–50 of 240`. A fifty-row board would be 3,500px tall.
+  - **A drawer on a row that has everything** was drawn and then left off:
+    **D7's canvas is full** at 15.5 MB against a 16 MB ceiling, so the space
+    went to the states the ticket asks for. It is one line in the build file
+    (`{ rows: "mixed", row: 10 }`) whenever it is wanted. **D17 also targets
+    D7**, so the canvas will need splitting by theme the way D6's and D10's
+    are before much more goes on it.
 - **What it is.** A tab on a type's page showing the rows in that type's lane
   table — the table the Smart Scheduler, the Posting Agent and Inventory read.
   This is where everything the generator makes ends up: Approve writes the
@@ -2458,7 +2500,11 @@ the edges are tested, not just the happy middle.
   - **A line of counts above the table**: "240 rows · 0 ready to post". Data,
     not instruction text.
   - **Fifty rows a page**, tabular figures, stacked rows on the phone.
-- **Flows:** F6.
+- **Flows:** **F18**, written on approval 2026-09-22, plus the Rows tab in the
+  screen inventory. **Dev tickets: DEV-54** (the tab) **and DEV-55** (a row's
+  drawer and Open the deck), both Phase 2. *(This ticket first said F6; F6 is Edit the Writing and has
+  nothing to do with the lane table. F17 stays reserved for D16, which named
+  it first.)*
 - **Design:** the tab row reads Overview · Writing · Rows · Go Live. The table
   fills the width under the counts line, the way D7's batch table does, and a
   whole row opens the drawer.
