@@ -151,7 +151,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
 | PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. Shows warmups only until PF-06 hands posts out |
 | PF-11 | Post-ban branch for manual accounts | Intermediate | **Unblocked by PF-01 since 2026-09-18** (this row was stale until 2026-09-22). Waiting on its SCREEN instead: the ban checklist is design ticket P8, not started |
-| PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Ready now** — PF-05 landed 2026-09-22 |
+| PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Morning reminder + stale-item alert (n8n) | Intermediate | **Ready now** — PF-07 landed 2026-09-22 |
 | PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
 | PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
@@ -160,7 +160,7 @@ phones or the Air in Yurie's hands. Order within the list is build order.
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
-| PF-19 | Calendar and Content types per fleet | Intermediate | Ready now; needs database changes |
+| PF-19 | Calendar and Content types per fleet | Intermediate | **Built 2026-09-22** as four new `_fleet` functions beside the untouched originals; no Physical data to show yet |
 | PF-20 | Incidents and the bell per fleet | Intermediate | Ready now |
 | PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
 
@@ -512,7 +512,7 @@ trail.
 *Done when:* dry-run on a manual account shows the checklist and touches no
 Geelark endpoint.
 
-## PF-09 · Health detector + Incidents read both sources — Ready now (PF-05 landed 2026-09-22)
+## PF-09 · Health detector + Incidents read both sources — Built 2026-09-22, awaiting a real hand-posted row
 
 The delivery-failure guard in `v_account_health_v3` and the failed-deliveries
 source in `src/lib/data/incidents.ts` read `geelark_tasks` only; add
@@ -666,7 +666,7 @@ chose the simpler rule. The before/after comparison in PF-10 still has its own
 date to split on.) In practice: every per-fleet number is "the same number,
 limited to the accounts currently in that fleet".
 
-**PF-19 · Calendar and Content types per fleet — Ready now.**
+**PF-19 · Calendar and Content types per fleet — Built 2026-09-22, no Physical data to show yet.**
 `calendar_month_rollup`, `calendar_month_days` and `calendar_day_detail` join
 `accounts` and can take an optional fleet. They read delivery from
 `geelark_tasks`, so Physical will look empty until PF-05 gives manual posts a

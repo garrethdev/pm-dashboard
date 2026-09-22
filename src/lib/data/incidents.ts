@@ -10,10 +10,11 @@ import {
 import type { PillTone } from "@/components/ui/pill";
 
 /**
- * Incident feed (plan §5) — bans, failed deliveries, scheduler shortfalls,
- * n8n workflow failures and dead analytics feeds. Newest first.
+ * Incident feed (plan §5) — bans, failed deliveries (robot AND hand-posted),
+ * scheduler shortfalls, n8n workflow failures and dead analytics feeds.
+ * Newest first.
  *
- * Nothing is snapshotted into an "incidents" table: four of the five sources
+ * Nothing is snapshotted into an "incidents" table: five of the seven sources
  * are already durable in Postgres, so the window is a display choice rather
  * than a storage limit. A snapshot table would duplicate those rows and could
  * silently drift from them. The dashboard card asks for 48h; the /incidents
@@ -134,6 +135,11 @@ async function bans(since: string, limit: number): Promise<Incident[]> {
   return out;
 }
 
+/**
+ * Posts a GEELARK phone could not deliver. Its hand-posted twin is
+ * handPostedFailures() below; the two together are the whole answer to "what
+ * failed to go out", which is why PF-09 added the second one.
+ */
 async function failedDeliveries(since: string, limit: number): Promise<Incident[]> {
   // v_dashboard_failed_deliveries, not v_failed_deliveries: Smart Scheduler
   // 1.0.1's reconcile moves Failed rows to 'Hold'/NULL, which emptied the old
@@ -161,6 +167,66 @@ async function failedDeliveries(since: string, limit: number): Promise<Incident[
     detail: `${r.meaning ?? `fail_code ${r.fail_code ?? "?"}`}${r.fail_desc ? `: ${r.fail_desc}` : ""}`,
     href: "/automation",
   }));
+}
+
+/**
+ * Posts that a PERSON could not put up (PF-09).
+ *
+ * The source above answers "did this go out?" with a Geelark task, which is
+ * the only answer a cloud phone can give. A real iPhone reports nothing back,
+ * so on the Physical fleet the record is a `post_deliveries` row marked
+ * `failed` — somebody was handed the post, tried, and it did not go up. That
+ * is the same event as a failed Geelark delivery and belongs in the same feed
+ * under the same heading, or the Physical fleet would look like a fleet where
+ * nothing ever fails.
+ *
+ * A failed post is DUMPED (Garreth, 2026-09-22): it is never handed out again
+ * and its content goes with it. So this row is the only lasting record that
+ * the post existed, which is a second reason it belongs in a durable feed
+ * rather than only on a to-do list that moves on the next morning.
+ *
+ * `note` is whatever the person typed when they marked it failed. It goes
+ * straight through, in the place Geelark's own fail message goes.
+ *
+ * Its own source, not folded into the one above, so that if one of the two
+ * cannot be read the other still reports.
+ */
+interface RawHandFailure {
+  id: number;
+  content_type: string;
+  note: string | null;
+  done_at: string | null;
+  accounts: { geelark_profile: string | null; username: string | null } | null;
+}
+
+async function handPostedFailures(since: string, limit: number): Promise<Incident[]> {
+  const rows = await sbRest<RawHandFailure[]>(
+    `post_deliveries?select=id,content_type,note,done_at,accounts(geelark_profile,username)` +
+      `&status=eq.failed&done_at=gte.${since}&order=done_at.desc&limit=${limit}`,
+  );
+  return rows
+    // A finished row always carries done_at (the table refuses one without
+    // it), but sorting a feed on a null date would put the row at the bottom
+    // of every range rather than at the moment it happened.
+    .filter((r): r is RawHandFailure & { done_at: string } => Boolean(r.done_at))
+    .map((r) => {
+      const profile = r.accounts?.geelark_profile;
+      const handle = r.accounts?.username;
+      const entity = profile ?? (handle ? `@${handle}` : "—");
+      const n = profileNum(profile ?? "");
+      return {
+        id: `hand-delivery:${r.id}`,
+        at: r.done_at,
+        tone: "danger" as PillTone,
+        type: "Failed delivery",
+        entity,
+        detail:
+          `${r.content_type} could not be posted by hand` +
+          `${r.note ? `: ${r.note}` : ""}` +
+          `; the post is dumped and will not be handed out again`,
+        href: n ? `/accounts/${n}` : "/todo",
+      };
+    });
 }
 
 async function shortfalls(since: string, limit: number): Promise<Incident[]> {
@@ -390,6 +456,7 @@ async function fetchIncidents(
   const groups = await Promise.all([
     readSource("Bans", "/accounts", () => bans(since, perSource)),
     readSource("Failed deliveries", "/calendar", () => failedDeliveries(since, perSource)),
+    readSource("Failed hand-posts", "/todo", () => handPostedFailures(since, perSource)),
     readSource("Scheduler shortfalls", "/calendar", () => shortfalls(since, perSource)),
     readSource("Workflow failures", "/automation", () => workflowFailures(since, perSource)),
     readSource("Analytics feeds", "/analytics", () => analyticsFeeds()),
@@ -403,7 +470,9 @@ async function fetchIncidents(
 
 /** Dashboard card: last 48h, trimmed to what the card can show. */
 export const getIncidents = cachedFetcher(
-  "incidents-card-v1",
+  // v2: the hand-posted failures source was added (PF-09), so a feed cached
+  // under the old key would be missing a whole kind of incident.
+  "incidents-card-v2",
   TTL.supabase,
   () => fetchIncidents(2, 15, 20),
   { tags: [INCIDENTS_TAG] },
@@ -417,7 +486,7 @@ export function getIncidentHistory(range: IncidentRange = "30d") {
   const entry = INCIDENT_RANGES.find((r) => r.key === range);
   const days = entry ? entry.days : 30;
   return cachedFetcher(
-    `incident-history:${range}`,
+    `incident-history-v2:${range}`,
     TTL.supabase,
     () => fetchIncidents(days, 500, 1000),
     // One key per range, so only the family tag makes Refresh work here.

@@ -7,6 +7,7 @@ import {
   type CtRangeKey,
 } from "@/lib/data/content-types";
 import { getFleetDefaults } from "@/lib/data/scheduler-config";
+import { getFleet } from "@/lib/fleet-server";
 
 /** GET /api/content-types?range=28d — powers the range switcher without a full
  *  navigation. Same shape the page server-renders. */
@@ -20,8 +21,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { data: fleet } = await getFleetDefaults();
-    const { data, fetchedAt } = await getContentTypes(range as CtRangeKey, fleet.glpWeek);
+    // Two different "fleets" in one line, which is unfortunate but real:
+    // `defaults` is the scheduler's fleet-wide cadence settings, `fleet` is
+    // which of Cloud / Physical this person is looking at (PF-19).
+    const [{ data: defaults }, fleet] = await Promise.all([getFleetDefaults(), getFleet()]);
+    const { data, fetchedAt } = await getContentTypes(
+      range as CtRangeKey,
+      defaults.glpWeek,
+      fleet,
+    );
     return NextResponse.json({ data, fetchedAt });
   } catch (err) {
     return NextResponse.json(

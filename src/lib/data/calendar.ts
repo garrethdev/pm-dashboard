@@ -1,18 +1,31 @@
 import { cache } from "react";
 import { CALENDAR_TAG, type Cached, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
+import type { Fleet } from "@/lib/fleet";
 
 /**
  * Content Calendar — what the Smart Scheduler actually laid down, by day.
  *
+ * ONE FLEET AT A TIME (PF-19). Every read here goes to the `_fleet` RPCs, which
+ * are the originals limited to the accounts in the fleet being looked at.
+ * Garreth's rule (2026-09-18): an account's data follows the account, so
+ * moving an account to a real phone moves its whole calendar history with it,
+ * with no move-date split. The scheduler run and the shortfalls beside the grid
+ * are deliberately NOT per fleet — one run plans the whole fleet, and splitting
+ * it would invent two runs that never happened.
+ *
  * Two deliberate choices, both learned from the data rather than assumed:
  *
- * 0. Delivery comes from geelark_tasks, not posting_status. The poster writes
+ * 0. Delivery comes from the delivery record, not posting_status. The poster writes
  *    "Posted" optimistically and [Reconcile] Daily Failed Posts only corrects
  *    it at 14:00 ET, hours before the 22:15 posting window closes — so an
  *    evening failure reads as a success until the next day. A row Geelark
  *    failed is counted as `failed` and kept out of `live`; a row nothing has
  *    attempted yet still counts as live, or tomorrow would read as zero.
+ *    Since PF-09 there are TWO delivery records, not one: a Geelark task for a
+ *    cloud phone, and a `post_deliveries` row for a post handed to a person.
+ *    A real iPhone reports nothing back, so without the second one the
+ *    Physical fleet's calendar would never show a post as delivered.
  *
  * 1. "Live" means posting_status in (Ready, Posted) — the same filter the
  *    scheduler itself applies. Counting by date alone is wrong: the retired
@@ -42,7 +55,8 @@ export interface CalendarTypeCount {
   registryLane: boolean;
   live: number;
   dead: number;
-  /** Rows Geelark could not deliver — excluded from `live`, not subtracted from it. */
+  /** Rows that could not be delivered — Geelark failed them, or the person
+   *  handed the post marked it failed. Excluded from `live`, not subtracted. */
   failed: number;
   accounts: number;
 }
@@ -183,14 +197,21 @@ export function monthGridRange(year: number, month1: number): { start: string; e
 export const getCalendarMonth = cache(async function getCalendarMonth(
   year: number,
   month1: number,
+  fleet: Fleet = "cloud",
 ): Promise<Cached<CalendarMonth>> {
   const { start, end } = monthGridRange(year, month1);
   return cachedFetcher(
-    `calendar-month-v2:${start}:${end}`,
+    // v3, and the fleet is part of the key: two people looking at two fleets
+    // must not be served each other's grid.
+    `calendar-month-v3:${fleet}:${start}:${end}`,
     TTL.supabase,
     async (): Promise<CalendarMonth> => {
       const [raw, dayTotals, runs] = await Promise.all([
-        sbRpc<RawRollup[]>("calendar_month_rollup", { p_start: start, p_end: end }),
+        sbRpc<RawRollup[]>("calendar_month_rollup_fleet", {
+          p_start: start,
+          p_end: end,
+          p_fleet: fleet,
+        }),
         // Day-level totals are their own aggregate: a distinct account count
         // cannot be recovered from the per-type rows without double-counting
         // an account that posts more than one type.
@@ -203,10 +224,11 @@ export const getCalendarMonth = cache(async function getCalendarMonth(
             accounts: number | string;
             off_registry: boolean;
           }[]
-        >("calendar_month_days", { p_start: start, p_end: end }),
+        >("calendar_month_days_fleet", { p_start: start, p_end: end, p_fleet: fleet }),
         // One row per scheduler run in the window. Runs are keyed by run_at,
         // not by the day they scheduled FOR — the 06:30 ET cron plans that
-        // same day, so the run's own date is the right key.
+        // same day, so the run's own date is the right key. Not filtered by
+        // fleet: one run plans everything, so both fleets show the same run.
         sbRest<RawRun[]>(
           "scheduler_runs?select=run_at,status,dry_run,accounts_considered,slots_planned," +
             `rows_scheduled,shortfall_count,error_step,error_message,duration_ms` +
@@ -278,12 +300,18 @@ export const getCalendarMonth = cache(async function getCalendarMonth(
 });
 
 /**
- * What Geelark actually did with the row.
+ * What actually happened to the row.
  *
  * `posting_status` is written optimistically by the poster and only corrected
  * by [Reconcile] Daily Failed Posts at 14:00 ET, so an evening failure reads
- * "Posted" until the next day's reconcile. This comes from geelark_tasks, which
- * is polled per task, and is the earliest honest answer available.
+ * "Posted" until the next day's reconcile. This comes from the delivery record
+ * instead — a Geelark task for a cloud phone, polled per task, or a
+ * `post_deliveries` row for a post a person was handed (PF-09) — and is the
+ * earliest honest answer available on either fleet.
+ *
+ * `pending` also covers a hand-posted delivery somebody skipped. Nothing in
+ * the app writes that status today, and reading it as still outstanding keeps
+ * the row on screen rather than letting it read as never attempted.
  */
 export type Delivery = "posted" | "failed" | "pending" | "none";
 
@@ -298,7 +326,9 @@ export interface CalendarPost {
   contentId: string | null;
   live: boolean;
   delivery: Delivery;
-  /** Geelark's own code and message, present only on a failure. */
+  /** The code and message behind a failure, present only on one. Geelark's own
+   *  on the Cloud fleet; on Physical there is no code, and the message is the
+   *  note the person left when they marked the post failed. */
   failCode: string | null;
   failDesc: string | null;
 }
@@ -315,7 +345,7 @@ export interface CalendarDayAccount {
   live: number;
   glp: number;
   filler: number;
-  /** Rows Geelark could not deliver, however posting_status reads. */
+  /** Rows that could not be delivered, however posting_status reads. */
   failed: number;
 }
 
@@ -347,14 +377,19 @@ interface RawDetail {
   fail_desc: string | null;
 }
 
-/** One day expanded: every account and what it is scheduled to post. */
-export async function getCalendarDay(date: string): Promise<Cached<CalendarDayDetail>> {
+/** One day expanded: every account in this fleet and what it is scheduled to
+ *  post. The run and the shortfalls under it stay fleet-wide — one scheduler
+ *  run planned the whole day. */
+export async function getCalendarDay(
+  date: string,
+  fleet: Fleet = "cloud",
+): Promise<Cached<CalendarDayDetail>> {
   return cachedFetcher(
-    `calendar-day-v3:${date}`,
+    `calendar-day-v4:${fleet}:${date}`,
     TTL.supabase,
     async (): Promise<CalendarDayDetail> => {
       const [rows, runs, shortfalls] = await Promise.all([
-        sbRpc<RawDetail[]>("calendar_day_detail", { p_day: date }),
+        sbRpc<RawDetail[]>("calendar_day_detail_fleet", { p_day: date, p_fleet: fleet }),
         sbRest<RawRun[]>(
           "scheduler_runs?select=run_at,status,dry_run,accounts_considered,slots_planned," +
             `rows_scheduled,shortfall_count,error_step,error_message,duration_ms` +

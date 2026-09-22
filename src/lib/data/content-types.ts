@@ -1,6 +1,7 @@
 import { CONTENT_TYPES_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { fetchCharacterOverrides } from "@/lib/data/cadence";
 import { sbRpc } from "@/lib/data/supabase";
+import type { Fleet } from "@/lib/fleet";
 
 /**
  * Content Types page — the registry as a catalogue, with how each lane is
@@ -11,10 +12,18 @@ import { sbRpc } from "@/lib/data/supabase";
  * which is a performance question, so a lane with an empty pool and great
  * numbers still reads as a good lane here.
  *
- * Every row comes from content_type_stats(), which drives off the registry
- * rather than the performance tables — a paused or retired lane keeps its
- * numbers, because those numbers are the reason to leave it off or bring it
+ * Every row comes from content_type_stats_fleet(), which drives off the
+ * registry rather than the performance tables — a paused or retired lane keeps
+ * its numbers, because those numbers are the reason to leave it off or bring it
  * back.
+ *
+ * ONE FLEET AT A TIME (PF-19). The numbers are the same numbers, limited to the
+ * accounts in the fleet being looked at, following Garreth's rule that an
+ * account's data follows the account. EVERY LANE STILL APPEARS IN BOTH FLEETS:
+ * a lane is a lane whichever phones post it, so on a fleet that has not posted
+ * it yet it simply reads as a lane with no posts rather than disappearing. The
+ * "last updated" time under the numbers is deliberately fleet-wide — it says
+ * when the analytics feed last ran, which is one fact for the whole database.
  */
 
 export type Lifecycle = "live" | "paused" | "retired";
@@ -195,9 +204,13 @@ function rank(a: ContentTypeRow, b: ContentTypeRow): number {
   return (b.score ?? -1) - (a.score ?? -1);
 }
 
-async function fetchContentTypes(days: number | null, glpPerWeek: number): Promise<ContentTypesData> {
+async function fetchContentTypes(
+  days: number | null,
+  glpPerWeek: number,
+  fleet: Fleet,
+): Promise<ContentTypesData> {
   const [raw, overrides] = await Promise.all([
-    sbRpc<RawStat[]>("content_type_stats", { p_days: days }),
+    sbRpc<RawStat[]>("content_type_stats_fleet", { p_days: days, p_fleet: fleet }),
     fetchCharacterOverrides(),
   ]);
   const all = (raw ?? []).map(toRow);
@@ -229,14 +242,20 @@ async function fetchContentTypes(days: number | null, glpPerWeek: number): Promi
   };
 }
 
-export function getContentTypes(range: CtRangeKey = CT_DEFAULT_RANGE, glpPerWeek = 10) {
+export function getContentTypes(
+  range: CtRangeKey = CT_DEFAULT_RANGE,
+  glpPerWeek = 10,
+  fleet: Fleet = "cloud",
+) {
   const entry = CT_RANGES.find((r) => r.key === range);
   // `?? 30` would be wrong: "all" carries a deliberate null.
   const days = entry ? entry.days : 30;
   return cachedFetcher(
-    `content-types-v1:${range}`,
+    // v2, and the fleet is part of the key: two people looking at two fleets
+    // must not be served each other's numbers.
+    `content-types-v2:${fleet}:${range}`,
     TTL.supabase,
-    () => fetchContentTypes(days, glpPerWeek),
+    () => fetchContentTypes(days, glpPerWeek, fleet),
     // One shared tag across every range, so a lifecycle change or the Refresh
     // button expires all three at once rather than only the range on screen.
     { tags: [CONTENT_TYPES_TAG] },

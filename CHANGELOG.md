@@ -20,6 +20,63 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — Posts made by hand now count everywhere they should
+
+**Where it came from:** tickets PF-09 and PF-19, built together because they
+read the same thing.
+
+**The health dot and the Incidents page can see hand-posted work (PF-09).**
+Everything the dashboard knew about whether a post actually went out came from
+Geelark: the cloud phone posted, and it told us. A real iPhone tells us
+nothing, so an account moved to a real phone would have read as one that had
+simply stopped — nothing posted, nothing failed, nothing tried, for ever. The
+two calculations underneath the health dot now read the hand-posting record as
+well, so an account on a real phone is judged by exactly the same rules as one
+on Geelark, with a real "last posted" date instead of a blank. The Incidents
+page gained a matching entry: a post somebody could not put up appears there
+beside the ones Geelark could not deliver, with whatever note they left.
+
+**One thing deliberately left alone.** The "system error" verdict still reads
+Geelark only. It means the posting machinery is broken, and it is matched
+against Geelark's own failure codes — captcha, account banned — which a
+hand-posted row has no equivalent of. A person who could not post something is
+a failed delivery, which the app already reports; folding it in would put a red
+"broken machinery" verdict on a human typo.
+
+**The Content Calendar and Content Types follow the Cloud / Physical switch
+(PF-19).** Both were fleet-wide, so Physical showed Cloud's numbers. They now
+show the fleet you are looking at, following the rule that an account's data
+follows the account. Every content lane still appears on both fleets showing no
+posts, rather than vanishing, so Content Types is readable on Physical from day
+one. The scheduler run and its shortfalls stay fleet-wide on purpose: one run
+plans everything, and splitting it would invent two runs that never happened.
+
+**Today's numbers did not move.** Every existing calculation was proven
+unchanged, in both directions, row by row: the account statistics (64
+accounts), last-post dates (55 accounts), the calendar month grid (667 rows),
+day totals (100 days), three expanded days (208 rows) and the content-type
+numbers over three windows (25 lanes each). Zero differences everywhere. I
+checked the two health views myself, separately from the agent that built
+them, by fingerprinting them before and after — identical.
+
+**Verification.** Both database changes are applied live. The four new calendar
+and content-type functions are executable by the app's own key only — not by
+the public key — which was read back rather than assumed, because this project
+has been caught before by a revoke that left the public key still named. Both
+pages were loaded in a real browser on both fleets with no console errors, and
+Cloud still shows the numbers it showed before. **Not proven with real work:**
+nothing has ever been posted by hand and no account is on a real phone, so the
+new half of every one of these calculations has never had a real row through
+it. The first honest test is the day the first account moves to a phone.
+
+**One thing to decide.** On Physical the calendar grid is empty but each day
+still carries its amber "N short" badge, because a shortfall belongs to the
+scheduler run, which is fleet-wide. It is working as designed, but on an empty
+grid it reads as though Physical itself fell short. Changing it is a display
+tweak, not a number.
+
+---
+
 ## 2026-09-22 — Accounts can be added from the app, with their Profile name typed in
 
 **Where it came from:** ticket PF-21, opened the same day off Garreth's

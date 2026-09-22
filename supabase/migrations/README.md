@@ -56,6 +56,8 @@ applied 2026-09-06) are deliberately not here.
 | 09-18 | `inventory_fleet` | PF-18: `inventory_rollup_fleet` and `scheduler_production_order_fleet`, the two Inventory calculations for one fleet. Demand comes from the fleet's accounts; unassigned content is Physical's supply, so Cloud's pool is zero. Originals and `inventory_check` untouched (the emails read them). **Parity not proven against live demand**: every account was paused, so both sides returned no rows. Once accounts are unpaused, check `select * from inventory_rollup(14,0,null)` against `inventory_rollup_fleet(14,0,null,'all')`, and that the `cloud` and `physical` targets add up to it |
 | 09-22 | `post_deliveries` | PF-05: one row per post handed to a person to post by hand — the Physical fleet's "actually posted" signal, standing in for `geelark_tasks.status = 3`. Content row named the way `content_type_registry` names it (`source_table` + the id), no FK, as `content_quarantine` does. Unique on `(source_table, source_id, account_id)` so an n8n retry cannot hand the same post out twice. RLS on with no policies and `anon`/`authenticated` revoked by name — `relacl` read back and it matches `devices` exactly. Proven live: a row inserted, flipped to `posted`, linked, put back to `queued` and flipped to `skipped` through the app's own module, and the anon key refused with 401 on both select and insert. The test row was deleted; the table is empty |
 | 09-22 | `post_deliveries_account_index` | PF-05 follow-up the same day: Supabase's performance linter flagged `post_deliveries_account_id_fkey` as a foreign key with no covering index, and the two reads by account (what is waiting, what went out) would both have scanned the table. `(account_id, done_at desc)`; the unique index does not cover it because `account_id` is not its leading column. Linter re-run clean for this table |
+| 09-22 | `health_reads_both_delivery_sources` | PF-09: the health chain answers "did this post go out?" from both fleets. `v_account_view_health`'s delivery counters (`fired_7d`, `fired_28d`, `deliv_fail_7d`, `last_fired_at`) and `v_account_last_post` now read `geelark_tasks` UNION `post_deliveries`, joined in through `accounts.geelark_profile`. **`v_account_health_v3` is deliberately untouched** — every rule it applies reads those two views, so the verdict follows without a second set of rules to keep in step. `v_dashboard_task_errors_7d` stays Geelark-only on purpose: it feeds `system error`, which is matched against Geelark fail-code meanings a hand-posted row has no equivalent of. Proven: new body vs live view, EXCEPT both ways, 0 rows each (64 accounts / 55 accounts). **Not proven with real work** — `post_deliveries` is empty, so the manual half has never had a real row through it |
+| 09-22 | `calendar_and_content_types_fleet` | PF-19: `calendar_month_rollup_fleet`, `calendar_month_days_fleet`, `calendar_day_detail_fleet` and `content_type_stats_fleet` — the four originals limited to one fleet, and the three calendar ones also reading `post_deliveries` beside `geelark_tasks` (PF-09). The originals are untouched. `content_type_stats_fleet` carries the accounts join the original never had, on handle AND platform together. Proven: `'all'` equals the original for the month grid (667 rows), day totals (100 days), three expanded days (208 rows) and content types at 7d / 30d / all-time (25 lanes each), EXCEPT both ways, 0 rows; `'cloud'` equals `'all'`; `'physical'` is empty. **Parity not proven against a real Physical account**: none exists yet |
 
 ## A migration that only replaces a function must leave its grants alone
 
@@ -107,6 +109,10 @@ case), an empty rows array clears correctly, a row naming another owner is
 refused, a duplicate lane is refused, and a lane sent for the wrong character
 raises instead of silently updating nothing. For the lifecycle function, a
 failure after the allowed-list widening rolls that widening back too.
+
+`20260922175000_calendar_and_content_types_fleet.sql` is a third, smaller
+case: it ends with a commented-out ACL-readback query that was not sent with
+the statements. Behaviour is identical; only that trailing comment differs.
 
 **These two files carry fuller comments than the statements recorded in
 `schema_migrations`** — the explanatory prose was added when they were written
@@ -187,6 +193,20 @@ without the `posting_paused IS FALSE` filter, and `v_scheduler_account_config`
 is now a thin filter over it, so the age ramp and the
 account -> character -> fleet chain exist in exactly one place. Nothing that
 plans or posts may read `_all`: paused accounts would start being scheduled.
+
+**A fleet function and its original are a pair.** `analytics_rollup` /
+`analytics_rollup_fleet`, `inventory_rollup` / `inventory_rollup_fleet`, and
+now the four calendar and content-type pairs added on 09-22. The `_fleet` one
+is the original with a fleet gate and nothing else; the original stays the
+fleet-wide answer because other things read it (the digest emails read
+`inventory_check`, and `content_type_stats` is still on the anon key's
+surface). **If one of a pair is ever changed, change the other to match** — and
+prove it the way both PF-17 and PF-19 did, by running the new body inline with
+literal arguments and diffing it against the live original with EXCEPT in both
+directions. Two rules the gate itself must follow: a row whose account matches
+nothing goes to Cloud, so the two fleets always add up to the whole; and a
+performance row is matched on handle AND platform, never the handle alone,
+because a handle is unique only within a platform.
 
 **Snapshot tables are cleaned up.** The 09-04 guard-day-cap migration creates
 `_cfg_before_20260904` and does not drop it, so the file reads as though the
