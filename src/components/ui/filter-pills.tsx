@@ -12,8 +12,12 @@ export function FilterPills<T extends string>({
 }: {
   /** `marked` puts a dot on the pill — used for "this one is not on the
    *  default" (a character with its own cadence). Optional and additive; every
-   *  existing caller is unaffected. */
-  options: { value: T; label: string; marked?: boolean }[];
+   *  existing caller is unaffected.
+   *
+   *  `icon` sits before the label, for a switch whose options are a shape
+   *  rather than a name — the To-do page's Grid / List (Garreth, 2026-09-22).
+   *  Also additive. */
+  options: { value: T; label: string; marked?: boolean; icon?: React.ReactNode }[];
   value: T;
   onChange: (value: T) => void;
   /** Sit beside other content instead of claiming its own full-width row.
@@ -50,12 +54,16 @@ export function FilterPills<T extends string>({
             // attention" below its own text and push the row past the card,
             // where growing proportionally fills the same space and still fits.
             "rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors",
+            // An icon needs the label beside it rather than under it, so the
+            // pill becomes a row only when there is one to place.
+            o.icon ? "inline-flex items-center justify-center gap-1.5" : "",
             inline ? "shrink-0" : "flex-auto sm:flex-none",
             value === o.value
               ? "bg-accent font-medium text-bg"
               : "text-text-muted hover:text-text-primary",
           )}
         >
+          {o.icon}
           {o.label}
           {o.marked && (
             <span

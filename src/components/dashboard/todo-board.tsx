@@ -4,8 +4,9 @@ import { useCallback, useMemo, useState } from "react";
 import { CtaButton } from "@/components/ui/cta-button";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { HoldButton } from "@/components/ui/hold-button";
-import { Check, Film, ListChecks, X } from "@/components/ui/icons";
+import { Check, Film, ListChecks, Robot, X } from "@/components/ui/icons";
 import { Stepper } from "@/components/ui/stepper";
+import { Tooltip } from "@/components/ui/tooltip";
 import {
   isItemFinished,
   todoPlaceholder,
@@ -98,6 +99,35 @@ export function useTodoBoard(state: TodoState, day: TodoDay) {
  * The tick itself. Big enough for a thumb, and it never completes anything on
  * its own — it opens the sheet that asks what happened.
  */
+/**
+ * The script's own work, on both screens. A robot in place of the word
+ * "Automated" (Garreth, 2026-09-22): the label was as wide as some of the
+ * tasks it sat beside, and it is read at a glance rather than actually read.
+ *
+ * Hovering says "Automated task" in the app's own tooltip rather than the
+ * browser's (Garreth, 2026-09-22). Nothing DEPENDS on the hover — the rule
+ * for these screens is that a phone must work without one — it only spells
+ * out a badge that is already understood from its shape. The same words are
+ * what a screen reader is given.
+ *
+ * `side` is "left" on the dashboard card: its phone blocks clip what leaves
+ * them (they have rounded corners to keep), and there the badge sits close
+ * enough to the right edge that a centred tooltip loses its last word.
+ */
+export function AutomatedMark({ side = "top" }: { side?: "top" | "left" }) {
+  return (
+    <Tooltip label="Automated task" side={side} className="shrink-0">
+      <span
+        role="img"
+        aria-label="Automated task"
+        className="flex size-5 items-center justify-center rounded-full bg-pill-bg text-text-muted"
+      >
+        <Robot className="size-3.5" />
+      </span>
+    </Tooltip>
+  );
+}
+
 export function TodoCheck({
   item,
   onOpen,

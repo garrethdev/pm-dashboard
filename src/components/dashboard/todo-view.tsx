@@ -4,23 +4,33 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FilterPills } from "@/components/ui/filter-pills";
 import {
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Copy,
+  Download,
   Film,
+  LinkSimple,
   ListChecks,
+  Rows,
   Smartphone,
+  SquaresFour,
 } from "@/components/ui/icons";
 import { StatusPill } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
-import { TodoCheck, TodoLogSheet, useTodoBoard } from "@/components/dashboard/todo-board";
+import {
+  AutomatedMark,
+  TodoCheck,
+  TodoLogSheet,
+  useTodoBoard,
+} from "@/components/dashboard/todo-board";
 import {
   accountProgress,
   deviceProgress,
   isItemFinished,
-  linksOwed,
   sortItems,
   todoDayLabel,
   todoEmptyReason,
@@ -51,11 +61,30 @@ import { cn } from "@/lib/utils";
  *  - CARRIED-OVER ITEMS SIT ABOVE TODAY'S inside their account. They are the
  *    oldest work and the only work with a deadline of its own, since an item
  *    stops carrying over after three days.
- *  - LINKS STILL OWED GET A FILTER, not a section of their own, pinned to the
- *    far end of the filter row away from the phone picker.
+ *  - WHAT HAPPENED TO A TASK IS SAID BESIDE ITS NAME (Garreth, 2026-09-22),
+ *    with the Automated label — Link needed, Failed, Skipped — and a failed
+ *    post also turns its own mark red. The right-hand end of the row is for
+ *    the two things you fetch before posting, and nothing else.
+ *  - A LINK STILL OWED IS MARKED ON ITS PHONE (Garreth, 2026-09-22). The
+ *    phone's icon becomes a yellow link when any account on it owes one, so
+ *    the phone that needs attention is obvious while scanning the list, and
+ *    says what it is owed rather than only that something is due. This
+ *    replaced a "n links to add" filter at the top of the page: one more
+ *    control to press, when the thing it found could simply be pointed at.
  *  - A FINISHED ITEM STAYS, struck through, with the time it was finished, for
  *    the rest of the day.
  *  - ANY DAY IS ONE PRESS AWAY: "Today" with an arrow either side.
+ *  - GRID OR LIST (Garreth, 2026-09-22). List is one phone per full-width
+ *    row, as before, and is the default. Grid stands the phones side by side,
+ *    three across on a wide screen, for the morning look at how the whole
+ *    farm stands. The switch is the same pair of glyphs as the Carousel
+ *    Generator's render screen (D5), so one control means one thing across
+ *    the app. It only appears from `md:` up: below that there is no room for
+ *    a second column, and a switch that does nothing is worse than no switch.
+ *    It sits at the right of the filter row, in the place the links filter
+ *    used to hold. A phone card sizes ITS OWN contents with container queries rather
+ *    than the window's width, so the same card reads correctly full-width and
+ *    in a third of the page.
  *
  * Runs on placeholder data (`todo-placeholder.ts`) until PF-05 and PF-07 exist.
  */
@@ -63,15 +92,13 @@ export function TodoView({ state, initialDay }: { state: TodoState; initialDay: 
   const [day, setDay] = useState<TodoDay>(initialDay);
   /** Empty means every phone. */
   const [picked, setPicked] = useState<string[]>([]);
-  const [linksOnly, setLinksOnly] = useState(false);
+  const [layout, setLayout] = useState<TodoLayout>("list");
   const board = useTodoBoard(state, day);
 
   const all = board.devices;
   const emptyReason = todoEmptyReason(state);
-  const owed = linksOwed(all);
 
-  const byDevice = picked.length === 0 ? all : all.filter((d) => picked.includes(d.id));
-  const devices = linksOnly ? onlyLinksOwed(byDevice) : byDevice;
+  const devices = picked.length === 0 ? all : all.filter((d) => picked.includes(d.id));
 
   const allFinished = all.length > 0 && all.every((device) => deviceProgress(device).finished);
 
@@ -86,22 +113,11 @@ export function TodoView({ state, initialDay }: { state: TodoState; initialDay: 
         {all.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <PhonePicker devices={all} picked={picked} onChange={setPicked} />
-            {owed > 0 && (
-              <button
-                onClick={() => setLinksOnly((v) => !v)}
-                aria-pressed={linksOnly}
-                className={cn(
-                  // Pinned to the far end: it is a different question from
-                  // which phone you are holding (Garreth, 2026-09-22).
-                  "tnum ml-auto inline-flex h-9 shrink-0 items-center rounded-full px-3 text-xs font-medium transition-colors",
-                  linksOnly
-                    ? "bg-accent-soft text-accent"
-                    : "bg-pill-bg text-pill-yellow hover:text-text-primary",
-                )}
-              >
-                {owed} {owed === 1 ? "link" : "links"} to add
-              </button>
-            )}
+            {/* The far end of this row, where the links filter used to sit
+                (Garreth, 2026-09-22). */}
+            <div className="ml-auto">
+              <LayoutSwitch layout={layout} onChange={setLayout} />
+            </div>
           </div>
         )}
 
@@ -125,9 +141,20 @@ export function TodoView({ state, initialDay }: { state: TodoState; initialDay: 
                 <p className="text-sm text-text-muted">All done for today</p>
               </Card>
             )}
-            {devices.map((device) => (
-              <DeviceCard key={device.id} device={device} onOpenItem={board.open} />
-            ))}
+            <div
+              className={cn(
+                layout === "grid"
+                  ? // `items-start` so a phone with one task keeps its own
+                    // height instead of being stretched to match the phone
+                    // beside it.
+                    "grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3"
+                  : "flex flex-col gap-3",
+              )}
+            >
+              {devices.map((device) => (
+                <DeviceCard key={device.id} device={device} onOpenItem={board.open} />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -141,6 +168,43 @@ export function TodoView({ state, initialDay }: { state: TodoState; initialDay: 
         />
       )}
     </>
+  );
+}
+
+/** One phone per row, or the phones side by side. */
+type TodoLayout = "grid" | "list";
+
+/**
+ * Grid or List, in the app's segmented-pill style, carrying the same two
+ * glyphs as the Carousel Generator's render screen (Garreth, 2026-09-22).
+ * It sits at the far end of the filter row, the place the "n links to add"
+ * filter held before a phone's own icon took that job over (Garreth,
+ * 2026-09-22).
+ *
+ * Hidden below `md:`, where a second column will not fit: on a phone the grid
+ * would draw exactly the same single stack as the list, and a switch that
+ * changes nothing is a broken switch. Wrapped rather than given a `hidden`
+ * class of its own, because the pills set their own display.
+ */
+function LayoutSwitch({
+  layout,
+  onChange,
+}: {
+  layout: TodoLayout;
+  onChange: (l: TodoLayout) => void;
+}) {
+  return (
+    <div className="hidden md:block">
+      <FilterPills
+        inline
+        value={layout}
+        onChange={onChange}
+        options={[
+          { value: "grid", label: "Grid", icon: <SquaresFour className="size-3.5" /> },
+          { value: "list", label: "List", icon: <Rows className="size-3.5" /> },
+        ]}
+      />
+    </div>
   );
 }
 
@@ -231,39 +295,25 @@ function PickerRow({
 function DayStepper({ day, onChange }: { day: TodoDay; onChange: (d: TodoDay) => void }) {
   const step = (by: number) => onChange(Math.max(-7, Math.min(14, day + by)));
 
+  // 28px, the height of the Grid / List pills, so the page's two switches
+  // read as the same weight of control (Garreth, 2026-09-22). The hit area is
+  // kept at 44px by the ::after inset below, which is invisible.
+  const arrow =
+    "relative flex size-7 items-center justify-center rounded-full border border-border text-text-muted transition-colors after:absolute after:-inset-2 after:content-[''] hover:border-text-muted/50 hover:text-text-primary";
+
   return (
     <div className="flex items-center gap-0.5">
-      <button
-        onClick={() => step(-1)}
-        aria-label="The day before"
-        className="flex size-9 items-center justify-center rounded-full border border-border text-text-muted transition-colors hover:border-text-muted/50 hover:text-text-primary"
-      >
-        <ChevronLeft className="size-4" />
+      <button onClick={() => step(-1)} aria-label="The day before" className={arrow}>
+        <ChevronLeft className="size-3.5" />
       </button>
       {/* Wide enough for the longest label so the arrows do not shuffle, and
           no wider (Garreth, 2026-09-22). */}
       <span className="min-w-20 text-center text-sm font-medium">{todoDayLabel(day)}</span>
-      <button
-        onClick={() => step(1)}
-        aria-label="The day after"
-        className="flex size-9 items-center justify-center rounded-full border border-border text-text-muted transition-colors hover:border-text-muted/50 hover:text-text-primary"
-      >
-        <ChevronRight className="size-4" />
+      <button onClick={() => step(1)} aria-label="The day after" className={arrow}>
+        <ChevronRight className="size-3.5" />
       </button>
     </div>
   );
-}
-
-/** Keep only the posts that were marked done without their link. */
-function onlyLinksOwed(devices: TodoDevice[]): TodoDevice[] {
-  return devices
-    .map((device) => ({
-      ...device,
-      accounts: device.accounts
-        .map((a) => ({ ...a, items: a.items.filter((i) => i.status === "postedNoLink") }))
-        .filter((a) => a.items.length > 0),
-    }))
-    .filter((d) => d.accounts.length > 0);
 }
 
 function DeviceCard({
@@ -278,19 +328,43 @@ function DeviceCard({
   const progress = deviceProgress(device);
 
   return (
-    <Card className="flex flex-col gap-4">
+    // `@container`: everything inside sizes itself against THIS CARD, not the
+    // window, so the same card is right full-width and at a third of the page
+    // in Grid (Garreth, 2026-09-22). `@lg` is 32rem — a third-width column on
+    // a 1440 screen lands under it and stacks, exactly as a phone does.
+    <Card className="@container flex flex-col gap-4">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 text-left"
       >
+        {/* The phone's icon IS the attention mark (Garreth, 2026-09-22): a
+            yellow LINK in place of the phone whenever an account on it has a
+            post that owes its link, so the phone to go back to is obvious
+            while scanning, and says what it wants rather than only that it
+            wants something. A phone cannot be both finished and owing a link
+            — an item without its link is not counted done — so the three
+            states never clash. */}
         <span
           className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-full bg-pill-bg",
-            progress.finished ? "text-accent" : "text-text-muted",
+            "flex size-8 shrink-0 items-center justify-center rounded-full",
+            progress.linksToAdd > 0
+              ? "bg-pill-yellow/15"
+              : cn("bg-pill-bg", progress.finished ? "text-accent" : "text-text-muted"),
           )}
         >
-          {progress.finished ? <Check className="size-4" /> : <Smartphone className="size-4" />}
+          {progress.linksToAdd > 0 ? (
+            <>
+              <LinkSimple className="size-4 text-pill-yellow" />
+              <span className="sr-only">
+                {progress.linksToAdd} {progress.linksToAdd === 1 ? "link" : "links"} to add
+              </span>
+            </>
+          ) : progress.finished ? (
+            <Check className="size-4" />
+          ) : (
+            <Smartphone className="size-4" />
+          )}
         </span>
         <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
           <span className="truncate text-sm font-medium">{device.name}</span>
@@ -344,7 +418,7 @@ function AccountGroup({
             (Garreth, 2026-09-22). */}
         {/* Left with everything else on a phone; pushed right only once
             there is room for it (Garreth, 2026-09-22). */}
-        <span className="flex shrink-0 items-center gap-1.5 sm:ml-auto">
+        <span className="flex shrink-0 items-center gap-1.5 @lg:ml-auto">
           <KindStatus label="Posts" of={progress.posts} />
           <KindStatus label="Warmup" of={progress.warmups} />
         </span>
@@ -374,14 +448,36 @@ function KindStatus({ label, of }: { label: string; of: { done: number; total: n
   );
 }
 
-/** What you need before you go and post. Not an outcome — that is the tick. */
-function RowButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
+/**
+ * What you need before you go and post. Not an outcome — that is the tick.
+ *
+ * On a narrow card (a Grid column) the two of these **share one line across
+ * the whole row**, half each, rather than stacking (Garreth, 2026-09-22).
+ * The full label does not fit in half a row that narrow, so there it
+ * shortens to its noun and an icon carries the verb. At `@lg` the button is
+ * exactly what it always was: its own width, its own words, no icon.
+ */
+function RowButton({
+  icon,
+  short,
+  children,
+  disabled,
+}: {
+  /** Stands in for the verb where the label is cut to its noun. */
+  icon: React.ReactNode;
+  short: string;
+  children: string;
+  disabled?: boolean;
+}) {
   return (
     <button
       disabled={disabled}
-      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border px-2.5 text-[11px] font-medium text-text-muted transition-colors disabled:opacity-40 enabled:hover:border-text-muted/50 enabled:hover:text-text-primary"
+      aria-label={children}
+      className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1 rounded-full border border-border px-1.5 text-[11px] font-medium text-text-muted transition-colors disabled:opacity-40 enabled:hover:border-text-muted/50 enabled:hover:text-text-primary @lg:flex-none @lg:shrink-0 @lg:gap-1.5 @lg:px-2.5"
     >
-      {children}
+      <span className="shrink-0 @lg:hidden">{icon}</span>
+      <span className="truncate @lg:hidden">{short}</span>
+      <span className="hidden @lg:inline">{children}</span>
     </button>
   );
 }
@@ -392,18 +488,28 @@ function ItemRow({ item, onOpen }: { item: TodoItem; onOpen: () => void }) {
 
   return (
     /* Four columns on a phone (Garreth, 2026-09-22): the tick, the mark, the
-       time it is due, and then everything about the task itself — its name,
-       its detail, its status and its buttons — stacked in one left-aligned
-       column rather than strung out beside the name. Each of the first three
-       sits in the row's 36px first band, so they line up with the name. From
-       `sm:` up the last column opens back out into a row, with the status and
-       buttons at the right-hand end. */
-    <li className="flex items-start gap-2 border-b border-border/60 py-2 last:border-0 last:pb-0 sm:gap-3">
+       time it is due, and then the task itself. Each of the first three sits
+       in the row's 36px first band, so they line up with the name.
+
+       The row WRAPS: where the card is narrow the two fetch buttons drop to a
+       line of their own across the WHOLE row, edge to edge, rather than being
+       squeezed into the column beside the name (Garreth, 2026-09-22). Once
+       the card is wide (`@lg:`, the card's own width — it may be sitting in a
+       third of the page in Grid) the row stops wrapping and the buttons
+       return to its right-hand end, on its centre line. */
+    <li className="flex flex-wrap items-start gap-2 border-b border-border/60 py-2 last:border-0 last:pb-0 @lg:flex-nowrap @lg:gap-3">
       <TodoCheck item={item} onOpen={onOpen} />
 
       <span className={cn("flex h-9 shrink-0 items-center", finished && "opacity-55")}>
-        {/* One circle for both kinds, the same size whatever the row height. */}
-        <span className="flex size-8 items-center justify-center rounded-full bg-card-raised text-text-muted">
+        {/* One circle for both kinds, the same size whatever the row height.
+            It turns red on a failed post (Garreth, 2026-09-22) so the row
+            that went wrong is findable without reading the pills. */}
+        <span
+          className={cn(
+            "flex size-8 items-center justify-center rounded-full bg-card-raised",
+            item.status === "failed" ? "text-pill-red" : "text-text-muted",
+          )}
+        >
           {isPost ? <Film className="size-4" /> : <ListChecks className="size-4" />}
         </span>
       </span>
@@ -417,31 +523,37 @@ function ItemRow({ item, onOpen }: { item: TodoItem; onOpen: () => void }) {
         {item.due}
       </span>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-3">
-        <div className={cn("flex min-w-0 flex-1 flex-col", finished && "opacity-55")}>
-          <span className="flex min-h-9 min-w-0 items-center gap-x-2">
-            <span className={cn("min-w-0 text-sm font-medium break-words", finished && "line-through")}>
-              {item.label}
-            </span>
-            {item.automated && (
-              <span className="shrink-0 rounded-full bg-pill-bg px-2 py-0.5 text-[10px] font-medium text-text-muted">
-                Automated
-              </span>
-            )}
+      <div className={cn("flex min-w-0 flex-1 flex-col", finished && "opacity-55")}>
+        {/* The status belongs beside the name, with the Automated label
+            (Garreth, 2026-09-22): what happened to a task is part of reading
+            the task, not something to look for at the other end of the row. */}
+        <span className="flex min-h-9 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className={cn("min-w-0 text-sm font-medium break-words", finished && "line-through")}>
+            {item.label}
           </span>
-          <ItemDetail item={item} />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 pb-1 sm:h-9 sm:shrink-0 sm:pb-0">
+          {item.automated && <AutomatedMark />}
           <ItemStatus item={item} />
-          {!finished && isPost && item.status !== "postedNoLink" && (
-            <>
-              <RowButton disabled={item.videoReady === false}>Download video</RowButton>
-              <RowButton>Copy caption</RowButton>
-            </>
-          )}
-        </div>
+        </span>
+        <ItemDetail item={item} />
       </div>
+
+      {!finished && isPost && item.status !== "postedNoLink" && (
+        // `w-full` is what breaks the line: a child that wide cannot sit
+        // beside anything, so the pair takes the row's whole width. At `@lg:`
+        // it hugs its buttons again and centres against the row.
+        <div className="flex w-full min-w-0 items-center gap-2 @lg:w-auto @lg:shrink-0 @lg:self-center">
+          <RowButton
+            icon={<Download className="size-3.5" />}
+            short="Video"
+            disabled={item.videoReady === false}
+          >
+            Download video
+          </RowButton>
+          <RowButton icon={<Copy className="size-3.5" />} short="Caption">
+            Copy caption
+          </RowButton>
+        </div>
+      )}
     </li>
   );
 }

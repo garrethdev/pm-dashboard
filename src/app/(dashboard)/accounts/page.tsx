@@ -1,8 +1,14 @@
 import { Suspense } from "react";
-import { AccountsTable } from "@/components/dashboard/accounts-table";
+import { AccountsViews } from "@/components/dashboard/accounts-views";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { getAccounts } from "@/lib/data/accounts";
+import {
+  PLACEHOLDER_ACCOUNTS,
+  PLACEHOLDER_PHONES,
+  wantsDemo,
+} from "@/lib/data/accounts-phone-placeholder";
+import { getDevices } from "@/lib/data/devices";
 import { getContentTypeOptions } from "@/lib/data/scheduler-overrides";
 import { inFleet } from "@/lib/fleet";
 import { getFleet } from "@/lib/fleet-server";
@@ -17,7 +23,7 @@ import { upstreamMessage } from "@/lib/data/upstream-error";
  * database was fine, and React's own error handling would never see the fault
  * it was meant to handle. Raised by the 2026-09-09 external review.
  */
-async function AccountsLive() {
+async function AccountsLive({ demo }: { demo: boolean }) {
   let loaded;
   try {
     loaded = await Promise.all([
@@ -26,6 +32,10 @@ async function AccountsLive() {
       // unreadable registry costs the modal its checkboxes, not the page.
       getContentTypeOptions().catch(() => ({ data: {} })),
       getFleet(),
+      // The by-phone view needs the phones themselves, so a registered phone
+      // with no accounts is still listed. Physical only; a failure here costs
+      // that view its groups, not the page.
+      getDevices().catch(() => ({ data: [] })),
     ]);
   } catch (err) {
     return (
@@ -38,13 +48,41 @@ async function AccountsLive() {
     );
   }
 
-  const [{ data }, options, fleet] = loaded;
+  const [{ data }, options, fleet, devices] = loaded;
   // Only the fleet being looked at (Cloud or Physical, top right). An account
   // moved to a real phone leaves the Cloud list and appears in the Physical one.
-  return <AccountsTable rows={inFleet(data, fleet)} contentTypeOptions={options.data} fleet={fleet} />;
+  const rows = inFleet(data, fleet);
+
+  // `?demo=1` draws the invented farm instead, so the by-phone view can be
+  // judged before a single account has been moved (P4). Never the default:
+  // this is a working screen on live rows.
+  const showDemo = demo && fleet === "physical";
+
+  return (
+    <AccountsViews
+      rows={showDemo ? PLACEHOLDER_ACCOUNTS : rows}
+      contentTypeOptions={options.data}
+      fleet={fleet}
+      phones={
+        showDemo
+          ? PLACEHOLDER_PHONES
+          : devices.data.map((d) => ({
+              id: d.id,
+              name: d.name,
+              model: d.model ?? null,
+              isActive: d.isActive,
+            }))
+      }
+    />
+  );
 }
 
-export default function AccountsPage() {
+export default async function AccountsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { demo } = await searchParams;
   return (
     <Suspense
       fallback={
@@ -54,7 +92,7 @@ export default function AccountsPage() {
         </div>
       }
     >
-      <AccountsLive />
+      <AccountsLive demo={wantsDemo(demo)} />
     </Suspense>
   );
 }

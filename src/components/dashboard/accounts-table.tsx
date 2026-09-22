@@ -26,6 +26,15 @@ import { SearchInput } from "@/components/ui/search-input";
 import { MultiProfileModal } from "@/components/dashboard/multi-profile-modal";
 import { RetireModal } from "@/components/dashboard/retire-modal";
 import { HealthReviewModal } from "@/components/dashboard/health-review-modal";
+import {
+  NoAccountsByPhone,
+  PhoneGroupCard,
+  type PhoneOption,
+} from "@/components/dashboard/accounts-by-phone";
+import {
+  WarmupModeSwitch,
+  type WarmupMode,
+} from "@/components/dashboard/warmup-mode-switch";
 import { fleetTone, healthTone, needsAttention } from "@/lib/health";
 import type { AccountRow } from "@/lib/data/accounts";
 import type { ContentTypeOption } from "@/lib/data/scheduler-overrides";
@@ -46,6 +55,24 @@ type PlatformFilter = "all" | Platform;
  *  Character 4, so a new character could not be filtered for until someone
  *  remembered to edit it. */
 type CharFilter = string;
+/** Page mode's eleven columns, in order, so every phone's table lines up. */
+const COL_WIDTHS = [
+  "8%", // Profile
+  "15%", // Username
+  "8%", // Character
+  "8%", // Age — the number AND its tier pill, which ran into Health at 6%
+  "9%", // Health
+  "9%", // Avg Views (7d)
+  "8%", // Suppressed
+  // Warmup carries the days AND the two-icon switch — about 108px of content
+  // before its own padding. At 11% the switch pushed into Last Post
+  // (Garreth, 2026-09-22).
+  "14%",
+  "8%", // Last Post
+  "7%", // Posting
+  "6%", // Retire
+];
+
 type SortKey = "views" | "suppressed" | "age" | "warmup" | "lastpost";
 
 const TH = "sticky top-0 z-10 bg-card pb-2 font-medium whitespace-nowrap";
@@ -143,11 +170,21 @@ export function AccountsTable({
   mode = "page",
   contentTypeOptions = {},
   fleet,
+  viewSwitch,
+  groupByPhone = false,
+  phones = [],
   className,
 }: {
   rows: AccountRow[];
   /** The fleet being looked at. Physical always offers the Facebook filter. */
   fleet?: Fleet;
+  /** By account / By phone, in Physical only (P4). Rendered opposite the page
+   *  title, with every other control on the line below. */
+  viewSwitch?: React.ReactNode;
+  /** Draw the accounts grouped under their phone instead of as one list (P4). */
+  groupByPhone?: boolean;
+  /** The registered phones, so one with no accounts is still listed. */
+  phones?: PhoneOption[];
   /** "page" = full detail table with action buttons; "card" = compact homepage card. */
   mode?: "page" | "card";
   /** Selectable content types per character. Page mode only. */
@@ -175,6 +212,11 @@ export function AccountsTable({
 
   // Posting settings (pause + per-account schedule) live in one modal — the
   // bare Pause button hid the fact that an account could also be throttled.
+  // P4's warmup mode, in Physical only. `accounts` has no column for it until
+  // PF-04, so a press moves the switch and forgets; everything starts Manual.
+  const [warmupModes, setWarmupModes] = useState<Record<string, WarmupMode>>({});
+  const showWarmupMode = fullColumns && fleet === "physical";
+
   const [settingsFor, setSettingsFor] = useState<AccountRow | null>(null);
   const [reviewing, setReviewing] = useState<AccountRow | null>(null);
   const [retiring, setRetiring] = useState<AccountRow | null>(null);
@@ -347,6 +389,24 @@ export function AccountsTable({
     >
       {() => (
         <div className="flex flex-col gap-4">
+          {/* On a phone the health pills live IN here (Garreth, 2026-09-22):
+              three more pills across the top of a 390px screen left no room
+              for the search. Above `sm:` they are back outside, where they
+              are quicker to reach. */}
+          <div className="flex flex-col gap-1.5 sm:hidden">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
+              Health
+            </span>
+            <FilterPills
+              value={health}
+              onChange={setHealth}
+              options={[
+                { value: "all", label: "All" },
+                { value: "healthy", label: "Healthy" },
+                { value: "attention", label: "Needs attention" },
+              ]}
+            />
+          </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
               Platform
@@ -392,12 +452,32 @@ export function AccountsTable({
   // No headings over empty space: with nothing to list, say so instead. "Yet"
   // when the fleet holds no accounts at all (Physical before the first phone),
   // "match" when filters or search hid them.
-  const table = rows.length === 0 ? (
+  // A FUNCTION, not a value, since the by-phone view draws one of these per
+  // phone (P4). Every column stays exactly as it is in the flat list — a
+  // grouped view that dropped half the detail would send you back to the
+  // other one to read it (Garreth, 2026-09-22).
+  const renderTable = (subset: AccountRow[], fixed = false) => subset.length === 0 ? (
     <EmptyState icon={Users} compact={mode === "card"}>
       {allRows.length === 0 ? "No accounts yet" : "No accounts match"}
     </EmptyState>
   ) : (
-    <table className="w-full text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0 [&_td:nth-last-child(2)]:pr-1 [&_th:nth-last-child(2)]:pr-1 [&_td:last-child]:pl-1 [&_th:last-child]:pl-1">
+    <table className={cn("w-full text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0 [&_td:nth-last-child(2)]:pr-1 [&_th:nth-last-child(2)]:pr-1 [&_td:last-child]:pl-1 [&_th:last-child]:pl-1",
+      // One table per phone in the by-phone view, so their columns only line
+      // up if the widths are fixed rather than fitted to each group's own
+      // content (Garreth, 2026-09-22).
+      // `min-w` as well as `table-fixed`: fixed layout alone crushes eleven
+      // columns into a 390px screen and they overlap into nonsense. With a
+      // floor, the block overflows and scrolls sideways exactly as the flat
+      // table does, and the percentages still line the blocks up because
+      // every one of them is the same width.
+      fixed && "table-fixed min-w-[1040px]")}>
+      {fixed && (
+        <colgroup>
+          {COL_WIDTHS.map((w, i) => (
+            <col key={i} style={{ width: w }} />
+          ))}
+        </colgroup>
+      )}
       <thead>
                 <tr className="text-left text-xs text-text-muted">
                   <th className={TH}>Profile</th>
@@ -420,7 +500,7 @@ export function AccountsTable({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => {
+                {subset.map((row) => {
                   const url = profileUrl(row);
                   const busy = settingsFor?.profile === row.profile;
                   const banSignals = hasBanSignals(row);
@@ -556,16 +636,29 @@ export function AccountsTable({
                         </td>
                       )}
                       <td className="py-2.5 whitespace-nowrap">
-                        {(() => {
-                          return (
-                            <span
-                              className="tnum"
-                              title={row.lastWarmupAt ? `last warmup ${new Date(row.lastWarmupAt).toLocaleDateString("en-US")}` : "never warmed"}
-                            >
-                              {freshnessLabel(row.daysSinceWarmup)}
-                            </span>
-                          );
-                        })()}
+                        {/* How long since the last warmup, and — in Physical —
+                            who does them: a person or the script (P4). One
+                            column, because they are one question. */}
+                        <span className="flex items-center gap-3">
+                          {/* A fixed width for the days, so every switch in
+                              the column starts at the same x instead of
+                              trailing however long that row's word is
+                              (Garreth, 2026-09-22). */}
+                          <span
+                            className="tnum w-11 shrink-0"
+                            title={row.lastWarmupAt ? `last warmup ${new Date(row.lastWarmupAt).toLocaleDateString("en-US")}` : "never warmed"}
+                          >
+                            {freshnessLabel(row.daysSinceWarmup)}
+                          </span>
+                          {showWarmupMode && (
+                            <WarmupModeSwitch
+                              mode={warmupModes[row.profile] ?? "manual"}
+                              onChange={(m) =>
+                                setWarmupModes((prev) => ({ ...prev, [row.profile]: m }))
+                              }
+                            />
+                          )}
+                        </span>
                       </td>
                       <td className="py-2.5 whitespace-nowrap">
                         {(() => {
@@ -677,6 +770,24 @@ export function AccountsTable({
             </table>
   );
 
+  const table = renderTable(rows);
+
+  // Accounts grouped under the phone they sit on, for the by-phone view (P4).
+  // Grouping uses the FILTERED rows, so a search or a health filter narrows
+  // the groups the same way it narrows the flat list.
+  const phoneGroups = phones.map((phone) => ({
+    phone,
+    accounts: rows.filter((r) => r.deviceId === phone.id),
+  }));
+  const noPhone = rows.filter((r) => r.deviceId == null);
+
+  const setWarmupMany = (subset: AccountRow[], m: WarmupMode) =>
+    setWarmupModes((prev) => {
+      const next = { ...prev };
+      for (const r of subset) next[r.profile] = m;
+      return next;
+    });
+
   // Compact homepage card: no page header, no action columns, scrollable body.
   if (mode === "card") {
     return (
@@ -708,39 +819,128 @@ export function AccountsTable({
   return (
     <>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-4">
+        {/* With a view switch the page takes TWO lines (Garreth, 2026-09-22):
+            the name of the page and the view of it on the first, opposite each
+            other, and everything that narrows what is listed on the second.
+            Without one — Cloud, which has no phones — it stays the single row
+            it has always been. */}
+        <div className="flex flex-col gap-4">
+          {/* The page's name, and — in Physical — the view of it opposite
+              (Garreth, 2026-09-22). On Cloud, which has no view to choose,
+              this row is for a phone only; on a desktop the name goes back
+              inline with the filters, where it has always been. */}
+          <div
+            className={cn(
+              "flex items-center justify-between gap-3",
+              !viewSwitch && "sm:hidden",
+            )}
+          >
             <h1 className="text-xl font-semibold">Accounts</h1>
-            {healthPills}
-            {filtersDropdown}
-            {filterChips}
-            {showRetired}
+            {viewSwitch}
           </div>
-          <div className="flex max-w-xl flex-1 items-center justify-end gap-2">
-            <SearchInput
-              value={query}
-              onChange={setQuery}
-              placeholder="Search profile, username, character…"
-              className="w-full max-w-sm"
-            />
-            <button
-              onClick={() => setPickerOpen(true)}
-              className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-                picked.length > 0
-                  ? "border-accent bg-accent-soft text-accent"
-                  : "border-border bg-card-raised text-text-muted hover:text-text-primary",
-              )}
-            >
-              <ListChecks className="size-3.5" />
-              {picked.length > 0 ? `${picked.length} profiles selected` : "Select multiple profiles"}
-            </button>
+
+          {/* On a phone this is TWO rows and the search comes first (Garreth,
+              2026-09-22): searching is what you came to do, and the filters
+              are a step you take afterwards. On a desktop it collapses back
+              into the one row it has always been, filters left, search right. */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-3">
+            <div className="order-1 flex items-center gap-2 sm:order-2 sm:ml-auto sm:max-w-xl sm:flex-1 sm:justify-end">
+              <SearchInput
+                value={query}
+                onChange={setQuery}
+                placeholder="Search profile, username, character…"
+                className="w-full sm:max-w-sm"
+              />
+              <button
+                onClick={() => setPickerOpen(true)}
+                aria-label={
+                  picked.length > 0
+                    ? `${picked.length} profiles selected`
+                    : "Select multiple profiles"
+                }
+                className={cn(
+                  // The icon alone on a phone: the label is half the width of
+                  // the screen and the icon is beside the search it belongs
+                  // with (Garreth, 2026-09-22).
+                  "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border px-2.5 text-xs font-medium whitespace-nowrap transition-colors sm:h-auto sm:px-3.5 sm:py-1.5",
+                  picked.length > 0
+                    ? "border-accent bg-accent-soft text-accent"
+                    : "border-border bg-card-raised text-text-muted hover:text-text-primary",
+                )}
+              >
+                <ListChecks className="size-3.5" />
+                {picked.length > 0 ? (
+                  <>
+                    <span className="tnum">{picked.length}</span>
+                    <span className="hidden sm:inline">profiles selected</span>
+                  </>
+                ) : (
+                  <span className="hidden sm:inline">Select multiple profiles</span>
+                )}
+              </button>
+            </div>
+            <div className="order-2 flex min-w-0 flex-wrap items-center gap-3 sm:order-1 sm:gap-4">
+              {!viewSwitch && <h1 className="hidden text-xl font-semibold sm:block">Accounts</h1>}
+              {/* Outside the dropdown on a desktop, inside it on a phone. */}
+              <span className="hidden sm:contents">{healthPills}</span>
+              {filtersDropdown}
+              {filterChips}
+              {/* Far end of the row on a phone (Garreth, 2026-09-22): a
+                  checkbox pressed against the Filters button reads as part of
+                  it. `sm:contents` dissolves this wrapper on a desktop, where
+                  the row is unchanged. */}
+              <span className="ml-auto sm:contents">{showRetired}</span>
+            </div>
           </div>
         </div>
 
-        <Card className="flex flex-col gap-6">
-          <div className="overflow-x-auto">{table}</div>
-        </Card>
+        {groupByPhone ? (
+          phones.length === 0 && noPhone.length === 0 ? (
+            <NoAccountsByPhone empty={allRows.length === 0} />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {phoneGroups.map(({ phone, accounts }) => (
+                <PhoneGroupCard
+                  key={phone.id}
+                  name={phone.name}
+                  model={phone.model}
+                  isActive={phone.isActive}
+                  href={`/devices/${phone.id}`}
+                  count={accounts.length}
+                  warmup={
+                    accounts.length > 0 && (
+                      <WarmupModeSwitch
+                        mode={phoneWarmupMode(accounts, warmupModes)}
+                        onChange={(m) => setWarmupMany(accounts, m)}
+                      />
+                    )
+                  }
+                >
+                  <div className="overflow-x-auto">{renderTable(accounts, true)}</div>
+                </PhoneGroupCard>
+              ))}
+
+              {noPhone.length > 0 && (
+                <PhoneGroupCard
+                  name="Not on a phone"
+                  model={null}
+                  notAPhone
+                  isActive
+                  count={noPhone.length}
+                  // No phone-wide press here: these accounts have nothing in
+                  // common except not being anywhere yet.
+                  warmup={null}
+                >
+                  <div className="overflow-x-auto">{renderTable(noPhone, true)}</div>
+                </PhoneGroupCard>
+              )}
+            </div>
+          )
+        ) : (
+          <Card className="flex flex-col gap-6">
+            <div className="overflow-x-auto">{table}</div>
+          </Card>
+        )}
       </div>
 
       {pickerOpen && (
@@ -781,4 +981,19 @@ export function AccountsTable({
       )}
     </>
   );
+}
+
+/**
+ * What a phone's own warmup switch shows. All Manual or all Automated lights
+ * that icon; anything else is "mixed" and lights neither, because lighting one
+ * would be a lie about the rest (Garreth, 2026-09-22).
+ */
+function phoneWarmupMode(
+  accounts: AccountRow[],
+  modes: Record<string, WarmupMode>,
+): WarmupMode | "mixed" {
+  const mode = (r: AccountRow) => modes[r.profile] ?? "manual";
+  if (accounts.every((a) => mode(a) === "manual")) return "manual";
+  if (accounts.every((a) => mode(a) === "script")) return "script";
+  return "mixed";
 }
