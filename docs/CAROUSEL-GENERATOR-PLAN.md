@@ -654,7 +654,10 @@ The canvas shows one slide at a time at true aspect ratio, with the other
 slides as a filmstrip. Text boxes and image cells are selectable and
 draggable; the inspector on the right edits the selected box's style (font,
 weight, size, stroke, shadow, alignment, wrap width) with the change visible
-at once. Sample copy fills the boxes so the styles can be judged; a
+at once, and **above the style sits the box's copy contract** — its Name, who
+writes it, and how many characters fit (item 58, D14; the paragraph on the
+Studio's inspector in §4.7 is superseded by that row where the two disagree).
+Sample copy fills the boxes so the styles can be judged; a
 "Regenerate sample" action asks the AI for fresh sample copy under the
 current direction. The template points at one **image library** (§6.8),
 asked for when the Studio opens: an existing library or a new one. Each image
@@ -1772,8 +1775,8 @@ Decided by Garreth on 2026-09-18 and 2026-09-19, in D10's third round
 | 53 | Where the designs live | **One canvas a ticket** (D6 and D10 one a theme), since 2026-09-18 (`docs/designs/README.md`). |
 
 Decided by Garreth on 2026-09-21, in the session on how a new content type
-gets written and wired (design tickets D13 and D13b, **both approved
-2026-09-22**; D14 and D15 still open):
+gets written and wired (design tickets D13, D13b and **D14 all approved
+2026-09-22**; D15 still open):
 
 | # | Question | Decision |
 |---|---|---|
@@ -1782,7 +1785,8 @@ gets written and wired (design tickets D13 and D13b, **both approved
 | 56 | What the Wiring tab is called on screen | **Go Live** — *Writing* and *Wiring* are one letter apart and sit in the same tab row, and Go Live says what it does. The database step keeps the name `wire` in the code and the runbook. D13. |
 | 57 | May a type generate with no writing instruction? | **No — but the stop is on the Generate form, not on the card.** Generate on the Carousel types card and in the type page's header stays an ordinary, pressable button, with a neutral **Needs writing** pill beside it saying what is missing; pressing it opens the Generate form as always. The form is what enforces the requirement: its Writing row is drawn in the danger stroke reading *No writing*, and **Generate at the foot of the form is unavailable until everything required is filled** — exactly as it already behaves for a missing image library or an empty image set. One rule instead of two: *Generate always opens the form; the form names what is missing.* (Garreth, 2026-09-22, after seeing the first round drawn: making the card's button dead created a dead end, because the only screen that could explain the problem was the one you could no longer reach.) The Studio's drafted note pre-fills the editor but does not count as saved, so a person has read it. Supersedes §4.7's "Save as content type … creates the standing direction". D13. |
 | 57b | Where does a type that was not made in the Studio get a first Writing? | **From the conversation on the Writing tab, which offers one first draft** built from the active template and its slides — the same offer, whatever made the type. It lands in the editor **unsaved**, under the same **Not saved** pill the Studio's own note gets, so item 57 is untouched: Save version is still the press a person makes, and the requirement is still met by someone having read the text. The alternative considered and dropped was leaving the panel blank until something is written, which is what D13 shipped: it asks a person to write a standing instruction from a blank page while the one thing on the screen that could help says nothing. The box is given a second wording for that state (*What should this type sound like?*), and on a phone — where the conversation is a sheet behind a floating button, so an empty panel is never on screen — the offer is repeated under the editor rather than hidden a press away. (Garreth, 2026-09-22.) D13b. |
-| 58 | How does the writer know what goes in each text box? | **The box is named**, and the name is its role in the copy contract, which also carries who writes it (AI, fixed, per batch) and how many characters fit. The Studio gains a Name field; the limit is measured from the box's wrap width and fonts rather than typed. No per-box description — what a box is for is said in the type's Writing, one place not two, with the box names listed beside that editor. D14. |
+| 58 | How does the writer know what goes in each text box? | **The box is named**, and the name is its role in the copy contract, which also carries who writes it (AI, fixed, per batch) and how many characters fit. The Studio gains a Name field; the limit is measured from the box's wrap width and fonts rather than typed. No per-box description — what a box is for is said in the type's Writing, one place not two, with the box names listed beside that editor. D14, **approved in dark and light 2026-09-22**. Three rows above Font — Name, Written by and *Fits n characters* — and on the canvas every box on the slide being worked on wears its name, so three boxes on one cover read as three roles rather than all coming out `line` from their position. Names are unique per slide, not per template, since four slides each carrying a `line` is the ordinary case. **Written by** sits across the panel's width because a layered slide needs a fourth option, **Set**, which absorbed D11's own Written by and Fact rows. |
+| 58b | What is a text box called when the AI did not name it? | **Text Box 1**, counting up in the order boxes are added to that slide. A box added by hand from the tool strip is created already named, so **a box is never unnamed** and the copy contract can never be left with a hole. This replaced the first answer, which was that an unnamed box makes the type unable to generate: that would have put a second kind of stop in the app one day after item 57 settled on one rule (*Generate always opens the form; the form names what is missing*), and there is nothing to stop if the hole cannot exist. The name is a default, not a fixture — it is typed over like any other, and emptying the field saves nothing. (Garreth, 2026-09-22.) D14. |
 
 Decided by Garreth on 2026-09-22, on the generator's front page (design
 ticket D16, open):
