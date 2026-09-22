@@ -655,3 +655,209 @@ export function accountProgress(account: TodoAccount): AccountProgress {
 export function linksOwed(devices: TodoDevice[]): number {
   return devices.reduce((n, d) => n + deviceProgress(d).linksToAdd, 0);
 }
+
+/* ------------------------------------------------------------------------ *
+ * P5 — the device page.
+ *
+ * The same invented farm as above, seen from one phone. The device page is a
+ * working screen on live rows (PF-02 built it), so this NEVER replaces them
+ * quietly: `?demo=full|new|off` on the URL draws the invented phone, and
+ * without it the page reads the database as it always has. That is the rule
+ * the Accounts page's by-phone view already follows.
+ *
+ * Goes with the rest of this file when PF-04, PF-05 and PF-07 land.
+ * ------------------------------------------------------------------------ */
+
+/** The three shapes a phone's page has to be judged in (P5's states). */
+export type DevicePageState = "full" | "new" | "off";
+
+const DEVICE_PAGE_STATES: DevicePageState[] = ["full", "new", "off"];
+
+/** `?demo=` — null when the page should read real rows. `?demo=1` means "full". */
+export function parseDevicePageState(
+  raw: string | string[] | undefined,
+): DevicePageState | null {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (v === undefined) return null;
+  if (v === "1" || v === "") return "full";
+  return (DEVICE_PAGE_STATES as string[]).includes(v) ? (v as DevicePageState) : null;
+}
+
+/**
+ * What the Accounts block adds to what the to-do list already knows about an
+ * account: its health, who warms it up (P4), and when it last did each thing.
+ * Keyed by the account id used in `today` below.
+ */
+export type DevicePageAccount = {
+  id: string;
+  /** A value from the health ladder, so the page can use the app's own tone. */
+  health: string;
+  /** P4's warmup mode. The device page SHOWS it; Accounts is where it changes. */
+  automated: boolean;
+  lastPost: string | null;
+  lastWarmup: string | null;
+};
+
+/** One row of the warmup history: manual and scripted told apart by `automated`. */
+export type WarmupSession = {
+  id: string;
+  handle: string;
+  label: string;
+  /** "Today 08:41", already in the phone's own timezone. */
+  when: string;
+  minutes: number;
+  automated: boolean;
+};
+
+export type DevicePagePlaceholder = {
+  name: string;
+  model: string;
+  iosVersion: string;
+  proxy: string;
+  timezone: string;
+  notes: string;
+  isActive: boolean;
+  /** Today's work for this phone only, in the shape the to-do screens draw. */
+  today: TodoDevice;
+  accounts: DevicePageAccount[];
+  warmups: WarmupSession[];
+};
+
+/** A phone carrying its three accounts, mid-morning. */
+const P5_FULL: DevicePagePlaceholder = {
+  name: "iPhone 1",
+  model: "iPhone 12",
+  iosVersion: "17.5.1",
+  proxy: "45.87.212.10:8000",
+  timezone: "America/New_York",
+  notes: "Bottom shelf, left.",
+  isActive: true,
+  today: {
+    id: "d1",
+    name: "iPhone 1",
+    model: "iPhone 12",
+    isActive: true,
+    accounts: [
+      {
+        id: "a1",
+        handle: "@character2.daily",
+        platform: "tiktok",
+        character: "Character 2",
+        items: [
+          { id: "p1", kind: "post", label: "Celebrity verdict", due: "09:00", status: "posted", doneAt: "09:12", videoReady: true },
+          { id: "p2", kind: "post", label: "Before and after", due: "13:00", status: "postedNoLink", doneAt: "13:04", videoReady: true },
+          { id: "p3", kind: "warmup", label: "Warmup, morning", due: "08:30", status: "logged", doneAt: "08:41", targetMinutes: WARMUP_TARGET, loggedMinutes: 17 },
+          { id: "p4", kind: "warmup", label: "Warmup, evening", due: "19:00", status: "todo", targetMinutes: WARMUP_TARGET },
+        ],
+      },
+      {
+        id: "a2",
+        handle: "@character2.clips",
+        platform: "instagram",
+        character: "Character 2",
+        items: [
+          { id: "p5", kind: "post", label: "Peptide myth", due: "11:00", status: "todo", videoReady: true },
+          { id: "p6", kind: "warmup", label: "Warmup, morning", due: "08:30", status: "logged", doneAt: "08:59", targetMinutes: WARMUP_TARGET, loggedMinutes: 16 },
+          // Logged so one account shows a FINISHED half of its day: the device
+          // page draws that as the cyan "Warmup done" pill, and a review that
+          // never renders a state cannot judge it (P5, round three).
+          { id: "p7", kind: "warmup", label: "Warmup, evening", due: "19:00", status: "logged", doneAt: "19:06", targetMinutes: WARMUP_TARGET, loggedMinutes: 16 },
+        ],
+      },
+      {
+        // a4, not a3: the same invented account is a4 on the To-do page, and
+        // the device page's pills link to it by id. Two different accounts
+        // sharing one id would land the link on the wrong one (P5, round
+        // three). Real account ids make this moot.
+        id: "a4",
+        handle: "@character4.notes",
+        platform: "facebook",
+        character: "Character 4",
+        items: [
+          { id: "p8", kind: "post", label: "Before and after", due: "16:00", status: "todo", carriedOverFrom: "yesterday", videoReady: true },
+          { id: "p9", kind: "warmup", label: "Warmup, morning", due: "08:30", status: "logged", doneAt: "09:14", targetMinutes: WARMUP_TARGET, loggedMinutes: 15, automated: true },
+          { id: "p10", kind: "warmup", label: "Warmup, evening", due: "19:00", status: "todo", targetMinutes: WARMUP_TARGET, automated: true },
+        ],
+      },
+    ],
+  },
+  accounts: [
+    { id: "a1", health: "healthy", automated: false, lastPost: "Today 09:12", lastWarmup: "Today 08:41" },
+    { id: "a2", health: "warming", automated: false, lastPost: "Yesterday 14:02", lastWarmup: "Today 08:59" },
+    { id: "a4", health: "watch", automated: true, lastPost: "2 days ago", lastWarmup: "Today 09:14" },
+  ],
+  warmups: [
+    { id: "w1", handle: "@character4.notes", label: "Warmup, morning", when: "Today 09:14", minutes: 15, automated: true },
+    { id: "w2", handle: "@character2.clips", label: "Warmup, morning", when: "Today 08:59", minutes: 16, automated: false },
+    { id: "w3", handle: "@character2.daily", label: "Warmup, morning", when: "Today 08:41", minutes: 17, automated: false },
+    { id: "w4", handle: "@character2.daily", label: "Warmup, evening", when: "Yesterday 19:22", minutes: 15, automated: false },
+    { id: "w5", handle: "@character4.notes", label: "Warmup, evening", when: "Yesterday 19:08", minutes: 15, automated: true },
+    { id: "w6", handle: "@character2.clips", label: "Warmup, morning", when: "Yesterday 08:36", minutes: 18, automated: false },
+  ],
+};
+
+/** Registered this morning: no accounts on it yet, so no work and no history. */
+const P5_NEW: DevicePagePlaceholder = {
+  name: "iPhone 5",
+  model: "iPhone 13",
+  iosVersion: "",
+  proxy: "",
+  timezone: "",
+  notes: "",
+  isActive: true,
+  today: { id: "d5", name: "iPhone 5", model: "iPhone 13", isActive: true, accounts: [] },
+  accounts: [],
+  warmups: [],
+};
+
+/** Switched off, and still owing its work — the phone does not stop the day. */
+const P5_OFF: DevicePagePlaceholder = {
+  name: "iPhone 4",
+  model: "iPhone 13",
+  iosVersion: "17.4",
+  proxy: "45.87.212.14:8000",
+  timezone: "America/New_York",
+  notes: "Screen cracked, waiting on a replacement.",
+  isActive: false,
+  today: {
+    id: "d4",
+    name: "iPhone 4",
+    model: "iPhone 13",
+    isActive: false,
+    accounts: [
+      {
+        id: "a5",
+        handle: "@character5.asmr",
+        platform: "tiktok",
+        character: "Character 5",
+        items: [
+          { id: "o1", kind: "post", label: "ASMR routine", due: "14:00", status: "todo", videoReady: true },
+          { id: "o2", kind: "warmup", label: "Warmup, morning", due: "08:30", status: "todo", targetMinutes: WARMUP_TARGET },
+          { id: "o3", kind: "warmup", label: "Warmup, evening", due: "19:00", status: "todo", targetMinutes: WARMUP_TARGET },
+        ],
+      },
+    ],
+  },
+  accounts: [
+    { id: "a5", health: "no data", automated: false, lastPost: "3 days ago", lastWarmup: "3 days ago" },
+  ],
+  warmups: [
+    { id: "w7", handle: "@character5.asmr", label: "Warmup, morning", when: "3 days ago 08:44", minutes: 16, automated: false },
+    { id: "w8", handle: "@character5.asmr", label: "Warmup, evening", when: "4 days ago 19:11", minutes: 15, automated: false },
+  ],
+};
+
+export function devicePlaceholder(state: DevicePageState): DevicePagePlaceholder {
+  if (state === "new") return P5_NEW;
+  if (state === "off") return P5_OFF;
+  return P5_FULL;
+}
+
+/**
+ * The id of an account's group on the To-do page, so another screen can link
+ * straight to it. One helper rather than two spellings, because a link that
+ * silently lands at the top of the page looks like it worked.
+ */
+export function todoAnchor(accountId: string): string {
+  return `todo-${accountId}`;
+}

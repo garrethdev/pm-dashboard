@@ -29,6 +29,7 @@ import {
 } from "@/components/dashboard/todo-board";
 import {
   accountProgress,
+  todoAnchor,
   deviceProgress,
   isItemFinished,
   sortItems,
@@ -407,7 +408,12 @@ function AccountGroup({
   return (
     // Its own quiet panel, so two accounts on one phone do not run together
     // (Garreth, 2026-09-22).
-    <div className="min-w-0 rounded-nested bg-card-raised/50 px-3 pt-4 pb-3">
+    // The id is what a device page's pill links to (P5, round three). It draws
+    // nothing; `scroll-mt-4` just keeps the panel off the top edge on arrival.
+    <div
+      id={todoAnchor(account.id)}
+      className="min-w-0 scroll-mt-4 rounded-nested bg-card-raised/50 px-3 pt-4 pb-3"
+    >
       {/* The account's own line needs room to breathe above and below before
           its tasks start (Garreth, 2026-09-22). */}
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-border pb-3.5">
