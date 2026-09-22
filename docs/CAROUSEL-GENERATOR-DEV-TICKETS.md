@@ -31,8 +31,13 @@ and on the phone the offer also sits under the editor because the conversation
 there is a sheet. Nothing moved in DEV-19b: the editor, Save version, the
 version dropdown and the text-box names are exactly as D13 left them. Still
 waiting on designs that
-are open: **DEV-21** gains the text-box Name field when **D14** is approved,
-and a ticket for the **Rows** tab is written when **D15** is.
+are open: a ticket for the **Rows** tab is written when **D15** is. **DEV-21
+gained its text-box copy contract on 2026-09-22**, when D14 was approved in
+dark and light: Name, Written by and a measured character limit above Font, a
+box added by hand arriving named **Text Box 1** rather than unnamed, and the
+names showing on the canvas. Two knock-ons for other tickets: a **Per batch**
+box adds a field to the Generate form (**DEV-06**), and renaming a box renames
+the key the writer writes against (**DEV-08**).
 
 **Where the Writing requirement is enforced — read this before building
 either ticket.** Generate on a carousel type's card and in its header is an
@@ -847,6 +852,44 @@ with AI, New set and the amber unread dot arrive with DEV-29 and DEV-30.
   - Inspector for a text box (font, weight, size, stroke, shadow, alignment,
     wrap width) with the change shown at once; for an image cell, which
     library set it draws from, and "No images" when the set is empty.
+  - **The box's copy contract sits above Font** (D14, approved by Garreth
+    2026-09-22). Three rows, and nothing else in the inspector moves:
+    - **Name** — a text field pre-filled from the AI's draft. It *is* the
+      box's key in the template's copy contract, so renaming it renames that
+      key and the writer (DEV-08) writes against the new one. A name already
+      used **on the same slide** is refused with **Taken**, the same word and
+      the same danger stroke the Save dialog's short name uses, and is not
+      saved; names need not be unique across slides, since four slides each
+      carrying a `line` is the ordinary case. Emptying the field saves
+      nothing — the box keeps the name it had.
+    - **Written by** — a segmented control across the panel's width, because
+      four options do not fit beside an 84px label: **AI**, **Fixed**, **Per
+      batch**, and on a layered slide also **Set**. Fixed opens a sub-row for
+      the words themselves, stored on the template and painted on every deck
+      of the type. **Per batch** means the Generate form (DEV-06) asks for it,
+      the way it already asks for the opening line, so adding a Per batch box
+      adds a field to that form. Set keeps D11's existing behaviour and its
+      **Fact** dropdown, which moved into this row.
+    - **Fits n characters** — a read-back, never an input. Measure it from
+      the box's wrap width and the bundled font files the painter uses, and
+      recompute it whenever wrap width or size changes. Do not store a typed
+      limit: a new box has no painted history to take one from, which is why
+      this is measured rather than entered.
+  - **A text box is never unnamed** (Garreth, 2026-09-22). A box the AI
+    drafted carries its role; a box added from the tool strip is created
+    already named **Text Box 1**, the number counting the boxes added to that
+    slide in the order they were made — so the next one is Text Box 2, and the
+    first free number is used if one was deleted. There is therefore **no hole
+    in the copy contract to guard against**: nothing here holds Generate, and
+    the Generate form has no missing-name state to mark. Do not build one.
+  - **Every text box on the selected slide shows its name** on the canvas, in
+    a tag above the box — the selected box's in the accent, the others in a
+    dark chip that reads over a photograph in either theme. Before D14 the tag
+    showed only on the selected box and its text came from the box's position,
+    so three boxes on one slide all read the same.
+  - **No per-box description field.** What a box is for is said in the type's
+    Writing (DEV-19), one place to read rather than two; the box names are
+    listed beside that editor (DEV-19b).
   - Every change edits the template object and is saved as a draft template
     row (`status = 'draft'`) a moment after the last change, so a closed tab
     loses nothing.

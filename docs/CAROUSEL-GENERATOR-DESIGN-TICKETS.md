@@ -39,6 +39,13 @@ yet.** It changes no screen but D7's Writing tab, so its pictures are new rows
 on D7's own canvas. It is numbered 13b, not 17, so the order of work reads off
 the numbers: it is D13's loose end, and renumbering D14 to D16 would break the
 references the dev tickets, the plan and the canvases already make to them.
+**And D17, 2026-09-22 (Garreth): the text-box pills become how you write a
+box's name.** D13 listed the template's text boxes under the Writing editor as
+read-only labels; D17 makes them **draggable into the editor and into the
+Conversation's box, and typeable with `@`**, so an instruction names a box
+rather than spelling one. **Open, not drawn yet.** It changes no screen but
+D7's Writing tab, so its pictures are new rows on D7's own canvas, and it
+leans on **D14**, which is what gives a box a name worth pointing at.
 The canvas D7 and D8 share is full — 14 MB of its 16 MB with both tickets on
 it in both themes — so it was **renamed from "(D7 to D10)" to "(D7 and D8)" on
 2026-09-16** (Garreth), because it is never going to hold the other two. D9
@@ -2315,12 +2322,35 @@ the edges are tested, not just the happy middle.
 
 ## D14. Naming a text box in the Studio
 
-- **Status:** **Open. Raised and decided by Garreth, 2026-09-21**, out of the
+- **Status:** **Raised and decided by Garreth, 2026-09-21**, out of the
   question of how the writer knows what to put in three text boxes on one
-  slide. Not drawn yet. **No canvas and no build file of its own**: its
+  slide. **APPROVED in dark and light by Garreth, 2026-09-22.** **No canvas
+  and no build file of its own**: its
   pictures are new rows on **D6 · Dark** and **D6 · Light**, and the same
   inspector section on **D11** for a layered slide. Build files:
   `d6-studio.build.mjs`, `d11-studio-round-two.build.mjs`.
+  - **D6 · Dark** (version 11): five new boards in the last two rows —
+    *A text box's name, and where its words come from*, *A fixed box: the
+    same words on every deck*, *A box added by hand: it arrives named Text
+    Box 1*, *A name already on the slide, refused*, and the phone's *The name
+    in the adjustments sheet, written per batch*. Every board that has a text
+    box selected was redrawn in place carrying the new rows.
+  - **D6 · Light** (version 6): the same five boards, and the same redraw in
+    place. The Name field, the accent on the chosen source and the **Taken**
+    red all come from the tokens already in `globals.css`, so light needed no
+    colour of its own; the names riding over a photo stay a dark chip in both
+    themes, because they sit on the picture rather than on a panel.
+  - **D11** (version 11, both pages): no new board. *Text on a box* and
+    *Slides sharing a subject* were redrawn in place with the same section,
+    **Set** being a layered layer's fourth source; D11's own **Written by**
+    and **Fact** rows are gone, absorbed into it.
+  - **Both D6 canvases are now 15.9 MB against a 16 MB ceiling** — the five
+    boards took each from 13.9 MB. The next ticket that adds a Studio board
+    will not fit and will need a canvas of its own.
+  - **Written by sits across the panel's width**, rather than beside its
+    label like Shadow and Alignment. Three options fit beside an 84px label
+    and four do not, and a layered slide needs four because of **Set**, so the
+    row buys the width for both cases with one shape.
 - **What it is.** The writer knows what goes in a text box from that box's
   **role** — the name it carries in the template's copy contract, which also
   records who writes it (AI, fixed, or chosen per batch) and how many
@@ -2350,6 +2380,15 @@ the edges are tested, not just the happy middle.
     written rather than two. The drift this risks — a box renamed while the
     Writing still names the old one — is answered by D13 listing the box names
     beside the Writing editor.
+- **Decided by Garreth, 2026-09-22, replacing the unnamed-box rule above:**
+  **a box is never unnamed.** A box the AI drafted carries its role; a box
+  added by hand from the tool strip arrives named **Text Box 1**, counting up
+  in the order boxes are added to that slide. So the copy contract can never
+  be left with a hole, and **nothing holds Generate** — which also settles the
+  question D13 raised, since there is no longer a missing thing for the
+  Generate form to mark. The name is a default, not a fixture: it is typed
+  over like any other. Emptying the field does not save; the box keeps the
+  name it had.
 - **Flows:** F8 steps 4 and 5.
 - **Design:** the inspector gains a section above Font — **Name**, **Written
   by** (three-way), **Fixed text** when Written by is Fixed, and **Fits n
@@ -2357,19 +2396,19 @@ the edges are tested, not just the happy middle.
   above the selected box already shows the name and keeps doing so.
 - **States:**
   - A box named by the AI's draft — the ordinary case.
-  - A box added by hand and not yet named: Generate is unavailable for the
-    type until it is, since an unnamed box is a hole in the copy contract.
+  - A box added by hand, arriving named **Text Box 1**.
   - A duplicate name on the same slide, refused.
   - A Fixed box with its words showing.
   - A cover slide with three named boxes, selected one at a time.
 - **Pictures:** **D6 · Dark** and **D6 · Light** — the inspector with its new
-  section, the three-named-boxes cover, an unnamed box, a refused duplicate, a
-  Fixed box. **D11** — the same section on a layered slide.
+  section, the three-named-boxes cover, a box added by hand with its default
+  name, a refused duplicate, a Fixed box, and the phone's adjustments sheet.
+  **D11** — the same section on a layered slide.
 - **Screen's own rules kept:** no instruction text, no accent button added
   (the section is inspector fields), no new pill colour.
 - **Done when:** approved in dark and light at both sizes, and a cover slide
   with three text boxes reads as three distinct roles on the canvas and in the
-  template the Studio saves.
+  template the Studio saves. **Met 2026-09-22.**
 
 ## D15. Rows — what is sitting in the lane
 
@@ -2529,3 +2568,113 @@ the edges are tested, not just the happy middle.
 - **Done when:** approved in dark and light at both sizes, and the three
   widgets say nothing that D1, D9, D10 and the bell do not already say the
   same way.
+
+## D17. Naming a text box while you write — drag it, or type `@`
+
+- **Status:** **Open. Raised by Garreth, 2026-09-22**, from looking at D13's
+  own *Writing* board. Not drawn yet. **No canvas and no build file of its
+  own**: it changes one screen that already exists, so its pictures are new
+  rows on the **D7** canvas
+  (https://claude.ai/artifact/Rjg4tERJZkguERBwbU2XWp), pages **D7 · Dark** and
+  **D7 · Light**, built by `docs/designs/carousel-generator/d7-type-page.build.mjs`.
+  **Depends on D14**, which is what gives a text box a name a person chose;
+  until then the names come from position, so the sample's `hook`, `line`,
+  `closing` are all D17 has to point at. It can be drawn before D14 is
+  approved, but it should not be built first.
+- **What it is.** D13 put the template's text boxes under the Writing editor
+  as a row of pills — **Text boxes** `hook` `line` `closing` — so the
+  instruction is written against the boxes that exist. They are read-only
+  labels. To actually write *the hook stays under eight words* you retype the
+  word yourself, and nothing links what you typed to the box: the name is
+  spelled by hand, and the copy prompt reads it as ordinary prose and has to
+  work out from context which words are naming a role.
+  This ticket makes those pills the way you put a box name into the text.
+  **Drag a pill into the editor** and it drops in at the point you dropped it.
+  **Type `@`** and the same names come up to be picked, the way every AI tool
+  now does it. The result either way is the box's name, in the text, as a
+  thing the screen and the prompt both recognise.
+  The same goes for the **Conversation's box** beside it, so *make @hook
+  shorter* is asking about a box rather than about a word.
+- **Why it is worth a ticket.** Three things it buys, none of them cosmetic:
+  - **The writer stops guessing.** The names are in front of you and you
+    cannot misspell one. On a cover slide with three boxes — which is exactly
+    what D14 exists for — that is the difference between an instruction the
+    painter can follow and one it cannot.
+  - **The prompt gets something it can resolve.** A mention can be turned into
+    the box's real role and, once D14 measures it, its character limit. *@hook
+    under eight words* and *the hook under eight words* read the same to a
+    person; only the first is unambiguous to the thing building the prompt.
+  - **It answers the drift D13 wrote down and left open.** D13 refused a
+    per-box description field so there would be one place to read, and noted
+    the risk: a box renamed in the Studio while the Writing still names the
+    old one. If mentions are recognised rather than typed, a Writing that
+    names a box that no longer exists can *say so*, instead of silently
+    instructing the AI about nothing.
+- **What it is not.** Not a rich-text Writing. The field stays words — one
+  text column, `carousel_lane_directions.direction`, as it is today. Not a
+  second place to describe a box (D13 settled that; a mention points into the
+  Writing, it does not add a field). Not a change to Save version, the version
+  dropdown, the guiding placeholder or D13b's first-draft offer. The pills
+  stay where D13 put them, under the editor; no new row on the card.
+- **To decide (Garreth):**
+  - **What a mention is when it is stored.** Two honest options. **Plain
+    text** — the editor stores `@hook`, and the screen highlights it by
+    matching the name against the active template's boxes each time it is
+    shown. Nothing that reads the column raw breaks, and the column stays
+    words only. Or **a marker** the app resolves to a box id, which survives a
+    rename but puts a code into a field that has never held one. *Recommended:
+    plain text.* It keeps the promise D13 made about the field, and the
+    rename case is handled by the unknown-mention state below rather than by
+    following the box silently.
+  - **How a mention that matches nothing reads.** A box renamed or deleted
+    leaves `@closing` pointing at nothing. It should look different from a
+    live mention — muted, not alarming — so the next person to open the
+    Writing sees it. Whether that also belongs beside Save version as a count
+    (*1 text box no longer exists*) is the open part; the screen's rule says
+    no instruction text, and a count of a real thing is data, not instruction.
+  - **Whether `@` is the right character.** It is what every AI tool uses and
+    what the idea asks for. The one collision is a person writing *never @
+    anyone* in an instruction about captions — answered by the menu only
+    opening while what follows `@` still matches a box name, and by Escape
+    dismissing it and leaving the plain characters alone. If `@` is wrong for
+    this field, the alternative is `/`, which collides with nothing here.
+  - **Does dropping a pill on the Conversation's box do anything different?**
+    The proposal is no: it inserts the same mention, and the AI's reply uses
+    the same mentions back, so the exchange and the Writing read alike.
+- **Proposed, for the review (not decided):**
+  - **Tapping a pill inserts it at the caret**, on desktop as well as on the
+    phone. Drag is the discoverable way and the way to place a mention
+    exactly; a tap is the fast way, and it is the only way that exists on a
+    phone. Drawing drag alone would leave the phone with nothing.
+  - **The Conversation on the phone is a sheet**, so the pills are not on
+    screen when its box is. Either the sheet carries its own copy of the row
+    or `@` is the only route there — the same shape of problem D13b solved by
+    putting its offer in two places.
+- **Flows:** F6 (the Writing tab), and F8 steps 4–5, where the names being
+  pointed at are set.
+- **Design:** the existing **Text boxes** row under the editor becomes
+  draggable and pressable; the editor and the Conversation's box accept a
+  drop at the caret and show the `@` menu; a mention inside the text reads as
+  the same mono pill the row already uses, inline. Nothing else on the tab
+  moves.
+- **States:**
+  - The ordinary case: a saved Writing with `@hook`, `@line` and `@closing`
+    sitting in its sentences.
+  - A pill mid-drag, with the editor showing where it would land.
+  - The `@` menu open, filtered as more is typed, one name highlighted.
+  - A mention of a box that no longer exists.
+  - A template with one text box (nothing to choose between) and one with
+    enough boxes that the menu has to scroll.
+  - The Conversation: a mention in what was asked, and in the AI's answer.
+  - Phone: a pill tapped into the editor, and whatever the Conversation sheet
+    gets.
+- **Screen's own rules kept:** no instruction text (the pills and the menu are
+  the whole explanation), no accent button added — Save version stays the
+  tab's one accent, no new pill colour (a mention is the mono pill D13 already
+  drew; an unknown one is muted, not red), nobody named.
+- **Done when:** approved in dark and light at both sizes, and a person can
+  put a text box's name into the Writing and into the Conversation without
+  typing it, on desktop and on the phone.
+- **Followed on approval:** **DEV-19b** gains the editor's side of it and
+  **DEV-25** the Conversation's; whether the prompt builder resolves mentions
+  is written into the copy-prompt ticket at the same time.

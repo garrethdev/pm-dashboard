@@ -542,7 +542,23 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
      text boxes.
   5. **Slide size** comes first in the adjustments. Select a text box to edit
      its font, weight, size, stroke, shadow, alignment and wrap width; drag it
-     to move it. Select an image cell to choose which set of the library it
+     to move it.
+     **Above Font sits the box's copy contract** (D14, approved 2026-09-22):
+     its **Name**, which is the role the writer reads and the key the template
+     saves; **Written by** — **AI**, **Fixed** or **Per batch**, and on a
+     layered slide also **Set** — with a box for the words themselves when it
+     is Fixed and the set's fact when it is Set; and **Fits n characters**, a
+     read-back the Studio works out from the box's wrap width and the bundled
+     fonts rather than taking a typed number, because a new box has no painted
+     history to take a limit from. A name already used on the same slide is
+     refused the way the Save dialog's short name is. Every box on the slide
+     being worked on shows its name above it, so three boxes on one cover read
+     as three roles. **A box is never unnamed** (Garreth, 2026-09-22): one the
+     AI drafted carries its role, and one added by hand arrives named **Text
+     Box 1**, counting up per slide, so nothing ever holds Generate. There is
+     no per-box description — what a box is *for* is said in the type's
+     Writing, with the box names listed beside that editor (D13, F6).
+     Select an image cell to choose which set of the library it
      draws from. A cell whose set has no images shows "No images". New
      images are made in the library (F7), not here.
      On a **layered slide** (`CAROUSEL-TEMPLATE-MODEL.md` §7) the Layers list,

@@ -187,7 +187,26 @@ const PHOTOS = [["mug"], ["journal", "shower"], ["dock"], ["yoga"], ["oats", "va
 const STYLES = {
   hook: { font: "General Sans", weight: "Bold", size: 72, stroke: 4, shadow: "Soft", off: 6, blur: 12, align: "centre", wrap: 880 },
   line: { font: "General Sans", weight: "Semibold", size: 56, stroke: 3, shadow: "Hard", off: 4, blur: 0, align: "centre", wrap: 900 },
+  small: { font: "General Sans", weight: "Semibold", size: 36, stroke: 2, shadow: "Hard", off: 3, blur: 0, align: "centre", wrap: 760 },
 };
+
+/* D14: a cover carrying three text boxes, so the Studio has a slide where three roles sit side by side — the
+   question the ticket came out of (Garreth, 2026-09-21: how does the writer know what goes in three boxes on one
+   slide?). Each box's name, who writes it, and a fixed box's own words. The fourth entry is a box added by hand
+   from the tool strip: it has no role in the AI's draft, so it takes the default name below. */
+const COVER3 = {
+  lines: ["SIX WEEKS, ONE HABIT", "The 6am routine I actually kept", "Swipe for all six", "New text"],
+  names: ["series", "hook", "swipe", ""],
+  styles: ["small", "hook", "small", "small"],
+  ats: ["top", "cover", "bottom2", "centre"],
+  by: ["fixed", "ai", "batch", "ai"],
+  fixed: ["SIX WEEKS, ONE HABIT", "", "", ""],
+};
+
+/* D14: where a box's words come from. AI writes it; Fixed paints the same words on every deck of the type; Per
+   batch means the Generate form asks for it, the way it already asks for the opening line. A layered template
+   drawing from sets adds a fourth, Set, which D11 supplies. */
+const SOURCES = [["ai", "AI"], ["fixed", "Fixed"], ["batch", "Per batch"]];
 
 /* Sample copy. A new type's draft ("Morning Routine", first person), and its regenerated sample; and the copy an
    existing type ("Before & After", D3's invented deck) opens with. Slide 4 carries the long line. */
@@ -457,6 +476,22 @@ ${S} .seg button:hover { color: var(--text-primary); }
 ${S} .seg button[aria-checked="true"] { background: var(--accent); color: var(--bg); }
 .is-light ${S} .seg button[aria-checked="true"] { color: #ffffff; }
 ${S} .seg.icons button { padding: 4px 8px; }
+/* D14: a choice that needs the panel's whole width, so three or four sources read at a glance. Its label sits on
+   the line above rather than in the 84px column. */
+${S} .irow.stack { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+${S} .seg.wide { display: flex; width: 100%; }
+${S} .seg.wide button { flex: 1 1 0; min-width: 0; }
+/* D14: the last row of the copy contract, closed off from the style rows under it. */
+${S} .irow.cut { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 4px; }
+${S} .rback { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+/* D14: a typed value in the inspector — the box's name, and a fixed box's words. Sized like .dd so Name reads as
+   Font's sibling; Taken is the same word the Save dialog's short name uses. */
+${S} .ifield { display: flex; flex: 1; min-width: 0; align-items: center; gap: 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--card-raised); padding: ${phone ? 6 : 5}px 12px; transition: box-shadow 150ms var(--ease); }
+${S} .ifield:focus-within, ${S} .ifield.is-focus { box-shadow: 0 0 0 2px var(--accent); }
+${S} .ifield input { width: 100%; min-width: 0; font-size: ${phone ? 16 : 12}px; line-height: 16px; font-weight: 500; color: var(--text-primary); outline: none; }
+${S} .ifield input::placeholder { color: var(--text-muted); font-weight: 400; }
+${S} .ifield .taken { flex-shrink: 0; font-size: 11px; line-height: 16px; font-weight: 500; color: var(--danger); }
+${S} .ifield.is-taken { box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 60%, transparent); }
 /* The stroke's colour: two swatches. */
 ${S} .sw { display: flex; width: 20px; height: 20px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--border); }
 ${S} .sw i { display: block; width: 12px; height: 12px; border-radius: 999px; }
@@ -584,6 +619,8 @@ ${S} .tb.can-pick { cursor: move; }
 ${S} .tb .tbt { display: block; }
 ${S} .tb--hook { font-size: 6.67cqw; line-height: 1.08; font-weight: 700; letter-spacing: -0.015em; }
 ${S} .tb--line { font-size: 5.2cqw; line-height: 1.12; font-weight: 600; letter-spacing: -0.01em; }
+/* D14: the cover's small lines — the series marker over the hook, the swipe line under it. */
+${S} .tb--small { font-size: 3.3cqw; line-height: 1.2; font-weight: 600; letter-spacing: 0.04em; }
 ${S} .tb.st-4 { -webkit-text-stroke: 0.37cqw #000000; paint-order: stroke fill; }
 ${S} .tb.st-3 { -webkit-text-stroke: 0.28cqw #000000; paint-order: stroke fill; }
 ${S} .tb.st-2 { -webkit-text-stroke: 0.19cqw #000000; paint-order: stroke fill; }
@@ -598,10 +635,17 @@ ${S} .tb.at-bottom { bottom: 8%; transform: translateX(-50%); }
 /* The closing slide carries two boxes: the closing line sits a little higher so the small line fits under it. */
 ${S} .tb.at-bottomUp { bottom: 12%; transform: translateX(-50%); }
 ${S} .tb.at-bottom2 { bottom: 3%; transform: translateX(-50%); }
-/* Selected: a dashed outline just outside the box, the role as a tag above it, eight handles. */
+/* D14: the three-role cover stacks the hook between two small lines, so the hook sits high enough that the name
+   riding above the swipe line clears it. */
+${S} .tb.at-cover { bottom: 22%; transform: translateX(-50%); }
+/* Selected: a dashed outline just outside the box, the name as a tag above it, eight handles. Since D14 every box
+   on the slide being worked on carries its name, so three boxes read as three roles; the selected one's tag is in
+   the accent and the rest sit in a dark chip, which reads over a photo in either theme. */
 ${S} .tb.is-sel { outline: 1px dashed var(--accent); outline-offset: 6px; }
 ${S} .tag { position: absolute; left: -6px; bottom: calc(100% + 10px); z-index: 4; border-radius: 6px; padding: 1px 6px; font-size: 10px; line-height: 16px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; color: var(--bg); background: var(--accent); -webkit-text-stroke: 0; text-shadow: none; }
 .is-light ${S} .tag { color: #ffffff; }
+${S} .tag.is-off { color: #ffffff; background: rgba(0, 0, 0, 0.62); }
+.is-light ${S} .tag.is-off { color: #ffffff; }
 ${S} .h { position: absolute; z-index: 4; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); border: 1px solid var(--bg); }
 ${S} .h-tl { left: -10px; top: -10px; } ${S} .h-t { left: calc(50% - 4px); top: -10px; } ${S} .h-tr { right: -10px; top: -10px; }
 ${S} .h-l { left: -10px; top: calc(50% - 4px); } ${S} .h-r { right: -10px; top: calc(50% - 4px); }
@@ -724,7 +768,8 @@ const slideFace = (p, pick) => `
                     <sc-if value="{{b.txt}}" hint-placeholder-val="{{ true }}"><span class="tbt">{{b.text}}</span></sc-if>
                     ${
                       pick
-                        ? `<sc-if value="{{b.sel}}" hint-placeholder-val="{{ false }}"><span class="tag">{{b.role}}</span><i class="h h-tl"></i><i class="h h-t"></i><i class="h h-tr"></i><i class="h h-l"></i><i class="h h-r"></i><i class="h h-bl"></i><i class="h h-b"></i><i class="h h-br"></i></sc-if>`
+                        ? `<sc-if value="{{b.tagOn}}" hint-placeholder-val="{{ true }}"><span class="tag {{b.tagCls}}">{{b.role}}</span></sc-if>
+                    <sc-if value="{{b.sel}}" hint-placeholder-val="{{ false }}"><i class="h h-tl"></i><i class="h h-t"></i><i class="h h-tr"></i><i class="h h-l"></i><i class="h h-r"></i><i class="h h-bl"></i><i class="h h-b"></i><i class="h h-br"></i></sc-if>`
                         : ""
                     }
                   ${pick ? "</button>" : "</span>"}
@@ -737,10 +782,46 @@ const stepper = (v, label, unit = "", cls = "") => `
                     <button type="button" class="stepbtn" aria-label="Increase ${label}" onClick="{{${v}Inc}}">${I.plus}</button>
                   </div>`;
 
-/* The settings for a text box: font, weight, size, stroke, shadow, alignment, wrap width. */
+/* D14: the box's copy contract, above its style — the name the writer reads, where the words come from, and how
+   many characters the box holds. The limit is worked out from the wrap width and the size rather than typed, so it
+   follows the steppers under it. A name already on the slide is refused with the Save dialog's own word, Taken. */
+const contractRows = () => `
+                <div class="irow">
+                  <span class="ilabel">Name</span>
+                  <div class="ictl">
+                    <div class="ifield {{bx.nameCls}}">
+                      <input type="text" aria-label="The box's name" placeholder="name this box" value="{{bx.name}}" onChange="{{bx.rename}}" />
+                      <sc-if value="{{bx.taken}}" hint-placeholder-val="{{ false }}"><span class="taken" role="alert">Taken</span></sc-if>
+                    </div>
+                  </div>
+                </div>
+                <div class="irow stack">
+                  <span class="ilabel">Written by</span>
+                  <div class="seg wide" role="radiogroup" aria-label="Written by">
+                    <sc-for list="{{bx.sources}}" as="w" hint-placeholder-count="3">
+                      <button type="button" role="radio" aria-checked="{{w.checked}}" onClick="{{w.pick}}">{{w.name}}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <sc-if value="{{bx.srcMore}}" hint-placeholder-val="{{ false }}">
+                  <div class="irow sub">
+                    <span class="ilabel"><span class="opt">{{bx.srcLabel}}</span></span>
+                    <div class="ictl">
+                      <sc-if value="{{bx.srcText}}" hint-placeholder-val="{{ true }}"><div class="ifield"><input type="text" aria-label="{{bx.srcLabel}}" placeholder="the words on every deck" value="{{bx.fixed}}" onChange="{{bx.setFixed}}" /></div></sc-if>
+                      <sc-if value="{{bx.srcPick}}" hint-placeholder-val="{{ false }}"><button type="button" class="dd" aria-haspopup="listbox" onClick="{{bx.pickFact}}">{{bx.fact}}${I.caretDown}</button></sc-if>
+                    </div>
+                  </div>
+                </sc-if>
+                <div class="irow cut">
+                  <span class="ilabel">Fits</span>
+                  <span class="ictl rback tnum">{{bx.fits}}</span>
+                </div>`;
+
+/* The settings for a text box: its name and source (D14), then font, weight, size, stroke, shadow, alignment, wrap width. */
 const boxSettings = () => `
               <div class="sec" aria-label="{{bx.label}}">
                 <div class="sech"><b>{{bx.title}}</b><span class="pill">Text box</span></div>
+                ${contractRows()}
                 <div class="irow">
                   <span class="ilabel">Font</span>
                   <div class="ictl"><button type="button" class="dd" aria-haspopup="listbox" onClick="{{bx.pickFont}}">{{bx.font}}${I.caretDown}</button></div>
@@ -1181,6 +1262,8 @@ function vals(init) {
     var PHOTOS = ${JSON.stringify(PHOTOS)};
     var STYLES = ${JSON.stringify(STYLES)};
     var COPY = ${JSON.stringify(COPY)};
+    var COVER3 = ${JSON.stringify(COVER3)};
+    var SOURCES = ${JSON.stringify(SOURCES)};
     var IDEA = ${JSON.stringify(IDEA)};
     var PROMPTS = ${JSON.stringify(PROMPTS)};
     var REFS = ${JSON.stringify(REFS)};
@@ -1221,16 +1304,53 @@ function vals(init) {
     var sel = s.d6sel || { kind: "box", i: 0 };
     var slide = Math.max(1, Math.min(SLIDES, s.d6slide || 1));
     var keyOf = function (n, i) { return n + ":" + i; };
+    /* D14's three-role cover: which slide carries it, and how many of its boxes are there (the fourth is the one
+       added by hand, which only the unnamed board shows). */
+    var cover3 = s.d6cover3 ? Math.max(3, Math.min(COVER3.lines.length, s.d6cover3)) : 0;
+    var on3 = function (n) { return !!cover3 && n === 1; };
     var styleOf = function (n, i) {
-      var role = n === 1 ? "hook" : (n === SLIDES && i === 0 ? "hook" : "line");
+      var role = on3(n) ? COVER3.styles[i] || "small" : n === 1 ? "hook" : (n === SLIDES && i === 0 ? "hook" : "line");
       return Object.assign({ name: role }, STYLES[role], boxStyles[keyOf(n, i)] || {});
     };
-    var select = function (n, kind, i) { self.setState({ d6slide: n, d6sel: { kind: kind, i: i }, d6vers: false, d6sheet: PHONE }); };
+    /* D14: the box's place in the copy contract — the name the writer reads, and who writes it. Both start from the
+       AI's draft and are kept as overrides, the way a box's style is. */
+    var boxMeta = s.d6boxMeta || {};
+    /* D14, decided by Garreth 2026-09-22: a box no longer arrives unnamed. A box the AI drafted carries its role;
+       a box added by hand takes "Text Box n", where n counts the boxes added to that slide in the order they were
+       made. So there is never a hole in the copy contract, and nothing to hold Generate for. */
+    var draftName = function (n, i) {
+      if (on3(n)) {
+        if (COVER3.names[i]) return COVER3.names[i];
+        var k = 1;
+        for (var j = 0; j < i; j++) if (!COVER3.names[j]) k++;
+        return "Text Box " + k;
+      }
+      if (i > 0) return "save";
+      return n === 1 ? "hook" : n === SLIDES ? "closing" : "line";
+    };
+    var draftBy = function (n, i) { return on3(n) ? COVER3.by[i] || "ai" : i > 0 ? "fixed" : "ai"; };
+    var draftFixed = function (n, i) {
+      if (on3(n)) return COVER3.fixed[i] || "";
+      return i > 0 ? "Save this for tomorrow morning" : "";
+    };
+    var metaOf = function (n, i) {
+      var m = boxMeta[keyOf(n, i)] || {};
+      return {
+        name: m.name !== undefined ? m.name : draftName(n, i),
+        by: m.by || draftBy(n, i),
+        fixed: m.fixed !== undefined ? m.fixed : draftFixed(n, i),
+      };
+    };
+    /* D14: how many characters the box holds, worked out from its wrap width and size against the bundled fonts
+       rather than typed in — a new box has no painted history to take a limit from. It follows the steppers. */
+    var fitsOf = function (st) { return Math.max(1, Math.round(st.wrap / (st.size * 0.5))) * (st.name === "small" ? 1 : 3); };
+    /* Selecting another box drops whatever was half-typed in the Name field. */
+    var select = function (n, kind, i) { self.setState({ d6slide: n, d6sel: { kind: kind, i: i }, d6vers: false, d6sheet: PHONE, d6nameVal: null }); };
     var writing = s.d6writing || 0;
     var faceOf = function (n, live) {
       var d = deck[n - 1];
       var L = LAYOUTS[d.src];
-      var lines = (d.alt ? altCopy : copySet)[d.src];
+      var lines = on3(n) ? COVER3.lines.slice(0, cover3) : (d.alt ? altCopy : copySet)[d.src];
       var onThis = n === slide;
       var cells = L.cells.map(function (c, i) {
         var g = cellSets[keyOf(n, i)] || c.g;
@@ -1249,17 +1369,22 @@ function vals(init) {
       });
       var boxes = lines.map(function (text, i) {
         var st = styleOf(n, i);
-        var at = i === 1 ? "bottom2" : L.at;
+        var at = on3(n) ? COVER3.ats[i] || "centre" : i === 1 ? "bottom2" : L.at;
         var selected = onThis && sel.kind === "box" && sel.i === i;
+        /* D14: the name rides above the box on the slide being worked on, so three boxes read as three roles. */
+        var nm = metaOf(n, i).name;
         return {
           text: text,
           sk: !!s.d6sampling || writing === n,
           txt: !s.d6sampling && writing !== n,
-          role: i === 0 ? (n === 1 ? "Hook" : n === SLIDES ? "Closing" : "Line") : "Line",
+          name: nm,
+          role: nm,
+          tagOn: onThis && live && !!nm,
+          tagCls: selected ? "" : "is-off",
           w: Math.round((st.wrap / 1080) * 1000) / 10,
           cls: ["tb--" + st.name, "st-" + Math.max(0, Math.min(4, st.stroke)), "sw-" + (st.strokeColour || "black"), "sh-" + st.shadow.toLowerCase(), "al-" + st.align, "at-" + at, selected ? "is-sel" : "", live ? "can-pick" : ""].join(" "),
           sel: selected,
-          label: (i === 0 ? "Text box" : "Second text box") + ", " + text,
+          label: (nm ? "Text box " + nm : "Text box with no name") + ", " + text,
           pressed: selected ? "true" : "false",
           pick: function (e) { if (e && e.stopPropagation) e.stopPropagation(); select(n, "box", i); }
         };
@@ -1282,7 +1407,7 @@ function vals(init) {
       return {
         cls: analysing ? "is-scan" : "",
         cells: [{ x: 0, y: 0, w: 100, h: 100, empty: false, full: true, cls: "img-" + r.img, label: "", pressed: "false", pick: function () {} }],
-        boxes: [{ text: r.text, sk: false, txt: true, role: "", w: 84, cls: (i === 0 ? "tb--hook" : "tb--line") + " st-3 sw-black sh-hard al-left at-top", sel: false, label: "", pressed: "false", pick: function () {} }]
+        boxes: [{ text: r.text, sk: false, txt: true, name: "", role: "", tagOn: false, tagCls: "", w: 84, cls: (i === 0 ? "tb--hook" : "tb--line") + " st-3 sw-black sh-hard al-left at-top", sel: false, label: "", pressed: "false", pick: function () {} }]
       };
     });
 
@@ -1318,6 +1443,7 @@ function vals(init) {
     var applyDeck = function (next, fn, extra) {
       self.setState(Object.assign({
         d6deck: next, d6cellSets: shiftKeys(cellSets, fn), d6cellImages: shiftKeys(cellImages, fn), d6boxStyles: shiftKeys(boxStyles, fn),
+        d6boxMeta: shiftKeys(boxMeta, fn),
         d6rendered: shiftRendered(fn), d6menu: 0, d6vers: false, d6added: 0, d6removed: 0
       }, extra || {}));
     };
@@ -1408,10 +1534,41 @@ function vals(init) {
       self.setState({ d6boxStyles: next });
     };
     var step = function (field, by, lo, hi) { return function () { setStyle(Object.fromEntries([[field, Math.max(lo, Math.min(hi, curStyle[field] + by))]])); }; };
-    var boxRole = ready && sel.kind === "box" && cur.boxes[sel.i] ? cur.boxes[sel.i].role : "Hook";
+    var boxRole = ready && sel.kind === "box" && cur.boxes[sel.i] ? cur.boxes[sel.i].role : "hook";
+    /* D14: the selected box's line of the copy contract. The Name field carries what is typed until it is a name
+       the slide can take; a name already on the slide is refused rather than saved. */
+    var curMeta = ready && sel.kind === "box" ? metaOf(slide, sel.i) : { name: "hook", by: "ai", fixed: "" };
+    var setMeta = function (patch) {
+      var next = Object.assign({}, boxMeta);
+      next[keyOf(slide, sel.i)] = Object.assign({}, boxMeta[keyOf(slide, sel.i)] || {}, patch);
+      self.setState({ d6boxMeta: next });
+    };
+    var siblingNames = (ready && sel.kind === "box" ? cur.boxes : []).map(function (b, i) { return i === sel.i ? "" : b.name; });
+    var typedName = s.d6nameVal === undefined || s.d6nameVal === null ? curMeta.name : s.d6nameVal;
+    var nameTaken = !!typedName && siblingNames.indexOf(typedName) >= 0;
     var bx = {
       label: "Settings for the selected text box",
       title: "Slide " + slide + " · " + boxRole,
+      name: typedName,
+      taken: nameTaken,
+      nameCls: nameTaken ? "is-taken" : "",
+      rename: function (e) {
+        var v = ((e && e.target ? e.target.value : "") || "").trim();
+        self.setState({ d6nameVal: v });
+        if (siblingNames.indexOf(v) < 0) setMeta({ name: v });
+      },
+      sources: SOURCES.map(function (p) {
+        return { key: p[0], name: p[1], checked: curMeta.by === p[0] ? "true" : "false", pick: function () { self.setState({ d6nameVal: null }); setMeta({ by: p[0] }); } };
+      }),
+      srcMore: curMeta.by === "fixed",
+      srcLabel: curMeta.by === "fixed" ? "The words" : "",
+      srcText: curMeta.by === "fixed",
+      srcPick: false,
+      fixed: curMeta.fixed,
+      fact: "",
+      pickFact: function () {},
+      setFixed: function (e) { setMeta({ fixed: ((e && e.target ? e.target.value : "") || "") }); },
+      fits: fitsOf(curStyle) + " characters",
       font: curStyle.font, weight: curStyle.weight,
       pickFont: function () { self.note("Lists the template's fonts"); },
       pickWeight: function () { self.note("Lists the font's weights"); },
@@ -1756,6 +1913,9 @@ function studioBaseScreen({ init = {} } = {}) {
     save: false, hold: 0, vers: false, copy: "morning", cin: "", chatOpen: false, unread: false, left: true, title: "", rename: false, renameVal: undefined, sheet: false, ask: false,
     ref: "", refNew: false, sampling: false,
     deck: null, menu: 0, gapShow: 0, writing: 0, added: 0, addedHow: "", removed: 0, panAt: null,
+    /* D14: how many text boxes the cover carries (3, or 4 with one added by hand), what is half-typed in the Name
+       field, and any change to a box's name, source or fixed words. */
+    cover3: 0, nameVal: null, boxMeta: null,
     ...init,
   };
   const fresh = {
@@ -1765,6 +1925,7 @@ function studioBaseScreen({ init = {} } = {}) {
     d6save: m.save, d6hold: m.hold, d6vers: m.vers, d6copy: m.copy, d6cin: m.cin, d6cinFocus: !!m.cinFocus, d6chatOpen: m.chatOpen, d6unread: m.unread, d6left: m.left,
     d6title: m.title, d6rename: m.rename, d6renameVal: m.renameVal, d6sheet: m.sheet,
     d6cellSets: null, d6cellImages: null, d6boxStyles: null, d6lset: "All", d6newLib: "", d6ph: 0, d6panning: false, d6panTo: null, d6toLibrary: false,
+    d6cover3: m.cover3, d6nameVal: m.nameVal, d6boxMeta: m.boxMeta,
   };
   return {
     id: "studio",
@@ -2160,14 +2321,12 @@ const layerSections = () => `
                 </sc-if>
               </sc-if>`;
 
-/* Rows D11 adds to the top of D6's text box settings: who writes it, the set's fact, and the box behind it. */
+/* The box behind a text layer. Who writes it and which fact of the set it takes were rows of their own until D14
+   (2026-09-22) gave every text box a Name and a Written by of its own, above Font; a layered layer now reads off
+   that one section, with Set as its fourth source, so there is one place in the inspector that says where the
+   words come from. */
 const textRows = () => `
                 <sc-if value="{{d11tx}}" hint-placeholder-val="{{ false }}">
-                  <div class="irow">
-                    <span class="ilabel">Written by</span>
-                    <div class="ictl"><div class="seg" role="radiogroup" aria-label="Written by"><button type="button" role="radio" aria-checked="{{d11byAi}}" onClick="{{d11toAi}}">AI</button><button type="button" role="radio" aria-checked="{{d11bySet}}" onClick="{{d11toSet}}">Set</button></div></div>
-                  </div>
-                  <sc-if value="{{d11bySetOn}}" hint-placeholder-val="{{ false }}">${row("Fact", dd("{{d11fact}}"), "sub")}</sc-if>
                   <div class="irow">
                     <span class="ilabel">Box</span>
                     <div class="ictl">
@@ -2279,7 +2438,16 @@ function patchPanels(html, optional) {
   out = swap(out, `<div class="cin">`, `<div class="cin">${smallChip}`, { optional, all: true });
   out = swap(out, `<div class="sbody">`, `<div class="sbody">${layerSections()}`, { optional });
   out = swap(out, `<div class="sec" id="sec-library"`, `${setsSection()}\n              <div class="sec" id="sec-library"`, { optional });
-  out = swap(out, `<span class="pill">Text box</span></div>`, `<span class="pill">Text box</span></div>${textRows()}`, { optional });
+  /* After D14's copy-contract rows, not before them: the box is a style, and the name and source above it are the
+     contract. The anchor is the last row of that group. */
+  out = swap(
+    out,
+    `<span class="ictl rback tnum">{{bx.fits}}</span>
+                </div>`,
+    `<span class="ictl rback tnum">{{bx.fits}}</span>
+                </div>${textRows()}`,
+    { optional },
+  );
   out = swap(out, `Upload images</button></span></span></div></sc-if>`, `Upload images</button></span></span></div></sc-if>${proposal}`, { optional, all: true });
   return out;
 }
@@ -2485,17 +2653,45 @@ function vals11(d6vals) {
     var bySet = !!selL && (s.d11by ? s.d11by[selL.id] === "set" : false) || (!!selL && selL.src === "Set" && !(s.d11by && s.d11by[selL.id] === "ai"));
     var setBy = function (v) { return function () { if (!selL) return; var b = Object.assign({}, s.d11by || {}); b[selL.id] = v; self.setState({ d11by: b }); }; };
     var boxOn = !!selL && selL.kind === "box" && s.d11box !== false;
+    /* D14 (2026-09-22): a layered text layer reads off the same copy-contract rows as a flat text box — the name it
+       carries, where its words come from and how many characters it holds. A template drawing from sets has a
+       fourth source, Set, and picking it asks which fact of the set fills the layer. */
+    var lyName = function (l) { return (s.d14names && s.d14names[l.id]) || l.name.toLowerCase().split(" ").join("-"); };
+    var SOURCES11 = [["ai", "AI"], ["set", "Set"], ["fixed", "Fixed"], ["batch", "Per batch"]];
     var styleFor = function (l) {
       if (!l) return {};
       var big = l.kind === "box";
       var align = l.kind === "label" ? "right" : "centre";
+      var wrap = l.kind === "label" ? 300 : big ? 944 : 940;
+      var size = big ? 48 : 42;
+      var nm = lyName(l);
+      var by = bySet ? "set" : (s.d11by && s.d11by[l.id]) || "ai";
+      var sibs = SLIDES11.filter(function (sd) { return sd.n === l.slide; })
+        .reduce(function (acc, sd) { return acc.concat(sd.layers); }, [])
+        .filter(function (o) { return o.id !== l.id && (o.kind === "box" || o.kind === "line" || o.kind === "label"); })
+        .map(lyName);
+      var typed = s.d14typed === undefined || s.d14typed === null ? nm : s.d14typed;
+      var tk = !!typed && sibs.indexOf(typed) >= 0;
       return {
-        title: "Slide " + l.slide + " · " + l.name,
-        font: "General Sans", weight: "Bold", size: big ? 48 : 42, stroke: big ? 0 : 4,
+        title: "Slide " + l.slide + " · " + nm,
+        name: typed, taken: tk, nameCls: tk ? "is-taken" : "",
+        rename: function (e) { self.setState({ d14typed: ((e && e.target ? e.target.value : "") || "").trim() }); },
+        sources: SOURCES11.map(function (p) {
+          return { key: p[0], name: p[1], checked: by === p[0] ? "true" : "false", pick: function () { self.setState({ d14typed: null }); setBy(p[0])(); } };
+        }),
+        srcMore: by === "set" || by === "fixed",
+        srcLabel: by === "set" ? "Fact" : "The words",
+        srcText: by === "fixed",
+        srcPick: by === "set",
+        fact: l.fact || "Name",
+        pickFact: function () { self.note("Lists the set's facts: Name, Year, Before weight, After weight"); },
+        fixed: "",
+        fits: Math.max(1, Math.round(wrap / (size * 0.5))) * (l.kind === "label" ? 1 : 2) + " characters",
+        font: "General Sans", weight: "Bold", size: size, stroke: big ? 0 : 4,
         strokeBlack: "true", strokeWhite: "false",
         shOff: "true", shHard: "false", shSoft: "false", shOn: false, shSoftOn: false,
         alLeft: "false", alCentre: align === "centre" ? "true" : "false", alRight: align === "right" ? "true" : "false",
-        wrap: l.kind === "label" ? 300 : big ? 944 : 940
+        wrap: wrap
       };
     };
 
@@ -2584,12 +2780,6 @@ function vals11(d6vals) {
       selCell: LAY ? false : D6V.selCell,
       bx: LAY && isText ? Object.assign({}, D6V.bx, styleFor(selL)) : D6V.bx,
       d11tx: LAY && isText,
-      d11byAi: bySet ? "false" : "true",
-      d11bySet: bySet ? "true" : "false",
-      d11bySetOn: bySet,
-      d11toAi: setBy("ai"),
-      d11toSet: setBy("set"),
-      d11fact: selL && selL.fact ? selL.fact : "Name",
       d11boxOn: boxOn,
       d11boxOnC: boxOn ? "true" : "false",
       d11boxOffC: boxOn ? "false" : "true",
@@ -2646,7 +2836,7 @@ function vals11(d6vals) {
  */
 export function studioScreen({ init = {} } = {}) {
   const base = studioBaseScreen({ init: init.d6 || {} });
-  const d = { lay: false, size: "45", sel: null, chip: "", prompt: "", cutEmpty: false, moment: "", flat: "", name: "", char: "", ver: "", ...(init.d11 || {}) };
+  const d = { lay: false, size: "45", sel: null, chip: "", prompt: "", cutEmpty: false, moment: "", flat: "", name: "", char: "", ver: "", names: null, typed: null, ...(init.d11 || {}) };
   return {
     ...base,
     css: (phone) => base.css(phone) + css11(phone),
@@ -2656,6 +2846,8 @@ export function studioScreen({ init = {} } = {}) {
       ...base.state,
       d11lay: d.lay, d11size: d.size, d11sel: d.sel, d11chip: d.chip, d11prompt: d.prompt, d11cutEmpty: d.cutEmpty, d11moment: d.moment,
       d11flat: d.flat, d11name: d.name, d11char: d.char, d11ver: d.ver, d11order: null, d11box: true, d11by: null, d11set: 0, d11view: null, d11tick: 0,
+      /* D14: a layer renamed in the inspector, and what is half-typed in the Name field. */
+      d14names: d.names, d14typed: d.typed,
     },
     vals: vals11(base.vals),
     didUpdate: (base.didUpdate || "") + didUpdate11,
@@ -2700,6 +2892,13 @@ const MOMENTS = {
   slideAdded: { ...READY, slide: 4, chatOpen: true, deck: [0, 1, 2, [2, true], 3, 4, 5].map((d) => (Array.isArray(d) ? { src: d[0], alt: d[1] } : { src: d, alt: false })), added: 4, addedHow: "new" },
   deleteFloor: { ...READY, slide: 2, menu: 2, deck: [{ src: 0, alt: false }, { src: 5, alt: false }] },
   phoneAddSlide: { ...READY, slide: 6, menu: 6, panAt: 2030 },
+  /* D14 (Garreth, 2026-09-21): a text box carries a name, and that name is its role in the copy contract. The
+     cover holds three of them, so the three roles can be read off one slide. */
+  nameHook: { ...READY, cover3: 3, slide: 1, sel: { kind: "box", i: 1 } },
+  nameFixed: { ...READY, cover3: 3, slide: 1, sel: { kind: "box", i: 0 } },
+  nameAdded: { ...READY, cover3: 4, slide: 1, sel: { kind: "box", i: 3 } },
+  nameTaken: { ...READY, cover3: 3, slide: 1, sel: { kind: "box", i: 2 }, nameVal: "hook" },
+  phoneName: { ...READY, cover3: 3, slide: 1, sel: { kind: "box", i: 2 }, sheet: true },
 };
 /* Round two's phone boards (D11 has none): a draft started from a Figma link, drawn as a layered template. */
 const FIGMA_READY = { stage: "ready", entry: "figma", lib: "window", slide: 1, title: "Red Carpet Rewind" };
@@ -2749,6 +2948,13 @@ function build(OUT) {
     { name: "SlideAdded", phone: false, m: "slideAdded", title: "D6 · The new slide written, the AI says what it did · Desktop", x: 0, y: ROW * 14 },
     { name: "DeleteFloor", phone: false, m: "deleteFloor", title: "D6 · Two slides left: Delete unavailable · Desktop", x: 1540, y: ROW * 14 },
     { name: "PhoneAddSlide", phone: true, m: "phoneAddSlide", title: "D6 · The Add slide slot at the end of the row, a slide's menu open · Phone", x: 3080, y: ROW * 12 },
+    /* D14 (Garreth, 2026-09-21): naming a text box. The cover carries three named boxes on every board of the row,
+       so the three roles and the three sources can be compared; the fourth board adds one by hand. */
+    { name: "BoxName", phone: false, m: "nameHook", title: "D6 · A text box's name, and where its words come from · Desktop", x: 0, y: ROW * 15 },
+    { name: "BoxFixed", phone: false, m: "nameFixed", title: "D6 · A fixed box: the same words on every deck · Desktop", x: 1540, y: ROW * 15 },
+    { name: "BoxAdded", phone: false, m: "nameAdded", title: "D6 · A box added by hand: it arrives named Text Box 1 · Desktop", x: 0, y: ROW * 16 },
+    { name: "BoxTaken", phone: false, m: "nameTaken", title: "D6 · A name already on the slide, refused · Desktop", x: 1540, y: ROW * 16 },
+    { name: "PhoneBoxName", phone: true, m: "phoneName", title: "D6 · The name in the adjustments sheet, written per batch · Phone", x: 3080, y: ROW * 15 },
   ];
   const artboards = [];
   for (const light of [false, true]) {
@@ -2760,7 +2966,7 @@ function build(OUT) {
     }
   }
   const note =
-    "Pictures, one screen per state; the controls that do work are a bonus. From the two cards you can walk the whole path: a card, a library (or New library), a saved deck or the chat box, then the draft. On the canvas boards, try dragging the dotted ground to pan, the title (press it to rename), a text box or an image cell on any slide, the adjustments on the left (the canvas follows), a library image (click it into the selected cell, or drag it onto a cell), the fold buttons on both panels and the rails they leave, Render preview, Regenerate sample, Save as carousel type, and Discard draft (press and hold).\n\nThe phone boards: the slides pan sideways, the adjustments open as a sheet from the bottom, the conversation floats behind the round button.\n\nRound two (D11, approved and brought in on 2026-09-15): slides are 4:5 or 9:16, and so are the reference's slides, the saved decks' covers and the library's tiles; Slide size comes first in the adjustments; a third card, Start from a Figma link; the chat box grows with the prompt (Shift+Enter starts a new line); the canvas pans in every direction and zooms (Ctrl or Cmd with the wheel, a pinch, or the buttons at the end of the tool strip; the zoom level fits every slide). Layered templates and the Figma link's desktop screens are on D11's canvas, Carousel Generator Designs - (D6 pt. 2 Studio).\n\nNew for review, the phone in round two: the Figma file's chip above the chat box in the conversation sheet, and the Layers list in the adjustments sheet. The phone keeps its sideways scroll, with no zoom.\n\nRound three, for review (2026-09-17): slides can be added, duplicated, deleted and moved. Press the dashed slot after the last slide, or the plus that appears between two slides on hover; the dots on a slide's caption open Duplicate, Move left, Move right and Delete. A new slide takes the layout of the slide before it and the AI writes its line; a duplicate keeps the text. Delete is unavailable at two slides. On the phone the dots always show and the slot ends the row.";
+    "Pictures, one screen per state; the controls that do work are a bonus. From the two cards you can walk the whole path: a card, a library (or New library), a saved deck or the chat box, then the draft. On the canvas boards, try dragging the dotted ground to pan, the title (press it to rename), a text box or an image cell on any slide, the adjustments on the left (the canvas follows), a library image (click it into the selected cell, or drag it onto a cell), the fold buttons on both panels and the rails they leave, Render preview, Regenerate sample, Save as carousel type, and Discard draft (press and hold).\n\nThe phone boards: the slides pan sideways, the adjustments open as a sheet from the bottom, the conversation floats behind the round button.\n\nRound two (D11, approved and brought in on 2026-09-15): slides are 4:5 or 9:16, and so are the reference's slides, the saved decks' covers and the library's tiles; Slide size comes first in the adjustments; a third card, Start from a Figma link; the chat box grows with the prompt (Shift+Enter starts a new line); the canvas pans in every direction and zooms (Ctrl or Cmd with the wheel, a pinch, or the buttons at the end of the tool strip; the zoom level fits every slide). Layered templates and the Figma link's desktop screens are on D11's canvas, Carousel Generator Designs - (D6 pt. 2 Studio).\n\nNew for review, the phone in round two: the Figma file's chip above the chat box in the conversation sheet, and the Layers list in the adjustments sheet. The phone keeps its sideways scroll, with no zoom.\n\nRound three, for review (2026-09-17): slides can be added, duplicated, deleted and moved. Press the dashed slot after the last slide, or the plus that appears between two slides on hover; the dots on a slide's caption open Duplicate, Move left, Move right and Delete. A new slide takes the layout of the slide before it and the AI writes its line; a duplicate keeps the text. Delete is unavailable at two slides. On the phone the dots always show and the slot ends the row.\n\nNew in D14, for review (Garreth, 2026-09-21), the last two rows: a text box carries a name, and that name is its role in the copy contract — what the writer reads to know what goes in it.\n· A text box's settings open on three rows above Font: Name, Written by, and Fits n characters. Nothing else in the inspector moved.\n· Name comes pre-filled from the AI's draft, and can be typed in on any board. A name already on the same slide is refused with Taken, the word the Save dialog's short name uses, and is not saved.\n· Written by is AI, Fixed or Per batch. Fixed opens a box for the words themselves, painted on every deck of the type — Glow Up's closing line and its QUIZ line are exactly this. Per batch means the Generate form asks for it, the way it already asks for the opening line.\n· Fits n characters is worked out from the box's wrap width and size, not typed. Press the Wrap width or the Size stepper and watch it change: a new box has no painted history to take a limit from, so measuring it is the only honest source. It is shown, never edited.\n· The cover on these boards carries three text boxes — series, hook and swipe — so three roles sit on one slide. Every box on the slide being worked on now shows its name above it, the selected one in the accent and the rest in a dark chip. Before D14 a box's role came from its position, so three boxes on one slide all came out the same.\n· A box added from the tool strip never arrives unnamed (Garreth, 2026-09-22): it takes the default name Text Box 1, counting up in the order boxes are added to that slide. So the copy contract is never left with a hole, and nothing has to hold Generate.\n· There is no per-box description. What a box is for is said in the type's Writing, so there is one place to read rather than two, with the box names listed beside that editor (D13).";
   fs.writeFileSync(
     path.join(OUT, "canvas.json"),
     JSON.stringify(

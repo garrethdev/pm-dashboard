@@ -47,11 +47,11 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
   and its states live in those screens' own build files. Approved
   2026-09-21. A ticket that extends existing screens is drawn this way; a
   ticket that adds a screen still gets its own canvas.
-- **D13, D13b, D14 and D15 have no canvas of their own either** (Garreth,
-  2026-09-21), for the same reason. They change and extend screens that
+- **D13, D13b, D14, D15 and D17 have no canvas of their own either**
+  (Garreth, 2026-09-21), for the same reason. They change and extend screens that
   already exist, so their boards are new last rows on the canvases those
-  screens own. **D13 and D13b were both approved on 2026-09-22;
-  D14 and D15 are still open, and D14 is next.**
+  screens own. **D13, D13b and D14 were all approved on 2026-09-22;
+  D15 and D17 are still open, and D15 is next.**
   - **D13** (Direction → **Writing**, Wiring → **Go Live**, Writing required)
     — **D1**, **D2** and **D7**, all three saved in dark and light. Boards
     that showed the old names were redrawn in place on those pages, not added
@@ -69,8 +69,20 @@ their two themes do not fit under the 16 MB limit of one canvas (D6 is
     redrawn in place rather than added beside. Placed **without `--theme`**,
     the way D13 was, because both themes were drawn together.
   - **D14** (naming a text box) — **D6 · Dark**, **D6 · Light**, and **D11**
-    for the same inspector section on a layered slide.
+    for the same inspector section on a layered slide. **APPROVED in dark and
+    light 2026-09-22** — D6 dark version 11, D6 light version 6, D11 version
+    11 (both its pages). For the dark round D11's light page was put back from
+    the live canvas the way the bullet below says, because its change reaches
+    both themes from one build; the light round then placed both pages, and a
+    last round redrew one board after Garreth decided a box added by hand
+    arrives named **Text Box 1** rather than unnamed. **Both D6 canvases are
+    full**: the five new boards took each from 13.9 MB to 15.9 MB, against a
+    16 MB ceiling, so the next ticket that *adds* a Studio board cannot go on
+    them and needs a canvas of its own.
   - **D15** (the **Rows** tab) — **D7**.
+  - **D17** (dragging and `@`-typing a text box's name into the Writing and
+    the Conversation) — **D7**. Raised 2026-09-22; it extends D13's own
+    text-box row, and leans on **D14** for the names it points at.
 - **D16 (Overview) is the exception and does get its own canvas** (2026-09-22):
   it adds a screen rather than extending one, which is the standing rule two
   bullets down. Name it "Carousel Generator Designs - (D16 Overview)", build
