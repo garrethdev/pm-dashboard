@@ -174,6 +174,8 @@ export function AccountsTable({
   groupByPhone = false,
   demo = false,
   phones = [],
+  notice,
+  headerAction,
   className,
 }: {
   rows: AccountRow[];
@@ -188,6 +190,11 @@ export function AccountsTable({
   demo?: boolean;
   /** The registered phones, so one with no accounts is still listed. */
   phones?: PhoneOption[];
+  /** A line to say above the table that something just landed — a newly added
+   *  account (PF-21), whose row is somewhere down a list of sixty. */
+  notice?: string | null;
+  /** The page's one accent button, on the title row: Add account (PF-21). */
+  headerAction?: React.ReactNode;
   /** "page" = full detail table with action buttons; "card" = compact homepage card. */
   mode?: "page" | "card";
   /** Selectable content types per character. Page mode only. */
@@ -898,15 +905,29 @@ export function AccountsTable({
           {/* The page's name, and — in Physical — the view of it opposite
               (Garreth, 2026-09-22). On Cloud, which has no view to choose,
               this row is for a phone only; on a desktop the name goes back
-              inline with the filters, where it has always been. */}
+              inline with the filters, where it has always been.
+
+              Add account joined this row for PF-21, and on a phone three
+              things do not fit: the name, the switch, and the button clipping
+              the switch to "By pho…". So on a phone the button sits opposite
+              the name and the switch takes the whole line below it, which is
+              the shape a segmented control is built for anyway. From `sm:` up
+              all three are back on the one line. */}
           <div
             className={cn(
-              "flex items-center justify-between gap-3",
+              "flex flex-wrap items-center gap-3",
               !viewSwitch && "sm:hidden",
             )}
           >
-            <h1 className="text-xl font-semibold">Accounts</h1>
-            {viewSwitch}
+            <h1 className="order-1 text-xl font-semibold">Accounts</h1>
+            {headerAction && (
+              <div className="order-2 ml-auto shrink-0 sm:order-3 sm:ml-0">{headerAction}</div>
+            )}
+            {viewSwitch && (
+              <div className="order-3 w-full min-w-0 sm:order-2 sm:ml-auto sm:w-auto">
+                {viewSwitch}
+              </div>
+            )}
           </div>
 
           {/* On a phone this is TWO rows and the search comes first (Garreth,
@@ -963,6 +984,17 @@ export function AccountsTable({
             </div>
           </div>
         </div>
+
+        {/* Something that just landed and would otherwise be invisible — an
+            account added from the form above. */}
+        {notice && (
+          <p
+            role="status"
+            className="rounded-nested bg-accent-soft px-3 py-2 text-sm text-accent"
+          >
+            {notice}
+          </p>
+        )}
 
         {/* A warmup switch that could not be saved. It sits above both views
             because the press it belongs to can come from either. */}

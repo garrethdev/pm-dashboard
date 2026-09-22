@@ -20,6 +20,49 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-22 — Accounts can be added from the app, with their Profile name typed in
+
+**Where it came from:** ticket PF-21, opened the same day off Garreth's
+decision that an account made from scratch on a real iPhone still gets a
+"Profile N" name, typed into a form rather than handed out by a robot.
+
+Until today an account row only ever came from the n8n provisioning workflow,
+and it arrived half-blank — the handle, the character, the day the account was
+made and the active flag were all typed into the database afterwards by hand.
+Accounts on real iPhones are not provisioned by anything, so there was no way
+to create one at all.
+
+The Accounts page in Physical now has an **Add account** button, opening the
+same kind of sheet as Add phone. It asks for the Profile name, the handle, the
+character, the platform, which fleet it is on, the phone it lives on, the day
+the account was made, and whether it starts paused. The row it writes is
+complete, with nothing left to fill in by hand.
+
+**Why the Profile name gets this much care.** It is what ties an account to its
+posts, its health verdict, its analytics and its calendar — several database
+views join on it — so the form guards it three ways. A name already in use is
+refused by name ("Profile 19 already exists — it is @mayas_journey0, retired").
+The spelling is settled before saving, because "profile 019", "Profile19" and
+"PROFILE 19" are one account to a person and three to a database; the form
+shows "Saves as Profile 19" first, so nothing is changed behind your back. And
+the number it suggests counts on from the HIGHEST rather than filling a gap:
+the fleet runs 8 to 78 with fourteen numbers missing, and those deleted
+accounts still have posts and tasks filed under their old names, so reusing a
+number would quietly graft a dead account's history onto a new one.
+
+**A new account starts paused** unless you switch it. One that goes live the
+moment it is written is picked up by the next planning run, and a day-zero
+account has not been warmed.
+
+**Confirmed live.** A real account was written through the finished form, seen
+in the Physical list, and deleted again within the minute — the table is back
+to its 64 rows. Every refusal above was tried against the live database and
+came back with the sentence quoted. **Not checked:** the phone dropdown has
+never been seen with a real phone in it, because none is registered; and the
+screens were looked at in headless Chrome, not Safari.
+
+---
+
 ## 2026-09-22 — Posts for real phones now go to a person, not to Geelark
 
 **Where it came from:** ticket PF-06, the last piece of plumbing the phone farm

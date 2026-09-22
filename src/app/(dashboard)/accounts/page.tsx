@@ -3,6 +3,7 @@ import { AccountsViews } from "@/components/dashboard/accounts-views";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { getAccounts } from "@/lib/data/accounts";
+import { nextProfileName } from "@/lib/data/account-rules";
 import {
   PLACEHOLDER_ACCOUNTS,
   PLACEHOLDER_PHONES,
@@ -63,6 +64,13 @@ async function AccountsLive({ demo }: { demo: boolean }) {
       rows={showDemo ? PLACEHOLDER_ACCOUNTS : rows}
       contentTypeOptions={options.data}
       fleet={fleet}
+      // For the Add account form (PF-21). The characters are the keys of the
+      // options above, which is the live `characters` table already read here.
+      // The suggestion comes from EVERY account, not the fleet being looked at:
+      // Profile names are one list across both fleets, and a number free in
+      // Physical may well be taken in Cloud.
+      characters={Object.keys(options.data).sort()}
+      suggestedProfile={nextProfileName(data.map((r) => r.profile))}
       // The invented farm reuses REAL profile names, so with PF-04 wired up a
       // press on its warmup switch would write to a live account. Demo rows
       // move the switch and forget, the way every switch on this page did
@@ -76,6 +84,7 @@ async function AccountsLive({ demo }: { demo: boolean }) {
               name: d.name,
               model: d.model ?? null,
               isActive: d.isActive,
+              held: d.accounts.length,
             }))
       }
     />
