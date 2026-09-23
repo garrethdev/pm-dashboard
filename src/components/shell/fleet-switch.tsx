@@ -20,8 +20,10 @@ const FLEET_ICON = { cloud: Cloud, physical: Smartphone } as const;
  * this in view that reads as the account being gone.
  *
  * Per person: a cookie set by /api/fleet, so Yurie working in Physical never changes what anyone
- * else sees. The active side is raised glass, not the accent; the accent stays
- * with the one action on the page, the same rule the sidebar follows.
+ * else sees. The active side is a solid fill in the text colour, not the
+ * accent; the accent stays with the one action on the page, the same rule the
+ * sidebar follows. It was raised glass until P13 (B1-1), which light mode
+ * flattens into the track's own colour, so neither side looked chosen.
  */
 export function FleetSwitch({ fleet }: { fleet: Fleet }) {
   const router = useRouter();
@@ -77,6 +79,9 @@ export function FleetSwitch({ fleet }: { fleet: Fleet }) {
       {FLEETS.map((f) => {
         const Icon = FLEET_ICON[f];
         return (
+          // A 44px target around the 32px half, for a thumb (P13 B1-2). The
+          // overhang is taken back by the negative margin, so the switch
+          // stays the height of the bell beside it.
           <button
             key={f}
             type="button"
@@ -85,11 +90,18 @@ export function FleetSwitch({ fleet }: { fleet: Fleet }) {
             title={FLEET_LABEL[f]}
             onClick={() => choose(f)}
             className={cn(
-              "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
-              shown === f ? "glass text-text-primary" : "text-text-muted hover:text-text-primary",
+              "-my-1.5 flex h-11 w-14 items-center justify-center",
+              shown === f ? "text-bg" : "text-text-muted hover:text-text-primary",
             )}
           >
-            <Icon className="size-4" />
+            <span
+              className={cn(
+                "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
+                shown === f && "bg-text-primary",
+              )}
+            >
+              <Icon className="size-4" />
+            </span>
           </button>
         );
       })}

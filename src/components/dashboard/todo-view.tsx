@@ -332,22 +332,29 @@ function PickerRow({
 function DayStepper({ day, onChange }: { day: TodoDay; onChange: (d: TodoDay) => void }) {
   const step = (by: number) => onChange(Math.max(-7, Math.min(14, day + by)));
 
-  // 28px, the height of the Grid / List pills, so the page's two switches
-  // read as the same weight of control (Garreth, 2026-09-22). The hit area is
-  // kept at 44px by the ::after inset below, which is invisible.
-  const arrow =
-    "relative flex size-7 items-center justify-center rounded-full border border-border text-text-muted transition-colors after:absolute after:-inset-2 after:content-[''] hover:border-text-muted/50 hover:text-text-primary";
+  // The circle is 28px, the height of the Grid / List pills, so the page's two
+  // switches read as the same weight of control (Garreth, 2026-09-22). The
+  // button around it is 44px, for a thumb, and the negative margin gives the
+  // overhang back so the row does not grow (P13 B7-2; an invisible ::after
+  // did this before, but the button itself still measured 28px).
+  const arrow = "group -m-2 flex size-11 items-center justify-center";
+  const circle =
+    "flex size-7 items-center justify-center rounded-full border border-border text-text-muted transition-colors group-hover:border-text-muted/50 group-hover:text-text-primary";
 
   return (
     <div className="flex items-center gap-0.5">
       <button onClick={() => step(-1)} aria-label="The day before" className={arrow}>
-        <ChevronLeft className="size-3.5" />
+        <span className={circle}>
+          <ChevronLeft className="size-3.5" />
+        </span>
       </button>
       {/* Wide enough for the longest label so the arrows do not shuffle, and
           no wider (Garreth, 2026-09-22). */}
       <span className="min-w-20 text-center text-sm font-medium">{todoDayLabel(day)}</span>
       <button onClick={() => step(1)} aria-label="The day after" className={arrow}>
-        <ChevronRight className="size-3.5" />
+        <span className={circle}>
+          <ChevronRight className="size-3.5" />
+        </span>
       </button>
     </div>
   );

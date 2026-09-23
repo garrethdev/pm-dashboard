@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Smartphone, X } from "@/components/ui/icons";
+import { ChevronRight, Loader2, Smartphone, X } from "@/components/ui/icons";
 import { HoldButton } from "@/components/ui/hold-button";
 import { StatusPill } from "@/components/ui/pill";
 import { MovePhonePicker } from "@/components/dashboard/move-phone-picker";
@@ -134,16 +134,23 @@ export function DeliveryModeControl({
 
   return (
     <>
+      {/* 44px tall on a phone, and the › says it opens something: it is the
+          only way to start a move, and it looked exactly like the read-only
+          pill (P13 B2-3). `relative` lifts it above the card's Select-mode
+          tick target. */}
       <button
         type="button"
         onClick={start}
         aria-label={`Managed on ${deliveryModeLabel(mode)}. Change`}
-        className="group cursor-pointer rounded-full outline-none transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-accent/70"
+        className="group relative flex shrink-0 cursor-pointer items-center rounded-full outline-none transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-accent/70 max-sm:min-h-11"
       >
-        <DeliveryModePill
-          mode={mode}
-          className="ring-1 ring-transparent transition-all duration-150 group-hover:brightness-125 group-hover:ring-current/40"
-        />
+        <StatusPill
+          tone={mode === "manual" ? "info" : "neutral"}
+          className="gap-0.5 pr-1.5 ring-1 ring-transparent transition-all duration-150 group-hover:brightness-125 group-hover:ring-current/40"
+        >
+          {deliveryModeLabel(mode)}
+          <ChevronRight className="size-3" />
+        </StatusPill>
       </button>
 
       {open && (
@@ -168,11 +175,13 @@ export function DeliveryModeControl({
                   </h2>
                 </div>
               </div>
+              {/* A 44px target around the 20px cross; the negative margin
+                  keeps the header where it was (P13 B2-2). */}
               <button
                 type="button"
                 onClick={close}
                 aria-label="Close"
-                className="text-text-muted hover:text-text-primary"
+                className="-m-3 flex size-11 shrink-0 items-center justify-center text-text-muted hover:text-text-primary"
               >
                 <X className="size-5" />
               </button>
