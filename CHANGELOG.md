@@ -20,6 +20,75 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — Phone farm: easier to tap on a phone, paused accounts' warmups on To-do, and the move back to Cloud hands back its posts
+
+**Where it came from:** Garreth picked these from the list of what was left on
+the phone farm, on 2026-09-23. The tap-target and contrast fixes are the P13
+review's findings (`docs/P13-REVIEW-FINDINGS.md`), approved that day. The rest
+are his decisions on gaps noted while building PF-03, P8 and P12.
+
+**What changed:**
+
+- **You can tell which fleet you're on.** The Cloud / Physical switch at the
+  top right now fills the side that is on with a solid pill, black in light
+  mode and white in dark. Before, in light mode, both sides looked the same.
+  (P13 review, B1-1.)
+- **Easier to tap on a phone.** These are now a full finger's width (44 px) on
+  phone screens: the Cloud / Physical switch, the ✕ on the move dialog and on
+  Add phone, the Cloud pill on each Settings card (which also gained a small ›
+  so it looks pressable), "← All phones", In use, Live view, Remove, Save and
+  Add screenshot on a phone's page, Cancel and Save phone on Add phone, and
+  To-do's ‹ Today › arrows. In Select mode in Settings, tapping anywhere on an
+  account's card ticks it, not just the small box. On a desktop these look
+  the same as before. (P13 review, B1-2, B2-2, B2-3, B3-2, B7-2.)
+- **Two labels that were too faint are easier to read.** The amber "hold to
+  confirm" button (moving accounts, To-do's Undo) in light mode, and the grey
+  pills ("Cloud", "Off", "Not yet due" …) in dark mode. Hold buttons also no
+  longer fade when the pointer is over them, which made them fainter still.
+  The red hold button (Retire) is still slightly under the readability
+  minimum; it was not in this batch. (P13 review, B2-1, B2-5.)
+- **Paused accounts that are warmed by hand now get their warmups on the
+  To-do list.** Their posts still stay off. Garreth's decision: an account
+  that has just moved onto a phone stays paused for three to five days while
+  it is warmed back up by hand, and those warmups are real work. Before, a
+  paused account showed nothing at all, so those warmups could only be logged
+  from the phone's or the account's own page. Accounts set to Automated still
+  show nothing while paused. The To-do page, the dashboard card, a phone's
+  "Today on this phone" and the bell's "things to do today" count all follow
+  the same rule, so they agree.
+- **On the dashboard's To-do card, a folded phone now shows Overdue** when it
+  holds a post that has waited more than a day. Before, you only saw it after
+  opening the phone. (Left open in P12.)
+- **On the dashboard's To-do card, an opened phone now lists a ban's clean-up
+  steps**, and they can be ticked there as on the To-do page. The phone's
+  count already included them, but the card never showed what they were.
+  (Left open in P8.)
+- **Moving an account from a phone back to Cloud now hands back the posts it
+  was holding.** Before, posts already handed to a person for that account
+  stayed on the to-do list, and their content stayed tied to it. Now they come
+  off the list as skipped and their content goes back to the pool to be
+  planned again, exactly as when a banned account is retired. Posts already
+  posted or marked failed stay as history, and content planned for later days
+  stays with the account, since it keeps posting on Cloud. The move, the
+  hand-back and the history record are saved together or not at all, and the
+  history says how many posts went back. (Noticed while building PF-03.)
+
+**How it was checked:** the size and contrast fixes were measured on the page
+in headless Chrome, at phone and desktop width, dark and light. **Not yet seen
+in Safari or on a real iPhone.** The paused-warmups rule was proven on the
+live database with a practice phone and a paused practice account: two
+warmups showed on the To-do page, the dashboard card and the phone's page, the
+bell counted them, no post appeared, and switching the account to Automated
+removed them. The move back to Cloud was proven live on a practice account,
+phone and content: the hand-back matched a ban's exactly, and two people moving
+the same account at the same moment could not both succeed. All practice rows
+were deleted and checked gone, and no real account was touched. The two card
+changes were seen in the demo states only; a clean-up tick saving from the
+card has not met a real ban yet. No real account is on a phone, so none of
+this has run on real work yet.
+
+---
+
 ## 2026-09-23 — Six fixes from the P13 review: missing pages, the Physical calendar, "Infinity days", the glowing button, the Facebook tab
 
 **Where it came from:** design ticket P13's review of the screens built

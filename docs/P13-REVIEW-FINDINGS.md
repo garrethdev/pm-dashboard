@@ -1,4 +1,4 @@
-# P13 — review of B1 to B7 (findings; five fixed and one cleared on 2026-09-23)
+# P13 — review of B1 to B7 (findings; thirteen fixed and one cleared on 2026-09-23)
 
 **Date:** 2026-09-23. **Code reviewed:** `2dfd69b` (PF-03 on top of `main`).
 **The pictures were not kept.** 128 screenshots were taken during the review
@@ -72,6 +72,8 @@ Screens: `b1-dash-physical-*`, `b1-dash-cloud-*` (all four views of each).
 | B1-2 | 390 dark + light | hard to use | Each half of the switch is **56 × 32 px**, under the 44 px minimum for a finger. This switch is on every page. | `fleet-switch.tsx` (`h-8 w-14`) | `b1-dash-physical-390-dark.png` | Make each half 44 px tall on phone widths. |
 | B1-3 | 390 dark + light | cosmetic | The switch takes about a third of the phone header, so longer page names get cut off: "Proxies & …", "Content cal…". | `src/components/shell/topbar.tsx` beside the switch | `b5-proxies-physical-390-light.png` | Narrow the switch on phones, or let the page name use the space the breadcrumb leaves. |
 
+**B1-1, B1-2 — Fixed 2026-09-23.** The side that is on is now a solid pill in the text colour: black in light mode, white in dark, measured 15.8:1 (light) and 17.2:1 (dark) against the track. Each half is a 56 × 44 target on phones; the visible pill stays 32 px. Measured in headless Chrome, not yet seen in Safari.
+
 ## B2 — Settings → Account management (moving accounts)
 
 Reviewed as it stands in this worktree. Another worker is changing the batch
@@ -89,6 +91,8 @@ Screens: `b2-settings-real-*`, `b2-settings-demo-*`, `b2-move-dialog-demo-*`,
 | B2-5 | dark (both widths) | cosmetic | The grey pill text ("Cloud" on every card) is **4.41:1**, just under 4.5:1. The same pill shows "0 accounts", "Not yet due", "Off" and "Posts 1 of 2" all over the app. | **Shared:** `StatusPill` grey tone (`--text-muted` on `--pill-bg`, dark) | `b2-settings-real-1440-dark.png` | Lighten the dark grey pill label a hair, enough to reach 4.5:1. |
 | B2-6 | light (both widths) | cosmetic | While nothing is picked, the batch button "Move onto phones" and the dialog's "Move onto a phone" are faded to 1.7–2.7:1 in light. That is allowed while switched off, but they are hard to read. | `CtaButton` / `HoldButton` disabled style (shared) | `b2-batch-demo-390-light.png`, `b2-move-dialog-demo-390-light.png` | Optional: fade switched-off buttons less (60% instead of 40%). |
 | B2-7 | — | Safari? | The tick boxes are the browser's own, coloured with `accent-color`, so Safari draws them differently from Chrome. | `account-management.tsx` | — | Look at Select mode once on an iPhone. |
+
+**B2-1, B2-2, B2-3, B2-5 — Fixed 2026-09-23.** The warn hold button uses a lighter 15% fill (`--warn-soft`), measured 5.29:1 in light mode (4.89:1 on a raised panel) and 6.40:1 in dark, and no hold button fades on hover any more. The move dialog's ✕ is 44 × 44, and in Select mode a tap anywhere on the card ticks it. The move pill has a › and is 44 px tall on phones. The grey StatusPill label uses its own `--pill-muted` (#909098), 4.77:1 in dark; `--text-muted` is unchanged elsewhere. Measured in headless Chrome, not yet seen in Safari. **Not fixed:** the red (danger) hold button, Retire, also misses 4.5:1 (3.93:1 on a light card); it was not in the approved list.
 
 ## B3 — Devices page, Add phone, and the page per phone
 
@@ -110,6 +114,8 @@ The missing-account page still logs React's development-only "script tag" warnin
 
 The empty Devices page itself is correct: its card fills the page and "No
 phones yet" is centred (`b3-devices-real-*`).
+
+**B3-2 — Fixed 2026-09-23.** On phones, "← All phones", the In use switch, Live view, Remove, Save and Add screenshot, and the Add phone sheet's ✕, Cancel and Save phone are all 44 px tall. Desktop sizes are unchanged.
 
 ## B4 — the Devices card on the Physical dashboard
 
@@ -170,6 +176,8 @@ The empty state itself is right at every width and theme: icon in a soft
 circle, one quiet line, card to the bottom of the screen.
 
 ---
+
+**B7-2 — Fixed 2026-09-23.** To-do's ‹ › day arrows are 44 × 44 tap targets on phones; the visible circle stays 28 px.
 
 ## Found on the way (shared by every screen, not B1–B7 themselves)
 
