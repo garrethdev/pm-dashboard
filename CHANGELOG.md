@@ -20,6 +20,83 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — Before the first phones: five accounts' ids stay exact, a Facebook account cannot borrow its Instagram twin's numbers, and the Cloud ban robot refuses real-phone accounts
+
+**Where it came from:** Garreth asked what stood between the dashboard and
+adding the first real phones and accounts (2026-09-23). Two of the three
+answers are here: PF-22, found earlier the same day, and the Facebook check
+the backlog had asked for "before the first Facebook account is created"
+since 2026-09-18 (PF-08). The third, guarding the Cloud ban robot's own form,
+was left open when PF-11 was built; Garreth approved publishing it the same
+day.
+
+**What changed:**
+
+- **Nine accounts' id numbers are no longer quietly changed on the Physical
+  side** (PF-22). Their ids are longer than the app could hold exactly, so it
+  changed the last digits. Five of them are active: Profiles 8, 9, 20, 64 and
+  65. On Cloud this did no harm, because Cloud finds accounts by Profile name.
+  But once one of them was on a real phone, a warmup logged from the To-do
+  list would have been refused or saved to the wrong account. Its posts and
+  any ban clean-up would have been missing from the To-do list, the phone's
+  page could not have added or removed it, and Edit account could not have
+  saved it. The app now carries account ids as text all the way through.
+  Nothing was renumbered, and Cloud screens are unchanged.
+- **A Facebook account can no longer borrow its Instagram twin's numbers**
+  (PF-08). Each real phone will carry one character's Instagram and Facebook,
+  often under the same name. The health dot and the Analytics page matched
+  views to accounts by name only. So a Facebook account named like its
+  Instagram twin would have shown the Instagram account's views as its own,
+  and Analytics would have counted that character's Instagram posts twice.
+  They now match on name and platform together. Facebook views are not
+  collected yet, so a Facebook account will honestly show no views.
+- **The Cloud ban robot's own form now refuses real-phone accounts, and only
+  deletes the Geelark phone whose name matches exactly** (PF-11). The
+  dashboard already sent real-phone bans elsewhere, but the robot's form in
+  n8n could still be filled in by hand. Worse, when the name did not match a
+  Geelark phone exactly, it picked the first phone its search returned: typing
+  "Profile 4" could have deleted Profile 40, and switched off that phone's
+  proxy and number renewals. Now a real-phone account is refused before
+  anything happens, with a message saying to use the dashboard's Retire
+  button. The robot also stops if it cannot check. Without an exact match it
+  deletes nothing, though the account is still marked banned and its posts
+  still go back to the pool, as before.
+
+**How it was checked:** both were proven on the live database with practice
+rows, all deleted afterwards and checked gone by query. No real account was
+touched or unpaused.
+
+- For the ids, a practice account had an id as long as the real ones and sat
+  on a practice phone. Its warmups showed on To-do, and a warmup logged from
+  the list landed on the exact id. Moving it onto and off the phone, one at a
+  time and as a batch, editing it, retiring it and ticking its clean-up step
+  all wrote to the right row. The type check, lint and all 211 tests pass.
+- For Facebook, the health and Analytics numbers for every existing account
+  were compared before and after and came out identical. A practice Instagram
+  and Facebook pair sharing one name showed the difference. Before the change,
+  the Facebook one showed 2 borrowed posts and the character showed 4 posts
+  and 8,000 views. After it, the Facebook one showed none and the character
+  showed the true 2 posts and 4,000 views. Those practice rows were never
+  saved, so no one else could have seen them.
+- For the ban robot, the new version was test-run in n8n with Geelark and the
+  forensics step faked, so nothing real could be deleted. A loose search
+  result touched nothing. A practice real-phone account was refused in Live
+  mode and its row was unchanged afterwards (it was then deleted). A Live run
+  with no exact match skipped the delete, and one with an exact match still
+  deleted as before. Published 2026-09-23; the old version is kept in n8n's
+  history.
+
+**Not yet seen with real work:** none of the five accounts is on a phone yet,
+no Facebook account exists yet, and the ban robot has not met a real ban
+since the change.
+
+**Also found, not fixed:** on the Physical fleet, Analytics with "All time"
+chosen never finishes loading while Physical has no posts yet. The database
+check gives up on it. This bug has been there since per-fleet Analytics was
+built (PF-17). It is in the backlog.
+
+---
+
 ## 2026-09-23 — Phone farm: easier to tap on a phone, paused accounts' warmups on To-do, and the move back to Cloud hands back its posts
 
 **Where it came from:** Garreth picked these from the list of what was left on
