@@ -15,8 +15,10 @@ import { StatusPill } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import {
   AutomatedMark,
+  BanCleanupGroup,
   TodoCheck,
   TodoLogSheet,
+  useCleanupTicks,
   useTodoBoard,
   type SheetTarget,
 } from "@/components/dashboard/todo-board";
@@ -96,6 +98,7 @@ export function TodoTodayCard({
                     setOpen((prev) => ({ ...prev, [device.id]: !(prev[device.id] ?? false) }))
                   }
                   onOpenItem={board.open}
+                  onStepSaved={board.live ? board.reload : undefined}
                 />
               ))}
             </ul>
@@ -127,13 +130,23 @@ function DeviceRow({
   open,
   onToggle,
   onOpenItem,
+  onStepSaved,
 }: {
   device: TodoDevice;
   open: boolean;
   onToggle: () => void;
   onOpenItem: (t: SheetTarget) => void;
+  /** On the live list: re-read it once a clean-up tick has saved. */
+  onStepSaved?: () => Promise<void>;
 }) {
-  const progress = deviceProgress(device);
+  // A ban's clean-up is ticked here exactly as on the To-do page (P8).
+  const { cleanups, toggleStep, stepError } = useCleanupTicks(device, onStepSaved);
+  const progress = deviceProgress({ ...device, cleanups });
+  // A post past the bell's 24 hours, said on the phone's own line so a phone
+  // folded shut does not hide it (P13 review). The same test as the row's pill.
+  const overdue = device.accounts.some((a) =>
+    a.items.some((i) => i.status === "todo" && i.overdueFor),
+  );
 
   return (
     <li className="overflow-hidden rounded-nested bg-card-raised/60">
@@ -168,6 +181,7 @@ function DeviceRow({
           )}
         </span>
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{device.name}</span>
+        {overdue && <StatusPill tone="danger">Overdue</StatusPill>}
         {!device.isActive && <StatusPill tone="warn">Off</StatusPill>}
         {/* The count only. A link still owed shows as the yellow box on its
             own row once the phone is opened, which is enough (Garreth,
@@ -182,6 +196,12 @@ function DeviceRow({
 
       {open && (
         <div className="flex flex-col gap-5 px-3 pt-1 pb-4">
+          {/* The clean-up first, as on the To-do page: it is the oldest work
+              on the phone (P8). */}
+          {cleanups.map((c) => (
+            <BanCleanupGroup key={c.accountId} compact cleanup={c} onToggle={toggleStep} />
+          ))}
+          {stepError && <p className="text-sm text-danger">{stepError}</p>}
           {device.accounts.map((account) => (
             <AccountGroup
               key={account.id}

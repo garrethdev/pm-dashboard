@@ -230,6 +230,8 @@ async function todoNotifications(): Promise<NotificationItem[]> {
   const items: NotificationItem[] = [];
 
   // --- One: what is still outstanding today -------------------------------
+  // Counted off the list itself, so whatever the list asks for is what this
+  // counts — including a paused account's hand warmups (Garreth, 2026-09-23).
   let posts = 0;
   let warmups = 0;
   const phones = new Set<string>();
