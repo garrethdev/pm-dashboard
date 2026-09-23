@@ -211,6 +211,17 @@ export async function setPostingPaused(
 export class MoveConflictError extends Error {}
 
 /**
+ * The line a move adds to the account's status_note. One function for the
+ * single move and the batch (PF-15), so the two write the same words.
+ */
+function moveNoteFragment(mode: DeliveryMode, userEmail: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  return ` | ${today} ${userEmail}: posting moved to ${
+    mode === "manual" ? "a real phone" : "Geelark"
+  } via dashboard`;
+}
+
+/**
  * PF-01 delivery mode: who posts for this account — and since PF-03, the phone
  * it goes onto. Never touches posting_paused or is_active, so moving an
  * account to a real phone cannot quietly resume or stop its schedule. Who and
@@ -236,10 +247,7 @@ export async function setDeliveryMode(
   userEmail: string,
   deviceId: number | null = null,
 ): Promise<{ movedAt: string | null }> {
-  const today = new Date().toISOString().slice(0, 10);
-  const noteFragment = ` | ${today} ${userEmail}: posting moved to ${
-    mode === "manual" ? "a real phone" : "Geelark"
-  } via dashboard`;
+  const noteFragment = moveNoteFragment(mode, userEmail);
 
   // Same read-modify-write as the pause note (PostgREST has no string concat).
   const cur = await sbFetch(
@@ -276,6 +284,69 @@ export async function setDeliveryMode(
     );
   }
   return { movedAt: mode === "manual" ? now : null };
+}
+
+/** A batch move refused, naming the account that stopped it. */
+export class BatchMoveRefusal extends MoveConflictError {
+  constructor(
+    message: string,
+    readonly profile: string | null,
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * PF-15: move several accounts onto phones at once, ALL OR NOTHING.
+ *
+ * One call to `move_accounts_onto_devices`, which checks every account and
+ * phone under lock and then writes them all in one transaction — the same
+ * columns, refusals and audit row as `setDeliveryMode` and its route, so the
+ * single move and the batch cannot disagree. If any account cannot move, the
+ * function raises naming it and nothing is written, not even for the accounts
+ * before it in the list.
+ *
+ * The audit rows are written inside that transaction (the single move writes
+ * its row afterwards); see the migration for why.
+ */
+export async function moveAccountsOntoPhones(
+  moves: { profile: string; deviceId: number }[],
+  userEmail: string,
+): Promise<{ movedAt: string }> {
+  const res = await sbFetch(
+    "rpc/move_accounts_onto_devices",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        p_moves: moves.map((m) => ({ profile: m.profile, device_id: m.deviceId })),
+        p_user_email: userEmail,
+        p_note: moveNoteFragment("manual", userEmail),
+      }),
+    },
+    // No retry, as for the single move: a batch that landed but timed out
+    // would come back refused by its own first account.
+    0,
+  );
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    let parsed: { code?: string; message?: string; details?: string | null } = {};
+    try {
+      parsed = JSON.parse(detail);
+    } catch {
+      /* not JSON: an outage, handled below */
+    }
+    // A RAISE from the function arrives with code P0001, the sentence in
+    // `message` and the account in `details`. Any other database error is a
+    // fault, not a refusal, and must not be shown as though the account were
+    // the problem.
+    if (parsed.code === "P0001" && parsed.message) {
+      throw new BatchMoveRefusal(`${parsed.message}. Nothing was moved.`, parsed.details ?? null);
+    }
+    console.error(`batch move failed (HTTP ${res.status}):`, detail.slice(0, 500));
+    throw new Error(`Could not move the accounts (HTTP ${res.status}). Nothing was moved`);
+  }
+  const out = (await res.json()) as { moved_to_device_at: string };
+  return { movedAt: out.moved_to_device_at };
 }
 
 /**

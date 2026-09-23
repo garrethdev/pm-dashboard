@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, Loader2, Smartphone, X } from "@/components/ui/icons";
 import { HoldButton } from "@/components/ui/hold-button";
 import {
+  batchMoves,
   batchSummary,
   candidateLabel,
   canTake,
@@ -35,6 +37,10 @@ import { cn } from "@/lib/utils";
  * moving", the sentence at the top says how many, and the button says how many
  * are actually about to move — a silent partial move would be the worst answer
  * available.
+ *
+ * THE SAVE IS ALL OR NOTHING (PF-15). One request moves every account that is
+ * not set to "Not moving", or none of them; a refusal names the account that
+ * stopped it, and that row is marked so it can be changed or set aside.
  */
 export function MoveBatchDialog({
   accounts,
@@ -54,6 +60,9 @@ export function MoveBatchDialog({
   const [rows, setRows] = useState<BatchRow[]>(suggestion.rows);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  /** The account the last refused save named, marked in the list. */
+  const [stoppedBy, setStoppedBy] = useState<string | null>(null);
+  const router = useRouter();
 
   const plan = useMemo(() => tallyPlan(rows, phones), [rows, phones]);
   const nothingToDo = plan.moving === 0;
@@ -64,6 +73,7 @@ export function MoveBatchDialog({
       prev.map((r) => (r.account.profile === profile ? { ...r, targetId } : r)),
     );
     setMessage("");
+    setStoppedBy(null);
   }
 
   function save() {
@@ -74,11 +84,28 @@ export function MoveBatchDialog({
     }
     setBusy(true);
     setMessage("");
-    // PF-15 builds the write. Until then the design is judged on the screen,
-    // and pressing through must not half-move a real fleet.
-    setBusy(false);
-    setMessage("Moving several at once is not wired up yet (PF-15).");
-    onDone();
+    setStoppedBy(null);
+    fetch("/api/accounts/delivery-mode/batch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moves: batchMoves(rows) }),
+    })
+      .then(async (res) => {
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          profile?: string | null;
+        };
+        if (!res.ok) {
+          setStoppedBy(data.profile ?? null);
+          throw new Error(data.error ?? "Request failed");
+        }
+        router.refresh();
+        onDone();
+      })
+      .catch((err) => {
+        setMessage(err instanceof Error ? err.message : "Network error");
+      })
+      .finally(() => setBusy(false));
   }
 
   return (
@@ -126,7 +153,8 @@ export function MoveBatchDialog({
             <li
               key={account.profile}
               className={cn(
-                "flex items-center gap-3 rounded-nested border border-border bg-card-raised/40 px-3 py-2",
+                "flex items-center gap-3 rounded-nested border bg-card-raised/40 px-3 py-2",
+                account.profile === stoppedBy ? "border-danger/60" : "border-border",
                 targetId === null && "opacity-60",
               )}
             >

@@ -15,7 +15,7 @@
  * spreading a batch of accounts across the phones that have room.
  */
 
-import { ACCOUNTS_PER_PHONE } from "@/lib/data/device-rules";
+import { ACCOUNTS_PER_PHONE, parseRowId } from "@/lib/data/device-rules";
 
 /** A phone as the move screens see it: enough to pick it, or say why not. */
 export interface MoveTarget {
@@ -202,6 +202,52 @@ export function batchSummary(plan: { moving: number; stranded: number; phonesUse
   const head = `${acct(plan.moving)} onto ${plan.phonesUsed} phone${plan.phonesUsed === 1 ? "" : "s"}`;
   if (plan.stranded === 0) return `${head}.`;
   return `${head}. ${acct(plan.stranded)} ${plan.stranded === 1 ? "is" : "are"} set to not move.`;
+}
+
+/** One account and the phone it is going onto, as the batch save sends it. */
+export interface BatchMove {
+  profile: string;
+  deviceId: number;
+}
+
+/**
+ * The rows of a plan that actually move (PF-15). A row set to "Not moving" is
+ * left out here rather than sent and skipped by the server, so what the button
+ * counts and what the save sends are the same list.
+ */
+export function batchMoves(rows: BatchRow[]): BatchMove[] {
+  return rows.flatMap((r) =>
+    r.targetId === null ? [] : [{ profile: r.account.profile, deviceId: r.targetId }],
+  );
+}
+
+const PROFILE_RE = /^Profile \d+$/;
+
+/**
+ * Check a batch save request before it goes near the database, and say what is
+ * wrong with it in a sentence. Only the SHAPE is checked here — whether each
+ * account and phone can take the move is the database function's job, under
+ * lock, so the answer cannot go stale between the check and the write.
+ *
+ * No count limit: nothing caps a phone (Garreth, 2026-09-22), and the whole
+ * fleet is a few dozen accounts.
+ */
+export function parseBatchMoves(raw: unknown): { moves: BatchMove[] } | { error: string } {
+  if (!Array.isArray(raw) || raw.length === 0) return { error: "No accounts to move." };
+  const moves: BatchMove[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    const { profile, deviceId } = (item ?? {}) as { profile?: unknown; deviceId?: unknown };
+    if (typeof profile !== "string" || !PROFILE_RE.test(profile)) {
+      return { error: "invalid profile" };
+    }
+    const id = parseRowId(deviceId);
+    if (id === null) return { error: `Choose a phone for ${profile} first.` };
+    if (seen.has(profile)) return { error: `${profile} is listed more than once.` };
+    seen.add(profile);
+    moves.push({ profile, deviceId: id });
+  }
+  return { moves };
 }
 
 /** How an account is named on screen. */

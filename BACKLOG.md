@@ -165,7 +165,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-10 | Comparison view | Intermediate | ~~Blocked by PF-03 only~~ PF-03 built 2026-09-23 and its date column is live; waits on design ticket P7 |
 | PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
-| PF-15 | Batch flips by character | Long term | ~~Blocked by PF-03~~ Ready now (PF-03 built 2026-09-23); optional. Its screen is designed 2026-09-22 (P10) — the batch dialog exists and plans the moves; only the write is missing |
+| PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
@@ -708,7 +708,7 @@ handling, not the app. Blocked until the Air has Xcode signed in and the agent
 installed on at least one phone.
 *Done when:* Czedrick sees both phones live from his own Mac and can tap one.
 
-## PF-15 · Batch flips — Screen designed 2026-09-22 (P10); PF-03 built 2026-09-23; optional
+## PF-15 · Batch flips — Built 2026-09-23
 
 Multi-select Move to phone by character, for when phones arrive in batches.
 Not needed for the pilot.
@@ -720,6 +720,29 @@ accounts it has no room for rather than dropping them. "By character" is the
 existing search plus Select all — no character control was added. **What is
 left** is one write that moves several accounts at once, which wants PF-03's
 single write first so the two cannot disagree.
+
+*Built 2026-09-23.* Holding Move posts the moving rows (not the "Not moving"
+ones) to `/api/accounts/delivery-mode/batch`, which calls the database
+function `move_accounts_onto_devices`. It checks every account and phone
+under lock first, then writes them all in one transaction, so either every
+account moves or none does; a refusal names the account and the dialog
+outlines that row. Same rules as PF-03: Cloud accounts only, never a retired
+one, never onto a missing or switched-off phone; the same columns
+(`delivery_mode`, `device_id`, `moved_to_device_at`, the status-note line);
+`posting_paused` untouched. One `delivery_mode_change` audit row per account,
+written inside the transaction (the single move writes its row afterwards),
+with `batch: true` in the new value. No cap per phone. The single move's
+route is unchanged. Demo mode still only closes the dialog.
+
+Migrations `move_accounts_onto_devices` and `_fix` (the first failed on its
+first practice run — see the migrations README; nothing was written).
+
+*Proven live 2026-09-23 on practice rows only* (two phones, four accounts,
+all deleted afterwards and confirmed gone): four moved in one press; with one
+moved behind the open dialog's back, the batch was refused naming it and the
+other three stayed on Cloud with no new audit rows.
+
+**Left to do:** the first real batch, the day phones arrive.
 
 ## PF-16 · Retire Geelark — Blocked by the last account moving
 

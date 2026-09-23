@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  batchMoves,
   batchSummary,
   canTake,
+  parseBatchMoves,
   roomBeforeNext,
   planBatch,
   roomLabel,
@@ -150,5 +152,71 @@ describe("batchSummary", () => {
     expect(batchSummary({ moving: 0, stranded: 3, phonesUsed: 0 })).toBe(
       "No phone is switched on, so 3 accounts cannot move.",
     );
+  });
+});
+
+describe("batchMoves", () => {
+  it("sends only the rows that are moving, in order", () => {
+    const rows = [
+      { account: account(1), targetId: 7 },
+      { account: account(2), targetId: null },
+      { account: account(3), targetId: 8 },
+    ];
+    expect(batchMoves(rows)).toEqual([
+      { profile: "Profile 1", deviceId: 7 },
+      { profile: "Profile 3", deviceId: 8 },
+    ]);
+  });
+
+  it("sends as many as the button counts", () => {
+    const plan = planBatch([account(1), account(2), account(3), account(4)], [phone(1, 0)]);
+    expect(batchMoves(plan.rows)).toHaveLength(plan.moving);
+  });
+
+  it("puts no limit on one phone", () => {
+    const rows = [1, 2, 3, 4, 5, 6].map((n) => ({ account: account(n), targetId: 9 }));
+    expect(batchMoves(rows)).toHaveLength(6);
+  });
+});
+
+describe("parseBatchMoves", () => {
+  it("accepts a well-formed batch", () => {
+    expect(
+      parseBatchMoves([
+        { profile: "Profile 1", deviceId: 7 },
+        { profile: "Profile 2", deviceId: "8" },
+      ]),
+    ).toEqual({
+      moves: [
+        { profile: "Profile 1", deviceId: 7 },
+        { profile: "Profile 2", deviceId: 8 },
+      ],
+    });
+  });
+
+  it("refuses an empty or missing batch", () => {
+    expect(parseBatchMoves([])).toEqual({ error: "No accounts to move." });
+    expect(parseBatchMoves(undefined)).toEqual({ error: "No accounts to move." });
+  });
+
+  it("refuses something that is not a profile", () => {
+    expect(parseBatchMoves([{ profile: "Profile 1; drop", deviceId: 7 }])).toEqual({
+      error: "invalid profile",
+    });
+  });
+
+  it("refuses a row with no phone, naming it", () => {
+    expect(parseBatchMoves([{ profile: "Profile 4", deviceId: null }])).toEqual({
+      error: "Choose a phone for Profile 4 first.",
+    });
+  });
+
+  it("refuses the same account twice", () => {
+    expect(
+      parseBatchMoves([
+        { profile: "Profile 4", deviceId: 1 },
+        { profile: "Profile 4", deviceId: 2 },
+      ]),
+    ).toEqual({ error: "Profile 4 is listed more than once." });
   });
 });
