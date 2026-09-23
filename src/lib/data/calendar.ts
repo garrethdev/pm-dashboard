@@ -73,6 +73,9 @@ export interface CalendarDay {
   /** True when any live post sits outside the active registry. */
   offRegistry: boolean;
   run: SchedulerRun | null;
+  /** Physical only (P11): posts marked posted by hand whose link has not been
+   *  added yet. Absent on Cloud, where Geelark reports the post itself. */
+  linkNeeded?: number;
 }
 
 export interface SchedulerRun {
@@ -203,7 +206,8 @@ export const getCalendarMonth = cache(async function getCalendarMonth(
   return cachedFetcher(
     // v3, and the fleet is part of the key: two people looking at two fleets
     // must not be served each other's grid.
-    `calendar-month-v3:${fleet}:${start}:${end}`,
+    // v4: days carry linkNeeded (P11).
+    `calendar-month-v4:${fleet}:${start}:${end}`,
     TTL.supabase,
     async (): Promise<CalendarMonth> => {
       const [raw, dayTotals, runs] = await Promise.all([
@@ -223,6 +227,7 @@ export const getCalendarMonth = cache(async function getCalendarMonth(
             failed_n: number | string;
             accounts: number | string;
             off_registry: boolean;
+            link_needed: number | string;
           }[]
         >("calendar_month_days_fleet", { p_start: start, p_end: end, p_fleet: fleet }),
         // One row per scheduler run in the window. Runs are keyed by run_at,
@@ -277,6 +282,8 @@ export const getCalendarMonth = cache(async function getCalendarMonth(
           accounts: n(t?.accounts),
           offRegistry: t?.off_registry ?? false,
           run: runByDay.get(d) ?? null,
+          // Only a Physical day can owe a link, so Cloud days leave it off.
+          ...(n(t?.link_needed) > 0 ? { linkNeeded: n(t?.link_needed) } : {}),
         });
       }
 
@@ -315,6 +322,15 @@ export const getCalendarMonth = cache(async function getCalendarMonth(
  */
 export type Delivery = "posted" | "failed" | "pending" | "none";
 
+/**
+ * Where a post handed to a person stands (P11), in the To-do list's own words.
+ * `Delivery` folds these into three; the Physical day view needs all five,
+ * because "posted but the link is still owed" and "skipped" are not the same
+ * thing as done or waiting. Null for a Cloud post, and for a Physical post not
+ * handed out yet (before the 10:00 ET run).
+ */
+export type HandDelivery = "queued" | "posted" | "postedNoLink" | "failed" | "skipped";
+
 export interface CalendarPost {
   contentType: string;
   bucket: string | null;
@@ -331,6 +347,10 @@ export interface CalendarPost {
    *  note the person left when they marked the post failed. */
   failCode: string | null;
   failDesc: string | null;
+  /** Physical only (P11). See HandDelivery. */
+  hand?: HandDelivery | null;
+  /** Physical only: the link the person pasted when they marked it posted. */
+  postUrl?: string | null;
 }
 
 export interface CalendarDayAccount {
@@ -375,6 +395,23 @@ interface RawDetail {
   delivery: Delivery;
   fail_code: string | null;
   fail_desc: string | null;
+  hand: string | null;
+  post_url: string | null;
+}
+
+const HAND_DELIVERIES: readonly string[] = [
+  "queued",
+  "posted",
+  "postedNoLink",
+  "failed",
+  "skipped",
+] satisfies HandDelivery[];
+
+/** The RPC's `hand` as a HandDelivery, or null for anything it does not know,
+ *  so a new status added in the database shows the post the old way rather
+ *  than as a blank pill. */
+function toHand(v: string | null): HandDelivery | null {
+  return v !== null && HAND_DELIVERIES.includes(v) ? (v as HandDelivery) : null;
 }
 
 /** One day expanded: every account in this fleet and what it is scheduled to
@@ -385,7 +422,8 @@ export async function getCalendarDay(
   fleet: Fleet = "cloud",
 ): Promise<Cached<CalendarDayDetail>> {
   return cachedFetcher(
-    `calendar-day-v4:${fleet}:${date}`,
+    // v5: posts carry hand and postUrl (P11).
+    `calendar-day-v5:${fleet}:${date}`,
     TTL.supabase,
     async (): Promise<CalendarDayDetail> => {
       const [rows, runs, shortfalls] = await Promise.all([
@@ -439,6 +477,8 @@ export async function getCalendarDay(
           delivery: r.delivery ?? "none",
           failCode: r.fail_code,
           failDesc: r.fail_desc,
+          hand: toHand(r.hand),
+          postUrl: r.post_url,
         });
         if (failed) acct.failed++;
         if (live) {

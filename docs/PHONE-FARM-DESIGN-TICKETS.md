@@ -90,11 +90,11 @@ purpose; the changelog has them.
 | P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22, and the switch now SAVES** — PF-04 landed the same day. The by-phone view still needs PF-02's real phones to have groups. What an Automated account SHOWS moved to PF-13 |
 | P5 | Rework the device page around the phone's daily work | **Approved and built 2026-09-22.** Warmup history is real since PF-04. ~~One gap, found 2026-09-22: "Today on this phone" is still demo-only~~ **Wired 2026-09-23:** "Today on this phone" reads the real to-do list for that phone (see the changelog) |
 | P6 | Track proxy expiry for real phones on Proxies & numbers | **Approved and built 2026-09-23.** One row per real phone, its accounts, proxy and numbers. Joins proven live with a test phone, since deleted. **Numbers moved from the phone to each account the same day (P14, Garreth)**; the numbers view is now one line per account |
-| P7 | Add the before-and-after comparison for moved accounts | Not started |
+| P7 | ~~Add the before-and-after comparison for moved accounts~~ | Dropped 2026-09-23 |
 | P8 | Add the checklist for a ban on a real phone | **Approved and built 2026-09-23** (PF-11). The app releases queued posts itself; the proxy is kept while other accounts use it (Garreth). Proven live with a practice phone, since deleted. `/todo?todo=ban` and `/accounts?demo=1` still draw the sample states |
 | P9 | Add the Live view page and link to it from the dashboard | Not started |
 | P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. **Built 2026-09-23:** PF-03 saves the single move, PF-15 the batch (all or nothing) |
-| P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
+| P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Calendar half built; after-Cloud half not started |
 | P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Built 2026-09-23.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. The stale row is **approved and built 2026-09-23**: a red Overdue pill on the bell's 24-hour rule (Garreth). Not yet seen with a real post |
 | P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | **Reviewed 2026-09-23** (`docs/P13-REVIEW-FINDINGS.md`). **Six items approved and done the same day:** five fixed (not-found pages, the Physical calendar's short pills, "Infinity days", the WebGL crash, the Facebook tab's range choices) and "No phones yet" found to be correct already. **Eight more fixed 2026-09-23 after Garreth approved them:** the tap targets on phones, the fleet switch you could not read in light mode, the faint amber hold button and the faint grey pill (B1-1, B1-2, B2-1, B2-2, B2-3, B2-5, B3-2, B7-2). Measured in headless Chrome; not yet seen in Safari |
 | P14 | Put an account's settings behind a ⋯ menu on its row, with Edit account and Retire account | **Approved and built 2026-09-23.** Live on every Physical row; Cloud unchanged (proven by screenshot). Phone numbers now belong to accounts |
@@ -121,7 +121,7 @@ the design ticket that covers it:
 | PF-07 Posting To-Do | The to-do list, on the dashboard and as a page | P1, P2, P3 (all approved 2026-09-22; PF-07 also inherits P3's six saving states) |
 | PF-08 Facebook | Facebook on the account screens | B6 (built); review in P13 |
 | PF-09 Health + incidents read both sources | nothing new (same screens, more data) | — |
-| PF-10 Comparison view | Before and after the move, per account | P7 |
+| ~~PF-10 Comparison view~~ | Dropped 2026-09-23 | ~~P7~~ |
 | PF-11 Post-ban for manual accounts | The checklist | P8 |
 | PF-12 Day's work + stale-post alert | The two bell items (built 2026-09-22), and the Overdue pill on the to-do list (built 2026-09-23) | P12 |
 | PF-13 Script write path | nothing (data only); what it logs shows in P4, P5 | — |
@@ -894,7 +894,8 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P7. Add the before-and-after comparison for moved accounts
 
-- **Status:** not started.
+- **Status:** **dropped 2026-09-23 (Garreth):** not needed. Kept below for
+  the record.
 - **Backlog:** PF-10. Garreth and Yurie read this at the week-6 review.
 - **Design:** one moved account on one screen: views per post, the share of
   posts under 10 views, the warmup dot, restrictions and bans, each shown
@@ -1086,7 +1087,14 @@ action is `CtaButton`, never a hand-rolled `bg-accent` button.**
 
 ## P11. Show hand-made posts on the calendar, and prepare the app for retiring Cloud
 
-- **Status:** not started.
+- **Status:** **calendar half approved and built 2026-09-23.** Garreth
+  approved the drawing the same day. A hand-made post uses the To-do list's
+  words: To post, Link needed, Posted (with a link to open the post), Failed
+  (opens to the person's note, no Geelark code) and Skipped. The month grid
+  adds an amber "N links needed" beside "N failed". Cloud is unchanged. The
+  sample data is deleted; the calendar reads real `post_deliveries` rows. The
+  after-Cloud half is not started: it waits on where Cloud's history should
+  go.
 - **Backlog:** PF-19, PF-16.
 - **Design:** how a post made by hand shows on the Content calendar (queued,
   posted and waiting for its link, posted, failed), since today the calendar

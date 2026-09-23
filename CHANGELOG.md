@@ -20,6 +20,80 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — The calendar tells you where each hand-made post stands (P11)
+
+**Where it came from:** design ticket P11, calendar half. Garreth approved the
+drawing the same day, and it was built straight after.
+
+**What changed:**
+
+- **On the Physical side, a post made by hand now uses the To-do list's own
+  words in the calendar's day view.** "To post" while it is on the list, "Link
+  needed" once it is posted without its link, "Posted" once the link is in,
+  "Failed", and "Skipped". Before, the day view borrowed Geelark's words: a
+  handed-out post read "Posting — Geelark has the task", and a posted one read
+  "Posted" whether or not its link was still owed.
+- **A posted one has a small button that opens the post** on TikTok, Instagram
+  or Facebook.
+- **A failed one opens to the note the person left** when they marked it
+  failed, without the Geelark error code and reconcile lines that meant
+  nothing for a real phone.
+- **The month grid shows "N links needed" in amber** beside "N failed", so a
+  day with unfinished posts looks unfinished at a glance.
+- Cloud's calendar is unchanged.
+
+**How it was checked:** the database change leaves everything the calendar
+read before exactly as it was. Both functions were fingerprinted over three
+weeks, on both fleets, before and after, and the fingerprints match. The new
+parts were proven on real accounts moved to Physical inside a transaction that
+was then undone. Five posts came back as posted with its link, link needed,
+failed with its note, to post and skipped, and the month counted one link
+needed. Nothing was left behind. Type check, lint and all 211 tests pass.
+Cloud's day view and Physical's empty month were both looked at in the running
+app, in headless Chrome, not Safari.
+
+**Not yet seen with real work:** no account is on a phone yet, so the Physical
+calendar is empty until the first one posts.
+
+---
+
+## 2026-09-23 — Geelark's robots leave real-phone accounts alone
+
+**Where it came from:** Garreth asked which automations give real-phone
+accounts their warmups and posts (2026-09-23). The answer turned up a gap: two
+Geelark robots in n8n still read every active account, whichever fleet it was
+in. Garreth chose to fix the robots rather than rely on deleting each cloud
+phone by hand.
+
+**What changed:**
+
+- **The Geelark warmup robot no longer warms an account that has moved to a
+  real phone** (`[Warmup] Unified Scheduler`, daily 5:00 am ET). Before, it
+  booked warmups for any active account whose Profile name still had a
+  Geelark cloud phone. So a moved account would have been used on the cloud
+  phone and on the iPhone on the same days, which is the pattern that gets
+  accounts flagged. It now reads Cloud accounts only.
+- **The twice-weekly health check no longer opens moved accounts on their old
+  cloud phone** (`Account Health Check`, Tuesday and Friday 7:00 am ET). It
+  used to start the app on the cloud phone, and it could mark the account
+  inactive from what it saw there. That would have taken a working real-phone
+  account off the To-do list. It now reads Cloud accounts only.
+- Nothing else in either robot changed. The GPS robot was checked and left
+  alone: it only changes the location setting on switched-off cloud phones and
+  never opens an account.
+
+**How it was checked:** both workflows were saved, published and confirmed
+live. The new account list was run against the live database: both return the
+same 32 accounts as before, because no account is on a real phone yet.
+
+**Not yet seen with real work:** no account has moved yet, so the robots have
+not had anything to skip. **Also not covered:** warmups Geelark had already
+booked (up to 7 days ahead) before an account moved still run. Garreth
+chose to keep clearing them a manual step, written into the new setup steps,
+`docs/REAL-PHONE-SETUP.md`.
+
+---
+
 ## 2026-09-23 — Before the first phones: five accounts' ids stay exact, a Facebook account cannot borrow its Instagram twin's numbers, and the Cloud ban robot refuses real-phone accounts
 
 **Where it came from:** Garreth asked what stood between the dashboard and
