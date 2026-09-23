@@ -110,8 +110,9 @@ export function HoldButton({
         "relative isolate inline-flex select-none items-center gap-2 overflow-hidden rounded-full px-4 py-1.5",
         "text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-40",
         "touch-none", // stop the browser turning a long press into a scroll or text selection
-        tone === "danger" ? "bg-danger/25 text-danger" : "bg-warn/25 text-warn",
-        !disabled && "hover:opacity-90",
+        // No hover fade: fading the whole button fades its label too, and the
+        // warn label is only just over 4.5:1 to begin with (P13 B2-1).
+        tone === "danger" ? "bg-danger/25 text-danger" : "bg-warn-soft text-warn",
         className,
       )}
     >

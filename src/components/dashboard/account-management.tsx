@@ -192,39 +192,54 @@ export function AccountManagement({
             {shown.map((r) => {
               const canPick = selecting && r.deliveryMode === "geelark";
               const isPicked = picked.has(r.profile);
+              const who = (
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium">{r.profile}</span>
+                    <span className="shrink-0 text-xs text-text-muted">
+                      {r.character.replace("Character ", "Char ")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                    <PlatformIcon platform={r.platform} className="size-3 shrink-0" />
+                    <span className="truncate">{r.username ?? "—"}</span>
+                  </div>
+                </div>
+              );
               return (
                 <li
                   key={r.profile}
                   className={cn(
-                    "flex items-center gap-3 rounded-nested border px-3 py-2.5",
+                    "relative flex items-center gap-3 rounded-nested border px-3 py-2.5",
                     isPicked
                       ? "border-accent/60 bg-accent/5"
                       : "border-border bg-card-raised/40",
                     selecting && !canPick && "opacity-50",
                   )}
                 >
-                  {selecting && (
-                    <input
-                      type="checkbox"
-                      checked={isPicked}
-                      disabled={!canPick}
-                      onChange={() => toggle(r.profile)}
-                      aria-label={`Select ${r.profile}`}
-                      className="size-4 shrink-0 accent-accent"
-                    />
+                  {selecting ? (
+                    // The whole card ticks the box, not only the 16px square
+                    // (P13 B2-2): the label's ::after is stretched over the
+                    // card, under the move pill, which stays its own button.
+                    <label
+                      className={cn(
+                        "flex min-w-0 flex-1 items-center gap-3 after:absolute after:inset-0 after:rounded-nested after:content-['']",
+                        canPick && "cursor-pointer",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isPicked}
+                        disabled={!canPick}
+                        onChange={() => toggle(r.profile)}
+                        aria-label={`Select ${r.profile}`}
+                        className="size-4 shrink-0 accent-accent"
+                      />
+                      {who}
+                    </label>
+                  ) : (
+                    who
                   )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium">{r.profile}</span>
-                      <span className="shrink-0 text-xs text-text-muted">
-                        {r.character.replace("Character ", "Char ")}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-text-muted">
-                      <PlatformIcon platform={r.platform} className="size-3 shrink-0" />
-                      <span className="truncate">{r.username ?? "—"}</span>
-                    </div>
-                  </div>
                   {/* The per-account move stays put while selecting, so the
                       screen does not become a different screen. */}
                   <DeliveryModeControl
