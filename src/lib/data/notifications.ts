@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { sbRest } from "@/lib/data/supabase";
 import { getOpenDeliveries } from "@/lib/data/post-deliveries";
-import { getTodoBoard } from "@/lib/data/todo";
+import { OVERDUE_HOURS, getTodoBoard } from "@/lib/data/todo";
 import { dayRangeET } from "@/lib/data/warmup-sessions";
 import { fleetOfEntity, getPhysicalProfiles } from "@/lib/data/fleet-accounts";
 import type { Fleet } from "@/lib/fleet";
@@ -173,15 +173,6 @@ async function warmupFailNotifications(
   }
   return items;
 }
-
-/**
- * How long a post may sit `queued` before the bell calls it overdue.
- *
- * A day, measured from the hand-out (Garreth, 2026-09-22). The Posting Agent
- * hands the day's posts out at 10:00 ET, so anything still untouched at the
- * same hour tomorrow has had a full working day pass it by.
- */
-const OVERDUE_HOURS = 24;
 
 /** The New York calendar date of an instant, as YYYY-MM-DD. */
 function etDayOf(d: Date): string {

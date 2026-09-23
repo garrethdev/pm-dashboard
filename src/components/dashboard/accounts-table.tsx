@@ -25,6 +25,7 @@ import { FilterChips } from "@/components/ui/filter-chips";
 import { SearchInput } from "@/components/ui/search-input";
 import { MultiProfileModal } from "@/components/dashboard/multi-profile-modal";
 import { RetireModal } from "@/components/dashboard/retire-modal";
+import { PhoneRetireModal } from "@/components/dashboard/phone-retire-modal";
 import { HealthReviewModal } from "@/components/dashboard/health-review-modal";
 import {
   NoAccountsByPhone,
@@ -35,7 +36,7 @@ import {
   WarmupModeSwitch,
   type WarmupMode,
 } from "@/components/dashboard/warmup-mode-switch";
-import { fleetTone, healthTone, needsAttention } from "@/lib/health";
+import { healthTone, needsAttention } from "@/lib/health";
 import type { AccountRow } from "@/lib/data/accounts";
 import type { ContentTypeOption } from "@/lib/data/scheduler-overrides";
 import { summarizeOverride } from "@/lib/data/scheduler-overrides";
@@ -76,13 +77,6 @@ const COL_WIDTHS = [
 type SortKey = "views" | "suppressed" | "age" | "warmup" | "lastpost";
 
 const TH = "sticky top-0 z-10 bg-card pb-2 font-medium whitespace-nowrap";
-
-/** The count carries the tone; the pill has no status dot. */
-const TONE_TEXT: Record<string, string> = {
-  accent: "text-accent",
-  warn: "text-warn",
-  danger: "text-danger",
-};
 
 /**
  * Freshness label for the Warmup and Last post columns.
@@ -347,15 +341,6 @@ export function AccountsTable({
     });
   }, [allRows]);
 
-  const activeCount = allRows.filter((r) => r.isActive).length;
-
-  const activePill = (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card-raised px-[13px] py-[7px] text-xs whitespace-nowrap">
-      <span className={cn("font-semibold tnum", TONE_TEXT[fleetTone(activeCount)])}>{activeCount}</span>
-      <span className="text-text-muted">Active Accounts</span>
-    </span>
-  );
-
   const q = query.trim().toLowerCase();
   const base = allRows.filter((r) => (showBanned ? true : r.isActive));
   const rows = base.filter(
@@ -543,7 +528,9 @@ export function AccountsTable({
   // grouped view that dropped half the detail would send you back to the
   // other one to read it (Garreth, 2026-09-22).
   const renderTable = (subset: AccountRow[], fixed = false) => subset.length === 0 ? (
-    <EmptyState icon={Users} compact={mode === "card"}>
+    // On the homepage card it fills the card and centres in it, rather than
+    // sitting at the top of an empty box (Garreth, 2026-09-23).
+    <EmptyState icon={Users} compact={mode === "card"} className={mode === "card" ? "h-full" : undefined}>
       {allRows.length === 0 ? "No accounts yet" : "No accounts match"}
     </EmptyState>
   ) : (
@@ -871,12 +858,9 @@ export function AccountsTable({
       <DashCard
         title="Accounts"
         toolbar={healthPills}
-        actions={
-          <>
-            {activePill}
-            {filtersDropdown}
-          </>
-        }
+        // No Active Accounts count here any more, in either fleet (Garreth,
+        // 2026-09-23). Filters, then View all at the right-hand edge.
+        actions={filtersDropdown}
         viewAllHref="/accounts"
         className={className}
       >
@@ -1071,13 +1055,30 @@ export function AccountsTable({
 
       )}
 
-      {retiring && (
-        <RetireModal
-          account={retiring}
-          onClose={() => setRetiring(null)}
-          onLiveStarted={handleLiveStarted}
-        />
-      )}
+      {retiring &&
+        (demo && fleet === "physical" ? (
+          // P8 design review: a real-phone account retires without the
+          // Post-Ban robot. Only the invented accounts reach it for now.
+          <PhoneRetireModal
+            handle={retiring.username ? `@${retiring.username}` : retiring.profile}
+            phone={phones.find((p) => p.id === retiring.deviceId)?.name ?? "its phone"}
+            others={
+              allRows.filter(
+                (r) => r.isActive && r.deviceId != null && r.deviceId === retiring.deviceId && r.profile !== retiring.profile,
+              ).length
+            }
+            queued={3}
+            number="+1 (555) 201-7781"
+            proxy="45.87.212.14:8000"
+            onClose={() => setRetiring(null)}
+          />
+        ) : (
+          <RetireModal
+            account={retiring}
+            onClose={() => setRetiring(null)}
+            onLiveStarted={handleLiveStarted}
+          />
+        ))}
 
       {settingsFor && (
         <PostingSettingsModal

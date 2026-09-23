@@ -10,6 +10,8 @@ export interface DeviceFormValues {
   proxy: string;
   timezone: string;
   notes: string;
+  /** One per line (P6). */
+  phoneNumbers: string;
 }
 
 export const EMPTY_DEVICE_FORM: DeviceFormValues = {
@@ -19,6 +21,7 @@ export const EMPTY_DEVICE_FORM: DeviceFormValues = {
   proxy: "",
   timezone: "",
   notes: "",
+  phoneNumbers: "",
 };
 
 /** Every phone runs through a US proxy, so these are the zones it can report. */
@@ -135,6 +138,22 @@ export function DeviceFields({
             <option key={tz} value={tz} />
           ))}
         </datalist>
+      </Field>
+      {/* The numbers of the accounts on this phone, so Proxies & numbers can
+          match each to its rental (P6). One per line; the placeholder shows it. */}
+      <Field label="Phone numbers" className="sm:col-span-2">
+        <textarea
+          value={values.phoneNumbers}
+          onChange={set("phoneNumbers")}
+          disabled={disabled}
+          maxLength={500}
+          rows={3}
+          autoComplete="off"
+          // Not inputMode="tel": the iPhone number pad has no Return key, and
+          // the numbers go one per line.
+          placeholder={"+1 555 201 3344\n+1 555 201 7781"}
+          className={cn(DEVICE_INPUT, "tnum resize-y")}
+        />
       </Field>
       <Field label="Notes" className="sm:col-span-2">
         <textarea

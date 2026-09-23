@@ -63,9 +63,11 @@ export interface DeviceState {
   whoer_screenshot_path: string | null;
   is_active: boolean;
   notes: string | null;
+  phone_numbers: string | null;
 }
 
-const DEVICE_COLS = "id,name,model,ios_version,proxy,timezone,whoer_screenshot_path,is_active,notes";
+const DEVICE_COLS =
+  "id,name,model,ios_version,proxy,timezone,whoer_screenshot_path,is_active,notes,phone_numbers";
 
 /** A phone as it is right now, read live (never from the cache) before a write. */
 export async function getDeviceState(id: number): Promise<DeviceState | null> {
@@ -83,6 +85,7 @@ function toColumns(fields: Partial<DeviceFields> & { isActive?: boolean }): Reco
   if (fields.proxy !== undefined) out.proxy = fields.proxy;
   if (fields.timezone !== undefined) out.timezone = fields.timezone;
   if (fields.notes !== undefined) out.notes = fields.notes;
+  if (fields.phoneNumbers !== undefined) out.phone_numbers = fields.phoneNumbers;
   if (fields.isActive !== undefined) out.is_active = fields.isActive;
   return out;
 }

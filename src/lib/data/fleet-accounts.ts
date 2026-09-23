@@ -61,9 +61,9 @@ export function fleetOfEntity(
  * no phone (spare proxies, unmatched rentals) stay with Cloud, where the
  * Replace proxy action that draws on them lives.
  *
- * Not covered yet: a real phone's own proxy is free text on the device, so its
- * expiry is not tracked here. That needs its own design (see the phone-farm
- * design tickets).
+ * Cloud only since P6 (2026-09-23): the Physical page lists real phones from
+ * `proxies-phones.ts` instead, because a real phone's proxy and numbers are
+ * recorded on the device, not on a Geelark phone.
  */
 export function limitProxyData(
   data: ProxyPhoneData,

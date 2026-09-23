@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DashCard } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/pill";
 import { formatEtDate } from "@/lib/data/format";
@@ -27,9 +28,11 @@ export function IncidentFeed({ incidents, className }: { incidents: Incident[]; 
   return (
     <DashCard title="Incident feed, last 48h" viewAllHref="/incidents" className={className}>
       {incidents.length === 0 ? (
-        <p className="flex items-center gap-1.5 py-2 text-sm text-text-muted">
-          <CheckCircle2 className="size-4 text-ok" /> No incidents in the last 48 hours.
-        </p>
+        // The shared empty state, centred in the card, with the tick the
+        // Incidents page uses for the same message (Garreth, 2026-09-23).
+        <EmptyState icon={CheckCircle2} compact className="h-full">
+          No incidents in the last 48 hours
+        </EmptyState>
       ) : (
         <>
           <div className="overflow-x-auto">
