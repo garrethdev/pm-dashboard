@@ -78,6 +78,7 @@ export function AccountsViews({
         fleet={fleet}
         groupByPhone={view === "phone"}
         phones={phones}
+        characters={characters}
         demo={demo}
         notice={added}
         viewSwitch={

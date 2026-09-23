@@ -137,6 +137,7 @@ export async function createAccount(
         platform: fields.platform,
         delivery_mode: fields.deliveryMode,
         device_id: fields.deviceId,
+        phone_number: fields.phoneNumber,
         account_created_on: fields.createdOn,
         is_active: true,
         posting_paused: fields.paused,
@@ -193,4 +194,76 @@ export async function detachDevice(id: number): Promise<void> {
   } catch (err) {
     console.error(`could not take account ${id} off its phone`, err);
   }
+}
+
+/** The account as Edit account needs it, read live before a change (P14). */
+export interface EditableAccount {
+  id: number;
+  geelark_profile: string;
+  username: string | null;
+  character: string | null;
+  platform: string | null;
+  delivery_mode: string;
+  device_id: number | null;
+  phone_number: string | null;
+  is_active: boolean;
+}
+
+const EDITABLE_COLS =
+  "id,geelark_profile,username,character,platform,delivery_mode,device_id,phone_number,is_active";
+
+export async function getEditableAccount(profile: string): Promise<EditableAccount | null> {
+  const res = await sbFetch(
+    `accounts?select=${EDITABLE_COLS}&geelark_profile=eq.${encodeURIComponent(profile)}&limit=1`,
+    {},
+  );
+  if (!res.ok) throw new Error(`Couldn't read the account (HTTP ${res.status})`);
+  return ((await res.json()) as EditableAccount[])[0] ?? null;
+}
+
+/** True when another account already has that handle on that platform. */
+export async function usernameTakenByOther(
+  username: string,
+  platform: string,
+  exceptId: number,
+): Promise<boolean> {
+  const res = await sbFetch(
+    `accounts?select=id&username=eq.${encodeURIComponent(username)}` +
+      `&platform=eq.${encodeURIComponent(platform)}&id=neq.${exceptId}&limit=1`,
+    {},
+  );
+  if (!res.ok) throw new Error(`Couldn't check the handle (HTTP ${res.status})`);
+  return ((await res.json()) as unknown[]).length > 0;
+}
+
+/**
+ * Write Edit account's changes to one row (P14). Only the columns given are
+ * sent. Filtered on the id AND the Physical fleet, so a Cloud account is
+ * never written from here even if a caller forgot to check (Garreth,
+ * 2026-09-23: Cloud is not touched).
+ */
+export async function updateAccount(
+  id: number,
+  columns: Partial<Pick<EditableAccount, "username" | "character" | "device_id" | "phone_number">>,
+): Promise<EditableAccount> {
+  const res = await sbFetch(
+    `accounts?id=eq.${id}&delivery_mode=eq.manual&select=${EDITABLE_COLS}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ ...columns, updated_at: new Date().toISOString() }),
+    },
+    0,
+  );
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    if (res.status === 409 && body.includes("username")) {
+      throw new AccountWriteError("Another account already has that handle.", 409);
+    }
+    console.error(`account edit rejected (HTTP ${res.status}):`, body);
+    throw new Error(`Saving the account failed (HTTP ${res.status}). Nothing was changed.`);
+  }
+  const rows = (await res.json()) as EditableAccount[];
+  if (!rows[0]) throw new AccountWriteError("That account is not on the Physical side.", 409);
+  return rows[0];
 }

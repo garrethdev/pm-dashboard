@@ -89,14 +89,15 @@ purpose; the changelog has them.
 | P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07. **Log warmup is live since PF-04** and **Posted / Failed since PF-07** (both 2026-09-22); the six saving states P3 handed over are built |
 | P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22, and the switch now SAVES** — PF-04 landed the same day. The by-phone view still needs PF-02's real phones to have groups. What an Automated account SHOWS moved to PF-13 |
 | P5 | Rework the device page around the phone's daily work | **Approved and built 2026-09-22.** Warmup history is real since PF-04. **One gap, found 2026-09-22: "Today on this phone" is still demo-only** — `device-detail.tsx` reads `demo?.today ?? null`, so a real phone always shows "Nothing due" however many deliveries it has. PF-05 and PF-07 built the tables and the To-do page but nobody rewired this page to them. Small follow-on, not a redesign |
-| P6 | Track proxy expiry for real phones on Proxies & numbers | **Approved and built 2026-09-23.** One row per real phone, its accounts, proxy and numbers (numbers recorded on the phone, Garreth). Joins proven live with a test phone, since deleted |
+| P6 | Track proxy expiry for real phones on Proxies & numbers | **Approved and built 2026-09-23.** One row per real phone, its accounts, proxy and numbers. Joins proven live with a test phone, since deleted. **Numbers moved from the phone to each account the same day (P14, Garreth)**; the numbers view is now one line per account |
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
-| P8 | Add the checklist for a ban on a real phone | **Approved 2026-09-23, after three rounds; build (PF-11) not started.** The app releases queued posts itself; the proxy is kept while other accounts use it (Garreth). Drawn at `/todo?todo=ban` and the Retire button on `/accounts?demo=1` |
+| P8 | Add the checklist for a ban on a real phone | **Approved and built 2026-09-23** (PF-11). The app releases queued posts itself; the proxy is kept while other accounts use it (Garreth). Proven live with a practice phone, since deleted. `/todo?todo=ban` and `/accounts?demo=1` still draw the sample states |
 | P9 | Add the Live view page and link to it from the dashboard | Not started |
 | P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. Building is PF-03 then PF-15 |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
 | P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Built 2026-09-23.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. The stale row is **approved and built 2026-09-23**: a red Overdue pill on the bell's 24-hour rule (Garreth). Not yet seen with a real post |
 | P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | Not started |
+| P14 | Put an account's settings behind a ⋯ menu on its row, with Edit account and Retire account | **Approved and built 2026-09-23.** Live on every Physical row; Cloud unchanged (proven by screenshot). Phone numbers now belong to accounts |
 
 Each of these has its full ticket further down. **A ticket moves through four
 steps, and its Status line says which it is at:** not started → designed,
@@ -898,7 +899,8 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 ## P8. Add the checklist for a ban on a real phone
 
 - **Status:** **approved 2026-09-23 (Garreth), after three rounds of
-  feedback; the build (PF-11) is not started.** Drawn in the
+  feedback, and built the same day (PF-11).** A real account's Retire now
+  opens this dialog and the checklist is real; see the changelog. Drawn in the
   running app with sample data: the checklist at `/todo?todo=ban`, and the
   retire dialog from any Retire button on `/accounts?demo=1` in Physical.
   **Decided (Garreth, 2026-09-23):**
@@ -1130,6 +1132,57 @@ action is `CtaButton`, never a hand-rolled `bg-accent` button.**
   been seen for any of them.
 - **Done when:** each is approved, or has a list of changes, and those
   changes are made in the app and looked at again.
+
+## P14. Put an account's settings behind a ⋯ menu on its row, with Edit account and Retire account
+
+- **Status:** **approved and built 2026-09-23** (Garreth approved the drawing
+  the same day). Live on every Physical row; `/accounts?demo=1` still draws
+  the invented farm, where Save only closes. Cloud rows and Cloud's Posting
+  window are unchanged, proven by before-and-after screenshots.
+- **Where it came from:** Garreth, 2026-09-23. The row carried three controls
+  (the warmup switch, the Posting pill, Retire) and had nowhere to edit the
+  handle, the character, the phone or the number. One menu frees the row and
+  gives all of that one home.
+- **Decided (Garreth, 2026-09-23):**
+  - **Cloud is not touched.** The ⋯ menu and Edit account are Physical only.
+  - **Phone numbers belong to accounts, not phones.** This reverses P6's "the
+    numbers are recorded on the phone" from the same morning. Proxies stay on
+    the phone: every account on it shares one.
+  - **The Profile name is shown but locked.** Every n8n workflow and every
+    content assignment finds an account by it.
+  - **The proxy is shown but locked,** with a link to the phone's page, where
+    it is changed once for every account on that phone. That already works:
+    accounts keep no copy of the proxy.
+  - **No red mark for ban signals.** The red Retire button that lit up for a
+    likely ban goes with the button; Garreth judged it more confusing than
+    useful.
+  - **Posting opens as the Active / Paused switch,** and **Edit cadence**
+    unfolds the custom cadence under it.
+- **What was drawn:**
+  - The last column is a ⋯ button. Its menu has **Edit account** and **Retire
+    account** (in red). Retire opens the P8 dialog, as before.
+  - The row loses its warmup switch (the days since the last warmup stay) and
+    its Posting pill, which becomes a plain word: Active, Paused or Custom.
+    The phone-level warmup switch in the By phone view stays.
+  - **Edit account** has four parts: **Details** (Profile name and Platform
+    locked; Handle and Character editable), **Phone** (which phone, the
+    account's phone number, and the phone's proxy read-only with a link to the
+    phone), **Posting** (the switch, then Edit cadence: posts a day, GLP and
+    filler a week, content types, ignore throttling) and **Warmup** (Manual /
+    Automated).
+  - Seen in headless Chrome at phone and desktop width, dark and light.
+- **For the build:**
+  - A phone number column on `accounts`, added beside what exists; the
+    phone's number box and P6's numbers view move to it. The Add account form
+    (PF-21) gains the field. The ban checklist then always names the banned
+    account's own number.
+  - The cadence reuses the Posting window's own fields and checks rather than
+    copying them, so the two cannot disagree. Cloud's window keeps working
+    exactly as it does.
+  - Changing the phone needs PF-03's write. Until then the field can be drawn
+    but must not save a half-move.
+- **Done when:** the menu and Edit account are approved, then built for real
+  Physical rows, and looked at in the running app at both sizes.
 
 ---
 

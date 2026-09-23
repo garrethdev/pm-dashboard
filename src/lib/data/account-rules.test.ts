@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   nextProfileName,
   normaliseProfile,
+  normalisePhoneNumber,
   normaliseUsername,
+  parseAccountEdit,
   parseNewAccount,
 } from "@/lib/data/account-rules";
 
@@ -145,5 +147,48 @@ describe("parseNewAccount", () => {
     expect(missing.ok && missing.fields.paused).toBe(true);
     const live = parseNewAccount(body({ paused: false }), { today: TODAY });
     expect(live.ok && live.fields.paused).toBe(false);
+  });
+});
+
+describe("normalisePhoneNumber", () => {
+  it("keeps a written number, tidied", () => {
+    expect(normalisePhoneNumber("  +1 (555)  201-7781 ")).toEqual({ ok: true, value: "+1 (555) 201-7781" });
+  });
+
+  it("takes blank as no number", () => {
+    expect(normalisePhoneNumber("   ")).toEqual({ ok: true, value: null });
+    expect(normalisePhoneNumber(null)).toEqual({ ok: true, value: null });
+  });
+
+  it("refuses a half number and anything with letters", () => {
+    expect(normalisePhoneNumber("555-2017")).toMatchObject({ ok: false });
+    expect(normalisePhoneNumber("call 5552017781")).toMatchObject({ ok: false });
+  });
+});
+
+describe("parseAccountEdit", () => {
+  it("changes only what was sent", () => {
+    expect(parseAccountEdit({ phoneNumber: "+15552017781" })).toEqual({
+      ok: true,
+      fields: { phoneNumber: "+15552017781" },
+    });
+  });
+
+  it("drops the @ from a handle, and takes an account off its phone", () => {
+    expect(parseAccountEdit({ username: "@cleora.glp", deviceId: null })).toEqual({
+      ok: true,
+      fields: { username: "cleora.glp", deviceId: null },
+    });
+  });
+
+  it("never reads a Profile name or a platform", () => {
+    const out = parseAccountEdit({ profile: "Profile 1", platform: "instagram" });
+    expect(out).toEqual({ ok: true, fields: {} });
+  });
+
+  it("refuses a bad number, a blank character and a phone that is not a number", () => {
+    expect(parseAccountEdit({ phoneNumber: "12345" })).toMatchObject({ ok: false });
+    expect(parseAccountEdit({ character: " " })).toMatchObject({ ok: false });
+    expect(parseAccountEdit({ deviceId: "iPhone 1" })).toMatchObject({ ok: false });
   });
 });

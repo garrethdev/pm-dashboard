@@ -65,6 +65,84 @@ export function normaliseUsername(raw: unknown): string | null {
   return /^[A-Za-z0-9._-]{1,60}$/.test(handle) ? handle : null;
 }
 
+/**
+ * An account's own phone number as it is stored (P14: numbers belong to
+ * accounts). Blank is allowed and means "none recorded"; anything else must be
+ * a whole number, 10 to 15 digits, written with the usual +, spaces, dashes,
+ * dots or brackets. It is kept as typed, tidied, because Proxies & numbers
+ * matches it to its TextVerified rental on the last ten digits anyway.
+ */
+export function normalisePhoneNumber(
+  raw: unknown,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (raw === null || raw === undefined) return { ok: true, value: null };
+  if (typeof raw !== "string") return { ok: false, error: "The phone number must be text." };
+  const text = raw.trim().replace(/\s+/g, " ");
+  if (text === "") return { ok: true, value: null };
+  const digits = text.replace(/\D/g, "");
+  if (!/^[+\d\s().-]+$/.test(text) || digits.length < 10 || digits.length > 15) {
+    return { ok: false, error: `"${text}" is not a whole phone number.` };
+  }
+  return { ok: true, value: text };
+}
+
+/** What Edit account may change (P14). Every field is optional: only the ones
+ *  sent are changed. */
+export interface AccountEditFields {
+  username?: string;
+  character?: string;
+  phoneNumber?: string | null;
+  /** The phone it is on, or null to take it off its phone. */
+  deviceId?: number | null;
+}
+
+/**
+ * Read the Edit account form. The Profile name and the platform are not here
+ * on purpose: every workflow finds an account by its Profile name, and an
+ * account does not change platform.
+ */
+export function parseAccountEdit(
+  body: Record<string, unknown>,
+): { ok: true; fields: AccountEditFields } | { ok: false; error: string } {
+  const fields: AccountEditFields = {};
+
+  if (body.username !== undefined) {
+    const username = normaliseUsername(body.username);
+    if (!username) {
+      return {
+        ok: false,
+        error: "Give the account its handle — letters, numbers, dots, dashes and underscores only.",
+      };
+    }
+    fields.username = username;
+  }
+
+  if (body.character !== undefined) {
+    const character = typeof body.character === "string" ? body.character.trim() : "";
+    if (character === "") return { ok: false, error: "Choose which character this account is." };
+    fields.character = character;
+  }
+
+  if (body.phoneNumber !== undefined) {
+    const number = normalisePhoneNumber(body.phoneNumber);
+    if (!number.ok) return number;
+    fields.phoneNumber = number.value;
+  }
+
+  if (body.deviceId !== undefined) {
+    const raw = body.deviceId;
+    if (raw === null || raw === "") {
+      fields.deviceId = null;
+    } else {
+      const n = typeof raw === "number" ? raw : typeof raw === "string" && /^\d{1,15}$/.test(raw) ? Number(raw) : NaN;
+      if (!Number.isSafeInteger(n) || n <= 0) return { ok: false, error: "That is not a phone." };
+      fields.deviceId = n;
+    }
+  }
+
+  return { ok: true, fields };
+}
+
 /** The fields a new account row is made from. */
 export interface NewAccountFields {
   /** Canonical "Profile 19". */
@@ -81,6 +159,8 @@ export interface NewAccountFields {
   createdOn: string;
   /** Held back from the scheduler until somebody says otherwise. */
   paused: boolean;
+  /** The account's own number, or null (P14). */
+  phoneNumber: string | null;
 }
 
 function validDate(value: string): boolean {
@@ -158,9 +238,13 @@ export function parseNewAccount(
     return { ok: false, error: "That date is too far back to be right." };
   }
 
+  const phoneNumber = normalisePhoneNumber(body.phoneNumber);
+  if (!phoneNumber.ok) return phoneNumber;
+
   return {
     ok: true,
     fields: {
+      phoneNumber: phoneNumber.value,
       profile,
       username,
       character,

@@ -154,12 +154,12 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-01 | `accounts.delivery_mode` switch | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
-| PF-03 | Move to phone button | Immediate | **READY TO BUILD 2026-09-22** — its screen, design ticket P10, is APPROVED. The dialog already asks for the phone; what is left is the write: `/api/accounts/delivery-mode` must also set `device_id` and `moved_to_device_at`, and `MOVE_WRITE_READY` in `delivery-mode-control.tsx` flipped in the same change |
+| PF-03 | Move to phone button | Immediate | **2026-09-23: Edit account (P14) now moves an account that is ALREADY on Physical between phones, or off one.** Still to build: the Cloud-to-phone move in Settings. **READY TO BUILD 2026-09-22** — its screen, design ticket P10, is APPROVED. The dialog already asks for the phone; what is left is the write: `/api/accounts/delivery-mode` must also set `device_id` and `moved_to_device_at`, and `MOVE_WRITE_READY` in `delivery-mode-control.tsx` flipped in the same change |
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
 | PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. ~~Shows warmups only until PF-06 hands posts out.~~ **PF-06 landed the same day**; a seeded delivery was seen on the list as "1 post and 2 warmups" (2026-09-22) |
-| PF-11 | Post-ban branch for manual accounts | Intermediate | **Unblocked by PF-01 since 2026-09-18** (this row was stale until 2026-09-22). Waiting on its SCREEN instead: the ban checklist is design ticket P8, not started |
+| PF-11 | Post-ban branch for manual accounts | Intermediate | **Built 2026-09-23** in the app, applied live and proven with a practice phone (since deleted). A real-phone account never reaches the robot. **Left open:** guarding the n8n robot's own hand-filled form, which waits on Garreth |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
 | PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
@@ -539,7 +539,7 @@ does.~~ **PF-06 landed later the same day (2026-09-22)**, and a seeded
 delivery was seen on the list as "1 post and 2 warmups", so the posts half is
 no longer theoretical.
 
-## PF-11 · Post-ban branch for manual accounts — Screen approved 2026-09-23 (P8); build not started
+## PF-11 · Post-ban branch for manual accounts — Built 2026-09-23; the n8n form guard is still open
 
 `[Ops] Post-Ban System` (`WmichajTDXL0pT1z`) deletes a Geelark phone; for
 `delivery_mode = manual` skip that and surface a checklist instead: sign out
@@ -547,6 +547,32 @@ on the device, release queued content, retire proxy and number. Same audit
 trail.
 *Done when:* dry-run on a manual account shows the checklist and touches no
 Geelark endpoint.
+
+*2026-09-23: built in the app rather than as a branch in the robot.* P8 decided
+there is no dry run for a real phone, because there is no robot to ask; the
+dialog's own preview is the report. So a manual account never reaches the
+robot at all:
+
+- `/api/accounts/phone-retire` (GET preview, POST retire) calls
+  `retire_phone_account`, one database function that marks the account
+  retired, runs the robot's own `release_profile_content`, closes the
+  account's queued `post_deliveries` as `skipped`, and writes the steps to the
+  new `ban_cleanup_steps` table. `profile_content_pending` is its read-only
+  mirror for the dialog's count.
+- `/api/accounts/post-ban` refuses `delivery_mode = manual` before calling n8n,
+  dry run included.
+- The Accounts table picks the dialog by the account's `delivery_mode`, not by
+  which fleet is on screen.
+- Ticks go through `/api/ban-steps/:id`; the to-do list reads the steps in
+  `getTodoBoard`.
+
+**Still open — the robot's own form.** It can be filled in by hand with a
+real-phone account's name, and nothing in n8n refuses it. Worse, `Process
+External` falls back to `items[0]` when Geelark's name search has no exact
+match, so a name that is not a Geelark phone can delete whichever cloud phone
+the search returns first. The fix is a check of `delivery_mode` before
+`Geelark Lookup`, and deleting only on an exact name match. It is a live
+workflow change (save, then publish), so it waits on Garreth.
 
 ## PF-09 · Health detector + Incidents read both sources — Built 2026-09-22, awaiting a real hand-posted row
 

@@ -19,6 +19,8 @@ export interface DeviceAccount {
   character: string | null;
   platform: Platform;
   isActive: boolean;
+  /** The account's own number (P14: numbers belong to accounts). */
+  phoneNumber: string | null;
 }
 
 export interface Device {
@@ -32,7 +34,8 @@ export interface Device {
   proofPath: string | null;
   isActive: boolean;
   notes: string | null;
-  /** One per line (P6). */
+  /** One per line (P6). No longer read since P14 moved numbers onto the
+   *  accounts; kept because the column is kept. */
   phoneNumbers: string | null;
   accounts: DeviceAccount[];
 }
@@ -58,11 +61,12 @@ interface RawDeviceAccount {
   platform: string | null;
   is_active: boolean;
   device_id: number | null;
+  phone_number: string | null;
 }
 
 const DEVICE_COLS =
   "id,name,model,ios_version,proxy,timezone,whoer_screenshot_path,is_active,notes,phone_numbers";
-const ACCOUNT_COLS = "id,geelark_profile,username,character,platform,is_active,device_id";
+const ACCOUNT_COLS = "id,geelark_profile,username,character,platform,is_active,device_id,phone_number";
 
 function toAccount(a: RawDeviceAccount): DeviceAccount {
   return {
@@ -72,6 +76,7 @@ function toAccount(a: RawDeviceAccount): DeviceAccount {
     character: a.character,
     platform: toPlatform(a.platform),
     isActive: a.is_active,
+    phoneNumber: a.phone_number,
   };
 }
 

@@ -24,15 +24,24 @@ export interface PlaceholderPhone {
   name: string;
   model: string | null;
   isActive: boolean;
+  /** Invented, for Edit account's read-only proxy line (P14). */
+  proxy: string;
 }
 
 export const PLACEHOLDER_PHONES: PlaceholderPhone[] = [
-  { id: 1, name: "iPhone 1", model: "iPhone 12", isActive: true },
-  { id: 2, name: "iPhone 2", model: "iPhone 12", isActive: true },
-  { id: 3, name: "iPhone 3", model: "iPhone 13", isActive: true },
+  { id: 1, name: "iPhone 1", model: "iPhone 12", isActive: true, proxy: "45.87.212.11:8000" },
+  { id: 2, name: "iPhone 2", model: "iPhone 12", isActive: true, proxy: "45.87.212.12:8000" },
+  { id: 3, name: "iPhone 3", model: "iPhone 13", isActive: true, proxy: "45.87.212.13:8000" },
   // A phone switched off still has its accounts; they simply do no work.
-  { id: 4, name: "iPhone 4", model: "iPhone 13", isActive: false },
+  { id: 4, name: "iPhone 4", model: "iPhone 13", isActive: false, proxy: "45.87.212.14:8000" },
 ];
+
+/** An invented number, stable per account: "+1 (555) 221-5299". */
+function sampleNumber(profile: string): string {
+  const n = Number(profile.replace(/\D/g, "")) || 0;
+  const tail = String(1000 + ((n * 7919) % 9000)).slice(-4);
+  return `+1 (555) 2${String(n % 100).padStart(2, "0")}-${tail}`;
+}
 
 /** Everything an AccountRow needs that this view does not care about. */
 function account(partial: {
@@ -58,6 +67,7 @@ function account(partial: {
     deliveryMode: "manual",
     deviceId: partial.deviceId,
     warmupMode: partial.warmupMode ?? "manual",
+    phoneNumber: sampleNumber(partial.profile),
     isActive: true,
     paused: partial.paused ?? false,
     healthStatus: health,

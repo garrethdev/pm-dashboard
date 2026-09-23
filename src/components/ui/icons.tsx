@@ -1,5 +1,9 @@
 import {
   ArrowDown as PhArrowDown,
+  DotsThreeVertical as PhDotsThreeVertical,
+  LockSimple as PhLockSimple,
+  PencilSimple as PhPencilSimple,
+  Prohibit as PhProhibit,
   ArrowDownRight as PhArrowDownRight,
   ArrowLeft as PhArrowLeft,
   ArrowRight as PhArrowRight,
@@ -195,3 +199,12 @@ export const Hand = icon(PhHand, "Hand");
 /* An account that is on no phone at all — the group at the end of the
  * by-phone view. A plain phone icon there would say the opposite. */
 export const SmartphoneOff = icon(PhDeviceMobileSlash, "SmartphoneOff");
+/* The ⋯ at the end of an account row that opens Edit account and Retire
+ * account (P14). Bold: filled, the three dots merge into a bar at 16px. */
+export const MoreVertical = icon(PhDotsThreeVertical, "MoreVertical", "bold");
+/* A field that is shown but cannot be changed, such as the Profile name. */
+export const Lock = icon(PhLockSimple, "Lock");
+export const Pencil = icon(PhPencilSimple, "Pencil");
+/* Retire, in the account menu: the account stops for good, which a bin
+ * would misstate — nothing is deleted. */
+export const Prohibit = icon(PhProhibit, "Prohibit");

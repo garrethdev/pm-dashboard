@@ -121,7 +121,9 @@ export function TodoView({
   const emptyReason = board.live
     ? board.devices.length === 0
       ? "noPhones"
-      : board.devices.every((d) => d.accounts.every((a) => a.items.length === 0))
+      : board.devices.every(
+            (d) => d.accounts.every((a) => a.items.length === 0) && !(d.cleanups?.length),
+          )
         ? "nothingDue"
         : null
     : todoEmptyReason(state);
@@ -180,7 +182,12 @@ export function TodoView({
               )}
             >
               {devices.map((device) => (
-                <DeviceCard key={device.id} device={device} onOpenItem={board.open} />
+                <DeviceCard
+                  key={device.id}
+                  device={device}
+                  onOpenItem={board.open}
+                  onStepSaved={board.live ? board.reload : undefined}
+                />
               ))}
             </div>
           </div>
@@ -349,15 +356,21 @@ function DayStepper({ day, onChange }: { day: TodoDay; onChange: (d: TodoDay) =>
 function DeviceCard({
   device,
   onOpenItem,
+  onStepSaved,
 }: {
   device: TodoDevice;
   onOpenItem: (t: SheetTarget) => void;
+  /** On the live list: re-read it once a tick has saved. Absent on a `?todo=`
+   *  design state, where a tick is held here and saved nowhere. */
+  onStepSaved?: () => Promise<void>;
 }) {
   // Open by default: this page is the work, not a summary of it.
   const [open, setOpen] = useState(true);
-  // Ticks on a ban's clean-up steps. DESIGN REVIEW ONLY (P8): held here and
-  // saved nowhere, so the drawing can be pressed and the count follows it.
+  // Ticks on a ban's clean-up steps, shown the instant they are pressed. On
+  // the live list each is saved (PF-11) and dropped once the list has been
+  // re-read with it; on a design state it is only held here.
   const [ticked, setTicked] = useState<Record<string, string | null>>({});
+  const [stepError, setStepError] = useState<string | null>(null);
   const cleanups = (device.cleanups ?? []).map((c) => ({
     ...c,
     steps: c.steps.map((st) =>
@@ -365,13 +378,43 @@ function DeviceCard({
     ),
   }));
   const progress = deviceProgress({ ...device, cleanups });
-  const toggleStep = (st: BanStep) =>
+  const toggleStep = async (st: BanStep) => {
+    const done = !st.done;
+    const drop = () =>
+      setTicked((t) => {
+        const next = { ...t };
+        delete next[st.id];
+        return next;
+      });
+    setStepError(null);
     setTicked((t) => ({
       ...t,
-      [st.id]: st.done
-        ? null
-        : new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()),
+      [st.id]: done
+        ? new Intl.DateTimeFormat("en-GB", {
+            timeZone: "America/New_York",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }).format(new Date())
+        : null,
     }));
+    if (!onStepSaved) return;
+    try {
+      const res = await fetch(`/api/ban-steps/${st.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ done }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+      await onStepSaved();
+      drop();
+    } catch (err) {
+      // Never left looking saved: the tick goes back to what the list says.
+      drop();
+      setStepError(err instanceof Error ? err.message : "Couldn't save the tick");
+    }
+  };
 
   return (
     // `@container`: everything inside sizes itself against THIS CARD, not the
@@ -438,6 +481,7 @@ function DeviceCard({
           {cleanups.map((c) => (
             <BanCleanupGroup key={c.accountId} cleanup={c} onToggle={toggleStep} />
           ))}
+          {stepError && <p className="px-1 text-sm text-danger">{stepError}</p>}
           {device.accounts.map((account) => (
             <AccountGroup
               key={account.id}

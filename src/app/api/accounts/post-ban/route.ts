@@ -106,6 +106,16 @@ export async function POST(request: Request) {
     userEmail = await actingUserEmail();
     const state = await getAccountState(profile);
     if (!state) return NextResponse.json({ error: "account not found" }, { status: 404 });
+    // A real-phone account never reaches the robot, not even for a dry run
+    // (PF-11). The robot finds a Geelark phone by name and deletes it, and a
+    // Physical account's name can still match a cloud phone it no longer
+    // uses. Its retire is /api/accounts/phone-retire.
+    if (state.delivery_mode === "manual") {
+      return NextResponse.json(
+        { error: `${profile} is on a real phone. Retire it from the Physical side` },
+        { status: 409 },
+      );
+    }
     if (live && !state.is_active && state.cleanedUp) {
       return NextResponse.json(
         { error: "account is already retired and cleaned up" },

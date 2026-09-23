@@ -139,22 +139,9 @@ export function DeviceFields({
           ))}
         </datalist>
       </Field>
-      {/* The numbers of the accounts on this phone, so Proxies & numbers can
-          match each to its rental (P6). One per line; the placeholder shows it. */}
-      <Field label="Phone numbers" className="sm:col-span-2">
-        <textarea
-          value={values.phoneNumbers}
-          onChange={set("phoneNumbers")}
-          disabled={disabled}
-          maxLength={500}
-          rows={3}
-          autoComplete="off"
-          // Not inputMode="tel": the iPhone number pad has no Return key, and
-          // the numbers go one per line.
-          placeholder={"+1 555 201 3344\n+1 555 201 7781"}
-          className={cn(DEVICE_INPUT, "tnum resize-y")}
-        />
-      </Field>
+      {/* No Phone numbers box since P14 (Garreth, 2026-09-23): a number
+          belongs to its account and is set in Edit account. The phone keeps
+          the proxy, which every account on it shares. */}
       <Field label="Notes" className="sm:col-span-2">
         <textarea
           value={values.notes}

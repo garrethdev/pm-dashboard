@@ -1,3 +1,4 @@
+import { getCleanupsByDevice } from "@/lib/data/ban-cleanups";
 import { sbRest } from "@/lib/data/supabase";
 import { toPlatform } from "@/lib/platform";
 import {
@@ -192,7 +193,7 @@ export interface TodoBoard {
  * Read one day's work, `dayOffset` days from today (0 is today, -1 yesterday).
  */
 export async function getTodoBoard(dayOffset = 0, now: Date = new Date()): Promise<TodoBoard> {
-  const { from } = dayRangeET(dayOffset, now);
+  const { from, to } = dayRangeET(dayOffset, now);
   const day = etDay(from.toISOString());
 
   const [devices, accounts] = await Promise.all([
@@ -215,9 +216,13 @@ export async function getTodoBoard(dayOffset = 0, now: Date = new Date()): Promi
   const working = accounts.filter((a) => a.posting_paused !== true);
   const byId = new Map(working.map((a) => [a.id, a]));
 
-  const [deliveries, sessions] = await Promise.all([
+  // A ban's clean-up is read without a fallback, unlike the warmups: a list
+  // that quietly dropped a banned account's sign-out would look finished when
+  // it is not, and a list that says it could not load is the honest failure.
+  const [deliveries, sessions, cleanups] = await Promise.all([
     readDeliveries([...byId.keys()], from),
     getSessionsOnDay({}, dayOffset, now).catch(() => [] as WarmupSession[]),
+    getCleanupsByDevice(from, to),
   ]);
 
   // Only the content rows we actually need, one request, keyed for the join.
@@ -336,6 +341,9 @@ export async function getTodoBoard(dayOffset = 0, now: Date = new Date()): Promi
         character: a.character ?? "—",
         items: itemsByAccount.get(a.id) ?? [],
       })),
+    // The clean-up after a ban on this phone (PF-11). The banned account is
+    // retired, so it is not among `accounts` above; its steps stand alone.
+    ...(cleanups.has(d.id) ? { cleanups: cleanups.get(d.id) } : {}),
   }));
 
   return { devices: board, extras, noPhones: false };

@@ -41,6 +41,9 @@ import type { AccountRow } from "@/lib/data/accounts";
 import type { ContentTypeOption } from "@/lib/data/scheduler-overrides";
 import { summarizeOverride } from "@/lib/data/scheduler-overrides";
 import { PostingSettingsModal } from "@/components/dashboard/posting-settings-modal";
+import { EditAccountModal } from "@/components/dashboard/edit-account-modal";
+import { RowMenu } from "@/components/dashboard/row-menu";
+import { Pencil, Prohibit } from "@/components/ui/icons";
 import {
   PLATFORM_LABEL,
   type Platform,
@@ -72,6 +75,25 @@ const COL_WIDTHS = [
   "8%", // Last Post
   "7%", // Posting
   "6%", // Retire
+];
+
+/**
+ * The same eleven columns once the row's controls have moved into the ⋯ menu
+ * (P14): Warmup keeps only its days, Posting is a word rather than a button,
+ * and the last column is the ⋯ itself.
+ */
+const COL_WIDTHS_MENU = [
+  "8%", // Profile
+  "16%", // Username
+  "8%", // Character
+  "9%", // Age
+  "10%", // Health
+  "10%", // Avg Views (7d)
+  "9%", // Suppressed
+  "8%", // Warmup
+  "8%", // Last Post
+  "10%", // Posting
+  "4%", // ⋯
 ];
 
 type SortKey = "views" | "suppressed" | "age" | "warmup" | "lastpost";
@@ -168,6 +190,7 @@ export function AccountsTable({
   groupByPhone = false,
   demo = false,
   phones = [],
+  characters,
   notice,
   headerAction,
   className,
@@ -184,6 +207,8 @@ export function AccountsTable({
   demo?: boolean;
   /** The registered phones, so one with no accounts is still listed. */
   phones?: PhoneOption[];
+  /** The live character list, for Edit account (P14). Physical only. */
+  characters?: string[];
   /** A line to say above the table that something just landed — a newly added
    *  account (PF-21), whose row is somewhere down a list of sixty. */
   notice?: string | null;
@@ -223,7 +248,11 @@ export function AccountsTable({
   // rather than waiting for the round trip. A write that fails takes its entry
   // back out, which drops the switch to the saved answer underneath.
   const [warmupModes, setWarmupModes] = useState<Record<string, WarmupMode>>({});
-  const showWarmupMode = fullColumns && fleet === "physical";
+  // P14 (Garreth, 2026-09-23): on the Physical side the row's controls fold
+  // into a ⋯ menu with Edit account and Retire account. Every Cloud row keeps
+  // the controls it has — Cloud is not touched.
+  const rowMenu = showActions && fleet === "physical";
+  const showWarmupMode = fullColumns && fleet === "physical" && !rowMenu;
   const [warmupError, setWarmupError] = useState<string | null>(null);
 
   /** What the switch shows for a row: the press, else what is saved. */
@@ -300,6 +329,7 @@ export function AccountsTable({
   const [settingsFor, setSettingsFor] = useState<AccountRow | null>(null);
   const [reviewing, setReviewing] = useState<AccountRow | null>(null);
   const [retiring, setRetiring] = useState<AccountRow | null>(null);
+  const [editing, setEditing] = useState<AccountRow | null>(null);
   // Profiles whose Live retire is running in the background → "Retiring…" spinner.
   const [retiringProfiles, setRetiringProfiles] = useState<Map<string, number>>(new Map());
 
@@ -546,7 +576,7 @@ export function AccountsTable({
       fixed && "table-fixed min-w-[1040px]")}>
       {fixed && (
         <colgroup>
-          {COL_WIDTHS.map((w, i) => (
+          {(rowMenu ? COL_WIDTHS_MENU : COL_WIDTHS).map((w, i) => (
             <col key={i} style={{ width: w }} />
           ))}
         </colgroup>
@@ -569,7 +599,14 @@ export function AccountsTable({
                   {sortHeader("Warmup", "warmup")}
                   {sortHeader("Last Post", "lastpost")}
                   {showActions && <th className={TH}>Posting</th>}
-                  {showActions && <th className={TH}>Retire</th>}
+                  {showActions &&
+                    (rowMenu ? (
+                      <th className={TH}>
+                        <span className="sr-only">Actions</span>
+                      </th>
+                    ) : (
+                      <th className={TH}>Retire</th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
@@ -762,7 +799,23 @@ export function AccountsTable({
                               modal, which is now the only place posting is
                               paused, throttled or restricted. */}
                           <td className="py-2.5">
-                            {row.isActive && !retiringProfiles.has(row.profile) ? (
+                            {rowMenu && row.isActive ? (
+                              // A word, not a button: the setting itself is in
+                              // Edit account now.
+                              (() => {
+                                const s = summarizeOverride(row.override, row.paused, row.effective);
+                                return (
+                                  <span
+                                    className={cn(
+                                      "text-xs font-medium whitespace-nowrap",
+                                      s.tone === "paused" ? "text-warn" : s.tone === "custom" ? "text-accent" : "text-text-muted",
+                                    )}
+                                  >
+                                    {s.tone === "paused" ? "Paused" : s.tone === "custom" ? "Custom" : "Active"}
+                                  </span>
+                                );
+                              })()
+                            ) : row.isActive && !retiringProfiles.has(row.profile) ? (
                               (() => {
                                 const s = summarizeOverride(row.override, row.paused, row.effective);
                                 return (
@@ -802,7 +855,28 @@ export function AccountsTable({
                           </td>
                           {/* Retire column: retire button / progress / retired label */}
                           <td className="py-2.5">
-                            {retiringProfiles.has(row.profile) ? (
+                            {rowMenu ? (
+                              row.isActive ? (
+                                <RowMenu
+                                  label={`Actions for ${row.profile}`}
+                                  items={[
+                                    {
+                                      label: "Edit account",
+                                      icon: <Pencil className="size-4" />,
+                                      onSelect: () => setEditing(row),
+                                    },
+                                    {
+                                      label: "Retire account",
+                                      icon: <Prohibit className="size-4" />,
+                                      onSelect: () => setRetiring(row),
+                                      danger: true,
+                                    },
+                                  ]}
+                                />
+                              ) : (
+                                <span className="text-xs text-text-muted">Retired</span>
+                              )
+                            ) : retiringProfiles.has(row.profile) ? (
                               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-danger">
                                 <Loader2 className="size-3.5 animate-spin" />
                                 Retiring…
@@ -1057,20 +1131,34 @@ export function AccountsTable({
 
       {retiring &&
         (demo && fleet === "physical" ? (
-          // P8 design review: a real-phone account retires without the
-          // Post-Ban robot. Only the invented accounts reach it for now.
+          // P8 design review: the invented accounts of `?demo=1`, drawn with
+          // invented facts. The hold saves nothing.
           <PhoneRetireModal
             handle={retiring.username ? `@${retiring.username}` : retiring.profile}
-            phone={phones.find((p) => p.id === retiring.deviceId)?.name ?? "its phone"}
-            others={
-              allRows.filter(
+            sample={{
+              phone: phones.find((p) => p.id === retiring.deviceId)?.name ?? "its phone",
+              others: allRows.filter(
                 (r) => r.isActive && r.deviceId != null && r.deviceId === retiring.deviceId && r.profile !== retiring.profile,
-              ).length
-            }
-            queued={3}
-            number="+1 (555) 201-7781"
-            proxy="45.87.212.14:8000"
+              ).length,
+              queued: 3,
+              number: "+1 (555) 201-7781",
+              proxy: "45.87.212.14:8000",
+            }}
             onClose={() => setRetiring(null)}
+          />
+        ) : retiring.deliveryMode === "manual" ? (
+          // PF-11: a real-phone account never reaches the Post-Ban robot. The
+          // app retires it itself and the phone half goes on the to-do list.
+          // Chosen by the account's own delivery mode, not by which fleet is
+          // on screen, so it cannot be sent to the robot from anywhere.
+          <PhoneRetireModal
+            handle={retiring.username ? `@${retiring.username}` : retiring.profile}
+            profile={retiring.profile}
+            onClose={() => setRetiring(null)}
+            onRetired={() => {
+              setRetiring(null);
+              router.refresh();
+            }}
           />
         ) : (
           <RetireModal
@@ -1079,6 +1167,23 @@ export function AccountsTable({
             onLiveStarted={handleLiveStarted}
           />
         ))}
+
+      {editing && (
+        <EditAccountModal
+          account={editing}
+          phones={phones}
+          characters={characters ?? characterOptions.slice(1).map((o) => o.value)}
+          options={contentTypeOptions[editing.character] ?? []}
+          // The invented farm reuses real Profile names, so nothing on it
+          // may be written.
+          sample={demo}
+          onClose={() => setEditing(null)}
+          onSaved={(close) => {
+            if (close) setEditing(null);
+            router.refresh();
+          }}
+        />
+      )}
 
       {settingsFor && (
         <PostingSettingsModal

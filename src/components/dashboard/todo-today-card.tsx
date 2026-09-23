@@ -64,7 +64,10 @@ export function TodoTodayCard({
   const emptyReason = board.live
     ? board.devices.length === 0
       ? "noPhones"
-      : board.devices.every((d) => d.accounts.every((a) => a.items.length === 0))
+      : // A phone whose only work is a ban's clean-up still has work (PF-11).
+        board.devices.every(
+            (d) => d.accounts.every((a) => a.items.length === 0) && !(d.cleanups?.length),
+          )
         ? "nothingDue"
         : null
     : todoEmptyReason(state);

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { AccountsViews } from "@/components/dashboard/accounts-views";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
+import { proxyForDisplay } from "@/lib/data/device-rules";
 import { getAccounts } from "@/lib/data/accounts";
 import { nextProfileName } from "@/lib/data/account-rules";
 import {
@@ -84,6 +85,7 @@ async function AccountsLive({ demo }: { demo: boolean }) {
               name: d.name,
               model: d.model ?? null,
               isActive: d.isActive,
+              proxy: proxyForDisplay(d.proxy),
               held: d.accounts.length,
             }))
       }

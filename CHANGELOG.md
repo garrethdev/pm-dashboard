@@ -20,6 +20,184 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — Physical accounts: a ⋯ menu with Edit account, and each account keeps its own phone number
+
+**Where it came from:** design ticket P14, which Garreth approved the same day
+(the drawing is the next entry down). Built to match it.
+
+**What changed, on the Physical side only:**
+
+- **Every account row ends in a ⋯ menu** with **Edit account** and **Retire
+  account**. The warmup switch and the Posting button are gone from the row;
+  Posting reads as a plain word (Active, Paused or Custom).
+- **Edit account saves for real.** It changes the handle, the character, the
+  account's phone number, and which phone it is on (or takes it off its
+  phone). It also sets posting on or off, the warmup mode, and, behind
+  **Edit cadence**, the custom schedule. The Profile name and the platform are
+  shown locked. The proxy is shown read-only with a link to the phone,
+  because every account on a phone shares it.
+- **Only what you changed is saved.** A Save that changes nothing writes
+  nothing. If one part fails, the window says which part, says the parts
+  before it were saved, and stays open, so nothing claims to be saved when it
+  is not.
+- **Phone numbers now belong to each account, not to the phone** (Garreth,
+  reversing this morning's P6 decision). The phone's form no longer has a
+  numbers box. **Add account** has a Phone number field. **Proxies & numbers**
+  lists one line per account with its own number, still matched to its
+  TextVerified rental. The **ban checklist** now always names the banned
+  account's own number, which removes the limit noted in the PF-11 entry.
+- A number must be a whole number of 10 to 15 digits. A half number is refused
+  with a sentence that says so.
+
+**Cloud is untouched, and this was checked.** The custom-schedule form was
+moved into a shared file so Edit account uses the very same fields and
+warnings as Cloud's Posting window, rather than a copy. Cloud's Posting window
+was screenshotted before and after the move and the two pictures are
+identical. Cloud's Accounts page is the same too; the only difference in its
+screenshots is the bell's dot, from a notification that arrived in between.
+The new save route refuses a Cloud account, and the database write is limited
+to Physical accounts as well.
+
+**The database** gained one new column, the account's phone number. The
+phone's old numbers column is left in place and is no longer read. It never
+held a real number, because no phone had been registered yet.
+
+**Confirmed live, 2026-09-23,** with two practice phones and one practice
+account, all deleted afterwards:
+
+- An account added through the app saved its number. A half number was
+  refused.
+- Edit account changed the handle, the number and the phone in one save, and
+  the history log recorded the old and the new values. Sent again, it changed
+  nothing and logged nothing. A bad number, an unknown character and a Cloud
+  account (Profile 8) were all refused. An attempt to rename the Profile or
+  change the platform was ignored.
+- Through the screen: a changed number saved; turning posting on, setting
+  warmup to Automated and saving the cadence each landed, and each wrote its
+  own history line.
+- Proxies & numbers showed the account's number on its phone. Retire from the
+  new menu showed the account's own number, with the proxy switch on because
+  it was the last account on that phone.
+- Seen in headless Chrome at desktop and phone width, dark mode. Not seen in
+  Safari.
+
+**Not done:** moving a Cloud account onto a phone is still PF-03's job in
+Settings. Edit account moves an account that is already on the Physical side.
+
+---
+
+## 2026-09-23 — P14 drawn: an account's settings behind a ⋯ menu (design only, not built)
+
+**Where it came from:** Garreth, 2026-09-23. The Accounts row carried three
+separate controls (the warmup switch, the Posting pill and Retire) and had
+nowhere to change an account's handle, character, phone or phone number.
+
+**Garreth's calls:**
+
+- **Cloud is not touched.** This is Physical only.
+- **Phone numbers belong to each account, not to the phone.** This reverses
+  this morning's P6 decision. Proxies stay on the phone, because every account
+  on a phone shares one.
+- The Profile name and the proxy are shown but cannot be changed here. The
+  Profile name is how every workflow finds the account, and the proxy is
+  changed on the phone's own page.
+- The red Retire button that lit up for a likely ban goes, with no replacement
+  mark.
+- Posting opens as a plain Active / Paused switch; **Edit cadence** unfolds the
+  custom schedule underneath.
+
+**What was drawn, with made-up data:** the last column of each row is now a ⋯
+button with **Edit account** and **Retire account**. The warmup switch and the
+Posting button leave the row; Posting becomes a plain word (Active, Paused or
+Custom). **Edit account** gathers Details, Phone (with the account's own
+number, and the phone's proxy with a link to the phone), Posting and Warmup in
+one window.
+
+Seen on `/accounts?demo=1` in Physical, in headless Chrome at phone and
+desktop width, dark and light. **Nothing is built:** Save only closes, and
+real Physical rows and every Cloud row are exactly as they were. Four small
+icons were added to the app's icon set for the menu.
+
+---
+
+## 2026-09-23 — Retiring a banned account on a real phone now works, and never reaches the Cloud robot
+
+**Where it came from:** backlog ticket PF-11, the build of design ticket P8,
+which Garreth approved earlier the same day. Built to match the approved
+drawing.
+
+**The danger it closes.** Until now, pressing Retire on any account sent it to
+the Cloud Post-Ban robot, including an account that lives on a real phone. The
+robot finds a Geelark cloud phone by name and deletes it. If it cannot find an
+exact match it takes the first phone the search returns, so for a real-phone
+account it could have deleted the wrong cloud phone. It would also have
+switched off the renewal of the proxy that the phone's healthy accounts still
+use. A real-phone account now never reaches the robot: the Retire button opens
+the real-phone dialog instead, chosen by where the account posts from, not by
+which side of the app is showing. The robot's own route also refuses a
+real-phone account outright, even for a dry run.
+
+**What happens now when a real-phone account is retired:**
+
+- **The dialog shows the real facts before you hold the button:** the phone,
+  how many queued posts will go back to the pool, the number, and the proxy
+  with how many other accounts still use it. The proxy switch starts off while
+  others use it and on when the banned account was the last one (Garreth's
+  call on P8).
+- **The app does its own half at once, all or nothing:** the account is marked
+  retired and banned, its queued posts go back to the pool (the same way the
+  robot hands them back), and any of its posts still waiting on the to-do list
+  are closed so nobody is asked to post for a banned account.
+- **The phone half goes on the To-do page** as a checklist at the top of that
+  phone: sign out, retire the number, and retire the proxy only if the switch
+  was on. Ticks are saved and shared. A finished checklist stays struck through
+  for the rest of that day; an unfinished one carries over every day until it
+  is done. The phone's count ("1 of 4") includes the steps, on the page and on
+  the dashboard card.
+- **The history log records** the retire and every tick. A repeated tick that
+  changes nothing is not logged.
+
+**One thing the app cannot know: which number was the banned account's.**
+Numbers are recorded on the phone, not on each account (P6). When the phone
+holds exactly one number, the step names it. When it holds several, the step
+names none rather than guess, because retiring a healthy account's number by
+mistake would be worse. Whoever does the step has to check which one it is.
+
+**The database** gained one new table for the checklist steps and two new
+functions: one counts what a retire would hand back, and one does the retire
+itself in a single step. Nothing existing was changed. Only the app's server
+key can call the new functions (checked after applying).
+
+**Confirmed live, 2026-09-23,** against a practice phone with two practice
+accounts and one queued post:
+
+- The Cloud route refused the real-phone account. The real-phone route refused
+  a Cloud account (Profile 8, a read that changed nothing).
+- The dialog showed the phone, the number, and the proxy without its password,
+  with the switch off because the second account still used it. Seen in
+  headless Chrome at phone and desktop width, dark mode.
+- Retiring marked the account retired with the note the Accounts page reads,
+  closed its queued post, wrote the sign-out and number steps and no proxy
+  step, and left the healthy account next to it untouched. Sending the retire
+  a second time changed nothing.
+- On the To-do page the checklist sat at the top of the phone. Ticking "Sign
+  out" from the page saved it (seen in light mode, desktop width). With both
+  steps ticked it showed today and was gone from tomorrow; unticked, it came
+  back on tomorrow's list.
+- All the practice records and their history-log lines were deleted
+  afterwards. The database is back to no phones.
+
+**Not checked:** a retire that hands real content back to the pool (the
+practice account had none; the hand-back is the robot's own, long-used
+function). Not seen in Safari.
+
+**Not done yet:** the robot's own form in n8n can still be filled in by hand
+with a real-phone account's name. The app no longer sends one, but the form
+does not refuse one. Guarding the robot itself is a change to a live n8n
+workflow and waits on Garreth.
+
+---
+
 ## 2026-09-23 — P8 approved: the clean-up after a ban on a real phone (drawing only, not built)
 
 **Where it came from:** design ticket P8 (backlog PF-11). On Cloud, the
