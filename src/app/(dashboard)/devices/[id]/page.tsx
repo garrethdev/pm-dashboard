@@ -2,7 +2,12 @@ import { notFound } from "next/navigation";
 import { DeviceDetail } from "@/components/dashboard/device-detail";
 import { parseRowId } from "@/lib/data/device-rules";
 import { getAssignableAccounts, getDevice, signProofUrls, type Device } from "@/lib/data/devices";
-import { devicePlaceholder, parseDevicePageState } from "@/lib/data/todo-placeholder";
+import { getTodoBoard } from "@/lib/data/todo";
+import {
+  devicePlaceholder,
+  parseDevicePageState,
+  type TodoDevice,
+} from "@/lib/data/todo-placeholder";
 import {
   getRecentSessions,
   getSessionsToday,
@@ -15,12 +20,12 @@ import { etDateTime } from "@/lib/data/format";
  * One phone — design ticket P5.
  *
  * `?demo=full|new|off` (and `?demo=1`, which means `full`) draws the invented
- * phone from `todo-placeholder.ts` so the reworked page can be judged: no
- * phone has been registered yet, and the three daily-work blocks read tables
- * that PF-04, PF-05 and PF-07 have still to build. Without it the page reads
- * the database exactly as it always has — the same rule the Accounts page's
- * by-phone view follows, because a placeholder that quietly replaced live rows
- * would be a lie the day the first phone is registered.
+ * phone from `todo-placeholder.ts`, which is how the page is judged in states
+ * live data will not produce on demand. Without it every block is live: the
+ * day's work comes from the To-do page's own reader (PF-07), narrowed to this
+ * phone, and the warmups from `warmup_sessions` (PF-04). A placeholder never
+ * quietly replaces live rows — the same rule the Accounts page's by-phone view
+ * follows.
  */
 export default async function DevicePage({
   params,
@@ -69,10 +74,28 @@ export default async function DevicePage({
   // The phone's warmups, real rows since PF-04. Read here rather than inside
   // the component so the page stays one server round trip, and allowed to fail
   // softly: an unreadable history costs this card its list, not the page.
-  const [history, todaysSessions] = await Promise.all([
+  //
+  // Today on this phone is the To-do page's list for this phone alone, read by
+  // the same function, so the two screens cannot disagree about what it owes.
+  // A failed read is null, which the card says rather than claiming the phone
+  // owes nothing.
+  const [history, todaysSessions, board] = await Promise.all([
     getRecentSessions({ deviceId: id, limit: 25 }).catch(() => []),
     getSessionsToday({ deviceId: id }).catch(() => []),
+    getTodoBoard(0, new Date(), { deviceId: id }).catch(() => null),
   ]);
+  const onBoard = board?.devices.find((d) => d.id === String(id));
+  // Only the accounts' own work. A ban's clean-up (P8) is for an account that
+  // has already left this phone, and the approved block is one line per
+  // account on it, so the clean-up stays on the To-do page.
+  const today: TodoDevice | null = board
+    ? {
+        id: String(id),
+        name: device.name,
+        isActive: device.isActive,
+        accounts: onBoard?.accounts ?? [],
+      }
+    : null;
   const handleOf = new Map(
     device.accounts.map((a) => [a.id, a.username ?? a.profile ?? `Account ${a.id}`]),
   );
@@ -98,6 +121,7 @@ export default async function DevicePage({
       assignable={assignable}
       warmups={warmups}
       warmupProgress={progress}
+      today={today}
       initialNotice={
         query.proof === "failed" && !device.proofPath
           ? "The phone was saved, but the screenshot did not upload. Add it here."

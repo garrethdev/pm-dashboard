@@ -132,13 +132,18 @@ export function getDevice(id: number): Promise<Cached<Device | null>> {
   )();
 }
 
-/** Live accounts that are not on any phone yet — what "Add account" offers. */
+/**
+ * Live Physical accounts that are not on any phone yet — what a phone's
+ * "Choose an account" offers. Physical only (Garreth, 2026-09-23): a Cloud
+ * account is moved onto a phone from Settings, which changes its fleet in the
+ * same save; offering it here would put it on a phone and leave it on Cloud.
+ */
 export const getAssignableAccounts = cachedFetcher(
-  "devices-assignable-v1",
+  "devices-assignable-v2",
   TTL.supabase,
   async () => {
     const rows = await sbRest<RawDeviceAccount[]>(
-      `accounts?select=${ACCOUNT_COLS}&is_active=eq.true&device_id=is.null&username=not.is.null&order=character.asc,platform.asc,id.asc`,
+      `accounts?select=${ACCOUNT_COLS}&is_active=eq.true&device_id=is.null&delivery_mode=eq.manual&username=not.is.null&order=character.asc,platform.asc,id.asc`,
     );
     return rows.map(toAccount);
   },

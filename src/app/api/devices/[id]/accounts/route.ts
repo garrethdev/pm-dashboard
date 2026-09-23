@@ -66,6 +66,8 @@ export async function POST(request: Request, ctx: Ctx) {
       heldCount: await countDeviceAccounts(deviceId),
       accountActive: account.is_active,
       accountDeviceId: account.device_id,
+      accountFleet: account.delivery_mode === "manual" ? "physical" : "cloud",
+      accountName: account.geelark_profile,
     });
     if (refusal) return NextResponse.json({ error: refusal }, { status: 409 });
 

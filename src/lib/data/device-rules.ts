@@ -3,6 +3,8 @@
  * without a database and shared between the routes and the screens.
  */
 
+import type { Fleet } from "@/lib/fleet";
+
 /**
  * How many accounts a phone is EXPECTED to carry today — not a limit.
  *
@@ -43,11 +45,24 @@ export function assignRefusal(args: {
   accountActive: boolean;
   /** The phone the account is on now, if any. */
   accountDeviceId: number | null;
+  /** Which side the account is on. Only a Physical account goes on a phone
+   *  here (Garreth, 2026-09-23). */
+  accountFleet: Fleet;
+  /** How the refusal names the account, e.g. "Profile 8". */
+  accountName?: string | null;
 }): string | null {
   if (!args.deviceActive) {
     return `${args.deviceName} is switched off. Switch it back on before adding accounts.`;
   }
   if (!args.accountActive) return "That account is retired, so it cannot go on a phone.";
+  // A Cloud account reaches a phone only through Settings (PF-03, PF-15),
+  // which moves it to Physical, puts it on the phone and dates the move in one
+  // save. Putting it on a phone from here would set the phone and leave it on
+  // Cloud, posting through the robot while listed on a real phone — the
+  // half-move PF-03 exists to prevent (Garreth, 2026-09-23).
+  if (args.accountFleet !== "physical") {
+    return `${args.accountName ?? "That account"} is on the Cloud side. Move it onto a phone from Settings.`;
+  }
   if (args.accountDeviceId === args.deviceId) {
     return `That account is already on ${args.deviceName}.`;
   }

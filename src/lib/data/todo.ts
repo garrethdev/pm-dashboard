@@ -191,16 +191,30 @@ export interface TodoBoard {
 
 /**
  * Read one day's work, `dayOffset` days from today (0 is today, -1 yesterday).
+ *
+ * `only.deviceId` narrows the read to one phone, for that phone's own page
+ * (P5). It is the same list, read by the same rules, with the phones and
+ * accounts it starts from filtered to one — so a phone's page and the To-do
+ * page can never disagree about what that phone owes.
  */
-export async function getTodoBoard(dayOffset = 0, now: Date = new Date()): Promise<TodoBoard> {
+export async function getTodoBoard(
+  dayOffset = 0,
+  now: Date = new Date(),
+  only: { deviceId?: number } = {},
+): Promise<TodoBoard> {
   const { from, to } = dayRangeET(dayOffset, now);
   const day = etDay(from.toISOString());
 
+  const onePhone = only.deviceId !== undefined;
   const [devices, accounts] = await Promise.all([
-    sbRest<RawDevice[]>("devices?select=id,name,model,is_active&order=name.asc"),
+    sbRest<RawDevice[]>(
+      "devices?select=id,name,model,is_active&order=name.asc" +
+        (onePhone ? `&id=eq.${only.deviceId}` : ""),
+    ),
     sbRest<RawAccount[]>(
       "accounts?select=id,geelark_profile,username,character,platform,device_id," +
-        "warmup_mode,posting_paused&device_id=not.is.null&is_active=eq.true&order=id.asc",
+        "warmup_mode,posting_paused&is_active=eq.true&order=id.asc" +
+        (onePhone ? `&device_id=eq.${only.deviceId}` : "&device_id=not.is.null"),
     ),
   ]);
   // So a post's row can be named rather than showing its content_type slug.

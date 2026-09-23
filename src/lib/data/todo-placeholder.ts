@@ -810,7 +810,10 @@ export function linksOwed(devices: TodoDevice[]): number {
  * without it the page reads the database as it always has. That is the rule
  * the Accounts page's by-phone view already follows.
  *
- * Goes with the rest of this file when PF-04, PF-05 and PF-07 land.
+ * PF-04, PF-05 and PF-07 have landed and a real phone's page now reads its
+ * day from `todo.ts`; this stays only as the `?demo=` drawing. Its accounts
+ * carry REAL profile names (Profile 21 and up), so nothing drawn from it may
+ * ever save.
  * ------------------------------------------------------------------------ */
 
 /** The three shapes a phone's page has to be judged in (P5's states). */
