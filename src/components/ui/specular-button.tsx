@@ -222,8 +222,18 @@ export function SpecularButton({
     if (!btn || !fx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const renderer = new Renderer({ alpha: true, premultipliedAlpha: true, antialias: true, dpr });
+    // No WebGL (switched off, blocked, or the browser is out of contexts):
+    // ogl's constructor throws, and uncaught that took the whole page down
+    // (P13 review, 2026-09-23). The glint is decoration over a button that is
+    // already fully drawn in CSS, so without it the button is simply flat.
+    let renderer: Renderer;
+    try {
+      renderer = new Renderer({ alpha: true, premultipliedAlpha: true, antialias: true, dpr });
+    } catch {
+      return;
+    }
     const gl = renderer.gl;
+    if (!gl) return;
     gl.clearColor(0, 0, 0, 0);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
