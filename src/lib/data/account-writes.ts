@@ -4,6 +4,7 @@ import {
   usernameTakenMessage,
   type NewAccountFields,
 } from "@/lib/data/account-rules";
+import { ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
 
 /**
  * Creating an account row from the app (PF-21).
@@ -90,7 +91,7 @@ export async function usernameTaken(username: string, platform: string): Promise
 }
 
 export interface CreatedAccount {
-  id: number;
+  id: AccountId;
   geelark_profile: string;
   username: string | null;
   character: string | null;
@@ -103,7 +104,7 @@ export interface CreatedAccount {
 }
 
 const RETURNED_COLS =
-  "id,geelark_profile,username,character,platform,delivery_mode,device_id," +
+  `${ACCOUNT_ID_COL},geelark_profile,username,character,platform,delivery_mode,device_id,` +
   "account_created_on,is_active,posting_paused";
 
 /**
@@ -183,7 +184,7 @@ export async function createAccount(
  * the phone is let go, because the account is real and the phone is a detail
  * that can be set again in a second.
  */
-export async function detachDevice(id: number): Promise<void> {
+export async function detachDevice(id: AccountId): Promise<void> {
   try {
     const res = await sbFetch(`accounts?id=eq.${id}`, {
       method: "PATCH",
@@ -198,7 +199,8 @@ export async function detachDevice(id: number): Promise<void> {
 
 /** The account as Edit account needs it, read live before a change (P14). */
 export interface EditableAccount {
-  id: number;
+  /** Text, never a number: see account-id.ts (PF-22). */
+  id: AccountId;
   geelark_profile: string;
   username: string | null;
   character: string | null;
@@ -210,7 +212,7 @@ export interface EditableAccount {
 }
 
 const EDITABLE_COLS =
-  "id,geelark_profile,username,character,platform,delivery_mode,device_id,phone_number,is_active";
+  `${ACCOUNT_ID_COL},geelark_profile,username,character,platform,delivery_mode,device_id,phone_number,is_active`;
 
 export async function getEditableAccount(profile: string): Promise<EditableAccount | null> {
   const res = await sbFetch(
@@ -225,7 +227,7 @@ export async function getEditableAccount(profile: string): Promise<EditableAccou
 export async function usernameTakenByOther(
   username: string,
   platform: string,
-  exceptId: number,
+  exceptId: AccountId,
 ): Promise<boolean> {
   const res = await sbFetch(
     `accounts?select=id&username=eq.${encodeURIComponent(username)}` +
@@ -243,7 +245,7 @@ export async function usernameTakenByOther(
  * 2026-09-23: Cloud is not touched).
  */
 export async function updateAccount(
-  id: number,
+  id: AccountId,
   columns: Partial<Pick<EditableAccount, "username" | "character" | "device_id" | "phone_number">>,
 ): Promise<EditableAccount> {
   const res = await sbFetch(

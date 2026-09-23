@@ -2,6 +2,7 @@ import {
   PROOF_TYPES,
   type DeviceFields,
 } from "@/lib/data/device-rules";
+import { ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
 
 /**
  * Server-side writes for physical phones (PF-02).
@@ -184,7 +185,7 @@ async function removeProofObject(path: string): Promise<void> {
 }
 
 export interface DeviceAccountState {
-  id: number;
+  id: AccountId;
   geelark_profile: string | null;
   username: string | null;
   platform: string | null;
@@ -195,9 +196,9 @@ export interface DeviceAccountState {
 }
 
 // SECURITY: accounts carries credentials — explicit columns only.
-const ACCOUNT_COLS = "id,geelark_profile,username,platform,is_active,device_id,delivery_mode";
+const ACCOUNT_COLS = `${ACCOUNT_ID_COL},geelark_profile,username,platform,is_active,device_id,delivery_mode`;
 
-export async function getDeviceAccountState(accountId: number): Promise<DeviceAccountState | null> {
+export async function getDeviceAccountState(accountId: AccountId): Promise<DeviceAccountState | null> {
   const res = await sbFetch(`rest/v1/accounts?select=${ACCOUNT_COLS}&id=eq.${accountId}&limit=1`, {});
   if (!res.ok) throw new Error(`Couldn't read the account (HTTP ${res.status})`);
   const rows = (await res.json()) as DeviceAccountState[];
@@ -212,7 +213,7 @@ export async function countDeviceAccounts(deviceId: number): Promise<number> {
 }
 
 async function patchAccountDevice(
-  accountId: number,
+  accountId: AccountId,
   deviceId: number | null,
   onlyIfCurrently: number | null,
 ): Promise<boolean> {
@@ -240,7 +241,7 @@ async function patchAccountDevice(
  * to the same phone at the same moment would each have seen room for one more.
  */
 export async function assignAccountToDevice(
-  accountId: number,
+  accountId: AccountId,
   device: { id: number; name: string },
 ): Promise<void> {
   const changed = await patchAccountDevice(accountId, device.id, null);
@@ -257,6 +258,6 @@ export async function assignAccountToDevice(
 }
 
 /** Take an account off a phone. False when it was not on that phone any more. */
-export function unassignAccountFromDevice(accountId: number, deviceId: number): Promise<boolean> {
+export function unassignAccountFromDevice(accountId: AccountId, deviceId: number): Promise<boolean> {
   return patchAccountDevice(accountId, null, deviceId);
 }

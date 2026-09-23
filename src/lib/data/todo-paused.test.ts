@@ -19,7 +19,8 @@ vi.mock("@/lib/data/supabase", () => ({
             id: Number(id) * 100,
             content_type: "demo",
             source_id: `s${id}`,
-            account_id: Number(id),
+            // Text, as the database now sends it (PF-22).
+            account_id: id,
             status: "queued",
             post_url: null,
             note: null,
@@ -43,7 +44,7 @@ const { getTodoBoard, workFor } = await import("@/lib/data/todo");
 
 function account(id: number, posting_paused: boolean, warmup_mode: string | null) {
   return {
-    id,
+    id: String(id),
     geelark_profile: `Profile ${id}`,
     username: null,
     character: null,

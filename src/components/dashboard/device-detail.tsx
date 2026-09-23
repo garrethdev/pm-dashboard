@@ -152,7 +152,7 @@ type AccountLine = {
 
 function realLines(device: Device): AccountLine[] {
   return device.accounts.map((a) => ({
-    key: String(a.id),
+    key: a.id,
     account: a,
     platform: a.platform,
     name: accountName(a),
@@ -233,7 +233,7 @@ export function DeviceDetail({
   /** This phone's recent warmup sessions, newest first (PF-04). */
   warmups?: WarmupSession[];
   /** How today's two sessions stand, per account id (PF-04). */
-  warmupProgress?: Record<number, SessionProgress[]>;
+  warmupProgress?: Record<string, SessionProgress[]>;
   /** This phone's day from the To-do page's reader (PF-07); null when it could
    *  not be read. Absent on the invented phone, which brings its own. */
   today?: TodoDevice | null;
@@ -302,7 +302,8 @@ export function DeviceDetail({
       body: JSON.stringify(body),
     });
 
-  const accountsRequest = (method: "POST" | "DELETE", accountId: number) => () =>
+  // The account id goes as text, as it came: see account-id.ts (PF-22).
+  const accountsRequest = (method: "POST" | "DELETE", accountId: string) => () =>
     fetch(`/api/devices/${device.id}/accounts`, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -458,7 +459,7 @@ export function DeviceDetail({
                     onClick={async () => {
                       const ok = await run(
                         "accounts",
-                        accountsRequest("POST", Number(picked)),
+                        accountsRequest("POST", picked),
                         "Adding the account failed",
                       );
                       if (ok) setPicked("");

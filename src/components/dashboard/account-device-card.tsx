@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronRight, Smartphone } from "@/components/ui/icons";
 import { StatusPill } from "@/components/ui/pill";
 import { AccountWarmupToday } from "@/components/dashboard/account-warmup-today";
+import { ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
 import { sbRest } from "@/lib/data/supabase";
 import { getDeviceForProfile } from "@/lib/data/devices";
 import { getSessionsToday, progressToday } from "@/lib/data/warmup-sessions";
@@ -28,10 +29,10 @@ async function AccountDeviceLink({ profile }: { profile: string }) {
 
   // The account's own row id, which is what a warmup session points at.
   // `geelark_profile` is what this page is addressed by; the two are one row.
-  let accountId: number | null = null;
+  let accountId: AccountId | null = null;
   try {
-    const rows = await sbRest<{ id: number }[]>(
-      `accounts?select=id&geelark_profile=eq.${encodeURIComponent(profile)}&limit=1`,
+    const rows = await sbRest<{ id: AccountId }[]>(
+      `accounts?select=${ACCOUNT_ID_COL}&geelark_profile=eq.${encodeURIComponent(profile)}&limit=1`,
     );
     accountId = rows[0]?.id ?? null;
   } catch {

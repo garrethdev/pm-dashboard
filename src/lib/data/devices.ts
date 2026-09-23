@@ -1,6 +1,7 @@
 import { cachedFetcher, DEVICES_TAG, TTL, type Cached } from "@/lib/data/cache";
 import { sbRest } from "@/lib/data/supabase";
 import { toPlatform, type Platform } from "@/lib/data/accounts";
+import { ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
 
 /**
  * Physical phones (PF-02) and the accounts each one holds.
@@ -12,8 +13,9 @@ import { toPlatform, type Platform } from "@/lib/data/accounts";
 
 export interface DeviceAccount {
   /** accounts.id. Used instead of the Geelark profile because a Facebook
-   *  account, or one created straight onto a real phone, may not have one. */
-  id: number;
+   *  account, or one created straight onto a real phone, may not have one.
+   *  Text, never a number: see account-id.ts (PF-22). */
+  id: AccountId;
   profile: string | null;
   username: string | null;
   character: string | null;
@@ -54,7 +56,7 @@ interface RawDevice {
 }
 
 interface RawDeviceAccount {
-  id: number;
+  id: AccountId;
   geelark_profile: string | null;
   username: string | null;
   character: string | null;
@@ -66,7 +68,7 @@ interface RawDeviceAccount {
 
 const DEVICE_COLS =
   "id,name,model,ios_version,proxy,timezone,whoer_screenshot_path,is_active,notes,phone_numbers";
-const ACCOUNT_COLS = "id,geelark_profile,username,character,platform,is_active,device_id,phone_number";
+const ACCOUNT_COLS = `${ACCOUNT_ID_COL},geelark_profile,username,character,platform,is_active,device_id,phone_number`;
 
 function toAccount(a: RawDeviceAccount): DeviceAccount {
   return {

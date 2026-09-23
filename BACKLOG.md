@@ -153,13 +153,13 @@ together** — a wrong "blocked by" costs somebody a morning.
 |---|---|---|---|
 | PF-01 | `accounts.delivery_mode` switch | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
-| PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
+| PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come. **The handle joins were fixed 2026-09-23** (they now match on handle and platform) |
 | PF-03 | Move to phone button | Immediate | **Built 2026-09-23, column applied live the same day.** The Settings move saves the fleet, the phone and the date of the move in one write, and the move back to Cloud takes the account off its phone. Never run on a real account: no phone is registered |
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
 | PF-07 | Posting To-Do page | Immediate | **Done 2026-09-22.** The list reads real deliveries and warmups, ticks write back, and all six saving states are built — the failed save proven by a real failure. ~~Shows warmups only until PF-06 hands posts out.~~ **PF-06 landed the same day**; a seeded delivery was seen on the list as "1 post and 2 warmups" (2026-09-22) |
-| PF-11 | Post-ban branch for manual accounts | Intermediate | **Built 2026-09-23** in the app, applied live and proven with a practice phone (since deleted). A real-phone account never reaches the robot. **Left open:** guarding the n8n robot's own hand-filled form, which waits on Garreth |
+| PF-11 | Post-ban branch for manual accounts | Intermediate | **Built 2026-09-23** in the app, applied live and proven with a practice phone (since deleted). A real-phone account never reaches the robot. The n8n robot's own form was guarded and published the same day: it refuses real-phone accounts and deletes only on an exact name match |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
 | PF-10 | Comparison view | Intermediate | ~~Blocked by PF-03 only~~ PF-03 built 2026-09-23 and its date column is live; waits on design ticket P7 |
@@ -167,12 +167,12 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
-| PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
+| PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query. **Bug found 2026-09-23, not fixed:** Physical + "All time" never returns while Physical has no posts (`analytics_rollup_fleet(null, *, 'physical')` hits the statement timeout; its date series starts at `-infinity`) |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
 | PF-19 | Calendar and Content types per fleet | Intermediate | **Built 2026-09-22** as four new `_fleet` functions beside the untouched originals; no Physical data to show yet |
 | PF-20 | Incidents and the bell per fleet | Intermediate | **Done 2026-09-22.** Incidents had followed the switch since 2026-09-18; the bell half was settled by Garreth — it shows BOTH fleets and names which on every item. Proven in the running app, dark and light, desktop and phone, against a temporary phone/account/post that was deleted afterwards. No real phone or post has used it |
 | PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
-| PF-22 | Account ids too large for the app to hold exactly | Immediate | **Not started.** Found 2026-09-23. Five active Cloud accounts have ids the app rounds. Harmless on Cloud; must be fixed before any of the five moves onto a phone |
+| PF-22 | Account ids too large for the app to hold exactly | Immediate | **Built 2026-09-23.** Account ids are carried as text on the Physical side (`src/lib/data/account-id.ts`). Proven live with a practice account whose id was as long as the real ones; not yet seen with one of the five real accounts on a phone |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -235,7 +235,8 @@ free text, and `content_type_registry` has no platform column). There is no
 hand in Supabase like every other account; it takes the next `Profile N` label
 because the app names accounts by that label. No Facebook row exists yet.
 
-**Before the first Facebook account is created** (found 2026-09-18, not fixed):
+**Before the first Facebook account is created** (found 2026-09-18; the handle
+joins were fixed 2026-09-23, see below):
 
 - **Create it paused.** `v_scheduler_account_config` has no platform filter
   (judged from a pattern search, not a full read), so an active, unpaused
@@ -578,7 +579,7 @@ does.~~ **PF-06 landed later the same day (2026-09-22)**, and a seeded
 delivery was seen on the list as "1 post and 2 warmups", so the posts half is
 no longer theoretical.
 
-## PF-11 · Post-ban branch for manual accounts — Built 2026-09-23; the n8n form guard is still open
+## PF-11 · Post-ban branch for manual accounts — Built 2026-09-23, n8n form guard published the same day
 
 `[Ops] Post-Ban System` (`WmichajTDXL0pT1z`) deletes a Geelark phone; for
 `delivery_mode = manual` skip that and surface a checklist instead: sign out
@@ -612,6 +613,17 @@ match, so a name that is not a Geelark phone can delete whichever cloud phone
 the search returns first. The fix is a check of `delivery_mode` before
 `Geelark Lookup`, and deleting only on an exact name match. It is a live
 workflow change (save, then publish), so it waits on Garreth.
+
+*2026-09-23: built, tested, and published the same day (Garreth).* `Process External`
+now refuses a `delivery_mode = manual` account before anything is written, dry
+run included, and stops if it cannot check. It matches a Geelark phone only by
+its exact name, and a new `Has Geelark phone?` step skips Stop and Delete when
+there is no exact match (Layer 4 still runs). Tested on the draft with Geelark
+and Layer 4 pinned: loose search results touched nothing, a practice
+real-phone account in Live mode was refused with its row unchanged, and both
+branches of the new step went the right way. The practice row was deleted.
+Live version `06febcab`; the previous one (`c5fe83e0`) is in n8n's history.
+Not yet met a real ban.
 
 **The ban's release rule now has a third copy (2026-09-23).**
 `move_account_to_cloud` repeats `release_profile_content`'s rule for single
@@ -907,7 +919,7 @@ having expired and says so, when the real reason is the pause. It is PF-12's
 wording, it only misleads while a queued post belongs to a paused account, and
 it was left alone rather than widened into this ticket.
 
-## PF-22 · Account ids too large for the app to hold exactly — Not started
+## PF-22 · Account ids too large for the app to hold exactly — Built 2026-09-23
 
 *Found 2026-09-23 by worker C while proving the paused-warmups change; added as
 a ticket by Garreth the same day.*
@@ -946,6 +958,15 @@ option and is not recommended: other tables point at these ids.
 shows its warmups on the To-do list, a warmup logged from the list lands on
 that exact id, and a move onto and off the phone writes the right row. Must
 land before any of the five active accounts above moves onto a phone.
+
+*Built 2026-09-23 — done-when met on practice rows.* `src/lib/data/account-id.ts`
+holds the rule: ids are read with `id:id::text` / `account_id:account_id::text`,
+kept as strings, and `parseAccountId` refuses a JSON number above 2^53 rather
+than trust a rounded one. The moves, retire and ban-step ticks already worked
+by Profile name or their own small ids. No Cloud screen reads `accounts.id`.
+Proven live with account `26716659041349299` on a practice phone (both deleted,
+checked by query). **Not checked:** whether any n8n Code node reads
+`accounts.id` as a number; today the robots address accounts by Profile name.
 
 **Not tickets, but on the sheet:** Tailscale + Screen Sharing on the Air,
 installing Xcode and the developer Apple ID (Yurie), installing WebDriverAgent
