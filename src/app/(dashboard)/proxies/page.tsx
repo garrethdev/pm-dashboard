@@ -8,6 +8,38 @@ import { ProviderBalanceCards } from "@/components/dashboard/provider-balance-ca
 import { getProxyPhoneData } from "@/lib/data/proxies";
 import { formatEtShort } from "@/lib/data/format";
 import { upstreamMessage } from "@/lib/data/upstream-error";
+import { ProxiesPhonesView } from "@/components/dashboard/proxies-phones-view";
+import { proxiesPhonePlaceholder } from "@/lib/data/proxies-phone-placeholder";
+import { getPhoneProxyData } from "@/lib/data/proxies-phones";
+import { wantsDemo } from "@/lib/data/accounts-phone-placeholder";
+
+/**
+ * Physical: one row per real phone (P6, approved 2026-09-23). The Geelark list
+ * the Cloud page reads cannot see a real phone's proxy or numbers.
+ */
+async function PhonesLive() {
+  let data;
+  try {
+    data = await getPhoneProxyData();
+  } catch (err) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-xl font-semibold">Proxies &amp; numbers</h1>
+        <DashCard title="Proxies">
+          <p className="text-sm text-text-muted">{upstreamMessage(err, "The proxy and phone data")}</p>
+        </DashCard>
+      </div>
+    );
+  }
+  return (
+    <ProxiesPhonesView
+      rows={data.rows}
+      fetchedAt={formatEtShort(data.fetchedAt)}
+      balances={<ProviderBalanceCards />}
+      demo={false}
+    />
+  );
+}
 
 /** The `try` guards the read only — see the note in accounts/page.tsx. */
 async function ProxiesLive() {
@@ -46,7 +78,24 @@ async function ProxiesLive() {
   );
 }
 
-export default function ProxiesPage() {
+export default async function ProxiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const physical = (await getFleet()) === "physical";
+  // `?demo=1` in Physical still draws P6's invented phones, for judging the
+  // layout in states live data will not produce on demand.
+  if (physical && wantsDemo((await searchParams).demo)) {
+    return (
+      <ProxiesPhonesView
+        rows={proxiesPhonePlaceholder()}
+        fetchedAt="placeholder"
+        balances={<ProviderBalanceCards />}
+        demo
+      />
+    );
+  }
   return (
     <Suspense
       fallback={
@@ -56,7 +105,7 @@ export default function ProxiesPage() {
         </div>
       }
     >
-      <ProxiesLive />
+      {physical ? <PhonesLive /> : <ProxiesLive />}
     </Suspense>
   );
 }

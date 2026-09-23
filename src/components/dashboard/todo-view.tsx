@@ -13,9 +13,11 @@ import {
   Copy,
   Download,
   Film,
+  Globe,
   LinkSimple,
   ListChecks,
   Rows,
+  SignOut,
   Smartphone,
   SquaresFour,
 } from "@/components/ui/icons";
@@ -30,12 +32,16 @@ import {
 } from "@/components/dashboard/todo-board";
 import {
   accountProgress,
+  cleanupSteps,
+  isCleanupDone,
   todoAnchor,
   deviceProgress,
   isItemFinished,
   sortItems,
   todoDayLabel,
   todoEmptyReason,
+  type BanCleanup,
+  type BanStep,
   type TodoAccount,
   type TodoDay,
   type TodoDevice,
@@ -349,7 +355,23 @@ function DeviceCard({
 }) {
   // Open by default: this page is the work, not a summary of it.
   const [open, setOpen] = useState(true);
-  const progress = deviceProgress(device);
+  // Ticks on a ban's clean-up steps. DESIGN REVIEW ONLY (P8): held here and
+  // saved nowhere, so the drawing can be pressed and the count follows it.
+  const [ticked, setTicked] = useState<Record<string, string | null>>({});
+  const cleanups = (device.cleanups ?? []).map((c) => ({
+    ...c,
+    steps: c.steps.map((st) =>
+      st.id in ticked ? { ...st, done: ticked[st.id] !== null, doneAt: ticked[st.id] ?? undefined } : st,
+    ),
+  }));
+  const progress = deviceProgress({ ...device, cleanups });
+  const toggleStep = (st: BanStep) =>
+    setTicked((t) => ({
+      ...t,
+      [st.id]: st.done
+        ? null
+        : new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()),
+    }));
 
   return (
     // `@container`: everything inside sizes itself against THIS CARD, not the
@@ -410,6 +432,12 @@ function DeviceCard({
 
       {open && (
         <div className="flex flex-col gap-2">
+          {/* A ban's clean-up comes first: it is the oldest work on the phone,
+              and until it is done the phone still carries a banned account's
+              sign-in (P8). */}
+          {cleanups.map((c) => (
+            <BanCleanupGroup key={c.accountId} cleanup={c} onToggle={toggleStep} />
+          ))}
           {device.accounts.map((account) => (
             <AccountGroup
               key={account.id}
@@ -421,6 +449,98 @@ function DeviceCard({
         </div>
       )}
     </Card>
+  );
+}
+
+/**
+ * The clean-up after a ban on a real phone — design ticket P8.
+ *
+ * Drawn like an account's own panel, because it IS about one account, with a
+ * red Banned pill so it is not mistaken for a working one. The steps are only
+ * what a person has to do on the phone; what the app did at the retire is not
+ * repeated here (Garreth, 2026-09-23). Finished, it stays for the rest of the day struck through, like
+ * any finished item.
+ */
+function BanCleanupGroup({
+  cleanup,
+  onToggle,
+}: {
+  cleanup: BanCleanup;
+  onToggle: (st: BanStep) => void;
+}) {
+  const steps = cleanupSteps(cleanup);
+  const done = steps.filter((st) => st.done).length;
+  const finished = isCleanupDone(cleanup);
+
+  return (
+    <div className="min-w-0 rounded-nested bg-card-raised/50 px-3 pt-4 pb-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-border pb-3.5">
+        <PlatformIcon platform={cleanup.platform} />
+        <span className={cn("min-w-0 truncate text-sm font-medium", finished && "text-text-muted")}>
+          {cleanup.handle}
+        </span>
+        <StatusPill tone="danger">Banned</StatusPill>
+        <span className="flex shrink-0 items-center gap-1.5 @lg:ml-auto">
+          <StatusPill tone={finished ? "ok" : "gray"}>
+            {finished ? "Cleaned up" : `Clean-up ${done} of ${steps.length}`}
+          </StatusPill>
+        </span>
+      </div>
+
+      <ul className="flex flex-col pt-1.5">
+        {cleanup.steps.map((st) => (
+          <BanStepRow key={st.id} step={st} onToggle={() => onToggle(st)} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function BanStepRow({ step, onToggle }: { step: BanStep; onToggle: () => void }) {
+  const Icon = step.kind === "signOut" ? SignOut : step.kind === "number" ? Smartphone : Globe;
+
+  return (
+    <li className="flex items-start gap-2 border-b border-border/60 py-2 last:border-0 last:pb-0 @lg:gap-3">
+      <button
+        onClick={onToggle}
+        role="checkbox"
+        aria-checked={step.done}
+        aria-label={step.label}
+        className="group flex h-9 w-11 shrink-0 items-center justify-center"
+      >
+        <span
+          className={cn(
+            "flex size-[22px] items-center justify-center rounded-md border transition-colors",
+            step.done
+              ? "border-accent bg-accent/15 text-accent"
+              : "border-border text-transparent group-hover:border-text-muted",
+          )}
+        >
+          <Check className="size-3.5" />
+        </span>
+      </button>
+
+      <span className={cn("flex h-9 shrink-0 items-center", step.done && "opacity-55")}>
+        <span className="flex size-8 items-center justify-center rounded-full bg-card-raised text-text-muted">
+          <Icon className="size-4" />
+        </span>
+      </span>
+
+      {/* The time column of a task row, left empty, so the step's name lines
+          up with every task name on the page. */}
+      <span className="w-11 shrink-0" aria-hidden />
+
+      <div className={cn("flex min-w-0 flex-1 flex-col", step.done && "opacity-55")}>
+        <span className="flex min-h-9 items-center">
+          <span className={cn("min-w-0 text-sm font-medium break-words", step.done && "line-through")}>
+            {step.label}
+          </span>
+        </span>
+        <p className="tnum text-xs text-text-muted">
+          {[step.detail, step.done ? step.doneAt : null].filter(Boolean).join(" · ")}
+        </p>
+      </div>
+    </li>
   );
 }
 
@@ -600,6 +720,8 @@ function ItemStatus({ item }: { item: TodoItem }) {
   if (item.status === "postedNoLink") return <StatusPill tone="warn">Link needed</StatusPill>;
   if (item.status === "failed") return <StatusPill tone="danger">Failed</StatusPill>;
   if (item.status === "skipped") return <StatusPill tone="gray">Skipped</StatusPill>;
+  // Only while it is still open: once posted, it is no longer late (P12).
+  if (item.overdueFor && !isItemFinished(item)) return <StatusPill tone="danger">Overdue</StatusPill>;
   return null;
 }
 
@@ -608,6 +730,12 @@ function ItemDetail({ item }: { item: TodoItem }) {
   const bits: string[] = [];
 
   if (item.carriedOverFrom) bits.push(`Due ${item.carriedOverFrom}`);
+  // The last day says what matters more than how long: tomorrow it is gone
+  // from the list (P12).
+  if (!isItemFinished(item)) {
+    if (item.lastDay) bits.push("last day on the list");
+    else if (item.overdueFor) bits.push(`waiting\u00a0${item.overdueFor}`);
+  }
   if (item.kind === "warmup" && item.targetMinutes) {
     bits.push(
       item.loggedMinutes && !isItemFinished(item)

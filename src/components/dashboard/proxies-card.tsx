@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2 } from "@/components/ui/icons";
+import { CheckCircle2, Globe, Smartphone } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { ExtendButton } from "@/components/ui/extend-button";
@@ -30,7 +31,15 @@ export interface ProxiesCardProps {
 
 type View = "proxies" | "phones";
 
-function AttentionList({ items, footer }: { items: AttentionItem[]; footer: string }) {
+function AttentionList({
+  items,
+  footer,
+  view,
+}: {
+  items: AttentionItem[];
+  footer: string;
+  view: View;
+}) {
   return (
     <>
       {items.length > 0 ? (
@@ -45,7 +54,11 @@ function AttentionList({ items, footer }: { items: AttentionItem[]; footer: stri
           ))}
         </div>
       ) : (
-        <p className="py-2 text-sm text-text-muted">Nothing needs attention.</p>
+        // The shared empty state, centred in the space above the footer
+        // (Garreth, 2026-09-23).
+        <EmptyState icon={view === "proxies" ? Globe : Smartphone} compact className="flex-1">
+          Nothing needs attention
+        </EmptyState>
       )}
       <p className="mt-auto flex items-center gap-1.5 border-t border-border pt-3 text-xs text-text-muted">
         <CheckCircle2 className="size-3.5 text-ok" />
@@ -61,8 +74,7 @@ export function ProxiesCard({
   className,
   proxies,
   phones,
-  toolbarBelow = false,
-}: ProxiesCardProps & { toolbarBelow?: boolean }) {
+}: ProxiesCardProps) {
   const [view, setView] = useState<View>("proxies");
   const active = view === "proxies" ? proxies : phones;
 
@@ -72,7 +84,6 @@ export function ProxiesCard({
       fetchedAt={fetchedAt}
       viewAllHref="/proxies"
       className={className}
-      toolbarBelow={toolbarBelow}
       toolbar={
         <FilterPills
           value={view}
@@ -85,7 +96,7 @@ export function ProxiesCard({
       }
     >
       <div className="flex h-full min-h-0 flex-col gap-3">
-        <AttentionList items={active.attention} footer={active.footer} />
+        <AttentionList items={active.attention} footer={active.footer} view={view} />
       </div>
     </DashCard>
   );

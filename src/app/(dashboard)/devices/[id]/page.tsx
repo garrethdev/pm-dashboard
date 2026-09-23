@@ -45,6 +45,7 @@ export default async function DevicePage({
       proofPath: null,
       isActive: demo.isActive,
       notes: demo.notes || null,
+      phoneNumbers: null,
       accounts: [],
     };
     return <DeviceDetail device={device} proofUrl={null} assignable={[]} demo={demo} />;

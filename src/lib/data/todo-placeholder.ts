@@ -40,6 +40,15 @@ export type TodoItem = {
   status: TodoItemStatus;
   /** The day it was originally due, when it did not get finished then (decision 5). */
   carriedOverFrom?: string;
+  /**
+   * How long an open post has waited, once it has waited long enough for the
+   * bell to call it overdue ("26 h", "3 days"). Absent means not overdue.
+   * The same 24-hour rule as the bell's overdue item (PF-12), so the list and
+   * the bell never disagree about the same post (P12, Garreth 2026-09-23).
+   */
+  overdueFor?: string;
+  /** Its third and last day on the list: tomorrow it drops off (decision 5). */
+  lastDay?: boolean;
   /** When it was finished, for the line a finished item leaves behind. */
   doneAt?: string;
   /** Why a failed item failed. */
@@ -75,13 +84,53 @@ export type TodoDevice = {
   /** A phone switched off still owes its work; the list has to say so. */
   isActive: boolean;
   accounts: TodoAccount[];
+  /** Banned accounts on this phone whose clean-up is not finished (P8). */
+  cleanups?: BanCleanup[];
 };
+
+/**
+ * One step of the clean-up after a ban on a real phone (P8, PF-11).
+ *
+ * On Cloud the Post-Ban robot does all of this; on a real phone a person does
+ * the phone half. Releasing the queued posts is NOT a step: the app does it
+ * the moment the account is retired (Garreth, 2026-09-23), so it is not on
+ * the checklist at all.
+ *
+ * Retiring the proxy is a step ONLY when the banned account was the last one
+ * on the phone. While others remain they still use it, so there is nothing to
+ * do and the checklist does not mention it (Garreth, 2026-09-23).
+ */
+export type BanStep = {
+  id: string;
+  kind: "signOut" | "number" | "proxy";
+  label: string;
+  /** What the step is about: the phone, the number, the proxy address. */
+  detail?: string;
+  done: boolean;
+  doneAt?: string;
+};
+
+export type BanCleanup = {
+  accountId: string;
+  handle: string;
+  platform: Platform;
+  steps: BanStep[];
+};
+
+/** The steps a person has to tick. */
+export function cleanupSteps(c: BanCleanup): BanStep[] {
+  return c.steps;
+}
+
+export function isCleanupDone(c: BanCleanup): boolean {
+  return cleanupSteps(c).every((st) => st.done);
+}
 
 /**
  * The states P1 and P2 have to be judged in. Live data will only ever produce
  * one of them at a time; the dashboard and the page pick one with `?todo=`.
  */
-export type TodoState = "work" | "done" | "empty" | "noPhones" | "phoneOff" | "stress";
+export type TodoState = "work" | "done" | "empty" | "noPhones" | "phoneOff" | "stress" | "ban";
 
 export const TODO_STATES: TodoState[] = [
   "work",
@@ -90,6 +139,7 @@ export const TODO_STATES: TodoState[] = [
   "noPhones",
   "phoneOff",
   "stress",
+  "ban",
 ];
 
 export function parseTodoState(raw: string | string[] | undefined): TodoState {
@@ -181,6 +231,20 @@ const WORK: TodoDevice[] = [
         platform: "instagram",
         character: "Character 2",
         items: [
+          {
+            // Handed out yesterday morning and still not posted: past the
+            // bell's 24 hours, so the row says so too (P12). i11 below is
+            // carried over from yesterday afternoon and is not overdue yet,
+            // which is the quiet case the list keeps.
+            id: "i5o",
+            kind: "post",
+            label: "ASMR routine",
+            due: "10:00",
+            status: "todo",
+            carriedOverFrom: "yesterday",
+            overdueFor: "26\u00a0h",
+            videoReady: true,
+          },
           {
             id: "i5",
             kind: "post",
@@ -278,13 +342,16 @@ const WORK: TodoDevice[] = [
             videoReady: true,
           },
           {
-            // Two days behind: the last day it will carry over.
+            // Three days behind: the last day it will carry over, and long
+            // past the bell's 24 hours (P12).
             id: "i11b",
             kind: "post",
             label: "Celebrity verdict",
             due: "16:00",
             status: "todo",
-            carriedOverFrom: "2 days ago",
+            carriedOverFrom: "3 days ago",
+            overdueFor: "3\u00a0days",
+            lastDay: true,
             videoReady: true,
           },
           {
@@ -337,6 +404,63 @@ const WORK: TodoDevice[] = [
 ];
 
 /** Everything today has been done, links and all. */
+/**
+ * P8: the clean-up after a ban, in the four states the ticket asks for.
+ *  - iPhone 1: PART DONE, and a ban on a phone that still holds two healthy
+ *    accounts, so the proxy stays and is not on the checklist.
+ *  - iPhone 2: DONE, still showing for the rest of the day like any finished item.
+ *  - iPhone 3: NOT STARTED, and the banned account was the last one on the
+ *    phone, so retiring the proxy IS a step.
+ */
+const BAN: TodoDevice[] = [
+  {
+    ...WORK[0]!,
+    cleanups: [
+      {
+        accountId: "b1",
+        handle: "@character2.shop",
+        platform: "tiktok",
+        steps: [
+          { id: "b1-1", kind: "signOut", label: "Sign out on the phone", detail: "iPhone 1", done: true, doneAt: "10:02" },
+          { id: "b1-2", kind: "number", label: "Retire the number", detail: "+1 (555) 201-7781", done: false },
+        ],
+      },
+    ],
+  },
+  {
+    ...WORK[1]!,
+    cleanups: [
+      {
+        accountId: "b2",
+        handle: "@character3.clips",
+        platform: "instagram",
+        steps: [
+          { id: "b2-1", kind: "signOut", label: "Sign out on the phone", detail: "iPhone 2", done: true, doneAt: "08:55" },
+          { id: "b2-2", kind: "number", label: "Retire the number", detail: "+1 (555) 202-8873", done: true, doneAt: "09:10" },
+        ],
+      },
+    ],
+  },
+  {
+    ...WORK[2]!,
+    // The banned account was the only one on this phone, so nothing else
+    // is due here today.
+    accounts: [],
+    cleanups: [
+      {
+        accountId: "b3",
+        handle: "@character4.notes",
+        platform: "facebook",
+        steps: [
+          { id: "b3-1", kind: "signOut", label: "Sign out on the phone", detail: "iPhone 3", done: false },
+          { id: "b3-2", kind: "number", label: "Retire the number", detail: "+1 (555) 203-1156", done: false },
+          { id: "b3-3", kind: "proxy", label: "Retire the proxy", detail: "45.87.212.58:8000", done: false },
+        ],
+      },
+    ],
+  },
+];
+
 const DONE: TodoDevice[] = [
   {
     id: "d1",
@@ -580,6 +704,7 @@ export function todoPlaceholder(state: TodoState, day: TodoDay = 0): TodoDevice[
   if (state === "done") return DONE;
   if (state === "phoneOff") return PHONE_OFF;
   if (state === "stress") return STRESS;
+  if (state === "ban") return BAN;
   return WORK;
 }
 
@@ -616,12 +741,15 @@ export function isItemOpen(item: TodoItem): boolean {
  * Carried-over items sit ABOVE today's, inside their account (P2's open
  * question, decided here): they are the oldest work and the only work with a
  * deadline of its own, since an item stops carrying over after three days.
- * Otherwise, time order.
+ * Among those, the overdue ones go first (P12). Otherwise, time order.
  */
 export function sortItems(items: TodoItem[]): TodoItem[] {
   return [...items].sort((a, b) => {
     if (Boolean(a.carriedOverFrom) !== Boolean(b.carriedOverFrom)) {
       return a.carriedOverFrom ? -1 : 1;
+    }
+    if (Boolean(a.overdueFor) !== Boolean(b.overdueFor)) {
+      return a.overdueFor ? -1 : 1;
     }
     return a.due.localeCompare(b.due);
   });
@@ -641,9 +769,13 @@ export type DeviceProgress = {
  */
 export function deviceProgress(device: TodoDevice): DeviceProgress {
   const items = device.accounts.flatMap((a) => a.items);
-  const done = items.filter(isItemFinished).length;
+  // A ban's steps are work on this phone like any other, so a phone with a
+  // clean-up still open is not finished (P8).
+  const steps = (device.cleanups ?? []).flatMap(cleanupSteps);
+  const done = items.filter(isItemFinished).length + steps.filter((st) => st.done).length;
+  const total = items.length + steps.length;
   const linksToAdd = items.filter((i) => i.status === "postedNoLink").length;
-  return { done, total: items.length, linksToAdd, finished: done === items.length };
+  return { done, total, linksToAdd, finished: done === total };
 }
 
 export type AccountProgress = {

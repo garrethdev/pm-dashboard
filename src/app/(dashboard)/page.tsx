@@ -20,8 +20,8 @@ import { getFleet } from "@/lib/fleet-server";
  * Automation, with Proxies + Incident feed below.
  *
  * Physical is design ticket P1: To-do at the top of the right column with
- * Inventory under it, and Proxies, the incident feed and Automation three
- * across below the hero. Automation stays on the Physical side because plenty
+ * Inventory under it, Proxies and Automation side by side below the hero, and
+ * the incident feed beside Top posts at the bottom (Garreth, 2026-09-23). Automation stays on the Physical side because plenty
  * still runs by robot there (Garreth, 2026-09-22) — only the Posting Agent
  * drops out of it, since Yurie posts by hand. The Devices card left the
  * dashboard; the phones have their own page in the menu.
@@ -101,34 +101,43 @@ function PhysicalHome({
         </div>
       </div>
 
-      {/* Proxies, the incident feed and Automation, three across. Physical
-          keeps this row at every width: with only To-do and Inventory beside
-          Accounts, the hero has no third column to fold them into. */}
+      {/* Proxies and Automation, half each. The incident feed moved down beside
+          Top posts (Garreth, 2026-09-23). Physical keeps this row at every
+          width: with only To-do and Inventory beside Accounts, the hero has no
+          third column to fold them into. */}
       <div className="grid grid-cols-12 gap-3">
         <Suspense
           fallback={
-            <CardSkeleton title="Proxies & numbers" lines={4} className="col-span-12 xl:col-span-4" />
+            <CardSkeleton title="Proxies & numbers" lines={4} className="col-span-12 xl:col-span-6" />
           }
         >
-          <ProxiesCardLive className="col-span-12 xl:col-span-4" />
+          <ProxiesCardLive className="col-span-12 xl:col-span-6" />
         </Suspense>
 
         <Suspense
-          fallback={
-            <CardSkeleton title="Incident feed, last 48h" lines={5} className="col-span-12 xl:col-span-4" />
-          }
+          fallback={<CardSkeleton title="Automation" lines={6} className="col-span-12 xl:col-span-6" />}
         >
-          <IncidentFeedLive className="col-span-12 xl:col-span-4" />
-        </Suspense>
-
-        <Suspense
-          fallback={<CardSkeleton title="Automation" lines={6} className="col-span-12 xl:col-span-4" />}
-        >
-          <AutomationCard className="col-span-12 xl:col-span-4" />
+          <AutomationCard className="col-span-12 xl:col-span-6" />
         </Suspense>
       </div>
 
-      <TopPostsCard />
+      {/* Top posts with the incident feed beside it, on the hero's own column
+          split so the right-hand edge lines up with To-do and Inventory. */}
+      <div className="grid grid-cols-12 gap-3">
+        <TopPostsCard className="col-span-12 xl:col-span-8 2xl:col-span-9" />
+
+        <Suspense
+          fallback={
+            <CardSkeleton
+              title="Incident feed, last 48h"
+              lines={5}
+              className="col-span-12 xl:col-span-4 2xl:col-span-3"
+            />
+          }
+        >
+          <IncidentFeedLive className="col-span-12 xl:col-span-4 2xl:col-span-3" />
+        </Suspense>
+      </div>
     </div>
   );
 }

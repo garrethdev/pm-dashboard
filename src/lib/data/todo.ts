@@ -52,6 +52,30 @@ import type {
 /** How many days an unfinished post keeps appearing (Garreth, 2026-09-19). */
 export const CARRY_OVER_DAYS = 3;
 
+/**
+ * How long a post may sit `queued` before it is overdue.
+ *
+ * A day, measured from the hand-out (Garreth, 2026-09-22). The Posting Agent
+ * hands the day's posts out at 10:00 ET, so anything still untouched at the
+ * same hour tomorrow has had a full working day pass it by.
+ *
+ * One number for both places that say so — the bell's overdue item and the
+ * red Overdue pill on the list (P12, Garreth 2026-09-23) — so the two can
+ * never disagree about the same post.
+ */
+export const OVERDUE_HOURS = 24;
+
+/**
+ * How long an open post has waited, once it is overdue: "26 h" under two
+ * days, "3 days" after. Null while it is not overdue yet. The space is a
+ * non-breaking one so a phone never splits the number from its unit.
+ */
+export function overdueFor(createdAt: string, now: Date): string | null {
+  const hours = Math.floor((now.getTime() - Date.parse(createdAt)) / 3_600_000);
+  if (hours < OVERDUE_HOURS) return null;
+  return hours >= 48 ? `${Math.floor(hours / 24)}\u00a0days` : `${hours}\u00a0h`;
+}
+
 /** When each of the day's two warmups is expected. Times rather than a rule:
  *  the list is read at a glance and "morning" and "evening" need an hour
  *  beside them to sort against the day's posts. */
@@ -239,6 +263,12 @@ export async function getTodoBoard(dayOffset = 0, now: Date = new Date()): Promi
       if (postDay !== day && daysBetween(postDay, day) > CARRY_OVER_DAYS) continue;
     }
 
+    // Overdue is about NOW, so only today's list says it (P12). A day stepped
+    // back to is a record of that day, and a day ahead has nothing late yet.
+    const waited = !finished && dayOffset === 0 ? overdueFor(row.created_at, now) : null;
+    const lastDay =
+      !finished && dayOffset === 0 && postDay !== day && daysBetween(postDay, day) === CARRY_OVER_DAYS;
+
     const id = `d${row.id}`;
     const item: TodoItem = {
       id,
@@ -246,7 +276,11 @@ export async function getTodoBoard(dayOffset = 0, now: Date = new Date()): Promi
       label: content ? labelFor(row.content_type) : row.content_type,
       due: content?.posting_time?.slice(0, 5) ?? etTime(row.created_at),
       status,
-      ...(postDay !== day ? { carriedOverFrom: postDay } : {}),
+      // In words, as the approved design reads ("Due yesterday", "Due 3 days
+      // ago"), not the raw date the row stores.
+      ...(postDay !== day ? { carriedOverFrom: daysAgo(daysBetween(postDay, day)) } : {}),
+      ...(waited ? { overdueFor: waited } : {}),
+      ...(lastDay ? { lastDay: true } : {}),
       ...(row.done_at ? { doneAt: etTime(row.done_at) } : {}),
       ...(row.note ? { reason: row.note } : {}),
       // Nothing to download means the render has not landed, and the button
@@ -311,6 +345,11 @@ function push<T>(map: Map<number, T[]>, key: number, value: T) {
   const list = map.get(key);
   if (list) list.push(value);
   else map.set(key, [value]);
+}
+
+/** "yesterday", "2 days ago": how far back a carried-over post was due. */
+function daysAgo(days: number): string {
+  return days === 1 ? "yesterday" : `${days} days ago`;
 }
 
 /** Whole days between two YYYY-MM-DD dates. Both are already New York dates,

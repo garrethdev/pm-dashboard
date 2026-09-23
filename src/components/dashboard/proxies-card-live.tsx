@@ -124,10 +124,10 @@ export async function ProxiesCardLive({ className }: { className?: string }) {
       className={className}
       proxies={proxyAttention(data)}
       phones={phoneAttention(data)}
-      // Physical puts this card in a third of the row below the hero, where
-      // the segmented control has no room beside the card's name (Garreth,
-      // 2026-09-22). Cloud's layout is untouched.
-      toolbarBelow={fleet === "physical"}
+      // The switch sits beside the name in both fleets. Physical had it on its
+      // own line while this card had a third of the row (2026-09-22); at half
+      // the row it fits, and Garreth asked for it back beside the title
+      // (2026-09-23).
     />
   );
 }

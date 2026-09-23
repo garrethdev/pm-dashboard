@@ -76,6 +76,8 @@ export interface DeviceFields {
   proxy: string | null;
   timezone: string | null;
   notes: string | null;
+  /** One per line (P6). Checked and tidied by `parsePhoneNumbers`. */
+  phoneNumbers: string | null;
 }
 
 const LIMITS: Record<keyof DeviceFields, number> = {
@@ -85,6 +87,7 @@ const LIMITS: Record<keyof DeviceFields, number> = {
   proxy: 200,
   timezone: 60,
   notes: 1000,
+  phoneNumbers: 500,
 };
 
 const LABELS: Record<keyof DeviceFields, string> = {
@@ -94,6 +97,7 @@ const LABELS: Record<keyof DeviceFields, string> = {
   proxy: "Proxy",
   timezone: "Time zone",
   notes: "Notes",
+  phoneNumbers: "Phone numbers",
 };
 
 /**
@@ -119,6 +123,12 @@ export function parseDeviceFields(
     if (key === "name") {
       if (value === "") return { ok: false, error: "Give the phone a name." };
       fields.name = value;
+    } else if (key === "phoneNumbers") {
+      const numbers = parsePhoneNumbers(value);
+      const bad = numbers.find((n) => n.replace(/\D/g, "").length < 10);
+      if (bad) return { ok: false, error: `"${bad}" is not a whole phone number.` };
+      // Stored one per line, however they were typed or pasted.
+      fields.phoneNumbers = numbers.length ? numbers.join("\n") : null;
     } else {
       fields[key] = value === "" ? null : value;
     }
@@ -127,6 +137,17 @@ export function parseDeviceFields(
     return { ok: false, error: "Give the phone a name." };
   }
   return { ok: true, fields };
+}
+
+/**
+ * The numbers recorded on a phone (P6), from the text the form holds. One per
+ * line, but a pasted list separated by commas or semicolons reads the same.
+ */
+export function parsePhoneNumbers(text: string | null): string[] {
+  return (text ?? "")
+    .split(/[\n,;]+/)
+    .map((n) => n.trim())
+    .filter(Boolean);
 }
 
 /**

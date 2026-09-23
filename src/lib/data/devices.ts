@@ -32,6 +32,8 @@ export interface Device {
   proofPath: string | null;
   isActive: boolean;
   notes: string | null;
+  /** One per line (P6). */
+  phoneNumbers: string | null;
   accounts: DeviceAccount[];
 }
 
@@ -45,6 +47,7 @@ interface RawDevice {
   whoer_screenshot_path: string | null;
   is_active: boolean;
   notes: string | null;
+  phone_numbers: string | null;
 }
 
 interface RawDeviceAccount {
@@ -57,7 +60,8 @@ interface RawDeviceAccount {
   device_id: number | null;
 }
 
-const DEVICE_COLS = "id,name,model,ios_version,proxy,timezone,whoer_screenshot_path,is_active,notes";
+const DEVICE_COLS =
+  "id,name,model,ios_version,proxy,timezone,whoer_screenshot_path,is_active,notes,phone_numbers";
 const ACCOUNT_COLS = "id,geelark_profile,username,character,platform,is_active,device_id";
 
 function toAccount(a: RawDeviceAccount): DeviceAccount {
@@ -82,6 +86,7 @@ function toDevice(d: RawDevice, accounts: RawDeviceAccount[]): Device {
     proofPath: d.whoer_screenshot_path,
     isActive: d.is_active,
     notes: d.notes,
+    phoneNumbers: d.phone_numbers,
     accounts: accounts.filter((a) => a.device_id === d.id).map(toAccount),
   };
 }

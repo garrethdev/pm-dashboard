@@ -57,6 +57,7 @@ function toForm(d: Device): DeviceFormValues {
     proxy: d.proxy ?? "",
     timezone: d.timezone ?? "",
     notes: d.notes ?? "",
+    phoneNumbers: d.phoneNumbers ?? "",
   };
 }
 

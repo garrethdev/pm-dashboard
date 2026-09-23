@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { CtaButton } from "@/components/ui/cta-button";
 import Link from "next/link";
-import { BarChart3, ExternalLink, Play } from "@/components/ui/icons";
+import { BarChart3, ExternalLink, Film, Play } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -151,9 +152,10 @@ export function TopPostsCard({
             : posts.length > 0
               ? posts.map((p) => <PostThumb key={p.postId} post={p} />)
               : (
-                <p className="col-span-full py-4 text-sm text-text-muted">
-                  No posts found for this range.
-                </p>
+                // The shared empty state (Garreth, 2026-09-23).
+                <EmptyState icon={Film} compact className="col-span-full">
+                  No posts found for this range
+                </EmptyState>
               )}
         </div>
       </div>

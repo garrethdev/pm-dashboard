@@ -20,6 +20,190 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — P8 approved: the clean-up after a ban on a real phone (drawing only, not built)
+
+**Where it came from:** design ticket P8 (backlog PF-11). On Cloud, the
+Post-Ban robot cleans up a banned account: it deletes the Geelark phone,
+switches off the proxy's and the number's renewals, hands the account's
+queued posts back to the pool, and marks it retired. On a real phone a person
+has to do the phone half, and nothing in the app asked them to.
+
+**Garreth's calls (2026-09-23):**
+
+- **The app hands the queued posts back itself**, the moment the account is
+  retired. Nothing on the phone is involved, so it is not a tick.
+- **The proxy stays while other accounts still use it.** One proxy serves
+  every account on a phone, so retiring it for one ban would cut off the
+  healthy accounts beside it.
+
+**What was drawn, with made-up data:**
+
+- **A retire dialog for real-phone accounts.** It says what happens at once
+  (the queued posts go back, the account is marked retired) and what is then
+  left on the phone: sign out, retire the number, and a switch for retiring
+  the proxy. Retiring still needs the button held down, as on Cloud.
+- **The checklist on the To-do page**, at the top of the banned account's
+  phone. Each step is ticked by hand, the phone's count includes them, and a
+  finished checklist stays struck through for the rest of the day. The sample
+  shows it not started, part done and done, and a ban on a phone that still
+  holds two healthy accounts (no proxy step there).
+
+**Round two, the same day (Garreth):** the checklist no longer lists a kept
+proxy, because there is nothing to do about it. It only appears, as "Retire
+the proxy", when the banned account was the last one on the phone. The
+dialog's two lists were made more visual: each row has its icon in a circle,
+with more space and a divider between rows, and what the app does itself is
+marked in the app's cyan. And the checklist's header no longer carries the
+"Retired 09:40 · 3 queued posts back in the pool" line: it is the account,
+the Banned pill and the count, then the steps.
+
+**Round three, the same day (Garreth):** retiring the proxy is now a switch
+in the retire dialog. It is on by default when the banned account was the last
+one on the phone, and off while others still use it (the row says how many).
+"Retire the proxy" only goes on the checklist when the switch is on.
+
+**Garreth approved the drawing the same day.** Building it is PF-11.
+
+Seen with `?todo=ban` on the To-do page and from the Retire buttons on
+`/accounts?demo=1`, in headless Chrome at phone and desktop width, dark mode.
+**Nothing is built yet:** a real account's Retire button still goes to the
+Cloud robot, and the ticks are saved nowhere.
+
+---
+
+## 2026-09-23 — Dashboard tidy-up: the incident feed beside Top posts, the Proxies switch beside its title, no Active Accounts count, centred empty cards
+
+**Where it came from:** Garreth, 2026-09-23: "Put the incident feed below
+which is beside the top posts." Asked which he meant, he chose beside Top
+posts rather than under it.
+
+On the Physical homepage, the row under the main cards was Proxies, Incident
+feed and Automation, three across, with Top posts underneath. It is now
+Proxies and Automation side by side, and the bottom row is Top posts with the
+Incident feed beside it. The bottom row splits the same way as the main cards
+above it, so the Incident feed lines up with To-do and Inventory. On a phone
+screen everything still stacks, and the Incident feed now comes after Top
+posts. Cloud's homepage keeps its own layout.
+
+**Also the same day (Garreth):** the Proxies / Phone numbers switch on the
+Proxies & numbers card sits beside the card's title again. On 2026-09-22 it
+was moved onto its own line because the card only had a third of the row.
+Now that the card has half the row, there is room beside the name. On a phone
+screen it still drops under the title, like every other card.
+
+**And the Accounts card lost its "Active Accounts" count (Garreth, same
+day), on both the Cloud and the Physical dashboard.** The card's header is now
+the name, the All / Healthy / Needs attention switch, then Filters with View
+all beside it at the right-hand edge. The full Accounts page is unchanged.
+
+**Empty cards now look empty the same way (Garreth, same day).** On the
+Accounts card, "No accounts yet" sat at the top of a tall empty box. It now
+sits in the middle of the card. Proxies & numbers, Top posts and the Incident
+feed used to say they were empty in a plain line of text. They now use the
+same icon-in-a-circle empty state as the rest of the app, centred in the card:
+a globe (or a phone, on the Phone numbers view) for "Nothing needs attention",
+a film for "No posts found for this range", and the Incidents page's tick for
+"No incidents in the last 48 hours". This applies on both the Cloud and the
+Physical dashboard.
+
+Checked in headless Chrome at 1440 and 1920 wide (and 390 for the switch),
+dark mode. Not checked in
+Safari.
+
+---
+
+## 2026-09-23 — Overdue posts look overdue on the to-do list, and Proxies & numbers shows the real phones
+
+**Where it came from:** design tickets P12 and P6. Both were started on
+2026-09-23 because neither needs a real phone to exist. Garreth made the calls
+below, approved both drawings the same day, and both were then built.
+
+### P12: an overdue post now says so on the to-do list
+
+The bell already warned, in red, when a post had waited more than 24 hours.
+The list did not agree with it: every carried-over post looked the same, with
+a quiet grey "Due yesterday". So the post the bell was warning about looked
+perfectly normal on the list.
+
+**Garreth's choice: a red Overdue pill, on the bell's own 24-hour rule.** A
+post carried over from yesterday afternoon stays quiet, as before. Once it has
+waited 24 hours, it gets a red Overdue pill beside its name, and the line
+under it says how long it has waited ("Due yesterday · waiting 26 h").
+
+- On its third and last day, the line says "last day on the list" instead,
+  because tomorrow it drops off.
+- Overdue posts go to the top of their account.
+- The pill shows on the To-do page, and inside an opened phone on the
+  dashboard card.
+- The list and the bell now read the 24 hours from the same place in the
+  code, so they cannot drift apart.
+- Only today's list says "overdue". Stepping back to an earlier day shows
+  that day as it was.
+
+**Found and fixed while building it:** on the real list, a carried-over post
+said "Due 2026-09-21" rather than "Due yesterday", unlike the approved design.
+It now says it in words, on the card too ("from yesterday").
+
+**Checked:** automated tests for the 24-hour cutoff and the switch from hours
+to days. The look was checked with the sample data (`?todo=work`).
+
+**Not checked with a real post:** no real post exists yet. Creating one would
+need an unpaused test account, which the scheduler could pick up.
+
+### P6: Proxies & numbers now lists the real phones
+
+On the Physical side, this page could only see Geelark phones. A real phone's
+proxy is a line typed on the phone's page, so its expiry appeared nowhere and
+an expiring proxy would have gone unnoticed. An account's phone number was
+worse off: accounts do not store their own number (checked in the database,
+2026-09-23). The only copy was on the account's Geelark phone, and it vanished
+when that phone was deleted.
+
+**Garreth's calls:**
+
+- The numbers are recorded **on the phone**, not on each account.
+- The page lists **the accounts on each phone, not its characters**, because
+  one phone has one proxy and every account on it shares it.
+
+**What changed:**
+
+- **Physical's Proxies & numbers now has one row per real phone.** It keeps
+  the same Proxies / Phone numbers switch as the Cloud page. Cloud is
+  unchanged.
+- **Proxies view:** for each phone, its accounts (one per line with their
+  platform mark), its proxy, when that proxy expires, days left, auto-renew
+  and Extend. The proxy expiring soonest comes first.
+- **Phone numbers view:** each number on each phone, matched to its
+  TextVerified rental.
+- On a phone screen each phone is a stacked block rather than a wide table.
+- There is no Replace proxy button here: a real phone's proxy is changed by
+  hand in ShadowRocket.
+- **The phone's form has a new Phone numbers box**, on Add phone and on the
+  phone's own page. It takes one number per line, and a pasted list separated
+  by commas works too. A number with fewer than ten digits is refused by name.
+- The database gained one new, empty column on phones to hold the numbers.
+  Nothing existing was changed.
+
+**Confirmed live, 2026-09-23:** a test phone was created with a real
+proxy-cheap address and a real TextVerified number. The proxy matched its
+subscription (expiry, days left, auto-renew) and the number matched its rental
+(cycle end, renewal state). A made-up number correctly showed "no rental
+match". Saving a pasted, comma-separated list through the app stored it one
+per line, and a half-number was refused. The test phone and the audit-log line
+from that save were deleted afterwards, so the database is back to no phones.
+
+**Not checked:** the accounts column with a real account on a real phone,
+because none has moved yet. The look with several phones was checked with the
+sample data (`?demo=1`).
+
+**Left as it was:** the Proxies & numbers card on the Physical homepage still
+reads Geelark phones.
+
+Both screens were checked in headless Chrome, at phone and desktop width, in
+dark and light mode. They have not been looked at in Safari.
+
+---
+
 ## 2026-09-22 — A phone can now carry as many accounts as you want, and two buttons read properly
 
 **Where it came from:** five pieces of feedback from Garreth on the P10

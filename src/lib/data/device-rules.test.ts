@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assignRefusal,
   parseDeviceFields,
+  parsePhoneNumbers,
   proofRefusal,
   proxyForDisplay,
 } from "@/lib/data/device-rules";
@@ -104,5 +105,37 @@ describe("proxyForDisplay", () => {
   it("leaves host:port and empty values as they are", () => {
     expect(proxyForDisplay("82.47.5.7:41802")).toBe("82.47.5.7:41802");
     expect(proxyForDisplay(null)).toBeNull();
+  });
+});
+
+// P6: numbers recorded on the phone.
+describe("phone numbers on a phone", () => {
+  it("reads one per line, or a pasted list", () => {
+    expect(parsePhoneNumbers("+1 480 330 1790\n+1 555 000 1111")).toEqual([
+      "+1 480 330 1790",
+      "+1 555 000 1111",
+    ]);
+    expect(parsePhoneNumbers(" +1 480 330 1790, +1 555 000 1111 ;\n\n")).toEqual([
+      "+1 480 330 1790",
+      "+1 555 000 1111",
+    ]);
+    expect(parsePhoneNumbers(null)).toEqual([]);
+  });
+
+  it("stores them tidied, one per line", () => {
+    const r = parseDeviceFields({ phoneNumbers: "+1 480 330 1790, +1 555 000 1111" }, { requireName: false });
+    expect(r).toEqual({ ok: true, fields: { phoneNumbers: "+1 480 330 1790\n+1 555 000 1111" } });
+  });
+
+  it("clears to nothing when emptied", () => {
+    expect(parseDeviceFields({ phoneNumbers: "  " }, { requireName: false })).toEqual({
+      ok: true,
+      fields: { phoneNumbers: null },
+    });
+  });
+
+  it("refuses a number that is not whole", () => {
+    const r = parseDeviceFields({ phoneNumbers: "+1 480 330" }, { requireName: false });
+    expect(r).toEqual({ ok: false, error: '"+1 480 330" is not a whole phone number.' });
   });
 });

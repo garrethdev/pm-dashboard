@@ -539,7 +539,7 @@ does.~~ **PF-06 landed later the same day (2026-09-22)**, and a seeded
 delivery was seen on the list as "1 post and 2 warmups", so the posts half is
 no longer theoretical.
 
-## PF-11 · Post-ban branch for manual accounts — Waiting on its screen (design ticket P8)
+## PF-11 · Post-ban branch for manual accounts — Screen approved 2026-09-23 (P8); build not started
 
 `[Ops] Post-Ban System` (`WmichajTDXL0pT1z`) deletes a Geelark phone; for
 `delivery_mode = manual` skip that and surface a checklist instead: sign out

@@ -89,13 +89,13 @@ purpose; the changelog has them.
 | P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07. **Log warmup is live since PF-04** and **Posted / Failed since PF-07** (both 2026-09-22); the six saving states P3 handed over are built |
 | P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22, and the switch now SAVES** — PF-04 landed the same day. The by-phone view still needs PF-02's real phones to have groups. What an Automated account SHOWS moved to PF-13 |
 | P5 | Rework the device page around the phone's daily work | **Approved and built 2026-09-22.** Warmup history is real since PF-04. **One gap, found 2026-09-22: "Today on this phone" is still demo-only** — `device-detail.tsx` reads `demo?.today ?? null`, so a real phone always shows "Nothing due" however many deliveries it has. PF-05 and PF-07 built the tables and the To-do page but nobody rewired this page to them. Small follow-on, not a redesign |
-| P6 | Track proxy expiry for real phones on Proxies & numbers | Not started |
+| P6 | Track proxy expiry for real phones on Proxies & numbers | **Approved and built 2026-09-23.** One row per real phone, its accounts, proxy and numbers (numbers recorded on the phone, Garreth). Joins proven live with a test phone, since deleted |
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
-| P8 | Add the checklist for a ban on a real phone | Not started |
+| P8 | Add the checklist for a ban on a real phone | **Approved 2026-09-23, after three rounds; build (PF-11) not started.** The app releases queued posts itself; the proxy is kept while other accounts use it (Garreth). Drawn at `/todo?todo=ban` and the Retire button on `/accounts?demo=1` |
 | P9 | Add the Live view page and link to it from the dashboard | Not started |
 | P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. Building is PF-03 then PF-15 |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
-| P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Part done 2026-09-22.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. Still open: how a stale item looks ON the to-do list |
+| P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Built 2026-09-23.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. The stale row is **approved and built 2026-09-23**: a red Overdue pill on the bell's 24-hour rule (Garreth). Not yet seen with a real post |
 | P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | Not started |
 
 Each of these has its full ticket further down. **A ticket moves through four
@@ -122,7 +122,7 @@ the design ticket that covers it:
 | PF-09 Health + incidents read both sources | nothing new (same screens, more data) | — |
 | PF-10 Comparison view | Before and after the move, per account | P7 |
 | PF-11 Post-ban for manual accounts | The checklist | P8 |
-| PF-12 Day's work + stale-post alert | The two bell items (built 2026-09-22), and how a stale item looks on the to-do list (still open) | P12 |
+| PF-12 Day's work + stale-post alert | The two bell items (built 2026-09-22), and the Overdue pill on the to-do list (built 2026-09-23) | P12 |
 | PF-13 Script write path | nothing (data only); what it logs shows in P4, P5 | — |
 | PF-14 Live view | The page on the Air, and the link to it | P9 |
 | PF-15 Batch moves | Moving several accounts at once | P10 |
@@ -849,7 +849,21 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P6. Track proxy expiry for real phones on Proxies & numbers
 
-- **Status:** not started. **A gap found on 2026-09-18, not a request.**
+- **Status:** **approved and built 2026-09-23.** A gap found on
+  2026-09-18, not a request. Drawn in the running app at `/proxies?demo=1` on
+  the Physical side. **Decided (Garreth, 2026-09-23): numbers are recorded on
+  the phone**, not on each account. Checked the same day that accounts store
+  no number of their own, so without this a number vanishes with its Geelark
+  phone. **Round two (Garreth, 2026-09-23): list the accounts on the phone,
+  not its characters**, because the accounts all share the phone's one
+  proxy. The drawing is the Cloud page's two views with a phone on every row:
+  no Replace proxy (a real phone's proxy is changed by hand in ShadowRocket),
+  and a stacked block per phone at phone width. **Built the same day:** a
+  Phone numbers box on the phone's form (one per line) and a new
+  `devices.phone_numbers` column; the proxy matched to proxy-cheap and each
+  number to TextVerified, proven live with a test phone that was then deleted.
+  `?demo=1` still draws the sample phones. Left as it was: the homepage
+  Proxies & numbers card in Physical still reads Geelark phones.
 - **The problem:** Proxies & numbers is built from Geelark's phone list, so it
   follows an account's *Geelark* phone. A real phone's proxy is only a line of
   text on the device, and the page cannot see when it expires. Once an
@@ -883,7 +897,43 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P8. Add the checklist for a ban on a real phone
 
-- **Status:** not started.
+- **Status:** **approved 2026-09-23 (Garreth), after three rounds of
+  feedback; the build (PF-11) is not started.** Drawn in the
+  running app with sample data: the checklist at `/todo?todo=ban`, and the
+  retire dialog from any Retire button on `/accounts?demo=1` in Physical.
+  **Decided (Garreth, 2026-09-23):**
+  - **The app releases the queued posts itself** at the moment of retiring,
+    as the Cloud robot does. That is not a tick; the checklist says it as a
+    fact ("3 queued posts back in the pool").
+  - **Retiring the proxy is a switch in the retire dialog** (round three,
+    Garreth: "what if that banned account is the last one that is using that
+    proxy"). It is ON by default when the banned account was the last one on
+    the phone, and OFF while other accounts still use it, with how many said
+    beside the address. "Retire the proxy" goes on the checklist only when it
+    is on.
+
+  **Round two (Garreth, 2026-09-23):** "Proxy kept" is gone from the
+  checklist and from the dialog. While other accounts remain there is nothing
+  to do about the proxy, so it is not listed at all. The dialog's two lists
+  are more visual: each row has its mark in a circle, with room and a rule
+  between rows, and what the app does itself is marked in cyan. The
+  checklist's header lost its "Retired 09:40 · 3 queued posts back in the
+  pool" line.
+
+  **Round three (Garreth, 2026-09-23):** the dialog's proxy row became a
+  switch rather than something the app decides alone. It is on by default for
+  the last account on a phone and off otherwise. Off, the row dims but the
+  switch stays at full strength, so it still reads as something you can press.
+
+  What was drawn: the retire dialog shows the two halves before the hold,
+  "Now" (what the app does) and "Then on iPhone 1, from the to-do list" (what
+  a person does). No dry run, because there is no robot to ask. The checklist
+  sits at the top of its phone's block on the To-do page, drawn like an
+  account panel with a red Banned pill and a "Clean-up 1 of 2" count. It
+  counts in the phone's "x of y", and it stays struck through for the rest of
+  the day once finished, like any finished item. Left for review: the
+  dashboard card's phone count includes the steps, but the card does not list
+  them.
 - **Backlog:** PF-11. On Cloud, a ban ends with the Geelark phone being
   deleted by the robot. On a real phone a person has to do the work.
 - **Design:** the checklist shown when a Physical account is retired as
@@ -1031,8 +1081,9 @@ action is `CtaButton`, never a hand-rolled `bg-accent` button.**
 
 ## P12. Add the day's-work reminder, overdue items, and bell items that name their fleet
 
-- **Status:** **part done 2026-09-22.** The bell half is built (PF-12) and now
-  names its fleet (PF-20); the to-do list half is not.
+- **Status:** **built 2026-09-23.** The bell half was built 2026-09-22 (PF-12)
+  and names its fleet (PF-20); the to-do list half was approved and built on
+  2026-09-23.
 - **Backlog:** PF-12 (done), PF-20 (done).
 - **The email is gone.** Asked who the morning email should go to, Garreth
   answered: no email, a notification in the dashboard instead (2026-09-22).
@@ -1053,6 +1104,17 @@ action is `CtaButton`, never a hand-rolled `bg-accent` button.**
     which." Every item now carries a Cloud or Physical label, PF-12's two are
     shown to everyone, and opening an item about the other fleet switches you
     over. See `BACKLOG.md` PF-20.
+- **The stale row, approved and built 2026-09-23.** Garreth chose a
+  red **Overdue** pill on the bell's own 24-hour rule, so the list and the bell
+  never disagree about the same post. Under 24 hours a carried-over post stays
+  quiet ("Due yesterday"). Past it, the row gets the pill and says how long it
+  has waited ("Due yesterday · waiting 26 h"). On its third and last day it
+  says "last day on the list" instead. Overdue posts sit at the top of their
+  account. The same pill shows on the dashboard card once a phone is opened.
+  Drawn at `/todo?todo=work` and `/?todo=work`; the real list now works it
+  out from the same `OVERDUE_HOURS` the bell reads. Not yet seen with a real
+  post. Left open: a folded phone on the dashboard card does not show that it
+  holds an overdue post.
 - **Done when:** the stale row on the to-do list is approved, then built and
   looked at in the running app. The fleet label is done.
 
