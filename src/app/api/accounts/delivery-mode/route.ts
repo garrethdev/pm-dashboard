@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { ACCOUNTS_TAG } from "@/lib/data/cache";
+import { ACCOUNTS_TAG, DEVICES_TAG } from "@/lib/data/cache";
 import { accountDetailTag } from "@/lib/data/account-detail";
 import { requireSession } from "@/lib/api-auth";
+import { parseRowId } from "@/lib/data/device-rules";
+import { getDeviceState } from "@/lib/data/device-writes";
 import {
   actingUserEmail,
   auditLog,
   getAccountState,
+  MoveConflictError,
   setDeliveryMode,
   validDeliveryMode,
   validProfile,
@@ -17,12 +20,17 @@ import {
  * "geelark" (the robot, through a cloud phone) or "manual" (a person on a real
  * iPhone). Modelled on the pause toggle, and deliberately leaves
  * posting_paused alone.
+ *
+ * PF-03: a move onto a real phone names the phone (`deviceId`), and the fleet,
+ * the phone and the date of the move are saved in one write. Without a phone
+ * the move is refused, so an account can never land on Physical with nowhere
+ * to be worked on. A move back to Cloud takes it off its phone.
  */
 export async function POST(request: Request) {
   const denied = await requireSession();
   if (denied) return denied;
 
-  let body: { profile?: unknown; mode?: unknown };
+  let body: { profile?: unknown; mode?: unknown; deviceId?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -34,6 +42,12 @@ export async function POST(request: Request) {
   }
   if (!validDeliveryMode(body.mode)) {
     return NextResponse.json({ error: "mode must be geelark or manual" }, { status: 400 });
+  }
+
+  const toPhysical = body.mode === "manual";
+  const deviceId = toPhysical ? parseRowId(body.deviceId) : null;
+  if (toPhysical && deviceId === null) {
+    return NextResponse.json({ error: "Choose a phone first." }, { status: 400 });
   }
 
   try {
@@ -48,16 +62,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, profile: body.profile, mode: body.mode, changed: false });
     }
 
-    await setDeliveryMode(body.profile, body.mode, userEmail);
+    let deviceName: string | null = null;
+    if (deviceId !== null) {
+      const device = await getDeviceState(deviceId);
+      if (!device) return NextResponse.json({ error: "That phone no longer exists." }, { status: 404 });
+      if (!device.is_active) {
+        return NextResponse.json(
+          { error: `${device.name} is switched off. Switch it back on before moving accounts onto it.` },
+          { status: 409 },
+        );
+      }
+      deviceName = device.name;
+    }
+
+    const { movedAt } = await setDeliveryMode(body.profile, body.mode, userEmail, deviceId);
     await auditLog({
       userEmail,
       action: "delivery_mode_change",
       target: body.profile,
-      oldValue: { delivery_mode: state.delivery_mode },
-      newValue: { delivery_mode: body.mode },
+      oldValue: { delivery_mode: state.delivery_mode, device_id: state.device_id },
+      newValue: {
+        delivery_mode: body.mode,
+        device_id: deviceId,
+        ...(deviceName ? { device_name: deviceName } : {}),
+        ...(movedAt ? { moved_to_device_at: movedAt } : {}),
+      },
     });
 
     revalidateTag(ACCOUNTS_TAG, { expire: 0 });
+    // The phone's page lists its accounts, on both ends of the move.
+    revalidateTag(DEVICES_TAG, { expire: 0 });
     // The account page has its own cache entry; without this it would keep
     // showing the old answer for up to a minute after the flip.
     revalidateTag(accountDetailTag(body.profile), { expire: 0 });
@@ -65,7 +99,7 @@ export async function POST(request: Request) {
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "change failed" },
-      { status: 502 },
+      { status: err instanceof MoveConflictError ? 409 : 502 },
     );
   }
 }

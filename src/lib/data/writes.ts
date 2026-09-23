@@ -144,6 +144,8 @@ export interface AccountState {
   status_note: string | null;
   /** "Character 3" — the outer bound on which content types may be selected. */
   character: string | null;
+  /** The phone it is on, if any (PF-02). */
+  device_id: number | null;
   /** true once the Post-Ban workflow has stamped its cleanup note. */
   cleanedUp: boolean;
 }
@@ -151,7 +153,7 @@ export interface AccountState {
 /** Read one account's current state (for old_value + guardrails). */
 export async function getAccountState(profile: string): Promise<AccountState | null> {
   const res = await sbFetch(
-    `accounts?select=posting_paused,delivery_mode,warmup_mode,is_active,status_note,character&geelark_profile=eq.${encodeURIComponent(profile)}`,
+    `accounts?select=posting_paused,delivery_mode,warmup_mode,is_active,status_note,character,device_id&geelark_profile=eq.${encodeURIComponent(profile)}`,
     { method: "GET" },
   );
   if (!res.ok) throw new Error(`Supabase read failed (HTTP ${res.status})`);
@@ -162,6 +164,7 @@ export async function getAccountState(profile: string): Promise<AccountState | n
     is_active: boolean;
     status_note: string | null;
     character: string | null;
+    device_id: number | null;
   }[];
   const row = rows[0];
   if (!row) return null;
@@ -204,17 +207,35 @@ export async function setPostingPaused(
   if (!res.ok) throw new Error(`Pause write failed (HTTP ${res.status}). Nothing was changed`);
 }
 
+/** A move refused because the account changed underneath it. */
+export class MoveConflictError extends Error {}
+
 /**
- * PF-01 delivery mode: who posts for this account. Writes that one column and
- * nothing else -- never posting_paused, never is_active -- so moving an
+ * PF-01 delivery mode: who posts for this account — and since PF-03, the phone
+ * it goes onto. Never touches posting_paused or is_active, so moving an
  * account to a real phone cannot quietly resume or stop its schedule. Who and
  * when live in dashboard_audit_log, written by the route.
+ *
+ * ONE WRITE, NOT THREE. Onto a phone sets the fleet, the phone and
+ * `moved_to_device_at` together; back to Cloud sets the fleet and takes it off
+ * its phone. Done as separate writes, a failure between them would leave an
+ * account on Physical with no phone, which is the half-move P10 exists to
+ * prevent.
+ *
+ * `moved_to_device_at` is set on every move onto a phone and kept on the way
+ * back: it is the before/after line PF-10 splits on, and the audit log holds
+ * every earlier move. A move from one phone to another (Edit account) is not a
+ * move off Cloud and leaves it alone.
+ *
+ * Guarded on the fleet it is leaving, so two people moving the same account at
+ * once cannot both succeed: the second matches nothing and is told so.
  */
 export async function setDeliveryMode(
   profile: string,
   mode: DeliveryMode,
   userEmail: string,
-): Promise<void> {
+  deviceId: number | null = null,
+): Promise<{ movedAt: string | null }> {
   const today = new Date().toISOString().slice(0, 10);
   const noteFragment = ` | ${today} ${userEmail}: posting moved to ${
     mode === "manual" ? "a real phone" : "Geelark"
@@ -229,16 +250,32 @@ export async function setDeliveryMode(
   const curRows = (await cur.json()) as { status_note: string | null }[];
   const newNote = (curRows[0]?.status_note ?? "") + noteFragment;
 
-  const res = await sbFetch(`accounts?geelark_profile=eq.${encodeURIComponent(profile)}`, {
-    method: "PATCH",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({
-      delivery_mode: mode,
-      status_note: newNote,
-      updated_at: new Date().toISOString(),
-    }),
-  });
+  const now = new Date().toISOString();
+  const leaving: DeliveryMode = mode === "manual" ? "geelark" : "manual";
+  const res = await sbFetch(
+    `accounts?geelark_profile=eq.${encodeURIComponent(profile)}&delivery_mode=eq.${leaving}&select=id`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        delivery_mode: mode,
+        device_id: mode === "manual" ? deviceId : null,
+        ...(mode === "manual" ? { moved_to_device_at: now } : {}),
+        status_note: newNote,
+        updated_at: now,
+      }),
+    },
+    // No retry: a write that landed but timed out would come back as a
+    // conflict with itself.
+    0,
+  );
   if (!res.ok) throw new Error(`Could not change who posts (HTTP ${res.status}). Nothing was changed`);
+  if (((await res.json()) as unknown[]).length === 0) {
+    throw new MoveConflictError(
+      `${profile} was just moved by someone else. Refresh and look again. Nothing was changed.`,
+    );
+  }
+  return { movedAt: mode === "manual" ? now : null };
 }
 
 /**

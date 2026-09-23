@@ -20,6 +20,42 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — Moving an account onto a phone now saves the phone
+
+**Where it came from:** ticket PF-03, the save behind design ticket P10's
+move dialog in Settings, which Garreth approved on 2026-09-22. Until now the
+dialog asked which phone and then refused to save, because the save would
+have moved the account to Physical and ignored the phone.
+
+**What changed:**
+
+- **Moving a Cloud account onto a phone** in Settings → Account management
+  now saves three things at once: the account is on Physical, it is on the
+  phone you picked, and the date it moved. They are one save, so an account
+  can never end up on Physical with no phone. The date is what the
+  before-and-after comparison (PF-10) will use.
+- **A move onto a phone is refused** if no phone is picked, or if the phone
+  has been switched off.
+- **Moving an account back to Cloud now takes it off its phone.** The dialog
+  already said it would ("It comes off …"), but until now the account stayed
+  listed on the phone.
+- **If two people move the same account at the same moment,** the second is
+  told it was just moved and nothing of theirs is saved.
+- Posting is still not touched. A moved account stays paused.
+
+**The database** gained one new column, the date an account moved onto a
+phone. It went in a few hours after the code, because the database itself was
+down from about 2:01 to 2:45 am ET. Every log went silent at once and it came
+back with a cold start; the cause is not established. Every existing account
+reads the new column as empty, meaning never moved.
+
+**Verified:** the code compiles and the existing 187 automated checks pass.
+The column was confirmed in the live database by query. No account has been
+moved, because no real phone is registered yet, so the save itself has not
+met the database.
+
+---
+
 ## 2026-09-23 — Physical accounts: a ⋯ menu with Edit account, and each account keeps its own phone number
 
 **Where it came from:** design ticket P14, which Garreth approved the same day
