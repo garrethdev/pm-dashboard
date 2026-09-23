@@ -3,6 +3,7 @@ import {
   batchMoves,
   batchSummary,
   canTake,
+  moveRefusal,
   parseBatchMoves,
   roomBeforeNext,
   planBatch,
@@ -218,5 +219,26 @@ describe("parseBatchMoves", () => {
         { profile: "Profile 4", deviceId: 2 },
       ]),
     ).toEqual({ error: "Profile 4 is listed more than once." });
+  });
+});
+
+describe("moveRefusal", () => {
+  it("hands on the sentence a move function raised", () => {
+    const body = JSON.stringify({
+      code: "P0001",
+      message: "Profile 7 was just moved by someone else. Refresh and look again",
+      details: null,
+    });
+    expect(moveRefusal(body)).toBe("Profile 7 was just moved by someone else. Refresh and look again");
+  });
+
+  it("does not dress up any other database error as a refusal", () => {
+    expect(moveRefusal(JSON.stringify({ code: "42883", message: "function does not exist" }))).toBeNull();
+    expect(moveRefusal(JSON.stringify({ code: "P0001", message: "" }))).toBeNull();
+  });
+
+  it("treats a body that is not JSON as an outage", () => {
+    expect(moveRefusal("<html>502 Bad Gateway</html>")).toBeNull();
+    expect(moveRefusal("")).toBeNull();
   });
 });

@@ -5,6 +5,7 @@ import { accountDetailTag } from "@/lib/data/account-detail";
 import { requireSession } from "@/lib/api-auth";
 import { parseRowId } from "@/lib/data/device-rules";
 import { getDeviceState } from "@/lib/data/device-writes";
+import { moveAccountToCloud } from "@/lib/data/move-to-cloud";
 import {
   actingUserEmail,
   auditLog,
@@ -25,6 +26,11 @@ import {
  * the phone and the date of the move are saved in one write. Without a phone
  * the move is refused, so an account can never land on Physical with nowhere
  * to be worked on. A move back to Cloud takes it off its phone.
+ *
+ * The move back to Cloud also hands back the posts the account was still
+ * holding for a person to post, the way a ban does (Garreth, 2026-09-23). That
+ * is one database call with its own audit row, so this route writes none for
+ * it.
  */
 export async function POST(request: Request) {
   const denied = await requireSession();
@@ -75,19 +81,24 @@ export async function POST(request: Request) {
       deviceName = device.name;
     }
 
-    const { movedAt } = await setDeliveryMode(body.profile, body.mode, userEmail, deviceId);
-    await auditLog({
-      userEmail,
-      action: "delivery_mode_change",
-      target: body.profile,
-      oldValue: { delivery_mode: state.delivery_mode, device_id: state.device_id },
-      newValue: {
-        delivery_mode: body.mode,
-        device_id: deviceId,
-        ...(deviceName ? { device_name: deviceName } : {}),
-        ...(movedAt ? { moved_to_device_at: movedAt } : {}),
-      },
-    });
+    let released: number | undefined;
+    if (toPhysical) {
+      const { movedAt } = await setDeliveryMode(body.profile, body.mode, userEmail, deviceId);
+      await auditLog({
+        userEmail,
+        action: "delivery_mode_change",
+        target: body.profile,
+        oldValue: { delivery_mode: state.delivery_mode, device_id: state.device_id },
+        newValue: {
+          delivery_mode: body.mode,
+          device_id: deviceId,
+          ...(deviceName ? { device_name: deviceName } : {}),
+          ...(movedAt ? { moved_to_device_at: movedAt } : {}),
+        },
+      });
+    } else {
+      ({ released } = await moveAccountToCloud(body.profile, userEmail));
+    }
 
     revalidateTag(ACCOUNTS_TAG, { expire: 0 });
     // The phone's page lists its accounts, on both ends of the move.
@@ -95,7 +106,13 @@ export async function POST(request: Request) {
     // The account page has its own cache entry; without this it would keep
     // showing the old answer for up to a minute after the flip.
     revalidateTag(accountDetailTag(body.profile), { expire: 0 });
-    return NextResponse.json({ ok: true, profile: body.profile, mode: body.mode, changed: true });
+    return NextResponse.json({
+      ok: true,
+      profile: body.profile,
+      mode: body.mode,
+      changed: true,
+      ...(released !== undefined ? { released } : {}),
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "change failed" },
