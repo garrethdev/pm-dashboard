@@ -35,6 +35,8 @@ export interface AccountRow {
    *  Only meaningful on the Physical fleet; a Geelark account is warmed by the
    *  Geelark RPA whatever this says. */
   warmupMode: WarmupMode;
+  /** The account's own number (P14: numbers belong to accounts, not phones). */
+  phoneNumber: string | null;
   isActive: boolean;
   paused: boolean;
   healthStatus: string;
@@ -104,6 +106,7 @@ interface RawAccount {
   delivery_mode: string | null;
   device_id: number | null;
   warmup_mode: string | null;
+  phone_number: string | null;
   is_active: boolean;
   posting_paused: boolean | null;
   health_status: string | null;
@@ -141,7 +144,7 @@ async function fetchAccounts(): Promise<AccountRow[]> {
     effective,
   ] = await Promise.all([
     sbRest<RawAccount[]>(
-      "accounts?select=geelark_profile,username,character,platform,delivery_mode,device_id,warmup_mode,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
+      "accounts?select=geelark_profile,username,character,platform,delivery_mode,device_id,warmup_mode,phone_number,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
     ),
     sbRest<{ platform: string; account: string; median_views_last5: number; posts_counted: number }[]>(
       "v_dashboard_last5_views?select=platform,account,median_views_last5,posts_counted",
@@ -269,6 +272,7 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       // Anything the column could not be (it is NOT NULL with a check) still
       // reads as the default rather than as a third state.
       warmupMode: a.warmup_mode === "script" ? "script" : "manual",
+      phoneNumber: a.phone_number,
       isActive: a.is_active,
       paused: a.posting_paused === true,
       healthStatus: health,

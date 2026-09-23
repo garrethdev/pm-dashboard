@@ -1,5 +1,5 @@
 import { getDevices } from "@/lib/data/devices";
-import { parsePhoneNumbers, proxyForDisplay } from "@/lib/data/device-rules";
+import { proxyForDisplay } from "@/lib/data/device-rules";
 import { getProxySubscriptions } from "@/lib/data/proxycheap";
 import { getPhoneRentals } from "@/lib/data/textverified";
 import type { Platform } from "@/lib/platform";
@@ -11,9 +11,10 @@ import type { Platform } from "@/lib/platform";
  * The Cloud page is built from Geelark's phone list, so a real phone's proxy
  * and numbers appeared nowhere. This is the same join with the phone as the
  * row: the proxy typed on the phone's page matched to a proxy-cheap
- * subscription on address and port, and each number recorded on the phone
- * (Garreth, 2026-09-23: numbers live on the phone) matched to a TextVerified
- * rental on its last ten digits — the two joins the Cloud page uses.
+ * subscription on address and port, and each account's number matched to a
+ * TextVerified rental on its last ten digits — the two joins the Cloud page
+ * uses. The numbers were first recorded on the phone (P6); since P14 (Garreth,
+ * 2026-09-23) each account holds its own, and the phone is only the row.
  */
 
 export interface PhoneProxySubscription {
@@ -25,6 +26,8 @@ export interface PhoneProxySubscription {
 
 export interface PhoneNumberRow {
   number: string;
+  /** The account the number belongs to (P14). */
+  account?: PhoneProxyAccount;
   /** null when the number matches no rental — nothing to renew. */
   rental: {
     renewable: boolean;
@@ -108,11 +111,18 @@ export async function getPhoneProxyData(): Promise<PhoneProxyData> {
             autoExtend: sub.autoExtend,
           }
         : null,
-      numbers: parsePhoneNumbers(d.phoneNumbers).map((number) => {
+      numbers: d.accounts
+        .filter((a) => a.isActive && a.phoneNumber)
+        .map((a) => {
+        const number = a.phoneNumber!;
         const key = last10(number);
         const rental = key ? rentalByNumber.get(key) : undefined;
         return {
           number,
+          account: {
+            handle: a.username ? `@${a.username}` : (a.profile ?? `Account ${a.id}`),
+            platform: a.platform,
+          },
           rental: rental
             ? {
                 renewable: rental.renewable,

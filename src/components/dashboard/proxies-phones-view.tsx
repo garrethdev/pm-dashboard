@@ -280,37 +280,68 @@ function ProxiesList({ rows, demo }: { rows: PhoneProxyRow[]; demo: boolean }) {
   );
 }
 
+/**
+ * One line per account, each with its own number (P14, Garreth 2026-09-23:
+ * numbers belong to accounts). An account with no number recorded still gets
+ * its line, so a missing number shows as a gap rather than as nothing.
+ */
+function numberLines(row: PhoneProxyRow): { account: PhoneProxyRow["accounts"][number] | null; n: PhoneNumberRow | null }[] {
+  if (row.accounts.length === 0) return [{ account: null, n: null }];
+  return row.accounts.map((account) => ({
+    account,
+    n:
+      row.numbers.find(
+        (x) => x.account?.handle === account.handle && x.account?.platform === account.platform,
+      ) ?? null,
+  }));
+}
+
+function AccountName({ account }: { account: PhoneProxyRow["accounts"][number] | null }) {
+  if (!account) return <span className="text-text-muted">—</span>;
+  return (
+    <span className="flex min-w-0 items-center gap-1.5 text-text-muted">
+      <PlatformIcon platform={account.platform} />
+      <span className="truncate">{account.handle}</span>
+    </span>
+  );
+}
+
 function NumbersList({ rows, demo }: { rows: PhoneProxyRow[]; demo: boolean }) {
   return (
     <>
       <ul className="flex flex-col md:hidden">
         {rows.map((row) => (
           <li key={row.deviceId} className="flex flex-col gap-2 border-t border-border py-3 first:border-0 first:pt-0">
-            <div className="flex flex-col gap-0.5">
-              <PhoneName row={row} />
-              {row.accounts.length > 0 && (
-                <div className="text-xs">
-                  <Accounts row={row} />
-                </div>
-              )}
-            </div>
-            {row.numbers.length === 0 ? (
-              <span className="text-sm text-text-muted">No numbers</span>
+            <PhoneName row={row} />
+            {row.accounts.length === 0 ? (
+              <span className="text-sm text-text-muted">No accounts</span>
             ) : (
-              <ul className="flex flex-col gap-2">
-                {row.numbers.map((n) => (
-                  <li key={n.number} className="flex items-center justify-between gap-3">
+              <ul className="flex flex-col gap-2.5">
+                {numberLines(row).map(({ account, n }) => (
+                  <li
+                    key={account ? `${account.platform}-${account.handle}` : "none"}
+                    className="flex items-center justify-between gap-3"
+                  >
                     <div className="flex min-w-0 flex-col gap-1">
-                      <span className="tnum text-sm">{formatPhone(n.number)}</span>
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                        <RentalPill n={n} />
-                        {n.rental?.cycleEndsAt && (
-                          <span className="tnum text-xs text-text-muted">{formatEtDate(n.rental.cycleEndsAt)}</span>
-                        )}
-                        {n.rental && <DaysLeft days={n.rental.daysLeft} />}
+                      <span className="text-xs">
+                        <AccountName account={account} />
                       </span>
+                      {n ? (
+                        <>
+                          <span className="tnum text-sm">{formatPhone(n.number)}</span>
+                          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                            <RentalPill n={n} />
+                            {n.rental?.cycleEndsAt && (
+                              <span className="tnum text-xs text-text-muted">{formatEtDate(n.rental.cycleEndsAt)}</span>
+                            )}
+                            {n.rental && <DaysLeft days={n.rental.daysLeft} />}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-text-muted">No number</span>
+                      )}
                     </div>
-                    {n.rental && <Extend demo={demo} href={phoneExtendHref(n)} />}
+                    {n?.rental && <Extend demo={demo} href={phoneExtendHref(n)} />}
                   </li>
                 ))}
               </ul>
@@ -324,7 +355,7 @@ function NumbersList({ rows, demo }: { rows: PhoneProxyRow[]; demo: boolean }) {
           <thead>
             <tr className="text-left text-xs text-text-muted">
               <th className={TH}>Phone</th>
-              <th className={TH}>Accounts</th>
+              <th className={TH}>Account</th>
               <th className={TH}>Phone number</th>
               <th className={TH}>Rental</th>
               <th className={TH}>Cycle ends</th>
@@ -335,14 +366,18 @@ function NumbersList({ rows, demo }: { rows: PhoneProxyRow[]; demo: boolean }) {
             </tr>
           </thead>
           <tbody>
-            {rows.flatMap((row) => {
-              // A phone's numbers read as one group: its name on the first
+            {rows.flatMap((row) =>
+              // A phone's accounts read as one group: its name on the first
               // line only, and the rule above the group rather than every line.
-              const numbers: (PhoneNumberRow | null)[] = row.numbers.length ? row.numbers : [null];
-              return numbers.map((n, i) => (
-                <tr key={`${row.deviceId}-${n?.number ?? "none"}`} className={i === 0 ? "border-t border-border" : ""}>
+              numberLines(row).map(({ account, n }, i) => (
+                <tr
+                  key={`${row.deviceId}-${account ? `${account.platform}-${account.handle}` : "none"}`}
+                  className={i === 0 ? "border-t border-border" : ""}
+                >
                   <td className="py-2.5 whitespace-nowrap">{i === 0 && <PhoneName row={row} />}</td>
-                  <td className="py-2.5 whitespace-nowrap">{i === 0 && <Accounts row={row} />}</td>
+                  <td className="py-2.5 whitespace-nowrap">
+                    <AccountName account={account} />
+                  </td>
                   <td className="tnum py-2.5 whitespace-nowrap">{n ? formatPhone(n.number) : "—"}</td>
                   <td className="py-2.5">{n ? <RentalPill n={n} /> : <span className="text-text-muted">—</span>}</td>
                   <td className="tnum py-2.5 whitespace-nowrap">
@@ -353,12 +388,11 @@ function NumbersList({ rows, demo }: { rows: PhoneProxyRow[]; demo: boolean }) {
                   </td>
                   <td className="py-2.5 text-right">{n?.rental && <Extend demo={demo} href={phoneExtendHref(n)} />}</td>
                 </tr>
-              ));
-            })}
+              )),
+            )}
           </tbody>
         </table>
       </div>
     </>
   );
 }
-

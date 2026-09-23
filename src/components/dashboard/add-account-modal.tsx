@@ -63,6 +63,8 @@ export function AddAccountModal({
   // The browser's own idea of today, which is what the person means by it.
   const [createdOn, setCreatedOn] = useState(() => localToday());
   const [paused, setPaused] = useState(true);
+  // The account's own number (P14: numbers belong to accounts, not phones).
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,6 +121,7 @@ export function AddAccountModal({
           deliveryMode: deliveryModeOfFleet(mode),
           deviceId: mode === "physical" && deviceId !== "" ? Number(deviceId) : null,
           createdOn,
+          phoneNumber: mode === "physical" ? phoneNumber : null,
           paused,
         }),
       });
@@ -261,6 +264,21 @@ export function AddAccountModal({
                 className={cn(DEVICE_INPUT, "tnum")}
               />
             </Field>
+
+            {mode === "physical" && (
+              <Field label="Phone number" className="sm:col-span-2">
+                <input
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  disabled={busy}
+                  inputMode="tel"
+                  autoComplete="off"
+                  maxLength={30}
+                  placeholder="+1 (555) 201-7781"
+                  className={cn(DEVICE_INPUT, "tnum")}
+                />
+              </Field>
+            )}
 
             <Group label="Posting" className="sm:col-span-2">
               <FilterPills

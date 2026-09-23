@@ -73,7 +73,7 @@ export function proxiesPhonePlaceholder(): PhoneProxyRow[] {
           rental: { renewable: true, includedForRenewal: true, cycleEndsAt: inDays(19), daysLeft: 19 },
         },
         {
-          // Typed on the phone, but no rental carries it.
+          // Recorded on the account, but no rental carries it.
           number: "+15552028873",
           rental: null,
         },
@@ -129,5 +129,10 @@ export function proxiesPhonePlaceholder(): PhoneProxyRow[] {
       numbers: [],
     },
   ];
-  return rows;
+  // Each number is an account's own (P14), so the invented numbers go to the
+  // phone's accounts in order; an account past the last number has none.
+  return rows.map((row) => ({
+    ...row,
+    numbers: row.numbers.map((n, i) => ({ ...n, account: row.accounts[i] })),
+  }));
 }
