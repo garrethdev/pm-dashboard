@@ -20,6 +20,55 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — Moving several accounts onto phones at once now saves, all or nothing
+
+**Where it came from:** ticket PF-15, the save behind the batch move that
+design ticket P10 drew (approved by Garreth on 2026-09-22). Until now the
+batch dialog planned which phone each account goes on, and pressing Move only
+said it was not wired up yet.
+
+**What changed:**
+
+- **Holding Move in the batch dialog** (Settings → Account management →
+  Select) now moves every account in the list onto the phone shown beside it.
+  Rows set to "Not moving" are left alone.
+- **All or nothing.** Either every account in the batch moves, or none does.
+  If one account cannot move, the dialog says which one and why, outlines
+  that row in red, and nothing is saved, not even for the accounts above it
+  in the list. Change that row or set it to "Not moving" and hold Move again.
+- **The same rules as moving one account**, so the two can never disagree:
+  it refuses a retired account, an account that is no longer on Cloud (for
+  example because someone else just moved it), and a phone that has been
+  deleted or switched off. It saves the same things: the account is on
+  Physical, on its phone, with the date it moved, plus the same line in its
+  notes. Posting stays paused. Each account moved gets its own line in the
+  change history, marked as part of a batch.
+- **No limit on how many accounts one phone takes**, as Garreth decided on
+  2026-09-22.
+- In the practice farm (`?demo=1`) the button still only closes the dialog.
+
+**The database** gained one function that does the whole batch in a single
+step. The first version had a mistake that only shows when it runs, and it
+failed on the first practice press with nothing saved; a corrected version
+went in minutes later. Both are recorded in `supabase/migrations/`. Only the
+app's server can call it: the public key cannot (checked in the database's
+own permission list).
+
+**Verified live, with practice rows only:** two practice phones and four
+practice Cloud accounts were made for the test. Through the app, in headless
+Chrome (not Safari), the four were moved in one press: three onto the first
+phone and one onto the second, each with its move date, its note line, one
+change-history line, and posting still paused. They were put back on Cloud,
+the dialog was opened again, and while it was open one of the four was moved
+to Physical behind its back. Pressing Move was refused, naming that account,
+and a query showed the other three had not moved and had no new history. A
+switched-off phone was also refused, naming the account. Every practice
+phone, account and history line was then deleted, and a query confirmed none
+remain. No real account has been moved this way. The code compiles and all
+195 automated checks pass.
+
+---
+
 ## 2026-09-23 — Moving an account onto a phone now saves the phone
 
 **Where it came from:** ticket PF-03, the save behind design ticket P10's
