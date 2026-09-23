@@ -22,6 +22,8 @@ describe("assignRefusal", () => {
     heldCount: 0,
     accountActive: true,
     accountDeviceId: null,
+    accountFleet: "physical" as const,
+    accountName: "Profile 8",
   };
 
   it("allows an account onto an empty phone", () => {
@@ -48,6 +50,33 @@ describe("assignRefusal", () => {
 
   it("refuses an account that is on a different phone rather than moving it silently", () => {
     expect(assignRefusal({ ...base, accountDeviceId: 2 })).toContain("another phone");
+  });
+
+  // Garreth, 2026-09-23: a Cloud account reaches a phone only through Settings,
+  // which moves its fleet in the same save.
+  it("refuses a Cloud account, naming it and saying where to move it", () => {
+    expect(assignRefusal({ ...base, accountFleet: "cloud" })).toBe(
+      "Profile 8 is on the Cloud side. Move it onto a phone from Settings.",
+    );
+  });
+
+  it("refuses a Cloud account with no profile name without printing null", () => {
+    expect(assignRefusal({ ...base, accountFleet: "cloud", accountName: null })).toBe(
+      "That account is on the Cloud side. Move it onto a phone from Settings.",
+    );
+  });
+
+  it("refuses a Cloud account even when it is somehow already on a phone", () => {
+    // A half-moved row (phone set, still Cloud) must not be topped up here.
+    expect(assignRefusal({ ...base, accountFleet: "cloud", accountDeviceId: 2 })).toContain(
+      "Cloud side",
+    );
+  });
+
+  it("still says a phone is off before anything about the account", () => {
+    expect(assignRefusal({ ...base, accountFleet: "cloud", deviceActive: false })).toContain(
+      "switched off",
+    );
   });
 });
 

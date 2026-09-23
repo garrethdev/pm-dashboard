@@ -10,21 +10,6 @@ import type { DeliveryMode } from "@/lib/data/accounts";
 import { canTake, type MoveTarget } from "@/lib/data/move-rules";
 import { FLEET_LABEL, fleetOfDeliveryMode } from "@/lib/fleet";
 
-/**
- * Whether the save can put the account on the phone as well as flip the fleet.
- *
- * FALSE UNTIL PF-03 LANDS. `/api/accounts/delivery-mode` sets the fleet and
- * nothing else — it does not read a phone. So pressing through with a phone
- * picked would flip the account to Physical and leave it on no phone, which is
- * the exact half-moved state this design exists to remove, except arrived at
- * silently. It cannot happen today, because no phone is registered and the
- * hold is held, but it would the moment the first one is.
- *
- * P10 is the design; PF-03 builds the write. Flip this, and the route, in the
- * same change.
- */
-const MOVE_WRITE_READY = false;
-
 /** The one place the two modes are given their on-screen names. */
 export function deliveryModeLabel(mode: DeliveryMode): string {
   return FLEET_LABEL[fleetOfDeliveryMode(mode)];
@@ -56,7 +41,7 @@ export function DeliveryModePill({ mode, className }: { mode: DeliveryMode; clas
  * is a state the To-do list cannot show — the work simply did not appear, and
  * nothing said why. One dialog now does both, so that gap cannot be left open.
  * Going the other way needs no picker: the account comes off whatever phone it
- * is on.
+ * is on. The route saves both halves in one write (PF-03).
  */
 export function DeliveryModeControl({
   profile,
@@ -123,10 +108,6 @@ export function DeliveryModeControl({
     // would move a LIVE account onto a phone that does not exist.
     if (demo) {
       setOpen(false);
-      return;
-    }
-    if (toPhysical && !MOVE_WRITE_READY) {
-      setMessage("Moving onto a phone is not wired up yet (PF-03), so nothing was changed.");
       return;
     }
     setBusy(true);

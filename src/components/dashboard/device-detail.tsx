@@ -33,6 +33,7 @@ import {
   todoAnchor,
   type DevicePagePlaceholder,
   type TodoAccount,
+  type TodoDevice,
   type WarmupSession,
 } from "@/lib/data/todo-placeholder";
 import { WarmupLogSheet } from "@/components/dashboard/warmup-log-sheet";
@@ -201,9 +202,9 @@ function demoLines(demo: DevicePagePlaceholder): AccountLine[] {
  *
  * `demo` is the invented phone from `todo-placeholder.ts`, drawn only when
  * `?demo=` is on the URL (P5's states: `full`, `new`, `off`). Without it the
- * page reads the database exactly as it always has, and the three new blocks
- * show their empty state, because the data behind them is PF-04, PF-05 and
- * PF-07 and none of it exists yet. Nothing saves on the invented phone.
+ * page is live: Today on this phone is the To-do page's own list (PF-07) for
+ * this phone alone, so a tick on the To-do page or the dashboard card turns
+ * the pill here cyan on the next read. Nothing saves on the invented phone.
  */
 export function DeviceDetail({
   device,
@@ -212,6 +213,7 @@ export function DeviceDetail({
   initialNotice,
   warmups: realWarmups = [],
   warmupProgress = {},
+  today: liveToday,
   demo = null,
 }: {
   device: Device;
@@ -224,6 +226,9 @@ export function DeviceDetail({
   warmups?: WarmupSession[];
   /** How today's two sessions stand, per account id (PF-04). */
   warmupProgress?: Record<number, SessionProgress[]>;
+  /** This phone's day from the To-do page's reader (PF-07); null when it could
+   *  not be read. Absent on the invented phone, which brings its own. */
+  today?: TodoDevice | null;
   /** The invented phone for the P5 review, or null for a real one. */
   demo?: DevicePagePlaceholder | null;
 }) {
@@ -252,7 +257,10 @@ export function DeviceDetail({
   // not a second place to work it. Marking anything done happens on the
   // dashboard and the To-do page only, so this reads the day straight through
   // rather than through the To-do board's tick state.
-  const today = demo?.today ?? null;
+  const today = demo ? demo.today : (liveToday ?? null);
+  // Live, and the read failed: say so rather than "Nothing due", which would
+  // tell somebody a phone owes nothing when nobody knows.
+  const todayUnread = !demo && liveToday === null;
   const progress = today ? deviceProgress(today) : null;
 
   const lines = demo ? demoLines(demo) : realLines(device);
@@ -361,7 +369,9 @@ export function DeviceDetail({
               ))}
             </div>
           ) : (
-            <EmptyState icon={ListChecks}>Nothing due</EmptyState>
+            <EmptyState icon={ListChecks}>
+              {todayUnread ? "Couldn't read today's list" : "Nothing due"}
+            </EmptyState>
           )}
         </DashCard>
 
@@ -374,9 +384,16 @@ export function DeviceDetail({
               </StatusPill>
             }
           >
-            <div className="flex flex-col gap-3">
+            {/* The full height of the card's body, so the add row can be
+                pinned to the card's bottom edge (Garreth, 2026-09-23) when
+                the grid stretches the card to the height of Warmup history
+                beside it, rather than floating under the list with empty card
+                below it. `min-h-full` rather than `grow`: DashCard wraps its
+                body in a box that is not itself a flex column. On a phone the
+                card is sized to its content and none of this shows. */}
+            <div className="flex min-h-full flex-col gap-3">
               {lines.length === 0 ? (
-                <EmptyState icon={Users} compact>
+                <EmptyState icon={Users} compact className="grow">
                   No accounts on this phone
                 </EmptyState>
               ) : (
@@ -402,7 +419,7 @@ export function DeviceDetail({
               )}
 
               {device.isActive && (
-                <div className="flex gap-2">
+                <div className="mt-auto flex gap-2">
                   <select
                     aria-label="Account to add"
                     value={picked}

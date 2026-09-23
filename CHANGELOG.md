@@ -20,6 +20,230 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — Six fixes from the P13 review: missing pages, the Physical calendar, "Infinity days", the glowing button, the Facebook tab
+
+**Where it came from:** design ticket P13's review of the screens built
+before the design step (`docs/P13-REVIEW-FINDINGS.md`). Garreth approved these
+six on 2026-09-23. The review's colour, size and tap-target findings are not
+part of this. They wait for their own approval.
+
+**What changed:**
+
+- **A page that doesn't exist now looks like the app.** Opening a phone that
+  was deleted used to show Next's built-in "404" page, which in light mode
+  turned the whole screen black and wiped out the logo. Now it says "This
+  phone is gone" with a link back to All phones. A wrong account number says
+  "This account is gone" with a link back to All accounts. Any other wrong
+  address says "This page doesn't exist" with a link to the Dashboard. All
+  three keep the menu and top bar, and read correctly in dark and light mode.
+  Light mode needed its own small fix on these pages: the browser was dropping
+  the saved theme when it drew a "not found" page, so light-mode viewers got
+  the dark theme.
+  The missing-account page still logs a React warning about a "script tag"
+  in the background, which only shows on the development server. The Cloud
+  account page was deliberately not restructured to avoid it, and nothing
+  looks different because of it.
+  An unknown **page** address now answers with status 200 and this "doesn't
+  exist" page, so a person sees it. Nothing machine-facing lives at page
+  addresses. A mistyped address under `/api`, which n8n, the Python renderer
+  and scripts call, still answers "not found" (404) as before, so a wrong one
+  fails loudly instead of looking like success.
+- **The Physical calendar no longer shows Cloud's "N short" counts.** The
+  "short" pills on each day come from the scheduler's daily run, which plans
+  every account at once, and today those are all Cloud accounts. On Physical
+  they read as that fleet's shortfall ("39 short" with no accounts at all).
+  They are now left off on Physical. Cloud's calendar is unchanged. The day
+  panel's shortfall list still covers the whole run, as PF-19 decided.
+- **"Nearest expiry in Infinity days" is gone.** With no active proxy, the
+  Proxies & numbers card on the dashboard now says "No proxies yet". Physical
+  always hit this, because its proxies are on the phones, which this card does
+  not count yet. Cloud still reads "38 proxies active, nearest expiry in …".
+- **The glowing accent button can no longer take the whole page down.** Its
+  glow needs WebGL, the browser's graphics feature. When the browser couldn't
+  start it (switched off, blocked, or out of capacity), the button crashed and
+  every page with one showed "This page couldn't load". Now the button just
+  shows without the glow.
+- **On Analytics, the Facebook tab no longer shows the 7 days / 2 weeks /
+  1 month / All time choices**, or the "as of" date beside them. Facebook has
+  no numbers to choose a range for, so they did nothing. They come back on
+  All, TikTok and Instagram.
+- **"No phones yet" on the To-do card and the Proxies page was already right,
+  so nothing was changed.** The review saw it while phones were listed on the
+  Devices page. The cause was timing: the Devices list is remembered for a
+  minute, and another session had just deleted its practice phones straight
+  from the database. Devices kept showing them while To-do (which is never
+  remembered) correctly said there were none. Proven with one practice phone
+  with no accounts: To-do said "Nothing due today" and Proxies listed the
+  phone. Once it was deleted, both said "No phones yet".
+
+**Verified:** in headless Chrome, not Safari. The code compiles, lint is
+clean on every file touched, and all 187 automated checks pass. With
+screenshots at phone and desktop width, dark and light:
+
+- **Cloud calendar:** before and after compared pixel by pixel, identical in
+  all four views. One view differed only where Next's dev-only "Compiling…"
+  badge sat in the corner.
+- **Buttons with WebGL on:** the Devices and Physical Proxies pages were
+  identical before and after in all four views.
+- **Buttons with WebGL off:** the Devices, Proxies and dashboard pages loaded,
+  and Add phone opened its form.
+- **Missing pages:** a missing phone, a missing account and a made-up address
+  each showed the new page in both themes.
+
+One practice phone ("P13 practice phone") was added for the "No phones yet"
+check and deleted straight after. A query confirmed no phone is left.
+**Not verified:** Safari. A production build: the light-mode theme problem
+was seen on the dev server, and the fix for it has only been checked there.
+
+---
+
+## 2026-09-23 — A phone's own page now shows its real day
+
+**Where it came from:** design ticket P5. When it was checked again on
+2026-09-22, after the real to-do list went live, the "Today on this phone"
+block on a phone's page was found still drawing only the made-up phone. On
+a real phone it always said "Nothing due", however much work the phone had.
+
+**What changed:**
+
+- **"Today on this phone" now shows that phone's real work.** It comes from
+  the same list the To-do page uses, cut down to this one phone, so the two
+  screens always agree. Tick something on the To-do page or the dashboard
+  card, and the phone's page shows it on the next load.
+- **It still looks the way Garreth approved it on 2026-09-22:** one line per
+  account, with a Posts pill and a Warmup pill. Cyan means that part is done.
+  Grey means it is not, and pressing it takes you to that account on the To-do
+  page. Nothing can be ticked on the phone's page, because work gets marked
+  done on the To-do page and the dashboard only. That was his decision, and
+  this change connects the real list without changing it.
+- **If the list cannot be read,** the block says so, instead of saying
+  "Nothing due" about a phone nobody could check.
+- **The made-up phone (`?demo=`) is unchanged,** and nothing on it saves.
+- **The row for adding an account now sits at the bottom of the Accounts
+  card** (Garreth, 2026-09-23). On a desktop the card is as tall as Warmup
+  history beside it, and the row used to float halfway down with empty card
+  below it. On a phone nothing moves. Checked at 1440 and 390, dark and light,
+  on the made-up phone with and without accounts, in headless Chrome, not
+  Safari.
+- **A phone's "Choose an account" now lists only Physical accounts**
+  (Garreth, 2026-09-23). Until now it also offered Cloud accounts. Adding one
+  put it on the phone but left it on the Cloud side, so it would have kept
+  posting through the robot while listed on a real phone. That is the
+  half-move the Settings move (PF-03) exists to prevent. A Cloud account now
+  goes onto a phone only from Settings, which moves its side, its phone and
+  the move date together. The save refuses a Cloud account too, not just the
+  list, saying for example "Profile 8 is on the Cloud side. Move it onto a
+  phone from Settings." Checked live with practice rows that have since been
+  deleted: the list showed the Physical one and not the Cloud one, a direct
+  save of the Cloud one was refused with nothing written, and the Physical
+  one still went on. The final write also checks the account is still
+  Physical, so one moved to Cloud in the moment between the check and the
+  save is not put on a phone either. That last check compiles and passes the
+  automated checks but has not met the database yet.
+- **A ban's clean-up steps are not shown on the phone's page.** They belong to
+  an account that has already left the phone, and the approved block has one
+  line for each account still on it. They stay on the To-do page.
+
+**Verified:** checked live with practice rows that have since been deleted: a
+practice phone with two practice accounts and one post waiting. The phone's
+page showed exactly what the To-do page showed ("0 of 5"). A post marked done
+and a warmup logged on the To-do page turned its Posts pill cyan and its Warmup
+pill to "1 of 2". A grey pill went to the right account on the To-do page. A
+second phone with no work showed the full-card "Nothing due". The practice
+accounts were switched on for posting only while this was checked, from 3:04 to
+3:08 am ET, because the list hides paused accounts. Afterwards a query found
+nothing had been handed to them, and they were deleted with everything they
+made. The To-do page's screenshots before and after the change are byte for
+byte identical. The code compiles and the 191 automated checks pass. The
+screenshots were taken in headless Chrome, not Safari.
+
+---
+
+## 2026-09-23 — Moving several accounts onto phones at once now saves, all or nothing
+
+**Where it came from:** ticket PF-15, the save behind the batch move that
+design ticket P10 drew (approved by Garreth on 2026-09-22). Until now the
+batch dialog planned which phone each account goes on, and pressing Move only
+said it was not wired up yet.
+
+**What changed:**
+
+- **Holding Move in the batch dialog** (Settings → Account management →
+  Select) now moves every account in the list onto the phone shown beside it.
+  Rows set to "Not moving" are left alone.
+- **All or nothing.** Either every account in the batch moves, or none does.
+  If one account cannot move, the dialog says which one and why, outlines
+  that row in red, and nothing is saved, not even for the accounts above it
+  in the list. Change that row or set it to "Not moving" and hold Move again.
+- **The same rules as moving one account**, so the two can never disagree:
+  it refuses a retired account, an account that is no longer on Cloud (for
+  example because someone else just moved it), and a phone that has been
+  deleted or switched off. It saves the same things: the account is on
+  Physical, on its phone, with the date it moved, plus the same line in its
+  notes. Posting stays paused. Each account moved gets its own line in the
+  change history, marked as part of a batch.
+- **No limit on how many accounts one phone takes**, as Garreth decided on
+  2026-09-22.
+- In the practice farm (`?demo=1`) the button still only closes the dialog.
+
+**The database** gained one function that does the whole batch in a single
+step. The first version had a mistake that only shows when it runs, and it
+failed on the first practice press with nothing saved; a corrected version
+went in minutes later. Both are recorded in `supabase/migrations/`. Only the
+app's server can call it: the public key cannot (checked in the database's
+own permission list).
+
+**Verified live, with practice rows only:** two practice phones and four
+practice Cloud accounts were made for the test. Through the app, in headless
+Chrome (not Safari), the four were moved in one press: three onto the first
+phone and one onto the second, each with its move date, its note line, one
+change-history line, and posting still paused. They were put back on Cloud,
+the dialog was opened again, and while it was open one of the four was moved
+to Physical behind its back. Pressing Move was refused, naming that account,
+and a query showed the other three had not moved and had no new history. A
+switched-off phone was also refused, naming the account. Every practice
+phone, account and history line was then deleted, and a query confirmed none
+remain. No real account has been moved this way. The code compiles and all
+195 automated checks pass.
+
+---
+
+## 2026-09-23 — Moving an account onto a phone now saves the phone
+
+**Where it came from:** ticket PF-03, the save behind design ticket P10's
+move dialog in Settings, which Garreth approved on 2026-09-22. Until now the
+dialog asked which phone and then refused to save, because the save would
+have moved the account to Physical and ignored the phone.
+
+**What changed:**
+
+- **Moving a Cloud account onto a phone** in Settings → Account management
+  now saves three things at once: the account is on Physical, it is on the
+  phone you picked, and the date it moved. They are one save, so an account
+  can never end up on Physical with no phone. The date is what the
+  before-and-after comparison (PF-10) will use.
+- **A move onto a phone is refused** if no phone is picked, or if the phone
+  has been switched off.
+- **Moving an account back to Cloud now takes it off its phone.** The dialog
+  already said it would ("It comes off …"), but until now the account stayed
+  listed on the phone.
+- **If two people move the same account at the same moment,** the second is
+  told it was just moved and nothing of theirs is saved.
+- Posting is still not touched. A moved account stays paused.
+
+**The database** gained one new column, the date an account moved onto a
+phone. It went in a few hours after the code, because the database itself was
+down from about 2:01 to 2:45 am ET. Every log went silent at once and it came
+back with a cold start; the cause is not established. Every existing account
+reads the new column as empty, meaning never moved.
+
+**Verified:** the code compiles and the existing 187 automated checks pass.
+The column was confirmed in the live database by query. No account has been
+moved, because no real phone is registered yet, so the save itself has not
+met the database.
+
+---
+
 ## 2026-09-23 — Physical accounts: a ⋯ menu with Edit account, and each account keeps its own phone number
 
 **Where it came from:** design ticket P14, which Garreth approved the same day

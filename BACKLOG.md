@@ -154,7 +154,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-01 | `accounts.delivery_mode` switch | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-02 | `devices` table + Devices page | Immediate | Built and on `main` 2026-09-18; first live write still to come |
 | PF-08 | Facebook as a platform | Immediate | Built and on `main` 2026-09-18; first live write still to come |
-| PF-03 | Move to phone button | Immediate | **2026-09-23: Edit account (P14) now moves an account that is ALREADY on Physical between phones, or off one.** Still to build: the Cloud-to-phone move in Settings. **READY TO BUILD 2026-09-22** — its screen, design ticket P10, is APPROVED. The dialog already asks for the phone; what is left is the write: `/api/accounts/delivery-mode` must also set `device_id` and `moved_to_device_at`, and `MOVE_WRITE_READY` in `delivery-mode-control.tsx` flipped in the same change |
+| PF-03 | Move to phone button | Immediate | **Built 2026-09-23, column applied live the same day.** The Settings move saves the fleet, the phone and the date of the move in one write, and the move back to Cloud takes the account off its phone. Never run on a real account: no phone is registered |
 | PF-04 | `warmup_sessions` + log form + health-dot union | Immediate | **Done 2026-09-22**, applied live; parity proven on the 52 existing accounts and a logged warmup proven to reach the health view. No real phone has used it yet |
 | PF-05 | `post_deliveries` table | Immediate | **Done 2026-09-22**, applied to the live database and proven end to end with a test row; no real post through it yet |
 | PF-06 | Posting Agent fork (n8n) | Immediate | **Done 2026-09-22**, published and live. Proven on a real run: a manual account got a queued row and no Geelark task, and a second run added no duplicate |
@@ -162,10 +162,10 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-11 | Post-ban branch for manual accounts | Intermediate | **Built 2026-09-23** in the app, applied live and proven with a practice phone (since deleted). A real-phone account never reaches the robot. **Left open:** guarding the n8n robot's own hand-filled form, which waits on Garreth |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
-| PF-10 | Comparison view | Intermediate | Blocked by PF-03 only (PF-04 and PF-05 landed 2026-09-22) |
+| PF-10 | Comparison view | Intermediate | ~~Blocked by PF-03 only~~ PF-03 built 2026-09-23 and its date column is live; waits on design ticket P7 |
 | PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
-| PF-15 | Batch flips by character | Long term | Blocked by PF-03; optional. Its screen is designed 2026-09-22 (P10) — the batch dialog exists and plans the moves; only the write is missing |
+| PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
@@ -188,7 +188,8 @@ account gets a `post_deliveries` row and no Geelark task.
 *Re-checked 2026-09-22:* the flip still has not been run on a real account —
 `dashboard_audit_log` holds zero `delivery_mode_change` rows — so the audit row
 has never been seen. It is also HELD at the moment: P10 made a move require a
-phone, and no phone is registered (see PF-03).
+phone, and no phone is registered (see PF-03, whose save was built
+2026-09-23).
 
 *Redesigned the same day (Garreth):* no pill on the Accounts table or the
 account page, so the Geelark screens stay as they were. Instead the app has
@@ -258,7 +259,7 @@ because the app names accounts by that label. No Facebook row exists yet.
   platforms. They will simply never see Facebook, which is right until
   Facebook performance ingest is decided.
 
-## PF-03 · Move to phone — Screen designed 2026-09-22 (P10); the write is what is left
+## PF-03 · Move to phone — Built 2026-09-23
 
 Pick a device, set `delivery_mode = manual`, record `moved_to_device_at`, write
 an audit row. Does **not** unpause. That date is what the comparison view
@@ -278,6 +279,28 @@ that is fixed — flip it in the same change, and `moved_to_device_at` needs
 adding to `accounts` (it does not exist yet).
 
 *Done when:* one click does all four and the account shows its phone.
+
+*Built 2026-09-23.* `/api/accounts/delivery-mode` now takes the phone and
+refuses a move onto Physical without one, or onto a phone that is switched
+off. The fleet, `device_id` and `moved_to_device_at` are one update, guarded
+on the fleet the account is leaving, so two people moving the same account at
+once cannot both win. The move back to Cloud clears `device_id` (the dialog
+already said "It comes off [phone]", which was not true until now) and keeps
+`moved_to_device_at`. `MOVE_WRITE_READY` is removed rather than flipped. The
+audit row records the old and new fleet and phone.
+
+**Column applied 2026-09-23** (`20260923200000_accounts_moved_to_device_at.sql`),
+after a delay: the database was down from about 2:01 to 2:45 am ET that day
+(every log source silent, then a cold start; cause not established — see the
+Supabase memory chart for that window). Empty on all 64 accounts, as it
+should be.
+
+**Left to do:** move one real account onto a real phone, and see the audit
+row and the date land.
+
+**Noticed, not changed:** an account moved back to Cloud keeps any queued
+`post_deliveries` rows it had on Physical. Every account is paused, so none
+exist today.
 
 ## PF-04 · `warmup_sessions` + log form — Done 2026-09-22
 
@@ -629,7 +652,7 @@ in Cloud. All fixtures deleted afterwards — `devices` and `post_deliveries` ar
 back to empty. **Not proven with real work:** no phone, account or post
 exists, and the day-rollover has not been watched happen.
 
-## PF-10 · Comparison view — Blocked by PF-03, PF-04 (PF-05 landed 2026-09-22)
+## PF-10 · Comparison view — PF-03 built 2026-09-23; waits on design ticket P7
 
 Each moved account before and after `moved_to_device_at`: views per post,
 share under 10 views, warmup dot, restrictions and bans; plus the Geelark
@@ -685,7 +708,7 @@ handling, not the app. Blocked until the Air has Xcode signed in and the agent
 installed on at least one phone.
 *Done when:* Czedrick sees both phones live from his own Mac and can tap one.
 
-## PF-15 · Batch flips — Screen designed 2026-09-22 (P10); blocked by PF-03; optional
+## PF-15 · Batch flips — Built 2026-09-23
 
 Multi-select Move to phone by character, for when phones arrive in batches.
 Not needed for the pilot.
@@ -697,6 +720,29 @@ accounts it has no room for rather than dropping them. "By character" is the
 existing search plus Select all — no character control was added. **What is
 left** is one write that moves several accounts at once, which wants PF-03's
 single write first so the two cannot disagree.
+
+*Built 2026-09-23.* Holding Move posts the moving rows (not the "Not moving"
+ones) to `/api/accounts/delivery-mode/batch`, which calls the database
+function `move_accounts_onto_devices`. It checks every account and phone
+under lock first, then writes them all in one transaction, so either every
+account moves or none does; a refusal names the account and the dialog
+outlines that row. Same rules as PF-03: Cloud accounts only, never a retired
+one, never onto a missing or switched-off phone; the same columns
+(`delivery_mode`, `device_id`, `moved_to_device_at`, the status-note line);
+`posting_paused` untouched. One `delivery_mode_change` audit row per account,
+written inside the transaction (the single move writes its row afterwards),
+with `batch: true` in the new value. No cap per phone. The single move's
+route is unchanged. Demo mode still only closes the dialog.
+
+Migrations `move_accounts_onto_devices` and `_fix` (the first failed on its
+first practice run — see the migrations README; nothing was written).
+
+*Proven live 2026-09-23 on practice rows only* (two phones, four accounts,
+all deleted afterwards and confirmed gone): four moved in one press; with one
+moved behind the open dialog's back, the batch was refused naming it and the
+other three stayed on Cloud with no new audit rows.
+
+**Left to do:** the first real batch, the day phones arrive.
 
 ## PF-16 · Retire Geelark — Blocked by the last account moving
 
