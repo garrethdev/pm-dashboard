@@ -20,10 +20,12 @@ const TONES: Record<PillTone, string> = {
   // The one exception: a solid alarm for the single state worse than
   // "collapsing", where the pill is meant to shout.
   critical: "bg-danger-deep text-white",
-  gray: "bg-pill-bg text-text-muted",
+  // Its own grey, a hair lighter than --text-muted in dark mode, which fell
+  // just short of 4.5:1 on this ground (P13 B2-5).
+  gray: "bg-pill-bg text-pill-muted",
   info: "bg-pill-bg text-info",
   accent: "bg-pill-bg text-accent",
-  neutral: "bg-pill-bg text-text-muted",
+  neutral: "bg-pill-bg text-pill-muted",
 };
 
 /** Status pill — a label on a tinted background. The tone carries the state;

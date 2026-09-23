@@ -86,12 +86,14 @@
 
         --ok: #4ade80;
         --warn: #fbbf24;
+        --warn-soft: rgba(251, 191, 36, 0.25);
         --orange: #fb923c;
         --danger: #f87171;
         --danger-deep: #dc2626;
         --info: #60a5fa;
 
         --pill-bg: #262627;
+        --pill-muted: #909098;
         --pill-red: #ff4949;
         --pill-amber: #ff9549;
         --pill-yellow: #fff949;
@@ -143,12 +145,14 @@
 
         --ok: #166534;
         --warn: #92400e;
+        --warn-soft: rgba(146, 64, 14, 0.15);
         --orange: #9a3412;
         --danger: #b91c1c;
         --danger-deep: #7f1d1d;
         --info: #1d4ed8;
 
         --pill-bg: #e4e8ed;
+        --pill-muted: var(--text-muted);
         --pill-red: #a11616;
         --pill-amber: #8a3f08;
         --pill-yellow: #6b4f03;
@@ -496,7 +500,7 @@
 
       .c-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 500; white-space: nowrap; background: var(--pill-bg); }
       .p-ok { color: var(--ok); } .p-accent { color: var(--accent); } .p-info { color: var(--info); }
-      .p-neutral { color: var(--text-muted); } .p-warn { color: var(--pill-yellow); }
+      .p-neutral { color: var(--pill-muted); } .p-warn { color: var(--pill-yellow); }
       .p-orange { color: var(--pill-amber); } .p-danger { color: var(--pill-red); }
       .p-critical { background: var(--danger-deep); color: #fff; }
 

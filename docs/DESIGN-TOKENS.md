@@ -136,6 +136,7 @@ reach for `--warn` because a yellow looks nice there.
 |---|---|---|---|
 | `--ok` | `#4ade80` | `#166534` | Healthy, active, within budget. |
 | `--warn` | `#fbbf24` | `#92400e` | Needs attention. Also the stale-data notice. |
+| `--warn-soft` | `rgba(251, 191, 36, 0.25)` | `rgba(146, 64, 14, 0.15)` | The ground of a `warn` hold button (`bg-warn-soft`). Weaker in light mode so the brown label clears 4.5:1 on a raised panel too (P13 B2-1). |
 | `--orange` | `#fb923c` | `#9a3412` | The step between warn and danger: collapsing, system error. |
 | `--danger` | `#f87171` | `#b91c1c` | Banned, failed, or a destructive action. |
 | `--danger-deep` | `#dc2626` | `#7f1d1d` | The one state worse than collapsing — shadowbanned. |
@@ -155,6 +156,7 @@ chart series and alert panels.
 | Token | Dark | Light | Used by |
 |---|---|---|---|
 | `--pill-bg` | `#262627` | `#e4e8ed` | The ground under every pill except `critical`. |
+| `--pill-muted` | `#909098` | `var(--text-muted)` | The `gray` / `neutral` pill's label. A hair lighter than `--text-muted` in dark mode, where that measured 4.41:1 on the pill ground (P13 B2-5). |
 | `--pill-yellow` | `#fff949` | `#6b4f03` | The `warn` pill's label. |
 | `--pill-amber` | `#ff9549` | `#8a3f08` | The `orange` pill's label. |
 | `--pill-red` | `#ff4949` | `#a11616` | The `danger` pill's label, and the destructive CTA's tint. |
@@ -428,7 +430,7 @@ Nine tones, all on `bg-pill-bg` except one.
 | `ok` | `bg-pill-bg text-ok` | Active, healthy |
 | `accent` | `bg-pill-bg text-accent` | Ramping |
 | `info` | `bg-pill-bg text-info` | Scheduled, informational |
-| `gray` / `neutral` | `bg-pill-bg text-text-muted` | Paused, none |
+| `gray` / `neutral` | `bg-pill-bg text-pill-muted` | Paused, none |
 | `warn` | `bg-pill-bg text-pill-yellow` | Throttled |
 | `orange` | `bg-pill-bg text-pill-amber` | Collapsing |
 | `danger` | `bg-pill-bg text-pill-red` | Banned |

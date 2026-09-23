@@ -47,8 +47,10 @@ const PLATFORM_SHORT: Record<Platform, string> = {
   facebook: "FB",
 };
 
+// 44px tall on a phone, the height a thumb needs; this is the page Yurie uses
+// standing up (P13 B3-2). Desktop keeps the compact 34px.
 const QUIET_BUTTON =
-  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-border bg-card-raised px-3.5 py-2 text-xs font-medium text-text-muted transition-colors hover:border-text-muted/50 hover:text-text-primary disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text-muted";
+  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-border bg-card-raised px-3.5 py-2 text-xs font-medium text-text-muted transition-colors hover:border-text-muted/50 hover:text-text-primary disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text-muted max-sm:min-h-11";
 
 function toForm(d: Device): DeviceFormValues {
   return {
@@ -84,6 +86,8 @@ function Switch({
   label: string;
 }) {
   return (
+    // A 44px target around the 36px track, for a thumb (P13 B3-2); the
+    // negative margin keeps the card header the height it was.
     <button
       type="button"
       role="switch"
@@ -91,17 +95,21 @@ function Switch({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={cn(
-        "relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-50",
-        checked ? "bg-accent" : "bg-border",
-      )}
+      className="-mx-1 -my-3 flex h-11 shrink-0 items-center px-1 disabled:opacity-50"
     >
       <span
         className={cn(
-          "absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm transition-transform",
-          checked ? "translate-x-4" : "translate-x-0",
+          "relative h-5 w-9 rounded-full transition-colors",
+          checked ? "bg-accent" : "bg-border",
         )}
-      />
+      >
+        <span
+          className={cn(
+            "absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm transition-transform",
+            checked ? "translate-x-4" : "translate-x-0",
+          )}
+        />
+      </span>
     </button>
   );
 }
@@ -324,9 +332,12 @@ export function DeviceDetail({
   return (
     <>
       <div className="flex flex-col gap-3">
+        {/* 44px tall on a phone, so the way back is not a 16px strip of text
+            (P13 B3-2, the first one it named). The negative margin gives the
+            extra height back to the gap, so the page does not move. */}
         <Link
           href={"/devices" as never}
-          className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-text-muted transition-colors hover:text-text-primary"
+          className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-text-muted transition-colors hover:text-text-primary max-sm:-my-3.5 max-sm:min-h-11 max-sm:pr-3"
         >
           <ArrowLeft className="size-3.5" /> All phones
         </Link>
@@ -540,6 +551,7 @@ export function DeviceDetail({
                 <CtaButton
                   disabled={locked || !dirty || values.name.trim() === ""}
                   onClick={() => void run("details", patch(values), "Saving the phone failed")}
+                  className="max-sm:min-h-11"
                 >
                   {busy === "details" && <Loader2 className="size-3.5 animate-spin" />}
                   Save

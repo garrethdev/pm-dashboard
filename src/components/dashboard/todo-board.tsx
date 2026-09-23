@@ -4,12 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CtaButton } from "@/components/ui/cta-button";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { HoldButton } from "@/components/ui/hold-button";
-import { Check, Film, ListChecks, Robot, X } from "@/components/ui/icons";
+import { Check, Film, Globe, ListChecks, Robot, SignOut, Smartphone, X } from "@/components/ui/icons";
+import { StatusPill } from "@/components/ui/pill";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { Stepper } from "@/components/ui/stepper";
 import { Tooltip } from "@/components/ui/tooltip";
 import {
+  cleanupSteps,
+  isCleanupDone,
   isItemFinished,
   todoPlaceholder,
+  type BanCleanup,
+  type BanStep,
   type TodoDay,
   type TodoDevice,
   type TodoItem,
@@ -698,5 +704,235 @@ export function TodoLogSheet({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Ticks on a ban's clean-up steps (P8, PF-11), for the To-do page and the
+ * dashboard card alike, so a step ticked on either is saved the same way.
+ *
+ * A tick shows the instant it is pressed. On the live list each is saved and
+ * dropped once the list has been re-read with it; on a design state, where
+ * `onStepSaved` is absent, it is only held here and saved nowhere.
+ */
+export function useCleanupTicks(device: TodoDevice, onStepSaved?: () => Promise<void>) {
+  const [ticked, setTicked] = useState<Record<string, string | null>>({});
+  const [stepError, setStepError] = useState<string | null>(null);
+  const cleanups = (device.cleanups ?? []).map((c) => ({
+    ...c,
+    steps: c.steps.map((st) =>
+      st.id in ticked ? { ...st, done: ticked[st.id] !== null, doneAt: ticked[st.id] ?? undefined } : st,
+    ),
+  }));
+  const toggleStep = async (st: BanStep) => {
+    const done = !st.done;
+    const drop = () =>
+      setTicked((t) => {
+        const next = { ...t };
+        delete next[st.id];
+        return next;
+      });
+    setStepError(null);
+    setTicked((t) => ({
+      ...t,
+      [st.id]: done
+        ? new Intl.DateTimeFormat("en-GB", {
+            timeZone: "America/New_York",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }).format(new Date())
+        : null,
+    }));
+    if (!onStepSaved) return;
+    try {
+      const res = await fetch(`/api/ban-steps/${st.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ done }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+      await onStepSaved();
+      drop();
+    } catch (err) {
+      // Never left looking saved: the tick goes back to what the list says.
+      drop();
+      setStepError(err instanceof Error ? err.message : "Couldn't save the tick");
+    }
+  };
+
+  return { cleanups, toggleStep, stepError };
+}
+
+/**
+ * The clean-up after a ban on a real phone — design ticket P8.
+ *
+ * Drawn like an account's own panel, because it IS about one account, with a
+ * red Banned pill so it is not mistaken for a working one. The steps are only
+ * what a person has to do on the phone; what the app did at the retire is not
+ * repeated here (Garreth, 2026-09-23). Finished, it stays for the rest of the day struck through, like
+ * any finished item.
+ */
+export function BanCleanupGroup({
+  cleanup,
+  onToggle,
+  compact = false,
+}: {
+  cleanup: BanCleanup;
+  onToggle: (st: BanStep) => void;
+  /** For the dashboard card: drawn like the card's own account groups, with
+   *  the 24px gutter its other ticks use, rather than as the page's panel. */
+  compact?: boolean;
+}) {
+  const steps = cleanupSteps(cleanup);
+  const done = steps.filter((st) => st.done).length;
+  const finished = isCleanupDone(cleanup);
+
+  if (compact) {
+    return (
+      <div className="min-w-0">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            <PlatformIcon platform={cleanup.platform} />
+          </span>
+          <span
+            className={cn(
+              "min-w-0 truncate text-xs font-medium",
+              finished ? "text-text-muted" : "text-text-primary",
+            )}
+          >
+            {cleanup.handle}
+          </span>
+          <StatusPill tone="danger">Banned</StatusPill>
+          <StatusPill tone={finished ? "ok" : "gray"}>
+            {finished ? "Cleaned up" : `Clean-up ${done} of ${steps.length}`}
+          </StatusPill>
+        </div>
+
+        <ul className="mt-3 flex flex-col gap-1.5">
+          {cleanup.steps.map((st) => (
+            <BanStepRow key={st.id} compact step={st} onToggle={() => onToggle(st)} />
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-w-0 rounded-nested bg-card-raised/50 px-3 pt-4 pb-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-border pb-3.5">
+        <PlatformIcon platform={cleanup.platform} />
+        <span className={cn("min-w-0 truncate text-sm font-medium", finished && "text-text-muted")}>
+          {cleanup.handle}
+        </span>
+        <StatusPill tone="danger">Banned</StatusPill>
+        <span className="flex shrink-0 items-center gap-1.5 @lg:ml-auto">
+          <StatusPill tone={finished ? "ok" : "gray"}>
+            {finished ? "Cleaned up" : `Clean-up ${done} of ${steps.length}`}
+          </StatusPill>
+        </span>
+      </div>
+
+      <ul className="flex flex-col pt-1.5">
+        {cleanup.steps.map((st) => (
+          <BanStepRow key={st.id} step={st} onToggle={() => onToggle(st)} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function BanStepRow({
+  step,
+  onToggle,
+  compact = false,
+}: {
+  step: BanStep;
+  onToggle: () => void;
+  compact?: boolean;
+}) {
+  const Icon = step.kind === "signOut" ? SignOut : step.kind === "number" ? Smartphone : Globe;
+
+  if (compact) {
+    // The card's row: tick, then the step's icon where a task's time sits,
+    // then the step. The detail stays — it is the number or proxy to retire.
+    return (
+      <li className="flex items-start gap-2">
+        <button
+          onClick={onToggle}
+          role="checkbox"
+          aria-checked={step.done}
+          aria-label={step.label}
+          className="group flex size-6 shrink-0 items-center justify-center"
+        >
+          <span
+            className={cn(
+              "flex size-5 items-center justify-center rounded-md border transition-colors",
+              step.done
+                ? "border-accent bg-accent/15 text-accent"
+                : "border-border text-transparent group-hover:border-text-muted",
+            )}
+          >
+            <Check className="size-3" />
+          </span>
+        </button>
+        <span className="flex h-6 w-11 shrink-0 items-center text-text-muted">
+          <Icon className="size-3.5" />
+        </span>
+        <span className="flex min-h-6 min-w-0 flex-1 flex-wrap items-center gap-x-1.5 text-xs">
+          <span className={step.done ? "text-text-muted line-through" : "text-text-primary"}>
+            {step.label}
+          </span>
+          <span className="tnum text-text-muted">
+            {[step.detail, step.done ? step.doneAt : null].filter(Boolean).join(" · ")}
+          </span>
+        </span>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-start gap-2 border-b border-border/60 py-2 last:border-0 last:pb-0 @lg:gap-3">
+      <button
+        onClick={onToggle}
+        role="checkbox"
+        aria-checked={step.done}
+        aria-label={step.label}
+        className="group flex h-9 w-11 shrink-0 items-center justify-center"
+      >
+        <span
+          className={cn(
+            "flex size-[22px] items-center justify-center rounded-md border transition-colors",
+            step.done
+              ? "border-accent bg-accent/15 text-accent"
+              : "border-border text-transparent group-hover:border-text-muted",
+          )}
+        >
+          <Check className="size-3.5" />
+        </span>
+      </button>
+
+      <span className={cn("flex h-9 shrink-0 items-center", step.done && "opacity-55")}>
+        <span className="flex size-8 items-center justify-center rounded-full bg-card-raised text-text-muted">
+          <Icon className="size-4" />
+        </span>
+      </span>
+
+      {/* The time column of a task row, left empty, so the step's name lines
+          up with every task name on the page. */}
+      <span className="w-11 shrink-0" aria-hidden />
+
+      <div className={cn("flex min-w-0 flex-1 flex-col", step.done && "opacity-55")}>
+        <span className="flex min-h-9 items-center">
+          <span className={cn("min-w-0 text-sm font-medium break-words", step.done && "line-through")}>
+            {step.label}
+          </span>
+        </span>
+        <p className="tnum text-xs text-text-muted">
+          {[step.detail, step.done ? step.doneAt : null].filter(Boolean).join(" · ")}
+        </p>
+      </div>
+    </li>
   );
 }

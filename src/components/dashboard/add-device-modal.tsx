@@ -103,11 +103,12 @@ export function AddDeviceModal({
             </span>
             <h2 className="text-base font-semibold">Add phone</h2>
           </div>
+          {/* 44px for a thumb (P13 B3-2); the margin keeps the header's height. */}
           <button
             onClick={onClose}
             disabled={busy}
             aria-label="Close"
-            className="flex size-9 items-center justify-center text-text-muted hover:text-text-primary disabled:opacity-40"
+            className="-m-1 flex size-11 items-center justify-center text-text-muted hover:text-text-primary disabled:opacity-40"
           >
             <X className="size-5" />
           </button>
@@ -141,7 +142,8 @@ export function AddDeviceModal({
           >
             Cancel
           </button>
-          <CtaButton onClick={submit} disabled={busy || !ready}>
+          {/* 44px on a phone (P13 B3-2). Cancel stretches to match. */}
+          <CtaButton onClick={submit} disabled={busy || !ready} className="max-sm:min-h-11">
             {busy && <Loader2 className="size-3.5 animate-spin" />}
             Save phone
           </CtaButton>

@@ -254,3 +254,21 @@ export function parseBatchMoves(raw: unknown): { moves: BatchMove[] } | { error:
 export function candidateLabel(a: MoveCandidate): string {
   return a.profile;
 }
+
+/**
+ * The sentence a move function refused with, or null when the failure was not
+ * a refusal. A RAISE from the database arrives with code P0001 and the
+ * sentence in `message`; any other error is a fault, and must not be shown as
+ * though the account were the problem.
+ */
+export function moveRefusal(body: string): string | null {
+  try {
+    const parsed = JSON.parse(body) as { code?: unknown; message?: unknown };
+    if (parsed.code === "P0001" && typeof parsed.message === "string" && parsed.message) {
+      return parsed.message;
+    }
+  } catch {
+    // not JSON: an outage, not a refusal
+  }
+  return null;
+}

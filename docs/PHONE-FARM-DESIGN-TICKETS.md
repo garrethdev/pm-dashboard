@@ -88,7 +88,7 @@ purpose; the changelog has them.
 | P2 | Add the To-do today page, grouped by device and then by account | **Approved 2026-09-22, and REAL since PF-07** the same day. `?todo=` still draws the placeholder states for review |
 | P3 | Add the Posted, Failed and Log warmup forms | **Approved 2026-09-22.** Built inside P2; the six states around a save that can fail moved to PF-07. **Log warmup is live since PF-04** and **Posted / Failed since PF-07** (both 2026-09-22); the six saving states P3 handed over are built |
 | P4 | Add a Manual / Automated warmup switch per account, and a by-phone view on Accounts | **Approved 2026-09-22, and the switch now SAVES** — PF-04 landed the same day. The by-phone view still needs PF-02's real phones to have groups. What an Automated account SHOWS moved to PF-13 |
-| P5 | Rework the device page around the phone's daily work | **Approved and built 2026-09-22.** Warmup history is real since PF-04. **One gap, found 2026-09-22: "Today on this phone" is still demo-only** — `device-detail.tsx` reads `demo?.today ?? null`, so a real phone always shows "Nothing due" however many deliveries it has. PF-05 and PF-07 built the tables and the To-do page but nobody rewired this page to them. Small follow-on, not a redesign |
+| P5 | Rework the device page around the phone's daily work | **Approved and built 2026-09-22.** Warmup history is real since PF-04. ~~One gap, found 2026-09-22: "Today on this phone" is still demo-only~~ **Wired 2026-09-23:** "Today on this phone" reads the real to-do list for that phone (see the changelog) |
 | P6 | Track proxy expiry for real phones on Proxies & numbers | **Approved and built 2026-09-23.** One row per real phone, its accounts, proxy and numbers. Joins proven live with a test phone, since deleted. **Numbers moved from the phone to each account the same day (P14, Garreth)**; the numbers view is now one line per account |
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
 | P8 | Add the checklist for a ban on a real phone | **Approved and built 2026-09-23** (PF-11). The app releases queued posts itself; the proxy is kept while other accounts use it (Garreth). Proven live with a practice phone, since deleted. `/todo?todo=ban` and `/accounts?demo=1` still draw the sample states |
@@ -96,7 +96,7 @@ purpose; the changelog has them.
 | P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. **Built 2026-09-23:** PF-03 saves the single move, PF-15 the batch (all or nothing) |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
 | P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Built 2026-09-23.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. The stale row is **approved and built 2026-09-23**: a red Overdue pill on the bell's 24-hour rule (Garreth). Not yet seen with a real post |
-| P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | **Reviewed 2026-09-23** (`docs/P13-REVIEW-FINDINGS.md`). **Six items approved and done the same day:** five fixed (not-found pages, the Physical calendar's short pills, "Infinity days", the WebGL crash, the Facebook tab's range choices) and "No phones yet" found to be correct already. The colour, size and tap-target findings wait for their own approval |
+| P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | **Reviewed 2026-09-23** (`docs/P13-REVIEW-FINDINGS.md`). **Six items approved and done the same day:** five fixed (not-found pages, the Physical calendar's short pills, "Infinity days", the WebGL crash, the Facebook tab's range choices) and "No phones yet" found to be correct already. **Eight more fixed 2026-09-23 after Garreth approved them:** the tap targets on phones, the fleet switch you could not read in light mode, the faint amber hold button and the faint grey pill (B1-1, B1-2, B2-1, B2-2, B2-3, B2-5, B3-2, B7-2). Measured in headless Chrome; not yet seen in Safari |
 | P14 | Put an account's settings behind a ⋯ menu on its row, with Edit account and Retire account | **Approved and built 2026-09-23.** Live on every Physical row; Cloud unchanged (proven by screenshot). Phone numbers now belong to accounts |
 
 Each of these has its full ticket further down. **A ticket moves through four
@@ -945,9 +945,12 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   sits at the top of its phone's block on the To-do page, drawn like an
   account panel with a red Banned pill and a "Clean-up 1 of 2" count. It
   counts in the phone's "x of y", and it stays struck through for the rest of
-  the day once finished, like any finished item. Left for review: the
+  the day once finished, like any finished item. ~~Left for review: the
   dashboard card's phone count includes the steps, but the card does not list
-  them.
+  them.~~ **Fixed 2026-09-23 (Garreth):** an opened phone on the dashboard card
+  lists the clean-up with the same panel and ticks as the To-do page, in the
+  card's compact row style. Seen in the demo state; a tick saving from the card
+  has not met a real ban yet.
 - **Backlog:** PF-11. On Cloud, a ban ends with the Geelark phone being
   deleted by the robot. On a real phone a person has to do the work.
 - **Design:** the checklist shown when a Physical account is retired as
@@ -1129,14 +1132,15 @@ action is `CtaButton`, never a hand-rolled `bg-accent` button.**
   account. The same pill shows on the dashboard card once a phone is opened.
   Drawn at `/todo?todo=work` and `/?todo=work`; the real list now works it
   out from the same `OVERDUE_HOURS` the bell reads. Not yet seen with a real
-  post. Left open: a folded phone on the dashboard card does not show that it
-  holds an overdue post.
+  post. ~~Left open: a folded phone on the dashboard card does not show that it
+  holds an overdue post.~~ **Fixed 2026-09-23 (Garreth):** a folded phone shows
+  the red Overdue pill when it holds one. Seen in the demo state only.
 - **Done when:** the stale row on the to-do list is approved, then built and
   looked at in the running app. The fleet label is done.
 
 ## P13. Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode
 
-- **Status:** **reviewed 2026-09-23**, with findings in `docs/P13-REVIEW-FINDINGS.md`. Six items approved and done the same day: five fixed, one found already correct. The design and accessibility findings are waiting for approval. Before the review: these screens worked and had been looked at in the app,
+- **Status:** **reviewed 2026-09-23**, with findings in `docs/P13-REVIEW-FINDINGS.md`. Six items approved and done the same day: five fixed, one found already correct. **The eight tap-target and contrast findings were approved and fixed later the same day.** Before the review: these screens worked and had been looked at in the app,
   but none went through a design review: the Cloud | Physical switch,
   Settings → Account management, the Devices list and Add phone sheet, the
   device page, the Devices card on the dashboard, the shared empty state,

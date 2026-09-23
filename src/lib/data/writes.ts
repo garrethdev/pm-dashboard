@@ -214,7 +214,7 @@ export class MoveConflictError extends Error {}
  * The line a move adds to the account's status_note. One function for the
  * single move and the batch (PF-15), so the two write the same words.
  */
-function moveNoteFragment(mode: DeliveryMode, userEmail: string): string {
+export function moveNoteFragment(mode: DeliveryMode, userEmail: string): string {
   const today = new Date().toISOString().slice(0, 10);
   return ` | ${today} ${userEmail}: posting moved to ${
     mode === "manual" ? "a real phone" : "Geelark"

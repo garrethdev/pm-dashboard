@@ -104,6 +104,10 @@
 
   --ok: #4ade80;
   --warn: #fbbf24;
+  /* The ground of a warn-tone hold button (Retire's quieter sibling: the fleet
+   * move, the batch move, To-do's Undo). A token rather than `bg-warn/25`
+   * because the two themes need different strengths: see the light block. */
+  --warn-soft: rgba(251, 191, 36, 0.25);
   /* Severity step between yellow and red: collapsing / system error. */
   --orange: #fb923c;
   --danger: #f87171;
@@ -120,6 +124,11 @@
    * background did. Those tokens are unchanged and still serve text, borders,
    * chart series and alert panels. */
   --pill-bg: #262627;
+  /* The grey pill's label ("Cloud", "Off", "Not yet due"). A hair lighter than
+   * --text-muted, which on this ground measured 4.41:1, just under AA; this is
+   * 4.77:1 (P13 B2-5). Its own token so the grey text everywhere else keeps its
+   * weight. */
+  --pill-muted: #909098;
   --pill-red: #ff4949;
   --pill-amber: #ff9549;
   --pill-yellow: #fff949;
@@ -191,12 +200,17 @@
 
   --ok: #166534;
   --warn: #92400e;
+  /* 15%, not the dark theme's 25%: at 25% the brown label sat at 4.46:1 on a
+   * card and 4.18:1 on a raised panel. 15% is 5.28:1 and 4.89:1 (P13 B2-1). */
+  --warn-soft: rgba(146, 64, 14, 0.15);
   --orange: #9a3412;
   --danger: #b91c1c;
   --danger-deep: #7f1d1d;
   --info: #1d4ed8;
 
   --pill-bg: #e4e8ed;
+  /* Already 5.52:1 here, so light mode keeps the ordinary muted grey. */
+  --pill-muted: var(--text-muted);
   --pill-red: #a11616;
   --pill-amber: #8a3f08;
   --pill-yellow: #6b4f03;
@@ -240,11 +254,13 @@
   --color-accent-soft: var(--accent-soft);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
   --color-orange: var(--orange);
   --color-danger: var(--danger);
   --color-danger-deep: var(--danger-deep);
   --color-info: var(--info);
   --color-pill-bg: var(--pill-bg);
+  --color-pill-muted: var(--pill-muted);
   --color-pill-red: var(--pill-red);
   --color-pill-amber: var(--pill-amber);
   --color-pill-yellow: var(--pill-yellow);
