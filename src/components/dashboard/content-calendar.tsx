@@ -201,6 +201,7 @@ export function ContentCalendar({
                   // as that fleet's shortfall (P13 review, 2026-09-23), so it is
                   // left off there until the run can say which fleet was short.
                   showShortfall={fleet !== "physical"}
+                  fleet={fleet}
                 />
               ))}
             </div>
@@ -227,12 +228,14 @@ function DayCell({
   isToday,
   onOpen,
   showShortfall,
+  fleet,
 }: {
   day: CalendarDay;
   muted: boolean;
   isToday: boolean;
   onOpen: () => void;
   showShortfall: boolean;
+  fleet: Fleet;
 }) {
   // Only live posts earn a pill. Held and failed rows are a quiet footnote;
   // cancelled rows never arrive at all (the RPCs drop them), so nothing here
@@ -350,10 +353,25 @@ function DayCell({
         <div className="mt-auto flex flex-wrap items-center gap-1.5">
           {day.failed > 0 && (
             <span
-              title={`${day.failed} post${day.failed === 1 ? "" : "s"} Geelark could not deliver`}
+              title={
+                fleet === "physical"
+                  ? `${day.failed} post${day.failed === 1 ? "" : "s"} marked failed on the To-do list`
+                  : `${day.failed} post${day.failed === 1 ? "" : "s"} Geelark could not deliver`
+              }
               className="inline-flex items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-medium text-danger"
             >
               {day.failed} failed
+            </span>
+          )}
+          {/* Physical only (P11): posted by hand, link still owed. Same word
+              and colour as the To-do list, so a day that is not finished
+              looks unfinished here too. */}
+          {!!day.linkNeeded && (
+            <span
+              title={`${day.linkNeeded} post${day.linkNeeded === 1 ? "" : "s"} posted without a link yet`}
+              className="inline-flex items-center rounded-full bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn"
+            >
+              {day.linkNeeded} link{day.linkNeeded === 1 ? "" : "s"} needed
             </span>
           )}
           {day.run && <RunPill run={day.run} showShortfall={showShortfall} />}

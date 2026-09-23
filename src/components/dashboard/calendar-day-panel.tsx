@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from "@/components/ui/icons";
-import type { CalendarDayAccount, CalendarDayDetail, CalendarPost } from "@/lib/data/calendar";
+import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Loader2, X } from "@/components/ui/icons";
+import type {
+  CalendarDayAccount,
+  CalendarDayDetail,
+  CalendarPost,
+  HandDelivery,
+} from "@/lib/data/calendar";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { isPlatform } from "@/lib/platform";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
@@ -30,11 +35,26 @@ import { cn } from "@/lib/utils";
  * "Scheduled" is the resting state: the scheduler assigned the content and
  * nothing has been attempted yet.
  */
+/**
+ * A post handed to a person (P11) says what the To-do list says about it, in
+ * the same words, so the two screens never describe one post differently.
+ * Geelark's wording ("Posting", "Geelark could not post this") would be wrong
+ * here: nobody but the person holding the phone touched it.
+ */
+const HAND_STATUS: Record<HandDelivery, { label: string; tone: PillTone; title?: string }> = {
+  queued: { label: "To post", tone: "info", title: "On the To-do list, not posted yet" },
+  postedNoLink: { label: "Link needed", tone: "warn", title: "Posted, but its link has not been added" },
+  posted: { label: "Posted", tone: "ok" },
+  failed: { label: "Failed", tone: "danger", title: "Marked failed on the To-do list" },
+  skipped: { label: "Skipped", tone: "gray" },
+};
+
 function resolveStatus(p: CalendarPost): {
   label: string;
   tone: PillTone;
   title?: string;
 } {
+  if (p.hand) return HAND_STATUS[p.hand];
   if (p.delivery === "failed") {
     return {
       label: "Failed",
@@ -377,6 +397,18 @@ function PostRow({ post: p }: { post: CalendarPost }) {
             off-registry
           </span>
         )}
+        {p.postUrl && (
+          <a
+            href={p.postUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Open the post"
+            title="Open the post"
+            className="ml-auto -my-1 rounded-full p-1 text-text-muted transition-colors hover:text-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+          >
+            <ExternalLink className="size-3.5" />
+          </a>
+        )}
         {hasError ? (
           <button
             type="button"
@@ -394,7 +426,7 @@ function PostRow({ post: p }: { post: CalendarPost }) {
             </StatusPill>
           </button>
         ) : (
-          <StatusPill tone={tone} className="ml-auto" {...(title ? { title } : {})}>
+          <StatusPill tone={tone} className={cn(!p.postUrl && "ml-auto")} {...(title ? { title } : {})}>
             {label}
           </StatusPill>
         )}
@@ -403,11 +435,16 @@ function PostRow({ post: p }: { post: CalendarPost }) {
       {showError && (
         <div className="mt-1 ml-[4.75rem] rounded-nested border border-danger/30 bg-danger/5 px-2.5 py-1.5">
           <p className="text-danger">{p.failDesc ?? "Geelark reported a failure with no message."}</p>
-          <p className="mt-0.5 text-[11px] text-text-muted">
-            {p.failCode && <>Geelark code {p.failCode}. </>}
-            posting_status says &ldquo;{p.status}&rdquo;
-            {p.status === "Posted" && ". The 14:00 ET reconcile has not corrected it yet"}
-          </p>
+          {/* A hand-made post's failure is the person's own note and nothing
+              else: there is no Geelark code, and the app already closed the
+              content row, so posting_status has nothing to disagree with. */}
+          {!p.hand && (
+            <p className="mt-0.5 text-[11px] text-text-muted">
+              {p.failCode && <>Geelark code {p.failCode}. </>}
+              posting_status says &ldquo;{p.status}&rdquo;
+              {p.status === "Posted" && ". The 14:00 ET reconcile has not corrected it yet"}
+            </p>
+          )}
         </div>
       )}
     </div>

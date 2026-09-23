@@ -162,7 +162,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-11 | Post-ban branch for manual accounts | Intermediate | **Built 2026-09-23** in the app, applied live and proven with a practice phone (since deleted). A real-phone account never reaches the robot. The n8n robot's own form was guarded and published the same day: it refuses real-phone accounts and deletes only on an exact name match |
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
-| PF-10 | Comparison view | Intermediate | ~~Blocked by PF-03 only~~ PF-03 built 2026-09-23 and its date column is live; waits on design ticket P7 |
+| PF-10 | Comparison view | ~~Intermediate~~ | **Dropped 2026-09-23 (Garreth):** not needed |
 | PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
@@ -315,6 +315,14 @@ account list just before a move and hands out a post just after could still
 leave one queued row on a Cloud account (a window of seconds, at 10:00 ET
 only). And the move dialog does not yet say how many posts will go back; the
 route already returns the number.
+
+**Found 2026-09-23: Geelark warmups already booked still run after a move.**
+The Geelark warmup robot (`QDUtABHSG4FMTrQX`) and the health check
+(`CXVxRMOUkLluRdBc`) now read Cloud accounts only (see CHANGELOG 2026-09-23).
+But the warmup robot books up to 7 days ahead in Geelark, and a move does not
+cancel those tasks. **Decided by Garreth the same day: not built.** Clearing
+them is a manual step when moving an account, step 3 of
+`docs/REAL-PHONE-SETUP.md`.
 
 ## PF-04 · `warmup_sessions` + log form — Done 2026-09-22
 
@@ -694,7 +702,12 @@ in Cloud. All fixtures deleted afterwards — `devices` and `post_deliveries` ar
 back to empty. **Not proven with real work:** no phone, account or post
 exists, and the day-rollover has not been watched happen.
 
-## PF-10 · Comparison view — PF-03 built 2026-09-23; waits on design ticket P7
+## PF-10 · Comparison view — Dropped 2026-09-23
+
+**Dropped by Garreth, 2026-09-23:** there is no need to compare how an
+account did on Geelark with how it does on a real phone. Nothing was built.
+`accounts.moved_to_device_at` stays: the move already writes it, and it costs
+nothing. The original ticket is kept below for the record.
 
 Each moved account before and after `moved_to_device_at`: views per post,
 share under 10 views, warmup dot, restrictions and bans; plus the Geelark
