@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
 import { WarmupWriteError, logSession } from "@/lib/data/warmup-sessions";
+import { parseAccountId } from "@/lib/data/account-id";
 
 /**
  * POST /api/warmups — record a warmup session done by hand (PF-04).
@@ -33,7 +34,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
 
-  if (typeof body.accountId !== "number" || !Number.isFinite(body.accountId)) {
+  // Text, so a 17-digit id arrives exactly (PF-22). A number above 2^53 has
+  // already been rounded by the sender and is refused.
+  const accountId = parseAccountId(body.accountId);
+  if (accountId === null) {
     return NextResponse.json({ error: "invalid account" }, { status: 400 });
   }
   if (typeof body.minutes !== "number" || !Number.isInteger(body.minutes)) {
@@ -57,7 +61,7 @@ export async function POST(request: Request) {
   try {
     const userEmail = await actingUserEmail();
     const session = await logSession({
-      accountId: body.accountId,
+      accountId,
       deviceId: (body.deviceId as number | null | undefined) ?? null,
       minutes: body.minutes,
       sessionNo: (body.sessionNo as number | undefined) ?? undefined,
@@ -69,7 +73,7 @@ export async function POST(request: Request) {
     await auditLog({
       userEmail,
       action: "warmup_logged",
-      target: String(body.accountId),
+      target: accountId,
       newValue: {
         minutes: session.minutes,
         session_no: session.sessionNo,

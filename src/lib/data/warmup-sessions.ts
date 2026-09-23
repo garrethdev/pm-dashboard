@@ -24,6 +24,8 @@
  * copy would show a session somebody has just logged as still outstanding.
  */
 
+import { ACCOUNT_FK_COL, type AccountId } from "@/lib/data/account-id";
+
 /** Who did the warming. Mirrors the check constraint. */
 export const WARMUP_MODES = ["manual", "script"] as const;
 export type WarmupSessionMode = (typeof WARMUP_MODES)[number];
@@ -43,7 +45,7 @@ export const SESSIONS_PER_DAY = 2;
 
 export interface WarmupSession {
   id: number;
-  accountId: number;
+  accountId: AccountId;
   /** The phone it was done on. Null when the account is not on one. */
   deviceId: number | null;
   startedAt: string;
@@ -59,7 +61,7 @@ export interface WarmupSession {
 
 interface RawSession {
   id: number;
-  account_id: number;
+  account_id: AccountId;
   device_id: number | null;
   started_at: string;
   finished_at: string | null;
@@ -71,7 +73,7 @@ interface RawSession {
 }
 
 const COLS =
-  "id,account_id,device_id,started_at,finished_at,minutes,session_no,mode,note,logged_by";
+  `id,${ACCOUNT_FK_COL},device_id,started_at,finished_at,minutes,session_no,mode,note,logged_by`;
 
 function toSession(row: RawSession): WarmupSession {
   return {
@@ -189,7 +191,7 @@ export function dayRangeET(offset = 0, now: Date = new Date()): { from: Date; to
 
 /** Sessions logged on one New York day, for an account or a whole phone. */
 export function getSessionsOnDay(
-  filter: { accountId?: number; deviceId?: number } = {},
+  filter: { accountId?: AccountId; deviceId?: number } = {},
   dayOffset = 0,
   now: Date = new Date(),
 ): Promise<WarmupSession[]> {
@@ -207,7 +209,7 @@ export function getSessionsOnDay(
 
 /** Sessions logged today (New York), for an account or a whole phone. */
 export function getSessionsToday(
-  filter: { accountId?: number; deviceId?: number } = {},
+  filter: { accountId?: AccountId; deviceId?: number } = {},
   now: Date = new Date(),
 ): Promise<WarmupSession[]> {
   const parts = [
@@ -225,7 +227,7 @@ export function getSessionsToday(
  * and on an account's (design ticket P5).
  */
 export function getRecentSessions(
-  filter: { accountId?: number; deviceId?: number; limit?: number } = {},
+  filter: { accountId?: AccountId; deviceId?: number; limit?: number } = {},
 ): Promise<WarmupSession[]> {
   const parts = [`select=${COLS}`, "order=started_at.desc"];
   if (filter.accountId !== undefined) parts.push(`account_id=eq.${filter.accountId}`);
@@ -275,7 +277,8 @@ export function nextSessionNo(sessions: WarmupSession[]): number {
 }
 
 export interface LogSessionInput {
-  accountId: number;
+  /** Sent as text; Postgres reads it into the bigint column exactly. */
+  accountId: AccountId;
   deviceId?: number | null;
   minutes: number;
   /** Omit and it lands on the first of today's sessions that is not done. */

@@ -21,6 +21,8 @@
  * anyone else is holding.
  */
 
+import { ACCOUNT_FK_COL, type AccountId } from "@/lib/data/account-id";
+
 /** Every state a handed-out post can be in. Mirrors the check constraint. */
 export const DELIVERY_STATUSES = ["queued", "posted", "failed", "skipped"] as const;
 export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
@@ -47,7 +49,7 @@ export interface PostDelivery {
   /** The table the content row lives in, and its id in that table. */
   sourceTable: string;
   sourceId: string;
-  accountId: number;
+  accountId: AccountId;
   /** The phone it was handed to. Null when the account is not on one. */
   deviceId: number | null;
   status: DeliveryStatus;
@@ -64,7 +66,7 @@ interface RawDelivery {
   content_type: string;
   source_table: string;
   source_id: string;
-  account_id: number;
+  account_id: AccountId;
   device_id: number | null;
   status: string;
   post_url: string | null;
@@ -75,7 +77,7 @@ interface RawDelivery {
 }
 
 const COLS =
-  "id,content_type,source_table,source_id,account_id,device_id,status,post_url,note,done_by,done_at,created_at";
+  `id,content_type,source_table,source_id,${ACCOUNT_FK_COL},device_id,status,post_url,note,done_by,done_at,created_at`;
 
 function toDelivery(row: RawDelivery): PostDelivery {
   return {
@@ -151,7 +153,7 @@ async function readRows(path: string, what: string): Promise<PostDelivery[]> {
  * the fleet, which is what a dashboard count wants.
  */
 export function getOpenDeliveries(
-  filter: { deviceId?: number; accountId?: number } = {},
+  filter: { deviceId?: number; accountId?: AccountId } = {},
 ): Promise<PostDelivery[]> {
   const parts = [`select=${COLS}`, "status=eq.queued", "order=created_at.asc"];
   if (filter.deviceId !== undefined) parts.push(`device_id=eq.${filter.deviceId}`);
@@ -164,7 +166,7 @@ export function getOpenDeliveries(
  * answer to the question `geelark_tasks.status = 3` answers for Cloud.
  */
 export function getPostedDeliveries(
-  filter: { accountId?: number; since?: string; limit?: number } = {},
+  filter: { accountId?: AccountId; since?: string; limit?: number } = {},
 ): Promise<PostDelivery[]> {
   const parts = [`select=${COLS}`, "status=eq.posted", "order=done_at.desc"];
   if (filter.accountId !== undefined) parts.push(`account_id=eq.${filter.accountId}`);
@@ -186,7 +188,7 @@ export interface QueueDeliveryInput {
   contentType: string;
   sourceTable: string;
   sourceId: string;
-  accountId: number;
+  accountId: AccountId;
   deviceId?: number | null;
   note?: string | null;
 }

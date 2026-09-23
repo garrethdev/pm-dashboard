@@ -1,4 +1,5 @@
 import { getCleanupsByDevice } from "@/lib/data/ban-cleanups";
+import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, parseAccountId, type AccountId } from "@/lib/data/account-id";
 import { sbRest } from "@/lib/data/supabase";
 import { toPlatform } from "@/lib/platform";
 import {
@@ -93,16 +94,20 @@ const WARMUP_LABEL = ["Warmup, morning", "Warmup, evening"];
  * which of that day's two sessions. The sheet reads it back to know what to
  * write. Spelled in one place so the two directions cannot drift.
  */
-export function warmupItemId(accountId: number, day: string, sessionNo: number): string {
+export function warmupItemId(accountId: AccountId, day: string, sessionNo: number): string {
   return `w${accountId}-${day}-${sessionNo}`;
 }
 
 export function parseWarmupItemId(
   id: string,
-): { accountId: number; day: string; sessionNo: number } | null {
+): { accountId: AccountId; day: string; sessionNo: number } | null {
   const m = /^w(\d+)-(\d{4}-\d{2}-\d{2})-([12])$/.exec(id);
   if (!m) return null;
-  return { accountId: Number(m[1]), day: m[2]!, sessionNo: Number(m[3]) };
+  // The account id stays text: read as a number, a 17-digit one is rounded
+  // to an account that does not exist (PF-22).
+  const accountId = parseAccountId(m[1]);
+  if (!accountId) return null;
+  return { accountId, day: m[2]!, sessionNo: Number(m[3]) };
 }
 
 /**
@@ -129,7 +134,7 @@ export function workFor(account: {
 }
 
 interface RawAccount {
-  id: number;
+  id: AccountId;
   geelark_profile: string | null;
   username: string | null;
   character: string | null;
@@ -150,7 +155,7 @@ interface RawDelivery {
   id: number;
   content_type: string;
   source_id: string;
-  account_id: number;
+  account_id: AccountId;
   status: string;
   post_url: string | null;
   note: string | null;
@@ -237,7 +242,7 @@ export async function getTodoBoard(
         (onePhone ? `&id=eq.${only.deviceId}` : ""),
     ),
     sbRest<RawAccount[]>(
-      "accounts?select=id,geelark_profile,username,character,platform,device_id," +
+      `accounts?select=${ACCOUNT_ID_COL},geelark_profile,username,character,platform,device_id,` +
         "warmup_mode,posting_paused&is_active=eq.true&order=id.asc" +
         (onePhone ? `&device_id=eq.${only.deviceId}` : "&device_id=not.is.null"),
     ),
@@ -269,7 +274,7 @@ export async function getTodoBoard(
   const unified = await readUnified(deliveries);
 
   const extras: TodoExtras = {};
-  const itemsByAccount = new Map<number, TodoItem[]>();
+  const itemsByAccount = new Map<AccountId, TodoItem[]>();
 
   for (const row of deliveries) {
     const account = posting.get(row.account_id);
@@ -376,7 +381,7 @@ export async function getTodoBoard(
     accounts: working
       .filter((a) => a.device_id === d.id)
       .map<TodoAccount>((a) => ({
-        id: String(a.id),
+        id: a.id,
         handle: a.username ? `@${a.username}` : (a.geelark_profile ?? `Account ${a.id}`),
         platform: toPlatform(a.platform),
         character: a.character ?? "—",
@@ -390,7 +395,7 @@ export async function getTodoBoard(
   return { devices: board, extras, noPhones: false };
 }
 
-function push<T>(map: Map<number, T[]>, key: number, value: T) {
+function push<K, T>(map: Map<K, T[]>, key: K, value: T) {
   const list = map.get(key);
   if (list) list.push(value);
   else map.set(key, [value]);
@@ -416,9 +421,9 @@ function daysBetween(from: string, to: string): number {
  * the carry-over window is applied per row above, where the content's own day
  * is known.
  */
-async function readDeliveries(accountIds: number[], from: Date): Promise<RawDelivery[]> {
+async function readDeliveries(accountIds: AccountId[], from: Date): Promise<RawDelivery[]> {
   if (accountIds.length === 0) return [];
-  const cols = "id,content_type,source_id,account_id,status,post_url,note,done_at,created_at";
+  const cols = `id,content_type,source_id,${ACCOUNT_FK_COL},status,post_url,note,done_at,created_at`;
   const inList = `(${accountIds.join(",")})`;
   const [open, done] = await Promise.all([
     sbRest<RawDelivery[]>(

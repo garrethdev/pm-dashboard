@@ -109,7 +109,7 @@ export default async function DevicePage({
   }));
   // How each account on this phone stands today, so the log form can say what
   // its minutes are being added to.
-  const progress: Record<number, SessionProgress[]> = {};
+  const progress: Record<string, SessionProgress[]> = {};
   for (const a of device.accounts) {
     progress[a.id] = progressToday(todaysSessions.filter((s) => s.accountId === a.id));
   }

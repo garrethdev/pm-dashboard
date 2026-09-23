@@ -4,6 +4,7 @@ import { ACCOUNTS_TAG, DEVICES_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
 import { assignRefusal, parseRowId } from "@/lib/data/device-rules";
+import { parseAccountId, type AccountId } from "@/lib/data/account-id";
 import {
   assignAccountToDevice,
   countDeviceAccounts,
@@ -23,10 +24,10 @@ function accountLabel(a: DeviceAccountState): string {
 
 async function readInput(request: Request, ctx: Ctx) {
   const deviceId = parseRowId((await ctx.params).id);
-  let accountId: number | null = null;
+  let accountId: AccountId | null = null;
   try {
     const body = (await request.json()) as { accountId?: unknown };
-    accountId = parseRowId(body?.accountId);
+    accountId = parseAccountId(body?.accountId);
   } catch {
     // falls through to the 400 below
   }

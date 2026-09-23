@@ -25,7 +25,8 @@ export function AccountWarmupToday({
   deviceName,
   progress,
 }: {
-  accountId: number;
+  /** accounts.id as text (PF-22). */
+  accountId: string;
   deviceId: number | null;
   handle: string;
   deviceName: string;

@@ -1,4 +1,5 @@
 import { proxyForDisplay } from "@/lib/data/device-rules";
+import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
 import { toPlatform } from "@/lib/platform";
 import type { BanCleanup, BanStep } from "@/lib/data/todo-placeholder";
 
@@ -80,7 +81,7 @@ export class RetireError extends Error {
 }
 
 interface RawAccount {
-  id: number;
+  id: AccountId;
   geelark_profile: string;
   device_id: number | null;
   delivery_mode: string | null;
@@ -109,7 +110,7 @@ export interface RetirePreview {
 
 async function readAccount(profile: string): Promise<RawAccount> {
   const rows = await read<RawAccount[]>(
-    `accounts?select=id,geelark_profile,device_id,delivery_mode,is_active,phone_number` +
+    `accounts?select=${ACCOUNT_ID_COL},geelark_profile,device_id,delivery_mode,is_active,phone_number` +
       `&geelark_profile=eq.${encodeURIComponent(profile)}`,
     "the account",
   );
@@ -202,7 +203,7 @@ export async function retirePhoneAccount(
 
 interface RawStep {
   id: number;
-  account_id: number;
+  account_id: AccountId;
   device_id: number | null;
   kind: string;
   detail: string | null;
@@ -249,8 +250,8 @@ export async function getCleanupsByDevice(
   // Every step of any checklist that could touch this day: started before it
   // ended, and either still open or finished after it began. Read by account
   // so a checklist is judged whole, never step by step.
-  const open = await read<{ account_id: number }[]>(
-    `ban_cleanup_steps?select=account_id&created_at=lt.${encodeURIComponent(to.toISOString())}` +
+  const open = await read<{ account_id: AccountId }[]>(
+    `ban_cleanup_steps?select=${ACCOUNT_FK_COL}&created_at=lt.${encodeURIComponent(to.toISOString())}` +
       // Quoted inside or=(…), where a bare "." or ":" in the value would be
       // read as syntax.
       `&or=${encodeURIComponent(`(done_at.is.null,done_at.gte."${from.toISOString()}")`)}`,
@@ -262,19 +263,19 @@ export async function getCleanupsByDevice(
   const inList = `(${accountIds.join(",")})`;
   const [steps, accounts] = await Promise.all([
     read<RawStep[]>(
-      `ban_cleanup_steps?select=id,account_id,device_id,kind,detail,position,done_at,created_at` +
+      `ban_cleanup_steps?select=id,${ACCOUNT_FK_COL},device_id,kind,detail,position,done_at,created_at` +
         `&account_id=in.${inList}&order=position.asc`,
       "the ban clean-ups",
     ),
     read<
       {
-        id: number;
+        id: AccountId;
         geelark_profile: string | null;
         username: string | null;
         platform: string | null;
       }[]
     >(
-      `accounts?select=id,geelark_profile,username,platform&id=in.${inList}`,
+      `accounts?select=${ACCOUNT_ID_COL},geelark_profile,username,platform&id=in.${inList}`,
       "the banned accounts",
     ),
   ]);
@@ -297,7 +298,7 @@ export async function getCleanupsByDevice(
     const a = accountById.get(accountId);
 
     const cleanup: BanCleanup = {
-      accountId: String(accountId),
+      accountId,
       handle: a?.username ? `@${a.username}` : (a?.geelark_profile ?? `Account ${accountId}`),
       platform: toPlatform(a?.platform),
       steps: mine.map<BanStep>((s) => ({
