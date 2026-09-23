@@ -93,7 +93,7 @@ purpose; the changelog has them.
 | P7 | Add the before-and-after comparison for moved accounts | Not started |
 | P8 | Add the checklist for a ban on a real phone | **Approved and built 2026-09-23** (PF-11). The app releases queued posts itself; the proxy is kept while other accounts use it (Garreth). Proven live with a practice phone, since deleted. `/todo?todo=ban` and `/accounts?demo=1` still draw the sample states |
 | P9 | Add the Live view page and link to it from the dashboard | Not started |
-| P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. Building is PF-03 then PF-15 |
+| P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. **Built 2026-09-23:** PF-03 saves the single move, PF-15 the batch (all or nothing) |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
 | P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Built 2026-09-23.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. The stale row is **approved and built 2026-09-23**: a red Overdue pill on the bell's 24-hour rule (Garreth). Not yet seen with a real post |
 | P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | **Reviewed 2026-09-23** (`docs/P13-REVIEW-FINDINGS.md`). **Six items approved and done the same day:** five fixed (not-found pages, the Physical calendar's short pills, "Infinity days", the WebGL crash, the Facebook tab's range choices) and "No phones yet" found to be correct already. The colour, size and tap-target findings wait for their own approval |
@@ -982,9 +982,11 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 ## P10. Move accounts onto phones in one step, and several at once
 
 - **Status:** **APPROVED 2026-09-22.** Drawn in the running app, not on a
-  canvas, and approved after five rounds of feedback. Nothing saves yet:
-  PF-03 builds the single write, PF-15 the batch. Next step is building, not
-  designing.
+  canvas, and approved after five rounds of feedback. ~~Nothing saves yet:
+  PF-03 builds the single write, PF-15 the batch.~~ **Both saves built
+  2026-09-23:** PF-03 moves one account (fleet, phone and move date in one
+  write), PF-15 moves a batch all or nothing. Proven on practice rows only;
+  no real account has moved, because no phone is registered.
 - **Backlog:** PF-03, PF-15.
 - **Where to look:** `/settings?demo=1`. The invented phones are the same four
   the Accounts by-phone view and the To-do screens use, so the three screens
