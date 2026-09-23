@@ -20,6 +20,68 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — A phone's own page now shows its real day
+
+**Where it came from:** design ticket P5. When it was checked again on
+2026-09-22, after the real to-do list went live, the "Today on this phone"
+block on a phone's page was found still drawing only the made-up phone. On
+a real phone it always said "Nothing due", however much work the phone had.
+
+**What changed:**
+
+- **"Today on this phone" now shows that phone's real work.** It comes from
+  the same list the To-do page uses, cut down to this one phone, so the two
+  screens always agree. Tick something on the To-do page or the dashboard
+  card, and the phone's page shows it on the next load.
+- **It still looks the way Garreth approved it on 2026-09-22:** one line per
+  account, with a Posts pill and a Warmup pill. Cyan means that part is done.
+  Grey means it is not, and pressing it takes you to that account on the To-do
+  page. Nothing can be ticked on the phone's page, because work gets marked
+  done on the To-do page and the dashboard only. That was his decision, and
+  this change connects the real list without changing it.
+- **If the list cannot be read,** the block says so, instead of saying
+  "Nothing due" about a phone nobody could check.
+- **The made-up phone (`?demo=`) is unchanged,** and nothing on it saves.
+- **The row for adding an account now sits at the bottom of the Accounts
+  card** (Garreth, 2026-09-23). On a desktop the card is as tall as Warmup
+  history beside it, and the row used to float halfway down with empty card
+  below it. On a phone nothing moves. Checked at 1440 and 390, dark and light,
+  on the made-up phone with and without accounts, in headless Chrome, not
+  Safari.
+- **A phone's "Choose an account" now lists only Physical accounts**
+  (Garreth, 2026-09-23). Until now it also offered Cloud accounts. Adding one
+  put it on the phone but left it on the Cloud side, so it would have kept
+  posting through the robot while listed on a real phone. That is the
+  half-move the Settings move (PF-03) exists to prevent. A Cloud account now
+  goes onto a phone only from Settings, which moves its side, its phone and
+  the move date together. The save refuses a Cloud account too, not just the
+  list, saying for example "Profile 8 is on the Cloud side. Move it onto a
+  phone from Settings." Checked live with practice rows that have since been
+  deleted: the list showed the Physical one and not the Cloud one, a direct
+  save of the Cloud one was refused with nothing written, and the Physical
+  one still went on. The final write also checks the account is still
+  Physical, so one moved to Cloud in the moment between the check and the
+  save is not put on a phone either. That last check compiles and passes the
+  automated checks but has not met the database yet.
+- **A ban's clean-up steps are not shown on the phone's page.** They belong to
+  an account that has already left the phone, and the approved block has one
+  line for each account still on it. They stay on the To-do page.
+
+**Verified:** checked live with practice rows that have since been deleted: a
+practice phone with two practice accounts and one post waiting. The phone's
+page showed exactly what the To-do page showed ("0 of 5"). A post marked done
+and a warmup logged on the To-do page turned its Posts pill cyan and its Warmup
+pill to "1 of 2". A grey pill went to the right account on the To-do page. A
+second phone with no work showed the full-card "Nothing due". The practice
+accounts were switched on for posting only while this was checked, from 3:04 to
+3:08 am ET, because the list hides paused accounts. Afterwards a query found
+nothing had been handed to them, and they were deleted with everything they
+made. The To-do page's screenshots before and after the change are byte for
+byte identical. The code compiles and the 191 automated checks pass. The
+screenshots were taken in headless Chrome, not Safari.
+
+---
+
 ## 2026-09-23 — Moving an account onto a phone now saves the phone
 
 **Where it came from:** ticket PF-03, the save behind design ticket P10's

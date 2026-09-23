@@ -97,6 +97,11 @@ export async function POST(request: Request) {
         heldCount: await countDeviceAccounts(device.id),
         accountActive: true,
         accountDeviceId: null,
+        // The fleet the new account is being made on. The form only offers a
+        // phone on Physical and parseNewAccount refuses one on Cloud; this is
+        // the same rule again, from the one place every phone write asks.
+        accountFleet: fields.deliveryMode === "manual" ? "physical" : "cloud",
+        accountName: fields.profile,
       });
       if (refusal) return NextResponse.json({ error: refusal, field: "device" }, { status: 409 });
     }

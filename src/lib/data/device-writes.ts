@@ -190,10 +190,12 @@ export interface DeviceAccountState {
   platform: string | null;
   is_active: boolean;
   device_id: number | null;
+  /** 'manual' is Physical, 'geelark' is Cloud. */
+  delivery_mode: string;
 }
 
 // SECURITY: accounts carries credentials — explicit columns only.
-const ACCOUNT_COLS = "id,geelark_profile,username,platform,is_active,device_id";
+const ACCOUNT_COLS = "id,geelark_profile,username,platform,is_active,device_id,delivery_mode";
 
 export async function getDeviceAccountState(accountId: number): Promise<DeviceAccountState | null> {
   const res = await sbFetch(`rest/v1/accounts?select=${ACCOUNT_COLS}&id=eq.${accountId}&limit=1`, {});
@@ -217,7 +219,12 @@ async function patchAccountDevice(
   // The filter on the current value makes this a compare-and-set: if someone
   // else moved the account between our read and this write, nothing matches
   // and nothing is changed.
-  const guard = onlyIfCurrently === null ? "device_id=is.null" : `device_id=eq.${onlyIfCurrently}`;
+  let guard = onlyIfCurrently === null ? "device_id=is.null" : `device_id=eq.${onlyIfCurrently}`;
+  // Only a Physical account goes ON a phone (Garreth, 2026-09-23). Checked
+  // here as well as in `assignRefusal`, so an account moved to Cloud between
+  // the check and this write is not put on a phone anyway. Taking one OFF a
+  // phone stays open to any account.
+  if (deviceId !== null) guard += "&delivery_mode=eq.manual";
   const res = await sbFetch(`rest/v1/accounts?id=eq.${accountId}&${guard}&select=id`, {
     method: "PATCH",
     headers: { ...JSON_HEADERS, Prefer: "return=representation" },
@@ -238,7 +245,10 @@ export async function assignAccountToDevice(
 ): Promise<void> {
   const changed = await patchAccountDevice(accountId, device.id, null);
   if (!changed) {
-    throw new DeviceWriteError("That account was just put on a phone by someone else. Refresh and look again.", 409);
+    throw new DeviceWriteError(
+      "That account was just put on a phone, or moved to the Cloud side, by someone else. Refresh and look again.",
+      409,
+    );
   }
   // There used to be a re-count here that undid the write when the phone had
   // gone over three while two people were both adding to it. Nothing caps a

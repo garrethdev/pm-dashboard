@@ -750,6 +750,18 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
   and warmups it is owed. The tables and the To-do page it needs both exist
   now; nothing went back and joined them to this page. That is the whole
   remaining job here, and it is a wiring change rather than a design one.
+
+  **Wired 2026-09-23.** Today on this phone reads `getTodoBoard()` from
+  `todo.ts`, the To-do page's own reader, narrowed to this phone, so the two
+  screens cannot disagree. It keeps the approved read-only pills. There are no
+  ticks here. A failed read says "Couldn't read today's list" instead of
+  "Nothing due". `?demo=` still draws the placeholder. Ban clean-ups (P8) are
+  left off this block, because it has one line for each account still on the
+  phone. *Verified live* with practice rows that have since been deleted:
+  the phone's page matched the To-do page, a tick on the To-do page turned the
+  pill cyan, a grey pill went to the right account, and an empty phone showed
+  the full-card empty state. Checked at 1440 and 390, dark and light, in
+  headless Chrome, not Safari.
   Drawn in the running app
   behind placeholder data, the way P1 to P4 were, so what is reviewed is the
   screen itself. The page is
