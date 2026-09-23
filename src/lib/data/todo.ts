@@ -37,7 +37,9 @@ import type {
  *    looked at still reads correctly afterwards.
  *
  * THE RULES IT ENFORCES, all Garreth's:
- *  - Paused accounts are hidden (2026-09-19).
+ *  - A paused account is given no posts (2026-09-19), but a paused account
+ *    with Manual warmup still gets its two warmups (2026-09-23) — see
+ *    `workFor` below.
  *  - An unfinished post carries over for three days and then stops (2026-09-19).
  *  - A FAILED post is dumped: it is finished, it never carries over, and it is
  *    never handed out again (2026-09-22).
@@ -101,6 +103,29 @@ export function parseWarmupItemId(
   const m = /^w(\d+)-(\d{4}-\d{2}-\d{2})-([12])$/.exec(id);
   if (!m) return null;
   return { accountId: Number(m[1]), day: m[2]!, sessionNo: Number(m[3]) };
+}
+
+/**
+ * What the list asks of one account: posts, warmups, both or neither.
+ *
+ * Decision 6 (Garreth, 2026-09-19) hid a paused account entirely — it keeps
+ * its phone and simply does no work. He narrowed it on 2026-09-23: an account
+ * that has just moved onto a phone stays paused for three to five days while
+ * it is warmed back up BY HAND, and those warmups are real work that belongs
+ * on the list. So pausing still stops the POSTS, always, and it stops the
+ * warmups only for an account set to Automated, whose sessions a script logs
+ * and nobody on the phones is asked for.
+ *
+ * One function, because the list, the phone's own page, the dashboard card and
+ * the bell's count all read the board this feeds, and the rule for a paused
+ * account has to be the same in every one of them.
+ */
+export function workFor(account: {
+  posting_paused: boolean | null;
+  warmup_mode: string | null;
+}): { posts: boolean; warmups: boolean } {
+  if (account.posting_paused !== true) return { posts: true, warmups: true };
+  return { posts: false, warmups: account.warmup_mode !== "script" };
 }
 
 interface RawAccount {
@@ -225,16 +250,17 @@ export async function getTodoBoard(
     return { devices: [], extras: {}, noPhones: true };
   }
 
-  // Decision 6 (Garreth, 2026-09-19): a paused account is not asked for
-  // anything. It keeps its phone, it simply does no work.
-  const working = accounts.filter((a) => a.posting_paused !== true);
-  const byId = new Map(working.map((a) => [a.id, a]));
+  // Decision 6 as it now stands (Garreth, 2026-09-23): a paused account is
+  // given no posts, but one warmed by hand keeps its warmups. An account with
+  // nothing asked of it is left off the list altogether.
+  const working = accounts.filter((a) => workFor(a).posts || workFor(a).warmups);
+  const posting = new Map(working.filter((a) => workFor(a).posts).map((a) => [a.id, a]));
 
   // A ban's clean-up is read without a fallback, unlike the warmups: a list
   // that quietly dropped a banned account's sign-out would look finished when
   // it is not, and a list that says it could not load is the honest failure.
   const [deliveries, sessions, cleanups] = await Promise.all([
-    readDeliveries([...byId.keys()], from),
+    readDeliveries([...posting.keys()], from),
     getSessionsOnDay({}, dayOffset, now).catch(() => [] as WarmupSession[]),
     getCleanupsByDevice(from, to),
   ]);
@@ -246,7 +272,7 @@ export async function getTodoBoard(
   const itemsByAccount = new Map<number, TodoItem[]>();
 
   for (const row of deliveries) {
-    const account = byId.get(row.account_id);
+    const account = posting.get(row.account_id);
     if (!account) continue;
 
     const content = unified.get(`${row.content_type}\u0000${row.source_id}`);
@@ -316,7 +342,8 @@ export async function getTodoBoard(
 
   // The two warmups every account owes that day, worked out from what was
   // logged rather than stored as rows of their own.
-  for (const account of working.values()) {
+  for (const account of working) {
+    if (!workFor(account).warmups) continue;
     const mine = sessions.filter((s) => s.accountId === account.id);
     const progress = progressToday(mine);
     const automated = account.warmup_mode === "script";

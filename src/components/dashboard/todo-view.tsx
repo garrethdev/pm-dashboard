@@ -13,11 +13,9 @@ import {
   Copy,
   Download,
   Film,
-  Globe,
   LinkSimple,
   ListChecks,
   Rows,
-  SignOut,
   Smartphone,
   SquaresFour,
 } from "@/components/ui/icons";
@@ -25,23 +23,21 @@ import { StatusPill } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import {
   AutomatedMark,
+  BanCleanupGroup,
   TodoCheck,
   TodoLogSheet,
+  useCleanupTicks,
   useTodoBoard,
   type SheetTarget,
 } from "@/components/dashboard/todo-board";
 import {
   accountProgress,
-  cleanupSteps,
-  isCleanupDone,
   todoAnchor,
   deviceProgress,
   isItemFinished,
   sortItems,
   todoDayLabel,
   todoEmptyReason,
-  type BanCleanup,
-  type BanStep,
   type TodoAccount,
   type TodoDay,
   type TodoDevice,
@@ -366,55 +362,10 @@ function DeviceCard({
 }) {
   // Open by default: this page is the work, not a summary of it.
   const [open, setOpen] = useState(true);
-  // Ticks on a ban's clean-up steps, shown the instant they are pressed. On
-  // the live list each is saved (PF-11) and dropped once the list has been
-  // re-read with it; on a design state it is only held here.
-  const [ticked, setTicked] = useState<Record<string, string | null>>({});
-  const [stepError, setStepError] = useState<string | null>(null);
-  const cleanups = (device.cleanups ?? []).map((c) => ({
-    ...c,
-    steps: c.steps.map((st) =>
-      st.id in ticked ? { ...st, done: ticked[st.id] !== null, doneAt: ticked[st.id] ?? undefined } : st,
-    ),
-  }));
+  // Ticks on a ban's clean-up steps, shown the instant they are pressed and
+  // saved on the live list (PF-11). Shared with the dashboard card.
+  const { cleanups, toggleStep, stepError } = useCleanupTicks(device, onStepSaved);
   const progress = deviceProgress({ ...device, cleanups });
-  const toggleStep = async (st: BanStep) => {
-    const done = !st.done;
-    const drop = () =>
-      setTicked((t) => {
-        const next = { ...t };
-        delete next[st.id];
-        return next;
-      });
-    setStepError(null);
-    setTicked((t) => ({
-      ...t,
-      [st.id]: done
-        ? new Intl.DateTimeFormat("en-GB", {
-            timeZone: "America/New_York",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          }).format(new Date())
-        : null,
-    }));
-    if (!onStepSaved) return;
-    try {
-      const res = await fetch(`/api/ban-steps/${st.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ done }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
-      await onStepSaved();
-      drop();
-    } catch (err) {
-      // Never left looking saved: the tick goes back to what the list says.
-      drop();
-      setStepError(err instanceof Error ? err.message : "Couldn't save the tick");
-    }
-  };
 
   return (
     // `@container`: everything inside sizes itself against THIS CARD, not the
@@ -493,98 +444,6 @@ function DeviceCard({
         </div>
       )}
     </Card>
-  );
-}
-
-/**
- * The clean-up after a ban on a real phone — design ticket P8.
- *
- * Drawn like an account's own panel, because it IS about one account, with a
- * red Banned pill so it is not mistaken for a working one. The steps are only
- * what a person has to do on the phone; what the app did at the retire is not
- * repeated here (Garreth, 2026-09-23). Finished, it stays for the rest of the day struck through, like
- * any finished item.
- */
-function BanCleanupGroup({
-  cleanup,
-  onToggle,
-}: {
-  cleanup: BanCleanup;
-  onToggle: (st: BanStep) => void;
-}) {
-  const steps = cleanupSteps(cleanup);
-  const done = steps.filter((st) => st.done).length;
-  const finished = isCleanupDone(cleanup);
-
-  return (
-    <div className="min-w-0 rounded-nested bg-card-raised/50 px-3 pt-4 pb-3">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-border pb-3.5">
-        <PlatformIcon platform={cleanup.platform} />
-        <span className={cn("min-w-0 truncate text-sm font-medium", finished && "text-text-muted")}>
-          {cleanup.handle}
-        </span>
-        <StatusPill tone="danger">Banned</StatusPill>
-        <span className="flex shrink-0 items-center gap-1.5 @lg:ml-auto">
-          <StatusPill tone={finished ? "ok" : "gray"}>
-            {finished ? "Cleaned up" : `Clean-up ${done} of ${steps.length}`}
-          </StatusPill>
-        </span>
-      </div>
-
-      <ul className="flex flex-col pt-1.5">
-        {cleanup.steps.map((st) => (
-          <BanStepRow key={st.id} step={st} onToggle={() => onToggle(st)} />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function BanStepRow({ step, onToggle }: { step: BanStep; onToggle: () => void }) {
-  const Icon = step.kind === "signOut" ? SignOut : step.kind === "number" ? Smartphone : Globe;
-
-  return (
-    <li className="flex items-start gap-2 border-b border-border/60 py-2 last:border-0 last:pb-0 @lg:gap-3">
-      <button
-        onClick={onToggle}
-        role="checkbox"
-        aria-checked={step.done}
-        aria-label={step.label}
-        className="group flex h-9 w-11 shrink-0 items-center justify-center"
-      >
-        <span
-          className={cn(
-            "flex size-[22px] items-center justify-center rounded-md border transition-colors",
-            step.done
-              ? "border-accent bg-accent/15 text-accent"
-              : "border-border text-transparent group-hover:border-text-muted",
-          )}
-        >
-          <Check className="size-3.5" />
-        </span>
-      </button>
-
-      <span className={cn("flex h-9 shrink-0 items-center", step.done && "opacity-55")}>
-        <span className="flex size-8 items-center justify-center rounded-full bg-card-raised text-text-muted">
-          <Icon className="size-4" />
-        </span>
-      </span>
-
-      {/* The time column of a task row, left empty, so the step's name lines
-          up with every task name on the page. */}
-      <span className="w-11 shrink-0" aria-hidden />
-
-      <div className={cn("flex min-w-0 flex-1 flex-col", step.done && "opacity-55")}>
-        <span className="flex min-h-9 items-center">
-          <span className={cn("min-w-0 text-sm font-medium break-words", step.done && "line-through")}>
-            {step.label}
-          </span>
-        </span>
-        <p className="tnum text-xs text-text-muted">
-          {[step.detail, step.done ? step.doneAt : null].filter(Boolean).join(" · ")}
-        </p>
-      </div>
-    </li>
   );
 }
 
