@@ -20,6 +20,83 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-23 — Six fixes from the P13 review: missing pages, the Physical calendar, "Infinity days", the glowing button, the Facebook tab
+
+**Where it came from:** design ticket P13's review of the screens built
+before the design step (`docs/P13-REVIEW-FINDINGS.md`). Garreth approved these
+six on 2026-09-23. The review's colour, size and tap-target findings are not
+part of this. They wait for their own approval.
+
+**What changed:**
+
+- **A page that doesn't exist now looks like the app.** Opening a phone that
+  was deleted used to show Next's built-in "404" page, which in light mode
+  turned the whole screen black and wiped out the logo. Now it says "This
+  phone is gone" with a link back to All phones. A wrong account number says
+  "This account is gone" with a link back to All accounts. Any other wrong
+  address says "This page doesn't exist" with a link to the Dashboard. All
+  three keep the menu and top bar, and read correctly in dark and light mode.
+  Light mode needed its own small fix on these pages: the browser was dropping
+  the saved theme when it drew a "not found" page, so light-mode viewers got
+  the dark theme.
+  The missing-account page still logs a React warning about a "script tag"
+  in the background, which only shows on the development server. The Cloud
+  account page was deliberately not restructured to avoid it, and nothing
+  looks different because of it.
+  An unknown **page** address now answers with status 200 and this "doesn't
+  exist" page, so a person sees it. Nothing machine-facing lives at page
+  addresses. A mistyped address under `/api`, which n8n, the Python renderer
+  and scripts call, still answers "not found" (404) as before, so a wrong one
+  fails loudly instead of looking like success.
+- **The Physical calendar no longer shows Cloud's "N short" counts.** The
+  "short" pills on each day come from the scheduler's daily run, which plans
+  every account at once, and today those are all Cloud accounts. On Physical
+  they read as that fleet's shortfall ("39 short" with no accounts at all).
+  They are now left off on Physical. Cloud's calendar is unchanged. The day
+  panel's shortfall list still covers the whole run, as PF-19 decided.
+- **"Nearest expiry in Infinity days" is gone.** With no active proxy, the
+  Proxies & numbers card on the dashboard now says "No proxies yet". Physical
+  always hit this, because its proxies are on the phones, which this card does
+  not count yet. Cloud still reads "38 proxies active, nearest expiry in …".
+- **The glowing accent button can no longer take the whole page down.** Its
+  glow needs WebGL, the browser's graphics feature. When the browser couldn't
+  start it (switched off, blocked, or out of capacity), the button crashed and
+  every page with one showed "This page couldn't load". Now the button just
+  shows without the glow.
+- **On Analytics, the Facebook tab no longer shows the 7 days / 2 weeks /
+  1 month / All time choices**, or the "as of" date beside them. Facebook has
+  no numbers to choose a range for, so they did nothing. They come back on
+  All, TikTok and Instagram.
+- **"No phones yet" on the To-do card and the Proxies page was already right,
+  so nothing was changed.** The review saw it while phones were listed on the
+  Devices page. The cause was timing: the Devices list is remembered for a
+  minute, and another session had just deleted its practice phones straight
+  from the database. Devices kept showing them while To-do (which is never
+  remembered) correctly said there were none. Proven with one practice phone
+  with no accounts: To-do said "Nothing due today" and Proxies listed the
+  phone. Once it was deleted, both said "No phones yet".
+
+**Verified:** in headless Chrome, not Safari. The code compiles, lint is
+clean on every file touched, and all 187 automated checks pass. With
+screenshots at phone and desktop width, dark and light:
+
+- **Cloud calendar:** before and after compared pixel by pixel, identical in
+  all four views. One view differed only where Next's dev-only "Compiling…"
+  badge sat in the corner.
+- **Buttons with WebGL on:** the Devices and Physical Proxies pages were
+  identical before and after in all four views.
+- **Buttons with WebGL off:** the Devices, Proxies and dashboard pages loaded,
+  and Add phone opened its form.
+- **Missing pages:** a missing phone, a missing account and a made-up address
+  each showed the new page in both themes.
+
+One practice phone ("P13 practice phone") was added for the "No phones yet"
+check and deleted straight after. A query confirmed no phone is left.
+**Not verified:** Safari. A production build: the light-mode theme problem
+was seen on the dev server, and the fix for it has only been checked there.
+
+---
+
 ## 2026-09-23 — Moving an account onto a phone now saves the phone
 
 **Where it came from:** ticket PF-03, the save behind design ticket P10's

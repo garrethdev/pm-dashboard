@@ -96,7 +96,7 @@ purpose; the changelog has them.
 | P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. Building is PF-03 then PF-15 |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Not started |
 | P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Built 2026-09-23.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. The stale row is **approved and built 2026-09-23**: a red Overdue pill on the bell's 24-hour rule (Garreth). Not yet seen with a real post |
-| P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | Not started |
+| P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | **Reviewed 2026-09-23** (`docs/P13-REVIEW-FINDINGS.md`). **Six items approved and done the same day:** five fixed (not-found pages, the Physical calendar's short pills, "Infinity days", the WebGL crash, the Facebook tab's range choices) and "No phones yet" found to be correct already. The colour, size and tap-target findings wait for their own approval |
 | P14 | Put an account's settings behind a ⋯ menu on its row, with Edit account and Retire account | **Approved and built 2026-09-23.** Live on every Physical row; Cloud unchanged (proven by screenshot). Phone numbers now belong to accounts |
 
 Each of these has its full ticket further down. **A ticket moves through four
@@ -1122,7 +1122,7 @@ action is `CtaButton`, never a hand-rolled `bg-accent` button.**
 
 ## P13. Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode
 
-- **Status:** not started. These screens work and were looked at in the app,
+- **Status:** **reviewed 2026-09-23**, with findings in `docs/P13-REVIEW-FINDINGS.md`. Six items approved and done the same day: five fixed, one found already correct. The design and accessibility findings are waiting for approval. Before the review: these screens worked and had been looked at in the app,
   but none went through a design review: the Cloud | Physical switch,
   Settings → Account management, the Devices list and Add phone sheet, the
   device page, the Devices card on the dashboard, the shared empty state,

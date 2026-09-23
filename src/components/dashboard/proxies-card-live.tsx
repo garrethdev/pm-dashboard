@@ -44,11 +44,17 @@ function proxyAttention(data: ProxyPhoneData): { attention: AttentionItem[]; foo
   }
 
   const healthy = data.rows.filter((r) => r.subscription?.status === "ACTIVE");
-  const nearest = Math.min(...healthy.map((r) => r.subscription!.daysLeft));
   const orphanNote =
     data.orphanSubscriptions.length > 0
       ? `, ${data.orphanSubscriptions.length} unassigned subscriptions`
       : "";
+  // With no active proxy there is no nearest expiry: Math.min() of nothing is
+  // Infinity, which the card printed as "in Infinity days" (P13 review,
+  // 2026-09-23). Physical is in that state until its proxies are counted.
+  if (healthy.length === 0) {
+    return { attention: attention.slice(0, MAX_ROWS), footer: `No proxies yet${orphanNote}` };
+  }
+  const nearest = Math.min(...healthy.map((r) => r.subscription!.daysLeft));
   return {
     attention: attention.slice(0, MAX_ROWS),
     footer: `${healthy.length} proxies active, nearest expiry in ${nearest} days${orphanNote}`,

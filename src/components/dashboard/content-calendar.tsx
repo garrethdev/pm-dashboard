@@ -17,6 +17,7 @@ import { DashCard } from "@/components/ui/card";
 import { StaleNotice } from "@/components/ui/stale-notice";
 import { cn } from "@/lib/utils";
 import { useDataRefresh } from "@/lib/refresh-bus";
+import type { Fleet } from "@/lib/fleet";
 
 /**
  * Content Calendar — the Smart Scheduler's output as a month grid.
@@ -58,6 +59,7 @@ export function ContentCalendar({
   today,
   initialFetchedAt,
   initialStale = false,
+  fleet = "cloud",
 }: {
   initial: CalendarMonth;
   initialYear: number;
@@ -67,6 +69,8 @@ export function ContentCalendar({
   initialFetchedAt: string;
   /** The month came from the last-known-good copy, not from Supabase. */
   initialStale?: boolean;
+  /** The fleet being looked at (top right). */
+  fleet?: Fleet;
 }) {
   const [month, setMonth] = useState({
     year: initialYear,
@@ -192,6 +196,11 @@ export function ContentCalendar({
                   muted={!inMonth(day.date)}
                   isToday={day.date === today}
                   onOpen={() => setOpenDay(day.date)}
+                  // The run's "N short" counts every account the scheduler
+                  // planned for, and today that is Cloud's. On Physical it read
+                  // as that fleet's shortfall (P13 review, 2026-09-23), so it is
+                  // left off there until the run can say which fleet was short.
+                  showShortfall={fleet !== "physical"}
                 />
               ))}
             </div>
@@ -217,11 +226,13 @@ function DayCell({
   muted,
   isToday,
   onOpen,
+  showShortfall,
 }: {
   day: CalendarDay;
   muted: boolean;
   isToday: boolean;
   onOpen: () => void;
+  showShortfall: boolean;
 }) {
   // Only live posts earn a pill. Held and failed rows are a quiet footnote;
   // cancelled rows never arrive at all (the RPCs drop them), so nothing here
@@ -345,7 +356,7 @@ function DayCell({
               {day.failed} failed
             </span>
           )}
-          {day.run && <RunPill run={day.run} />}
+          {day.run && <RunPill run={day.run} showShortfall={showShortfall} />}
           {day.offRegistry && (
             <span title="Outside the active registry">
               <AlertTriangle className="size-3 text-warn" />
@@ -362,7 +373,7 @@ function DayCell({
  * is noise — the cell is already dense — so success shows nothing and the two
  * states worth chasing get a pill each (Garreth 2026-09-06).
  */
-function RunPill({ run }: { run: SchedulerRun }) {
+function RunPill({ run, showShortfall }: { run: SchedulerRun; showShortfall: boolean }) {
   if (run.status === "error") {
     return (
       <span
@@ -373,7 +384,7 @@ function RunPill({ run }: { run: SchedulerRun }) {
       </span>
     );
   }
-  if (run.shortfallCount > 0) {
+  if (showShortfall && run.shortfallCount > 0) {
     return (
       <span
         title={`${run.shortfallCount} slot${run.shortfallCount === 1 ? "" : "s"} the scheduler could not fill`}

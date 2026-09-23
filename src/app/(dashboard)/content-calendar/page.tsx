@@ -32,12 +32,13 @@ async function CalendarLive() {
   // Fetch inside the try, build JSX outside it: JSX returned from a try block
   // is not actually rendered there, so a render-time error would escape the
   // catch anyway and the guard would be a lie.
-  let data, fetchedAt, stale;
+  let data, fetchedAt, stale, fleet;
   try {
     // The fleet the person is looking at (PF-19). Read here rather than passed
     // in, so the run pill below can read the same cookie and share the request
     // dedupe on getCalendarMonth.
-    ({ data, fetchedAt, stale } = await getCalendarMonth(year, month1, await getFleet()));
+    fleet = await getFleet();
+    ({ data, fetchedAt, stale } = await getCalendarMonth(year, month1, fleet));
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     return (
@@ -55,6 +56,7 @@ async function CalendarLive() {
       today={today}
       initialFetchedAt={fetchedAt}
       initialStale={stale ?? false}
+      fleet={fleet}
     />
   );
 }

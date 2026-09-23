@@ -825,7 +825,10 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
             ]}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-3 sm:ml-auto">
+        {/* Hidden on Facebook: there is nothing to chart, so a range (and the
+            date the TikTok/Instagram numbers were read) would choose nothing
+            (P13 review, 2026-09-23). They return with the other tabs. */}
+        <div hidden={facebook} className="flex flex-wrap items-center gap-3 sm:ml-auto">
           {/* Not real-time: both perf tables are filled by scheduled ingests. */}
           <span className={cn("text-xs whitespace-nowrap text-text-muted", loading && "animate-pulse")}>
             {loading ? "updating…" : `as of ${formatEtDate(data.lastIngest)}`}
