@@ -163,7 +163,8 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
 | PF-10 | Comparison view | ~~Intermediate~~ | **Dropped 2026-09-23 (Garreth):** not needed |
-| PF-13 | Write path for the warmup script | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Still waits on the script itself being decided |
+| PF-13 | Warmup script: the dashboard side (write path, Running, what an Automated account shows) | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Split from the script build on 2026-09-25 (Garreth); can be built and proven with practice rows before the script exists |
+| PF-23 | Warmup script: the build (on the Air, its own repository) | Long term | **Partly ready now** — tasks B0–B11 need no phone (2026-09-25); M1 onward needs WebDriverAgent on a phone. Split from PF-13 on 2026-09-25 (Garreth). Needs PF-13's write path by its step M6 |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
@@ -715,7 +716,30 @@ cohort of the same character. This is what the week-6 review reads.
 *Done when:* Garreth and Yurie can read one moved account's before/after on
 one screen.
 
-## PF-13 · Write path for the warmup script — Ready now; waits on the script being decided
+## PF-13 · Warmup script: the dashboard side — Ready now
+
+*Split 2026-09-25 (Garreth):* this ticket is **only the dashboard's part** —
+everything the app and the database need so the script can report in, and so
+an Automated account reads correctly. Building the script itself is **PF-23**.
+None of this waits on the script: every item can be built and proven with
+practice rows, as PF-04 and PF-07 were.
+
+The work, in build order:
+
+1. **The write path.** A way for the Air to add `warmup_sessions` rows with
+   `mode = 'script'`: a service-role key kept on the Air, or a small secured
+   endpoint on the dashboard (the guide recommends the endpoint).
+2. **The Running status** (Garreth, 2026-09-25). A session is only written
+   when it ends, so a script that dies halfway looked the same as one that
+   never started. The script says when a session starts and checks in once a
+   minute; the dashboard shows **Running** while check-ins are fresh, and a
+   stopped script when they go quiet with no finished row. Recommended
+   storage: a small table of its own (one row per run, `last_seen_at`), not
+   `warmup_sessions`, whose minutes are summed to decide when a session is
+   done and which cannot take a zero-minute row. Not built.
+3. **What an Automated account shows**, the stopped-script threshold, and the
+   mid-day flip back to Manual — the three items P4 handed over, below.
+
 
 *Heading corrected 2026-09-22: it read "Blocked by PF-04", which the summary
 table above already contradicted. PF-04 landed 2026-09-22 and `warmup_sessions`
@@ -749,7 +773,81 @@ it. What has to be designed and built alongside the write path:
 
 *Done when:* a row inserted from the Air shows on the dashboard within a
 minute, **and an Automated account reads correctly on the screens above —
-including a script that has stopped, proven by stopping one.**
+Running while a session is under way, and a script that has stopped, proven
+by stopping one.** Until PF-23 exists, "from the Air" and "stopping one" can
+be a practice row written by hand and a check-in left to go quiet.
+
+## PF-23 · Warmup script: the build — Partly ready now; the phone steps are blocked by hardware
+
+*Split from PF-13 on 2026-09-25 (Garreth).* The program on the MacBook Air
+that warms real-phone accounts by itself. **It is not built in this repo**: it
+lives in its own repository on the Air and talks to the dashboard only through
+PF-13. Czedrick builds it.
+
+**The plan** is `Warmup Script Build Guide.md` (for the builder) and `Warmup
+Script Plan (Simple).md` (plain English), in the folder above this repo and not
+in git. In short: open the app, switch to the right account and prove it by
+reading the username, scroll like a person for 15 to 20 minutes twice a day,
+ask Claude whether some videos are on topic, like or follow only now and then,
+and report the session to the dashboard. It never posts, comments or messages.
+
+**Decided by Garreth, 2026-09-25:**
+
+- **Model for the on-topic check: Claude Haiku 4.5.** Estimated ~$76 a month
+  for the fleet at the guide's starting sample rate, against ~$380 on Opus 5.
+- **It reports Running** while a session is under way (the dashboard half is
+  PF-13).
+- **Search phrases:** his list of 22, in the guide's section 10.
+
+**Build order** (the guide's section 12; each step ends with something that
+can be shown):
+
+- M1 — Touch one phone from the Air, and from Czedrick's own Mac over Tailscale.
+- M2 — Read the screen: tell the feed from an advert or a dialog.
+- M3 — Scroll like a person for ten minutes, no likes, no Claude, no database.
+- M4 — The Claude check, agreeing with a human on fifty saved screenshots.
+- M5 — Likes, follows and saves, within the per-session caps.
+- M6 — Report to the dashboard: Running, then the finished session. **Needs
+  PF-13's write path and Running status.**
+- M7 — Every stop condition, each one set off on purpose.
+- M8 — The daily planner, unattended for three days.
+- M9 — One real account on the script for two weeks.
+
+Everything up to M9 runs on a throwaway TikTok account, never one of the moved
+accounts. Instagram and Facebook start only after M9 passes.
+
+**Can be done now, before the phones** (Garreth, 2026-09-25: build what does
+not need a phone, so phone day is testing). Full detail and a "done when" for
+each is in the guide's section 12a. They run against a pretend phone:
+
+- [ ] B0 — Anthropic key for the script; agree how it writes to the dashboard
+- [ ] B1 — The script's own repository, config with the search phrases, a dry-run switch
+- [ ] B2 — The pretend phone, so whole sessions can run on a laptop
+- [ ] B3 — Read iOS Farm and note what is borrowed
+- [ ] B4 — The behaviour numbers (watch times, swipes, like/follow/save odds, caps)
+- [ ] B5 — A lasting persona per account
+- [ ] B6 — Session shapes, never the same twice running
+- [ ] B7 — The daily planner, proven by the 30-day dry run
+- [ ] B8 — The Claude check on Haiku 4.5, against ~50 saved TikTok screenshots from any iPhone
+- [ ] B9 — Every stop rule, fired on the pretend phone
+- [ ] B10 — Reporting Running and the finished session (needs PF-13 first)
+- [ ] B11 — A first draft of the TikTok part, expected to change on phone day
+
+**Waits for a phone:** M1, M2 on real screens, M3 watched by a human, M5 and M7
+on real screens, M8's three unattended days, M9. PF-13 (the dashboard side)
+also needs no phone and can be built alongside.
+
+**The phone steps are blocked by:** the Air on the desk with Xcode and the
+company's Apple developer login (Yurie), Developer Mode on the phones,
+Tailscale, and WebDriverAgent installed on at least one phone. M1 is the
+moment they become possible.
+
+**Not recorded: which account a phone was left on** (Garreth, 2026-09-25).
+Yurie always checks she is on the right account before posting, so neither
+the script nor the dashboard keeps track of it.
+
+*Done when:* M9 passes — one real account warmed by the script for two weeks
+with no restriction message and views holding.
 
 ## PF-14 · Live view page — Blocked by hardware
 
@@ -984,7 +1082,8 @@ checked by query). **Not checked:** whether any n8n Code node reads
 **Not tickets, but on the sheet:** Tailscale + Screen Sharing on the Air,
 installing Xcode and the developer Apple ID (Yurie), installing WebDriverAgent
 on the phones (Czedrick, remote), stopping a moved account's Geelark warmups on
-move day, unpausing after the re-warm, and the warmup scripts themselves.
+move day, unpausing after the re-warm, and ~~the warmup scripts themselves~~
+(a ticket since 2026-09-25: **PF-23**).
 
 **Supersedes:** the V3 line "All GeeLark device provisioning and warmup should
 stay in n8n regardless" (2026-09-09), and partly the V2 "Set up new accounts
