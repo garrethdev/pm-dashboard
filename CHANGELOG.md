@@ -20,6 +20,40 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## Unmerged branch — Carousel search connection and template checks (2026-09-24)
+
+**Where it came from:** Garreth asked for actual backend integration against the
+approved designs and development tickets, preserving existing work.
+
+**Added locally:** signed-in search, filter-options and reference-detail routes
+using the existing Supabase corpus directly (DEV-39/42/43 groundwork). Query
+embeddings use the corpus model and a short bounded cache; embedding failures
+are labeled keyword fallbacks, as DEV-47 asks. Search is capped at 20 seconds,
+does not rerank, excludes videos and does not pretend its matches are a total.
+Template checks and a row loader (DEV-03 groundwork) reject malformed copy,
+layout and image bindings. Historical templates remain unchanged; generation
+rejects their outdated dimensions and pending risk-gate defaults.
+
+**Verification:** 277 tests pass. Tests use mocked database/provider responses;
+no live query, migration, render, deployment or end-to-end ticket proof is claimed.
+The branch was fast-forwarded to GitHub main at `781fb20` before these additions.
+Remaining release gates and ticket gaps are in `docs/carousel-backend-progress.md`.
+
+## Unmerged branch — Carousel backend foundation (2026-09-24)
+
+**Where it came from:** Garreth asked to begin modular backend work using the
+Carousel Generator screens and development tickets, preserving existing code.
+
+**Added locally:** isolated batch-input checks, shared progress/count rules and
+owner/revision checks for human commands, with unit tests. A batch that requested
+50 decks cannot appear finished because only five were saved. Auto has no
+permission to approve. Existing application code and applied migrations are
+unchanged. These functions are not yet connected to database writes or routes.
+
+**Inline documentation:** the new modules explain counting invariants, trusted
+identity/readiness inputs, concurrency responsibilities and persistence boundaries.
+**Release status:** not merged, pushed or deployed. This is not a live fix.
+
 ## 2026-09-23 — The calendar tells you where each hand-made post stands (P11)
 
 **Where it came from:** design ticket P11, calendar half. Garreth approved the
