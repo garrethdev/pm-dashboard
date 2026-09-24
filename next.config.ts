@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // The documentation serves these pinned assets locally, including in Vercel bundles.
+  outputFileTracingIncludes: {
+    "/api/carousel-generator/docs/assets/*": ["./node_modules/swagger-ui-dist/swagger-ui.css", "./node_modules/swagger-ui-dist/swagger-ui-bundle.js"],
+  },
   /**
    * Keep a visited page in the browser for a short while, so going back to one
    * is instant instead of a fresh round trip.

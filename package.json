@@ -21,9 +21,11 @@
     "ogl": "^1.0.11",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "swagger-ui-dist": "5.33.0"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "13.1.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24.13.4",
     "@types/react": "^19",

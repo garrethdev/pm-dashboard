@@ -20,6 +20,17 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## Unmerged branch — Carousel API documentation (2026-09-24)
+
+**Where it came from:** Garreth requested Swagger documentation for the backend.
+Added a session-protected Swagger UI and downloadable OpenAPI contract covering
+the four implemented search/detail endpoints, with examples, limits, authentication
+and error responses. Planned generation features are explicitly excluded. Assets
+are served locally; no remote validator receives the contract. Added specification
+validation and documentation-route tests. No production deployment or live database
+verification is implied. OpenAPI validation, all 285 tests, type checking and
+focused lint passed; browser visual and deployed-host checks remain unperformed.
+
 ## Unmerged branch — Carousel search connection and template checks (2026-09-24)
 
 **Where it came from:** Garreth asked for actual backend integration against the
