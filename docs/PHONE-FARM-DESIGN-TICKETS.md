@@ -124,7 +124,8 @@ the design ticket that covers it:
 | ~~PF-10 Comparison view~~ | Dropped 2026-09-23 | ~~P7~~ |
 | PF-11 Post-ban for manual accounts | The checklist | P8 |
 | PF-12 Day's work + stale-post alert | The two bell items (built 2026-09-22), and the Overdue pill on the to-do list (built 2026-09-23) | P12 |
-| PF-13 Script write path | nothing (data only); what it logs shows in P4, P5 | — |
+| PF-13 Warmup script, dashboard side | Running, today's two scripted sessions, a stopped script, on Accounts, the device page and the account page | Designed with the build (P4 handed it over) |
+| PF-23 Warmup script, the build | nothing (runs on the Air) | — |
 | PF-14 Live view | The page on the Air, and the link to it | P9 |
 | PF-15 Batch moves | Moving several accounts at once | P10 |
 | PF-16 Retire Geelark | What the app looks like with Cloud gone | P11 |
@@ -1214,9 +1215,12 @@ action is `CtaButton`, never a hand-rolled `bg-accent` button.**
 
 ## Still open
 
-1. **The automated warmup session.** No decision yet on the new warmup script
+1. ~~**The automated warmup session.** No decision yet on the new warmup script
    (Garreth, 2026-09-19), so what an automated session looks like and how long
-   it runs is unknown. P4 designs around "done when the script finishes".
+   it runs is unknown. P4 designs around "done when the script finishes".~~
+   **Decided 2026-09-25:** the Warmup Script Build Guide is the plan. A
+   scripted session is 15 to 20 minutes, twice a day, and shows **Running**
+   while under way. The screens are PF-13; the script itself is PF-23.
 
 Settled 2026-09-19: **a manual warmup session is about 15 to 20 minutes**, so
 the log sheet starts at 15 and a session counts as done from 15; and **an item
