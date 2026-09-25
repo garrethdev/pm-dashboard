@@ -17,6 +17,7 @@ it("documents exactly the implemented business endpoints", () => {
   expect(Object.keys(carouselOpenApi.paths).sort()).toEqual([
     "/api/carousel-generator/carousels/{id}", "/api/carousel-generator/facets",
     "/api/carousel-generator/search", "/api/carousel-generator/sources/{id}",
+    "/api/carousel-generator/types",
   ]);
   expect(carouselOpenApi.components.schemas.SearchRequest.properties.limit.maximum).toBe(25);
   expect(carouselOpenApi.components.schemas.SearchRequest.properties.rerank.enum).toEqual([false]);

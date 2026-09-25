@@ -28,9 +28,19 @@ export const carouselOpenApi = {
   openapi: "3.0.3",
   info: { title: "PM Dashboard — Carousel Backend", version: "0.1.0", description: "Feature-branch implementation, not deployed/live-verified completion. Sign into this dashboard before Try it out. Batch generation, template CRUD, rendering, approval, ingestion, feed and saves/votes APIs are not implemented and intentionally omitted. Query embeddings can incur provider cost." },
   servers: [{ url: "/", description: "Same dashboard origin (local or preview)." }],
-  tags: [{ name: "Search" }, { name: "Details" }],
+  tags: [{ name: "Search" }, { name: "Details" }, { name: "Types" }],
   security: [{ dashboardSession: [] }],
   paths: {
+    "/api/carousel-generator/types": { get: {
+      tags: ["Types"], operationId: "listCarouselTypes", summary: "List carousel entries from the content registry",
+      description: "Read-only, all lifecycle states. Registry string keys are not generator UUIDs. Does not infer template, Writing, library or batch readiness from posting configuration.",
+      responses: {
+        "200": success("TypesResponse"),
+        "401": commonErrors["401"],
+        "307": commonErrors["307"],
+        "502": { description: "Registry unavailable; retry, not an empty catalog.", content: { "application/json": { schema: { type: "object", required: ["error"], properties: { error: text } } } } },
+      },
+    } },
     "/api/carousel-generator/search": { post: {
       tags: ["Search"], operationId: "searchCarousels", summary: "Search saved carousel evidence",
       description: "Direct Supabase search; no reranking. Literal channel forces exact keyword mode. Embedding failure yields explicit keyword fallback. Retrieves 50 candidates then filters to carousel format and returns at most 25. This is not a feed, exhaustive total or paginated search. No query-ID/feedback write or ingestion occurs.",
@@ -48,6 +58,7 @@ export const carouselOpenApi = {
   components: {
     securitySchemes: { dashboardSession: { type: "apiKey", in: "cookie", name: "sb-<project-ref>-auth-token", description: "Placeholder cookie name: Supabase SSR uses a project-specific name and may split it into numbered chunks. Sign into the same dashboard first; Swagger cannot set the session cookie. Never enter Supabase service-role or provider keys here." } },
     schemas: {
+      TypesResponse: { type: "object", required: ["types"], properties: { types: { type: "array", items: { type: "object", required: ["id", "name", "character", "lifecycle"], properties: { id: text, name: text, character: text, lifecycle: text } } } } },
       Error: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: text, message: text } } } },
       SearchRequest: { type: "object", additionalProperties: false, required: ["query"], properties: {
         query: { type: "string", minLength: 1, maxLength: 1000, pattern: "\\S" },
