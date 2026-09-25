@@ -99,9 +99,12 @@ export function projectBatch(batch: BatchProgress) {
   return { batchId: batch.id, revision: batch.revision, status, label, counts,
     unaccounted, toRender, toApprove, blocked, successfulWritten, successfulRendered,
     madeInAuto: batch.madeInAuto, mode: batch.mode, actions,
-    // A stopped batch retains its type slot. Persistence must enforce slot uniqueness;
-    // this projection is only a read model, not a concurrency constraint.
-    occupiesTypeSlot: batch.lifecycle !== "finished" };
+    // D1/D12: waiting for review or final approval is not active generation.
+    // A stopped runner retains its slot until explicitly continued/finished.
+    // Persistence must enforce the matching constraint under a lane lock; this
+    // read model alone does not prevent concurrent batch creation.
+    occupiesTypeSlot: batch.lifecycle === "stopped" ||
+      (batch.lifecycle === "open" && (writingRemaining > 0 || renderingRemaining > 0)) };
 }
 
 /** Presentation capabilities are not authorization. Every command must recheck. */

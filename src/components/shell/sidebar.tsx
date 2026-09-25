@@ -105,6 +105,12 @@ const CAROUSEL_NAV: NavConfig = {
             pathname.startsWith("/carousel-generator/types") ||
             pathname.startsWith("/carousel-generator/generate"),
         },
+        {
+          label: "Trends",
+          href: "/carousel-generator/trends",
+          icon: ChartBar,
+          isActive: under("/carousel-generator/trends"),
+        },
       ],
     },
   ],

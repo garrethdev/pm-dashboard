@@ -20,6 +20,38 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## Unmerged branch — Carousel frontend and integration groundwork (2026-09-25)
+
+**Where it came from:** Garreth requested implementation against the September
+25 design export, a main-branch duplicate check, a full remaining-ticket ledger,
+manual testing and independent visual review.
+
+**Implemented, not deployed:** type cards and Generate form, authenticated
+registry catalog, Trends search wired to the existing API, and a carousel
+details dialog with slide navigation, saved analysis and transcription. Search
+has cancellation, explicit errors/retry, keyword-fallback disclosure and no
+invented totals. This is not the complete feed/saves/digests workflow. Batch
+submission remains disabled until persistence and providers are connected.
+
+Template validation now checks effective font/style/override and image-rule
+fields while preserving historical fixtures. Batch type keys now accept the
+registry's text identifiers, waiting-for-approval batches no longer occupy an
+active generation slot, and pure runner rules cover naming, stalling and Auto's
+three attempts without permitting automatic approval.
+
+The pure image picker covers deterministic selection, whole-library and named
+sets, cover preference, distinctness, thin-set repeats and Glow Up diagonal
+brightness matching. Database reads and persisted-manifest reuse are still to
+be connected. No library or production lane data was changed.
+
+**Verification:** current main was fetched at `781fb20`, with no newer changes
+to duplicate. Unit/type/lint checks and a Webpack production build passed during
+this pass. Independent vision review covered 14 exported reference screens, not
+the running app. Live browser navigation is blocked by the browser policy check;
+no magic-link email or manual click-through is claimed. No database migration,
+production merge, deployment or posting was performed. The full ledger and
+remaining acceptance checks are in `docs/carousel-implementation-tracker.md`.
+
 ## Unmerged branch — Carousel API documentation (2026-09-24)
 
 **Where it came from:** Garreth requested Swagger documentation for the backend.

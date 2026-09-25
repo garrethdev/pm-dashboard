@@ -5,6 +5,12 @@ const valid = { typeId: id, templateVersionId: id, writingVersionId: id, library
 it("parses a bounded explicit batch snapshot", () => {
   expect(parseCreateBatch(valid)).toEqual({ ...valid, note: "", perBatchText: {} });
 });
+it("accepts the existing text registry key, not just proposed UUID types", () => {
+  expect(parseCreateBatch({ ...valid, typeId: "glowup" }).typeId).toBe("glowup");
+});
+it.each(["", " ", "bad\nkey", "x".repeat(201), 42])("rejects invalid registry key %s", typeId => {
+  expect(() => parseCreateBatch({ ...valid, typeId })).toThrow("typeId");
+});
 it.each([0, 51, "50", 1.1, null])("rejects invalid counts %s", requested => {
   expect(() => parseCreateBatch({ ...valid, requested })).toThrow();
 });

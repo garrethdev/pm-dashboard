@@ -5,6 +5,17 @@ const batch = (decks: DeckProgress[], patch: Partial<BatchProgress> = {}): Batch
   id: "batch-1", revision: 1, requested: decks.length || 1, lifecycle: "open", mode: "manual", madeInAuto: false, decks, ...patch,
 });
 describe("one batch status for all screens", () => {
+  it("permits another batch while waiting for review or human approval", () => {
+    for (const state of ["written", "rendered", "approved"] as const) {
+      expect(projectBatch(batch([deck("a", state)])).occupiesTypeSlot).toBe(false);
+    }
+  });
+  it("retains the lane while there is active or unaccounted work", () => {
+    for (const state of ["pending", "writing", "render_queued", "rendering"] as const) {
+      expect(projectBatch(batch([deck("a", state)])).occupiesTypeSlot).toBe(true);
+    }
+    expect(projectBatch(batch([], { requested: 2 })).occupiesTypeSlot).toBe(true);
+  });
   it("accounts for all 50 requested decks, even if only five were saved", () => {
     const result = projectBatch(batch(Array.from({ length: 5 }, (_, i) => deck(String(i), "written")), { requested: 50 }));
     expect(result.unaccounted).toBe(45);

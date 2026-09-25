@@ -1,4 +1,4 @@
-/** Proposed new generator-entity IDs; these are not legacy bigint reference IDs. */
+/** Registry typeId is a text key; version/library IDs identify supporting rows. */
 export interface CreateBatchInput {
   typeId: string;
   templateVersionId: string;
@@ -29,7 +29,12 @@ export function parseCreateBatch(input: unknown): CreateBatchInput {
   // Reject mass-assignment fields such as owner, lifecycle or approval rather than
   // allowing them to flow into a later database insert.
   if (Object.keys(value).some(key => !fields.has(key))) throw new BatchInputError("Unexpected batch field");
-  for (const key of ["typeId", "templateVersionId", "writingVersionId", "libraryId"]) {
+  // The shared registry is keyed by content_type, not UUID. Never interpolate
+  // this key as a SQL identifier: the repository must bind it as a value.
+  if (typeof value.typeId !== "string" || !value.typeId.trim() || value.typeId.length > 200 || /[\u0000-\u001f\u007f]/.test(value.typeId)) {
+    throw new BatchInputError("typeId must be a registry key of at most 200 characters");
+  }
+  for (const key of ["templateVersionId", "writingVersionId", "libraryId"]) {
     if (typeof value[key] !== "string" || !uuid.test(value[key])) throw new BatchInputError(`${key} must be a UUID`);
   }
   if (!Number.isInteger(value.requested) || (value.requested as number) < 1 || (value.requested as number) > 50) {
