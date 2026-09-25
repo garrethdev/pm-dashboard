@@ -5,6 +5,29 @@ const batch = (decks: DeckProgress[], patch: Partial<BatchProgress> = {}): Batch
   id: "batch-1", revision: 1, requested: decks.length || 1, lifecycle: "open", mode: "manual", madeInAuto: false, decks, ...patch,
 });
 describe("one batch status for all screens", () => {
+  it.each([
+    ["writing", "Writing 0 of 1", "batch"],
+    ["rendering", "Rendering 0 of 1", "batch"],
+    ["written", "1 to render", "review"],
+    ["rendered", "1 to approve", "finished"],
+    ["flagged", "1 flagged", "batch"],
+    ["approved", "Done", "finished"],
+  ] as const)("projects %s into the shared presentation contract", (state, label, destination) => {
+    expect(projectBatch(batch([deck("a", state)]))).toMatchObject({ label, destination, tone: "neutral" });
+  });
+  it("uses danger tone only for stopped batches", () => {
+    expect(projectBatch(batch([deck("a", "written")], { lifecycle: "stopped" })))
+      .toMatchObject({ label: "Stopped", tone: "danger", destination: "batch" });
+  });
+  it("removes dropped decks from the writing target without counting them as success", () => {
+    const result = projectBatch(batch([deck("a", "written"), deck("b", "writing"), deck("c", "dropped")], { mode: "auto" }));
+    expect(result).toMatchObject({ label: "Writing 1 of 2", target: 2, droppedLabel: "1 dropped", successfulWritten: 1 });
+  });
+  it("keeps drops beside rendering progress and mixed approval progress", () => {
+    const result = projectBatch(batch([deck("a", "approved"), deck("b", "rendering"), deck("c", "dropped")]));
+    expect(result).toMatchObject({ label: "Rendering 1 of 2", target: 2, droppedLabel: "1 dropped" });
+    expect(projectBatch(batch([deck("a", "approved"), deck("b", "rendered")]))).toMatchObject({ label: "1 to approve", destination: "finished", droppedLabel: null });
+  });
   it("permits another batch while waiting for review or human approval", () => {
     for (const state of ["written", "rendered", "approved"] as const) {
       expect(projectBatch(batch([deck("a", state)])).occupiesTypeSlot).toBe(false);

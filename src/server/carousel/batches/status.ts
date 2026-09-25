@@ -67,18 +67,26 @@ export function projectBatch(batch: BatchProgress) {
   const renderingRemaining = counts.render_queued + counts.rendering;
   const successfulWritten = counts.written + counts.render_queued + counts.rendering + counts.rendered + counts.approved;
   const successfulRendered = counts.rendered + counts.approved;
+  // Dropped/discarded decks remain auditable but are no longer work to finish.
+  const target = batch.requested - counts.dropped - counts.discarded;
   let status: "stopped" | "done" | "writing" | "rendering" | "needs_attention" | "to_render" | "to_approve" | "awaiting_finish";
   let label: string;
   // Active work takes label priority. Keep exposing blocked counts alongside it so
   // clients do not interpret a writing/rendering label as proof that every deck is healthy.
   if (batch.lifecycle === "stopped") { status = "stopped"; label = "Stopped"; }
   else if (batch.lifecycle === "finished") { status = "done"; label = "Done"; }
-  else if (writingRemaining > 0) { status = "writing"; label = `Writing ${successfulWritten} of ${batch.requested}`; }
+  else if (writingRemaining > 0) { status = "writing"; label = `Writing ${successfulWritten} of ${target}`; }
   else if (renderingRemaining > 0) { status = "rendering"; label = `Rendering ${successfulRendered} of ${successfulRendered + renderingRemaining}`; }
   else if (toRender > 0) { status = "to_render"; label = `${toRender} to render`; }
   else if (toApprove > 0) { status = "to_approve"; label = `${toApprove} to approve`; }
-  else if (blocked > 0) { status = "needs_attention"; label = `${blocked} need attention`; }
-  else { status = "awaiting_finish"; label = "Ready to finish"; }
+  else if (blocked > 0) { status = "needs_attention"; label = `${blocked} flagged`; }
+  // Display completion is distinct from the explicit persistence finalization.
+  else { status = "awaiting_finish"; label = "Done"; }
+
+  const tone = status === "stopped" ? "danger" : "neutral";
+  const destination = status === "to_render" ? "review" :
+    status === "to_approve" || status === "done" || status === "awaiting_finish" ? "finished" : "batch";
+  const droppedLabel = counts.dropped ? `${counts.dropped} dropped` : null;
 
   const actions: BatchAction[] = [];
   if (batch.lifecycle === "finished") actions.push("run_again");
@@ -96,7 +104,8 @@ export function projectBatch(batch: BatchProgress) {
       if (!outstanding) actions.push("finish");
     }
   }
-  return { batchId: batch.id, revision: batch.revision, status, label, counts,
+  return { batchId: batch.id, revision: batch.revision, status, label, tone, destination,
+    target, droppedLabel, counts,
     unaccounted, toRender, toApprove, blocked, successfulWritten, successfulRendered,
     madeInAuto: batch.madeInAuto, mode: batch.mode, actions,
     // D1/D12: waiting for review or final approval is not active generation.

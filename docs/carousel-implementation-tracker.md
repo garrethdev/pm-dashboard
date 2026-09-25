@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 25, 23:41 UTC continuation
+
+- Fresh main fetch still resolves to 781fb20. No concurrent agents or pre-existing edits were found; the previous committed checkpoint was b0110b2, with no intervening implementation commits.
+- DEV-61 shared projection now returns the specified flagged/Done wording, neutral versus stopped-danger tone, logical screen destination, effective target and a separate dropped-deck label. Writing excludes dropped/discarded decks from its denominator. Explicit persistence finalization remains separate from display completion.
+- Added nine presentation-contract tests; full suite passes 398 tests in 30 files. This is a partial DEV-61 implementation, not certification: persisted readbacks, nullable column-count semantics and consumers across unfinished screens remain open.
+- Retried dashboard browser access after checking existing tabs. It is still denied before navigation because the admin-enforced security policy cannot be verified. No magic-link email was sent and no manual click-through or live vision QA was completed.
+- Initial 40–70 active-hour estimate has not been validated by end-to-end throughput; no reliable completion-time reduction is justified.
+
 Automation carousel-implementation-20-minute-progress is active. Report actual changes, completed versus partial tickets, tests, manual/vision evidence and blockers every 20 minutes. Do not count files or artboards as finished tickets. Continue unblocked work; pause the automation only after verified completion or the user's request.
 
 ## September 25 implementation pass after main audit
