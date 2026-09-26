@@ -39,6 +39,28 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 10:22 UTC continuation
+
+- Main remains `781fb20`; clean starting branch and no active worker agents.
+- Added render-path expansion for original slide numbers and the two imported
+  lane patterns, requiring a trusted run/scratch prefix and rejecting traversal,
+  unknown tokens and invalid identifiers/extensions.
+- Added server-internal Supabase Storage upload/readback adapter: explicit
+  trusted project/key/bucket policy, no credential discovery, `x-upsert: false`,
+  redirects refused, bounded attempts/timeouts/backoff and SHA-256 readback.
+  Duplicate 400/409 responses are accepted only if downloaded bytes match.
+  Different existing objects are never overwritten or treated as success.
+- Consulted Supabase's standard-upload documentation and installed storage-js
+  implementation. Corrected the readback URL to the SDK's authenticated GET
+  `/storage/v1/object/<bucket>/<path>` before final verification.
+- 713 tests / 56 files, typecheck, focused lint and diff checks pass. The new
+  tests mock storage responses, including timeouts, ambiguous upload failures,
+  duplicates, mismatches and permanent errors. NO live upload/readback occurred.
+- DEV-05 remains partial: deck/job wiring, configured bucket policy, isolated
+  live scratch-deck proof and persisted readback are still open. No new manual/
+  vision QA or full ticket certified. Access/browser blockers unchanged; no
+  deployment, production merge or evidence-supported revised ETA.
+
 ### September 26, 10:02 UTC continuation
 
 - Main freshly fetched at `781fb20`; clean starting tree and no active workers.
@@ -333,7 +355,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-02 | Materialise and render claims as database functions | Open |
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
 | DEV-04 | Painter: text | Template-bound captions and bundled static fonts tested; emoji and Python/design visual parity open |
-| DEV-05 | Painter: images, composition and upload | Captioned composition and bounded fetch adapter tested; live allowlist verification, upload, persistence and parity open |
+| DEV-05 | Painter: images, composition and upload | Composition, fetch and no-overwrite upload/readback adapters tested; live scratch proof, job wiring, persistence and parity open |
 | DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |
 | DEV-08 | Copy writer | Prompt/output contract and bounded length retry tested; provider, lane seeds, hardening and persistence open |
