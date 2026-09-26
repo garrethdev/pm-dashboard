@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 00:41 UTC continuation
+
+- Main refreshed at 781fb20; clean starting tree and no active agents.
+- Added server-side OpenRouter JSON writer adapter, using the official API reference at https://openrouter.ai/docs/api_reference/overview. Captures an explicitly configured `CAROUSEL_WRITER_MODEL` for both attempts, reads the existing server API key, uses a fixed HTTPS endpoint with redirects forbidden, requests JSON with a token cap, aborts after 45 seconds, rejects truncated/refused/malformed completions and sanitizes errors. No automatic transport retries or default model. `.env.example` documents the new non-secret model setting.
+- Thirteen adapter tests added. Full suite passes 446 tests across 34 files; type-check and targeted lint pass. Tests use a fake HTTP transport: no paid requests, live model capability proof, saved drafts or deployed route invocation occurred.
+- DEV-08 remains partial: adapter exists but is not connected to a persisted batch route; lane seeds, caption hardening, versioned saves and live samples remain. DEV-09 original rubric/patterns and live risk mapping still need verification.
+- No new browser/manual/vision evidence, no production merge/deployment. Access blockers and provisional estimate remain unchanged; no full ticket newly certified.
+
 ### September 26, 00:21 UTC continuation
 
 - Main freshly fetched at 781fb20; no active agents, unrelated changes or duplicate workers.
