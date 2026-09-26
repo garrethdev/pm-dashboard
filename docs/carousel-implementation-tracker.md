@@ -44,7 +44,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-06 | Image picking and the persisted manifest | Pure picker tested; database adapter and persistence open |
 | DEV-07 | Parity check against the Python painters | Open |
 | DEV-08 | Copy writer | Prompt/output contract and bounded length retry tested; provider, lane seeds, hardening and persistence open |
-| DEV-09 | Quality gate | Open |
+| DEV-09 | Quality gate | Fail-closed coordinator and writer integration tested; original rubric/patterns, similarity and live adapters open |
 | DEV-10 | Music lookup (F14) | Open |
 | DEV-11 | Batch service and routes | Partial foundation; acceptance still open |
 | DEV-12 | Render service and vision check | Open |
@@ -105,6 +105,15 @@ Vision agent inspected 20 reference screenshots across D16/D1/D2/D3/D4/D5/D10 an
 Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, keyboard/focus, empty/loading/error/retry states, navigation/back behavior and persisted readback where applicable.
 
 ## Reporting
+
+### September 26, 00:21 UTC continuation
+
+- Main freshly fetched at 781fb20; no active agents, unrelated changes or duplicate workers.
+- Added quality-gate coordinator with separately injected compliance/scoring/risk adapters. Compliance runs despite remote failures; score <6, high risk, delete/review, malformed evidence or timeout flag copy. Verdict reasons/suggestions are retained; raw provider errors are not. Timeouts abort provider requests and bound waiting even if an adapter ignores abort.
+- Integrated validated writing with the coordinator for one draft-version identity. Hook must be a painted opening-slide role; on-screen text follows painted slide order. A passing copy stops at `awaiting_music`, never human approval or render readiness. Written copy is retained when gating fails.
+- 23 additional tests; full suite 433 tests in 33 files passes, type-check and targeted lint pass. No live provider calls or database writes made.
+- DEV-09 remains partial: original rubric and regex patterns were not found in the inspected source and were not guessed; same-batch similarity, exact workflow response mapping, live adapters, saved verdicts and mandatory invocation on every persisted version remain open. DEV-08 caption hardening/seeds/provider/persistence gaps remain.
+- Browser/manual/vision and live schema/credential blockers unchanged. No new end-to-end ticket certification, no production merge or deployment. Planning ETA remains provisional rather than reduced on unit-test evidence.
 
 ### September 26, 00:01 UTC continuation
 
