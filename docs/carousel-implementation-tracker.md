@@ -39,6 +39,21 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 07:42 UTC continuation
+
+- Main remains `781fb20`; clean starting tree and no active worker agents.
+- DEV-04: added text-only SVG layer output using the measured layout. Crisp pass
+  uses round stroke joins and stroke-before-fill. Hard/soft shadows are separate
+  unstroked layers; soft output carries a blur sigma for the future compositor.
+- Escapes authored text, rejects invalid XML/style attributes, bounds paint
+  settings and explicitly refuses emoji until bitmap-run support is implemented.
+- 604 tests / 46 files pass, plus typecheck and focused lint. Tests inspect SVG
+  structure with synthetic metrics; they do not prove raster output, font accuracy,
+  emoji support, sharp blur behavior or comparison with the Python painter.
+- No full ticket newly complete; fonts/raster composition and manual/vision QA
+  remain open. Credential approval still outstanding; no live access retried,
+  no writes/deployment, and no verified revised completion ETA.
+
 ### September 26, 07:22 UTC continuation
 
 - Main remains `781fb20`; clean starting tree and no active worker agents.
@@ -188,7 +203,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-01 | Database: the generation record, templates, directions, libraries | Open |
 | DEV-02 | Materialise and render claims as database functions | Open |
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
-| DEV-04 | Painter: text | Layout math tested; real fonts, SVG paint, emoji and visual parity open |
+| DEV-04 | Painter: text | Layout and text-only SVG layers tested; real fonts, raster composition, emoji and visual parity open |
 | DEV-05 | Painter: images, composition and upload | Open |
 | DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |
