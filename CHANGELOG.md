@@ -86,6 +86,24 @@ feed uses. Batch naming and its test stay. Private helpers stopped being
 exported, the Rows count uses a count request instead of fetching ids, and
 Overview reads the batches once instead of twice.
 
+**Found by the click-through on 2026-09-26 and fixed:** the Trends search
+came back "could not be completed" on every query, because the search
+adapter asked `reference_beats` for a `media` column that does not exist;
+it now takes each slide's image from the analysis's media inventory, the
+way the feed does, and a meaning search for "under eye bags" returns
+twenty-five carousels with their matched slide. A template drafted from a
+reference could arrive with no text boxes when the model named its list
+differently; every slide now gets at least one box. The Studio's title row
+overflowed on a phone; its two buttons take a row of their own there.
+Tested the same day, by press or by query: Stop and Continue, the
+one-minute stalled rule, a second batch refused while one runs and allowed
+while one waits, a stale press refused with "Refresh", Retry on a failed
+deck, the Discard hold, Change track, a Studio slide added, deleted and
+brought back with undo, version 2 saved while a running batch kept version
+1 and version 1 made active again, Copy to Studio from a reference, Save on
+Trends with the Saved grid and Recent saves, the datestamp painted on Glow
+Up's last slide, and the phone and light-mode passes.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

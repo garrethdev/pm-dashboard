@@ -312,13 +312,18 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
           ) : (
             <button type="button" onClick={() => setRenaming(true)} aria-label="Rename" className="inline-flex items-center gap-2 text-left"><h1 className="truncate text-xl font-semibold tracking-[-0.02em]">{name}</h1><Pencil className="size-3.5 text-text-muted" /></button>
           )}
-          {editing && <Pill>{editing.character}</Pill>}
-          {editing && <Pill className="tnum">Version {editing.activeVersion ?? editing.versions[0]?.version ?? 1}</Pill>}
-          {library && <Pill>{library.name}</Pill>}
+          <span className="hidden items-center gap-2 sm:flex">
+            {editing && <Pill>{editing.character}</Pill>}
+            {editing && <Pill className="tnum">Version {editing.activeVersion ?? editing.versions[0]?.version ?? 1}</Pill>}
+            {library && <Pill>{library.name}</Pill>}
+          </span>
           {dirty && <Pill>Not saved</Pill>}
         </div>
-        <HoldButton onConfirm={discard} tone="warn" className="bg-transparent border border-border text-text-muted">{editing ? "Discard changes" : "Discard draft"}</HoldButton>
-        <Accent disabled={!t || !libraryId} busy={busy === "save"} onClick={() => (editing ? void save() : setSaveOpen(true))}>{editing ? "Save version" : "Save as carousel type"}</Accent>
+        {/* On a phone the two actions take a row of their own under the title. */}
+        <span className="flex w-full items-center justify-end gap-2 sm:ml-auto sm:w-auto">
+          <HoldButton onConfirm={discard} tone="warn" className="bg-transparent border border-border text-text-muted">{editing ? "Discard changes" : "Discard draft"}</HoldButton>
+          <Accent disabled={!t || !libraryId} busy={busy === "save"} onClick={() => (editing ? void save() : setSaveOpen(true))}>{editing ? "Save version" : "Save as carousel type"}</Accent>
+        </span>
       </div>
 
       <div className="grid min-h-[560px] flex-1 gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
@@ -370,7 +375,7 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
           <div className="absolute top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-border glass-overlay px-2 py-1">
             {busy === "draft" ? <span className="inline-flex items-center gap-1.5 px-2 text-xs text-text-muted"><Loader2 className="size-3.5 animate-spin" />Drafting</span> : (
               <>
-                <span className="px-2 text-xs text-text-muted tnum">{selected ? `Slide ${selected.slide + 1} of ${t?.slides.length ?? 0}` : `${t?.slides.length ?? 0} slides`}</span>
+                <span className="hidden px-2 text-xs text-text-muted tnum sm:inline">{selected ? `Slide ${selected.slide + 1} of ${t?.slides.length ?? 0}` : `${t?.slides.length ?? 0} slides`}</span>
                 <Btn onClick={renderPreview} busy={busy === "render"} disabled={!t}><Play className="size-3.5" />Render preview</Btn>
                 <Btn onClick={regenSample} busy={busy === "sample"} disabled={!t}><RotateCw className="size-3.5" />Regenerate sample</Btn>
               </>
