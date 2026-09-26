@@ -38,6 +38,35 @@ export function insertWritingMention(text: string, start: number, end: number, n
   // otherwise merge with the token or prevent it from being recognized.
   const before = text.slice(0, start), after = text.slice(end);
   const prefix = /[\w@]$/.test(before) ? " " : "";
-  const suffix = /^[a-zA-Z0-9_-]/.test(after) ? " " : "";
+  const suffix = /^[@a-zA-Z0-9_-]/.test(after) ? " " : "";
   return { text: before + prefix + inserted + suffix + after, caret: before.length + prefix.length + inserted.length + suffix.length };
+}
+
+/** Only a matching identifier prefix at a collapsed caret opens suggestions.
+ * A UI can pass the dismissed trigger offset after Escape without editing text;
+ * reset it on a new typing interaction. Menu placement/focus belongs to the UI. */
+export function writingMentionSuggestions(text: string, caret: number, roles: readonly CopyRole[], dismissedStart?: number) {
+  if (!Number.isSafeInteger(caret) || caret < 0 || caret > text.length) throw new Error("Invalid Writing caret");
+  const match = /(?<![\w@])@([a-zA-Z][a-zA-Z0-9_-]*|)$/.exec(text.slice(0, caret));
+  if (!match || match.index === dismissedStart) return null;
+  // An interior caret is not a new trigger; replacing a rendered pill uses the
+  // separate atomic insertion path instead of opening a nested menu.
+  if (writingMentions(text, roles).some(token => caret > token.start && caret < token.end)) return null;
+  const candidates = roles.filter(role => /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(role.role) && role.role.startsWith(match[1]));
+  return candidates.length ? { start: match.index, end: caret, query: match[1], candidates } : null;
+}
+
+/** Returns null when normal browser deletion should handle plain prose. Existing
+ * active AND stale mentions are atomic. No whitespace normalization is applied. */
+export function deleteWritingMention(text: string, start: number, end: number, direction: "backward" | "forward", roles: readonly CopyRole[]) {
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end < start || end > text.length ||
+      !["backward", "forward"].includes(direction)) throw new Error("Invalid Writing deletion");
+  const tokens = writingMentions(text, roles);
+  const overlaps = tokens.filter(token => start === end
+    ? direction === "backward" ? start > token.start && start <= token.end : start >= token.start && start < token.end
+    : start < token.end && end > token.start);
+  if (!overlaps.length) return null;
+  const from = Math.min(start, ...overlaps.map(token => token.start));
+  const to = Math.max(end, ...overlaps.map(token => token.end));
+  return { text: text.slice(0, from) + text.slice(to), caret: from };
 }

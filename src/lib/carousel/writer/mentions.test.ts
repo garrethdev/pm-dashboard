@@ -1,7 +1,38 @@
 import { expect, it } from "vitest";
-import { writingMentions, insertWritingMention } from "./mentions";
+import { writingMentions, insertWritingMention, writingMentionSuggestions, deleteWritingMention } from "./mentions";
 import type { CopyRole } from "../template/validate";
 const roles: CopyRole[] = [{ role: "hook", writer: "ai", columns: ["hook"], max_chars: 80 }, { role: "closing", writer: "ai", columns: ["closing"] }];
+it("filters suggestions as an identifier is typed and carries length limits", () => {
+  expect(writingMentionSuggestions("Use @", 5, roles)?.candidates).toEqual(roles);
+  const result = writingMentionSuggestions("Use @ho", 7, roles);
+  expect(result).toMatchObject({ start: 4, end: 7, query: "ho" });
+  expect(result?.candidates.map(role => role.role)).toEqual(["hook"]);
+  expect(result?.candidates[0].max_chars).toBe(80);
+});
+it.each(["never @ anyone", "contact@example", "@@ho", "@unknown", "@ ho"])("leaves unmatched prose alone: %s", text => {
+  expect(writingMentionSuggestions(text, text.length, roles)).toBeNull();
+});
+it("suppresses an escaped trigger without changing text and rejects an interior caret", () => {
+  const text = "Use @ho";
+  expect(writingMentionSuggestions(text, text.length, roles, 4)).toBeNull();
+  expect(text).toBe("Use @ho");
+  expect(writingMentionSuggestions("Use @hook", 7, roles)).toBeNull();
+});
+it("deletes active and stale mentions as whole units", () => {
+  expect(deleteWritingMention("Use @hook!", 9, 9, "backward", roles)).toEqual({ text: "Use !", caret: 4 });
+  expect(deleteWritingMention("Use @old!", 4, 4, "forward", roles)).toEqual({ text: "Use !", caret: 4 });
+  expect(deleteWritingMention("Use @hook!", 6, 8, "backward", roles)).toEqual({ text: "Use !", caret: 4 });
+  expect(deleteWritingMention("Use @hook and @closing!", 6, 17, "forward", roles)).toEqual({ text: "Use !", caret: 4 });
+});
+it("returns native deletion control for prose, spacing and email", () => {
+  expect(deleteWritingMention("Use @hook here", 10, 10, "backward", roles)).toBeNull();
+  expect(deleteWritingMention("a@example", 9, 9, "backward", roles)).toBeNull();
+});
+it("keeps an adjacent existing mention distinct on insertion", () => {
+  const result = insertWritingMention("@closing", 0, 0, "hook", roles);
+  expect(result.text).toBe("@hook @closing");
+  expect(writingMentions(result.text, roles)).toHaveLength(2);
+});
 it("finds active and stale mentions without treating emails or spaced @ as mentions", () => {
   const text = "Focus @hook, not @old. never @ anyone; a@example.com";
   const tokens = writingMentions(text, roles);

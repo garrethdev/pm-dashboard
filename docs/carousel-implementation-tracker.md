@@ -39,6 +39,13 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 13:22 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch at 61e853f, no concurrent implementation agents.
+- Continued DEV-62's shared plain-text helpers: matching-prefix suggestions with character limits, explicit Escape trigger suppression, no suggestions for spaced @/emails/unmatched prefixes/interior mention carets, and whole-token backward/forward/range deletion for active and stale mentions. Plain prose deletion returns control to the browser. Fixed adjacent insertion so two mentions cannot merge.
+- Ten additional regression cases; 779 tests / 60 files, type-check, targeted lint and diff checks pass. No DOM or keyboard event wiring is claimed by these pure-function tests.
+- DEV-62 still partial: rendered editor, menu/focus/IME handling, drag/drop, multiword-name syntax, persistence and desktop/phone/theme verification remain open. No full ticket completed, no new manual/vision QA or build. Live credential/catalog/browser blockers remain; no live writes, merge/deploy or supported revised ETA.
+
 ### September 26, 13:02 UTC continuation
 
 - Main refreshed at 781fb20; clean starting branch at 733fdb5 and no other active implementation agents. Read DEV-62 and existing prompt mention behavior.
