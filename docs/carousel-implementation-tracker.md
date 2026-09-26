@@ -39,6 +39,26 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 10:02 UTC continuation
+
+- Main freshly fetched at `781fb20`; clean starting tree and no active workers.
+- Added bounded HTTPS raster download: exact server-owned origin allowlist,
+  public IPv4 resolution with connection pinned to the checked address, original
+  hostname retained for TLS/SNI, no redirects/cookies/credentials, 15-second total
+  deadline, 20MB per image, streaming limits, content-type/signature checks and
+  rejection of encoded/incomplete transfers. IPv6-only hosts intentionally remain
+  unsupported. Full image decoding is still performed by the existing compositor.
+- Added saved-manifest image collection with identity validation, sequential
+  downloads, per-invocation URL deduplication and 80MB aggregate limit. Failed
+  images fail the deck, never cause repicking or silent slide renumbering.
+- 691 tests / 55 files, typecheck, focused lint and diff checks pass. New tests
+  use mocked DNS/HTTPS (including private/mixed answers, redirects, size limits,
+  DNS/body deadlines and late DNS resolution), NOT live network verification.
+  No server origin allowlist has been inferred from user content or enabled.
+- Consulted Node's official HTTPS/DNS API documentation. No browser/credential
+  policy bypass, live request, upload, persistence or deployment occurred. No new
+  manual/vision QA, full ticket certification or evidence-supported revised ETA.
+
 ### September 26, 09:42 UTC continuation
 
 - Main remains `781fb20`; clean starting tree and no running worker agents.
@@ -313,7 +333,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-02 | Materialise and render claims as database functions | Open |
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
 | DEV-04 | Painter: text | Template-bound captions and bundled static fonts tested; emoji and Python/design visual parity open |
-| DEV-05 | Painter: images, composition and upload | In-memory captioned deck composition tested; safe remote fetching, upload, persistence and parity open |
+| DEV-05 | Painter: images, composition and upload | Captioned composition and bounded fetch adapter tested; live allowlist verification, upload, persistence and parity open |
 | DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |
 | DEV-08 | Copy writer | Prompt/output contract and bounded length retry tested; provider, lane seeds, hardening and persistence open |
