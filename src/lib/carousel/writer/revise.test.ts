@@ -13,6 +13,34 @@ function setup() {
   return { input, previous, options, output, contract };
 }
 describe("copy revision isolation", () => {
+  it("cannot broaden a track rewrite through caller mutation while waiting", async () => {
+    const { input, previous, options, output } = setup();
+    options.generate.mockImplementation(async () => {
+      options.scope.kind = "deck";
+      previous.version = 99;
+      return { ...output, caption: "Forbidden collateral edit" };
+    });
+    const result = await reviseCopy(input, previous, options);
+    expect(result.state).toBe("flagged");
+    expect(result.copy).toBeNull();
+    expect(result.metadata).toMatchObject({ previous_version: 4, version: 5, revision_scope: { kind: "track" } });
+  });
+  it("keeps feedback and provider fixed during a length-correction retry", async () => {
+    const { input, previous, options, output, contract } = setup();
+    const role = contract.roles.find(role => role.max_chars !== undefined)!;
+    const originalProvider = options.generate;
+    originalProvider.mockImplementationOnce(async () => {
+      options.feedback = "Changed while waiting";
+      options.generate = vi.fn(async () => { throw new Error("Wrong provider"); });
+      return { ...output, roles: { ...output.roles, [role.role]: "x".repeat(role.max_chars! + 1) } };
+    });
+    const result = await reviseCopy(input, previous, options);
+    expect(result.state).toBe("copy_validated");
+    expect(originalProvider).toHaveBeenCalledTimes(2);
+    expect(originalProvider).toHaveBeenNthCalledWith(2, expect.stringContaining("Different track"));
+    expect(originalProvider).toHaveBeenNthCalledWith(2, expect.not.stringContaining("Changed while waiting"));
+    expect(options.generate).not.toHaveBeenCalled();
+  });
   it("changes track only and proposes version N+1 without altering the original", async () => {
     const { input, previous, options, output } = setup();
     const snapshot = structuredClone(previous);

@@ -11,6 +11,11 @@ export async function reviseCopy(input: WritingInput, previous: { version: numbe
   modelId: string;
   generate: (prompt: string) => Promise<unknown>;
 }) {
+  // Provider calls can outlive caller edits. Capture data, scope and callbacks
+  // before the first await so retries and N+1 checks refer to one revision.
+  input = structuredClone(input);
+  previous = structuredClone(previous);
+  options = { ...options, scope: structuredClone(options.scope) };
   if (!Number.isSafeInteger(previous.version) || previous.version < 1 || previous.version >= Number.MAX_SAFE_INTEGER || options.expectedVersion !== previous.version) {
     throw new Error("Stale or invalid draft version");
   }

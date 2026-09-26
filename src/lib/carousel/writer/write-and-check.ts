@@ -42,6 +42,8 @@ async function checkWriting<T extends Awaited<ReturnType<typeof writeCopy>>>(con
 }
 
 export async function writeAndCheck(input: WritingInput, options: WriteCheckOptions) {
+  input = structuredClone(input);
+  options = { ...options, gates: { ...options.gates } };
   const contract = prepare(input, options);
   return checkWriting(contract, await writeCopy(input, options.modelId, options.generate), options);
 }
@@ -53,6 +55,9 @@ export async function reviseAndCheck(input: WritingInput,
   previous: { contentId: string; version: number; copy: WrittenCopy },
   options: WriteCheckOptions & { expectedVersion: number; scope: RevisionScope; feedback: string },
 ) {
+  input = structuredClone(input);
+  previous = structuredClone(previous);
+  options = { ...options, gates: { ...options.gates }, scope: structuredClone(options.scope) };
   const contract = prepare(input, options);
   if (!previous.contentId.trim() || previous.contentId === options.contentId) throw new Error("Revision requires a new draft identity");
   const writing = await reviseCopy(input, previous, options);

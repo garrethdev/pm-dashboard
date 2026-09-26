@@ -39,6 +39,13 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 11:42 UTC continuation
+
+- Main fetched at 781fb20; clean starting tree at a51269a and no other active implementation agents. Reviewed DEV-08/09 requirements and the current revision/checker implementation.
+- Fixed a revision-safety gap: caller mutation during a provider await could broaden the checked scope, change reported N+1 provenance or replace feedback/provider on length retry. Revision now captures input, previous copy/version, scope and callback before awaits. Initial/revision write-and-check also capture gate adapters and draft identity so a result cannot be gated against a later caller edit.
+- Four new regression cases exercise scope/provenance mutation, retry feedback/provider mutation, and initial/revision gate-identity isolation. Full suite: 732 tests / 59 files; type-check, targeted lint and diff checks pass. These provider/gate tests use injected doubles, not live service proof. Previous checkpoint's production build passed; no fresh build this checkpoint.
+- DEV-08/09 remain partial; no full ticket newly certified. Original caption-hardening rules/lane prompts, persisted version locking, providers, music and remaining UI work remain open. No new manual click-through or vision evidence. Browser policy and credential/catalog access blockers unchanged; no live writes, merge or deployment. No evidence supports a revised completion ETA.
+
 ### September 26, 11:22 UTC continuation
 
 - Main refreshed at 781fb20; clean starting branch at 6bba615, no concurrent implementation agents or duplicate workers.

@@ -15,6 +15,34 @@ function setup() {
   return { input, options };
 }
 describe("write and check one version", () => {
+  it.each([false, true])("keeps gate identity and adapters stable across provider waits (revision=%s)", async revision => {
+    const { input, options } = setup();
+    const output = await options.generate();
+    const risk = options.gates.risk;
+    const replacement = vi.fn(async () => ({ risk_level: "low", action: "approve", violations: [], llm_reasons: [], suggestions: [] }));
+    options.generate.mockImplementation(async () => {
+      options.contentId = "changed-id";
+      options.contentType = "changed-type";
+      options.hookRole = "missing-role";
+      options.gates.risk = replacement;
+      input.template.slides[0].text[0].role = "missing-role";
+      return structuredClone(output);
+    });
+    const revisionOptions = { ...options, expectedVersion: 2, scope: { kind: "track" as const }, feedback: "Try again" };
+    // Both entry points receive an object that the provider may mutate while
+    // resolving; the gate must still use the original validated identity.
+    if (revision) options.generate.mockImplementation(async () => {
+      revisionOptions.contentId = "changed-id";
+      revisionOptions.gates.risk = replacement;
+      return structuredClone(output);
+    });
+    const result = revision
+      ? await reviseAndCheck(input, { contentId: "old-version", version: 2, copy: output }, revisionOptions)
+      : await writeAndCheck(input, options);
+    expect(result.state).toBe("awaiting_music");
+    expect(risk).toHaveBeenCalledWith({ items: [expect.objectContaining({ content_id: "draft-version-3", type: "covered_eye", text_hook: "Copy" })] }, expect.any(AbortSignal));
+    expect(replacement).not.toHaveBeenCalled();
+  });
   it.each(["track", "deck"] as const)("rechecks a %s revision using the new identity", async kind => {
     const { input, options } = setup();
     const contract = buildWritingContract(input);
