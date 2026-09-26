@@ -39,6 +39,25 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 08:02 UTC continuation
+
+- Main remains `781fb20`; clean starting tree and no active worker agents.
+- DEV-05: added CPU-only image-cell composition from bounded raster buffers.
+  Supports centre-cover fit, bicubic/Lanczos selection, optional EXIF orientation,
+  manifest-order composition, sRGB output and PNG/JPEG encoding. Rejects invalid
+  bounds, corrupt/non-raster/animated input and excessive input/output sizes.
+- Declared already-installed Sharp 0.35.4 as a direct dependency; install scripts
+  were disabled. Consulted official resize/composite docs:
+  https://sharp.pixelplumbing.com/api-resize/ and
+  https://sharp.pixelplumbing.com/api-composite/.
+- 609 tests / 47 files, typecheck and focused lint pass. New integration tests
+  genuinely encode/decode images and check pixels at four-cell boundaries plus
+  JPEG dimensions/metadata. An initial type-import error was corrected and rerun.
+- This is NOT font/text integration, Python parity or app end-to-end verification.
+  Remote fetch protections, caption composition, uploads and persisted rendering
+  remain open. Manual/vision QA still blocked; no new full ticket complete, no
+  credential attempts or deployment, and no evidence-supported revised ETA.
+
 ### September 26, 07:42 UTC continuation
 
 - Main remains `781fb20`; clean starting tree and no active worker agents.
@@ -204,7 +223,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-02 | Materialise and render claims as database functions | Open |
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
 | DEV-04 | Painter: text | Layout and text-only SVG layers tested; real fonts, raster composition, emoji and visual parity open |
-| DEV-05 | Painter: images, composition and upload | Open |
+| DEV-05 | Painter: images, composition and upload | Real local raster composition tested; remote fetching, captions, upload and parity open |
 | DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |
 | DEV-08 | Copy writer | Prompt/output contract and bounded length retry tested; provider, lane seeds, hardening and persistence open |
