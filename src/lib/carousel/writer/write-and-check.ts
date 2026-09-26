@@ -1,10 +1,11 @@
 import { evaluateCopy, type GateAdapters } from "../gate/evaluate";
-import { buildWritingContract, writeCopy, type WritingInput } from "./contract";
+import { buildWritingContract, writeCopy, type WritingInput, type WrittenCopy } from "./contract";
+import { reviseCopy, type RevisionScope } from "./revise";
 
 /** One written version through copy checks. The caller supplies a NEW draft-version
  * identity and persists this result atomically. Music and render checks are still
  * required; this function cannot approve a deck or write a lane row. */
-export async function writeAndCheck(input: WritingInput, options: {
+export interface WriteCheckOptions {
   contentId: string;
   contentType: string;
   hookRole: string;
@@ -12,13 +13,19 @@ export async function writeAndCheck(input: WritingInput, options: {
   generate: (prompt: string) => Promise<unknown>;
   gates: GateAdapters;
   timeoutMs?: number;
-}) {
+}
+
+function prepare(input: WritingInput, options: WriteCheckOptions) {
   const contract = buildWritingContract(input);
   if (!options.contentId.trim() || !options.contentType.trim()) throw new Error("Draft identity and type are required");
   if (!contract.template.slides[0].text.some(box => box.role === options.hookRole)) {
     throw new Error("Hook role must be on the opening slide");
   }
-  const writing = await writeCopy(input, options.modelId, options.generate);
+  if (options.timeoutMs !== undefined && (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1 || options.timeoutMs > 60_000)) throw new Error("Invalid gate timeout");
+  return contract;
+}
+
+async function checkWriting<T extends Awaited<ReturnType<typeof writeCopy>>>(contract: ReturnType<typeof buildWritingContract>, writing: T, options: WriteCheckOptions) {
   if (writing.state !== "copy_validated" || !writing.copy) return { state: writing.state, writing, gate: null };
   const copy = writing.copy;
   // Only painted roles are sent as on-screen text, in slide/box order. Never
@@ -32,4 +39,22 @@ export async function writeAndCheck(input: WritingInput, options: {
     on_screen_text: onScreenText,
   }, options.gates, options.timeoutMs);
   return { state: gate.state === "flagged" ? "flagged" as const : "awaiting_music" as const, writing, gate };
+}
+
+export async function writeAndCheck(input: WritingInput, options: WriteCheckOptions) {
+  const contract = prepare(input, options);
+  return checkWriting(contract, await writeCopy(input, options.modelId, options.generate), options);
+}
+
+/** Revisions deliberately use exactly the same checker as initial generation.
+ * Even track-only revisions get a fresh verdict for their new content identity.
+ * The repository still owns authorization, version locking and atomic saves. */
+export async function reviseAndCheck(input: WritingInput,
+  previous: { contentId: string; version: number; copy: WrittenCopy },
+  options: WriteCheckOptions & { expectedVersion: number; scope: RevisionScope; feedback: string },
+) {
+  const contract = prepare(input, options);
+  if (!previous.contentId.trim() || previous.contentId === options.contentId) throw new Error("Revision requires a new draft identity");
+  const writing = await reviseCopy(input, previous, options);
+  return checkWriting(contract, writing, options);
 }

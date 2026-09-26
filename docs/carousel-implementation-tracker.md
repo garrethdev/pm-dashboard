@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 01:21 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch and no concurrent agents.
+- Initial generation and revision now share one quality-check integration. New `reviseAndCheck` requires a different draft identity, preserves N+1 provenance, reruns compliance/scoring/risk even for track-only revisions, retains new copy when the gate fails, and stops at awaiting music. Invalid timeout settings are rejected before a writer request.
+- Five new integration tests with injected adapters. Full suite: 458 passing tests in 35 files; type-check and targeted lint pass.
+- This closes only the in-memory revision-to-checker gap. Persisted route enforcement, fresh music lookup, saved readbacks, rendering invalidation, original compliance/rubric and live workflow adapters remain outstanding. DEV-08/09 remain partial, with no new end-to-end completion claim.
+- No new manual click-through or vision QA, no live calls/writes, no merge/deploy. Existing browser/security and environment/schema blockers remain. No evidence supports shortening the provisional estimate.
+
 ### September 26, 01:01 UTC continuation
 
 - Main freshly verified at 781fb20; starting checkout clean and no agents running.
