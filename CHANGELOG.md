@@ -170,6 +170,23 @@ with no missing cover and no failed image; 38 of their 113 inner slides are
 gone for good until re-scraped. The lasting fix belongs in the enrichment
 worker, which should re-host slides at scrape time; noted in `BACKLOG.md`.
 
+**Zero view counts on Trending (2026-09-26, Garreth: "wrong view count or
+not relevant"):** every reference the intake has written since Sep 12 at
+21:00 UTC carried views, likes and saves of 0 and a score of 0, so the
+Trending panel ranked the newest day's rows in an arbitrary order and
+labelled each "0 views". The real numbers had been collected all along and
+sat in the snapshots table; the bridge workflow in n8n simply writes zeros
+into the reference. Garreth chose to leave the bridge alone and fix the
+data: a one-off backfill on the live project gave 955 zero-count references
+the views, likes and saves from their latest snapshot, scored the way the
+old bridge scored them (12 had no snapshot and stay at zero), and the Trends
+reader now reads the latest snapshot for any reference still at zero, so
+new rows show real counts without waiting for another backfill. Confirmed
+live: the four Trending tiles that read "0 views" now read their real
+counts and rank by them; the feed's first page has no zero-count carousel.
+Ranking of new rows on the Overview and in search still depends on the
+stored score, which the reader cannot fix; that stays with the bridge.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

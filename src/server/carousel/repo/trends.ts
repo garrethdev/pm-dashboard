@@ -5,6 +5,7 @@
  */
 import { dbCount, dbDelete, dbGet, dbGetAll, dbInsert, dbPatch, enc } from "@/server/carousel/repo/db";
 import { displayUrl } from "@/server/carousel/media";
+import { fallback } from "@/server/carousel/log";
 import type { Digest, KnowledgeRule, Reference, ReferenceAnalysis } from "@/server/carousel/repo/types";
 
 interface RefRow {
@@ -79,6 +80,25 @@ async function analysesFor(ids: number[]): Promise<Map<number, AnalysisRow>> {
   return map;
 }
 
+/**
+ * The latest performance snapshot per reference, for rows the intake left at
+ * zero. Since 2026-09-12 the bridge writes every new reference with views,
+ * likes and saves of 0 and keeps the real numbers in the snapshots table
+ * (Garreth, 2026-09-26: read the snapshot, do not change the bridge). The
+ * one-off backfill fixed the rows that existed then; this covers the rest.
+ */
+async function snapshotsFor(ids: number[]): Promise<Map<number, { views: number; likes: number; saves: number }>> {
+  const map = new Map<number, { views: number; likes: number; saves: number }>();
+  if (!ids.length) return map;
+  const rows = await dbGetAll<{ source_reference_id: number; views: number | null; likes: number | null; bookmarks: number | null }>(
+    `source_performance_snapshots?select=source_reference_id,views,likes,bookmarks&source_reference_id=in.(${ids.join(",")})&views=gt.0&order=observed_at.desc`,
+  ).catch(fallback("snapshots", []));
+  for (const r of rows) {
+    if (!map.has(r.source_reference_id)) map.set(r.source_reference_id, { views: Number(r.views) || 0, likes: Number(r.likes) || 0, saves: Number(r.bookmarks) || 0 });
+  }
+  return map;
+}
+
 async function personal(viewer: string, ids: number[]): Promise<{ saved: Set<number>; votes: Map<number, "up" | "down"> }> {
   if (!ids.length) return { saved: new Set(), votes: new Map() };
   const list = ids.join(",");
@@ -91,9 +111,11 @@ async function personal(viewer: string, ids: number[]): Promise<{ saved: Set<num
 
 async function hydrate(rows: RefRow[], viewer: string): Promise<Reference[]> {
   const ids = rows.map((r) => r.id);
-  const [beats, analyses, me] = await Promise.all([beatsFor(ids), analysesFor(ids), personal(viewer, ids)]);
+  const zero = rows.filter((r) => !r.views).map((r) => r.id);
+  const [beats, analyses, me, snaps] = await Promise.all([beatsFor(ids), analysesFor(ids), personal(viewer, ids), snapshotsFor(zero)]);
   return rows.map((r) => {
     const a = analyses.get(r.id);
+    const counts = r.views ? { views: r.views, likes: r.likes, saves: r.saves } : (snaps.get(r.id) ?? { views: r.views, likes: r.likes, saves: r.saves });
     const media = mediaOf(a);
     const b = beats.get(r.id) ?? [];
     const slides: Reference["slides"] = (b.length ? b : media.map((_, i) => ({ position: i + 1, visible_copy: null, visual_description: null, narrative_role: null }))).map((s, i) => ({
@@ -114,9 +136,9 @@ async function hydrate(rows: RefRow[], viewer: string): Promise<Reference[]> {
       sourceUrl: r.source_url,
       thumbnail: r.thumbnail_url,
       slides,
-      views: r.views,
-      likes: r.likes,
-      saves: r.saves,
+      views: counts.views,
+      likes: counts.likes,
+      saves: counts.saves,
       publishedAt: r.published_at,
       topics,
       hookFamily: a?.hook_family ?? r.hook_type,
