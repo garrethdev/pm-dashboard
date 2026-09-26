@@ -90,12 +90,14 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
       const byId = new Map(refs.map(r => [String(r.id), r]));
       const selected = matches.filter(r => byId.has(String(r.reference_id))).slice(0, Number(limit));
       const selectedIds = [...new Set(selected.map(r => String(r.reference_id)))];
-      const beats = selectedIds.length ? await all(`reference_beats?source_reference_id=in.(${selectedIds.join(",")})&select=id,source_reference_id,position,media&order=source_reference_id.asc,position.asc,id.asc`) : [];
+      // Live reference_beats has no media/visual columns. Keep real slide counts;
+      // do not manufacture matched-slide imagery from the reference's cover.
+      const beats = selectedIds.length ? await all(`reference_beats?source_reference_id=in.(${selectedIds.join(",")})&select=id,source_reference_id,position&order=source_reference_id.asc,position.asc,id.asc`) : [];
       return { query: b.query, channel, requested_mode: requestedMode, mode, fallback, reranked: false,
         results: selected.map(match => {
           const reference = byId.get(String(match.reference_id))!;
           const slides = beats.filter(s => String(s.source_reference_id) === String(match.reference_id));
-          return { ...match, reference, matched_media: slides.find(s => s.position === match.matched_slide)?.media ?? null, thumbnail_url: reference.thumbnail_url, slide_count: slides.length };
+          return { ...match, reference, matched_media: null, thumbnail_url: reference.thumbnail_url, slide_count: slides.length };
         }), pagination: { returned: selected.length, limit, candidate_limit: 50, total: null, exhaustive: false },
       };
     }
@@ -107,12 +109,25 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
     const refs = await db(`references_unified?id=eq.${input}${operation === "carousel" ? "&format=eq.carousel" : ""}&select=id,format,creator_handle,platform,source_url,thumbnail_url,views,likes,saves,published_at`);
     if (!refs.length) throw new CatalogError(404, "REFERENCE_NOT_FOUND", "Reference not found.");
     const [beats, analysis, documents] = await Promise.all([
-      all(`reference_beats?source_reference_id=eq.${input}&select=id,position,media,visual,visible_copy,visual_description,narrative_role,inspection_status&order=position.asc,id.asc`),
+      all(`reference_beats?source_reference_id=eq.${input}&select=id,position,visible_copy,visual_description,narrative_role,inspection_status&order=position.asc,id.asc`),
       db(`reference_analysis?source_reference_id=eq.${input}&analysis_version=in.(perez-slides-v1,phase0-multiformat-v1)&select=id,analysis_version,inspection_status,topic,angle,hook_family,emotional_tone,visual_style,opener_treatment,proof_placement,cta_structure,inferred,observed,updated_at&order=updated_at.desc,id.asc&limit=1`),
       all(`carousel_search_documents?source_reference_id=eq.${input}&enabled=eq.true&select=id,slide_position,kind,evidence_class,content,metadata,inspection_status&order=id.asc`),
     ]);
+    let savedAnalysis = analysis[0] ?? null;
+    const inferred = savedAnalysis?.inferred && typeof savedAnalysis.inferred === "object" && !Array.isArray(savedAnalysis.inferred)
+      ? savedAnalysis.inferred as Row : {};
+    // DEV-42: the older phase0 run stored Story separately. Read only that saved
+    // field, preserving analysis status/coverage and never exposing strength scores.
+    if (savedAnalysis?.analysis_version === "phase0-multiformat-v1" && !(typeof inferred.story_structure === "string" && inferred.story_structure.trim())) {
+      const evaluations = await db(`reference_format_evaluations?source_reference_id=eq.${input}&select=story_structure,evaluated_at&order=evaluated_at.desc.nullslast&limit=1`);
+      const story = evaluations[0]?.story_structure;
+      if (typeof story === "string" && story.trim()) {
+        savedAnalysis = { ...savedAnalysis, inferred: { ...inferred, story_structure: story },
+          story_structure_source: { relation: "reference_format_evaluations", evaluated_at: evaluations[0].evaluated_at ?? null } };
+      }
+    }
     // Missing analysis is explicit; model text is saved evidence, not human approval.
-    return { reference: refs[0], slides: beats, analysis: analysis[0] ?? null, documents, reading_required: !analysis.length, evidence_scope: "external_market_reference" };
+    return { reference: refs[0], slides: beats, analysis: savedAnalysis, documents, reading_required: !analysis.length, evidence_scope: "external_market_reference" };
   } catch (error) {
     if (controller.signal.aborted) throw new CatalogError(504, "SEARCH_TIMEOUT", "Search exceeded 20 seconds. Try a narrower query.");
     if (error instanceof CatalogError) throw error;

@@ -1,19 +1,21 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { callCatalog } from "./client";
 import { readSearchBody } from "./http";
+import { analysisGroups } from "./analysis";
 beforeEach(() => {
   vi.stubEnv("SUPABASE_URL", "https://project.supabase.co");
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "private-key");
   vi.stubEnv("OPENROUTER_API_KEY", "embedding-key");
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); vi.restoreAllMocks(); });
-it("calls the existing RPC and removes videos while retaining matched media", async () => {
+it("calls the existing RPC and removes videos without inventing absent slide media", async () => {
   const fetcher = vi.fn()
     .mockResolvedValueOnce(Response.json([{ reference_id: 1, matched_slide: 2 }, { reference_id: 2 }]))
     .mockResolvedValueOnce(Response.json([{ id: 1, format: "carousel", thumbnail_url: "cover", likes: null }]))
-    .mockResolvedValueOnce(Response.json([{ source_reference_id: 1, position: 2, media: { url: "slide-two" } }]));
+    .mockResolvedValueOnce(Response.json([{ source_reference_id: 1, position: 2 }]));
   const out = await callCatalog("search", { query: "eyes", mode: "keyword" }, fetcher);
-  expect(out).toMatchObject({ mode: "keyword", reranked: false, results: [{ reference_id: 1, matched_media: { url: "slide-two" }, reference: { likes: null } }], pagination: { total: null, exhaustive: false } });
+  expect(out).toMatchObject({ mode: "keyword", reranked: false, results: [{ reference_id: 1, matched_media: null, reference: { likes: null }, slide_count: 1 }], pagination: { total: null, exhaustive: false } });
+  expect(new URL(String(fetcher.mock.calls[2][0])).searchParams.get("select")).toBe("id,source_reference_id,position");
   expect(String(fetcher.mock.calls[0][0])).toContain("/rest/v1/rpc/search_carousel_library");
   expect(String(fetcher.mock.calls[1][0])).toContain("format=eq.carousel");
 });
@@ -78,10 +80,46 @@ it.each(["perez-slides-v1", "phase0-multiformat-v1"])("reads saved %s detail fie
   expect(analysisUrl.searchParams.get("analysis_version")).toBe("in.(perez-slides-v1,phase0-multiformat-v1)");
   expect(analysisUrl.searchParams.get("select")).toContain("inferred,observed");
   expect(analysisUrl.searchParams.get("order")).toBe("updated_at.desc,id.asc");
+  const beatsUrl = new URL(String(fetcher.mock.calls.find(([url]) => String(url).includes("reference_beats?"))![0]));
+  expect(beatsUrl.searchParams.get("select")).toBe("id,position,visible_copy,visual_description,narrative_role,inspection_status");
 });
 it.each(["null", "[]", "broken", '{"query":""}', '{"query":"eyes","owner":"me"}'])("rejects malformed request %s", async body => {
   await expect(readSearchBody(new Request("https://dashboard.example", { method: "POST", body }))).rejects.toMatchObject({ status: 400 });
 });
 it("bounds request bytes without trusting content length", async () => {
   await expect(readSearchBody(new Request("https://dashboard.example", { method: "POST", body: JSON.stringify({ query: "x".repeat(33000) }) }))).rejects.toMatchObject({ status: 413 });
+});
+
+it.each(["list_with_introduction", null, "", { unsupported: true }])("uses only a saved phase0 story string: %j", async story => {
+  const original = { id: "analysis", analysis_version: "phase0-multiformat-v1", inspection_status: "partial", hook_family: "outcome_preview", inferred: { first_product_slide: 3 } };
+  const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+    const path = String(url);
+    if (path.includes("references_unified?")) return Response.json([{ id: 1 }]);
+    if (path.includes("reference_analysis?")) return Response.json([original]);
+    if (path.includes("reference_format_evaluations?")) return Response.json([{ story_structure: story, evaluated_at: "2026-09-19T00:00:00Z", hook_strength: 9 }]);
+    return Response.json([]);
+  });
+  const result = await callCatalog("carousel", "1", fetcher);
+  expect(result.analysis).toMatchObject(original);
+  const query = new URL(String(fetcher.mock.calls.find(([url]) => String(url).includes("reference_format_evaluations?"))![0]));
+  expect(query.searchParams.get("source_reference_id")).toBe("eq.1");
+  expect(query.searchParams.get("select")).toBe("story_structure,evaluated_at");
+  expect(query.searchParams.get("limit")).toBe("1");
+  expect(JSON.stringify(result.analysis)).not.toContain("hook_strength");
+  const storyRow = analysisGroups(result.analysis ?? null).flatMap(group => group.rows).find(row => row.label === "Story");
+  if (typeof story === "string" && story) {
+    expect(storyRow?.values).toEqual(["List with introduction"]);
+    expect(result.analysis?.story_structure_source).toMatchObject({ relation: "reference_format_evaluations" });
+  } else expect(storyRow).toBeUndefined();
+});
+
+it.each(["perez-slides-v1", "phase0-multiformat-v1"])("does not replace a saved story for %s", async version => {
+  const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+    const path = String(url);
+    if (path.includes("references_unified?")) return Response.json([{ id: 1 }]);
+    if (path.includes("reference_analysis?")) return Response.json([{ analysis_version: version, inferred: { story_structure: "original" } }]);
+    return Response.json([]);
+  });
+  expect((await callCatalog("carousel", "1", fetcher)).analysis?.inferred).toEqual({ story_structure: "original" });
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes("reference_format_evaluations?"))).toBe(false);
 });

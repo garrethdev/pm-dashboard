@@ -1,6 +1,6 @@
 # Carousel Generator implementation tracker
 
-Updated September 25, 2026. Working branch: codex/carousel-backend-foundation.
+Updated September 26, 2026. Working branch: codex/carousel-backend-foundation.
 Current main fetched directly from GitHub: 781fb20. Main contains no newer commits than the branch base; no duplicate implementation found on main.
 Starting feature commit: ac45989.
 
@@ -32,6 +32,25 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 - No production merge/deploy or live social posting is included in autonomous testing; use isolated test data and preview.
 
 ## Per-ticket ledger (62 entries)
+
+### September 26, 04:42 UTC continuation
+
+- Main re-fetched: still `781fb20`; no active worker agents or overlapping edits.
+- DEV-42: implemented the phase0 Story fallback from verified
+  `reference_format_evaluations` fields, preserving existing analysis/status and
+  recording source provenance without exposing strength scores.
+- A real read found an existing adapter defect hidden by mocked tests: live
+  `reference_beats` has neither `media` nor `visual`. Removed those invalid select
+  fields from detail/search reads. Matched-slide media remains explicitly null;
+  correct slide-image sourcing is still open, not replaced with invented URLs.
+- Live read-only adapter smoke: one phase0 carousel returned six slides and its
+  saved Story; all five relation requests returned HTTP 200. Initial non-carousel
+  sample returned the correct 404; the subsequent 502 exposed the column defect
+  before correction. No database writes or provider calls occurred.
+- Verification: 516 tests / 38 files passed; typecheck and focused lint passed.
+  Browser/manual/vision validation still blocked and no full ticket certified.
+- Estimate remains provisional (40–70 active engineering hours originally);
+  no measured full generation path exists to justify a revised completion date.
 
 | Ticket | Work | Status |
 |---|---|---|
