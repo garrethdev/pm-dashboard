@@ -39,6 +39,23 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 09:02 UTC continuation
+
+- Main freshly fetched at `781fb20`; clean starting branch and no active workers.
+- DEV-04 now has font-outline SVG painting and transparent caption PNG output,
+  with measured wrapping, crisp stroke/fill and separate hard/blurred shadows.
+  Measurement and glyph painting use the same parsed font, avoiding host-font
+  fallback. Emoji remains explicitly unsupported, not silently substituted.
+- Real raster pixel tests exposed missing closing contours in decoded CFF paths;
+  explicit closure fixes the missing stroke edge. Tests cover coordinates, fill,
+  stroke, transparency, hard/soft shadows, empty text and rejected inputs.
+- 628 tests / 50 files, typecheck, focused lint and diff checks pass. These use
+  a synthetic rectangle font, not approved fonts or Python reference renders.
+  Font bundling, emoji, template-box integration and final slide composition/
+  upload remain open. No full ticket newly certified, no new manual/vision QA.
+- Credential and browser policy blockers remain; neither was bypassed. No live
+  writes/deployment. No measured end-to-end throughput to justify a revised ETA.
+
 ### September 26, 08:42 UTC continuation
 
 - Main remains `781fb20`; clean starting tree, no worker agents active.
@@ -252,7 +269,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-01 | Database: the generation record, templates, directions, libraries | Open |
 | DEV-02 | Materialise and render claims as database functions | Open |
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
-| DEV-04 | Painter: text | Layout and text-only SVG layers tested; real fonts, raster composition, emoji and visual parity open |
+| DEV-04 | Painter: text | Measured outlines and caption PNG layers pixel-tested; approved fonts, emoji, template integration and visual parity open |
 | DEV-05 | Painter: images, composition and upload | Real local raster composition tested; remote fetching, captions, upload and parity open |
 | DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |

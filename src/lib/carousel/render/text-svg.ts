@@ -1,4 +1,5 @@
 import { layoutText, type TextLayoutInput } from "./text-layout";
+import { loadFontMetrics } from "./font-metrics";
 export interface TextPaint {
   fontFamily: string;
   fill: string;
@@ -14,6 +15,20 @@ const color = (value: string) => /^#[0-9a-f]{6}$/i.test(value);
  * deliberately refused until the bitmap-run painter implements its exact metrics.
  */
 export function paintTextLayers(input: TextLayoutInput, paint: TextPaint, measure: (text: string) => number) {
+  return paintLayers(input, paint, measure);
+}
+
+/** Production text geometry comes from the supplied licensed static font, not
+ * a font-family installed on the host. Metrics cannot be supplied independently
+ * of the outlines. Emoji still requires the separate bitmap-run implementation. */
+export function paintOutlinedTextLayers(input: Omit<TextLayoutInput, "font">, paint: Omit<TextPaint, "fontFamily">, fontBytes: Uint8Array) {
+  const font = loadFontMetrics(fontBytes);
+  return paintLayers({ ...input, font }, { ...paint, fontFamily: "Outlined" },
+    text => font.measure(text, input.size), (text, x, baseline) => font.outline(text, input.size, x, baseline));
+}
+
+function paintLayers(input: TextLayoutInput, paint: TextPaint, measure: (text: string) => number,
+  outline?: (text: string, x: number, baseline: number) => string) {
   if (typeof input.text !== "string" || input.text.length > 20_000 ||
       [...input.text].some(char => { const n = char.codePointAt(0)!; return n < 32 && ![9, 10, 13].includes(n) || n >= 0xd800 && n <= 0xdfff || n === 0xfffe || n === 0xffff; })) throw new Error("Invalid SVG text");
   if (/[\p{Extended_Pictographic}\p{Regional_Indicator}\u20e3\ufe0f]/u.test(input.text)) throw new Error("Emoji bitmap painting is not implemented");
@@ -28,8 +43,9 @@ export function paintTextLayers(input: TextLayoutInput, paint: TextPaint, measur
       shadow.kind === "soft" && (typeof shadow.blur !== "number" || !Number.isFinite(shadow.blur) || shadow.blur <= 0 || shadow.blur > 1000))) throw new Error("Invalid SVG shadow");
   const layout = layoutText(input, measure);
   const wrap = (content: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${input.canvas.width}" height="${input.canvas.height}" viewBox="0 0 ${input.canvas.width} ${input.canvas.height}">${content}</svg>`;
-  const text = (dx: number, dy: number, attributes: string) => layout.lines.map(line =>
-    `<text x="${line.x + dx}" y="${line.baseline + dy}" font-family="${xml(paint.fontFamily)}" font-size="${input.size}" xml:space="preserve" ${attributes}>${xml(line.text)}</text>`).join("");
+  const text = (dx: number, dy: number, attributes: string) => layout.lines.map(line => outline
+    ? `<path d="${outline(line.text, line.x + dx, line.baseline + dy)}" ${attributes}/>`
+    : `<text x="${line.x + dx}" y="${line.baseline + dy}" font-family="${xml(paint.fontFamily)}" font-size="${input.size}" xml:space="preserve" ${attributes}>${xml(line.text)}</text>`).join("");
   return {
     foreground: wrap(text(0, 0, `fill="${paint.fill}" stroke="${paint.stroke.color}" stroke-width="${paint.stroke.width}" stroke-linejoin="round" paint-order="stroke fill"`)),
     shadow: shadow ? { svg: wrap(text(shadow.dx, shadow.dy, `fill="${shadow.color}" fill-opacity="${shadow.opacity}" stroke="none"`)),
