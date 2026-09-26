@@ -34,10 +34,31 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 - The tickets identify unresolved schema and Go Live view-composition choices. Preserve legacy image_direction until its use is verified; do not drop it.
 - Provider and n8n access need verification. Keep generation and final approval separate; never simulate success.
 - Turbopack build failed on environment port-binding permission. Standard Webpack production build subsequently PASSED with approved network access for the existing font dependency. Browser tests have not passed.
-- This checkout has no persisted Supabase/provider environment, but authorized Vercel retrieval now works. Supabase credentials were loaded only into a short-lived process; five zero-row probes and REST metadata reads succeeded. Local missing environment variables are no longer an access blocker. Development-scoped configuration does not establish database isolation; no live writes were performed.
+- This checkout has no persisted Supabase/provider environment. Earlier Vercel retrieval succeeded and credentials were used only in a short-lived process for five zero-row probes and REST metadata reads. Further retrieval is now blocked pending explicit approval (see September 26 06:02 entry above). Development-scoped configuration does not establish database isolation; no live writes were performed.
 - No production merge/deploy or live social posting is included in autonomous testing; use isolated test data and preview.
 
 ## Per-ticket ledger (62 entries)
+
+### September 26, 09:22 UTC continuation
+
+- Main freshly fetched at `781fb20`; clean starting branch, no active workers.
+- Added v1 template-to-caption planning: role lookup, fixed-copy protection,
+  limits, conditional hook quotes, shallow style overrides, explicit newlines,
+  original slide numbers and rejection of contradictory alignment declarations.
+- Added in-memory captioned-deck rendering from saved image selections, supplied
+  raster assets and explicit font bytes. Preflights all captions/fonts before
+  image work, preserves box paint order, supports PNG/JPEG and returns explicit
+  unpersisted/unapproved status. Template font paths are never opened.
+- 637 tests / 52 files, typecheck, focused lint and diff checks pass. Integration
+  tests decode six captioned 1080x1920 images and check top/bottom placement,
+  background pixels, overlapping-box paint order and JPEG encoding. A fixture
+  typing error was fixed before the final checks passed.
+- Tests use a synthetic rectangle font and solid-color images, not approved
+  fonts, real content or Python visual parity. Emoji, font bundle, safe remote
+  fetching, uploads, persisted jobs and app integration remain open. No full
+  ticket newly certified; no new manual/vision QA or live access attempts.
+- Browser/security and credential-approval blockers unchanged. No deployment;
+  no measured end-to-end throughput supports a revised completion ETA.
 
 ### September 26, 09:02 UTC continuation
 
@@ -269,8 +290,8 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-01 | Database: the generation record, templates, directions, libraries | Open |
 | DEV-02 | Materialise and render claims as database functions | Open |
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
-| DEV-04 | Painter: text | Measured outlines and caption PNG layers pixel-tested; approved fonts, emoji, template integration and visual parity open |
-| DEV-05 | Painter: images, composition and upload | Real local raster composition tested; remote fetching, captions, upload and parity open |
+| DEV-04 | Painter: text | Template-bound caption layers pixel-tested; approved fonts, emoji and visual parity open |
+| DEV-05 | Painter: images, composition and upload | In-memory captioned deck composition tested; safe remote fetching, upload, persistence and parity open |
 | DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |
 | DEV-08 | Copy writer | Prompt/output contract and bounded length retry tested; provider, lane seeds, hardening and persistence open |
