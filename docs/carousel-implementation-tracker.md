@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 01:01 UTC continuation
+
+- Main freshly verified at 781fb20; starting checkout clean and no agents running.
+- Added isolated deck/slide/track rewrite preparation. Proposes N+1 with previous-version provenance, rejects stale expected versions and mismatched template roles before provider calls, preserves original copy, protects fixed/per-batch values and flags collateral edits outside the requested scope. Slide rewrite requires one AI role painted on exactly one slide. Full-deck revision can rewrite all AI copy.
+- Seven new regression tests; full suite passes 453 tests in 35 files. Type-check and targeted lint pass.
+- This is not persisted versioning: transaction/row-lock version checks, routes, refreshed risk/music checks for revisions, rendering invalidation and saved readbacks remain open. No approval or gate verdict is inherited by these returned copies. DEV-08 stays partial.
+- No live provider calls, DB mutations, manual click-through or new vision QA. Browser/live-access blockers unchanged; no merge or deployment. No new end-to-end ticket completed and no validated ETA reduction.
+
 ### September 26, 00:41 UTC continuation
 
 - Main refreshed at 781fb20; clean starting tree and no active agents.
