@@ -33,6 +33,23 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 05:22 UTC continuation
+
+- Main re-fetched at `781fb20`; clean starting tree, no active worker agents.
+- Search now loads saved discovery image lists in a bulk read and uses the same
+  conservative slide-position alignment as Details. Selects the latest evidence
+  per reference and the exact matched position; absent, incomplete and ambiguous
+  media remain null. No per-card request fan-out or cross-reference substitution.
+- Live keyword search (`eyes`) returned 25 results. Search RPC, reference, beat
+  and discovery reads all returned HTTP 200. One of 25 results had a valid
+  matched-slide image; this is not a claim of full inventory image coverage or
+  successful asset rendering. No provider invocation or database mutation.
+- 526 tests / 39 files pass; typecheck and focused lint pass. Added regressions
+  for latest-source selection, partial lists and out-of-range matched positions.
+- DEV-39/42 remain partial. Browser click-through and rendered vision QA remain
+  unverified; full generation remains unfinished. No production deployment or
+  evidence supporting a revised full-completion ETA.
+
 ### September 26, 05:02 UTC continuation
 
 - Main remains `781fb20`; branch was clean and no worker agents active.

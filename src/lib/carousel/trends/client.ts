@@ -93,12 +93,24 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
       const selectedIds = [...new Set(selected.map(r => String(r.reference_id)))];
       // Live reference_beats has no media/visual columns. Keep real slide counts;
       // do not manufacture matched-slide imagery from the reference's cover.
-      const beats = selectedIds.length ? await all(`reference_beats?source_reference_id=in.(${selectedIds.join(",")})&select=id,source_reference_id,position&order=source_reference_id.asc,position.asc,id.asc`) : [];
+      const [beats, mediaEvidence] = selectedIds.length ? await Promise.all([
+        all(`reference_beats?source_reference_id=in.(${selectedIds.join(",")})&select=id,source_reference_id,position&order=source_reference_id.asc,position.asc,id.asc`),
+        all(`source_discovery_evidence?source_reference_id=in.(${selectedIds.join(",")})&source_format=eq.carousel&select=id,source_reference_id,media_urls&order=source_reference_id.asc,last_seen_at.desc.nullslast,id.asc`),
+      ]) : [[], []];
+      // Ordering selects the same latest evidence as the detail reader. Fetch
+      // once for this result set, not once per card, and never cross reference IDs.
+      const latestEvidence = new Map<string, Row>();
+      for (const evidence of mediaEvidence) {
+        const id = String(evidence.source_reference_id);
+        if (!latestEvidence.has(id)) latestEvidence.set(id, evidence);
+      }
       return { query: b.query, channel, requested_mode: requestedMode, mode, fallback, reranked: false,
         results: selected.map(match => {
           const reference = byId.get(String(match.reference_id))!;
-          const slides = beats.filter(s => String(s.source_reference_id) === String(match.reference_id));
-          return { ...match, reference, matched_media: null, thumbnail_url: reference.thumbnail_url, slide_count: slides.length };
+          const id = String(match.reference_id);
+          const slides = attachSlideMedia(beats.filter(s => String(s.source_reference_id) === id), latestEvidence.get(id));
+          const matched = slides.find(slide => slide.position === match.matched_slide);
+          return { ...match, reference, matched_media: matched?.media ?? null, thumbnail_url: reference.thumbnail_url, slide_count: slides.length };
         }), pagination: { returned: selected.length, limit, candidate_limit: 50, total: null, exhaustive: false },
       };
     }

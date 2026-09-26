@@ -26,12 +26,31 @@ it("calls the existing RPC and removes videos without inventing absent slide med
   const fetcher = vi.fn()
     .mockResolvedValueOnce(Response.json([{ reference_id: 1, matched_slide: 2 }, { reference_id: 2 }]))
     .mockResolvedValueOnce(Response.json([{ id: 1, format: "carousel", thumbnail_url: "cover", likes: null }]))
-    .mockResolvedValueOnce(Response.json([{ source_reference_id: 1, position: 2 }]));
+    .mockResolvedValueOnce(Response.json([{ source_reference_id: 1, position: 2 }]))
+    .mockResolvedValueOnce(Response.json([]));
   const out = await callCatalog("search", { query: "eyes", mode: "keyword" }, fetcher);
   expect(out).toMatchObject({ mode: "keyword", reranked: false, results: [{ reference_id: 1, matched_media: null, reference: { likes: null }, slide_count: 1 }], pagination: { total: null, exhaustive: false } });
   expect(new URL(String(fetcher.mock.calls[2][0])).searchParams.get("select")).toBe("id,source_reference_id,position");
   expect(String(fetcher.mock.calls[0][0])).toContain("/rest/v1/rpc/search_carousel_library");
   expect(String(fetcher.mock.calls[1][0])).toContain("format=eq.carousel");
+});
+it("search uses the exact matched slide from each reference's latest complete image list", async () => {
+  const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+    const path = String(url);
+    if (path.includes("rpc/")) return Response.json([{ reference_id: 1, matched_slide: 2 }, { reference_id: 2, matched_slide: 1 }, { reference_id: 3, matched_slide: 8 }]);
+    if (path.includes("references_unified?")) return Response.json([1, 2, 3].map(id => ({ id, format: "carousel" })));
+    if (path.includes("reference_beats?")) return Response.json([1, 2, 3].flatMap(source_reference_id => [1, 2].map(position => ({ source_reference_id, position }))));
+    if (path.includes("source_discovery_evidence?")) return Response.json([
+      { source_reference_id: 1, media_urls: ["https://example.com/1a", "https://example.com/1b"] },
+      { source_reference_id: 1, media_urls: ["https://example.com/old-a", "https://example.com/old-b"] },
+      { source_reference_id: 2, media_urls: ["https://example.com/2a"] },
+      { source_reference_id: 3, media_urls: ["https://example.com/3a", "https://example.com/3b"] },
+    ]);
+    return Response.json([]);
+  });
+  const out = await callCatalog("search", { query: "eyes", mode: "keyword" }, fetcher);
+  expect(out.results?.map(row => row.matched_media)).toEqual([{ url: "https://example.com/1b" }, null, null]);
+  expect(fetcher.mock.calls.filter(([url]) => String(url).includes("source_discovery_evidence?"))).toHaveLength(1);
 });
 it("embeds and caches normalized queries at the corpus dimensions", async () => {
   const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ data: [{ index: 0, embedding: Array(512).fill(0.1) }] }))
