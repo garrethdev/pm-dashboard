@@ -8,6 +8,7 @@ function fixture() {
   const template = structuredClone(eye); Reflect.deleteProperty(template.lane.set_on_materialise, "gatekeep_status");
   return { template, identifiers: { carousel_id: "CE-241" }, prefix: "scratch/run-1",
     rendered: { stage: "captioned_deck" as const, persisted: false as const, approved: false as const,
+      template: { slug: template.slug, version: template.version },
       slides: [1, 2, 3, 4, 5, 6].map(n => ({ n, format: "jpeg" as const, bytes: Buffer.from([255, 216, 255, n]) })) } };
 }
 beforeEach(() => {
@@ -47,6 +48,11 @@ it("rejects absent, duplicate and reordered slide numbers before uploads", async
     if (variant === "reordered") input.rendered.slides.reverse();
     await expect(uploadCaptionedDeck(input, config)).rejects.toThrow();
   }
+  expect(mock).not.toHaveBeenCalled();
+});
+it("rejects output painted with a different pinned template version", async () => {
+  const input = fixture(); input.rendered.template.version = 2;
+  await expect(uploadCaptionedDeck(input, config)).rejects.toThrow("does not match template");
   expect(mock).not.toHaveBeenCalled();
 });
 it("rejects colliding destinations, mismatched extensions and disallowed buckets", async () => {

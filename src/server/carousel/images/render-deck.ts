@@ -44,5 +44,6 @@ export async function renderCaptionedDeck(input: Parameters<typeof renderDeckBac
     if (total > 100_000_000) throw new Error("Captioned deck output byte limit exceeded");
     slides.push({ n: plans[index].n, format: output.format, bytes });
   }
-  return { stage: "captioned_deck" as const, persisted: false as const, approved: false as const, slides };
+  return { stage: "captioned_deck" as const, persisted: false as const, approved: false as const,
+    template: { slug: template.slug, version: template.version }, slides };
 }

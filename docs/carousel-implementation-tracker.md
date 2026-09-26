@@ -39,6 +39,15 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 11:02 UTC continuation
+
+- Main freshly fetched at 781fb20; no newer main implementation or concurrent implementation workers. Continued from 72d9ece without changing unrelated files.
+- Rendered decks now carry their template slug/version; upload preflight rejects a mismatched pinned template before any storage call.
+- Connected the actual caption/image renderer, bundled fonts, deck uploader and per-object readback adapter in integration tests for both lanes (six JPEG slides and seven PNG slides). Only storage HTTP is simulated. Tests verify dimensions, numbered paths, SHA256 readbacks and duplicate retries without extra objects or overwrites. Historical template changes are test-only, not published migrations.
+- Full suite: 723 passing tests across 58 files. Type-check, targeted lint and diff whitespace checks pass. No fresh production build this checkpoint.
+- Vision agent inspected the two generated opening-slide raster samples in /private/tmp/carousel-deck-qa.2FbNR3: upright readable glyphs, intact outline/shadow and no clipping/overlap. Synthetic solid backgrounds and short test copy do not prove design fidelity, long-copy fit or app behavior.
+- No full ticket newly certified end-to-end. No live storage/database writes, manual browser click-through, merge or deployment. Credential approval, browser policy and live schema/provider verification remain blockers; no measured end-to-end throughput supports a revised ETA.
+
 ### September 26, 10:42 UTC continuation
 
 - Main fetched at `781fb20`; clean starting branch and no active worker agents.

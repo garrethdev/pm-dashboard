@@ -18,7 +18,8 @@ export async function uploadCaptionedDeck(input: {
 }, config: Parameters<typeof uploadRenderedImage>[1]) {
   const template = validateTemplate(input.template);
   const output = template.output as { bucket: string; path: string; format: "png" | "jpeg" };
-  if (input.rendered?.stage !== "captioned_deck" || !Array.isArray(input.rendered.slides) ||
+  if (input.rendered?.stage !== "captioned_deck" || input.rendered.template?.slug !== template.slug ||
+      input.rendered.template?.version !== template.version || !Array.isArray(input.rendered.slides) ||
       input.rendered.slides.length !== template.slides.length) throw new Error("Captioned deck does not match template");
   if (!config.allowedBuckets.includes(output.bucket)) throw new Error("Render bucket is not allowed");
   // Keep policy stable across awaited uploads without retaining it in receipts.
