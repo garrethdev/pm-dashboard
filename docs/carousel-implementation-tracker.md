@@ -39,6 +39,21 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 08:42 UTC continuation
+
+- Main remains `781fb20`; clean starting tree, no worker agents active.
+- Added opentype.js 2.0.0 and its types at pinned versions, install scripts off.
+  Consulted official project API documentation: https://github.com/opentypejs/opentype.js.
+- Added bounded static-font parsing and measurement with actual advance widths
+  and ascender metrics. Rejects malformed/variable fonts, missing glyphs and invalid
+  sizes rather than relying on an OS fallback. Connected measurements to layout tests.
+- 622 tests / 49 files, typecheck and focused lint pass. New tests serialize and
+  parse a generated OpenType fixture; they do not prove the required Inter,
+  Liberation Sans or Noto assets, licensing bundle, glyph appearance or font parity.
+- Approved font bundling and final text rasterization remain open. No full ticket
+  newly certified; manual/vision QA remains blocked. No live credential retry,
+  writes or deployment; no evidence-supported revised completion ETA.
+
 ### September 26, 08:22 UTC continuation
 
 - Main remains `781fb20`; clean starting tree, no active worker agents.
