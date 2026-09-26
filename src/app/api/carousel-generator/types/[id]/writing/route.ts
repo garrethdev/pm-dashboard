@@ -1,3 +1,4 @@
+import { logError } from "@/server/carousel/log";
 import { attempt, bad, body, guard, ok, str } from "@/server/carousel/http";
 import { getCarouselType } from "@/server/carousel/repo/catalog";
 import { listWriting, makeWritingActive, saveWriting } from "@/server/carousel/repo/writing";
@@ -8,7 +9,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   try {
     return ok({ versions: await listWriting(id) });
-  } catch {
+  } catch (err) {
+    logError("writing list", err);
     return bad("Writing could not be loaded", 502);
   }
 }

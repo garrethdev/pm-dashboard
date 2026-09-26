@@ -3,7 +3,8 @@
  * that are not wired yet, each with its template, its Writing, its library,
  * its supply and its batches.
  */
-import { dbGet, dbGetAll, dbRpc, enc } from "@/server/carousel/repo/db";
+import { dbGet, dbGetAll, dbRpc } from "@/server/carousel/repo/db";
+import { fallback } from "@/server/carousel/log";
 import type { CarouselType, WritingVersion } from "@/server/carousel/repo/types";
 import { listActiveWriting } from "@/server/carousel/repo/writing";
 import { listTemplateRecords } from "@/server/carousel/repo/templates";
@@ -90,8 +91,8 @@ export async function listTypeShells(): Promise<Omit<CarouselType, "lastBatch" |
     dbGetAll<RegistryRow>("content_type_registry?select=content_type,display_name,character,media_shape,lifecycle,cadence_per_week,source_table&media_shape=eq.image_carousel&order=display_name.asc"),
     listTemplateRecords(),
     listActiveWriting(),
-    dbGet<PoolRow[]>("v_scheduler_pool?select=content_type,pool_n").catch(() => [] as PoolRow[]),
-    dbRpc<StatRow[]>("content_type_stats_fleet", { p_days: 30, p_fleet: "cloud" }).catch(() => [] as StatRow[]),
+    dbGet<PoolRow[]>("v_scheduler_pool?select=content_type,pool_n").catch(fallback("scheduler pool", [] as PoolRow[])),
+    dbRpc<StatRow[]>("content_type_stats_fleet", { p_days: 30, p_fleet: "cloud" }).catch(fallback("content type stats", [] as StatRow[])),
     dbGetAll<{ id: string; name: string }>("image_libraries?select=id,name"),
   ]);
   const writingByType = new Map<string, WritingVersion>(writing.map((w) => [w.typeId, w]));

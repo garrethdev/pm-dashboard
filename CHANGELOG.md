@@ -124,6 +124,19 @@ uploads land: the libraries grid reads every image row to count them and
 pick its covers, which is fine at today's 155 images and wasteful at
 thousands.
 
+**Error handling and logging pass (2026-09-26, Garreth asked how it stood):**
+every failed read on the generator's pages and routes now leaves a line in
+the server log that starts with `[carousel]` and says what failed (which
+type, which batch, which template), instead of quietly showing an empty
+section. Four routes that answered "could not read" without logging anything
+now log too. A batch whose runner crashes is marked Stopped straight away
+with the reason in the log, rather than looking alive until the one-minute
+stall rule catches it. And the placeholder person `dev@local` is only used
+when the dev bypass is on: on a real deployment a session that cannot be
+read is refused rather than written into the audit log as somebody else.
+Verified by typecheck, lint, the test suite and reloading the touched pages;
+the crash path has not met a real crash yet.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

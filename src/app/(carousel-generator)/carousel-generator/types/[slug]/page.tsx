@@ -5,6 +5,7 @@ import { getCarouselType } from "@/server/carousel/repo/catalog";
 import { laneRows } from "@/server/carousel/repo/lane-rows";
 import { getTemplateRecord } from "@/server/carousel/repo/templates";
 import { listWriting } from "@/server/carousel/repo/writing";
+import { fallback } from "@/server/carousel/log";
 
 /* The type page (D7, D13, D15): Overview, Writing, Rows and Go Live tabs. */
 export const dynamic = "force-dynamic";
@@ -19,10 +20,10 @@ export default async function CarouselTypePage({ params, searchParams }: { param
     const type = await getCarouselType(slug);
     if (!type) return { missing: true as const };
     const [template, writing, batches, rows] = await Promise.all([
-      type.templateId ? getTemplateRecord(type.templateId).catch(() => null) : null,
-      listWriting(type.id).catch(() => []),
-      listBatches({ typeId: type.id }).catch(() => []),
-      type.laneTable ? laneRows(type.laneTable, 0).catch(() => ({ rows: [], total: 0, ready: 0 })) : { rows: [], total: 0, ready: 0 },
+      type.templateId ? getTemplateRecord(type.templateId).catch(fallback(`type ${slug} template`, null)) : null,
+      listWriting(type.id).catch(fallback(`type ${slug} writing`, [])),
+      listBatches({ typeId: type.id }).catch(fallback(`type ${slug} batches`, [])),
+      type.laneTable ? laneRows(type.laneTable, 0).catch(fallback(`type ${slug} rows`, { rows: [], total: 0, ready: 0 })) : { rows: [], total: 0, ready: 0 },
     ]);
     return { type, template, writing, batches, rows };
   })().catch((err: unknown) => {

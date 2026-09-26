@@ -38,6 +38,7 @@ import { notifyBatchFinished, notifyBatchWritten } from "@/server/carousel/servi
 import { paintDeck, type PaintTemplate } from "@/server/carousel/services/painter";
 import { settledRoles, writeDeck, type CopyRole } from "@/server/carousel/services/writer";
 import { batchWords } from "@/server/carousel/status-words";
+import { fallback, logError } from "@/server/carousel/log";
 
 const MAX_TRIES = 3;
 
@@ -53,7 +54,10 @@ function loopRunning(batchId: string): boolean {
 export function ensureLoop(batchId: string): void {
   if (loops.has(batchId)) return;
   const p = run(batchId)
-    .catch((err) => console.error(`carousel batch ${batchId} loop failed`, err))
+    .catch(async (err) => {
+      logError(`batch ${batchId} loop`, err);
+      await touchBatch(batchId, { status: "stopped" }).catch((e) => logError(`batch ${batchId} stop after crash`, e));
+    })
     .finally(() => loops.delete(batchId));
   loops.set(batchId, p);
 }
@@ -115,7 +119,7 @@ async function writeOne(ctx: Context, row: DraftRow, feedback: string | null): P
     });
     const copy = { ...settledRoles(ctx.contract, batch.perBatchText), ...result.copy };
     const gate = gateDeck(copy, ctx.contract, result.hook, others);
-    const music = await lookupTrack(result.musicHint, row.id, ctx.pillar).catch(() => ({ music: result.musicHint ?? "", status: "not_found" as const }));
+    const music = await lookupTrack(result.musicHint, row.id, ctx.pillar).catch(fallback(`music lookup for deck ${row.id}`, { music: result.musicHint ?? "", status: "not_found" as const }));
     const flagged = gate.flagged || music.status === "not_found";
     await patchDeck(row.id, {
       status: flagged ? "flagged" : "written",

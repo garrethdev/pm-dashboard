@@ -7,6 +7,7 @@ import { listTypeShells } from "@/server/carousel/repo/types-catalog";
 import { savedFeed, trending } from "@/server/carousel/repo/trends";
 import type { BatchSummary, CarouselType, OverviewData } from "@/server/carousel/repo/types";
 import { batchWords } from "@/server/carousel/status-words";
+import { fallback } from "@/server/carousel/log";
 
 /** Fold the batches into the type shells: the last, the running and the waiting batch of each. */
 function joinTypes(shells: Awaited<ReturnType<typeof listTypeShells>>, batches: BatchSummary[]): CarouselType[] {
@@ -42,8 +43,8 @@ export async function overviewData(viewer: string): Promise<OverviewData> {
   const [shells, batches, trend, saved] = await Promise.all([
     listTypeShells(),
     listBatches(),
-    trending(viewer, 4).catch(() => ({ asOf: null, isToday: false, items: [] })),
-    savedFeed(viewer, 6).catch(() => []),
+    trending(viewer, 4).catch(fallback("overview trending", { asOf: null, isToday: false, items: [] })),
+    savedFeed(viewer, 6).catch(fallback("overview saved", [])),
   ]);
   const types = joinTypes(shells, batches);
   const words = batches.map((b) => ({ b, w: batchWords(b) }));

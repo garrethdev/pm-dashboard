@@ -1,3 +1,4 @@
+import { logError } from "@/server/carousel/log";
 import { validateTemplate } from "@/lib/carousel/template/validate";
 import { attempt, bad, body, guard, ok, str } from "@/server/carousel/http";
 import { getTemplateRecord, makeTemplateVersionActive, patchTemplate, saveTemplateVersion } from "@/server/carousel/repo/templates";
@@ -11,7 +12,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const template = await getTemplateRecord(id);
     if (!template) return bad("Template not found", 404);
     return ok({ template });
-  } catch {
+  } catch (err) {
+    logError("template read", err);
     return bad("The template could not be loaded", 502);
   }
 }

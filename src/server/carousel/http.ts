@@ -5,13 +5,22 @@
  */
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
+import { authBypassed } from "@/lib/auth";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
+import { logError } from "@/server/carousel/log";
 
 export async function guard(): Promise<{ denied: NextResponse } | { denied: null; email: string }> {
   const denied = await requireSession();
   if (denied) return { denied };
-  const email = await actingUserEmail().catch(() => "dev@local");
-  return { denied: null, email };
+  // The placeholder person exists only under the dev bypass; a real session
+  // that cannot be read is refused rather than audited as somebody else.
+  try {
+    return { denied: null, email: await actingUserEmail() };
+  } catch (err) {
+    if (authBypassed()) return { denied: null, email: "dev@local" };
+    logError("session read", err);
+    return { denied: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+  }
 }
 
 export function ok(data: unknown, init: ResponseInit = {}) {
@@ -52,7 +61,7 @@ export async function attempt<T>(
     return ok(result ?? { ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Something went wrong";
-    console.error(`carousel ${action} on ${target} failed:`, err);
+    logError(`${action} on ${target}`, err);
     return bad(message, 500);
   }
 }
