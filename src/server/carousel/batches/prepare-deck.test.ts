@@ -45,3 +45,15 @@ it("fails an empty image pool instead of returning a ready deck", async () => {
   vi.mocked(readImageLibrary).mockResolvedValue([]);
   await expect(prepareDeck(input)).rejects.toThrow("empty set");
 });
+it("reuses saved images without reading a changed or unavailable library", async () => {
+  const first = await prepareDeck(input);
+  vi.mocked(readImageLibrary).mockClear().mockRejectedValue(Error("Library unavailable"));
+  const retry = await prepareDeck(input, first.manifest);
+  expect(retry.manifest).toEqual(first.manifest);
+  expect(retry.imageSelection).toBe("reused");
+  expect(readImageLibrary).not.toHaveBeenCalled();
+});
+it("fails corrupt saved selections instead of silently repicking", async () => {
+  await expect(prepareDeck(input, null)).rejects.toThrow("Invalid saved image manifest");
+  expect(readImageLibrary).not.toHaveBeenCalled();
+});

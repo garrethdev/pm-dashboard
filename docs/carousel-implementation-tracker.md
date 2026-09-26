@@ -39,6 +39,21 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 07:02 UTC continuation
+
+- Main remains `781fb20`; clean starting tree, no worker agents active.
+- Added saved image-manifest validation for exact deck/library/template version,
+  original slide numbers, cell order/count, image IDs and URL shape. Returns a
+  fresh allow-listed structure; preserves legal repeated images in thin pools.
+- Preparation can reuse a supplied saved manifest without reading the current
+  library. Invalid saved selections fail rather than silently repicking. This
+  does not authenticate the snapshot or implement atomic database persistence.
+- 582 tests / 44 files, typecheck and focused lint pass. Retry tests cover an
+  unavailable/changed library and corrupt saved data; they are local tests only.
+- No live credential attempts, database writes or deployments. Manual/vision QA
+  and durable persistence/rendering remain unfinished; no full ticket certified
+  and no evidence-supported revised ETA.
+
 ### September 26, 06:42 UTC continuation
 
 - Main remains `781fb20`; clean starting tree and no active worker agents.

@@ -2,6 +2,7 @@ import { readPinnedTemplate } from "../templates/read-version";
 import { readPinnedWriting } from "../writer/read-writing";
 import { readImageLibrary } from "../images/library";
 import { pickImages, type PickingTemplate } from "@/lib/carousel/picking/pick";
+import { readSavedManifest } from "@/lib/carousel/picking/manifest";
 import { buildWritingContract, type WritingInput } from "@/lib/carousel/writer/contract";
 
 export interface PinnedDeckInput {
@@ -20,7 +21,7 @@ export interface PinnedDeckInput {
  * No model call, write, approval or render occurs here. Persist the proposal
  * atomically before painting, and use that saved manifest on render retries.
  */
-export async function prepareDeck(input: PinnedDeckInput) {
+export async function prepareDeck(input: PinnedDeckInput, savedManifest?: unknown) {
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (![input.deckId, input.templateId, input.writingVersionId, input.libraryId].every(id => typeof id === "string" && uuid.test(id)) ||
       !Number.isSafeInteger(input.templateVersion) || input.templateVersion < 1 ||
@@ -30,6 +31,7 @@ export async function prepareDeck(input: PinnedDeckInput) {
   // Snapshot caller-owned text before the first await so a concurrent edit cannot
   // produce a prompt assembled from two different revisions.
   const snapshot = { ...input, perBatchText: { ...input.perBatchText } };
+  const savedSnapshot = savedManifest === undefined ? undefined : structuredClone(savedManifest);
   const pinned = await readPinnedTemplate(snapshot.templateId, snapshot.templateVersion);
   if (pinned.template.content_type !== snapshot.contentType) throw new Error("Template does not belong to the batch content type");
   const allowed = new Set(pinned.template.copy_contract.filter(role => role.writer === "per_batch").map(role => role.role));
@@ -42,8 +44,12 @@ export async function prepareDeck(input: PinnedDeckInput) {
   const picking: PickingTemplate = { slug: contract.template.slug, version: contract.template.version,
     image_rules: contract.template.image_rules as Record<string, unknown>, slides: contract.template.slides };
   const libraryId = snapshot.libraryId.toLowerCase();
-  const manifest = pickImages(picking, await readImageLibrary(libraryId), libraryId, snapshot.deckId.toLowerCase());
+  // A supplied but corrupt saved manifest fails; it must never trigger repicking.
+  const manifest = savedSnapshot === undefined
+    ? pickImages(picking, await readImageLibrary(libraryId), libraryId, snapshot.deckId.toLowerCase())
+    : readSavedManifest(savedSnapshot, picking, libraryId, snapshot.deckId.toLowerCase());
   return { state: "prepared" as const, persisted: false as const,
+    imageSelection: savedSnapshot === undefined ? "proposed" as const : "reused" as const,
     templateVersionId: pinned.versionId, writingVersionId: writing.writingVersionId,
     writingInput, contract, manifest };
 }
