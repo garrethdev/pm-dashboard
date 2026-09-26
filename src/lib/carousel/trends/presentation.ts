@@ -25,6 +25,18 @@ export interface CarouselDetail {
   reading_required: boolean;
 }
 
+/** Validate the HTTP boundary before rendering: a null slide otherwise crashes
+ * image navigation. Unknown optional fields remain available as plain data. */
+export function parseCarouselDetail(value: unknown): CarouselDetail {
+  const row = (v: unknown): v is CatalogRecord => !!v && typeof v === "object" && !Array.isArray(v);
+  if (!row(value) || !row(value.reference) || !Array.isArray(value.slides) || !value.slides.every(row) ||
+      !Array.isArray(value.documents) || !value.documents.every(row) ||
+      !(value.analysis === null || row(value.analysis)) || typeof value.reading_required !== "boolean") {
+    throw new Error("Unexpected detail response.");
+  }
+  return value as unknown as CarouselDetail;
+}
+
 export function plainText(value: unknown): string {
   return typeof value === "string" ? value : "";
 }

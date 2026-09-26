@@ -64,6 +64,21 @@ it("returns unread references without fabricating analysis", async () => {
   const fetcher = vi.fn().mockResolvedValueOnce(Response.json([{ id: 1 }])).mockImplementation(() => Promise.resolve(Response.json([])));
   expect(await callCatalog("carousel", "1", fetcher)).toMatchObject({ reading_required: true, analysis: null, slides: [] });
 });
+it.each(["perez-slides-v1", "phase0-multiformat-v1"])("reads saved %s detail fields without fabricating evidence", async version => {
+  const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+    const path = String(url);
+    if (path.includes("references_unified?")) return Response.json([{ id: 1, format: "carousel" }]);
+    if (path.includes("reference_beats?")) return Response.json([{ id: "beat", position: 1, visible_copy: "", narrative_role: "opening_hook", inspection_status: "complete" }]);
+    if (path.includes("reference_analysis?")) return Response.json([{ id: "analysis", analysis_version: version, inspection_status: "partial", inferred: { story_structure: "list_with_introduction" }, observed: { coverage: { inspected_images: 1, supplied_images: 3 } } }]);
+    return Response.json([]);
+  });
+  const result = await callCatalog("carousel", "1", fetcher);
+  expect(result).toMatchObject({ reading_required: false, analysis: { analysis_version: version, inspection_status: "partial" }, slides: [{ visible_copy: "" }] });
+  const analysisUrl = new URL(String(fetcher.mock.calls.find(([url]) => String(url).includes("reference_analysis?"))![0]));
+  expect(analysisUrl.searchParams.get("analysis_version")).toBe("in.(perez-slides-v1,phase0-multiformat-v1)");
+  expect(analysisUrl.searchParams.get("select")).toContain("inferred,observed");
+  expect(analysisUrl.searchParams.get("order")).toBe("updated_at.desc,id.asc");
+});
 it.each(["null", "[]", "broken", '{"query":""}', '{"query":"eyes","owner":"me"}'])("rejects malformed request %s", async body => {
   await expect(readSearchBody(new Request("https://dashboard.example", { method: "POST", body }))).rejects.toMatchObject({ status: 400 });
 });

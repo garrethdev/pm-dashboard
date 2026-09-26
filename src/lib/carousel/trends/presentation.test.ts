@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { initialSlide, mediaUrl, metric, plainText, safeWebUrl, searchSummary, type SearchResponse } from "./presentation";
+import { initialSlide, mediaUrl, metric, plainText, safeWebUrl, searchSummary, parseCarouselDetail, type SearchResponse } from "./presentation";
 
 describe("safe catalog presentation", () => {
+  it("retains partial and unread detail records", () => {
+    const detail = { reference: { id: 1 }, slides: [], documents: [], analysis: null, reading_required: true };
+    expect(parseCarouselDetail(detail)).toEqual(detail);
+    expect(parseCarouselDetail({ ...detail, analysis: { inspection_status: "partial" }, reading_required: false }).analysis?.inspection_status).toBe("partial");
+  });
+  it.each([{ reference: [] }, { slides: [null] }, { slides: ["slide"] }, { documents: [null] }, { analysis: [] }, { reading_required: "false" }])("rejects malformed detail fields %j", patch => {
+    expect(() => parseCarouselDetail({ reference: {}, slides: [], documents: [], analysis: null, reading_required: true, ...patch })).toThrow("Unexpected detail response");
+  });
   it.each(["javascript:alert(1)", "data:image/svg+xml,bad", "http://example.com/a", "https://user:secret@example.com/", "//example.com/a", null])("rejects unsafe URL %s", value => expect(safeWebUrl(value)).toBeNull());
   it("accepts only known image fields", () => {
     expect(mediaUrl({ public_url: "https://example.com/image.jpg" })).toBe("https://example.com/image.jpg");

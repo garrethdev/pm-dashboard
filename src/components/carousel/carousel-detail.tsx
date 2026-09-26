@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CatalogImage } from "./catalog-image";
 import { SavedAnalysis } from "./saved-analysis";
 import { codeLabel, coverageLabel } from "@/lib/carousel/trends/analysis";
-import { initialSlide, mediaUrl, metric, plainText, safeWebUrl, type CarouselDetail } from "@/lib/carousel/trends/presentation";
+import { initialSlide, mediaUrl, metric, plainText, safeWebUrl, parseCarouselDetail, type CarouselDetail } from "@/lib/carousel/trends/presentation";
 
 /** Native modal supplies focus trapping/Escape; closing preserves the search grid. */
 export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string; matchedSlide: unknown; onClose: () => void }) {
@@ -33,8 +33,8 @@ export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string
       try {
         const response = await fetch(`/api/carousel-generator/carousels/${encodeURIComponent(id)}`, { signal: controller.signal });
         if (!response.ok) throw new Error(response.status === 401 ? "Sign in again to view this carousel." : response.status === 404 ? "This carousel is no longer available." : "Carousel details could not be loaded.");
-        const data: CarouselDetail = await response.json();
-        if (!Array.isArray(data.slides) || !Array.isArray(data.documents) || !data.reference) throw new Error("Unexpected detail response.");
+        const data = parseCarouselDetail(await response.json());
+        if (controller.signal.aborted) return;
         setDetail(data); setSlide(initialSlide(data.slides, matchedSlide));
       } catch (cause) { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Unable to load details."); }
     })();

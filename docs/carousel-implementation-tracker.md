@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 02:41 UTC continuation
+
+- Main refreshed at 781fb20; clean starting tree, no active agents.
+- Investigated phase0 story fallback: reference_format_evaluations is named in DEV-42 but has no tracked schema definition in this checkout. Did not invent its join/filter columns; live schema verification is required before that query can be authored safely.
+- Hardened the detail HTTP boundary against null/malformed slides, documents, analysis, reference and reading flags; aborted responses no longer update the viewer. Invalid responses follow the existing error/retry UI rather than crashing during rendering.
+- Added adapter regressions for both saved analysis versions, partial status, coverage selection and empty visible copy, plus malformed response tests. Full suite: 481 tests in 37 files; type-check and targeted lint pass.
+- DEV-42 remains partial. These tests use supplied responses, not live database proof. No new manual/vision QA, migrations, merge or deployment. Existing access blockers remain; no full ticket newly certified or supported ETA reduction.
+
 ### September 26, 02:21 UTC continuation
 
 - Main refreshed at 781fb20; clean starting tree, no active worker agents.
