@@ -39,6 +39,14 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 13:42 UTC continuation
+
+- Main fetched at 781fb20; clean starting tree at d0e09cd and no other active implementation agents. Read bundled Next client-component instructions.
+- Added reusable controlled `WritingEditor` component: contenteditable surface painted with text nodes/noneditable mention spans, muted stale-name treatment/count, plain-text paste, role insertion buttons, matching suggestion list, arrow/Enter/Escape handling, atomic mention deletion and composition-event guards. Plain text crosses the callback boundary; no HTML is stored. External drops are prevented pending proper caret-aware drag/drop implementation.
+- Component is NOT mounted on a live type page and has no save endpoint. Selection restoration, mobile beforeinput/IME, undo/redo, autocomplete positioning, accessibility, dark/light fidelity and drag/drop require browser verification and further work. DOM rebuilding may interfere with native undo; do not certify this as production-ready editor behavior.
+- Existing 779 tests / 60 files pass; type-check, targeted lint (zero remaining warnings), diff checks and local Webpack production build pass. No new component interaction tests or manual/vision evidence: existing helper tests do not prove browser behavior.
+- DEV-62 remains partial; no full ticket completed. Live schema/credential and browser-policy blockers persist. No live writes, merge/deploy or supported revised ETA.
+
 ### September 26, 13:22 UTC continuation
 
 - Main refreshed at 781fb20; clean starting branch at 61e853f, no concurrent implementation agents.
