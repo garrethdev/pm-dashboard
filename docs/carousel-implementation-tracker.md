@@ -39,6 +39,24 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 10:42 UTC continuation
+
+- Main fetched at `781fb20`; clean starting branch and no active worker agents.
+- Connected captioned-deck output to the no-overwrite slide uploader. All slide
+  numbers, formats, signatures, sizes and destinations are preflighted before
+  the first write. Duplicate paths and mismatched extensions fail early; bytes
+  and bucket policy are snapshotted across asynchronous calls.
+- Partial failures retain earlier verified receipts, report the failed original
+  slide number with storage state `unknown`, and list unattempted slides. No
+  deletion, renumbering, automatic approval or database completion occurs. Retries
+  use identical destinations so the existing adapter can verify duplicate bytes.
+- 720 tests / 57 files, typecheck, focused lint and diff checks pass. Seven new
+  orchestration tests mock the uploader; they are not live Storage proof. No
+  full ticket newly certified. Durable lease/version checks, receipt persistence,
+  configured storage policy and isolated scratch-deck verification remain open.
+- No new manual/vision QA, credential retrieval, live writes or deployment.
+  Browser/access blockers remain; no evidence-supported revised completion ETA.
+
 ### September 26, 10:22 UTC continuation
 
 - Main remains `781fb20`; clean starting branch and no active worker agents.
