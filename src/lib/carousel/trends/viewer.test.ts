@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { outsideDialog, visibleSlideIndices } from "./viewer";
+import { outsideDialog, visibleSlideIndices, sheetScrollAction } from "./viewer";
 describe("carousel viewer navigation", () => {
+  it("expands for forward reading and collapses only at the top", () => {
+    expect(sheetScrollAction(false, 0, 0, 30)).toBe("expand");
+    expect(sheetScrollAction(true, 0, 0, -30)).toBe("collapse");
+    expect(sheetScrollAction(true, 100, 0, -30)).toBeNull();
+    expect(sheetScrollAction(true, 100, 0, 30)).toBeNull();
+  });
+  it.each([[30, 10], [0, 5], [30, 30], [0, NaN]])("ignores horizontal, tiny or invalid gestures", (x, y) => {
+    expect(sheetScrollAction(false, 0, x, y)).toBeNull();
+  });
   it("shows all dots for a short deck", () => expect(visibleSlideIndices(4, 2)).toEqual([0, 1, 2, 3]));
   it.each([0, 4, 25, 49])("keeps selected index %s in a bounded long-deck window", selected => {
     const result = visibleSlideIndices(50, selected);

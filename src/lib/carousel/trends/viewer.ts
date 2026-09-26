@@ -11,3 +11,12 @@ export function visibleSlideIndices(count: number, selected: number): number[] {
 export function outsideDialog(x: number, y: number, rect: { left: number; top: number; right: number; bottom: number }) {
   return x < rect.left || x > rect.right || y < rect.top || y > rect.bottom;
 }
+
+/** Positive delta means reading farther down. Collapse only at the panel's top,
+ * so ordinary scrolling back through a long analysis never hides its content. */
+export function sheetScrollAction(expanded: boolean, scrollTop: number, deltaX: number, deltaY: number): "expand" | "collapse" | null {
+  if (![scrollTop, deltaX, deltaY].every(Number.isFinite) || Math.abs(deltaY) < 24 || Math.abs(deltaX) >= Math.abs(deltaY)) return null;
+  if (!expanded && deltaY > 0) return "expand";
+  if (expanded && scrollTop <= 1 && deltaY < 0) return "collapse";
+  return null;
+}

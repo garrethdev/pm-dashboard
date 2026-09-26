@@ -106,6 +106,13 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 03:21 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch, no active worker agents.
+- Phone information sheet now responds to vertical wheel/touch gestures: expands for forward reading, collapses on reverse movement only at panel top. Horizontal/tiny gestures and pinch zoom retain native behavior; ordinary expanded-content scrolling is not intercepted. Listener cleanup included, desktop unaffected, grab-bar button remains keyboard alternative. No animation is introduced, including for reduced-motion users.
+- Five gesture-rule tests added; full suite 496 tests in 38 files passes, type-check and targeted lint pass. Native input event behavior remains unverified in a real browser/device; unit rules are not touch QA.
+- DEV-42 remains partial pending the remaining data/actions and live acceptance. No new manual or vision pass, live database activity, merge or deployment. Previously rechecked browser and credential/schema blockers remain, with no newly certified full ticket or supported ETA reduction.
+
 ### September 26, 03:01 UTC continuation
 
 - Main refreshed at 781fb20, clean starting branch, no active worker agents.

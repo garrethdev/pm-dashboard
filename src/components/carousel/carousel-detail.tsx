@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CatalogImage } from "./catalog-image";
 import { SavedAnalysis } from "./saved-analysis";
+import { useInformationSheet } from "./use-information-sheet";
 import { codeLabel, coverageLabel } from "@/lib/carousel/trends/analysis";
 import { outsideDialog, visibleSlideIndices } from "@/lib/carousel/trends/viewer";
 import { initialSlide, mediaUrl, metric, plainText, safeWebUrl, parseCarouselDetail, type CarouselDetail } from "@/lib/carousel/trends/presentation";
@@ -10,6 +11,7 @@ import { initialSlide, mediaUrl, metric, plainText, safeWebUrl, parseCarouselDet
 /** Native modal supplies focus trapping/Escape; closing preserves the search grid. */
 export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string; matchedSlide: unknown; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
   const startedOnBackdrop = useRef(false);
   const [detail, setDetail] = useState<CarouselDetail | null>(null);
   const [error, setError] = useState("");
@@ -17,6 +19,7 @@ export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string
   const [slide, setSlide] = useState(0);
   const [tab, setTab] = useState<"Details" | "Analysis" | "Transcription">("Details");
   const [expanded, setExpanded] = useState(false);
+  useInformationSheet(panel, !!detail && !error, expanded, setExpanded);
   function selectTab(name: typeof tab) {
     setTab(name);
     if (name !== "Details") setExpanded(true);
@@ -85,7 +88,7 @@ export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string
             if (target >= 0) { event.preventDefault(); selectTab(names[target]); document.getElementById(`tab-${names[target]}`)?.focus(); }
           }} className={`border-b-2 py-3 text-sm ${tab === name ? "border-text-primary" : "border-transparent text-text-muted"}`}>{name}</button>)}
         </div>
-        <div role="tabpanel" tabIndex={0} id="detail-panel" aria-labelledby={`tab-${tab}`} className="min-h-0 flex-1 space-y-4 overflow-auto overscroll-contain p-4 text-sm md:min-h-56 md:p-5">
+        <div ref={panel} role="tabpanel" tabIndex={0} id="detail-panel" aria-labelledby={`tab-${tab}`} className="min-h-0 flex-1 space-y-4 overflow-auto overscroll-contain p-4 text-sm md:min-h-56 md:p-5">
           {tab === "Details" && <>
             <div className="grid grid-cols-3 gap-2">{["views", "likes", "saves"].map(key => <div key={key} className="rounded-2xl bg-card-raised p-3"><p className="text-xs capitalize text-text-muted">{key}</p><p className="tnum mt-2">{metric(detail.reference[key]) ?? "Unknown"}</p></div>)}</div>
             <dl className="space-y-3"><div className="flex justify-between gap-3"><dt>Posted</dt><dd>{plainText(detail.reference.published_at) || "Unknown"}</dd></div><div className="flex justify-between gap-3"><dt>Platform</dt><dd>{plainText(detail.reference.platform) || "Unknown"}</dd></div><div className="flex justify-between"><dt>Saved slides</dt><dd className="tnum">{detail.slides.length}</dd></div></dl>
