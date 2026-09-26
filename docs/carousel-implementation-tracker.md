@@ -43,7 +43,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-05 | Painter: images, composition and upload | Open |
 | DEV-06 | Image picking and the persisted manifest | Pure picker tested; database adapter and persistence open |
 | DEV-07 | Parity check against the Python painters | Open |
-| DEV-08 | Copy writer | Open |
+| DEV-08 | Copy writer | Prompt/output contract and bounded length retry tested; provider, lane seeds, hardening and persistence open |
 | DEV-09 | Quality gate | Open |
 | DEV-10 | Music lookup (F14) | Open |
 | DEV-11 | Batch service and routes | Partial foundation; acceptance still open |
@@ -105,6 +105,14 @@ Vision agent inspected 20 reference screenshots across D16/D1/D2/D3/D4/D5/D10 an
 Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, keyboard/focus, empty/loading/error/retry states, navigation/back behavior and persisted readback where applicable.
 
 ## Reporting
+
+### September 26, 00:01 UTC continuation
+
+- Fresh main fetch remains 781fb20; no concurrent agents or unrelated edits found.
+- Added `src/lib/carousel/writer/contract.ts`: generation-safe template validation; AI-role prompt contract; fixed/per-batch text assembly; active painted-role mention resolution and stale-mention metadata; strict structured-output validation; exactly one length correction attempt before flagging; sanitized provider failure state; model/prompt/direction/template provenance. Unicode limits count code points, not UTF-16 units. This is an injected provider interface, not an enabled production provider call.
+- Twelve new tests cover supplied text immutability, stale mentions, email preservation, missing batch choices, malformed output, bounded retry, provider failure and rejection of unsafe historical templates before a call. Full suite: 410 tests in 31 files pass; type-check passes.
+- DEV-08 remains partial. Outstanding: port exact lane prompts/direction seeds, caption brand/molecule hardening, real provider adapter, versioned draft persistence and redo operations, quality/music gates and three live decks per lane for human review. No copy result grants approval or render readiness.
+- Browser/security and live credential/schema blockers unchanged; no new manual click-through or live vision QA evidence. No production merge/deployment. Initial estimate remains provisional pending a verified end-to-end batch.
 
 ### September 25, 23:41 UTC continuation
 
