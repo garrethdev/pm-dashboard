@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -6,11 +6,13 @@ import sharp from "sharp";
 import eye from "../../../../docs/carousel-templates/covered-eye.v1.json";
 import glow from "../../../../docs/carousel-templates/glowup.v1.json";
 import { validateTemplate } from "@/lib/carousel/template/validate";
-import { loadTemplateCaptionFonts } from "./fonts";
-import { renderCaptionedDeck } from "./render-deck";
+const mocks = vi.hoisted(() => ({ fetchImage: vi.fn() }));
+vi.mock("./fetch-image", () => ({ fetchImageBytes: mocks.fetchImage }));
+import { renderSavedDeck } from "./render-saved-deck";
 import { uploadCaptionedDeck } from "./upload-deck";
 
 afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => vi.clearAllMocks());
 it.each(["eye", "glow"])("connects real %s raster rendering to simulated storage and duplicate readback", async lane => {
   const raw = structuredClone(lane === "eye" ? eye : glow);
   // Deliberate test-only migration of the historical imports: approved=false,
@@ -25,10 +27,12 @@ it.each(["eye", "glow"])("connects real %s raster rendering to simulated storage
     role.role === "hook_type" ? "Jealous Friend" : role.role === "datestamp" ? "September\n2026" : "A calm morning";
   const url = "https://images.example.com/source.png";
   const source = await sharp({ create: { width: 40, height: 60, channels: 3, background: "#64748b" } }).png().toBuffer();
-  const rendered = await renderCaptionedDeck({ template, roles, deckId: "test-deck", libraryId: "test-library",
-    fonts: await loadTemplateCaptionFonts(template), images: new Map([[url, source]]),
+  mocks.fetchImage.mockResolvedValue(source);
+  const rendered = await renderSavedDeck({ template, roles, deckId: "test-deck", libraryId: "test-library",
+    allowedOrigins: ["https://images.example.com"],
     manifest: { deck_id: "test-deck", library_id: "test-library", template: { slug: template.slug, version: template.version },
       slides: template.slides.map(slide => ({ n: slide.n, cells: slide.cells.map((_, cell) => ({ cell, image_id: "source", public_url: url })) })) } });
+  expect(mocks.fetchImage).toHaveBeenCalledTimes(1);
   const objects = new Map<string, Uint8Array>();
   const transport = vi.fn<typeof fetch>(async (request, options) => {
     const path = new URL(String(request)).pathname;

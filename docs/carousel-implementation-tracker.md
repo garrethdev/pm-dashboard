@@ -39,6 +39,14 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 11:22 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch at 6bba615, no concurrent implementation agents or duplicate workers.
+- Added internal `renderSavedDeck`: snapshots template/copy/selections/server-origin policy before awaits, validates the saved manifest, loads bundled fonts, preflights captions/glyph support before downloads, downloads only the saved selections and invokes the real captioned renderer. Never repicks, uploads, saves database rows or approves. Authorization, persisted revision and lease checks remain caller responsibilities; this is not an exposed generation route.
+- Five new lifecycle regressions cover real font/raster output, foreign manifests, invalid copy/fonts/emoji before network, caller mutation across awaits, and unavailable/invalid assets. Both six/seven-slide integration tests now use this operation and verify deduplicated downloads before simulated storage/readback. External image downloads and storage remain simulated, not live proof.
+- 728 tests across 59 files pass; type-check, targeted lint, diff checks and local Webpack production build pass. No new manual browser or vision evidence this checkpoint; the previous raster smoke review remains limited to its synthetic samples.
+- No full ticket newly certified end-to-end. Live credentials/catalog/provider and browser-policy blockers remain. Remaining screens, durable persistence/jobs and full workflow QA are not finished. No live writes, production merge or deployment; no measured end-to-end throughput supports a revised ETA.
+
 ### September 26, 11:02 UTC continuation
 
 - Main freshly fetched at 781fb20; no newer main implementation or concurrent implementation workers. Continued from 72d9ece without changing unrelated files.
