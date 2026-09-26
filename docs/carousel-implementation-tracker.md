@@ -39,6 +39,21 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 06:22 UTC continuation
+
+- Main re-fetched at `781fb20`; clean starting tree and no worker agents active.
+- Added a pinned Writing reader for existing `carousel_lane_directions`, using
+  the exact saved row ID and checking the registry content-type binding. Preserves
+  authored text and allows inactive pinned versions for retries; never substitutes
+  the latest active version. Rejects missing, ambiguous, blank and mismatched rows.
+- Writer preparation now rejects blank Writing before a provider call. Tests
+  verify this guard and sanitization of database errors.
+- 565 tests / 42 files pass, plus typecheck and focused lint. These are local
+  checks only: no live credential retrieval was retried after the security denial.
+- Batch persistence/provider integration and manual/vision QA remain unfinished.
+  No full ticket newly complete, no production deployment, no verified revised
+  completion ETA. Live read approval remains outstanding.
+
 ### September 26, 06:02 UTC continuation
 
 - Main remains `781fb20`; clean starting tree and no active worker agents.

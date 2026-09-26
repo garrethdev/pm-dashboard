@@ -25,6 +25,7 @@ export function resolveMentions(direction: string, template: CarouselTemplate) {
 export function buildWritingContract(input: WritingInput) {
   const template = validateTemplate(input.template);
   if (!Number.isSafeInteger(input.direction.version) || input.direction.version < 1) throw new Error("Invalid direction version");
+  if (typeof input.direction.text !== "string" || !input.direction.text.trim()) throw new Error("Writing is required before generation");
   const mentions = resolveMentions(input.direction.text, template);
   const supplied: Record<string, string> = Object.create(null);
   for (const role of template.copy_contract) {

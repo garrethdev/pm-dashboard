@@ -13,6 +13,12 @@ function output(i = input()) {
 }
 
 describe("writer copy contract", () => {
+  it.each(["", " \n\t"])("refuses missing Writing before calling a provider", async text => {
+    const i = input(); i.direction.text = text;
+    const generate = vi.fn();
+    await expect(writeCopy(i, "model", generate)).rejects.toThrow("Writing is required");
+    expect(generate).not.toHaveBeenCalled();
+  });
   it("resolves active mentions and records stale ones", () => {
     const i = input();
     const c = buildWritingContract(i);
