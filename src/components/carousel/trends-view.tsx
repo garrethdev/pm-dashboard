@@ -17,6 +17,7 @@ import { DetailsWindow } from "@/components/carousel/details-window";
 import { Btn, Pill, compact, post, shortDate, useJson } from "@/components/carousel/kit";
 import { TrendsSearch } from "@/components/carousel/trends-search";
 import { Bookmark, Check, ChevronLeft, ChevronRight, LayoutList, Loader2, PaintBrush, ThumbsDown, ThumbsUp, TrendUp } from "@/components/ui/icons";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { cn } from "@/lib/utils";
 import type { Digest, KnowledgeRule, Reference } from "@/server/carousel/repo/types";
 
@@ -62,7 +63,7 @@ function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () =>
   return (
     <article ref={ref} aria-label={`${r.handle ?? "Carousel"}, ${slides.length} slides`} className="flex flex-col gap-2.5 border-b border-border py-5 last:border-b-0">
       <div className="flex items-center gap-2.5">
-        <span className="flex size-8 items-center justify-center rounded-full bg-card-raised text-[10px] font-semibold text-text-muted uppercase" aria-hidden>{r.platform.slice(0, 2)}</span>
+        <span className="flex size-8 items-center justify-center rounded-full bg-card-raised" aria-hidden><PlatformIcon platform={r.platform} className="size-4 text-text-primary" /></span>
         <span className="flex min-w-0 flex-col">
           <span className="flex items-baseline gap-1.5 text-sm"><b className="truncate">{r.handle ? `@${r.handle}` : "Unknown"}</b>{r.publishedAt && <span className="text-xs text-text-muted tnum">· {shortDate(r.publishedAt)}</span>}</span>
           {r.topics.length > 0 && <span className="truncate text-xs text-text-muted">{r.topics.map((t) => t.replace(/_/g, " ")).join(" · ")}</span>}
@@ -277,8 +278,8 @@ function Knowledge() {
         <span className="ml-auto tnum">{shortDate(r.updatedAt)}</span>
       </div>
       <p className="text-sm">{r.ruleText}</p>
-      {r.rationale && <p className="text-xs text-text-muted">{r.rationale}</p>}
-      {actions && <div className="flex gap-2"><Btn onClick={() => decide(r, "active")}>Accept</Btn><Btn onClick={() => decide(r, "rejected")}>Reject</Btn></div>}
+      {r.rationale && <p className="line-clamp-2 text-xs text-text-muted">{r.rationale}</p>}
+      {actions && <div className="flex gap-2"><Btn line onClick={() => decide(r, "active")}><Check className="size-3.5" />Accept</Btn><Btn line onClick={() => decide(r, "rejected")}>Reject</Btn></div>}
     </li>
   );
   return (
@@ -288,7 +289,7 @@ function Knowledge() {
         <span className="mx-1 border-l border-border" />
         {confs.map((c) => <button key={c} type="button" aria-pressed={conf === c} onClick={() => setConf(conf === c ? null : c)} className={cn("rounded-full border px-3 py-1 text-xs font-medium", conf === c ? "border-text-primary bg-text-primary text-bg" : "border-border text-text-muted hover:text-text-primary")}>{c}</button>)}
       </div>
-      {pending.length > 0 && <section><h3 className="mb-1 text-sm font-semibold">Proposed <span className="text-text-muted tnum">{pending.length}</span></h3><ul>{pending.map((r) => <Rule key={r.id} r={r} actions />)}</ul></section>}
+      {pending.length > 0 && <section><h3 className="mb-1 text-sm font-semibold">Pending <span className="text-text-muted tnum">{pending.length}</span></h3><ul>{pending.map((r) => <Rule key={r.id} r={r} actions />)}</ul></section>}
       <section><h3 className="mb-1 text-sm font-semibold">Accepted <span className="text-text-muted tnum">{accepted.length}</span></h3>{accepted.length ? <ul>{accepted.map((r) => <Rule key={r.id} r={r} actions={false} />)}</ul> : <p className="text-sm text-text-muted">Nothing accepted yet</p>}</section>
     </div>
   );
@@ -311,8 +312,8 @@ export function TrendsView({ section, query }: { section?: string; query?: strin
       <div className="flex flex-wrap items-center gap-4">
         <h1 className="text-xl font-semibold tracking-[-0.02em]">Trends</h1>
       </div>
-      <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[200px_minmax(0,1fr)_300px]">
-        <nav aria-label="Sections" className="fixed inset-x-4 bottom-4 z-30 flex justify-around rounded-full border border-border glass-overlay p-1 md:static md:flex-col md:justify-start md:gap-1 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
+      <div className={cn("grid min-h-0 flex-1 gap-4", cur === "feed" ? "md:grid-cols-[200px_minmax(0,1fr)_300px]" : "md:grid-cols-[200px_minmax(0,1fr)]")}>
+        <nav aria-label="Sections" className="fixed inset-x-4 bottom-4 z-30 flex justify-around rounded-full border border-border glass-overlay p-1 md:static md:flex-col md:justify-start md:gap-1 md:self-start md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
           {SECTIONS.map((s) => (
             <button key={s.id} type="button" aria-current={cur === s.id ? "page" : undefined} onClick={() => go(s.id)} className={cn("rounded-full px-3 py-1.5 text-sm md:rounded-nested md:px-3 md:text-left", cur === s.id ? "bg-card font-medium text-text-primary" : "text-text-muted hover:text-text-primary")}>{s.label}</button>
           ))}
@@ -326,7 +327,7 @@ export function TrendsView({ section, query }: { section?: string; query?: strin
             {cur === "knowledge" && <Knowledge />}
           </div>
         </div>
-        <aside className="hidden min-h-0 flex-col md:flex" aria-label="Recent saves">
+        <aside className={cn("hidden min-h-0 flex-col", cur === "feed" && "md:flex")} aria-label="Recent saves">
           <section className="flex flex-col gap-2 rounded-card border border-border bg-card p-4 shadow-card">
             <h2 className="text-sm font-medium text-text-muted">Recent saves</h2>
             {(recent?.items ?? []).slice(0, 5).map((r) => (

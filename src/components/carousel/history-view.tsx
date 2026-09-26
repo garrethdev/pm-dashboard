@@ -58,14 +58,14 @@ export function HistoryView({ initial, types }: { initial: BatchSummary[] | null
     <div className="flex flex-1 flex-col gap-5">
       <div className="flex items-center gap-3">
         <h1 className="text-xl font-semibold tracking-[-0.02em]">History</h1>
-        {all.length > 0 && <span className="text-sm text-text-muted tnum">{rows.length}</span>}
+        {all.length > 0 && <span className="text-sm text-text-muted tnum">{rows.length} {rows.length === 1 ? "batch" : "batches"}</span>}
       </div>
       {all.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <div role="group" aria-label="Filter by carousel type" className="no-scrollbar flex gap-1.5 overflow-x-auto">
-            <button type="button" aria-pressed={type === null} onClick={() => setType(null)} className={cn("rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap", type === null ? "border-text-primary bg-text-primary text-bg" : "border-border text-text-muted hover:text-text-primary")}>All</button>
+            <button type="button" aria-pressed={type === null} onClick={() => setType(null)} className={cn("rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap", type === null ? "border-accent text-accent" : "border-border text-text-muted hover:text-text-primary")}>All types</button>
             {typeChips.map((t) => (
-              <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(type === t.id ? null : t.id)} className={cn("rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap", type === t.id ? "border-text-primary bg-text-primary text-bg" : "border-border text-text-muted hover:text-text-primary")}>{t.name}</button>
+              <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(type === t.id ? null : t.id)} className={cn("rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap", type === t.id ? "border-accent text-accent" : "border-border text-text-muted hover:text-text-primary")}>{t.name}</button>
             ))}
           </div>
           <div className="ml-auto">
@@ -96,12 +96,12 @@ export function HistoryView({ initial, types }: { initial: BatchSummary[] | null
         </div>
       ) : (
         <section className="overflow-hidden rounded-card border border-border bg-card shadow-card">
-          <div className="hidden grid-cols-[88px_minmax(0,1fr)_80px_80px_80px_80px_150px_120px] gap-3 border-b border-border px-5 py-2.5 text-[11px] font-medium tracking-[0.08em] text-text-muted uppercase md:grid">
+          <div className="hidden grid-cols-[88px_minmax(0,1fr)_80px_80px_80px_80px_150px_120px] gap-3 border-b border-border px-5 py-2.5 text-xs text-text-muted md:grid">
             <span>Date</span><span>Carousel type</span><span>Requested</span><span>Written</span><span>Rendered</span><span>Approved</span><span>Status</span><span />
           </div>
           {rows.map((b) => {
             const w = batchWords(b);
-            const openLabel = w.stage === "to_render" ? "Render" : w.stage === "to_approve" ? "Approve" : w.stage === "stopped" ? "Continue" : "Open";
+            const openLabel = w.stage === "to_render" ? "Render" : w.stage === "to_approve" ? "Approve" : w.stage === "stopped" ? "Continue" : "Open batch";
             return (
               <div key={b.id} className="relative grid grid-cols-1 gap-2 border-b border-border px-5 py-3 last:border-b-0 hover:bg-card-raised md:grid-cols-[88px_minmax(0,1fr)_80px_80px_80px_80px_150px_120px] md:items-center md:gap-3">
                 <Link href={w.href as never} aria-label={`Open ${b.batchName}`} className="absolute inset-0 z-0" />

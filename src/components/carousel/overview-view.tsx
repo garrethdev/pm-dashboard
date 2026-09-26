@@ -185,7 +185,7 @@ export function OverviewView({ initial }: { initial: OverviewData | null }) {
                     <Link href={`/carousel-generator/types/${t.slug}` as never} className="col-span-2 truncate text-sm font-medium underline decoration-transparent underline-offset-4 transition-colors hover:decoration-text-muted" title={t.name}>
                       {t.name}
                     </Link>
-                    <Pill>{t.character}</Pill>
+                    <span className="justify-self-start"><Pill>{t.character}</Pill></span>
                     <span className="flex justify-end">
                       {running ? (
                         <Btn href={`/carousel-generator/batches/${running.id}`}>Open running batch</Btn>

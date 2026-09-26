@@ -243,9 +243,10 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
       <div className="flex flex-1 flex-col gap-5">
         <Head name={name} onBack={() => router.push("/carousel-generator/types")} />
         <div className="flex flex-1 items-center justify-center">
-          <div className="grid w-full max-w-lg grid-cols-1 gap-3 sm:grid-cols-2">
-            <button type="button" onClick={() => { setVia("reference"); setStage("library"); }} className="flex flex-col items-center gap-3 rounded-card border border-border bg-card p-8 text-center hover:border-text-muted/40"><LayoutList className="size-7 text-text-muted" /><b className="text-sm">Start from a reference deck</b></button>
-            <button type="button" onClick={() => { setVia("idea"); setStage("library"); }} className="flex flex-col items-center gap-3 rounded-card border border-border bg-card p-8 text-center hover:border-text-muted/40"><Sparkles className="size-7 text-text-muted" /><b className="text-sm">Discuss your idea</b></button>
+          <div className="grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+            <button type="button" onClick={() => { setVia("reference"); setStage("library"); }} className="flex min-h-64 flex-col items-center justify-center gap-4 rounded-card border border-border bg-card p-8 text-center hover:border-text-muted/40"><span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><LayoutList className="size-5" /></span><b className="text-sm">Start from a reference deck</b></button>
+            <button type="button" onClick={() => { setVia("idea"); setStage("library"); }} className="flex min-h-64 flex-col items-center justify-center gap-4 rounded-card border border-border bg-card p-8 text-center hover:border-text-muted/40"><span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><Sparkles className="size-5" /></span><b className="text-sm">Discuss your idea</b></button>
+            <button type="button" disabled title="Figma import is not connected yet" className="flex min-h-64 flex-col items-center justify-center gap-4 rounded-card border border-border bg-card p-8 text-center opacity-50"><span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><Pencil className="size-5" /></span><b className="text-sm">Start from a Figma link</b></button>
           </div>
         </div>
       </div>
@@ -316,7 +317,7 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
           {library && <Pill>{library.name}</Pill>}
           {dirty && <Pill>Not saved</Pill>}
         </div>
-        <HoldButton onConfirm={discard} tone="warn">{editing ? "Discard changes" : "Discard draft"}</HoldButton>
+        <HoldButton onConfirm={discard} tone="warn" className="bg-transparent border border-border text-text-muted">{editing ? "Discard changes" : "Discard draft"}</HoldButton>
         <Accent disabled={!t || !libraryId} busy={busy === "save"} onClick={() => (editing ? void save() : setSaveOpen(true))}>{editing ? "Save version" : "Save as carousel type"}</Accent>
       </div>
 
@@ -365,8 +366,8 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
           </div>
         </aside>
 
-        <div className="relative flex min-h-0 flex-col overflow-hidden rounded-card border border-border bg-card-sunken">
-          <div className="absolute top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border glass-overlay px-2 py-1">
+        <div className="relative flex min-h-0 flex-col overflow-hidden rounded-card border border-border bg-card-sunken [background-image:radial-gradient(var(--border)_1px,transparent_1.2px)] [background-size:18px_18px]">
+          <div className="absolute top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-border glass-overlay px-2 py-1">
             {busy === "draft" ? <span className="inline-flex items-center gap-1.5 px-2 text-xs text-text-muted"><Loader2 className="size-3.5 animate-spin" />Drafting</span> : (
               <>
                 <span className="px-2 text-xs text-text-muted tnum">{selected ? `Slide ${selected.slide + 1} of ${t?.slides.length ?? 0}` : `${t?.slides.length ?? 0} slides`}</span>
@@ -407,13 +408,15 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
                   aria-label={`Slide ${s.n}`}
                   onClick={() => setSelected({ slide: i, box: null })}
                   onKeyDown={(e) => { if (e.key === "Enter") setSelected({ slide: i, box: null }); }}
-                  className={cn("relative overflow-hidden rounded-[10px] border bg-card", selected?.slide === i ? "border-accent" : "border-border")}
-                  style={{ width: slideW, height: slideH, background: t.canvas.background ?? undefined }}
+                  // A slide is a picture, not a panel: it stays dark in both
+                  // themes so white slide copy reads the way it will be painted.
+                  className={cn("relative overflow-hidden rounded-[10px] border", selected?.slide === i ? "border-accent" : "border-border")}
+                  style={{ width: slideW, height: slideH, background: t.canvas.background ?? "#111113" }}
                 >
                   {previews[s.n] ? (
                     <SlideFace svg={previews[s.n]} className="absolute inset-0" />
                   ) : (
-                    <div className={cn("absolute inset-0 grid gap-px", s.layout === "quad" ? "grid-cols-2 grid-rows-2" : "grid-cols-1")}>{s.cells.map((_, k) => <span key={k} className="flex items-center justify-center bg-card-raised text-[10px] text-text-muted">{s.images.pools?.[0] ?? "library"}</span>)}</div>
+                    <div className={cn("absolute inset-0 grid gap-px", s.layout === "quad" ? "grid-cols-2 grid-rows-2" : "grid-cols-1")}>{s.cells.map((_, k) => <span key={k} className="flex items-center justify-center bg-white/5 text-[10px] text-white/50">{s.images.pools?.[0] ?? "library"}</span>)}</div>
                   )}
                   {s.text.map((b) => {
                     const on = selected?.slide === i && selected.box === b.role;

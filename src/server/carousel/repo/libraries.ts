@@ -70,6 +70,7 @@ export async function listLibraries(): Promise<Library[]> {
       readOnly: l.read_only,
       count: mine.length,
       cover: cover?.public_url ?? null,
+      covers: [cover, ...mine.filter((a) => a !== cover)].filter((a): a is ImageAsset => Boolean(a)).slice(0, 3).map((a) => a.public_url),
       sets: setsOf(l.id, sets, mine),
       usedBy: used.get(l.id) ?? [],
       untagged: l.source_bank ? 0 : mine.length,
@@ -107,6 +108,7 @@ export async function getLibrary(id: string): Promise<LibraryDetail | null> {
     readOnly: l.read_only,
     count: active.length,
     cover: cover?.public_url ?? null,
+    covers: [cover, ...active.filter((a) => a !== cover)].filter((a): a is ImageAsset => Boolean(a)).slice(0, 3).map((a) => a.public_url),
     sets: setsOf(l.id, sets, active),
     usedBy: used.get(l.id) ?? [],
     untagged: l.source_bank ? 0 : images.filter((i) => !i.details).length,
@@ -117,7 +119,7 @@ export async function getLibrary(id: string): Promise<LibraryDetail | null> {
 export async function createLibrary(name: string, by: string): Promise<Library> {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60) || "library";
   const [row] = await dbInsert<LibraryRow>("image_libraries", { slug: `${slug}-${Date.now().toString(36)}`, name, read_only: false, created_by: by });
-  return { id: row.id, slug: row.slug, name: row.name, readOnly: false, count: 0, cover: null, sets: [], usedBy: [], untagged: 0 };
+  return { id: row.id, slug: row.slug, name: row.name, readOnly: false, count: 0, cover: null, covers: [], sets: [], usedBy: [], untagged: 0 };
 }
 
 export async function createSet(libraryId: string, name: string, parentId: string | null): Promise<LibrarySet> {

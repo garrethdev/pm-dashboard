@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Accent, Btn, LoadError, PageHead, Pill, post, useJson } from "@/components/carousel/kit";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ChevronLeft, ChevronRight, Images, Plus, Sparkles, Upload, X } from "@/components/ui/icons";
+import { ChevronLeft, Images, Plus, Sparkles, Upload, X } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { Library, LibraryDetail, LibraryImage } from "@/server/carousel/repo/types";
 
@@ -40,24 +40,28 @@ export function LibrariesView({ initial }: { initial: Library[] | null }) {
   }
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
         <h1 className="text-xl font-semibold tracking-[-0.02em]">Image libraries</h1>
-        <Btn onClick={() => setNaming(true)}><Plus className="size-3" />New library</Btn>
+        <span className="text-sm text-text-muted tnum">{libs.length} {libs.length === 1 ? "library" : "libraries"}</span>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         {libs.map((l) => (
-          <Link key={l.id} href={`/carousel-generator/library/${l.id}` as never} className="group flex flex-col gap-3 rounded-card border border-border bg-card p-4 shadow-card transition-colors hover:border-text-muted/40">
-            <span className="aspect-[4/5] w-full overflow-hidden rounded-nested border border-border bg-card-sunken bg-cover bg-center" style={l.cover ? { backgroundImage: `url("${l.cover}")` } : undefined}>
-              {!l.cover && <span className="flex h-full items-center justify-center text-text-muted"><Images className="size-6" /></span>}
+          <Link key={l.id} href={`/carousel-generator/library/${l.id}` as never} className="group flex flex-col gap-2.5 transition-opacity hover:opacity-90">
+            {/* The tile is a mosaic of the library's own images: one large, two stacked. */}
+            <span className="grid aspect-[4/5] w-full grid-cols-[2fr_1fr] grid-rows-2 gap-1 overflow-hidden rounded-nested bg-card-sunken">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className={cn("bg-card-raised bg-cover bg-center", i === 0 && "row-span-2")} style={l.covers[i] ? { backgroundImage: `url("${l.covers[i]}")` } : undefined}>
+                  {i === 0 && !l.covers[0] && <span className="flex h-full items-center justify-center text-text-muted"><Images className="size-6" /></span>}
+                </span>
+              ))}
             </span>
-            <span className="flex flex-col gap-1">
-              <span className="flex items-center justify-between gap-2"><span className="truncate text-sm font-semibold">{l.name}</span><ChevronRight className="size-3.5 text-text-muted" /></span>
-              <span className="text-xs text-text-muted tnum">{l.count} images · {l.sets.filter((s) => !s.parentId).length} sets{l.untagged ? ` · ${l.untagged} unread` : ""}</span>
-              <span className="flex flex-wrap gap-1">{l.readOnly && <Pill>Read-only</Pill>}{l.usedBy.map((u) => <Pill key={u}>{u}</Pill>)}</span>
+            <span className="flex flex-col px-0.5">
+              <span className="truncate text-sm font-semibold">{l.name}</span>
+              <span className="text-xs text-text-muted tnum">{l.count === 0 ? "Nothing in it yet" : `${l.count} images`}{l.untagged ? ` · ${l.untagged} unread` : ""}</span>
             </span>
           </Link>
         ))}
-        <button type="button" onClick={() => setNaming(true)} className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-card border border-dashed border-border bg-card-sunken p-4 text-sm text-text-muted hover:text-text-primary">
+        <button type="button" onClick={() => setNaming(true)} className="flex aspect-[4/5] flex-col items-center justify-center gap-2 self-start rounded-nested border border-dashed border-border bg-card-sunken p-4 text-sm text-text-muted hover:text-text-primary">
           <Plus className="size-4" />
           New library
         </button>

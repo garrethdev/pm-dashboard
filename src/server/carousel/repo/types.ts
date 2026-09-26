@@ -213,6 +213,8 @@ export interface Library {
   readOnly: boolean;
   count: number;
   cover: string | null;
+  /** The first three images, for the tile's mosaic. */
+  covers: string[];
   sets: LibrarySet[];
   /** Which types draw from this library. */
   usedBy: string[];

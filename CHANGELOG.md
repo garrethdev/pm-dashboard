@@ -61,6 +61,21 @@ library, and shown on the batch page; the Writing version was saved and read
 back by query; the Overview, Carousel types, Generate, batch, History, type
 page and libraries screens were opened in the browser on the live data.
 
+**Visual review:** every screen was captured at desktop and phone width in
+both themes and compared against the design export by a separate reviewing
+agent. Its fixes applied here: status pills sit in a type card's footer and
+Generate is the accent button on every card (D1, D13); the Studio has its own
+full-bleed frame, three start cards and slides that stay dark in light mode
+(D6); Image libraries are mosaic tiles with the count in the title (D8);
+table headers are sentence case and the History filter's active chip is the
+accent outline (D9); the Trends rail has no box, a post carries its platform
+mark, and Recent saves shows only on the Feed (D10). Still open from that
+review, for a later pass: the type page's sticky phone footer and Weekly cap
+tile (D7), the Knowledge tab's two tables with a confidence dropdown (D10),
+the Overview's refresh button in the top bar, and the dashboard's own theme
+bootstrap script, which makes the Next dev overlay complain on every page
+(pre-existing on `main`, not changed here).
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

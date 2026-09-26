@@ -172,7 +172,7 @@ export function GenerateForm({ type, libraries, perBatchRoles }: { type: Carouse
                 <span className="text-sm text-danger">No writing</span>
               )}
               <Link href={`/carousel-generator/types/${type.slug}?tab=writing` as never} className="ml-auto inline-flex items-center gap-0.5 text-xs text-text-muted hover:text-text-primary">
-                {type.writing ? "Writing" : "Write it"} <ChevronRight className="size-3" />
+                {type.writing ? "Edit" : "Write it"} <ChevronRight className="size-3" />
               </Link>
             </div>
             {type.writing && (

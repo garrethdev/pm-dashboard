@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import type { CarouselType } from "@/server/carousel/repo/types";
 import { batchWords } from "@/server/carousel/status-words";
 
-function TypeCard({ t, accent }: { t: CarouselType; accent: boolean }) {
+function TypeCard({ t }: { t: CarouselType }) {
   const [open, setOpen] = useState(false);
   const retired = t.lifecycle === "retired";
   const running = t.runningBatch;
@@ -29,8 +29,6 @@ function TypeCard({ t, accent }: { t: CarouselType; accent: boolean }) {
       <div className="flex flex-wrap gap-1.5">
         <Pill>{t.character}</Pill>
         {slidesText(t) && <Pill className="tnum">{slidesText(t)}</Pill>}
-        {t.lifecycle === "not_wired" && <Pill>Not wired</Pill>}
-        {!t.writing && !retired && <Pill>Needs writing</Pill>}
       </div>
       <div className="border-y border-border">
         <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center justify-between py-2.5 text-xs font-medium text-text-muted hover:text-text-primary">
@@ -48,7 +46,9 @@ function TypeCard({ t, accent }: { t: CarouselType; accent: boolean }) {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {t.lastBatch && !waiting && <span className="text-xs text-text-muted tnum">Last batch {shortDate(t.lastBatch.createdAt)}</span>}
+        {t.lifecycle === "not_wired" && <Pill>Not wired</Pill>}
+        {!t.writing && !retired && <Pill>Needs writing</Pill>}
+        {t.lastBatch && !waiting && t.writing && <span className="text-xs text-text-muted tnum">Last batch {shortDate(t.lastBatch.createdAt)}</span>}
         {waiting && (
           <Link href={waiting.href as never} className="inline-flex items-center gap-1 rounded-full bg-pill-bg px-2.5 py-0.5 text-xs font-medium text-text-primary tnum">
             {waiting.label} <ChevronRight className="size-3" />
@@ -57,10 +57,9 @@ function TypeCard({ t, accent }: { t: CarouselType; accent: boolean }) {
         <span className="ml-auto flex items-center gap-2">
           {retired ? null : running ? (
             <Btn href={`/carousel-generator/batches/${running.id}`}>Open running batch</Btn>
-          ) : accent ? (
-            <Accent small href={`/carousel-generator/generate?type=${encodeURIComponent(t.id)}`}>Generate</Accent>
           ) : (
-            <Btn href={`/carousel-generator/generate?type=${encodeURIComponent(t.id)}`}>Generate</Btn>
+            // Generate always opens the form; the form names what is missing (D13).
+            <Accent small href={`/carousel-generator/generate?type=${encodeURIComponent(t.id)}`}>Generate</Accent>
           )}
         </span>
       </div>
@@ -82,8 +81,6 @@ export function TypesView({ initial }: { initial: CarouselType[] | null }) {
   }
   const live = types.filter((t) => t.lifecycle !== "retired");
   const retired = types.filter((t) => t.lifecycle === "retired");
-  // The accent goes to the type with the least cover; the rest are secondary (D1).
-  const most = live.filter((t) => t.daysOfCover !== null && !t.runningBatch).sort((a, b) => a.daysOfCover! - b.daysOfCover!)[0];
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
@@ -99,7 +96,7 @@ export function TypesView({ initial }: { initial: CarouselType[] | null }) {
         <>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
             {live.map((t) => (
-              <TypeCard key={t.id} t={t} accent={t.id === most?.id} />
+              <TypeCard key={t.id} t={t} />
             ))}
           </div>
           {retired.length > 0 && (
@@ -112,7 +109,7 @@ export function TypesView({ initial }: { initial: CarouselType[] | null }) {
               {retiredOpen && (
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
                   {retired.map((t) => (
-                    <TypeCard key={t.id} t={t} accent={false} />
+                    <TypeCard key={t.id} t={t} />
                   ))}
                 </div>
               )}

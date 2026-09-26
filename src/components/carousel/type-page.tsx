@@ -39,12 +39,13 @@ function slideLines(template: Record<string, unknown> | null): { n: number; text
   return slides.map((s) => ({ n: s.n, text: (s.text ?? []).map((t) => t.role.replace(/_/g, " ")).join(" · ") || "image" }));
 }
 
-function Card({ title, action, children, className }: { title?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
+function Card({ title, titleExtra, action, children, className }: { title?: string; titleExtra?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <section className={cn("flex flex-col gap-4 rounded-card border border-border bg-card p-5 shadow-card", className)}>
       {(title || action) && (
         <div className="flex flex-wrap items-center gap-3">
           {title && <h2 className="text-sm font-medium text-text-muted">{title}</h2>}
+          {titleExtra}
           {action && <span className="ml-auto flex items-center gap-2">{action}</span>}
         </div>
       )}
@@ -77,7 +78,9 @@ function Overview({ d, onChange }: { d: Payload; onChange: () => void }) {
   return (
     <div className="flex flex-col gap-4">
       <Card
-        action={tpl && (
+        action={tpl && <Btn href={`/carousel-generator/studio/${tpl.slug}`}><Pencil className="size-3.5" />Edit template</Btn>}
+        title="Template"
+        titleExtra={tpl && (
           <>
             <span className="relative">
               <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card-raised px-3.5 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary">
@@ -98,10 +101,8 @@ function Overview({ d, onChange }: { d: Payload; onChange: () => void }) {
               )}
             </span>
             {shownRow?.active ? <Pill tone="ok">Active</Pill> : shown !== null && <Btn onClick={makeActive} busy={busy}>Make active</Btn>}
-            <Btn href={`/carousel-generator/studio/${tpl.slug}`}><Pencil className="size-3.5" />Edit template</Btn>
           </>
         )}
-        title="Template"
       >
         {tpl ? (
           <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
@@ -117,9 +118,9 @@ function Overview({ d, onChange }: { d: Payload; onChange: () => void }) {
         )}
       </Card>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="grid grid-cols-3 gap-3" aria-label="Pool">
+        <div className="grid grid-cols-3 content-start gap-3" aria-label="Pool">
           {tiles.map(([l, v]) => (
-            <div key={l} className="dot-fade flex flex-col justify-between gap-2 overflow-hidden rounded-nested border border-border bg-card-raised px-4 py-3 text-text-muted">
+            <div key={l} className="dot-fade flex min-h-[104px] flex-col justify-between gap-2 overflow-hidden rounded-nested border border-border bg-card-raised px-4 py-3 text-text-muted">
               <span className="relative z-10 text-xs">{l}</span>
               <span className={cn("relative z-10 text-2xl font-semibold tnum", v === "—" ? "text-text-muted" : "text-text-primary")}>{v}</span>
             </div>
@@ -145,7 +146,7 @@ function Overview({ d, onChange }: { d: Payload; onChange: () => void }) {
           <p className="text-sm text-text-muted">No batches yet</p>
         ) : (
           <div className="flex flex-col">
-            <div className="hidden grid-cols-[88px_80px_80px_80px_80px_minmax(0,1fr)_100px] gap-3 border-b border-border pb-2 text-[11px] font-medium tracking-[0.08em] text-text-muted uppercase md:grid"><span>Date</span><span>Requested</span><span>Written</span><span>Rendered</span><span>Approved</span><span /><span /></div>
+            <div className="hidden grid-cols-[88px_80px_80px_80px_80px_minmax(0,1fr)_100px] gap-3 border-b border-border pb-2 text-xs text-text-muted md:grid"><span>Date</span><span>Requested</span><span>Written</span><span>Rendered</span><span>Approved</span><span /><span /></div>
             {d.batches.slice(0, 8).map((b) => {
               const w = batchWords(b);
               return (
@@ -307,7 +308,7 @@ function RowsTab({ d, slug, goLive }: { d: Payload; slug: string; goLive: () => 
         <EmptyState icon={Table}>No rows yet</EmptyState>
       ) : (
         <div className="flex flex-col">
-          <div className="hidden grid-cols-[40px_80px_minmax(0,1fr)_160px_90px_90px_110px_20px] gap-3 border-b border-border pb-2 text-[11px] font-medium tracking-[0.08em] text-text-muted uppercase md:grid"><span /><span>Id</span><span>Caption</span><span>Music</span><span>Posting date</span><span>Profile</span><span>Status</span><span /></div>
+          <div className="hidden grid-cols-[40px_80px_minmax(0,1fr)_160px_90px_90px_110px_20px] gap-3 border-b border-border pb-2 text-xs text-text-muted md:grid"><span /><span>Id</span><span>Caption</span><span>Music</span><span>Posting date</span><span>Profile</span><span>Status</span><span /></div>
           {rows.rows.map((r) => (
             <button key={r.id} type="button" onClick={() => setOpenRow(r)} className="grid grid-cols-[40px_minmax(0,1fr)_20px] items-center gap-3 border-b border-border py-2 text-left last:border-b-0 hover:bg-card-raised md:grid-cols-[40px_80px_minmax(0,1fr)_160px_90px_90px_110px_20px]">
               <span className="aspect-[4/5] w-10 rounded-[6px] border border-border bg-card-sunken bg-cover bg-center" style={r.thumbnail ? { backgroundImage: `url("${r.thumbnail}")` } : undefined} aria-hidden />

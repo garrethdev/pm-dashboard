@@ -8,7 +8,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { DeckCard } from "@/components/carousel/deck-card";
-import { Accent, Btn, PageHead, Pill, Track, post, typeMeta, useJson } from "@/components/carousel/kit";
+import { Accent, Btn, PageHead, Pill, Track, post, useJson } from "@/components/carousel/kit";
 import { AlertTriangle, GridFour, Pause, Play, RotateCw, Rows } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { Batch } from "@/server/carousel/repo/types";
@@ -117,7 +117,7 @@ export function BatchView({ id, initial }: { id: string; initial: Payload | null
       <PageHead
         back={{ href: `/carousel-generator/types/${encodeURIComponent(b.typeId)}`, label: "Carousel types" }}
         title={b.typeName}
-        meta={c.rendered > 0 || done ? typeMeta(b) : undefined}
+        meta={undefined}
         actions={
           c.rendered > 0 ? (
             <div role="radiogroup" aria-label="Layout" className="inline-flex rounded-full bg-card-raised p-0.5">
@@ -161,7 +161,7 @@ export function BatchView({ id, initial }: { id: string; initial: Payload | null
             {approveBtn}
           </span>
         </div>
-        {b.lifecycle !== "finished" && <Track value={progress} />}
+        <Track value={progress} />
         {actionError && <p role="alert" className="text-xs text-danger">{actionError}</p>}
         {error && <p className="text-xs text-text-muted">{error}</p>}
       </div>

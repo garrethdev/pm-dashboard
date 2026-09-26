@@ -106,15 +106,18 @@ const CAROUSEL_NAV: NavConfig = {
           label: "Overview",
           href: "/carousel-generator",
           icon: LayoutDashboard,
-          isActive: (pathname) => pathname === "/carousel-generator" || pathname.startsWith("/carousel-generator/batches"),
+          isActive: (pathname) => pathname === "/carousel-generator",
         },
         {
           label: "Carousel types",
           href: "/carousel-generator/types",
           icon: Cards,
           // A type's own page and its Generate form belong to this row too.
+          // A type's page, its Generate form and its batches belong to this row too.
           isActive: (pathname) =>
-            pathname.startsWith("/carousel-generator/types") || pathname.startsWith("/carousel-generator/generate"),
+            pathname.startsWith("/carousel-generator/types") ||
+            pathname.startsWith("/carousel-generator/generate") ||
+            pathname.startsWith("/carousel-generator/batches"),
         },
         { label: "History", href: "/carousel-generator/history", icon: History, isActive: under("/carousel-generator/history") },
         { label: "Image libraries", href: "/carousel-generator/library", icon: Images, isActive: under("/carousel-generator/library") },

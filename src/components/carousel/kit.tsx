@@ -158,7 +158,7 @@ export function SectionHead({ title, note, link, action }: { title: string; note
   return (
     <div className="flex min-h-[30px] items-center gap-2 px-0.5">
       <h2 className="text-sm font-semibold tracking-[-0.01em]">{title}</h2>
-      {note && <span className="truncate text-xs text-text-muted tnum">{note}</span>}
+      {note && <span className="hidden truncate text-xs text-text-muted tnum sm:inline">{note}</span>}
       {action && <span className="ml-auto">{action}</span>}
       {link && !action && (
         <Link href={link.href as never} className="ml-auto inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-text-muted transition-colors hover:text-text-primary">
