@@ -39,6 +39,28 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 09:42 UTC continuation
+
+- Main remains `781fb20`; clean starting tree and no running worker agents.
+- Bundled unmodified Inter Bold 4.1 and Liberation Sans Bold 2.1.5 from official
+  releases, with their licenses and SHA-256 provenance in
+  `assets/carousel-fonts/README.md`. Added fixed-catalog, checksum-verified loading;
+  template filenames cannot become arbitrary filesystem/network reads.
+- Real Inter text exposed unsupported GSUB shaping in opentype.js. Replaced
+  runtime metrics/outlines with pinned fontkit 2.0.4 without disabling features;
+  synthetic-font regression tests still pass. Installed packages with scripts off.
+- 645 tests / 53 files, typecheck, focused lint and Webpack production build pass.
+  Build trace for carousel types includes both fonts and their licenses. This is
+  local bundle verification, not deployed execution or a complete generation run.
+- Vision agent inspected two newly rasterized font samples: upright/readable
+  text, visible quotes/ampersand/em dash, no missing glyphs or clipping, distinct
+  fill/stroke/soft shadow. Inter quote shapes differ visibly from Liberation Sans.
+  Samples are reproducible using CAROUSEL_FONT_QA_DIR with `fonts.test.ts`.
+- This is local font-smoke QA, not browser click-through or Python/design parity.
+  Emoji, production render integration, upload/persistence and visual sign-off
+  remain open. No full ticket newly certified; no live credentials retried, merge
+  or deployment. Browser/access blockers remain and no reliable revised ETA.
+
 ### September 26, 09:22 UTC continuation
 
 - Main freshly fetched at `781fb20`; clean starting branch, no active workers.
@@ -290,7 +312,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-01 | Database: the generation record, templates, directions, libraries | Open |
 | DEV-02 | Materialise and render claims as database functions | Open |
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
-| DEV-04 | Painter: text | Template-bound caption layers pixel-tested; approved fonts, emoji and visual parity open |
+| DEV-04 | Painter: text | Template-bound captions and bundled static fonts tested; emoji and Python/design visual parity open |
 | DEV-05 | Painter: images, composition and upload | In-memory captioned deck composition tested; safe remote fetching, upload, persistence and parity open |
 | DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |

@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // The documentation serves these pinned assets locally, including in Vercel bundles.
   outputFileTracingIncludes: {
+    // Static caption faces plus licenses; no runtime downloads or OS font fallback.
+    "/api/carousel-generator/**/*": ["./assets/carousel-fonts/**/*"],
     "/api/carousel-generator/docs/assets/*": ["./node_modules/swagger-ui-dist/swagger-ui.css", "./node_modules/swagger-ui-dist/swagger-ui-bundle.js"],
   },
   /**
