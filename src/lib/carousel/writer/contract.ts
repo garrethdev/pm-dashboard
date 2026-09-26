@@ -1,4 +1,5 @@
 import { validateTemplate, type CarouselTemplate } from "../template/validate";
+import { paintedWritingRoles, writingMentions } from "./mentions";
 
 export const WRITER_PROMPT_VERSION = "carousel-writer/1";
 export interface WritingInput {
@@ -11,13 +12,16 @@ export interface WritingInput {
 
 /** Only painted boxes can be mentioned; obsolete roles must not steer new copy. */
 export function resolveMentions(direction: string, template: CarouselTemplate) {
-  const painted = new Set(template.slides.flatMap(slide => slide.text.map(box => box.role)));
   const dropped = new Set<string>();
-  const text = direction.replace(/(?<![\w@])@([a-zA-Z][a-zA-Z0-9_-]*)/g, (_, name: string) => {
-    const role = template.copy_contract.find(role => role.role === name && painted.has(name));
-    if (!role) { dropped.add(name); return ""; }
-    return `[text slot ${role.role}; writer ${role.writer}; ${role.max_chars === undefined ? "no character limit configured" : `maximum ${role.max_chars} characters`}]`;
-  });
+  let text = "", cursor = 0;
+  for (const token of writingMentions(direction, paintedWritingRoles(template))) {
+    text += direction.slice(cursor, token.start);
+    const role = token.role;
+    if (!role) dropped.add(token.name);
+    else text += `[text slot ${role.role}; writer ${role.writer}; ${role.max_chars === undefined ? "no character limit configured" : `maximum ${role.max_chars} characters`}]`;
+    cursor = token.end;
+  }
+  text += direction.slice(cursor);
   return { text, droppedMentions: [...dropped] };
 }
 

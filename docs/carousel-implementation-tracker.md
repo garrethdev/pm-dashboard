@@ -39,6 +39,13 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 13:02 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch at 733fdb5 and no other active implementation agents. Read DEV-62 and existing prompt mention behavior.
+- Extracted a shared plain-text mention module and connected the prompt builder to it. Provides painted-role vocabulary, active/stale mention tokens with UTF-16 selection offsets, and caret/range insertion that replaces intersected mentions atomically. Existing identifier syntax and email exclusions remain unchanged; no HTML is produced or stored.
+- Six new tests cover tokens/stale names, email/prose exclusions, astral-character offsets, lossless text reconstruction, mid-sentence insertion, atomic replacement, separators and invalid selections. Full suite 769 tests / 60 files; type-check, targeted lint and diff checks pass.
+- DEV-62 remains partial: rendered editor surface, autocomplete, drag/drop, keyboard/backspace behavior, multiword-name syntax, saved Writing readbacks and desktop/phone/theme QA remain open. This module is not evidence of those interactions. No full ticket certified, no new manual/vision QA or build. Live credential/catalog/browser blockers persist; no live writes, merge/deploy or supported ETA revision.
+
 ### September 26, 12:42 UTC continuation
 
 - Main refreshed at 781fb20; clean starting branch at ba4ff9e with no concurrent implementation agents. Read DEV-53/61's explicit blank-versus-zero requirement.
