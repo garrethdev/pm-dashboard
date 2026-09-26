@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { BatchSummary } from "@/server/carousel/repo/types";
 import { batchWords } from "./status-words";
 
-const base = (patch: Partial<BatchSummary> & { counts?: Partial<BatchSummary["counts"]> }): BatchSummary => ({
+const base = (patch: Omit<Partial<BatchSummary>, "counts"> & { counts?: Partial<BatchSummary["counts"]> }): BatchSummary => ({
   id: "b1",
   typeId: "glowup",
   typeName: "Glow Up",

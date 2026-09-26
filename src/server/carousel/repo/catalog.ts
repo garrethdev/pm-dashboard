@@ -51,9 +51,11 @@ export async function overviewData(viewer: string): Promise<OverviewData> {
     approved: 0,
     needsInput: words.filter((x) => x.w.needsPerson).length,
   };
+  // What today did: decks written in batches made today, rendered where the
+  // render was asked for today, approved where the sign-off was today.
   for (const b of batches) {
-    if (isToday(b.updatedAt) && b.lifecycle !== "finished") today.written += b.counts.written;
-    if (isToday(b.renderRequestedAt) || (isToday(b.updatedAt) && b.counts.rendered > 0)) today.rendered += b.counts.rendered;
+    if (isToday(b.createdAt)) today.written += b.counts.written;
+    if (isToday(b.renderRequestedAt)) today.rendered += b.counts.rendered;
     if (isToday(b.approvedAt)) today.approved += b.counts.approved;
   }
   const generated = types.filter((t) => t.lastBatch).sort((a, b) => (b.lastBatch!.createdAt).localeCompare(a.lastBatch!.createdAt));

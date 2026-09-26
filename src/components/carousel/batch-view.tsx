@@ -101,7 +101,9 @@ export function BatchView({ id, initial }: { id: string; initial: Payload | null
       )}
     </span>
   );
-  const autoBtn = (auto || paused) && (
+  // Auto's one control lives while there is work Auto could still do; it is
+  // gone once the batch waits for Approve, which is a person's press (D12).
+  const autoBtn = (auto || paused) && ["writing", "rendering", "flagged", "to_render", "stopped"].includes(w.stage) && (
     <Btn line onClick={() => act(auto ? "pause-auto" : "resume-auto")} busy={busy === "pause-auto" || busy === "resume-auto"}>
       {auto ? <><Pause className="size-3.5" />Pause auto</> : <><Play className="size-3.5" />Resume auto</>}
     </Btn>

@@ -149,6 +149,7 @@ export async function draftFromIdea(idea: string, sets: string[], size: StudioSi
     sets.length ? `The image library has these sets; give each slide the set that fits: ${sets.join(", ")}.` : "The image library has no sets yet; leave set null.",
     `Each text box has a short snake_case name (the hook is "hook"), a one-line purpose, a font size (40 to 80) and "at", where its centre sits from 0 (top) to 1 (bottom).`,
     `Also write "direction": one paragraph of writing direction for this type, and "sample": a sample line for every box name.`,
+    `"name" is a short plain-English title with spaces, like "Evening Habit", never a slug.`,
     `Reply: {"name": "...", "slides": [{"layout": "single", "set": "...", "boxes": [{"name": "hook", "purpose": "...", "size": 64, "at": 0.5}]}], "direction": "...", "sample": {"hook": "..."}}`,
   ].join("\n");
   return parseSpec(await askModel(prompt), idea.slice(0, 40));
