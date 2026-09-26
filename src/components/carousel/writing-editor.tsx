@@ -3,6 +3,7 @@
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import type { CopyRole } from "@/lib/carousel/template/validate";
 import { deleteWritingMention, insertWritingMention, writingMentions, writingMentionSuggestions } from "@/lib/carousel/writer/mentions";
+import { createWritingHistory, recordWritingEdit, moveWritingHistory } from "@/lib/carousel/writer/edit-history";
 
 /** Selection offsets use the same plain text that is saved, not HTML lengths. */
 function selectionOffsets(root: HTMLElement) {
@@ -46,6 +47,7 @@ export function WritingEditor({ value, roles, onChange, disabled = false }: {
   const id = useId(), root = useRef<HTMLDivElement>(null);
   const caret = useRef<number | null>(null), composing = useRef(false);
   const savedSelection = useRef({ start: value.length, end: value.length });
+  const history = useRef(createWritingHistory({ text: value, caret: value.length }));
   const [menu, setMenu] = useState<ReturnType<typeof writingMentionSuggestions>>(null);
   const [highlight, setHighlight] = useState(0);
   const stale = new Set(writingMentions(value, roles).filter(token => !token.role).map(token => token.name)).size;
@@ -53,6 +55,9 @@ export function WritingEditor({ value, roles, onChange, disabled = false }: {
   useLayoutEffect(() => {
     const element = root.current;
     if (!element || composing.current) return;
+    // A loaded version/server replacement starts a new local history. Parent
+    // echoes of our own edits already match present and do not reset undo.
+    if (history.current.present.text !== value) history.current = createWritingHistory({ text: value, caret: value.length });
     const selection = document.activeElement === element ? selectionOffsets(element) : null;
     const fragment = document.createDocumentFragment(); let cursor = 0;
     for (const token of writingMentions(value, roles)) {
@@ -77,8 +82,16 @@ export function WritingEditor({ value, roles, onChange, disabled = false }: {
     return savedSelection.current;
   }
   function commit(text: string, nextCaret: number) {
+    history.current = recordWritingEdit(history.current, { text: value, caret: Math.min(savedSelection.current.end, value.length) });
+    history.current = recordWritingEdit(history.current, { text, caret: nextCaret });
     caret.current = nextCaret; savedSelection.current = { start: nextCaret, end: nextCaret };
     onChange(text); setMenu(null); root.current?.focus();
+  }
+  function navigateHistory(direction: "undo" | "redo") {
+    history.current = moveWritingHistory(history.current, direction);
+    const next = history.current.present;
+    caret.current = next.caret; savedSelection.current = { start: next.caret, end: next.caret };
+    setMenu(null); onChange(next.text);
   }
   function choose(name: string) {
     const selection = menu ?? savedSelection.current;
@@ -92,6 +105,7 @@ export function WritingEditor({ value, roles, onChange, disabled = false }: {
   function readInput() {
     if (composing.current || !root.current) return;
     const text = root.current.textContent ?? "", selection = capture();
+    history.current = recordWritingEdit(history.current, { text, caret: selection.end });
     caret.current = selection.end; onChange(text);
     setMenu(selection.start === selection.end ? writingMentionSuggestions(text, selection.end, roles) : null);
     setHighlight(0);
@@ -104,12 +118,25 @@ export function WritingEditor({ value, roles, onChange, disabled = false }: {
       contentEditable={!disabled} suppressContentEditableWarning tabIndex={disabled ? -1 : 0}
       className="min-h-36 whitespace-pre-wrap rounded-lg border border-neutral-300 p-3 text-sm outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700"
       onInput={readInput} onMouseUp={capture} onBlur={() => { capture(); setMenu(null); }}
+      onBeforeInput={event => {
+        const type = (event.nativeEvent as InputEvent).inputType;
+        if (disabled || composing.current) return;
+        if (type === "historyUndo" || type === "historyRedo") {
+          event.preventDefault(); navigateHistory(type === "historyUndo" ? "undo" : "redo");
+        } else {
+          const selection = capture();
+          history.current = recordWritingEdit(history.current, { text: value, caret: Math.min(selection.end, value.length) });
+        }
+      }}
       onCompositionStart={() => { composing.current = true; setMenu(null); }}
       onCompositionEnd={() => { composing.current = false; readInput(); }}
       onPaste={event => { event.preventDefault(); if (!disabled) replaceSelection(event.clipboardData.getData("text/plain")); }}
       onDrop={event => { event.preventDefault(); }}
       onKeyDown={event => {
         if (disabled || composing.current || event.nativeEvent.isComposing) return;
+        if ((event.metaKey || event.ctrlKey) && !event.altKey && ["z", "y"].includes(event.key.toLowerCase())) {
+          event.preventDefault(); navigateHistory(event.key.toLowerCase() === "y" || event.shiftKey ? "redo" : "undo"); return;
+        }
         if (menu && event.key === "Escape") { event.preventDefault(); setMenu(null); return; }
         if (menu && ["ArrowDown", "ArrowUp"].includes(event.key)) {
           event.preventDefault(); setHighlight(index => (index + (event.key === "ArrowDown" ? 1 : -1) + menu.candidates.length) % menu.candidates.length); return;

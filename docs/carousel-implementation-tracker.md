@@ -39,6 +39,13 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 14:02 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch at 6fa11ec and no other active implementation agents.
+- Added bounded plain-text/caret edit history (100 past edits, 1M retained UTF-16 units per history stack) and connected it to the unmounted Writing editor's keyboard undo/redo and history input-event handling. New text clears redo; caret-only changes do not. Parent values differing from current local text reset history for loaded versions. This is local editor history, not persisted draft versioning.
+- Eight new test cases cover restoration, branching, boundaries, memory caps, input snapshots and invalid carets. Full suite 787 tests / 61 files; type-check, targeted lint and diff checks pass. No new production build or component interaction test this checkpoint.
+- DEV-62 remains partial. Actual browser undo/event ordering, mobile beforeinput/IME, selection behavior, drag/drop, multiword names, accessibility, page mounting and persistence still need work/verification. No manual click-through or new vision QA; live credential/catalog/browser-policy blockers unchanged. No full ticket completed, live writes, merge/deploy or supported revised ETA.
+
 ### September 26, 13:42 UTC continuation
 
 - Main fetched at 781fb20; clean starting tree at d0e09cd and no other active implementation agents. Read bundled Next client-component instructions.
