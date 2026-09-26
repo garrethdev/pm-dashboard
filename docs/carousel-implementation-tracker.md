@@ -33,6 +33,21 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 05:42 UTC continuation
+
+- Main remains `781fb20`; clean starting tree and no active worker agents.
+- DEV-06: added server-side `v_image_assets` adapter with explicit columns,
+  library/status scoping, pagination bound, row validation, duplicate-ID rejection
+  and sanitized read failures. Connected it to the deterministic picker through
+  an explicitly unpersisted proposal function. No source bank changes.
+- Live read-only check: two existing libraries returned 55 and 69 valid active
+  assets. Each produced a one-slide in-memory proposal from a synthetic probe
+  template. This verifies view-to-picker integration, NOT design/template parity,
+  rendering, persistence, concurrency or generation completion.
+- 537 tests / 40 files, typecheck and focused lint passed. Browser/manual/vision
+  QA remains blocked. No additional full ticket certified; no deployment or
+  database writes. Full-completion ETA remains unverified.
+
 ### September 26, 05:22 UTC continuation
 
 - Main re-fetched at `781fb20`; clean starting tree, no active worker agents.
@@ -95,7 +110,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
 | DEV-04 | Painter: text | Open |
 | DEV-05 | Painter: images, composition and upload | Open |
-| DEV-06 | Image picking and the persisted manifest | Pure picker tested; database adapter and persistence open |
+| DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |
 | DEV-08 | Copy writer | Prompt/output contract and bounded length retry tested; provider, lane seeds, hardening and persistence open |
 | DEV-09 | Quality gate | Fail-closed coordinator and writer integration tested; original rubric/patterns, similarity and live adapters open |
