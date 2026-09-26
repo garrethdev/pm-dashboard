@@ -80,6 +80,24 @@ function must leave its grants alone. `content_type_stats` was rewritten on
 — hardening one function inside an unrelated fix would make the eventual audit
 harder, not easier, because the count would no longer mean what it says here.
 
+## Slide images expire before anyone looks at them
+
+Found 2026-09-26 while fixing grey covers on Trends. The `media_enrich`
+worker (outside n8n; nobody in the repo knows where it runs, see
+`docs/CAROUSEL-GENERATOR-PLAN.md` open questions) stores TikTok's signed
+slide links in `reference_analysis.observed.media_inventory`. Those links
+expire roughly two weeks after the scrape, and about half are HEIC files no
+browser can show. 459 slides across 89 carousels are already gone. What is
+needed:
+
+- The worker should copy each slide into the `reference-slides` bucket
+  (created 2026-09-26, public) at scrape time and store that link, the way
+  the one-off backfill did for the 119 links that were still live.
+- The 459 expired slides need a fresh scrape of their source post to come
+  back; the Virlo API can return new links by slideshow id.
+- Until then the dashboard shows the Virlo thumbnail as the cover and "Image
+  gone" for the inner slides.
+
 ## The Virlo research pipeline is not monitored
 
 **A caution from the review. V1. Not part of the 2026-09-11 batch — still

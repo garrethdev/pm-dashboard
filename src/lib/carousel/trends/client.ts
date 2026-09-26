@@ -1,4 +1,5 @@
 /** DEV-39/47: direct server-to-Supabase adapter, not the undeployed HTTP service. */
+import { displayUrl } from "@/server/carousel/media";
 export class CatalogError extends Error {
   constructor(readonly status: number, readonly code: string, message: string) { super(message); }
 }
@@ -98,7 +99,7 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
       ]) : [[], []];
       const mediaOf = (id: string): string[] => {
         const inv = analyses.filter(a => String(a.source_reference_id) === id).map(a => (a.observed as Row | null)?.media_inventory).find(Array.isArray) as { position: number; image_url: string }[] | undefined;
-        return (inv ?? []).slice().sort((x, y) => x.position - y.position).map(m => m.image_url);
+        return (inv ?? []).slice().sort((x, y) => x.position - y.position).map(m => displayUrl(m.image_url)).filter((u): u is string => Boolean(u));
       };
       return { query: b.query, channel, requested_mode: requestedMode, mode, fallback, reranked: false,
         results: selected.map(match => {

@@ -4,6 +4,7 @@
  * knowledge base.
  */
 import { dbCount, dbDelete, dbGet, dbGetAll, dbInsert, dbPatch, enc } from "@/server/carousel/repo/db";
+import { displayUrl } from "@/server/carousel/media";
 import type { Digest, KnowledgeRule, Reference, ReferenceAnalysis } from "@/server/carousel/repo/types";
 
 interface RefRow {
@@ -60,9 +61,9 @@ async function beatsFor(ids: number[]): Promise<Map<number, BeatRow[]>> {
 }
 
 /** The slides' images live in the analysis's media inventory; beats carry the words. */
-function mediaOf(a: AnalysisRow | undefined): string[] {
+function mediaOf(a: AnalysisRow | undefined): (string | null)[] {
   const inv = (a?.observed?.media_inventory as { position: number; image_url: string }[] | undefined) ?? [];
-  return [...inv].sort((x, y) => x.position - y.position).map((m) => m.image_url);
+  return [...inv].sort((x, y) => x.position - y.position).map((m) => displayUrl(m.image_url));
 }
 
 async function analysesFor(ids: number[]): Promise<Map<number, AnalysisRow>> {

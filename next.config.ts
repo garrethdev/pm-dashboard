@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
     staleTimes: { dynamic: 30, static: 180 },
   },
 
+  // The slide-image converter (HEIC to JPEG for the Trends screens) runs on
+  // the server and ships its own WebAssembly, so it is loaded from
+  // node_modules as is instead of being bundled.
+  serverExternalPackages: ["heic-decode", "libheif-js", "sharp"],
+
   // /cadence was folded into /content-calendar (2026-09-06): the lane mix moved
   // into the "Adjust Cadence" dialog and the per-account limits table moved
   // under the calendar. Permanent, because the old URL is in people's history

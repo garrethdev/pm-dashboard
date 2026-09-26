@@ -151,6 +151,25 @@ regains focus. Confirmed live: an open Overview made no requests in a
 minute; pressing Render on a batch produced one read for the press and one
 more two and a half seconds later, then nothing.
 
+**Missing slide images on Trends (2026-09-26, Garreth saw grey covers in
+the feed):** two causes, both in the data rather than the screens. Half of
+the slide images read by the Sep 8 to 12 intake point at TikTok's HEIC
+files, which no browser can show, and every TikTok slide link is signed with
+an expiry a fortnight or so after the scrape: of 578 such links, 459 had
+already expired and the other 119 expired the next day. Three things done.
+The 119 still-live slides were copied into a new public bucket
+`reference-slides` on the live project (HEIC converted to JPEG on the way),
+and their analysis rows now point at the copies, with the original link kept
+beside each as `source_image_url`. A new server route,
+`/api/carousel-generator/image`, converts any HEIC slide from TikTok's CDN
+or Virlo to JPEG on request, for the pipeline's future rows. And an expired
+link is now treated as no image, so the carousel's cover falls back to the
+durable Virlo thumbnail and an inner slide reads "Image gone" instead of a
+blank box. Confirmed live: the feed and the saves rail load 22 carousels
+with no missing cover and no failed image; 38 of their 113 inner slides are
+gone for good until re-scraped. The lasting fix belongs in the enrichment
+worker, which should re-host slides at scrape time; noted in `BACKLOG.md`.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It
