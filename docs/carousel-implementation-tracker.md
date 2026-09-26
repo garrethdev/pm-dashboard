@@ -39,6 +39,19 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 07:22 UTC continuation
+
+- Main remains `781fb20`; clean starting tree and no active worker agents.
+- DEV-04: added measurement-driven text-layout calculations following template
+  model §2 and renderer spec B.1/B.2. Handles greedy whitespace wrap, explicit
+  datestamp lines, overflowing words without a blank first line, four anchors,
+  fractional line heights and ascender-to-SVG-baseline conversion.
+- 594 tests / 45 files, typecheck and focused lint pass. New tests use injected
+  synthetic measurements; actual bundled fonts/opentype metrics, emoji handling,
+  SVG paint/shadows, rasterization and Python visual parity remain OPEN.
+- No live credential attempts, writes or deployment. Manual/vision QA remains
+  blocked; no full ticket newly certified and no verified revised completion ETA.
+
 ### September 26, 07:02 UTC continuation
 
 - Main remains `781fb20`; clean starting tree, no worker agents active.
@@ -175,7 +188,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-01 | Database: the generation record, templates, directions, libraries | Open |
 | DEV-02 | Materialise and render claims as database functions | Open |
 | DEV-03 | Template types and validator | Partial foundation; acceptance still open |
-| DEV-04 | Painter: text | Open |
+| DEV-04 | Painter: text | Layout math tested; real fonts, SVG paint, emoji and visual parity open |
 | DEV-05 | Painter: images, composition and upload | Open |
 | DEV-06 | Image picking and the persisted manifest | Picker and live read adapter verified; atomic manifest persistence and rendering open |
 | DEV-07 | Parity check against the Python painters | Open |
