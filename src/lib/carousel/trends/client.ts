@@ -90,12 +90,24 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
       const byId = new Map(refs.map(r => [String(r.id), r]));
       const selected = matches.filter(r => byId.has(String(r.reference_id))).slice(0, Number(limit));
       const selectedIds = [...new Set(selected.map(r => String(r.reference_id)))];
-      const beats = selectedIds.length ? await all(`reference_beats?source_reference_id=in.(${selectedIds.join(",")})&select=id,source_reference_id,position,media&order=source_reference_id.asc,position.asc,id.asc`) : [];
+      // Beats carry the words; the slide images live in the analysis's media
+      // inventory (reference_beats has no media column, read live 2026-09-26).
+      const [beats, analyses] = selectedIds.length ? await Promise.all([
+        all(`reference_beats?source_reference_id=in.(${selectedIds.join(",")})&kind=eq.slide&select=id,source_reference_id,position&order=source_reference_id.asc,position.asc,id.asc`),
+        all(`reference_analysis?source_reference_id=in.(${selectedIds.join(",")})&select=id,source_reference_id,observed&order=id.asc`),
+      ]) : [[], []];
+      const mediaOf = (id: string): string[] => {
+        const inv = analyses.filter(a => String(a.source_reference_id) === id).map(a => (a.observed as Row | null)?.media_inventory).find(Array.isArray) as { position: number; image_url: string }[] | undefined;
+        return (inv ?? []).slice().sort((x, y) => x.position - y.position).map(m => m.image_url);
+      };
       return { query: b.query, channel, requested_mode: requestedMode, mode, fallback, reranked: false,
         results: selected.map(match => {
-          const reference = byId.get(String(match.reference_id))!;
-          const slides = beats.filter(s => String(s.source_reference_id) === String(match.reference_id));
-          return { ...match, reference, matched_media: slides.find(s => s.position === match.matched_slide)?.media ?? null, thumbnail_url: reference.thumbnail_url, slide_count: slides.length };
+          const id = String(match.reference_id);
+          const reference = byId.get(id)!;
+          const slides = beats.filter(s => String(s.source_reference_id) === id);
+          const media = mediaOf(id);
+          const matched = typeof match.matched_slide === "number" ? media[match.matched_slide - 1] ?? null : null;
+          return { ...match, reference, matched_media: matched ?? media[0] ?? null, thumbnail_url: reference.thumbnail_url, slide_count: Math.max(slides.length, media.length) };
         }), pagination: { returned: selected.length, limit, candidate_limit: 50, total: null, exhaustive: false },
       };
     }
@@ -107,7 +119,7 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
     const refs = await db(`references_unified?id=eq.${input}${operation === "carousel" ? "&format=eq.carousel" : ""}&select=id,format,creator_handle,platform,source_url,thumbnail_url,views,likes,saves,published_at`);
     if (!refs.length) throw new CatalogError(404, "REFERENCE_NOT_FOUND", "Reference not found.");
     const [beats, analysis, documents] = await Promise.all([
-      all(`reference_beats?source_reference_id=eq.${input}&select=id,position,media,visual,visible_copy,visual_description,inspection_status&order=position.asc,id.asc`),
+      all(`reference_beats?source_reference_id=eq.${input}&kind=eq.slide&select=id,position,visible_copy,visual_description,inspection_status&order=position.asc,id.asc`),
       db(`reference_analysis?source_reference_id=eq.${input}&analysis_version=eq.perez-slides-v1&select=id,analysis_version,inspection_status,topic,hook_family,updated_at&limit=1`),
       all(`carousel_search_documents?source_reference_id=eq.${input}&enabled=eq.true&select=id,slide_position,kind,evidence_class,content,metadata,inspection_status&order=id.asc`),
     ]);

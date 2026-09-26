@@ -234,7 +234,7 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
 
   const discard = () => {
     if (editing) router.push(`/carousel-generator/types/${editing.slug}`);
-    else { setTemplate(null); setCopy({}); setHistory([]); setMsgs([]); setStage("start"); setDirty(false); }
+    else { setTemplate(null); setCopy({}); setHistory([]); setMsgs([]); setStage("start"); setDirty(false); setName("New carousel type"); setRefStrip(null); }
   };
 
   // ── Screens before the canvas ──

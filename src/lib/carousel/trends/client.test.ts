@@ -11,9 +11,11 @@ it("calls the existing RPC and removes videos while retaining matched media", as
   const fetcher = vi.fn()
     .mockResolvedValueOnce(Response.json([{ reference_id: 1, matched_slide: 2 }, { reference_id: 2 }]))
     .mockResolvedValueOnce(Response.json([{ id: 1, format: "carousel", thumbnail_url: "cover", likes: null }]))
-    .mockResolvedValueOnce(Response.json([{ source_reference_id: 1, position: 2, media: { url: "slide-two" } }]));
+    .mockResolvedValueOnce(Response.json([{ source_reference_id: 1, position: 1 }, { source_reference_id: 1, position: 2 }]))
+    .mockResolvedValueOnce(Response.json([{ id: "a", source_reference_id: 1, observed: { media_inventory: [{ position: 1, image_url: "slide-two" }, { position: 0, image_url: "slide-one" }] } }]));
   const out = await callCatalog("search", { query: "eyes", mode: "keyword" }, fetcher);
-  expect(out).toMatchObject({ mode: "keyword", reranked: false, results: [{ reference_id: 1, matched_media: { url: "slide-two" }, reference: { likes: null } }], pagination: { total: null, exhaustive: false } });
+  expect(out).toMatchObject({ mode: "keyword", reranked: false, results: [{ reference_id: 1, matched_media: "slide-two", slide_count: 2, reference: { likes: null } }], pagination: { total: null, exhaustive: false } });
+  expect(String(fetcher.mock.calls[2][0])).not.toContain("media");
   expect(String(fetcher.mock.calls[0][0])).toContain("/rest/v1/rpc/search_carousel_library");
   expect(String(fetcher.mock.calls[1][0])).toContain("format=eq.carousel");
 });

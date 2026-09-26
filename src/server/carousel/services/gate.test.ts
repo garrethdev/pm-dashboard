@@ -55,3 +55,21 @@ describe("the painter's wrap", () => {
     expect(wrapText("a\nb", 60, 600)).toEqual(["a", "b"]);
   });
 });
+
+describe("the painter's quote rule", () => {
+  it("wraps slide 1 in quotes only for the hook types the template names", async () => {
+    const { paintDeck } = await import("./painter");
+    const template = {
+      slug: "t", version: 1, image_rules: { one: "one" },
+      canvas: { width: 1080, height: 1920, background: null },
+      text_styles: { caption: { fill: "#FFFFFF", wrap: { rule: "greedy_whitespace", width: 952 }, align: "center" } },
+      slides: [{ n: 1, layout: "single", cells: [{ x: 0, y: 0, w: 1080, h: 1920 }], images: { rule: "one" }, text: [{ role: "slide_1", style: "caption", size: 72, anchor: { kind: "top", y: 105 }, quote: { when_hook_type: ["Jealous Friend"], open: "“", close: "”" } }] }],
+    };
+    const assets = [{ library_id: "lib", image_id: "a", public_url: "https://x/a.jpg", is_cover: false, set_name: "s", subset_name: null, luminance: null, status: "active" }];
+    const quoted = paintDeck(template as never, assets, "lib", "deck-1", { slide_1: "she said it", hook_type: "Jealous Friend" });
+    const plain = paintDeck(template as never, assets, "lib", "deck-1", { slide_1: "she said it", hook_type: "Open Loop" });
+    expect(quoted[0].svg).toContain("“she said it”");
+    expect(plain[0].svg).not.toContain("“");
+    expect(quoted[0].imageUrls).toEqual(["https://x/a.jpg"]);
+  });
+});

@@ -122,13 +122,19 @@ async function askModel(prompt: string): Promise<string> {
 
 function parseSpec(content: string, fallbackName: string): DraftSpec {
   const raw = JSON.parse(content.slice(content.indexOf("{"), content.lastIndexOf("}") + 1)) as Partial<DraftSpec>;
-  const slides = (Array.isArray(raw.slides) ? raw.slides : []).slice(0, 20).map((s) => ({
-    layout: s.layout === "quad" ? ("quad" as const) : ("single" as const),
-    boxes: (Array.isArray(s.boxes) ? s.boxes : []).slice(0, 3).map((b) => ({ name: String(b.name ?? "line").slice(0, 40), purpose: String(b.purpose ?? "").slice(0, 200), size: Number(b.size) || 60, at: Number(b.at) || 0.5 })),
-    set: typeof s.set === "string" ? s.set : null,
-  }));
+  const sample: Record<string, string> = typeof raw.sample === "object" && raw.sample ? Object.fromEntries(Object.entries(raw.sample).map(([k, v]) => [k, String(v).slice(0, 300)])) : {};
+  const sampleKeys = Object.keys(sample);
+  const slides = (Array.isArray(raw.slides) ? raw.slides : []).slice(0, 20).map((s, i) => {
+    // The model has been seen to name the list "text" or "text_boxes"; every
+    // slide gets at least one box, from the sample's keys when it sent none.
+    const loose = s as unknown as { boxes?: unknown; text?: unknown; text_boxes?: unknown };
+    const rawBoxes = [loose.boxes, loose.text, loose.text_boxes].find(Array.isArray) as DraftSlide["boxes"] | undefined;
+    const boxes = (rawBoxes ?? []).slice(0, 3).map((b) => ({ name: String(b.name ?? "line").slice(0, 40), purpose: String(b.purpose ?? "").slice(0, 200), size: Number(b.size) || 60, at: Number(b.at) || 0.5 }));
+    if (!boxes.length) boxes.push({ name: sampleKeys[i] ?? (i === 0 ? "hook" : `line_${i + 1}`), purpose: "", size: i === 0 ? 64 : 54, at: 0.5 });
+    return { layout: s.layout === "quad" ? ("quad" as const) : ("single" as const), boxes, set: typeof s.set === "string" ? s.set : null };
+  });
   if (slides.length < 2) throw new Error("The draft had fewer than two slides");
-  return { name: String(raw.name ?? fallbackName).slice(0, 80), slides, direction: String(raw.direction ?? "").slice(0, 4000), sample: typeof raw.sample === "object" && raw.sample ? Object.fromEntries(Object.entries(raw.sample).map(([k, v]) => [k, String(v).slice(0, 300)])) : {} };
+  return { name: String(raw.name ?? fallbackName).slice(0, 80), slides, direction: String(raw.direction ?? "").slice(0, 4000), sample };
 }
 
 function fixtureSpec(idea: string, sets: string[]): DraftSpec {
@@ -178,7 +184,7 @@ export async function draftFromReference(viewer: string, referenceId: number, se
     `Reference beats:\n${beats}`,
     `Slide size ${size}. Each slide: layout "single" or "quad" and 1 or 2 text boxes with a snake_case name (first slide's is "hook"), a purpose, a font size (40 to 80) and "at" (0 top to 1 bottom).`,
     sets.length ? `Image sets available: ${sets.join(", ")}.` : "Leave set null.",
-    `Also "direction" (one paragraph) and "sample" (a fresh sample line per box, not the reference's words).`,
+    `Also "direction" (one paragraph) and "sample" (a fresh sample line per box, not the reference's words). "name" is a short plain-English title with spaces, never a slug.`,
     `Reply: {"name": "...", "slides": [...], "direction": "...", "sample": {...}}`,
   ].join("\n");
   const spec = parseSpec(await askModel(prompt), ref.handle ? `From @${ref.handle}` : "From a reference");
