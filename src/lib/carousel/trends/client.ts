@@ -1,4 +1,5 @@
 /** DEV-39/47: direct server-to-Supabase adapter, not the undeployed HTTP service. */
+import { attachSlideMedia } from "./slide-media";
 export class CatalogError extends Error {
   constructor(readonly status: number, readonly code: string, message: string) { super(message); }
 }
@@ -108,10 +109,11 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
     if (!validId(input)) throw new CatalogError(400, "INVALID_REFERENCE", "Invalid reference ID.");
     const refs = await db(`references_unified?id=eq.${input}${operation === "carousel" ? "&format=eq.carousel" : ""}&select=id,format,creator_handle,platform,source_url,thumbnail_url,views,likes,saves,published_at`);
     if (!refs.length) throw new CatalogError(404, "REFERENCE_NOT_FOUND", "Reference not found.");
-    const [beats, analysis, documents] = await Promise.all([
+    const [beats, analysis, documents, mediaEvidence] = await Promise.all([
       all(`reference_beats?source_reference_id=eq.${input}&select=id,position,visible_copy,visual_description,narrative_role,inspection_status&order=position.asc,id.asc`),
       db(`reference_analysis?source_reference_id=eq.${input}&analysis_version=in.(perez-slides-v1,phase0-multiformat-v1)&select=id,analysis_version,inspection_status,topic,angle,hook_family,emotional_tone,visual_style,opener_treatment,proof_placement,cta_structure,inferred,observed,updated_at&order=updated_at.desc,id.asc&limit=1`),
       all(`carousel_search_documents?source_reference_id=eq.${input}&enabled=eq.true&select=id,slide_position,kind,evidence_class,content,metadata,inspection_status&order=id.asc`),
+      db(`source_discovery_evidence?source_reference_id=eq.${input}&source_format=eq.carousel&select=id,media_urls&order=last_seen_at.desc.nullslast,id.asc&limit=1`),
     ]);
     let savedAnalysis = analysis[0] ?? null;
     const inferred = savedAnalysis?.inferred && typeof savedAnalysis.inferred === "object" && !Array.isArray(savedAnalysis.inferred)
@@ -127,7 +129,7 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
       }
     }
     // Missing analysis is explicit; model text is saved evidence, not human approval.
-    return { reference: refs[0], slides: beats, analysis: savedAnalysis, documents, reading_required: !analysis.length, evidence_scope: "external_market_reference" };
+    return { reference: refs[0], slides: refs[0].format === "carousel" ? attachSlideMedia(beats, mediaEvidence[0]) : beats, analysis: savedAnalysis, documents, reading_required: !analysis.length, evidence_scope: "external_market_reference" };
   } catch (error) {
     if (controller.signal.aborted) throw new CatalogError(504, "SEARCH_TIMEOUT", "Search exceeded 20 seconds. Try a narrower query.");
     if (error instanceof CatalogError) throw error;

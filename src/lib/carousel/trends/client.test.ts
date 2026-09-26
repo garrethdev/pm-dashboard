@@ -2,6 +2,20 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { callCatalog } from "./client";
 import { readSearchBody } from "./http";
 import { analysisGroups } from "./analysis";
+it("connects canonical carousel beats to the latest source image list", async () => {
+  const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+    const path = String(url);
+    if (path.includes("references_unified?")) return Response.json([{ id: 1, format: "carousel" }]);
+    if (path.includes("reference_beats?")) return Response.json([{ id: "beat", position: 1, visible_copy: "Saved copy" }]);
+    if (path.includes("source_discovery_evidence?")) return Response.json([{ id: "source", media_urls: ["https://example.com/slide.jpg"] }]);
+    return Response.json([]);
+  });
+  expect(await callCatalog("carousel", "1", fetcher)).toMatchObject({ slides: [{ visible_copy: "Saved copy", media: { url: "https://example.com/slide.jpg" }, media_source: { id: "source", position: 1 } }], reading_required: true });
+  const query = new URL(String(fetcher.mock.calls.find(([url]) => String(url).includes("source_discovery_evidence?"))![0]));
+  expect(query.searchParams.get("source_reference_id")).toBe("eq.1");
+  expect(query.searchParams.get("source_format")).toBe("eq.carousel");
+  expect(query.searchParams.get("order")).toBe("last_seen_at.desc.nullslast,id.asc");
+});
 beforeEach(() => {
   vi.stubEnv("SUPABASE_URL", "https://project.supabase.co");
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "private-key");

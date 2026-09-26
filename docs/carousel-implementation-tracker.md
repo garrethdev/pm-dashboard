@@ -33,6 +33,24 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 05:02 UTC continuation
+
+- Main remains `781fb20`; branch was clean and no worker agents active.
+- DEV-42 media adapter now reads the latest carousel discovery record's ordered
+  `media_urls`. Attaches URLs/provenance only when count equals contiguous beat
+  positions and every URL is valid/distinct. Invalid or ambiguous lists remain
+  unavailable, never compacted or replaced with the cover. Search-card matched
+  imagery is still separate unfinished work.
+- Read-only live adapter check passed for three canonical carousels with 1, 7
+  and 8 slides: 16/16 slide rows received saved image URLs; all 18 requests were
+  HTTP 200. URLs were not fetched/rendered, so asset availability and visual
+  correspondence are not certified. Initial discovery-only samples were rejected
+  as non-carousel by the canonical reference filter; provider format alone is
+  not authoritative.
+- Local tests, typecheck and focused lint pass. Browser/manual/vision QA remains
+  blocked; no full ticket newly certified. No writes, deployment or new workers.
+- No revised end-to-end ETA is supported until a full generation path is measured.
+
 ### September 26, 04:42 UTC continuation
 
 - Main re-fetched: still `781fb20`; no active worker agents or overlapping edits.
