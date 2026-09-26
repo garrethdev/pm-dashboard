@@ -20,6 +20,66 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## Unmerged branch — Carousel Generator connected end to end (2026-09-25)
+
+**Where it came from:** Garreth asked for the prototyped D1 to D16 screens to
+be finished and connected, with manual click-through testing and a visual
+review against the design export. Branch `claude/carousel-generator-connect`,
+on top of the Codex backend foundation.
+
+**What a person can now do.** Open the Carousel Generator from the Generate
+hub and land on **Overview**; see every carousel type with its supply, its
+last batch and what it is waiting for; open a type and read its template,
+its versions, its batches and the rows sitting in its lane table; write and
+save the type's **Writing** as numbered versions; press **Generate**, choose
+the count, the library, a note, the template's per-batch lines and Auto mode;
+watch the batch write deck by deck with the real writer; regenerate a deck
+with feedback, retry a failed one, discard one, change its track; press
+**Render (n) decks** and see every slide painted; press **Approve (n)
+decks**; find the batch again on **History** and on the type's page; get a
+bell item when a batch is written or finished; browse **Image libraries** and
+their sets; draft a template in the **Studio** from an idea or from a
+reference, edit its boxes and slides, and save it as a new carousel type;
+scroll the **Trends** feed of carousels not yet seen, vote, save, read the
+details window, and accept or reject knowledge rules.
+
+**Database (applied to the live project on 2026-09-25, additive only):** new
+tables for templates and their versions, Writing versions, image libraries
+with sets and images, and the per-person Trends tables (saved, votes, seen)
+and the digest table; new columns and wider status checks on the three draft
+tables, which were empty; a view that unions the two image banks into
+libraries; two seeded read-only libraries and the two seeded templates
+(Glow Up version 1, Covered Eye version 1). Every new table has row-level
+security on with no policies, so only the server reaches it. The migration
+file is `supabase/migrations/20260925120000_carousel_generator_foundation.sql`;
+its second and third steps (asset URLs for the Glow Up bank, and the deck
+version rule) are recorded at its foot.
+
+**Confirmed live:** a three-deck Glow Up batch was written by the real writer
+(Claude Sonnet 4.6 through OpenRouter), gated, given tracks from the music
+library, and shown on the batch page; the Writing version was saved and read
+back by query; the Overview, Carousel types, Generate, batch, History, type
+page and libraries screens were opened in the browser on the live data.
+
+**Not built yet, said plainly:**
+- The painter paints each slide as a preview drawing (the picked photos and
+  the copy at the template's true size) and shows it on the batch page. It
+  does **not** yet rasterise to PNG or JPEG with the bundled font files, and
+  nothing is uploaded or written to a lane table, so a rendered deck stays
+  inside the generator's own tables and never reaches the scheduler. That is
+  the step that needs a native image library on the server.
+- Auto mode runs inside the app's own process, kicked off by the request that
+  started or continued the batch. If the process stops mid-batch the batch
+  reads Stopped after a minute and Continue picks it up. Where the worker
+  should live for good (a queue or a scheduled job) is DEV-48's open
+  question and is not decided here.
+- The lane-creation function behind Go Live, the Higgsfield image generation,
+  uploads into a library, AI tagging of images, the digest capture from n8n,
+  analysis on demand for an unread reference, and the writing conversation on
+  Claude are shown as unavailable on their screens rather than pretended.
+- The vision check after rendering is not run; a rendered deck is not
+  re-flagged by a model.
+
 ## Unmerged branch — Carousel frontend and integration groundwork (2026-09-25)
 
 **Where it came from:** Garreth requested implementation against the September

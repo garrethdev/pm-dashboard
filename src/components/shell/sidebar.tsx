@@ -20,6 +20,11 @@ import {
   SignOut,
   Smartphone,
   X,
+  LayoutDashboard,
+  History,
+  Images,
+  PaintBrush,
+  TrendUp,
 } from "@/components/ui/icons";
 import { SidebarToggleIcon } from "@/components/ui/sidebar-toggle-icon";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
@@ -95,22 +100,26 @@ const CAROUSEL_NAV: NavConfig = {
     {
       label: "Carousel Generator",
       items: [
+        // Overview is the landing (D16, approved 2026-09-22); Carousel types
+        // moved to /types and keeps its item. No item carries a count.
+        {
+          label: "Overview",
+          href: "/carousel-generator",
+          icon: LayoutDashboard,
+          isActive: (pathname) => pathname === "/carousel-generator" || pathname.startsWith("/carousel-generator/batches"),
+        },
         {
           label: "Carousel types",
-          href: "/carousel-generator",
+          href: "/carousel-generator/types",
           icon: Cards,
           // A type's own page and its Generate form belong to this row too.
           isActive: (pathname) =>
-            pathname === "/carousel-generator" ||
-            pathname.startsWith("/carousel-generator/types") ||
-            pathname.startsWith("/carousel-generator/generate"),
+            pathname.startsWith("/carousel-generator/types") || pathname.startsWith("/carousel-generator/generate"),
         },
-        {
-          label: "Trends",
-          href: "/carousel-generator/trends",
-          icon: ChartBar,
-          isActive: under("/carousel-generator/trends"),
-        },
+        { label: "History", href: "/carousel-generator/history", icon: History, isActive: under("/carousel-generator/history") },
+        { label: "Image libraries", href: "/carousel-generator/library", icon: Images, isActive: under("/carousel-generator/library") },
+        { label: "Studio", href: "/carousel-generator/studio", icon: PaintBrush, isActive: under("/carousel-generator/studio") },
+        { label: "Trends", href: "/carousel-generator/trends", icon: TrendUp, isActive: under("/carousel-generator/trends") },
       ],
     },
   ],

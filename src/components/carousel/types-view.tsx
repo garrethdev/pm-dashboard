@@ -1,66 +1,125 @@
 "use client";
 
+/**
+ * Carousel types (D1, with D12's waiting words and D13's Needs writing).
+ * Every card: the name, the character and slides pills, View details (posts
+ * left, days of cover, median views), then the footer with the last batch,
+ * the waiting words when a batch waits for a press, and Generate — accent
+ * when the type is the one most in need, or Open running batch.
+ */
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { CarouselTypeSummary } from "@/lib/carousel/types/catalog";
+import { useState } from "react";
+import { Accent, Btn, LoadError, Pill, shortDate, slidesText, useJson } from "@/components/carousel/kit";
+import { ChevronDown, ChevronRight, Plus } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
+import type { CarouselType } from "@/server/carousel/repo/types";
+import { batchWords } from "@/server/carousel/status-words";
 
-function TypeCard({ type }: { type: CarouselTypeSummary }) {
-  const retired = type.lifecycle === "retired";
-  return <article className="rounded-[24px] border border-border bg-card p-5">
-    <h2 className="font-semibold text-text-primary">{type.name}</h2>
-    <div className="mt-2 flex flex-wrap gap-2 text-xs text-text-muted">
-      <span className="rounded-full bg-card-raised px-2.5 py-1">{type.character}</span>
-      {type.lifecycle !== "live" && <span className="rounded-full bg-card-raised px-2.5 py-1">{type.lifecycle}</span>}
-    </div>
-    <details className="my-4 border-y border-border py-3 text-sm text-text-muted">
-      <summary className="cursor-pointer">View details</summary>
-      <dl className="mt-3 space-y-2 text-xs">
-        <div><dt>Registry key</dt><dd className="break-all text-text-primary">{type.id}</dd></div>
-        <div><dt>Generator setup</dt><dd>Template, Writing and image library are not connected yet.</dd></div>
-      </dl>
-    </details>
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-xs text-text-muted">{retired ? "Retired" : "Setup unavailable"}</span>
-      {!retired && <Link href={`/carousel-generator/generate?type=${encodeURIComponent(type.id)}`}
-        className="rounded-full bg-accent px-4 py-2 text-xs font-medium text-bg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">Generate</Link>}
-    </div>
-  </article>;
+function TypeCard({ t, accent }: { t: CarouselType; accent: boolean }) {
+  const [open, setOpen] = useState(false);
+  const retired = t.lifecycle === "retired";
+  const running = t.runningBatch;
+  const waiting = t.waitingBatch ? batchWords(t.waitingBatch) : null;
+  const cover = t.daysOfCover;
+  return (
+    <article className={cn("flex flex-col gap-3 rounded-card border border-border bg-card p-5 shadow-card", retired && "opacity-70")}>
+      <Link href={`/carousel-generator/types/${t.slug}` as never} className="truncate text-left text-[15px] font-semibold tracking-[-0.01em] underline decoration-transparent underline-offset-4 hover:decoration-text-muted" title={t.name}>
+        {t.name}
+      </Link>
+      <div className="flex flex-wrap gap-1.5">
+        <Pill>{t.character}</Pill>
+        {slidesText(t) && <Pill className="tnum">{slidesText(t)}</Pill>}
+        {t.lifecycle === "not_wired" && <Pill>Not wired</Pill>}
+        {!t.writing && !retired && <Pill>Needs writing</Pill>}
+      </div>
+      <div className="border-y border-border">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center justify-between py-2.5 text-xs font-medium text-text-muted hover:text-text-primary">
+          <span>View details</span>
+          <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
+        </button>
+        <div className={cn("grid transition-[grid-template-rows] duration-200", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+          <div className="overflow-hidden">
+            <div className="grid grid-cols-3 gap-2 pb-3">
+              <div><div className="text-lg font-semibold tnum">{t.postsLeft ?? "—"}</div><div className="text-[11px] text-text-muted">Posts left</div></div>
+              <div><div className={cn("text-lg font-semibold tnum", cover !== null && cover <= 2 && "text-danger")}>{cover ?? "—"}</div><div className="text-[11px] text-text-muted">Days of cover</div></div>
+              <div><div className="text-lg font-semibold tnum">{t.medianViews !== null ? t.medianViews.toLocaleString() : "—"}</div><div className="text-[11px] text-text-muted">Median views</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {t.lastBatch && !waiting && <span className="text-xs text-text-muted tnum">Last batch {shortDate(t.lastBatch.createdAt)}</span>}
+        {waiting && (
+          <Link href={waiting.href as never} className="inline-flex items-center gap-1 rounded-full bg-pill-bg px-2.5 py-0.5 text-xs font-medium text-text-primary tnum">
+            {waiting.label} <ChevronRight className="size-3" />
+          </Link>
+        )}
+        <span className="ml-auto flex items-center gap-2">
+          {retired ? null : running ? (
+            <Btn href={`/carousel-generator/batches/${running.id}`}>Open running batch</Btn>
+          ) : accent ? (
+            <Accent small href={`/carousel-generator/generate?type=${encodeURIComponent(t.id)}`}>Generate</Accent>
+          ) : (
+            <Btn href={`/carousel-generator/generate?type=${encodeURIComponent(t.id)}`}>Generate</Btn>
+          )}
+        </span>
+      </div>
+    </article>
+  );
 }
 
-/** Load failures stay failures: an unavailable database must not look like first run. */
-export function TypesView() {
-  const [types, setTypes] = useState<CarouselTypeSummary[] | null>(null);
-  const [error, setError] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    async function load() {
-      try {
-        const response = await fetch("/api/carousel-generator/types", { signal: controller.signal });
-        if (!response.ok) throw new Error(response.status === 401 ? "Your session expired. Sign in again." : "Carousel types could not be loaded.");
-        const data = await response.json();
-        if (!Array.isArray(data.types)) throw new Error("Unexpected carousel catalog response.");
-        setTypes(data.types);
-      } catch (cause) {
-        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Unable to load types.");
-      }
-    }
-    void load();
-    return () => controller.abort();
-  }, [attempt]);
-  const active = types?.filter(type => type.lifecycle !== "retired") ?? [];
-  const retired = types?.filter(type => type.lifecycle === "retired") ?? [];
-  return <section aria-labelledby="carousel-types-heading">
-    <header className="mb-7 flex items-center justify-between gap-4">
-      <h1 id="carousel-types-heading" className="text-xl font-semibold">Carousel types</h1>
-      <button disabled title="Studio creation is not connected yet" className="rounded-full bg-card-raised px-4 py-2 text-xs text-text-muted disabled:cursor-not-allowed">+ New carousel type</button>
-    </header>
-    {error ? <div role="alert" className="rounded-[24px] border border-border bg-card p-6">
-      <p>{error}</p><button className="mt-4 rounded-full bg-card-raised px-4 py-2 text-sm" onClick={() => { setError(""); setAttempt(value => value + 1); }}>Retry</button>
-    </div> : types === null ? <p role="status" className="text-sm text-text-muted">Loading carousel types…</p> : <>
-      {active.length === 0 && <div className="rounded-[24px] border border-border bg-card p-8 text-center"><h2 className="font-semibold">No active carousel types</h2><p className="mt-2 text-sm text-text-muted">There are no active carousel entries in the registry.</p></div>}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">{active.map(type => <TypeCard key={type.id} type={type} />)}</div>
-      {retired.length > 0 && <details className="mt-7"><summary className="cursor-pointer text-sm text-text-muted">Retired · {retired.length}</summary><div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">{retired.map(type => <TypeCard key={type.id} type={type} />)}</div></details>}
-    </>}
-  </section>;
+export function TypesView({ initial }: { initial: CarouselType[] | null }) {
+  const { data, error, reload } = useJson<{ types: CarouselType[] }>(initial ? null : "/api/carousel-generator/types-full");
+  const types = data?.types ?? initial;
+  const [retiredOpen, setRetiredOpen] = useState(false);
+  if (!types) {
+    return (
+      <div className="flex flex-col gap-5">
+        <h1 className="text-xl font-semibold">Carousel types</h1>
+        <LoadError message={error ?? "Carousel types could not be loaded"} onRetry={reload} />
+      </div>
+    );
+  }
+  const live = types.filter((t) => t.lifecycle !== "retired");
+  const retired = types.filter((t) => t.lifecycle === "retired");
+  // The accent goes to the type with the least cover; the rest are secondary (D1).
+  const most = live.filter((t) => t.daysOfCover !== null && !t.runningBatch).sort((a, b) => a.daysOfCover! - b.daysOfCover!)[0];
+  return (
+    <div className="flex flex-1 flex-col gap-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-[-0.02em]">Carousel types</h1>
+        <Btn href="/carousel-generator/studio"><Plus className="size-3" />New carousel type</Btn>
+      </div>
+      {live.length === 0 && retired.length === 0 ? (
+        <div data-empty-fill="" className="flex min-h-[360px] flex-1 flex-col items-center justify-center gap-4 rounded-card border border-border bg-card-sunken px-7 py-11 text-center">
+          <h4 className="text-base font-semibold">No carousel types</h4>
+          <Accent href="/carousel-generator/studio">New carousel type</Accent>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
+            {live.map((t) => (
+              <TypeCard key={t.id} t={t} accent={t.id === most?.id} />
+            ))}
+          </div>
+          {retired.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <button type="button" onClick={() => setRetiredOpen((o) => !o)} aria-expanded={retiredOpen} className="flex w-fit items-center gap-2 text-sm text-text-muted hover:text-text-primary">
+                <ChevronRight className={cn("size-3.5 transition-transform", retiredOpen && "rotate-90")} />
+                <span>Retired</span>
+                <Pill className="tnum">{retired.length}</Pill>
+              </button>
+              {retiredOpen && (
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                  {retired.map((t) => (
+                    <TypeCard key={t.id} t={t} accent={false} />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
 }

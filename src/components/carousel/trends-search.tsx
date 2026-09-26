@@ -8,8 +8,8 @@ import { SEARCH_CHANNELS, mediaUrl, plainText, safeWebUrl, searchSummary, type S
 /** Submit-driven search, not a substitute for DEV-36/45's ranked unseen feed.
  * A request sequence prevents a slower old search replacing a newer result.
  */
-export function TrendsSearch() {
-  const [query, setQuery] = useState("");
+export function TrendsSearch({ compact = false, onSearching, initialQuery = "" }: { compact?: boolean; onSearching?: (on: boolean) => void; initialQuery?: string } = {}) {
+  const [query, setQuery] = useState(initialQuery);
   const [channel, setChannel] = useState<SearchChannel>("meaning");
   const [creator, setCreator] = useState("");
   const [topic, setTopic] = useState("");
@@ -23,6 +23,9 @@ export function TrendsSearch() {
   const sequence = useRef(0);
   const lastSearch = useRef<{ query: string; channel: SearchChannel; filters: { creator?: string; topic?: string } } | null>(null);
   useEffect(() => () => request.current?.abort(), []);
+  // The page swaps the feed out while a search is on screen (D10: results replace the feed in place).
+  const searching = Boolean(pending || error || result);
+  useEffect(() => { onSearching?.(searching); }, [searching, onSearching]);
 
   async function search(retry = false) {
     const body = retry ? lastSearch.current : { query: query.trim(), channel, filters: { ...(creator.trim() ? { creator: creator.trim() } : {}), ...(topic.trim() ? { topic: topic.trim() } : {}) } };
@@ -57,8 +60,8 @@ export function TrendsSearch() {
     }
   }
   const filterCount = Number(Boolean(creator.trim())) + Number(Boolean(topic.trim()));
-  return <section aria-labelledby="trends-heading" className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-    <header className="flex flex-wrap items-center justify-between gap-4"><h1 id="trends-heading" className="text-xl font-semibold">Trends</h1><span className="text-xs text-text-muted">Carousel search</span></header>
+  return <section aria-label="Search" className={compact ? "flex w-full flex-col gap-4" : "mx-auto flex w-full max-w-5xl flex-col gap-5"}>
+    {!compact && <header className="flex flex-wrap items-center justify-between gap-4"><h1 className="text-xl font-semibold">Trends</h1><span className="text-xs text-text-muted">Carousel search</span></header>}
     <form onSubmit={event => { event.preventDefault(); void search(); }} className="flex flex-wrap items-center gap-2">
       <div className="flex min-w-0 flex-1 items-center rounded-full border border-border bg-card px-4">
         <label htmlFor="carousel-search" className="sr-only">Search carousels</label>
@@ -77,7 +80,7 @@ export function TrendsSearch() {
     </form>}
     {pending && <div role="status"><p className="mb-4 text-sm text-text-muted">Searching for “{pending}”…</p><div className="grid grid-cols-3 gap-1 sm:gap-3">{Array.from({ length: 6 }, (_, index) => <div key={index} className="aspect-[4/5] rounded-xl bg-card-raised motion-safe:animate-pulse" />)}</div></div>}
     {error && <div role="alert" className="rounded-2xl border border-border p-5"><p>{error}</p><button type="button" onClick={() => void search(true)} className="mt-3 rounded-full border border-border px-4 py-2 text-sm">Retry</button></div>}
-    {!pending && !error && !result && <p className="py-12 text-center text-sm text-text-muted">Search the saved carousel library. The ranked feed is not connected yet.</p>}
+    {!compact && !pending && !error && !result && <p className="py-12 text-center text-sm text-text-muted">Search the saved carousel library.</p>}
     {result && <>
       <p role="status" className="text-sm text-text-muted">{searchSummary(result)}</p>
       <div className="flex flex-wrap gap-2">{Object.entries(appliedFilters).map(([key, value]) => <button key={key} type="button" aria-label={`Remove ${key} filter ${value}`} onClick={() => removeFilter(key as "creator" | "topic")} className="rounded-full border border-border px-3 py-1 text-xs">{value} ×</button>)}</div>
