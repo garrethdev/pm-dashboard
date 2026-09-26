@@ -39,6 +39,21 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 08:22 UTC continuation
+
+- Main remains `781fb20`; clean starting tree, no active worker agents.
+- Added deck-background adapter connecting validated templates and saved image
+  manifests to actual raster composition. Preflights all required bytes, snapshots
+  them, reuses repeated URLs, bounds deck input/output bytes and keeps slide numbers.
+  Returns explicit `image_backgrounds` / `finalSlides: false`, lossless PNG only.
+- 613 tests / 48 files, typecheck and focused lint pass. Integration test renders
+  all six 1080×1920 fixture backgrounds, decodes dimensions and checks pixels;
+  missing slide-6 asset is rejected. An initial invalid two-slide fixture was
+  corrected to the full contiguous template; production validation was preserved.
+- Tests do not verify captions, real-source appearance, uploads, persistence or
+  app click-through. Manual/vision QA still blocked; no full ticket newly complete.
+  No live credentials retried, writes or deployment; revised ETA remains unverified.
+
 ### September 26, 08:02 UTC continuation
 
 - Main remains `781fb20`; clean starting tree and no active worker agents.
