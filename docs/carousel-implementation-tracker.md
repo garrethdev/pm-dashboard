@@ -23,6 +23,12 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Blockers (continue other work)
 
+- September 26 06:02 UTC: auto-review rejected the next Vercel environment
+  credential retrieval as insufficiently specifically authorized. Do not retry
+  or use an indirect credential path. Explicit user approval is needed to retrieve
+  development database credentials for further read-only verification. Earlier
+  successful receipts remain historical evidence, not authorization to bypass this.
+
 - Browser sign-in: September 25 request to open the dashboard was refused before navigation because the browser security policy could not be verified. No magic-link email sent. User supplied garrethdottin@gmail.com and will return a link after successful initiation. Do not bypass browser controls.
 - Live REST access and generation table columns verified September 26 using existing Vercel development-scoped credentials. SQL constraints, applied migrations, RLS and function grants still need catalog verification before migration changes. Existing generation extensions MUST be reused; see `carousel-live-access-receipt.md`.
 - The tickets identify unresolved schema and Go Live view-composition choices. Preserve legacy image_direction until its use is verified; do not drop it.
@@ -32,6 +38,22 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 - No production merge/deploy or live social posting is included in autonomous testing; use isolated test data and preview.
 
 ## Per-ticket ledger (62 entries)
+
+### September 26, 06:02 UTC continuation
+
+- Main remains `781fb20`; clean starting tree and no active worker agents.
+- Added a pinned template-version reader: exact template ID/version, duplicate
+  detection, identity checks, generation validation and JSON/version consistency.
+  No substitution of a newer active version during retries; no mutation or silent
+  repair of legacy template settings. This is not yet wired to a durable batch run.
+- 549 tests / 41 files passed, along with typecheck and focused lint. Regression
+  coverage includes invalid identities, missing/duplicate rows, version mismatch,
+  inactive pinned versions, legacy safety settings and sanitized read errors.
+- Live smoke check was blocked before execution by credential-access auto-review.
+  No live-template validation result is claimed. User approval requested; continue
+  unrelated local work without bypassing this decision.
+- No new full ticket certified. Browser/manual/vision QA and full generation remain
+  incomplete; no evidence-supported revised ETA. No live writes or deployment.
 
 ### September 26, 05:42 UTC continuation
 
