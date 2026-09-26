@@ -107,8 +107,8 @@ export async function callCatalog(operation: CatalogOperation, input?: unknown, 
     const refs = await db(`references_unified?id=eq.${input}${operation === "carousel" ? "&format=eq.carousel" : ""}&select=id,format,creator_handle,platform,source_url,thumbnail_url,views,likes,saves,published_at`);
     if (!refs.length) throw new CatalogError(404, "REFERENCE_NOT_FOUND", "Reference not found.");
     const [beats, analysis, documents] = await Promise.all([
-      all(`reference_beats?source_reference_id=eq.${input}&select=id,position,media,visual,visible_copy,visual_description,inspection_status&order=position.asc,id.asc`),
-      db(`reference_analysis?source_reference_id=eq.${input}&analysis_version=eq.perez-slides-v1&select=id,analysis_version,inspection_status,topic,hook_family,updated_at&limit=1`),
+      all(`reference_beats?source_reference_id=eq.${input}&select=id,position,media,visual,visible_copy,visual_description,narrative_role,inspection_status&order=position.asc,id.asc`),
+      db(`reference_analysis?source_reference_id=eq.${input}&analysis_version=in.(perez-slides-v1,phase0-multiformat-v1)&select=id,analysis_version,inspection_status,topic,angle,hook_family,emotional_tone,visual_style,opener_treatment,proof_placement,cta_structure,inferred,observed,updated_at&order=updated_at.desc,id.asc&limit=1`),
       all(`carousel_search_documents?source_reference_id=eq.${input}&enabled=eq.true&select=id,slide_position,kind,evidence_class,content,metadata,inspection_status&order=id.asc`),
     ]);
     // Missing analysis is explicit; model text is saved evidence, not human approval.

@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 02:21 UTC continuation
+
+- Main refreshed at 781fb20; clean starting tree, no active worker agents.
+- Detail query now selects documented analysis fields/inferred/coverage and narrative roles, and accepts either perez-slides-v1 or phase0-multiformat-v1, choosing the latest saved row. Column definitions checked against the tracked intelligence-engine migration; live shape remains unverified.
+- Added explicit allow-listed presentation and native disclosure groups: Summary (initially open), How it works, Reusable pattern, Audience response. Empty rows/groups omitted; partial analysis preserved; model bookkeeping not rendered. Code words receive one centralized plain-word conversion. Transcription adds saved coverage, opening-slide label, visual descriptions and narrative tags. Only a complete inspected wordless slide is called wordless; uninspected missing copy remains unknown.
+- Nine projection tests added; 472 tests pass across 37 files, plus type-check and targeted lint. Native disclosures are implementation, not browser QA proof.
+- DEV-42 remains partial: phase0 story lookup in reference_format_evaluations, full caption, empty-audience explanation, read/retry actions, save/vote/Studio and all-entry-point/live verification remain. No new manual or vision pass, live database reads or deployment. No full ticket certified; ETA still unverified.
+
 ### September 26, 02:01 UTC continuation
 
 - Main fetched at 781fb20; no conflicting work. Used the user-requested vision agent for read-only reference review of D10-PhoneDetailsLight and D10-PhoneAnalysisUpLight; this is not live QA.

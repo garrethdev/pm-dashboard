@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CatalogImage } from "./catalog-image";
+import { SavedAnalysis } from "./saved-analysis";
+import { codeLabel, coverageLabel } from "@/lib/carousel/trends/analysis";
 import { initialSlide, mediaUrl, metric, plainText, safeWebUrl, type CarouselDetail } from "@/lib/carousel/trends/presentation";
 
 /** Native modal supplies focus trapping/Escape; closing preserves the search grid. */
@@ -77,14 +79,11 @@ export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string
             <div className="grid grid-cols-3 gap-2">{["views", "likes", "saves"].map(key => <div key={key} className="rounded-2xl bg-card-raised p-3"><p className="text-xs capitalize text-text-muted">{key}</p><p className="tnum mt-2">{metric(detail.reference[key]) ?? "Unknown"}</p></div>)}</div>
             <dl className="space-y-3"><div className="flex justify-between gap-3"><dt>Posted</dt><dd>{plainText(detail.reference.published_at) || "Unknown"}</dd></div><div className="flex justify-between gap-3"><dt>Platform</dt><dd>{plainText(detail.reference.platform) || "Unknown"}</dd></div><div className="flex justify-between"><dt>Saved slides</dt><dd className="tnum">{detail.slides.length}</dd></div></dl>
           </>}
-          {tab === "Analysis" && <>
-            {detail.reading_required && <p className="text-text-muted">No saved analysis yet.</p>}
-            {detail.analysis && <dl className="space-y-3">{Object.entries(detail.analysis).filter(([key, value]) => ["topic", "hook_family"].includes(key) && typeof value === "string").map(([key, value]) => <div key={key}><dt className="text-xs capitalize text-text-muted">{key.replaceAll("_", " ")}</dt><dd className="mt-1 whitespace-pre-wrap">{plainText(value)}</dd></div>)}</dl>}
-            {detail.documents.length > 0 && <h4 className="font-medium">Saved evidence</h4>}
-            {detail.documents.map((document, index) => <section key={String(document.id ?? index)} className="border-t border-border pt-3"><h4 className="text-xs text-text-muted">{plainText(document.kind)}</h4><p className="mt-2 whitespace-pre-wrap">{plainText(document.content)}</p></section>)}
-            <p className="text-xs text-text-muted">Saved model observations are not proof of causation.</p>
+          {tab === "Analysis" && <SavedAnalysis detail={detail} />}
+          {tab === "Transcription" && <>
+            {coverageLabel(detail.analysis) && <p className="text-xs text-text-muted">{coverageLabel(detail.analysis)}</p>}
+            {detail.slides.length ? detail.slides.map((item, index) => <section key={String(item.id ?? index)}><h4 className="text-xs text-text-muted">{item.position === 1 ? "Opening slide" : `Slide ${String(item.position ?? index + 1)}`}</h4><p className="mt-2 whitespace-pre-wrap">{plainText(item.visible_copy) || (item.inspection_status === "complete" ? "No words on this slide" : "No saved transcription for this slide.")}</p>{plainText(item.visual_description) && <p className="mt-2 whitespace-pre-wrap text-xs text-text-muted">{plainText(item.visual_description)}</p>}{codeLabel(item.narrative_role) && <p className="mt-2 text-xs text-text-muted">{codeLabel(item.narrative_role)}</p>}</section>) : <p className="text-text-muted">No saved transcription.</p>}
           </>}
-          {tab === "Transcription" && (detail.slides.length ? detail.slides.map((item, index) => <section key={String(item.id ?? index)}><h4 className="text-xs text-text-muted">Slide {String(item.position ?? index + 1)}</h4><p className="mt-2 whitespace-pre-wrap">{plainText(item.visible_copy) || "No saved transcription for this slide."}</p></section>) : <p className="text-text-muted">No saved transcription.</p>)}
         </div>
         <footer className="flex shrink-0 justify-end border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{source && <a href={source} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center rounded-full border border-border px-4 py-2 text-xs">View Post ↗</a>}</footer>
       </div>
