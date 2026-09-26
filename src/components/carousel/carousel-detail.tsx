@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { CatalogImage } from "./catalog-image";
 import { SavedAnalysis } from "./saved-analysis";
 import { codeLabel, coverageLabel } from "@/lib/carousel/trends/analysis";
+import { outsideDialog, visibleSlideIndices } from "@/lib/carousel/trends/viewer";
 import { initialSlide, mediaUrl, metric, plainText, safeWebUrl, parseCarouselDetail, type CarouselDetail } from "@/lib/carousel/trends/presentation";
 
 /** Native modal supplies focus trapping/Escape; closing preserves the search grid. */
 export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string; matchedSlide: unknown; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const startedOnBackdrop = useRef(false);
   const [detail, setDetail] = useState<CarouselDetail | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -25,7 +27,7 @@ export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     node?.showModal();
-    return () => { document.body.style.overflow = overflow; node?.close(); if (previous instanceof HTMLElement) previous.focus(); };
+    return () => { document.body.style.overflow = overflow; node?.close(); if (previous instanceof HTMLElement) previous.focus({ preventScroll: true }); };
   }, []);
   useEffect(() => {
     const controller = new AbortController();
@@ -43,7 +45,13 @@ export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string
   const current = detail?.slides[slide];
   const source = safeWebUrl(detail?.reference.source_url);
   const handle = plainText(detail?.reference.creator_handle) || "Unknown creator";
-  return <dialog ref={dialog} onCancel={onClose} onClose={onClose} aria-labelledby="carousel-detail-title" className="fixed inset-0 m-0 h-dvh max-h-dvh w-screen max-w-none overflow-hidden border-0 bg-card p-0 text-text-primary backdrop:bg-black/70 md:m-auto md:h-auto md:max-h-[94dvh] md:w-[min(1040px,96vw)] md:overflow-auto md:rounded-[24px] md:border md:border-border">
+  return <dialog ref={dialog} onCancel={onClose} onClose={onClose} aria-modal="true" aria-labelledby="carousel-detail-title" onPointerDown={event => {
+    startedOnBackdrop.current = event.target === event.currentTarget && outsideDialog(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
+  }} onPointerCancel={() => { startedOnBackdrop.current = false; }} onClick={event => {
+    const dismiss = startedOnBackdrop.current && event.target === event.currentTarget && outsideDialog(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
+    startedOnBackdrop.current = false;
+    if (dismiss) onClose();
+  }} className="fixed inset-0 m-0 h-dvh max-h-dvh w-screen max-w-none overflow-hidden border-0 bg-card p-0 text-text-primary backdrop:bg-black/70 md:m-auto md:h-auto md:max-h-[94dvh] md:w-[min(1040px,96vw)] md:overflow-auto md:rounded-[24px] md:border md:border-border">
     <div className="flex h-14 items-center justify-between border-b border-border px-4 md:justify-end md:border-0 md:p-3">
       <div className="min-w-0 pr-3 md:hidden"><p className="truncate text-sm font-semibold">{handle}</p><p className="truncate text-xs text-text-muted">{plainText(detail?.reference.platform)}{typeof matchedSlide === "number" ? ` · Matches on slide ${matchedSlide}` : ""}</p></div>
       <button autoFocus type="button" aria-label="Close carousel details" onClick={onClose} className="size-11 shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2">×</button>
@@ -63,6 +71,9 @@ export function CarouselDetailDialog({ id, matchedSlide, onClose }: { id: string
           <span aria-live="polite" className="sr-only tnum rounded-full bg-card/90 px-2 py-1 text-xs text-text-muted md:not-sr-only">{detail.slides.length ? `${slide + 1} / ${detail.slides.length}` : "No saved slides"}</span>
           <button type="button" disabled={slide >= detail.slides.length - 1} aria-label="Next slide" onClick={() => setSlide(value => value + 1)} className="size-11 rounded-full border border-border disabled:opacity-30">›</button>
         </div>
+        {detail.slides.length > 1 && <nav aria-label="Choose carousel slide" className="absolute inset-x-0 bottom-0 flex justify-center md:static">
+          {visibleSlideIndices(detail.slides.length, slide).map(index => <button key={index} type="button" aria-label={`Go to slide ${String(detail.slides[index].position ?? index + 1)}`} aria-current={index === slide ? "true" : undefined} onClick={() => setSlide(index)} className="flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-[-4px]"><span aria-hidden="true" className={`size-1.5 rounded-full ${index === slide ? "bg-text-primary" : "bg-text-muted/40"}`} /></button>)}
+        </nav>}
       </div>
       <div className={`absolute inset-x-0 bottom-0 flex min-h-0 min-w-0 flex-col rounded-t-[24px] bg-card shadow-2xl md:static md:h-auto md:rounded-none md:shadow-none ${expanded ? "h-[85dvh]" : "h-[37dvh]"}`}>
         {/* A real button provides a keyboard alternative to a drag-only sheet. */}

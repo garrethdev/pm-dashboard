@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 03:01 UTC continuation
+
+- Main refreshed at 781fb20, clean starting branch, no active worker agents.
+- Added accessible slide dots with a bounded seven-control window for long decks, actual saved-position labels and 44px controls. Desktop backdrop dismissal now requires both pointer start and click outside the dialog rectangle, preventing an inside-to-outside drag from closing it. Focus restoration uses preventScroll to retain the search position; explicit aria-modal added.
+- Ten navigation/geometry tests added; full suite 491 tests across 38 files passes, type-check and targeted lint pass. These are not browser interaction tests.
+- Retried manual browser access after inspecting existing tabs: dashboard navigation is still denied because the admin-enforced security policy cannot be verified. No sign-in email sent, no manual click-through or live visual proof obtained. No workaround attempted.
+- DEV-42 remains partial, including scroll-driven phone-sheet behavior and full live acceptance. Database/provider blockers unchanged. No merge or deployment, no newly certified full ticket and no supported ETA reduction.
+
 ### September 26, 02:41 UTC continuation
 
 - Main refreshed at 781fb20; clean starting tree, no active agents.
