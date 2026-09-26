@@ -16,7 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Check, ChevronDown, ChevronRight, Pencil, Table } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { BatchSummary, CarouselType, LaneRow, TemplateRecord, WritingVersion } from "@/server/carousel/repo/types";
-import { batchWords } from "@/server/carousel/status-words";
+import { batchWords, whileMoving } from "@/server/carousel/status-words";
 
 type Tab = "overview" | "writing" | "rows" | "go-live";
 const TABS: { id: Tab; label: string }[] = [
@@ -388,7 +388,7 @@ function GoLive({ d }: { d: Payload }) {
 
 export function TypePage({ slug, initial, tab }: { slug: string; initial: Payload | null; tab?: string }) {
   const search = useSearchParams();
-  const { data, error, reload } = useJson<Payload>(`/api/carousel-generator/types/${encodeURIComponent(slug)}`, { every: 15_000, initial });
+  const { data, error, reload } = useJson<Payload>(`/api/carousel-generator/types/${encodeURIComponent(slug)}`, { every: (d) => whileMoving(d?.batches), initial });
   // The address is the tab (D13: the query string is something a person
   // reads). It is written with the browser's own history so the switch is
   // instant: a router navigation re-ran the whole server page and the tab

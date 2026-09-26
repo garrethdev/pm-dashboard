@@ -257,10 +257,12 @@ export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet
   useEffect(() => {
     // Subscribing to an external system — the notifications endpoint — which
     // is exactly the case this rule exempts. The first call cannot wait for
-    // the 20s interval or the bell would be empty for the first 20 seconds.
+    // the interval or the bell would be empty until it fired. Once a minute,
+    // plus a re-read whenever the window regains focus (Garreth, 2026-09-26:
+    // the app does not need constant polling).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-    const t = setInterval(load, 20_000);
+    const t = setInterval(load, 60_000);
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
     return () => {

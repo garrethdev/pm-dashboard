@@ -14,7 +14,7 @@ import { DetailsWindow } from "@/components/carousel/details-window";
 import { ChevronRight, Flag, Images, LayoutList, Pause, Pencil, Play, SealCheck } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { BatchSummary, OverviewData, Reference } from "@/server/carousel/repo/types";
-import { batchWords, type BatchStage } from "@/server/carousel/status-words";
+import { batchWords, whileMoving, type BatchStage } from "@/server/carousel/status-words";
 
 const STAGE_ICON: Record<BatchStage, React.ComponentType<{ className?: string }>> = {
   writing: Pencil,
@@ -117,7 +117,7 @@ const EmptyMark = () => (
 );
 
 export function OverviewView({ initial }: { initial: OverviewData | null }) {
-  const { data, error, reload } = useJson<OverviewData>("/api/carousel-generator/overview", { every: 15_000, initial });
+  const { data, error, reload } = useJson<OverviewData>("/api/carousel-generator/overview", { every: (d) => whileMoving(d?.tasks), initial });
   const [open, setOpen] = useState<number | null>(null);
   const d = data ?? initial;
 

@@ -137,6 +137,20 @@ read is refused rather than written into the audit log as somebody else.
 Verified by typecheck, lint, the test suite and reloading the touched pages;
 the crash path has not met a real crash yet.
 
+**Polling cut back (2026-09-26, Garreth: the app does not need that
+frequency):** the generator's screens no longer re-read the server on a
+fixed clock. Overview, a type's page, History and a batch page now re-read
+only while a batch on that screen is actually writing or rendering (every
+five seconds, the batch page every two and a half), and go quiet the moment
+it is waiting on a person, stopped or done. A screen that is not polling
+re-reads once when you come back to the tab, so it is never older than the
+last time you looked. Pages that render on the server no longer fetch the
+same data a second time as soon as they open. The bell checks once a minute
+instead of every twenty seconds, and still re-checks when the window
+regains focus. Confirmed live: an open Overview made no requests in a
+minute; pressing Render on a batch produced one read for the press and one
+more two and a half seconds later, then nothing.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

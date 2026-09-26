@@ -7,7 +7,7 @@
  * colour is spelled out.
  */
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "@/components/ui/icons";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
 import { cn } from "@/lib/utils";
@@ -190,18 +190,37 @@ export function LoadError({ message, onRetry }: { message: string; onRetry?: () 
 }
 
 /** Load JSON from one of the generator's routes, with a Retry and optional polling. */
-export function useJson<T>(url: string | null, opts: { every?: number; initial?: T | null } = {}) {
+/**
+ * Read a JSON route. Server-rendered pages pass `initial`, and the hook then
+ * trusts it instead of fetching the same thing again on mount.
+ *
+ * `every` is how often to re-read while the page is open: a number, or a
+ * function of the latest data that answers null when nothing on the screen
+ * can change on its own (no batch writing or rendering). It is re-asked
+ * whenever the data changes, so a press that starts work starts the polling
+ * with it. A screen that is not polling still catches up when the person
+ * comes back to the tab.
+ */
+export function useJson<T>(url: string | null, opts: { every?: number | ((data: T | null) => number | null); initial?: T | null } = {}) {
   const [data, setData] = useState<T | null>(opts.initial ?? null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(!opts.initial && Boolean(url));
   const [tick, setTick] = useState(0);
+  const [settled, setSettled] = useState(0);
   const reload = useCallback(() => setTick((t) => t + 1), []);
+  const skipFirst = opts.initial != null;
+  const interval = useEffectEvent((latest: T | null): number | null => {
+    const e = opts.every;
+    if (typeof e === "function") return e(latest);
+    return e ?? null;
+  });
 
+  // The read itself. The first pass is skipped when the page already
+  // rendered the data on the server.
   useEffect(() => {
-    if (!url) return;
+    if (!url || (skipFirst && tick === 0)) return;
     let alive = true;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const load = async () => {
+    (async () => {
       try {
         const res = await fetch(url, { cache: "no-store" });
         const json = (await res.json().catch(() => ({}))) as { error?: string };
@@ -212,17 +231,41 @@ export function useJson<T>(url: string | null, opts: { every?: number; initial?:
       } catch (err) {
         if (alive) setError(err instanceof Error ? err.message : "Could not load");
       } finally {
-        if (alive) setLoading(false);
-        if (alive && opts.every && document.visibilityState !== "hidden") timer = setTimeout(load, opts.every);
-        else if (alive && opts.every) timer = setTimeout(load, opts.every * 3);
+        if (alive) {
+          setLoading(false);
+          setSettled((n) => n + 1);
+        }
       }
-    };
-    void load();
+    })();
     return () => {
       alive = false;
-      if (timer) clearTimeout(timer);
     };
-  }, [url, tick, opts.every]);
+  }, [url, tick, skipFirst]);
+
+  // The next read, decided from what is on screen now. Re-evaluated after
+  // every read and whenever the data is changed by a press.
+  useEffect(() => {
+    if (!url) return;
+    const wait = interval(data);
+    if (wait == null) return;
+    const t = setTimeout(() => setTick((n) => n + 1), document.visibilityState === "hidden" ? wait * 3 : wait);
+    return () => clearTimeout(t);
+  }, [url, data, settled]);
+
+  // Coming back to the tab re-reads once, so a screen that is not polling
+  // is never older than the moment the person last looked at it.
+  useEffect(() => {
+    if (!url) return;
+    const onBack = () => {
+      if (document.visibilityState === "visible") setTick((n) => n + 1);
+    };
+    document.addEventListener("visibilitychange", onBack);
+    window.addEventListener("focus", onBack);
+    return () => {
+      document.removeEventListener("visibilitychange", onBack);
+      window.removeEventListener("focus", onBack);
+    };
+  }, [url]);
 
   return { data, error, loading, reload, setData };
 }

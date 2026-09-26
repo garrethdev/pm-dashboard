@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BatchSummary } from "@/server/carousel/repo/types";
-import { batchWords } from "./status-words";
+import { batchWords, whileMoving } from "./status-words";
 
 const base = (patch: Omit<Partial<BatchSummary>, "counts"> & { counts?: Partial<BatchSummary["counts"]> }): BatchSummary => ({
   id: "b1",
@@ -74,5 +74,22 @@ describe("DEV-61: what a batch is waiting for", () => {
   it("does not call a waiting batch stopped however long it waits", () => {
     const w = batchWords(base({ counts: { written: 18 }, lastMovementAt: "2026-09-01T00:00:00Z" }));
     expect(w.label).toBe("18 to render");
+  });
+});
+
+describe("when a screen that lists batches should re-read", () => {
+  it("polls while a batch is writing or rendering", () => {
+    expect(whileMoving([base({ counts: { pending: 17, written: 3 } })])).toBe(5000);
+    expect(whileMoving([base({ renderRequestedAt: "2026-09-25T10:01:00Z", counts: { written: 20, rendering: 2, rendered: 1 } })], 2500)).toBe(2500);
+  });
+  it("does not poll when every batch is waiting on a person, stopped or done", () => {
+    expect(whileMoving([base({ counts: { written: 20 } })])).toBeNull();
+    expect(whileMoving([base({ lifecycle: "stopped", counts: { pending: 17, written: 3 } })])).toBeNull();
+    expect(whileMoving([base({ lifecycle: "finished", approvedAt: "2026-09-25T11:00:00Z", counts: { written: 20, rendered: 20, approved: 20 } })])).toBeNull();
+    expect(whileMoving([])).toBeNull();
+    expect(whileMoving(undefined)).toBeNull();
+  });
+  it("stops polling a batch that has stalled, since only a person can continue it", () => {
+    expect(whileMoving([base({ lastMovementAt: "2026-09-25T10:00:00Z", counts: { pending: 17, written: 3 } })])).toBeNull();
   });
 });

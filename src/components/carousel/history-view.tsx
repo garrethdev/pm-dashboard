@@ -14,7 +14,7 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { Check, History, RotateCw } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { BatchSummary } from "@/server/carousel/repo/types";
-import { batchWords } from "@/server/carousel/status-words";
+import { batchWords, whileMoving } from "@/server/carousel/status-words";
 
 const RANGES = [
   { key: "7", label: "Last 7 days", days: 7 },
@@ -28,7 +28,7 @@ function num(n: number, blankWhenZero = false): string {
 }
 
 export function HistoryView({ initial, types }: { initial: BatchSummary[] | null; types: { id: string; name: string }[] }) {
-  const { data, error, reload } = useJson<{ batches: BatchSummary[] }>("/api/carousel-generator/history", { every: 10_000, initial: initial ? { batches: initial } : null });
+  const { data, error, reload } = useJson<{ batches: BatchSummary[] }>("/api/carousel-generator/history", { every: (d) => whileMoving(d?.batches), initial: initial ? { batches: initial } : null });
   const [type, setType] = useState<string | null>(null);
   const [range, setRange] = useState<(typeof RANGES)[number]["key"]>("30");
   const all = data?.batches ?? initial;

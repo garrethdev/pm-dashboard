@@ -102,3 +102,14 @@ export function batchWords(b: BatchSummary, now = Date.now()): BatchWords {
   }
   return { ...base, stage: "done", label: "Done", tone: "neutral", needsPerson: false, running: false, progress: null };
 }
+
+/**
+ * How often a screen that lists batches should re-read, in milliseconds:
+ * `ms` while one is writing or rendering, null otherwise. Stopped, Done and
+ * "to approve" only change when a person presses something, so a screen
+ * showing only those has nothing to poll for (Garreth, 2026-09-26).
+ */
+export function whileMoving(batches: BatchSummary[] | undefined, ms = 5000, now = Date.now()): number | null {
+  const moving = batches?.some((b) => b.lifecycle === "open" && ["writing", "rendering"].includes(batchWords(b, now).stage));
+  return moving ? ms : null;
+}

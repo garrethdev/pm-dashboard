@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DeckCard } from "@/components/carousel/deck-card";
 import { Accent, Btn, PageHead, Pill, Track, post, useJson } from "@/components/carousel/kit";
+import { whileMoving } from "@/server/carousel/status-words";
 import { AlertTriangle, GridFour, Pause, Play, RotateCw, Rows } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { Batch } from "@/server/carousel/repo/types";
@@ -20,7 +21,7 @@ interface Payload {
 }
 
 export function BatchView({ id, initial }: { id: string; initial: Payload | null }) {
-  const { data, error, reload, setData } = useJson<Payload>(`/api/carousel-generator/batches/${id}`, { every: 2500, initial });
+  const { data, error, reload, setData } = useJson<Payload>(`/api/carousel-generator/batches/${id}`, { every: (d) => whileMoving(d ? [d.batch] : undefined, 2500), initial });
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [layout, setLayout] = useState<"grid" | "rows">("grid");
