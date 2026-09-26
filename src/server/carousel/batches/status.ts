@@ -26,12 +26,21 @@ export interface BatchProgress {
 }
 export type BatchAction = "render" | "approve" | "stop" | "continue" | "finish" | "run_again" | "pause_auto" | "resume_auto";
 
+/** Persisted stage counts from the same repository snapshot. Null means not yet
+ * measured, not zero. Current deck states cannot reconstruct these historical
+ * counts reliably (a later vision flag, for example, can follow a render). */
+export interface BatchColumnCounts {
+  written: number | null;
+  rendered: number | null;
+  approved: number | null;
+}
+
 /**
  * Derives display counts and candidate human actions from a complete batch snapshot.
  * Throws on inconsistent data instead of presenting a misleading success state.
  * This neither authenticates callers nor acquires a lock or persists transitions.
  */
-export function projectBatch(batch: BatchProgress) {
+export function projectBatch(batch: BatchProgress, columnCounts?: BatchColumnCounts) {
   if (!batch.id || !Number.isSafeInteger(batch.revision) || batch.revision < 0 ||
       !Number.isInteger(batch.requested) || batch.requested < 1 || batch.requested > 50) {
     throw new Error("Invalid batch identity, revision or requested count");
@@ -39,6 +48,16 @@ export function projectBatch(batch: BatchProgress) {
   if (!["open", "stopped", "finished"].includes(batch.lifecycle) ||
       !["manual", "auto"].includes(batch.mode)) throw new Error("Invalid batch lifecycle or mode");
   if (typeof batch.madeInAuto !== "boolean" || !Array.isArray(batch.decks)) throw new Error("Invalid batch provenance or deck collection");
+  // DEV-61/53: preserve blanks for columns; never infer measurement from a status
+  // or use display counts as authority to render/approve. The repository must
+  // supply all three fields together when measured counts are available.
+  const columns: BatchColumnCounts = columnCounts === undefined
+    ? { written: null, rendered: null, approved: null }
+    : { written: columnCounts?.written, rendered: columnCounts?.rendered, approved: columnCounts?.approved };
+  for (const key of ["written", "rendered", "approved"] as const) {
+    const value = columns[key];
+    if (value !== null && (!Number.isSafeInteger(value) || value < 0 || value > batch.requested)) throw new Error(`Invalid batch column count: ${key}`);
+  }
   const counts = Object.fromEntries(DECK_STATES.map(s => [s, 0])) as Record<DeckState, number>;
   const ids = new Set<string>();
   const decks: readonly DeckProgress[] = batch.decks;
@@ -110,7 +129,7 @@ export function projectBatch(batch: BatchProgress) {
     }
   }
   return { batchId: batch.id, revision: batch.revision, status, label, tone, destination,
-    target, droppedLabel, counts,
+    target, droppedLabel, counts, columns,
     unaccounted, toRender, toApprove, blocked, successfulWritten, successfulRendered,
     madeInAuto: batch.madeInAuto, mode: batch.mode, actions,
     // D1/D12: waiting for review or final approval is not active generation.

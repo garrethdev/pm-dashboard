@@ -5,6 +5,37 @@ const batch = (decks: DeckProgress[], patch: Partial<BatchProgress> = {}): Batch
   id: "batch-1", revision: 1, requested: decks.length || 1, lifecycle: "open", mode: "manual", madeInAuto: false, decks, ...patch,
 });
 describe("one batch status for all screens", () => {
+  it("preserves blank and zero columns without changing waiting status", () => {
+    const input = batch([deck("a", "written")]);
+    const blank = projectBatch(input, { written: 1, rendered: null, approved: null });
+    const zero = projectBatch(input, { written: 1, rendered: 0, approved: 0 });
+    expect(blank.label).toBe("1 to render");
+    expect(zero.label).toBe(blank.label);
+    expect(blank.columns).toEqual({ written: 1, rendered: null, approved: null });
+    expect(zero.columns).toEqual({ written: 1, rendered: 0, approved: 0 });
+    expect(zero.actions).toEqual(blank.actions);
+  });
+  it("does not invent measured counts from current deck state", () => {
+    expect(projectBatch(batch([deck("a", "rendered")])).columns)
+      .toEqual({ written: null, rendered: null, approved: null });
+  });
+  it("retains measured render counts after a vision flag without granting approval", () => {
+    const result = projectBatch(batch([deck("a", "flagged")]), { written: 1, rendered: 1, approved: 0 });
+    expect(result.columns.rendered).toBe(1);
+    expect(result.label).toBe("1 flagged");
+    expect(result.actions).not.toContain("approve");
+  });
+  it.each([-1, 2, 0.5, NaN, Infinity, "0", undefined])("rejects invalid measured counts %s", value => {
+    const columns = { written: 1, rendered: 0, approved: 0 };
+    Reflect.set(columns, "rendered", value);
+    expect(() => projectBatch(batch([deck("a", "written")]), columns)).toThrow("column count");
+  });
+  it("returns a separate count snapshot", () => {
+    const columns = { written: 1, rendered: 0, approved: 0 };
+    const result = projectBatch(batch([deck("a", "written")]), columns);
+    columns.rendered = 1;
+    expect(result.columns.rendered).toBe(0);
+  });
   it.each(["false", "true", 1, 0, null, undefined])("rejects non-boolean readiness %s before exposing commands", value => {
     for (const field of ["canRender", "canApprove"] as const) {
       const input = batch([deck("a", field === "canRender" ? "written" : "rendered")]);

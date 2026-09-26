@@ -39,6 +39,13 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 12:42 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch at ba4ff9e with no concurrent implementation agents. Read DEV-53/61's explicit blank-versus-zero requirement.
+- Shared batch projection now accepts repository-supplied nullable written/rendered/approved column counts. Null stays null, measured zero stays zero, absent measurements are not invented from current deck states. Counts are allowlisted, range-checked and copied; they never grant readiness/actions or change status derivation. A rendered deck later flagged by vision can retain its measured render count without offering approval.
+- Eleven regression cases added. Full suite: 763 tests / 59 files; final focused status suite 44 tests, type-check, targeted lint and diff checks pass.
+- DEV-61/53 remain partial: repository readbacks must provide counts from the same snapshot, and unfinished History/type/Overview consumers must display them. No full ticket certified, no new manual/vision QA or production build. Live credentials/catalog/browser blockers unchanged; no live writes, merge/deploy or supported ETA revision.
+
 ### September 26, 12:22 UTC continuation
 
 - Main fetched at 781fb20; clean starting branch at 9b5e5c7 and no other active implementation agents. Reviewed shared batch projection and Auto decisions against DEV-61 and runner requirements.
