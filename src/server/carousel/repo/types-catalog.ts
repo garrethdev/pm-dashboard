@@ -144,8 +144,3 @@ export async function listTypeShells(): Promise<Omit<CarouselType, "lastBatch" |
   }
   return shells;
 }
-
-export async function registryRow(contentType: string): Promise<RegistryRow | null> {
-  const rows = await dbGet<RegistryRow[]>(`content_type_registry?select=content_type,display_name,character,media_shape,lifecycle,cadence_per_week,source_table&content_type=eq.${enc(contentType)}`);
-  return rows[0] ?? null;
-}

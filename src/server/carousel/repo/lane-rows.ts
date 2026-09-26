@@ -3,7 +3,7 @@
  * why each row cannot post. Read-only; every repair happens on the screen
  * that owns it.
  */
-import { dbGet, enc } from "@/server/carousel/repo/db";
+import { dbCount, dbGet } from "@/server/carousel/repo/db";
 import type { LaneRow } from "@/server/carousel/repo/types";
 
 interface GlowupRow {
@@ -37,7 +37,7 @@ interface CoveredEyeRow {
   created_at: string | null;
 }
 
-export const PAGE_SIZE = 25;
+const PAGE_SIZE = 25;
 
 function status(r: { posting_status: string | null; scheduler_ready: boolean; rendered: boolean; gate: string | null }): { status: string; blocker: string | null } {
   if (r.posting_status === "Posted") return { status: "Posted", blocker: null };
@@ -55,8 +55,8 @@ export async function laneRows(table: string, page = 0): Promise<{ rows: LaneRow
   if (table === "glowup_decks") {
     const [rows, total, ready] = await Promise.all([
       dbGet<GlowupRow[]>(`glowup_decks?select=carousel_id,deck_key,caption,music,posting_date,geelark_profile,posting_status,render_status,gatekeep_status,scheduler_ready,approved,slide_1_url,created_at&order=created_at.desc&limit=${PAGE_SIZE}&offset=${from}`),
-      countOf("glowup_decks"),
-      countOf("glowup_decks?scheduler_ready=eq.true&posting_status=neq.Posted"),
+      dbCount("glowup_decks"),
+      dbCount("glowup_decks?scheduler_ready=eq.true&posting_status=neq.Posted"),
     ]);
     return {
       total,
@@ -77,8 +77,8 @@ export async function laneRows(table: string, page = 0): Promise<{ rows: LaneRow
   if (table === "covered_eye_carousel") {
     const [rows, total, ready] = await Promise.all([
       dbGet<CoveredEyeRow[]>(`covered_eye_carousel?select=carousel_id,caption,music,posting_date,geelark_profile,posting_status,status,gatekeep_status,scheduler_ready,approved,slide_1_url,created_at&order=created_at.desc&limit=${PAGE_SIZE}&offset=${from}`),
-      countOf("covered_eye_carousel"),
-      countOf("covered_eye_carousel?scheduler_ready=eq.true&posting_status=neq.Posted"),
+      dbCount("covered_eye_carousel"),
+      dbCount("covered_eye_carousel?scheduler_ready=eq.true&posting_status=neq.Posted"),
     ]);
     return {
       total,
@@ -97,17 +97,4 @@ export async function laneRows(table: string, page = 0): Promise<{ rows: LaneRow
     };
   }
   return { rows: [], total: 0, ready: 0 };
-}
-
-async function countOf(path: string): Promise<number> {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  const sep = path.includes("?") ? "&" : "?";
-  const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/${path}${sep}select=${enc("carousel_id")}`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact", Range: "0-0" },
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
-  const range = res.headers.get("content-range") ?? "";
-  const total = Number(range.split("/")[1]);
-  return Number.isFinite(total) ? total : 0;
 }

@@ -15,7 +15,7 @@ import { Accent, Btn, LoadError, PageHead, Pill, WordsPill, post, shortDate, typ
 import { EmptyState } from "@/components/ui/empty-state";
 import { Check, ChevronDown, ChevronRight, Pencil, Table } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
-import type { BatchSummary, CarouselType, LaneRow, Library, TemplateRecord, WritingVersion } from "@/server/carousel/repo/types";
+import type { BatchSummary, CarouselType, LaneRow, TemplateRecord, WritingVersion } from "@/server/carousel/repo/types";
 import { batchWords } from "@/server/carousel/status-words";
 
 type Tab = "overview" | "writing" | "rows" | "go-live";
@@ -386,7 +386,7 @@ function GoLive({ d }: { d: Payload }) {
   );
 }
 
-export function TypePage({ slug, initial, tab, libraries }: { slug: string; initial: Payload | null; tab?: string; libraries?: Library[] }) {
+export function TypePage({ slug, initial, tab }: { slug: string; initial: Payload | null; tab?: string }) {
   const router = useRouter();
   const search = useSearchParams();
   const { data, error, reload } = useJson<Payload>(`/api/carousel-generator/types/${encodeURIComponent(slug)}`, { every: 15_000, initial });
@@ -397,7 +397,6 @@ export function TypePage({ slug, initial, tab, libraries }: { slug: string; init
   const go = (t: Tab) => {
     router.replace(`/carousel-generator/types/${slug}${t === "overview" ? "" : `?tab=${t}`}` as never);
   };
-  void libraries;
   const d = data ?? initial;
   if (!d) {
     return (

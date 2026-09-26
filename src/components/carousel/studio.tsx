@@ -269,7 +269,7 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
               </button>
             ))}
             <div className="mt-2 flex justify-end gap-2 border-t border-border pt-3">
-              <Accent disabled={!libraryId} onClick={() => { if (via === "reference" && referenceId) void draft(null); else if (via === "reference") setStage("idea"); else setStage("idea"); }}>Continue</Accent>
+              <Accent disabled={!libraryId} onClick={() => (via === "reference" && referenceId ? void draft(null) : setStage("idea"))}>Continue</Accent>
             </div>
           </div>
         </div>

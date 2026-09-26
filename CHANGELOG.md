@@ -76,6 +76,16 @@ the Overview's refresh button in the top bar, and the dashboard's own theme
 bootstrap script, which makes the Next dev overlay complain on every page
 (pre-existing on `main`, not changed here).
 
+**Tidy-up after the review (same day):** the Codex foundation's pieces that
+the build superseded were removed rather than left as a second opinion — the
+owner-only command check, the client-side batch input contract, the pure
+status projection and the Auto decision table (the runner and the status
+words own those rules now), the split-column template loader, and the
+search's own details dialog, which now opens the same details window the
+feed uses. Batch naming and its test stay. Private helpers stopped being
+exported, the Rows count uses a count request instead of fetching ids, and
+Overview reads the batches once instead of twice.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

@@ -3,7 +3,6 @@ import { TypePage } from "@/components/carousel/type-page";
 import { listBatches } from "@/server/carousel/repo/batches";
 import { getCarouselType } from "@/server/carousel/repo/catalog";
 import { laneRows } from "@/server/carousel/repo/lane-rows";
-import { listLibraries } from "@/server/carousel/repo/libraries";
 import { getTemplateRecord } from "@/server/carousel/repo/templates";
 import { listWriting } from "@/server/carousel/repo/writing";
 
@@ -19,20 +18,18 @@ export default async function CarouselTypePage({ params, searchParams }: { param
   const loaded = await (async () => {
     const type = await getCarouselType(slug);
     if (!type) return { missing: true as const };
-    const [template, writing, batches, rows, libraries] = await Promise.all([
+    const [template, writing, batches, rows] = await Promise.all([
       type.templateId ? getTemplateRecord(type.templateId).catch(() => null) : null,
       listWriting(type.id).catch(() => []),
       listBatches({ typeId: type.id }).catch(() => []),
       type.laneTable ? laneRows(type.laneTable, 0).catch(() => ({ rows: [], total: 0, ready: 0 })) : { rows: [], total: 0, ready: 0 },
-      listLibraries().catch(() => []),
     ]);
-    return { type, template, writing, batches, rows, libraries };
+    return { type, template, writing, batches, rows };
   })().catch((err: unknown) => {
     console.error("type page failed", err);
     return null;
   });
   if (loaded && "missing" in loaded) notFound();
   if (!loaded) return <TypePage slug={slug} initial={null} tab={tab} />;
-  const { libraries, ...initial } = loaded;
-  return <TypePage slug={slug} tab={tab} initial={initial} libraries={libraries} />;
+  return <TypePage slug={slug} tab={tab} initial={loaded} />;
 }

@@ -11,9 +11,12 @@
  * `carousel_draft_slides` row. The words on a deck's pill are the deck-state
  * table in that document.
  */
-import type { DeckState } from "@/server/carousel/batches/status";
-
-export type { DeckState };
+/** Every word a deck's pill can carry (docs/CAROUSEL-GENERATOR-FLOWS.md deck-state table). */
+export const DECK_STATES = [
+  "pending", "writing", "written", "render_queued", "rendering", "rendered",
+  "approved", "flagged", "failed", "dropped", "discarded",
+] as const;
+export type DeckState = (typeof DECK_STATES)[number];
 
 export type BatchLifecycle = "open" | "stopped" | "finished";
 export type BatchMode = "manual" | "auto";

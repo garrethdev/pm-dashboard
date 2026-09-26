@@ -11,7 +11,6 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "@/components/ui/icons";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
 import { cn } from "@/lib/utils";
-import type { BatchSummary } from "@/server/carousel/repo/types";
 import type { BatchWords } from "@/server/carousel/status-words";
 
 /** The quiet grey outline button: the designs' `btn2`. */
@@ -302,8 +301,4 @@ export function SlideFace({ svg, className, label }: { svg: string | null; class
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
-}
-
-export function batchTitle(b: BatchSummary): string {
-  return b.batchName;
 }

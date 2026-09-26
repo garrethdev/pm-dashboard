@@ -199,18 +199,3 @@ export function validateTemplate(value: unknown, purpose: "historical" | "genera
   }
   return structuredClone(t) as CarouselTemplate;
 }
-
-/** Reassembles §6's split JSON columns, then validates exactly like a file import. */
-export function templateFromRow(raw: unknown, purpose: "historical" | "generation" = "generation") {
-  const row = object(raw, "row"), canvas = object(row.canvas, "row.canvas"), slides = object(row.slides, "row.slides"), copy = object(row.copy_contract, "row.copy_contract");
-  return validateTemplate({
-    schema: "pm.carousel-template/1", slug: row.slug, version: row.version,
-    status: row.status, name: row.name, character: row.character, content_type: row.content_type,
-    canvas: canvas.canvas, output: canvas.output, fit: canvas.fit, text_origin: canvas.text_origin,
-    fonts: canvas.fonts, text_styles: canvas.text_styles,
-    slides: slides.slides, image_sources: slides.image_sources, image_rules: slides.image_rules,
-    copy_contract: copy.copy_contract, not_painted: copy.not_painted, music: copy.music,
-    directions: { copy: row.copy_direction, caption: row.caption_direction, image: row.image_direction },
-    lane: row.lane, provenance: { ...object(row.generation_metadata ?? {}, "row.generation_metadata"), source_reference_id: row.source_reference_id },
-  }, purpose);
-}

@@ -35,10 +35,10 @@ export function similarity(a: string, b: string): number {
 
 export function gateDeck(copy: Record<string, string>, contract: CopyRole[], hook: string, otherHooks: string[]): GateResult {
   let score = 10;
-  let worst: GateResult | null = null;
+  const findings: { kind: GateResult["kind"]; reason: string; fix: string }[] = [];
   const note = (kind: GateResult["kind"], reason: string, fix: string, penalty: number) => {
     score -= penalty;
-    if (!worst) worst = { score, flagged: true, kind, reason, fix };
+    findings.push({ kind, reason, fix });
   };
 
   for (const r of contract) {
@@ -66,6 +66,7 @@ export function gateDeck(copy: Record<string, string>, contract: CopyRole[], hoo
     }
   }
   const final = Math.max(0, Math.min(10, score));
-  if (worst) return { ...(worst as GateResult), score: final, flagged: final < 6 || (worst as GateResult).kind !== null };
+  const first = findings[0];
+  if (first) return { ...first, score: final, flagged: true };
   return { score: final, flagged: false, kind: null, reason: null, fix: null };
 }

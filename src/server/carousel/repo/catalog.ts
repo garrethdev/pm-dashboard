@@ -8,8 +8,8 @@ import { savedFeed, trending } from "@/server/carousel/repo/trends";
 import type { BatchSummary, CarouselType, OverviewData } from "@/server/carousel/repo/types";
 import { batchWords } from "@/server/carousel/status-words";
 
-export async function listCarouselTypes(): Promise<CarouselType[]> {
-  const [shells, batches] = await Promise.all([listTypeShells(), listBatches()]);
+/** Fold the batches into the type shells: the last, the running and the waiting batch of each. */
+function joinTypes(shells: Awaited<ReturnType<typeof listTypeShells>>, batches: BatchSummary[]): CarouselType[] {
   return shells.map((s) => {
     const mine = batches.filter((b) => b.typeId === s.id);
     const running = mine.find((b) => batchWords(b).running) ?? null;
@@ -24,6 +24,11 @@ export async function listCarouselTypes(): Promise<CarouselType[]> {
   });
 }
 
+export async function listCarouselTypes(): Promise<CarouselType[]> {
+  const [shells, batches] = await Promise.all([listTypeShells(), listBatches()]);
+  return joinTypes(shells, batches);
+}
+
 export async function getCarouselType(id: string): Promise<CarouselType | null> {
   const types = await listCarouselTypes();
   return types.find((t) => t.id === id || t.slug === id) ?? null;
@@ -34,12 +39,13 @@ function isToday(iso: string | null): boolean {
 }
 
 export async function overviewData(viewer: string): Promise<OverviewData> {
-  const [types, batches, trend, saved] = await Promise.all([
-    listCarouselTypes(),
+  const [shells, batches, trend, saved] = await Promise.all([
+    listTypeShells(),
     listBatches(),
     trending(viewer, 4).catch(() => ({ asOf: null, isToday: false, items: [] })),
     savedFeed(viewer, 6).catch(() => []),
   ]);
+  const types = joinTypes(shells, batches);
   const words = batches.map((b) => ({ b, w: batchWords(b) }));
   const tasks: BatchSummary[] = [
     ...words.filter((x) => x.w.running && x.w.stage !== "stopped").map((x) => x.b),

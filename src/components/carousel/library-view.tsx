@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Accent, Btn, LoadError, PageHead, Pill, post, useJson } from "@/components/carousel/kit";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ChevronLeft, Images, Plus, Sparkles, Upload, X } from "@/components/ui/icons";
+import { Images, Plus, Sparkles, Upload, X } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { Library, LibraryDetail, LibraryImage } from "@/server/carousel/repo/types";
 
@@ -205,7 +205,6 @@ export function LibraryDetailView({ id, initial }: { id: string; initial: Librar
           </form>
         </div>
       )}
-      <span className="hidden"><ChevronLeft /></span>
     </div>
   );
 }

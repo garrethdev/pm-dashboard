@@ -45,7 +45,7 @@ type Loops = Map<string, Promise<void>>;
 const g = globalThis as unknown as { __carouselLoops?: Loops };
 const loops: Loops = g.__carouselLoops ?? (g.__carouselLoops = new Map());
 
-export function loopRunning(batchId: string): boolean {
+function loopRunning(batchId: string): boolean {
   return loops.has(batchId);
 }
 

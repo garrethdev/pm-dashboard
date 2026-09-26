@@ -3,7 +3,7 @@
  * what one person has seen, saved and voted, the study digests and the
  * knowledge base.
  */
-import { dbDelete, dbGet, dbGetAll, dbInsert, dbPatch, enc } from "@/server/carousel/repo/db";
+import { dbCount, dbDelete, dbGet, dbGetAll, dbInsert, dbPatch, enc } from "@/server/carousel/repo/db";
 import type { Digest, KnowledgeRule, Reference, ReferenceAnalysis } from "@/server/carousel/repo/types";
 
 interface RefRow {
@@ -166,13 +166,13 @@ export async function markSeen(viewer: string, ids: number[]): Promise<void> {
   await dbInsert("reference_seen", ids.map((reference_id) => ({ reference_id, seen_by: viewer })), { upsert: "reference_id,seen_by" });
 }
 
+/** Seen rows only ever name carousels, so the difference of two counts is the unseen count. */
 export async function unseenCount(viewer: string): Promise<number> {
   const [all, seen] = await Promise.all([
-    dbGetAll<{ id: number }>("references_unified?select=id&format=eq.carousel"),
-    dbGetAll<{ reference_id: number }>(`reference_seen?select=reference_id&seen_by=eq.${enc(viewer)}`),
+    dbCount("references_unified?format=eq.carousel"),
+    dbCount(`reference_seen?seen_by=eq.${enc(viewer)}`),
   ]);
-  const s = new Set(seen.map((x) => x.reference_id));
-  return all.filter((r) => !s.has(r.id)).length;
+  return Math.max(0, all - seen);
 }
 
 export async function savedFeed(viewer: string, limit = 200): Promise<Reference[]> {
@@ -229,7 +229,7 @@ const PLAIN: Record<string, string> = {
   list: "List",
 };
 
-export function plainWord(v: unknown): string | null {
+function plainWord(v: unknown): string | null {
   if (v === null || v === undefined || v === "") return null;
   const s = String(v);
   return PLAIN[s] ?? s.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());

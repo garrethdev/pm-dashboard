@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { attempt, bad, body, guard, ok, str } from "@/server/carousel/http";
 import { createBatch, listBatches } from "@/server/carousel/repo/batches";
 import { getCarouselType } from "@/server/carousel/repo/catalog";
@@ -55,4 +54,3 @@ export async function POST(req: Request) {
 }
 
 export const dynamic = "force-dynamic";
-export type { NextResponse };

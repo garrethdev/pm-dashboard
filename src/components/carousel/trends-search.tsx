@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CatalogImage } from "./catalog-image";
-import { CarouselDetailDialog } from "./carousel-detail";
+import { DetailsWindow } from "./details-window";
 import { SEARCH_CHANNELS, mediaUrl, plainText, safeWebUrl, searchSummary, type SearchChannel, type SearchResponse } from "@/lib/carousel/trends/presentation";
 
 /** Submit-driven search, not a substitute for DEV-36/45's ranked unseen feed.
@@ -18,7 +18,7 @@ export function TrendsSearch({ compact = false, onSearching, initialQuery = "" }
   const [pending, setPending] = useState("");
   const [result, setResult] = useState<SearchResponse | null>(null);
   const [error, setError] = useState("");
-  const [selection, setSelection] = useState<{ id: string; slide: unknown } | null>(null);
+  const [selection, setSelection] = useState<{ id: number; slide: number } | null>(null);
   const request = useRef<AbortController | null>(null);
   const sequence = useRef(0);
   const lastSearch = useRef<{ query: string; channel: SearchChannel; filters: { creator?: string; topic?: string } } | null>(null);
@@ -88,12 +88,12 @@ export function TrendsSearch({ compact = false, onSearching, initialQuery = "" }
       <div className="-mx-6 grid grid-cols-3 gap-1 sm:mx-0 sm:gap-3">{result.results.map((item, index) => {
         const id = String(item.reference.id);
         const handle = plainText(item.reference.creator_handle) || "Unknown creator";
-        return <button key={`${id}-${index}`} type="button" onClick={() => setSelection({ id, slide: item.matched_slide })} className="group relative overflow-hidden border border-border text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent sm:rounded-xl" aria-label={`Open carousel by ${handle}${typeof item.matched_slide === "number" ? `, matched slide ${item.matched_slide}` : ""}`}>
+        return <button key={`${id}-${index}`} type="button" onClick={() => setSelection({ id: Number(id), slide: typeof item.matched_slide === "number" ? Math.max(0, item.matched_slide - 1) : 0 })} className="group relative overflow-hidden border border-border text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent sm:rounded-xl" aria-label={`Open carousel by ${handle}${typeof item.matched_slide === "number" ? `, matched slide ${item.matched_slide}` : ""}`}>
           <div className="aspect-[4/5] bg-card"><CatalogImage src={mediaUrl(item.matched_media) ?? safeWebUrl(item.thumbnail_url)} alt={`Carousel by ${handle}`} /></div>
           <span className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1"><span className="sr-only">{handle}</span><span className="tnum rounded-full bg-card/90 px-2 py-1 text-[10px] text-text-primary">{item.slide_count} saved slides</span></span>
         </button>;
       })}</div>
     </>}
-    {selection && <CarouselDetailDialog key={selection.id} id={selection.id} matchedSlide={selection.slide} onClose={() => setSelection(null)} />}
+    {selection && <DetailsWindow key={selection.id} id={selection.id} startSlide={selection.slide} onClose={() => setSelection(null)} />}
   </section>;
 }

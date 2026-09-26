@@ -27,6 +27,12 @@ export interface DraftSpec {
   sample: Record<string, string>;
 }
 
+/** A box name from a beat or a free label: lower snake case, "hook" for the first slide. */
+function roleName(label: string | null | undefined, index: number): string {
+  if (index === 0) return "hook";
+  return (label ?? `line_${index + 1}`).replace(/[^a-z0-9]+/gi, "_").toLowerCase().replace(/(^_|_$)/g, "") || `line_${index + 1}`;
+}
+
 const SIZES: Record<StudioSize, { width: number; height: number }> = { "4:5": { width: 1080, height: 1350 }, "9:16": { width: 1080, height: 1920 } };
 
 /** A valid empty template at a size, with one caption style and no slides yet. */
@@ -163,8 +169,8 @@ export async function draftFromReference(viewer: string, referenceId: number, se
   const fallback = (): DraftSpec => ({
     name: ref.handle ? `From @${ref.handle}` : "From a reference",
     direction: `Follow the reference's beats: ${ref.slides.map((s) => s.role).filter(Boolean).join(", ") || "hook, build, payoff"}. Warm, plain, first person.`,
-    slides: ref.slides.map((s, i) => ({ layout: "single" as const, boxes: [{ name: i === 0 ? "hook" : (s.role ?? `line_${i + 1}`).replace(/[^a-z0-9]+/gi, "_").toLowerCase(), purpose: s.copy ? `Like: ${s.copy.slice(0, 80)}` : "A line for this beat", size: i === 0 ? 64 : 54, at: 0.5 }], set: sets[i % Math.max(1, sets.length)] ?? null })),
-    sample: Object.fromEntries(ref.slides.map((s, i) => [i === 0 ? "hook" : (s.role ?? `line_${i + 1}`).replace(/[^a-z0-9]+/gi, "_").toLowerCase(), s.copy?.replace(/\s+/g, " ").trim().slice(0, 120) || ""])),
+    slides: ref.slides.map((s, i) => ({ layout: "single" as const, boxes: [{ name: roleName(s.role, i), purpose: s.copy ? `Like: ${s.copy.slice(0, 80)}` : "A line for this beat", size: i === 0 ? 64 : 54, at: 0.5 }], set: sets[i % Math.max(1, sets.length)] ?? null })),
+    sample: Object.fromEntries(ref.slides.map((s, i) => [roleName(s.role, i), s.copy?.replace(/\s+/g, " ").trim().slice(0, 120) || ""])),
   });
   if (!writerAvailable() || !analysed) return { spec: fallback(), reference: { handle: ref.handle, slides: ref.slides.map((s) => ({ media: s.media, copy: s.copy })), analysed } };
   const prompt = [

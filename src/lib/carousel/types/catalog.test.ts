@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { carouselCatalog, validDeckCount } from "./catalog";
+import { carouselCatalog } from "./catalog";
 
 describe("carousel registry projection", () => {
   it("excludes video without inventing generator readiness", () => {
@@ -15,7 +15,3 @@ describe("carousel registry projection", () => {
   });
 });
 
-describe("deck count", () => {
-  it.each(["1", "20", "50"])("accepts %s", value => expect(validDeckCount(value)).toBe(true));
-  it.each(["", "0", "51", "-1", "2.5", "NaN", "1e1", " 2"])("rejects %s", value => expect(validDeckCount(value)).toBe(false));
-});

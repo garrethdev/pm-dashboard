@@ -108,9 +108,18 @@ export async function dbRpc<T>(fn: string, args: Record<string, unknown> = {}): 
   return (await res.json()) as T;
 }
 
-/** Whether the generator can reach the database at all. */
-export function dbConfigured(): boolean {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+/** How many rows match, without fetching them (PostgREST's exact count header). */
+export async function dbCount(pathWithFilter: string): Promise<number> {
+  const sep = pathWithFilter.includes("?") ? "&" : "?";
+  const res = await fetch(url(`${pathWithFilter}${sep}select=*`), {
+    method: "HEAD",
+    headers: headers({ Prefer: "count=exact" }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    cache: "no-store",
+  });
+  if (!res.ok) await fail(res, `count ${pathWithFilter.split("?")[0]}`);
+  const total = Number((res.headers.get("content-range") ?? "").split("/")[1]);
+  return Number.isFinite(total) ? total : 0;
 }
 
 export const enc = encodeURIComponent;

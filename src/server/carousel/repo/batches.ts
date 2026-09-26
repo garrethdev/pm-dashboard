@@ -3,7 +3,7 @@
  * `carousel_draft_slides`, read and written the way the screens need them.
  */
 import { dbGet, dbGetAll, dbInsert, dbPatch, enc } from "@/server/carousel/repo/db";
-import type { Batch, BatchSummary, Deck, DeckSlide, DeckState, NewBatch } from "@/server/carousel/repo/types";
+import { DECK_STATES, type Batch, type BatchSummary, type Deck, type DeckSlide, type DeckState, type NewBatch } from "@/server/carousel/repo/types";
 import { batchName } from "@/server/carousel/batches/runner";
 import { getTypeBasics, type TypeBasics } from "@/server/carousel/repo/types-catalog";
 import { getTemplateRecord, getTemplateVersion } from "@/server/carousel/repo/templates";
@@ -76,12 +76,8 @@ const DRAFT_COLS =
   "id,brief_id,version,position,status,auto_tries,hook,caption,copy,music,music_status,score,flag_kind,flag_reason,last_error,feedback,lane_row_id,rendered_at,approved_at,human_approved,created_at,updated_at";
 const SLIDE_COLS = "id,draft_id,position,box_copy,image_ids,image_url,rendered_url,rendered_svg";
 
-const DECK_STATES = new Set<DeckState>([
-  "pending", "writing", "written", "render_queued", "rendering", "rendered", "approved", "flagged", "failed", "dropped", "discarded",
-]);
-
 function deckState(status: string): DeckState {
-  if (DECK_STATES.has(status as DeckState)) return status as DeckState;
+  if ((DECK_STATES as readonly string[]).includes(status)) return status as DeckState;
   // Rows written by the older draft vocabulary.
   if (status === "draft" || status === "in_review") return "written";
   if (status === "rejected") return "discarded";
@@ -168,7 +164,7 @@ export function countDecks(requested: number, decks: Deck[]): BatchSummary["coun
   };
 }
 
-export function toSummary(r: BriefRow, decks: Deck[], type: TypeBasics | undefined): BatchSummary {
+function toSummary(r: BriefRow, decks: Deck[], type: TypeBasics | undefined): BatchSummary {
   const requested = r.requested ?? decks.length;
   return {
     id: r.id,
@@ -197,7 +193,7 @@ export function toSummary(r: BriefRow, decks: Deck[], type: TypeBasics | undefin
   };
 }
 
-export async function listBriefRows(filter = ""): Promise<BriefRow[]> {
+async function listBriefRows(filter = ""): Promise<BriefRow[]> {
   return dbGetAll<BriefRow>(`carousel_briefs?select=${BRIEF_COLS}&content_type=not.is.null${filter}&order=created_at.desc`);
 }
 
@@ -295,10 +291,6 @@ export async function createBatch(
   return (await getBatch(row.id))!;
 }
 
-export async function patchBatch(id: string, patch: Record<string, unknown>): Promise<void> {
-  await dbPatch(`carousel_briefs?id=eq.${enc(id)}`, { ...patch, updated_at: new Date().toISOString() });
-}
-
 /** Every batch change bumps the revision and the movement clock. */
 export async function touchBatch(id: string, patch: Record<string, unknown> = {}): Promise<void> {
   const cur = await dbGet<{ revision: number }[]>(`carousel_briefs?select=revision&id=eq.${enc(id)}`);
@@ -351,9 +343,4 @@ export async function replaceSlides(
   await dbInsert("carousel_draft_slides", slides.map((s) => ({ draft_id: draftId, status: "draft", ...s })), {
     upsert: "draft_id,position",
   });
-}
-
-export async function listSlideRows(draftIds: string[]): Promise<SlideRow[]> {
-  if (!draftIds.length) return [];
-  return dbGetAll<SlideRow>(`carousel_draft_slides?select=${SLIDE_COLS}&draft_id=in.(${draftIds.map(enc).join(",")})`);
 }

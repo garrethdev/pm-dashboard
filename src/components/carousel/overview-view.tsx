@@ -39,7 +39,6 @@ function Loader({ render }: { render: boolean }) {
           style={{ animationDelay: `${d}ms`, opacity: 0.12 }}
         />
       ))}
-      <style>{`@keyframes px16on{0%,100%{opacity:.12}50%{opacity:1}}`}</style>
     </span>
   );
 }

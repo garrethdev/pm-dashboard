@@ -23,7 +23,3 @@ export function carouselCatalog(rows: readonly RegistryCarouselRow[]): CarouselT
     lifecycle: row.lifecycle,
   })).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 }
-
-export function validDeckCount(value: string): boolean {
-  return /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 50;
-}
