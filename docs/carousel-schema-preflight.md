@@ -3,6 +3,11 @@
 Status: **prepared, not executed against Supabase**. This document is not a live
 schema receipt and does not claim DEV-01 or DEV-02 is complete.
 
+September 26 update: the preliminary REST probe and column metadata discovery
+succeeded using existing deployment configuration. See
+`carousel-live-access-receipt.md`. The SQL catalog script below remains unexecuted;
+existing generation tables and extensions were found and must not be duplicated.
+
 ## Preliminary API access probe
 
 With the existing server environment loaded securely, Node 22+ can run:

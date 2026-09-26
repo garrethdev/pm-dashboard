@@ -24,11 +24,11 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 ## Blockers (continue other work)
 
 - Browser sign-in: September 25 request to open the dashboard was refused before navigation because the browser security policy could not be verified. No magic-link email sent. User supplied garrethdottin@gmail.com and will return a link after successful initiation. Do not bypass browser controls.
-- Live DB schema, applied migrations and service credentials need read-only verification before applying additive migrations. Do not duplicate existing generation tables or move vector extensions.
+- Live REST access and generation table columns verified September 26 using existing Vercel development-scoped credentials. SQL constraints, applied migrations, RLS and function grants still need catalog verification before migration changes. Existing generation extensions MUST be reused; see `carousel-live-access-receipt.md`.
 - The tickets identify unresolved schema and Go Live view-composition choices. Preserve legacy image_direction until its use is verified; do not drop it.
 - Provider and n8n access need verification. Keep generation and final approval separate; never simulate success.
 - Turbopack build failed on environment port-binding permission. Standard Webpack production build subsequently PASSED with approved network access for the existing font dependency. Browser tests have not passed.
-- This checkout has no configured Supabase/provider environment, and the corresponding keys are absent from the process. Verify secure existing deployment configuration before live data/provider tests; do not paste keys into source.
+- This checkout has no persisted Supabase/provider environment, but authorized Vercel retrieval now works. Supabase credentials were loaded only into a short-lived process; five zero-row probes and REST metadata reads succeeded. Local missing environment variables are no longer an access blocker. Development-scoped configuration does not establish database isolation; no live writes were performed.
 - No production merge/deploy or live social posting is included in autonomous testing; use isolated test data and preview.
 
 ## Per-ticket ledger (62 entries)
