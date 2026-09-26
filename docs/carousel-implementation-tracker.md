@@ -39,6 +39,13 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 12:22 UTC continuation
+
+- Main fetched at 781fb20; clean starting branch at 9b5e5c7 and no other active implementation agents. Reviewed shared batch projection and Auto decisions against DEV-61 and runner requirements.
+- Rejected non-boolean readiness flags in batch projection and Auto decisions. Previously a stored string "false" was truthy and could offer render/approve or return a render instruction. Missing/null/numeric/string flags now fail closed. Projection also validates provenance, deck collection shape and nonblank string deck identities.
+- Thirteen additional parameterized regression cases cover malformed flags through projection/owner actions/Auto, plus malformed provenance and collections. Full suite: 752 tests / 59 files. Type-check, targeted lint and diff checks pass. These are domain tests, not persisted command/worker or UI verification.
+- No full ticket newly certified. Live schema/credential and browser-policy blockers remain; durable persistence, unfinished screens and end-to-end QA are still open. No new manual click-through, vision QA or production build this checkpoint; no live writes, merge or deployment. No measured throughput supports a revised ETA.
+
 ### September 26, 12:02 UTC continuation
 
 - Main refreshed at 781fb20; clean starting feature branch at 2da937c and no concurrent implementation agents.

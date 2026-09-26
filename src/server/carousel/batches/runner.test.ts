@@ -22,6 +22,13 @@ describe("stalled runner", () => {
 });
 describe("Auto never approves", () => {
   const deck: AutoDeckSnapshot = { state: "flagged", attempt: 1, checksPassed: false, paused: false };
+  it.each(["false", "true", 1, 0, null, undefined])("rejects non-boolean worker flags %s", value => {
+    for (const field of ["checksPassed", "paused"] as const) {
+      const input = { ...deck, state: "written" as const };
+      Reflect.set(input, field, value);
+      expect(() => nextAutoDecision(input)).toThrow("readiness flags");
+    }
+  });
   it("rewrites until the third attempt, then drops", () => {
     expect(nextAutoDecision(deck)).toBe("rewrite");
     expect(nextAutoDecision({ ...deck, attempt: 2 })).toBe("rewrite");

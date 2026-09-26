@@ -5,6 +5,27 @@ const batch = (decks: DeckProgress[], patch: Partial<BatchProgress> = {}): Batch
   id: "batch-1", revision: 1, requested: decks.length || 1, lifecycle: "open", mode: "manual", madeInAuto: false, decks, ...patch,
 });
 describe("one batch status for all screens", () => {
+  it.each(["false", "true", 1, 0, null, undefined])("rejects non-boolean readiness %s before exposing commands", value => {
+    for (const field of ["canRender", "canApprove"] as const) {
+      const input = batch([deck("a", field === "canRender" ? "written" : "rendered")]);
+      Reflect.set(input.decks[0], field, value);
+      expect(() => projectBatch(input)).toThrow("readiness flags");
+      expect(() => permittedActions(input, "owner", "owner")).toThrow("readiness flags");
+    }
+  });
+  it("rejects malformed provenance, collections and deck identities", () => {
+    const input = batch([deck("a", "written")]);
+    Reflect.set(input, "madeInAuto", "false");
+    expect(() => projectBatch(input)).toThrow("provenance");
+    input.madeInAuto = false;
+    Reflect.set(input, "decks", {});
+    expect(() => projectBatch(input)).toThrow("collection");
+    for (const id of [123, "   ", null]) {
+      const malformed = batch([deck("a", "written")]);
+      Reflect.set(malformed.decks[0], "id", id);
+      expect(() => projectBatch(malformed)).toThrow("Invalid or duplicate deck");
+    }
+  });
   it.each([
     ["writing", "Writing 0 of 1", "batch"],
     ["rendering", "Rendering 0 of 1", "batch"],

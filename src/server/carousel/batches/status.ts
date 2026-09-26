@@ -38,12 +38,17 @@ export function projectBatch(batch: BatchProgress) {
   }
   if (!["open", "stopped", "finished"].includes(batch.lifecycle) ||
       !["manual", "auto"].includes(batch.mode)) throw new Error("Invalid batch lifecycle or mode");
+  if (typeof batch.madeInAuto !== "boolean" || !Array.isArray(batch.decks)) throw new Error("Invalid batch provenance or deck collection");
   const counts = Object.fromEntries(DECK_STATES.map(s => [s, 0])) as Record<DeckState, number>;
   const ids = new Set<string>();
-  for (const deck of batch.decks) {
-    if (!deck.id || ids.has(deck.id) || !DECK_STATES.includes(deck.state)) {
+  const decks: readonly DeckProgress[] = batch.decks;
+  for (const deck of decks) {
+    if (!deck || typeof deck.id !== "string" || !deck.id.trim() || ids.has(deck.id) || !DECK_STATES.includes(deck.state)) {
       throw new Error("Invalid or duplicate deck");
     }
+    // Database JSON must meet the runtime contract too. Truthy strings such as
+    // "false" must never expose a render/approve command in the shared projection.
+    if (typeof deck.canRender !== "boolean" || typeof deck.canApprove !== "boolean") throw new Error("Invalid deck readiness flags");
     if ((deck.canRender && deck.state !== "written") || (deck.canApprove && deck.state !== "rendered")) {
       throw new Error("Readiness does not match deck state");
     }

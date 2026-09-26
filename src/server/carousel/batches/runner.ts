@@ -45,6 +45,8 @@ export type AutoDecision = "wait" | "write" | "render" | "rewrite" | "retry_musi
  * This is a decision only. A fenced worker applies it transactionally later.
  */
 export function nextAutoDecision(deck: AutoDeckSnapshot): AutoDecision {
+  // Never promote coercible or absent stored flags to a worker instruction.
+  if (typeof deck.paused !== "boolean" || typeof deck.checksPassed !== "boolean") throw new Error("Invalid Auto readiness flags");
   if (!Number.isInteger(deck.attempt) || deck.attempt < 1 || deck.attempt > 3) throw new Error("Invalid Auto attempt");
   if (deck.flagKind !== undefined && !["copy", "music", "vision"].includes(deck.flagKind)) throw new Error("Invalid flag kind");
   if (["approved", "dropped", "discarded"].includes(deck.state)) return "settled";
