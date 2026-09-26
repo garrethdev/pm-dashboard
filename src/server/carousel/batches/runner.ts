@@ -30,13 +30,15 @@ export function isStalled(input: { phase: string; lastMovementAt: string; now: n
 }
 
 export interface AutoDeckSnapshot {
-  state: "pending" | "writing" | "written" | "rendering" | "rendered" | "flagged" | "failed" | "approved" | "dropped" | "discarded";
+  state: "pending" | "writing" | "written" | "render_queued" | "rendering" | "rendered" | "flagged" | "failed" | "approved" | "dropped" | "discarded";
   /** Initial attempt is 1; attempt increments only after a claimed rewrite starts. */
   attempt: number;
   paused: boolean;
   checksPassed: boolean;
+  /** Current-version failure category; absent means legacy copy flag. */
+  flagKind?: "copy" | "music" | "vision";
 }
-export type AutoDecision = "wait" | "write" | "render" | "rewrite" | "drop" | "needs_attention" | "await_human_approval" | "settled";
+export type AutoDecision = "wait" | "write" | "render" | "rewrite" | "retry_music" | "rewrite_and_render" | "drop" | "needs_attention" | "await_human_approval" | "settled";
 
 /** DEV-49: three complete attempts, not three extra retries. Infrastructure
  * failures are not quality failures and must not silently exhaust content tries.
@@ -44,14 +46,24 @@ export type AutoDecision = "wait" | "write" | "render" | "rewrite" | "drop" | "n
  */
 export function nextAutoDecision(deck: AutoDeckSnapshot): AutoDecision {
   if (!Number.isInteger(deck.attempt) || deck.attempt < 1 || deck.attempt > 3) throw new Error("Invalid Auto attempt");
+  if (deck.flagKind !== undefined && !["copy", "music", "vision"].includes(deck.flagKind)) throw new Error("Invalid flag kind");
   if (["approved", "dropped", "discarded"].includes(deck.state)) return "settled";
-  if (deck.paused) return "wait";
+  // DEV-51: Pause is a hand-off to manual, not cancellation of the batch.
+  // Pending writing continues; an already queued render keeps its place.
+  if (deck.paused && ["written", "flagged"].includes(deck.state)) return "wait";
   switch (deck.state) {
     case "pending": return "write";
     case "writing": case "rendering": return "wait";
+    case "render_queued": return deck.checksPassed ? "render" : "needs_attention";
     case "written": return deck.checksPassed ? "render" : "needs_attention";
     case "rendered": return deck.checksPassed ? "await_human_approval" : "needs_attention";
-    case "flagged": return deck.attempt === 3 ? "drop" : "rewrite";
+    case "flagged":
+      if (deck.attempt === 3) return "drop";
+      if (deck.flagKind === "music") return "retry_music";
+      // This is a workflow plan, not permission to skip refreshed copy/music
+      // checks. A new version must pass those gates before it is queued again.
+      if (deck.flagKind === "vision") return "rewrite_and_render";
+      return "rewrite";
     case "failed": return "needs_attention";
     default: throw new Error("Invalid Auto deck state");
   }

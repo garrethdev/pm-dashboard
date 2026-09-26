@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 04:02 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch and no active worker agents.
+- Corrected an Auto pause mismatch against DEV-51: pending writing and previously queued rendering can continue; newly written decks and flagged retries wait for manual action. Queued renders still require valid checks, completed renders still require human approval, and infrastructure failures remain visible.
+- Retry plans now distinguish copy rewrite, music lookup retry and vision rewrite/re-render. All quality flags still drop after the third attempt. Vision's plan explicitly requires fresh copy/music gates before queueing, not an unchecked direct render.
+- Six new cases; full suite 510 tests in 38 files passes, type-check and targeted lint pass.
+- DEV-48/49/51 remain partial: these are shared decisions, not an operating durable worker. Persisted attempts/leases, provider execution and live pause/resume proof remain open. No new manual/vision QA, no merge/deploy, no new end-to-end ticket completion. Live access blockers remain and no reliable ETA reduction is supported.
+
 ### September 26, 03:42 UTC continuation
 
 - Main refreshed at 781fb20; clean starting branch and no active worker agents.

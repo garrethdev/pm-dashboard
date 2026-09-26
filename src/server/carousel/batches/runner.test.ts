@@ -39,4 +39,20 @@ describe("Auto never approves", () => {
     expect(nextAutoDecision({ ...deck, state: "writing" })).toBe("wait");
     expect(nextAutoDecision({ ...deck, state: "approved", paused: true })).toBe("settled");
   });
+  it("continues pending writing and queued rendering after pause", () => {
+    expect(nextAutoDecision({ ...deck, state: "pending", paused: true })).toBe("write");
+    expect(nextAutoDecision({ ...deck, state: "render_queued", checksPassed: true, paused: true })).toBe("render");
+    expect(nextAutoDecision({ ...deck, state: "written", checksPassed: true, paused: true })).toBe("wait");
+  });
+  it("does not render queued work with missing checks", () => {
+    expect(nextAutoDecision({ ...deck, state: "render_queued", paused: true })).toBe("needs_attention");
+  });
+  it("paused rendered work still awaits human approval", () => {
+    expect(nextAutoDecision({ ...deck, state: "rendered", checksPassed: true, paused: true })).toBe("await_human_approval");
+  });
+  it.each([["copy", "rewrite"], ["music", "retry_music"], ["vision", "rewrite_and_render"]] as const)("routes %s flags to %s", (flagKind, expected) => {
+    expect(nextAutoDecision({ ...deck, flagKind })).toBe(expected);
+    expect(nextAutoDecision({ ...deck, flagKind, attempt: 3 })).toBe("drop");
+    expect(nextAutoDecision({ ...deck, flagKind, paused: true })).toBe("wait");
+  });
 });
