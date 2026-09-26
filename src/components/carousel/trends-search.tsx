@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CatalogImage } from "./catalog-image";
 import { CarouselDetailDialog } from "./carousel-detail";
-import { SEARCH_CHANNELS, mediaUrl, plainText, safeWebUrl, searchSummary, type SearchChannel, type SearchResponse } from "@/lib/carousel/trends/presentation";
+import { SEARCH_CHANNELS, mediaUrl, plainText, safeWebUrl, searchSummary, parseSearchResponse, type SearchChannel, type SearchResponse } from "@/lib/carousel/trends/presentation";
 
 /** Submit-driven search, not a substitute for DEV-36/45's ranked unseen feed.
  * A request sequence prevents a slower old search replacing a newer result.
@@ -37,8 +37,7 @@ export function TrendsSearch() {
         signal: controller.signal, body: JSON.stringify({ ...body, limit: 25 }),
       });
       if (!response.ok) throw new Error(response.status === 401 ? "Your session expired. Sign in again." : response.status === 504 ? "The search timed out." : "The search could not be completed.");
-      const data: SearchResponse = await response.json();
-      if (!Array.isArray(data.results) || !data.pagination) throw new Error("Unexpected search response.");
+      const data = parseSearchResponse(await response.json());
       if (sequence.current === current) { setResult(data); setAppliedFilters(body.filters); }
     } catch (cause) {
       if (!controller.signal.aborted && sequence.current === current) setError(cause instanceof Error ? cause.message : "Search failed.");

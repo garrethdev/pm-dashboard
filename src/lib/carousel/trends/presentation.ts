@@ -25,6 +25,21 @@ export interface CarouselDetail {
   reading_required: boolean;
 }
 
+/** Reject corrupt result rows instead of crashing the grid or reporting an empty
+ * search. These IDs must also meet the detail endpoint's safe-integer contract. */
+export function parseSearchResponse(value: unknown): SearchResponse {
+  const row = (v: unknown): v is CatalogRecord => !!v && typeof v === "object" && !Array.isArray(v);
+  const validId = (v: unknown) => (typeof v === "string" || typeof v === "number") && /^[1-9]\d{0,15}$/.test(String(v)) && Number.isSafeInteger(Number(v));
+  const validItem = (v: unknown) => row(v) && row(v.reference) && validId(v.reference.id) && Number.isSafeInteger(v.slide_count) && Number(v.slide_count) >= 0;
+  if (!row(value) || typeof value.query !== "string" || typeof value.mode !== "string" ||
+      !(value.fallback === null || typeof value.fallback === "string") || !Array.isArray(value.results) || !value.results.every(validItem) ||
+      !row(value.pagination) || !Number.isSafeInteger(value.pagination.limit) || Number(value.pagination.limit) < 1 || Number(value.pagination.limit) > 25 ||
+      value.pagination.returned !== value.results.length || value.results.length > Number(value.pagination.limit) || typeof value.pagination.exhaustive !== "boolean") {
+    throw new Error("Unexpected search response.");
+  }
+  return value as unknown as SearchResponse;
+}
+
 /** Validate the HTTP boundary before rendering: a null slide otherwise crashes
  * image navigation. Unknown optional fields remain available as plain data. */
 export function parseCarouselDetail(value: unknown): CarouselDetail {

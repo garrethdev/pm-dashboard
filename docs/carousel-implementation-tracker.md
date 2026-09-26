@@ -106,6 +106,13 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 03:42 UTC continuation
+
+- Main refreshed at 781fb20; clean starting branch and no active worker agents.
+- Search HTTP boundary now validates result/reference records, safe detail IDs, saved-slide counts and pagination consistency before rendering. Corrupt results enter error/retry rather than crashing or being misrepresented as an empty search; known zero-slide records remain valid.
+- Eight new response tests. Full suite: 504 tests in 38 files passes. Type-check, targeted lint and a fresh Webpack production build PASS, including all currently implemented carousel routes. The build did not deploy or exercise live providers/database.
+- DEV-34/39/42 remain partial. No new manual click-through or vision QA, no new end-to-end ticket certification. Browser/security and live environment/schema blockers remain. Build success does not reduce the unverified end-to-end ETA.
+
 ### September 26, 03:21 UTC continuation
 
 - Main refreshed at 781fb20; clean starting branch, no active worker agents.
