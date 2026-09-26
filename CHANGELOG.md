@@ -115,6 +115,15 @@ work (the agent screenshotted before the dev server had compiled the page),
 and it cannot press and hold, so the Discard hold read as a dead control.
 The search box is now a search input so assistive tools and agents find it.
 
+**After the QA agent's library finding:** every generator page that reads
+the database before it paints (a library, a type, a batch, and the four
+list pages) now shows its title and a pulsing card at once while the read
+runs, so a pressed tile never looks dead. The image modal closes on Escape
+and hands focus back to its tile. Left as is, and worth revisiting once
+uploads land: the libraries grid reads every image row to count them and
+pick its covers, which is fine at today's 155 images and wasteful at
+thousands.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

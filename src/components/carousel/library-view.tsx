@@ -8,7 +8,7 @@
  * pieces that are not connected yet, saying so rather than pretending.
  */
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Accent, Btn, LoadError, PageHead, Pill, post, useJson } from "@/components/carousel/kit";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Images, Plus, Sparkles, Upload, X } from "@/components/ui/icons";
@@ -82,10 +82,20 @@ export function LibrariesView({ initial }: { initial: Library[] | null }) {
 
 function ImageModal({ img, onClose, readOnly }: { img: LibraryImage; onClose: () => void; readOnly: boolean }) {
   const details = img.details ? Object.entries(img.details).filter(([, v]) => v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)) : [];
+  const box = useRef<HTMLDivElement>(null);
+  // Escape closes, focus lands inside and goes back to the tile on close,
+  // the same as the details window on Trends.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", key);
+    box.current?.focus();
+    return () => { document.removeEventListener("keydown", key); opener?.focus?.(); };
+  }, [onClose]);
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div aria-hidden onClick={onClose} className="absolute inset-0 bg-[var(--scrim)]" />
-      <div role="dialog" aria-modal="true" aria-label="Image" className="relative flex max-h-full w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-card border border-border bg-card p-5 md:flex-row">
+      <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Image" className="relative flex max-h-full w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-card border border-border bg-card p-5 outline-none md:flex-row">
         <button type="button" onClick={onClose} aria-label="Close" className="absolute top-3 right-3 flex size-9 items-center justify-center rounded-full bg-card-raised text-text-muted hover:text-text-primary"><X className="size-[18px]" /></button>
         <span className="block aspect-[4/5] w-full max-w-sm shrink-0 rounded-nested border border-border bg-card-sunken bg-cover bg-center" style={{ backgroundImage: `url("${img.url}")` }} role="img" aria-label={img.setName ?? "Image"} />
         <div className="flex min-w-0 flex-1 flex-col gap-3 pr-10 text-sm">
