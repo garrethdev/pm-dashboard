@@ -106,6 +106,14 @@ Every implemented screen needs desktop 1440 and phone 390 checks, light/dark, ke
 
 ## Reporting
 
+### September 26, 01:41 UTC continuation
+
+- Main refreshed at 781fb20; clean starting tree and no concurrent agents. Rechecked tool availability and local configuration rather than assuming the earlier access blocker was unchanged.
+- No database/Vercel/n8n connector or `psql`/`vercel` command found. SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL, N8N_API_KEY and VERCEL_TOKEN are absent from this process. Saved September 12 audit receipts contain workflow/credential-reference metadata, not a configured connection; no secret values were printed.
+- Added documented read-only `probeGenerationAccess`, using zero-row GETs against five existing relations, fixed server configuration, timeout and no redirects. It never reports an inaccessible object as absent or certifies schema. Missing configuration makes no requests.
+- Five tests added; full suite passes 463 tests in 36 files; type-check and targeted lint pass. The actual local probe returned configured=false with no checks, not a successful database verification.
+- Persistence remains blocked on securely configured database access and live catalog readback. No migrations, production writes, manual click-through or new vision QA occurred. No additional ticket is end-to-end complete; ETA remains unvalidated while integration access is absent.
+
 ### September 26, 01:21 UTC continuation
 
 - Main refreshed at 781fb20; clean starting branch and no concurrent agents.

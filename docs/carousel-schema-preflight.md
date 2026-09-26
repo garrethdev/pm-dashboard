@@ -3,6 +3,20 @@
 Status: **prepared, not executed against Supabase**. This document is not a live
 schema receipt and does not claim DEV-01 or DEV-02 is complete.
 
+## Preliminary API access probe
+
+With the existing server environment loaded securely, Node 22+ can run:
+
+```sh
+node --experimental-strip-types --input-type=module -e 'import {probeGenerationAccess} from "./src/server/carousel/schema-access.ts"; console.log(JSON.stringify(await probeGenerationAccess(), null, 2));'
+```
+
+This checks five existing relations using GET with `limit=0`. It returns only
+relation/access/status summaries, not content rows or credentials. `reachable`
+does not validate columns, constraints, RLS or service-role grants. `unverified`
+does not mean the relation is absent. `schemaVerified` is always false: the
+catalog preflight below is still required. Missing configuration sends no request.
+
 Run `scripts/carousel-generator/schema-preflight.sql` in the intended Supabase
 project's SQL editor using an administrator connection. The script is a read-only
 transaction, with a 30-second statement timeout, and inspects PostgreSQL catalogs.
