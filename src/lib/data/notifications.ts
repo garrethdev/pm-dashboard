@@ -366,11 +366,19 @@ async function storedNotifications(
     // written with — running a proxy swap through retireTitle() would announce
     // it as a retirement, which is worse than no notification at all.
     if (r.type !== "retire") {
+      // A generator item opens the batch that is waiting (DEV-52); its
+      // target is the batch id, not a profile, so it names no fleet.
+      const carousel = r.type.startsWith("carousel_");
       return {
         ...base,
+        fleet: carousel ? undefined : base.fleet,
         title: r.title,
         body: r.body,
-        href: r.type === "proxy_replace" ? "/proxies" : "/accounts",
+        href: carousel
+          ? `/carousel-generator/batches/${r.target ?? ""}`
+          : r.type === "proxy_replace"
+            ? "/proxies"
+            : "/accounts",
       };
     }
 

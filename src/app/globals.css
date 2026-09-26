@@ -467,3 +467,11 @@ h2,
 *::-webkit-scrollbar {
   display: none;
 }
+
+/* The Carousel Generator's working-batch loader (D16): nine cells with a
+   wavefront driving to the right. Only the timing lives here; the cells are
+   drawn by the Overview. */
+@keyframes px16on {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 1; }
+}

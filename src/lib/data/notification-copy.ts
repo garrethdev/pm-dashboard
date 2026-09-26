@@ -60,6 +60,8 @@ const CATEGORY: Record<string, string> = {
   proxy_replace: "Proxies",
   todo_today: "To-do",
   todo_overdue: "To-do",
+  carousel_batch_written: "Carousel Generator",
+  carousel_batch_finished: "Carousel Generator",
 };
 
 export function categoryLabel(type: string): string {

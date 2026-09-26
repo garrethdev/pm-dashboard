@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // The documentation serves these pinned assets locally, including in Vercel bundles.
+  outputFileTracingIncludes: {
+    "/api/carousel-generator/docs/assets/*": ["./node_modules/swagger-ui-dist/swagger-ui.css", "./node_modules/swagger-ui-dist/swagger-ui-bundle.js"],
+  },
   /**
    * Keep a visited page in the browser for a short while, so going back to one
    * is instant instead of a fresh round trip.
@@ -19,6 +23,11 @@ const nextConfig: NextConfig = {
   experimental: {
     staleTimes: { dynamic: 30, static: 180 },
   },
+
+  // The slide-image converter (HEIC to JPEG for the Trends screens) runs on
+  // the server and ships its own WebAssembly, so it is loaded from
+  // node_modules as is instead of being bundled.
+  serverExternalPackages: ["heic-decode", "libheif-js", "sharp"],
 
   // /cadence was folded into /content-calendar (2026-09-06): the lane mix moved
   // into the "Adjust Cadence" dialog and the per-account limits table moved
