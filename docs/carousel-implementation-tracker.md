@@ -39,6 +39,21 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 06:42 UTC continuation
+
+- Main remains `781fb20`; clean starting tree and no active worker agents.
+- Added internal `prepareDeck` orchestration connecting pinned template/Writing
+  readers, prompt contract and image-library picker. Verifies template content-type
+  binding and allowed per-batch roles; snapshots caller text before asynchronous
+  reads. Returns explicitly unpersisted preparation, never approved/render-ready.
+- Local integration tests assemble a six-slide fixture proposal and cover wrong
+  type, unsafe identity, unwanted role overrides, missing Writing and empty pools.
+  These tests mock database readers; they do NOT establish a live generation run.
+- 571 tests / 43 files, typecheck and focused lint pass. No credential access was
+  retried. Live verification awaits approval; manual/vision QA remains blocked.
+- Persistence, model calls, rendering and durable execution remain open. No full
+  ticket newly certified, no production deployment, no verified revised ETA.
+
 ### September 26, 06:22 UTC continuation
 
 - Main re-fetched at `781fb20`; clean starting tree and no worker agents active.
