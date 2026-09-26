@@ -9,7 +9,7 @@
  * checks; the wire itself is not built here.
  */
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Accent, Btn, LoadError, PageHead, Pill, WordsPill, post, shortDate, typeMeta, useJson } from "@/components/carousel/kit";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -387,15 +387,16 @@ function GoLive({ d }: { d: Payload }) {
 }
 
 export function TypePage({ slug, initial, tab }: { slug: string; initial: Payload | null; tab?: string }) {
-  const router = useRouter();
   const search = useSearchParams();
   const { data, error, reload } = useJson<Payload>(`/api/carousel-generator/types/${encodeURIComponent(slug)}`, { every: 15_000, initial });
   // The address is the tab (D13: the query string is something a person
-  // reads), so there is no second copy of it in state.
+  // reads). It is written with the browser's own history so the switch is
+  // instant: a router navigation re-ran the whole server page and the tab
+  // lagged behind the press by seconds (found by the QA agent, 2026-09-26).
   const fromUrl = search.get("tab") ?? tab;
   const cur: Tab = TABS.find((t) => t.id === fromUrl)?.id ?? "overview";
   const go = (t: Tab) => {
-    router.replace(`/carousel-generator/types/${slug}${t === "overview" ? "" : `?tab=${t}`}` as never);
+    window.history.replaceState(null, "", `/carousel-generator/types/${slug}${t === "overview" ? "" : `?tab=${t}`}`);
   };
   const d = data ?? initial;
   if (!d) {

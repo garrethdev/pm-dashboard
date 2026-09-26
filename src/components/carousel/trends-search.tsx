@@ -65,7 +65,7 @@ export function TrendsSearch({ compact = false, onSearching, initialQuery = "" }
     <form onSubmit={event => { event.preventDefault(); void search(); }} className="flex flex-wrap items-center gap-2">
       <div className="flex min-w-0 flex-1 items-center rounded-full border border-border bg-card px-4">
         <label htmlFor="carousel-search" className="sr-only">Search carousels</label>
-        <input id="carousel-search" value={query} onChange={event => setQuery(event.target.value)} maxLength={1000} placeholder="Search carousels…" className="min-w-0 flex-1 bg-transparent py-3 text-sm" />
+        <input id="carousel-search" type="search" value={query} onChange={event => setQuery(event.target.value)} maxLength={1000} placeholder="Search carousels…" className="min-w-0 flex-1 bg-transparent py-3 text-sm" />
         {query && <button type="button" onClick={clear} aria-label="Clear search" className="px-2 text-text-muted">×</button>}
         <button type="submit" disabled={!query.trim()} aria-label="Search" className="rounded-full px-2 py-2 text-sm disabled:opacity-30">⌕</button>
       </div>

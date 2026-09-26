@@ -104,6 +104,17 @@ brought back with undo, version 2 saved while a running batch kept version
 Trends with the Saved grid and Recent saves, the datestamp painted on Glow
 Up's last slide, and the phone and light-mode passes.
 
+**Independent QA agent (2026-09-26):** the open-source Browser Use agent
+drove six flows on GPT-4.1 against the dev server. It completed the
+generate, render and approve flow (4 of 5) and the overview walk (3 of 5),
+and it found one real fault: a tab press on the type page waited on a full
+server re-render, so Writing and Go Live looked unchanged for seconds. Tabs
+now switch at once and only the address follows. Its other blockers did not
+hold up when checked by hand: the History table and the library tile both
+work (the agent screenshotted before the dev server had compiled the page),
+and it cannot press and hold, so the Discard hold read as a dead control.
+The search box is now a search input so assistive tools and agents find it.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It
