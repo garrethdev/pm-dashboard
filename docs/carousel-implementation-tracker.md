@@ -39,6 +39,14 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 
 ## Per-ticket ledger (62 entries)
 
+### September 26, 12:02 UTC continuation
+
+- Main refreshed at 781fb20; clean starting feature branch at 2da937c and no concurrent implementation agents.
+- Fixed quality-gate fail-closed validation: risk enums previously used string coercion for validation, permitting arrays such as ["high"] that then missed strict rejection comparisons. Risk level/action now require primitive strings. Non-cloneable adapter evidence also fails closed without storing raw errors.
+- Gate input/adapter references are captured before queued calls, and each remote result is cloned when received rather than after both finish. A later mutation cannot turn an already received high-risk verdict or low score into a pass while the other provider remains pending.
+- Seven new regressions; 739 tests / 59 files pass. Type-check, targeted lint and diff checks pass. Provider calls in these tests are doubles. No new production build, manual click-through or vision QA this checkpoint.
+- DEV-09 remains partial: original rubric/compliance rules, live provider wiring and persisted invocation still require completion. No full ticket newly certified; remaining UI/persistence/jobs are unfinished. Browser-policy and credential/catalog blockers unchanged. No live writes, merge or deployment, and no supported revised ETA.
+
 ### September 26, 11:42 UTC continuation
 
 - Main fetched at 781fb20; clean starting tree at a51269a and no other active implementation agents. Reviewed DEV-08/09 requirements and the current revision/checker implementation.

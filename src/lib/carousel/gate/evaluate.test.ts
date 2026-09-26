@@ -6,6 +6,57 @@ function adapters(): GateAdapters {
   return { compliance: vi.fn(() => []), score: vi.fn(async () => ({ score: 8, suggestions: [] })), risk: vi.fn(async () => verdict) };
 }
 describe("copy quality orchestration", () => {
+  it.each([
+    { risk_level: ["high"] }, { action: ["delete"] },
+    { risk_level: { toString: (): string => "high" } }, { action: { toString: (): string => "review" } },
+  ])("rejects coercible non-string risk enums: %j", async malformed => {
+    const a = adapters(); a.risk = async () => ({ ...verdict, ...malformed });
+    const result = await evaluateCopy(item, a);
+    expect(result.state).toBe("flagged");
+    expect(result.reasons).toContain("Not gated");
+    expect(result.risk).toBeNull();
+  });
+  it("captures identity and adapters before queued provider calls", async () => {
+    const original = { ...item }, a = adapters(), risk = a.risk;
+    const pending = evaluateCopy(original, a);
+    original.content_id = "changed";
+    a.risk = vi.fn(async () => { throw new Error("Wrong adapter"); });
+    expect((await pending).state).toBe("copy_checks_passed");
+    expect(risk).toHaveBeenCalledWith({ items: [item] }, expect.any(AbortSignal));
+    expect(a.risk).not.toHaveBeenCalled();
+  });
+  it("retains a received rejection while waiting for the scorer", async () => {
+    vi.useFakeTimers();
+    try {
+      const a = adapters();
+      const evidence = { ...verdict, risk_level: "high", violations: ["Original violation"] };
+      a.risk = async () => evidence;
+      a.score = async () => new Promise(resolve => setTimeout(() => resolve({ score: 8, suggestions: [] }), 50));
+      const pending = evaluateCopy(item, a, 100);
+      await vi.advanceTimersByTimeAsync(1);
+      evidence.risk_level = "low"; evidence.violations.length = 0;
+      await vi.advanceTimersByTimeAsync(49);
+      const result = await pending;
+      expect(result.state).toBe("flagged");
+      expect(result.reasons).toEqual(["Original violation"]);
+      expect(result.risk?.risk_level).toBe("high");
+    } finally { vi.useRealTimers(); }
+  });
+  it("retains a received low score while waiting for the risk gate", async () => {
+    vi.useFakeTimers();
+    try {
+      const a = adapters(), evidence = { score: 3, suggestions: ["Rewrite hook"] };
+      a.score = async () => evidence;
+      a.risk = async () => new Promise(resolve => setTimeout(() => resolve(verdict), 50));
+      const pending = evaluateCopy(item, a, 100);
+      await vi.advanceTimersByTimeAsync(1);
+      evidence.score = 9; evidence.suggestions.length = 0;
+      await vi.advanceTimersByTimeAsync(49);
+      const result = await pending;
+      expect(result.reasons).toEqual(["Score 3"]);
+      expect(result.suggestions).toEqual(["Rewrite hook"]);
+    } finally { vi.useRealTimers(); }
+  });
   it("passes only complete evidence and sends the current version in the risk envelope", async () => {
     const a = adapters();
     expect((await evaluateCopy(item, a)).state).toBe("copy_checks_passed");

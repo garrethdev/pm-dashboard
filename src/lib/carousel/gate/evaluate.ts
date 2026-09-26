@@ -26,8 +26,8 @@ function quality(value: unknown): value is QualityScore {
   return object(value) && typeof value.score === "number" && Number.isFinite(value.score) && value.score >= 1 && value.score <= 10 && strings(value.suggestions);
 }
 function risk(value: unknown): value is RiskVerdict {
-  return object(value) && ["low", "medium", "high"].includes(String(value.risk_level)) &&
-    ["approve", "review", "delete"].includes(String(value.action)) &&
+  return object(value) && typeof value.risk_level === "string" && ["low", "medium", "high"].includes(value.risk_level) &&
+    typeof value.action === "string" && ["approve", "review", "delete"].includes(value.action) &&
     strings(value.violations) && strings(value.llm_reasons) && strings(value.suggestions);
 }
 
@@ -38,7 +38,9 @@ async function bounded(call: (signal: AbortSignal) => Promise<unknown>, timeoutM
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
-      Promise.resolve().then(() => call(controller.signal)),
+      // Keep evidence as it arrived, even if an adapter reuses/mutates its object
+      // while the other provider is pending. Non-cloneable output fails closed.
+      Promise.resolve().then(() => call(controller.signal)).then(value => structuredClone(value)),
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => { controller.abort(); reject(new Error("Gate timeout")); }, timeoutMs);
       }),
@@ -49,6 +51,8 @@ async function bounded(call: (signal: AbortSignal) => Promise<unknown>, timeoutM
 /** Runs on every written version. A passed result concerns copy checks ONLY:
  * music, rendering and final human approval remain separate requirements. No writes. */
 export async function evaluateCopy(item: GateItem, adapters: GateAdapters, timeoutMs = 20_000) {
+  item = { ...item };
+  adapters = { ...adapters };
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) throw new Error("Invalid gate timeout");
   for (const key of ["content_id", "type", "text_hook", "caption", "on_screen_text"] as const) {
     if (typeof item[key] !== "string" || !item[key].trim()) throw new Error(`Missing gate input: ${key}`);
