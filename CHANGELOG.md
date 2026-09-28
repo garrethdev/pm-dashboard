@@ -20,6 +20,42 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-28 — The bell says when an Automated account has gone 3 days without a warmup (PF-13)
+
+**Where it came from:** Garreth, 2026-09-28: "For the 3-day no warmup, add
+that as a notification." Earlier the same day, the warning only showed on the
+account's page and its phone's page, so it was only seen by someone who went
+looking.
+
+**What changed:**
+
+- **A new bell item**, labelled Physical. For one account it reads, for
+  example, "@handle not warmed in 5 days". For several it is one item, "3
+  automated accounts not warmed in 3+ days", listing each with its days, worst
+  first. It says the warmup script may have stopped.
+- **Amber for one or two accounts, red for three or more**, because several
+  going quiet at once points to the script itself. This is the same rule the
+  bell already uses for Geelark warmup failures.
+- **It includes paused accounts.** The script warms them, but they are not on
+  the To-do list (Garreth, 2026-09-28), so the bell is the one place a dead
+  script shows for them.
+- **Dismissing it holds** while those accounts stay behind. It comes back if
+  another account falls behind, or if the same one recovers and later falls
+  behind again.
+- One account's item opens that account's page; several open Accounts.
+
+**How it was checked:** four new tests (237 in all pass, with type check and
+lint). In the running app, in headless Chrome, dark mode, desktop width, a
+paused practice account last warmed 5 days earlier showed up in the bell as
+"@pf13_practice not warmed in 5 days", labelled Physical, linking to its page.
+The first look showed "4d" beside the title's "5 days", because the item was
+timed from the last warmup. It is now timed from the start of the New York
+day, like the day's to-do item. The practice rows were deleted afterwards.
+
+**Not yet seen:** a real account behind, light mode, phone width, Safari.
+
+---
+
 ## 2026-09-28 — The warmup script can report in, and the app shows what it is doing (PF-13)
 
 **Where it came from:** PF-13, the dashboard side of the warmup script. Garreth

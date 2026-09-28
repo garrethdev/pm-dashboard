@@ -60,6 +60,7 @@ const CATEGORY: Record<string, string> = {
   proxy_replace: "Proxies",
   todo_today: "To-do",
   todo_overdue: "To-do",
+  warmup_overdue: "Warmup",
 };
 
 export function categoryLabel(type: string): string {

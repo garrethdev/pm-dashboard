@@ -429,6 +429,43 @@ export async function getLastFinishedWarmups(profiles: string[]): Promise<Map<st
   return new Map(rows.map((r) => [r.geelark_profile, r.last_success_at]));
 }
 
+export interface OverdueAccount {
+  id: AccountId;
+  username: string | null;
+  profile: string | null;
+  /** New York days without a finished warmup, 3 or more. */
+  days: number;
+  /** What the count runs from: the last finished warmup, or the move onto
+   *  the phone for an account never warmed. Names the streak, so a dismissed
+   *  alert comes back if the account recovers and later falls behind again. */
+  since: string;
+}
+
+interface RawOverdueAccount {
+  id: AccountId;
+  username: string | null;
+  geelark_profile: string | null;
+  moved_to_device_at: string | null;
+}
+
+async function overdueOf(accounts: RawOverdueAccount[], now: Date): Promise<OverdueAccount[]> {
+  const last = await getLastFinishedWarmups(
+    accounts.map((a) => a.geelark_profile).filter((p): p is string => Boolean(p)),
+  );
+  const out: OverdueAccount[] = [];
+  for (const a of accounts) {
+    const finished = (a.geelark_profile ? last.get(a.geelark_profile) : null) ?? null;
+    const days = warmupOverdueDays(finished, a.moved_to_device_at, now);
+    const since = finished ?? a.moved_to_device_at;
+    if (days !== null && since) {
+      out.push({ id: a.id, username: a.username, profile: a.geelark_profile, days, since });
+    }
+  }
+  return out;
+}
+
+const OVERDUE_COLS = `${ACCOUNT_ID_COL},username,geelark_profile,moved_to_device_at`;
+
 /**
  * Which of these accounts are Automated and past the 3-day line, and by how
  * many days (Garreth, 2026-09-28). Manual accounts are never in the answer:
@@ -438,25 +475,23 @@ export async function getAutomatedOverdue(
   accountIds: AccountId[],
   now: Date = new Date(),
 ): Promise<Map<AccountId, number>> {
-  const out = new Map<AccountId, number>();
-  if (accountIds.length === 0) return out;
-  const accounts = await readJson<
-    { id: AccountId; geelark_profile: string | null; moved_to_device_at: string | null }[]
-  >(
-    `accounts?select=${ACCOUNT_ID_COL},geelark_profile,moved_to_device_at` +
-      `&warmup_mode=eq.script&id=in.(${accountIds.join(",")})`,
+  if (accountIds.length === 0) return new Map();
+  const accounts = await readJson<RawOverdueAccount[]>(
+    `accounts?select=${OVERDUE_COLS}&warmup_mode=eq.script&id=in.(${accountIds.join(",")})`,
     "the accounts",
   );
-  const last = await getLastFinishedWarmups(
-    accounts.map((a) => a.geelark_profile).filter((p): p is string => Boolean(p)),
+  return new Map((await overdueOf(accounts, now)).map((a) => [a.id, a.days]));
+}
+
+/**
+ * Every account the script is meant to be warming — the same five checks the
+ * script itself runs on, paused or not — that is past the 3-day line. For the
+ * bell (Garreth, 2026-09-28: "add that as a notification").
+ */
+export async function getAllAutomatedOverdue(now: Date = new Date()): Promise<OverdueAccount[]> {
+  const accounts = await readJson<RawOverdueAccount[]>(
+    `accounts?select=${OVERDUE_COLS}&${ELIGIBLE}&order=id.asc`,
+    "the accounts",
   );
-  for (const a of accounts) {
-    const days = warmupOverdueDays(
-      (a.geelark_profile ? last.get(a.geelark_profile) : null) ?? null,
-      a.moved_to_device_at,
-      now,
-    );
-    if (days !== null) out.set(a.id, days);
-  }
-  return out;
+  return overdueOf(accounts, now);
 }
