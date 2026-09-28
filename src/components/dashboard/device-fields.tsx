@@ -35,7 +35,7 @@ const US_TIMEZONES = [
 
 // text-base on a phone: iOS Safari zooms the page into any field under 16px.
 export const DEVICE_INPUT =
-  "w-full rounded-nested border border-border bg-card-raised px-3 py-2.5 text-base outline-none placeholder:text-text-muted focus:border-accent disabled:opacity-40 sm:py-2 sm:text-sm";
+  "w-full rounded-nested border border-border bg-card-raised px-3 py-2.5 text-base outline-none placeholder:text-text-placeholder focus:border-accent disabled:opacity-40 sm:py-2 sm:text-sm";
 
 function Field({
   label,

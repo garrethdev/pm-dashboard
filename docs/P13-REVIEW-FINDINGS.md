@@ -179,6 +179,29 @@ circle, one quiet line, card to the bottom of the screen.
 
 **B7-2 — Fixed 2026-09-23.** To-do's ‹ › day arrows are 44 × 44 tap targets on phones; the visible circle stays 28 px.
 
+## Garreth's pass on the leftovers, 2026-09-28
+
+Garreth checked the findings that were never on an approved list, in Safari on
+the running app.
+
+- **B6-1 — Changed.** On a phone, the platform choice on Analytics is now a
+  dropdown that starts on All (his design: "the selector of the platform
+  should be in a dropdown with the default of all"). Desktop keeps its tabs.
+- **B3-3 — Changed, the other way from the suggestion.** The review suggested
+  a *lighter* grey for the example text. Garreth asked for it a little
+  *darker*. It is now its own colour, `--text-placeholder`: unchanged in dark
+  mode, and in light mode `#465060` (7.0:1) instead of `#515c6b` (5.9:1).
+  That is still far from typed text (14.6:1). It is used by every text box
+  that had the standard placeholder colour, not only Add phone, so the forms
+  stay alike.
+- **Accepted as they are, no change:** B5-4 (the icon-only Add account on a
+  phone), B2-4 (the faded switched-off phone, in both themes), B1-3 (page
+  names cut beside the switch), B5-3 (the bare empty Views chart) and B7-1
+  (the plain-text empty lists).
+- **Not yet answered:** B2-6 (faint switched-off move buttons) and B6-2 (the
+  Facebook dot). Could not be checked without real data: B3-4, B3-5. Code
+  only: B4-1.
+
 ## Found on the way (shared by every screen, not B1–B7 themselves)
 
 - **breaks, rare device settings:** the glowing accent button (`CtaButton` →

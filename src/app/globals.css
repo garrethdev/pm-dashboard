@@ -62,6 +62,9 @@
   --border: #242426;
   --text-primary: #f4f4f5;
   --text-muted: #8a8a92;
+  /* Example text in an empty box. The same as --text-muted in dark mode; a
+   * shade darker in light mode (P13 B3-3, Garreth 2026-09-28). */
+  --text-placeholder: #8a8a92;
 
   /* Atmospherics. The glow has to exist before glass reads as glass: a blur
    * over a flat fill produces nothing, so the light source comes first and the
@@ -171,6 +174,9 @@
   --border: #e4e4e6;
   --text-primary: #1b1d21;
   --text-muted: #515c6b;
+  /* 7.0:1 on a raised field instead of --text-muted's 5.9:1, and still well
+   * short of typed text's 14.6:1, so a blank form does not read as filled. */
+  --text-placeholder: #465060;
 
   /* Flat by decision (Garreth 2026-09-07): light mode keeps the layout and
    * drops the atmospherics rather than inventing a second visual language. */
@@ -256,6 +262,7 @@
   --color-border: var(--border);
   --color-text-primary: var(--text-primary);
   --color-text-muted: var(--text-muted);
+  --color-text-placeholder: var(--text-placeholder);
   --color-accent: var(--accent);
   --color-accent-deep: var(--accent-deep);
   --color-accent-soft: var(--accent-soft);

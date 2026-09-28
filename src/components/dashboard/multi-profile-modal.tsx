@@ -69,7 +69,7 @@ export function MultiProfileModal({
                 onChange={(e) => setField(i, e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && apply()}
                 placeholder="e.g. 29"
-                className="w-full rounded-full border border-border bg-card-raised px-3.5 py-2 text-sm outline-none placeholder:text-text-muted focus:border-accent"
+                className="w-full rounded-full border border-border bg-card-raised px-3.5 py-2 text-sm outline-none placeholder:text-text-placeholder focus:border-accent"
               />
               <button
                 onClick={() => removeField(i)}

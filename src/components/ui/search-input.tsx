@@ -27,7 +27,7 @@ export function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-transparent text-sm outline-none placeholder:text-text-muted"
+        className="w-full bg-transparent text-sm outline-none placeholder:text-text-placeholder"
       />
       {value && (
         <button

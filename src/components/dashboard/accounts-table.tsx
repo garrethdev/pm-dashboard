@@ -931,10 +931,14 @@ export function AccountsTable({
     return (
       <DashCard
         title="Accounts"
-        toolbar={healthPills}
+        // On a phone the health pills live inside Filters, and Filters sits
+        // beside the title (Garreth, 2026-09-28), as on the Accounts page.
+        toolbar={<div className="hidden sm:contents">{healthPills}</div>}
         // No Active Accounts count here any more, in either fleet (Garreth,
         // 2026-09-23). Filters, then View all at the right-hand edge.
         actions={filtersDropdown}
+        hideActionsOnPhone
+        titleAside={filtersDropdown}
         viewAllHref="/accounts"
         className={className}
       >

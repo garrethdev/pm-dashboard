@@ -189,7 +189,7 @@ export function ReplaceProxyModal({
               autoComplete="off"
               spellCheck={false}
               placeholder="IP:PORT:USERNAME:PASSWORD"
-              className="w-full rounded-nested border border-border bg-card-raised px-3 py-2 font-mono text-xs outline-none placeholder:text-text-muted focus:border-accent disabled:opacity-40"
+              className="w-full rounded-nested border border-border bg-card-raised px-3 py-2 font-mono text-xs outline-none placeholder:text-text-placeholder focus:border-accent disabled:opacity-40"
             />
             {/* Read back what was understood rather than only complaining when
                 it is wrong: the failure this catches is a line that parses but

@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   Cards,
   ChartBar,
+  Check,
   ExternalLink,
   FacebookLogo,
   Users,
@@ -31,6 +32,7 @@ import {
 } from "recharts";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, DashCard } from "@/components/ui/card";
+import { Dropdown } from "@/components/ui/dropdown";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { TopPostsCard } from "@/components/dashboard/top-posts-card";
 import { AnalyticsSkeleton } from "@/components/dashboard/analytics-skeleton";
@@ -798,6 +800,19 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
   // about but accounts does not (an "unassigned" bucket, a retired character
   // still inside the window) is kept, so nothing silently drops out of the
   // filter.
+  const platformOptions = [
+    { value: "all", label: "All" },
+    { value: "tiktok", label: "TikTok" },
+    { value: "instagram", label: "Instagram" },
+    ...(fleet === "physical" ? [{ value: "facebook", label: "Facebook" }] : []),
+  ];
+  const platformValue = facebook ? "facebook" : platform;
+  const platformLabel = platformOptions.find((o) => o.value === platformValue)?.label ?? "All";
+  const choosePlatform = (v: string) => {
+    setFacebook(v === "facebook");
+    if (v !== "facebook") setPlatform(v as PlatformKey);
+  };
+
   const ctCharacters = [
     ...new Set([...data.characterOptions, ...data.contentTypes.map((t) => t.character)]),
   ].sort();
@@ -810,20 +825,47 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-3">
         <div className="flex min-w-0 items-center justify-between gap-3 sm:contents">
           <h1 className="shrink-0 text-xl font-semibold">Analytics</h1>
-          <FilterPills
-            inline
-            value={facebook ? "facebook" : platform}
-            onChange={(v) => {
-              setFacebook(v === "facebook");
-              if (v !== "facebook") setPlatform(v as PlatformKey);
-            }}
-            options={[
-              { value: "all", label: "All" },
-              { value: "tiktok", label: "TikTok" },
-              { value: "instagram", label: "Instagram" },
-              ...(fleet === "physical" ? [{ value: "facebook", label: "Facebook" }] : []),
-            ]}
-          />
+          {/* Phone: a dropdown, starting on All (Garreth, 2026-09-28). As a
+              row of tabs it ran off the edge on Physical, where Facebook makes
+              four, and read "Faceboo" unless you knew to swipe (P13 B6-1). */}
+          <div className="sm:hidden">
+            <Dropdown label={platformLabel} align="right">
+              {(close) => (
+                <div role="menu" className="flex flex-col gap-0.5">
+                  {platformOptions.map((o) => {
+                    const on = o.value === platformValue;
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={on}
+                        onClick={() => {
+                          choosePlatform(o.value);
+                          close();
+                        }}
+                        className="flex h-11 items-center gap-2.5 rounded-nested px-2 text-left text-sm transition-colors hover:bg-card-raised"
+                      >
+                        <span className="flex size-5 shrink-0 items-center justify-center text-accent">
+                          {on && <Check className="size-3.5" />}
+                        </span>
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </Dropdown>
+          </div>
+          {/* From `sm:` up the tabs fit, and stay as they were. */}
+          <div className="hidden sm:contents">
+            <FilterPills
+              inline
+              value={platformValue}
+              onChange={choosePlatform}
+              options={platformOptions}
+            />
+          </div>
         </div>
         {/* Hidden on Facebook: there is nothing to chart, so a range (and the
             date the TikTok/Instagram numbers were read) would choose nothing

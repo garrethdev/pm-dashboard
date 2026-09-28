@@ -68,7 +68,7 @@ function SignInForm({ error }: { error?: string }) {
           type="email"
           required
           placeholder="you@example.com"
-          className="rounded-nested border border-border bg-card-raised px-3.5 py-3 text-sm outline-none placeholder:text-text-muted focus:border-accent/60"
+          className="rounded-nested border border-border bg-card-raised px-3.5 py-3 text-sm outline-none placeholder:text-text-placeholder focus:border-accent/60"
         />
       </div>
 
