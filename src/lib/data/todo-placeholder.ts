@@ -67,6 +67,13 @@ export type TodoItem = {
    * 2026-09-22). Nobody can tick one.
    */
   automated?: boolean;
+  /**
+   * Warmups only: what the script is doing about this session (PF-13).
+   * `running` while its check-ins are fresh, with the time it started;
+   * `stopped` when they went quiet without the run being closed, with the
+   * last time it was heard from. Absent when no run is open.
+   */
+  run?: { state: "running" | "stopped"; at: string };
 };
 
 export type TodoAccount = {

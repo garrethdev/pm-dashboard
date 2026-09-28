@@ -20,6 +20,113 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-28 — The warmup script can report in, and the app shows what it is doing (PF-13)
+
+**Where it came from:** PF-13, the dashboard side of the warmup script. Garreth
+asked for parts 1 and 2 on 2026-09-28. Before building, the script's own
+repository (`garrethdev/warmup-runner`) was read: its tasks B0 to B12 are done
+on pretend phones, and its reporting step, B10, was blocked waiting for this.
+Garreth chose the secured endpoint over the master key on 2026-09-27, and
+chose the Running status on 2026-09-25.
+
+**What changed:**
+
+- **The script has its own way in.** There are six web addresses under
+  `/api/warmup-runner/`, opened with a token instead of a sign-in. Two let the
+  script read what it could not read before, because those tables are locked:
+  which accounts it may warm, and which sessions are already done that day.
+  Four let it write: a run has started, still running (once a minute), the run
+  is over, and the finished session. It can do nothing else. It cannot change
+  an account, a phone or a post.
+- **It is refused when something is wrong.** A call is refused for an account
+  that is not set to Automated on a phone, or is retired or banned, and for
+  the wrong phone. It is also refused when the minutes are more than the clock
+  allows, or the start time is far off. Every refusal carries a sentence and a
+  short code, so the script can log why.
+- **A retry never counts twice.** If the Air sends the same thing again after
+  a slow connection, the dashboard recognises it and changes nothing. A new
+  database rule makes sure one run can only ever write one session.
+- **The To-do list says Running and Stopped.** On an Automated account's
+  warmup, a blue **Running** tag shows while the script is checking in, with
+  the time it started. A red **Stopped** tag shows when the check-ins have gone
+  quiet for 3 minutes and the run was never closed, with the time it was last
+  heard from. Before this, a script that died halfway looked the same as one
+  that had not started. The dashboard's To-do card shows the same two tags.
+- **The list updates itself** every 30 seconds while an Automated warmup is
+  still open today, so nobody has to refresh to see a run start or finish.
+- **Two calls made while building, both open to change:** 3 minutes before
+  Stopped (two missed check-ins). And if an account is switched back to Manual
+  halfway through a run, the minutes that run did are still kept.
+- **For the script's builder:** `docs/WARMUP-RUNNER-API.md` sets out every
+  address, what to send, and every refusal.
+
+**Part 3, after Garreth's answers the same day:**
+
+- **An Automated account's own page lists its two warmups** where a Manual
+  account has its Log warmup card. They are rows nobody can press, each with
+  the robot and one word: Done (with the time and minutes), Running, Stopped,
+  or Not yet.
+- **On the phone's page, an Automated account keeps its one line.** The
+  warmup tag gets the robot, can't be pressed, and says Stopped, Running,
+  Warmup done, or Warmup 1 of 2. Before, it was a grey tag that sent you to
+  the To-do list, where there was nothing to do.
+- **Three days without a finished warmup shows in red** ("No warmup in 4
+  days"), on the account's page and on its line on the phone's page, but only
+  for Automated accounts. Garreth: "3 days no warmup = problem."
+- **Switching an account back to Manual mid-day** makes the rest of its day
+  Manual. Its warmups go on the To-do list for a person, and the script's
+  minutes still count. The list already behaved this way; a test now makes
+  sure it keeps doing so.
+- **A paused Automated account stays off the To-do list**, as Garreth
+  decided, so it is also missing from the phone page's Today block. Its own
+  page still shows it.
+- The Accounts page is unchanged. Its Warmup column already counts the
+  script's sessions.
+
+**How it was checked:** the new table was added to the live database. It is
+readable only with the master key, which was confirmed by reading its
+permissions back, and the database's record of the change matches the file.
+With a practice phone and two practice accounts, every address was called
+against the running app, as the script would call it, and every refusal was
+triggered on purpose. On the To-do page (headless Chrome, dark mode, desktop
+width):
+
+- Running showed while the run was checking in.
+- Stopped showed after its check-ins had really gone quiet for more than 3
+  minutes. Nothing was backdated.
+- With the page left open, the script's 17-minute session was written, and
+  within 30 seconds the warmup was ticked, with no reload.
+
+The repeat write and the repeat close were both recognised and changed
+nothing. Part 3 was then looked at on a practice account last warmed 5 days
+earlier (run states set directly in the database for this check):
+
+- Its own page showed "No warmup in 5 days" with the morning warmup Stopped
+  and the evening one Running.
+- Its phone's line showed the robot, Stopped and the red warning.
+- After the morning session was written, the page showed Done with 17 min,
+  and the warning was gone.
+- The To-do list read the same as before the change.
+
+All practice rows were deleted afterwards, and the database is back to 0
+phones, 0 sessions and 0 runs. Type check, lint and all 233 tests pass (22 of
+them new).
+
+**Not yet done or seen:**
+
+- **The token was added to Vercel (Production and Preview) the same day, but
+  only takes effect with the next deploy**, so until this change is on `main`
+  and deployed, the live app has none of this. A copy is in the Keychain on
+  Garreth's Mac ("WARMUP_RUNNER_TOKEN (pm-dashboard)") to hand to the Air.
+- The Air itself has never called it, because the script's B10 is still to be
+  built.
+- The dashboard card's tags, light mode, phone width and Safari were not
+  looked at. Every check was in headless Chrome, dark mode, desktop width.
+- A dead script only shows on screens someone has to open. Nothing reaches
+  the bell.
+
+---
+
 ## 2026-09-23 — The calendar tells you where each hand-made post stands (P11)
 
 **Where it came from:** design ticket P11, calendar half. Garreth approved the

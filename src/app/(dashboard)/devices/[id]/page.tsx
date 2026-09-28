@@ -15,6 +15,7 @@ import {
   type SessionProgress,
 } from "@/lib/data/warmup-sessions";
 import { etDateTime } from "@/lib/data/format";
+import { getAutomatedOverdue } from "@/lib/data/warmup-runs";
 
 /**
  * One phone — design ticket P5.
@@ -114,6 +115,12 @@ export default async function DevicePage({
     progress[a.id] = progressToday(todaysSessions.filter((s) => s.accountId === a.id));
   }
 
+  // Automated accounts past three days with no finished warmup (PF-13).
+  // Allowed to fail softly: a missing warning costs a pill, not the page.
+  const overdue = await getAutomatedOverdue(device.accounts.map((a) => a.id)).catch(
+    () => new Map<string, number>(),
+  );
+
   return (
     <DeviceDetail
       device={device}
@@ -122,6 +129,7 @@ export default async function DevicePage({
       warmups={warmups}
       warmupProgress={progress}
       today={today}
+      warmupOverdue={Object.fromEntries(overdue)}
       initialNotice={
         query.proof === "failed" && !device.proofPath
           ? "The phone was saved, but the screenshot did not upload. Add it here."

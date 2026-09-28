@@ -5,12 +5,21 @@ import { authBypassed, isEmailAllowed } from "@/lib/auth";
 const PUBLIC_PATHS = ["/login", "/auth/confirm"];
 
 /**
+ * The warmup script on the Air (PF-13) is not a person and has no session, so
+ * its routes skip the sign-in check here and demand their own token instead
+ * (`requireRunnerToken` in src/lib/warmup-runner-api.ts, which every route
+ * under this prefix calls first). Same string as RUNNER_API_PREFIX there; not
+ * imported, to keep this file free of server-only modules.
+ */
+const RUNNER_API_PREFIX = "/api/warmup-runner/";
+
+/**
  * Auth gate (Next 16 "proxy", formerly middleware): refreshes the Supabase
  * session cookie and redirects unauthenticated / non-allowlisted visitors to
  * /login. API routes re-check the session themselves — this is the outer door.
  */
 export async function proxy(request: NextRequest) {
-  if (authBypassed()) {
+  if (authBypassed() || request.nextUrl.pathname.startsWith(RUNNER_API_PREFIX)) {
     return NextResponse.next({ request });
   }
 

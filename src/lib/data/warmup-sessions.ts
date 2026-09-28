@@ -111,8 +111,9 @@ function serviceKey(): string {
 }
 
 /** Same shape as the helper in `post-deliveries.ts`: timeout, one retry, and a
- *  sentence rather than a stack trace when Supabase cannot be reached. */
-async function sbFetch(path: string, init: RequestInit, retries = 1): Promise<Response> {
+ *  sentence rather than a stack trace when Supabase cannot be reached. Also
+ *  used by `warmup-runs.ts`, the script's side of the same table. */
+export async function sbFetch(path: string, init: RequestInit, retries = 1): Promise<Response> {
   const key = serviceKey();
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
