@@ -956,10 +956,22 @@ Cloud" to design.
 
 **Still worth doing, and needs no phones:** move the plain-text Supabase keys
 in the Posting Agent, Smart Scheduler and Virlo bridge into n8n credentials,
-then rotate them. **Worth watching** once the last Geelark phone is gone: a
+then rotate them. **Progress 2026-09-28 (keys NOT rotated, Garreth: "do not
+change the keys for now"):** the Posting Agent already used the "Supabase
+Service Role" credential everywhere. The Virlo bridge's only pasted keys were
+in a switched-off old step, now deleted and published. **The Smart Scheduler
+still has its key pasted in**, inside a Code step, and n8n does not let Code
+steps use stored credentials; moving it means rebuilding how that step reads
+and writes the database. Not started. Other workflows have not been swept. **Worth watching** once the last Geelark phone is gone: a
 workflow that alerts on an empty Geelark reply (Wallet Guard, the Posting
 Agent's "no phones" case) may start raising false alarms. That has not been
 checked; nothing is empty yet.
+
+**Found 2026-09-28: n8n is out of runs.** Since about 10 pm ET on 2026-09-25,
+n8n Cloud has refused every scheduled run ("Execution limit reached"), so no
+workflow has done any work for two days. The Virlo bridge's schedule is named
+"Hourly" but runs every 5 minutes (288 runs a day), the likely reason the
+allowance ran out. Getting runs back is a plan decision for Garreth.
 
 ~~In order: unpublish Warmup Scheduler, GPS drift, the Geelark branch of the
 Posting Agent, Task Detail Poller, Wallet Guard (unpublish, do not delete; keep
