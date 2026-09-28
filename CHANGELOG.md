@@ -20,6 +20,39 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-28 — The bell says when n8n stops running workflows
+
+**Where it came from:** found the same day. n8n Cloud reached its plan's
+monthly run limit at about 10 pm ET on 2026-09-25 and refused every scheduled
+run for more than two days: the scheduler, the stats collection, gatekeeping
+and the research pipelines. Nothing in the dashboard said so. Garreth asked
+for an alert.
+
+**What changed:**
+
+- **A red bell item, "n8n is not running workflows"**, with n8n's own reason
+  and the last time anything finished, for example: "Execution limit reached.
+  Consider upgrading your plan. Nothing has finished since Sep 25, 10:00 pm".
+  It opens the Automation page.
+- **When it appears:** when n8n's latest 20 real runs have all failed, and
+  nothing has succeeded for over an hour. One workflow failing on its own does
+  not set it off; the Automation page covers that. Test runs and the
+  error-alert workflow are not counted. The error-alert workflow kept
+  succeeding all through the outage, so counting it would have hidden it.
+- **Dismissing it holds for the rest of that outage.** A later outage alerts
+  again.
+- **It costs no n8n runs.** It reads n8n's run history, at most every five
+  minutes, and only opens the one failed run it needs to read the reason.
+
+**How it was checked:** eight new tests (245 pass, with type check and lint).
+Then live against the real, still-running outage: the local app's bell showed
+the item with the exact reason and "since Sep 25, 10:00 pm", at the top and in
+red, at phone width in headless Chrome.
+
+**Not yet seen:** the item clearing itself once n8n runs again.
+
+---
+
 ## 2026-09-28 — On phones: Analytics has a platform dropdown, cards keep their pills inside Filters, and example text is easier to read
 
 **Where it came from:** Garreth's pass on the leftover findings from the

@@ -198,8 +198,10 @@ the running app.
   phone), B2-4 (the faded switched-off phone, in both themes), B1-3 (page
   names cut beside the switch), B5-3 (the bare empty Views chart) and B7-1
   (the plain-text empty lists).
-- **Not yet answered:** B2-6 (faint switched-off move buttons) and B6-2 (the
-  Facebook dot). Could not be checked without real data: B3-4, B3-5. Code
+- **Also accepted as they are (Garreth, later the same day):** B2-6 (faint
+  switched-off move buttons) and B6-2 (the Facebook dot). The Geelark
+  automation log on an account's page keeps its Executed / Pending pills
+  outside Filters on a phone. Could not be checked without real data: B3-4, B3-5. Code
   only: B4-1.
 
 ## Found on the way (shared by every screen, not B1–B7 themselves)
