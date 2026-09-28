@@ -4,7 +4,8 @@ import { warmupItemsFor } from "@/lib/data/todo";
 import type { TodoItem } from "@/lib/data/todo-placeholder";
 import type { WarmupSession } from "@/lib/data/warmup-sessions";
 import { automatedWord } from "@/components/dashboard/automated-warmups";
-import { RunnerError, rangeOfETDate } from "@/lib/data/warmup-runs";
+import { RunnerError, rangeOfETDate, type OverdueAccount } from "@/lib/data/warmup-runs";
+import { warmupOverdueItem } from "@/lib/data/notifications";
 import { parseDeviceId, parseNote, parseRunKey, requireRunnerToken } from "@/lib/warmup-runner-api";
 
 // PF-13: the Running status and the script's door.
@@ -194,5 +195,45 @@ describe("automatedWord", () => {
     expect(automatedWord({ ...base, run: { state: "stopped", at: "09:31" } })).toMatchObject({ tone: "danger", label: "Stopped" });
     expect(automatedWord(base)).toEqual({ tone: "gray", label: "Not yet", detail: null });
     expect(automatedWord({ ...base, loggedMinutes: 6 }).detail).toBe("6 of 15 min");
+  });
+});
+
+describe("warmupOverdueItem (the bell, Garreth 2026-09-28)", () => {
+  const acct = (id: string, days: number, over: Partial<OverdueAccount> = {}): OverdueAccount => ({
+    id,
+    username: `user${id}`,
+    profile: `Profile ${id}`,
+    days,
+    since: `2026-09-2${9 - days}T12:00:00Z`,
+    ...over,
+  });
+
+  it("says nothing when no Automated account is behind", () => {
+    expect(warmupOverdueItem([])).toBeNull();
+  });
+
+  it("names one account and links to its page", () => {
+    const item = warmupOverdueItem([acct("21", 4)])!;
+    expect(item).toMatchObject({
+      title: "@user21 not warmed in 4 days",
+      severity: "warning",
+      href: "/accounts/21",
+      fleet: "physical",
+      markKeys: ["warmup_overdue:21:2026-09-25T12:00:00Z"],
+    });
+  });
+
+  it("groups several, worst first, and turns red at three", () => {
+    const item = warmupOverdueItem([acct("21", 3), acct("22", 5), acct("23", 4)])!;
+    expect(item.title).toBe("3 automated accounts not warmed in 3+ days");
+    expect(item.body).toBe("@user22 (5 days), @user23 (4 days) and @user21 (3 days). The warmup script may have stopped");
+    expect(item.severity).toBe("critical");
+    expect(item.href).toBe("/accounts");
+  });
+
+  it("comes back as new when an account falls behind on a new streak", () => {
+    const first = warmupOverdueItem([acct("21", 4)])!;
+    const later = warmupOverdueItem([acct("21", 3, { since: "2026-10-02T12:00:00Z" })])!;
+    expect(later.markKeys).not.toEqual(first.markKeys);
   });
 });

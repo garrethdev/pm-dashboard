@@ -167,7 +167,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-23 | Warmup script: the build (on the Air, its own repository) | Long term | **Partly ready now** — tasks B0–B11 need no phone (2026-09-25); M1 onward needs WebDriverAgent on a phone. Split from PF-13 on 2026-09-25 (Garreth). Needs PF-13's write path by its step M6 |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
-| PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
+| PF-16 | Retire Geelark: workflows, app code, keys | Long term | **Narrowed 2026-09-28 (Garreth): Cloud stays, empty.** Nothing is removed from the app or n8n. What is left is the key rotation, blocked by the n8n credential move |
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query. **Bug found 2026-09-23, not fixed:** Physical + "All time" never returns while Physical has no posts (`analytics_rollup_fleet(null, *, 'physical')` hits the statement timeout; its date series starts at `-infinity`) |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
 | PF-19 | Calendar and Content types per fleet | Intermediate | **Built 2026-09-22** as four new `_fleet` functions beside the untouched originals; no Physical data to show yet |
@@ -944,9 +944,24 @@ other three stayed on Cloud with no new audit rows.
 
 **Left to do:** the first real batch, the day phones arrive.
 
-## PF-16 · Retire Geelark — Blocked by the last account moving
+## PF-16 · Retire Geelark — Narrowed 2026-09-28: Cloud stays, only the keys remain
 
-In order: unpublish Warmup Scheduler, GPS drift, the Geelark branch of the
+**Garreth, 2026-09-28:** keep Cloud's infrastructure as it is, with no phones
+and no active accounts, rather than removing it. So the removal below is
+**cancelled**: the Cloud side of the app (the switch, its menu, the Geelark
+wallet, every Cloud page) stays and simply shows its empty states, and the
+Geelark workflows in n8n stay published and find nothing to do each run. It
+also closes the after-Cloud half of design ticket P11: there is no "app without
+Cloud" to design.
+
+**Still worth doing, and needs no phones:** move the plain-text Supabase keys
+in the Posting Agent, Smart Scheduler and Virlo bridge into n8n credentials,
+then rotate them. **Worth watching** once the last Geelark phone is gone: a
+workflow that alerts on an empty Geelark reply (Wallet Guard, the Posting
+Agent's "no phones" case) may start raising false alarms. That has not been
+checked; nothing is empty yet.
+
+~~In order: unpublish Warmup Scheduler, GPS drift, the Geelark branch of the
 Posting Agent, Task Detail Poller, Wallet Guard (unpublish, do not delete; keep
 `geelark_tasks` read-only for forensics). Then remove from the app:
 `src/lib/data/geelark.ts` phone list, `wallet.ts`, `geelark-writes.ts`,
@@ -956,7 +971,8 @@ key rotation is also blocked by the plaintext keys in the Posting Agent, Smart
 Scheduler and Virlo bridge — move those to n8n credentials first (see the n8n
 credentials note in memory).
 *Done when:* no live workflow or app route calls Geelark and the old key is
-dead.
+dead.~~ *Done when (narrowed):* the inline keys are in n8n credentials and
+rotated.
 
 ## PF-17 to PF-20 · Each fleet gets its own numbers
 
