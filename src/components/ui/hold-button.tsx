@@ -112,7 +112,7 @@ export function HoldButton({
         "touch-none", // stop the browser turning a long press into a scroll or text selection
         // No hover fade: fading the whole button fades its label too, and the
         // warn label is only just over 4.5:1 to begin with (P13 B2-1).
-        tone === "danger" ? "bg-danger/25 text-danger" : "bg-warn-soft text-warn",
+        tone === "danger" ? "bg-danger-soft text-danger" : "bg-warn-soft text-warn",
         className,
       )}
     >

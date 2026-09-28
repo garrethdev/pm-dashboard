@@ -139,6 +139,7 @@ reach for `--warn` because a yellow looks nice there.
 | `--warn-soft` | `rgba(251, 191, 36, 0.25)` | `rgba(146, 64, 14, 0.15)` | The ground of a `warn` hold button (`bg-warn-soft`). Weaker in light mode so the brown label clears 4.5:1 on a raised panel too (P13 B2-1). |
 | `--orange` | `#fb923c` | `#9a3412` | The step between warn and danger: collapsing, system error. |
 | `--danger` | `#f87171` | `#b91c1c` | Banned, failed, or a destructive action. |
+| `--danger-soft` | `rgba(248, 113, 113, 0.15)` | `rgba(185, 28, 28, 0.12)` | The ground of a `danger` hold button, Retire (`bg-danger-soft`). Replaced `bg-danger/25`, whose red label fell under 4.5:1 on raised panels in both themes (P13 B2-1's follow-up, 2026-09-28). |
 | `--danger-deep` | `#dc2626` | `#7f1d1d` | The one state worse than collapsing — shadowbanned. |
 | `--info` | `#60a5fa` | `#1d4ed8` | Neutral information, non-urgent. |
 
@@ -668,7 +669,9 @@ Two naming notes that will otherwise look like mistakes:
   its meaning.
 
 Two tokens exist in Figma with no CSS custom property — `color/status/danger-soft`
-(`bg-danger/25`, the press-and-hold ground) and `color/status/warn-soft`
+(`bg-danger/25`, the press-and-hold ground; since 2026-09-28 the code has a
+real `--danger-soft` at 15% dark / 12% light, and Figma, frozen since
+2026-09-12, keeps the old 25%) and `color/status/warn-soft`
 (`bg-warn/10`, the stale-notice and running-long ground). In code both are
 Tailwind opacity modifiers rather than variables, but Figma needs a concrete
 value to bind, and paint-level opacity does not survive instancing.
