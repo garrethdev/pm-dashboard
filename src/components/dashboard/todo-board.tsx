@@ -181,6 +181,22 @@ export function useTodoBoard(
     [live, liveBoard, placeholder, overrides],
   );
 
+  // The script's work changes with nobody touching the page: a run starts,
+  // then finishes or goes quiet (PF-13). So while today's list still has a
+  // scripted warmup open, it re-reads itself every 30 seconds — only while
+  // the tab is being looked at, and never for a day stepped away from.
+  const scriptOwesWork =
+    Boolean(live) &&
+    day === 0 &&
+    devices.some((d) => d.accounts.some((a) => a.items.some((i) => (i.automated || i.run) && i.status === "todo")));
+  useEffect(() => {
+    if (!scriptOwesWork) return;
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") void reload(0);
+    }, 30_000);
+    return () => clearInterval(t);
+  }, [scriptOwesWork, reload]);
+
   /**
    * Record what happened to an item.
    *

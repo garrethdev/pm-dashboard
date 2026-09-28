@@ -1,9 +1,10 @@
 import { getCleanupsByDevice } from "@/lib/data/ban-cleanups";
 import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, parseAccountId, type AccountId } from "@/lib/data/account-id";
 import { sbRest } from "@/lib/data/supabase";
+import { runStateFor, type RunRow } from "@/lib/data/warmup-run-state";
+import { getRunsOnDay } from "@/lib/data/warmup-runs";
 import { toPlatform } from "@/lib/platform";
 import {
-  SESSIONS_PER_DAY,
   SESSION_TARGET_MINUTES,
   dayRangeET,
   getSessionsOnDay,
@@ -131,6 +132,59 @@ export function workFor(account: {
 }): { posts: boolean; warmups: boolean } {
   if (account.posting_paused !== true) return { posts: true, warmups: true };
   return { posts: false, warmups: account.warmup_mode !== "script" };
+}
+
+/**
+ * One account's two warmups for a day, as to-do items.
+ *
+ * Shared by the To-do list and the account's own page (PF-13), so the two can
+ * never disagree about a session.
+ *
+ * BACK TO MANUAL (Garreth, 2026-09-28). An account switched from Automated to
+ * Manual partway through the day simply reads as Manual from then on: its
+ * warmups lose the robot and can be ticked, and any minutes the script had
+ * already logged still count, because a session is a SUM over every row for
+ * it, whoever wrote them. So a person picks up where the script left off.
+ */
+export function warmupItemsFor(
+  account: { id: AccountId; warmup_mode: string | null },
+  sessions: WarmupSession[],
+  runs: RunRow[],
+  day: string,
+  now: Date,
+): TodoItem[] {
+  const mine = sessions.filter((s) => s.accountId === account.id);
+  const progress = progressToday(mine);
+  const automated = account.warmup_mode === "script";
+
+  return progress.map((p, i) => {
+    const last = mine.filter((s) => s.sessionNo === p.sessionNo).at(-1);
+    const run = runStateFor(runs, account.id, p.sessionNo, p.done, now);
+    return {
+      id: warmupItemId(account.id, day, p.sessionNo),
+      kind: "warmup",
+      label: WARMUP_LABEL[i] ?? `Warmup ${p.sessionNo}`,
+      due: WARMUP_DUE[i] ?? "12:00",
+      status: p.done ? "logged" : "todo",
+      ...(p.done && last ? { doneAt: etTime(last.finishedAt ?? last.startedAt) } : {}),
+      targetMinutes: SESSION_TARGET_MINUTES,
+      loggedMinutes: p.minutes,
+      // An Automated account's warmups stay on the list and cannot be
+      // ticked, so a script that has stopped reads as work that never
+      // completes (Garreth, 2026-09-22, overturning P4's original rule).
+      ...(automated ? { automated: true } : {}),
+      // Whatever the account is set to now: an account flipped back to
+      // Manual mid-run still shows the run the script had under way.
+      ...(run
+        ? {
+            run: {
+              state: run.state,
+              at: etTime(run.state === "running" ? run.startedAt : run.lastSeenAt),
+            },
+          }
+        : {}),
+    };
+  });
 }
 
 interface RawAccount {
@@ -264,10 +318,13 @@ export async function getTodoBoard(
   // A ban's clean-up is read without a fallback, unlike the warmups: a list
   // that quietly dropped a banned account's sign-out would look finished when
   // it is not, and a list that says it could not load is the honest failure.
-  const [deliveries, sessions, cleanups] = await Promise.all([
+  const [deliveries, sessions, cleanups, runs] = await Promise.all([
     readDeliveries([...posting.keys()], from),
     getSessionsOnDay({}, dayOffset, now).catch(() => [] as WarmupSession[]),
     getCleanupsByDevice(from, to),
+    // The script's Running record (PF-13). Falls back to none, like the
+    // warmups: without it the items still read correctly, only unmarked.
+    getRunsOnDay(dayOffset, now).catch(() => [] as RunRow[]),
   ]);
 
   // Only the content rows we actually need, one request, keyed for the join.
@@ -350,26 +407,8 @@ export async function getTodoBoard(
   for (const account of working) {
     if (!workFor(account).warmups) continue;
     const mine = sessions.filter((s) => s.accountId === account.id);
-    const progress = progressToday(mine);
-    const automated = account.warmup_mode === "script";
-
-    for (let i = 0; i < SESSIONS_PER_DAY; i++) {
-      const p = progress[i]!;
-      const last = mine.filter((s) => s.sessionNo === p.sessionNo).at(-1);
-      push(itemsByAccount, account.id, {
-        id: warmupItemId(account.id, day, p.sessionNo),
-        kind: "warmup",
-        label: WARMUP_LABEL[i] ?? `Warmup ${p.sessionNo}`,
-        due: WARMUP_DUE[i] ?? "12:00",
-        status: p.done ? "logged" : "todo",
-        ...(p.done && last ? { doneAt: etTime(last.finishedAt ?? last.startedAt) } : {}),
-        targetMinutes: SESSION_TARGET_MINUTES,
-        loggedMinutes: p.minutes,
-        // An Automated account's warmups stay on the list and cannot be
-        // ticked, so a script that has stopped reads as work that never
-        // completes (Garreth, 2026-09-22, overturning P4's original rule).
-        ...(automated ? { automated: true } : {}),
-      });
+    for (const item of warmupItemsFor(account, mine, runs, day, now)) {
+      push(itemsByAccount, account.id, item);
     }
   }
 

@@ -163,7 +163,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
 | PF-10 | Comparison view | ~~Intermediate~~ | **Dropped 2026-09-23 (Garreth):** not needed |
-| PF-13 | Warmup script: the dashboard side (write path, Running, what an Automated account shows) | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Split from the script build on 2026-09-25 (Garreth); can be built and proven with practice rows before the script exists |
+| PF-13 | Warmup script: the dashboard side (write path, Running, what an Automated account shows) | Long term | **Built 2026-09-28, all three parts**: the script's six web addresses, Running/Stopped on the To-do list, and what an Automated account shows (Garreth's answers the same day). Table applied live, proven with practice rows. Token set in Vercel the same day; live once this is deployed |
 | PF-23 | Warmup script: the build (on the Air, its own repository) | Long term | **Partly ready now** — tasks B0–B11 need no phone (2026-09-25); M1 onward needs WebDriverAgent on a phone. Split from PF-13 on 2026-09-25 (Garreth). Needs PF-13's write path by its step M6 |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
@@ -716,7 +716,7 @@ cohort of the same character. This is what the week-6 review reads.
 *Done when:* Garreth and Yurie can read one moved account's before/after on
 one screen.
 
-## PF-13 · Warmup script: the dashboard side — Ready now
+## PF-13 · Warmup script: the dashboard side — Built 2026-09-28; token set, waiting on deploy and the Air
 
 *Split 2026-09-25 (Garreth):* this ticket is **only the dashboard's part** —
 everything the app and the database need so the script can report in, and so
@@ -739,6 +739,52 @@ The work, in build order:
    done and which cannot take a zero-minute row. Not built.
 3. **What an Automated account shows**, the stopped-script threshold, and the
    mid-day flip back to Manual — the three items P4 handed over, below.
+
+**Parts 1 and 2 built 2026-09-28** (branch `garrethdev/pf-13-warmup-dashboard`).
+The contract for the script's builder is `docs/WARMUP-RUNNER-API.md`.
+
+- **The write path is the endpoint** (Garreth's choice, 2026-09-27, recorded in
+  the runner repo). Six addresses under `/api/warmup-runner/`, opened by a
+  token (`WARMUP_RUNNER_TOKEN`) instead of a sign-in. Two reads (eligible
+  accounts, a day's sessions), because the tables are locked to the master key,
+  and four writes (start, check in, close, finished session). The request's
+  account and phone are checked against the five eligibility rules. A
+  retried request never counts twice.
+- **Running lives in `warmup_runs`**, one row per run, as recommended. The To-do
+  list and the dashboard card show **Running** while the last check-in is
+  under 3 minutes old, and **Stopped** in red once it is older with the run
+  never closed. The page re-reads itself every 30 seconds while a scripted
+  warmup is open today.
+- **Decided while building, open to change:** the 3 minutes (two missed
+  check-ins); a finished session is accepted from an account flipped to Manual
+  mid-run, if a run was started for it, so the minutes it ran are kept.
+- **Token set in Vercel 2026-09-28** (`WARMUP_RUNNER_TOKEN`, Production and
+  Preview, marked sensitive). It takes effect on the next deploy. The same
+  value is in the Keychain on Garreth's Mac, under "WARMUP_RUNNER_TOKEN
+  (pm-dashboard)", to give to the Air. Still to do: put it on the Air.
+
+**Part 3 decided by Garreth and built, 2026-09-28:**
+
+- **3 days with no finished warmup is a problem.** Counted in New York days
+  from the last session that reached 15 minutes, by anyone; an account never
+  warmed counts from the day it moved onto its phone. Shown as a red "No
+  warmup in N days" on the account's page and on its line on the phone's page.
+- **Switched back to Manual mid-day: the rest of the day is Manual.** The
+  warmups lose the robot and go on the To-do list for a person, and any minutes
+  the script already did still count. This is how the list already worked (it
+  follows the account's current setting, and minutes add up); a test now holds
+  it there.
+- **A paused Automated account stays off the To-do list**, as it is today. So
+  it is also absent from the phone page's "Today" block, which reads the same
+  list. Its own page still shows it.
+- **What an Automated account shows.** On its own page, its two warmups are
+  listed in place of the Log warmup card: rows nobody can press, each with the
+  robot and one word (Done with the time and minutes, Running, Stopped, or Not
+  yet). On the phone's page it keeps its one line (Garreth, 2026-09-22: no
+  detailed list there): the warmup pill carries the robot, cannot be pressed,
+  and says Stopped, Running, Warmup done or Warmup N of 2. The Accounts page is
+  unchanged: nobody's daily warmups are listed there, and its Warmup column
+  already counts the script's sessions (kept uncoloured, Garreth 2026-09-07).
 
 
 *Heading corrected 2026-09-22: it read "Blocked by PF-04", which the summary

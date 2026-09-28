@@ -37,6 +37,7 @@ import {
   type WarmupSession,
 } from "@/lib/data/todo-placeholder";
 import { WarmupLogSheet } from "@/components/dashboard/warmup-log-sheet";
+import { AutomatedWarmupPill, OverdueWarmup } from "@/components/dashboard/automated-warmups";
 import { SESSIONS_PER_DAY, type SessionProgress } from "@/lib/data/warmup-sessions";
 import { healthTone } from "@/lib/health";
 import { cn } from "@/lib/utils";
@@ -222,6 +223,7 @@ export function DeviceDetail({
   warmups: realWarmups = [],
   warmupProgress = {},
   today: liveToday,
+  warmupOverdue = {},
   demo = null,
 }: {
   device: Device;
@@ -237,6 +239,9 @@ export function DeviceDetail({
   /** This phone's day from the To-do page's reader (PF-07); null when it could
    *  not be read. Absent on the invented phone, which brings its own. */
   today?: TodoDevice | null;
+  /** Automated accounts past three days with no finished warmup, and by how
+   *  many days (PF-13, Garreth 2026-09-28). */
+  warmupOverdue?: Record<string, number>;
   /** The invented phone for the P5 review, or null for a real one. */
   demo?: DevicePagePlaceholder | null;
 }) {
@@ -377,7 +382,11 @@ export function DeviceDetail({
           {today && today.accounts.length > 0 ? (
             <div className="flex flex-col gap-2">
               {today.accounts.map((account) => (
-                <AccountToday key={account.id} account={account} />
+                <AccountToday
+                  key={account.id}
+                  account={account}
+                  overdueDays={warmupOverdue[account.id] ?? null}
+                />
               ))}
             </div>
           ) : (
@@ -744,8 +753,12 @@ function LogWarmupButton({
  * page — the one place the work is actually done. That is the whole
  * navigation of this block: see it here, do it there.
  */
-function AccountToday({ account }: { account: TodoAccount }) {
+function AccountToday({ account, overdueDays }: { account: TodoAccount; overdueDays: number | null }) {
   const progress = accountProgress(account);
+  // Automated (PF-13 part 3): the warmups are the script's, so the pill says
+  // how the script stands and goes nowhere — there is nothing on the To-do
+  // list for a person to do about them.
+  const automated = account.items.some((i) => i.kind === "warmup" && i.automated);
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-nested bg-card-raised/50 px-3 py-3">
@@ -754,7 +767,12 @@ function AccountToday({ account }: { account: TodoAccount }) {
       <span className="shrink-0 text-xs text-text-muted">{account.character}</span>
       <span className="flex shrink-0 items-center gap-1.5 @lg:ml-auto">
         <CountPill label="Posts" of={progress.posts} accountId={account.id} />
-        <CountPill label="Warmup" of={progress.warmups} accountId={account.id} />
+        {automated ? (
+          <AutomatedWarmupPill items={account.items} />
+        ) : (
+          <CountPill label="Warmup" of={progress.warmups} accountId={account.id} />
+        )}
+        {overdueDays !== null && <OverdueWarmup days={overdueDays} />}
       </span>
     </div>
   );
