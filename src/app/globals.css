@@ -111,6 +111,10 @@
   /* Severity step between yellow and red: collapsing / system error. */
   --orange: #fb923c;
   --danger: #f87171;
+  /* The ground of a danger-tone hold button (Retire). 15%, not the 25% it
+   * had as `bg-danger/25`: at 25% the red label sat at 4.61:1 on a card but
+   * 4.18:1 on a raised panel. 15% is 5.56:1 and 5.03:1 (P13 B2-1's follow-up). */
+  --danger-soft: rgba(248, 113, 113, 0.15);
   /* Deeper red for the one state worse than "collapsing" (shadowbanned). */
   --danger-deep: #dc2626;
   --info: #60a5fa;
@@ -205,6 +209,9 @@
   --warn-soft: rgba(146, 64, 14, 0.15);
   --orange: #9a3412;
   --danger: #b91c1c;
+  /* 12%: at 25% Retire's label was 3.93:1 on a card and 3.66:1 on a raised
+   * panel; 12% is 4.95:1 and 4.59:1 (P13 B2-1's follow-up). */
+  --danger-soft: rgba(185, 28, 28, 0.12);
   --danger-deep: #7f1d1d;
   --info: #1d4ed8;
 
@@ -257,6 +264,7 @@
   --color-warn-soft: var(--warn-soft);
   --color-orange: var(--orange);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --color-danger-deep: var(--danger-deep);
   --color-info: var(--info);
   --color-pill-bg: var(--pill-bg);

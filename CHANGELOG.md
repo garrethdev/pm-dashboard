@@ -20,6 +20,50 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-28 — Physical "All time" analytics loads, Retire is easier to read, and the new warmup screens are checked in light mode and on phones
+
+**Where it came from:** Garreth asked for these three on 2026-09-28. The
+analytics bug was found on 2026-09-23 (PF-17). The Retire button was left over
+from the 2026-09-23 design review (P13), because it was not on the list
+approved that day. The screen check covers today's PF-13 work, which had only
+been seen in dark mode on a desktop-sized window.
+
+**What changed:**
+
+- **Analytics on Physical with "All time" now loads.** It used to spin
+  forever: with no posts, it tried to count chart weeks from the beginning of
+  time. It now answers at once, with zeros and an empty chart. Nothing changed
+  for any other range or for Cloud.
+- **The red Retire button is easier to read.** Its pale red background was
+  strong enough to drown the red label: 3.93:1 in light mode, where 4.5:1 is
+  the bar, and 4.18:1 in dark mode on the lighter panels. It now has its own
+  lighter background (12% in light, 15% in dark), and every surface is between
+  4.59:1 and 5.56:1. Same approach as the amber hold button's fix on
+  2026-09-23.
+- **Today's warmup screens were checked in light mode and at phone width**
+  (390 px): the To-do list, the dashboard's To-do card, the account's page,
+  the phone's page and the bell. Nothing needed fixing. None of them scrolls
+  sideways on a phone, and every tag and warning reads in both themes. One
+  thing noticed: in the dashboard card, a warmup with a Running or Stopped tag
+  shortens its name to "Warmup, ...". The 08:30 / 19:00 time beside it still
+  tells the two apart, so it was left alone.
+
+**How it was checked:**
+
+- *The analytics fix:* the fixed version ran beside the live one before it
+  went in, and gave identical answers on eleven ordinary ranges and on Cloud's
+  "All time", checked by fingerprint. Physical "All time" went from never
+  answering to a quarter of a second. It was then seen loading on the page.
+- *Retire:* its colours were read off the running page. The dialog was opened
+  in both themes, but the button was never pressed, because holding it starts
+  a real retirement.
+- *All checks* were in headless Chrome, with practice rows that were deleted
+  afterwards. Type check, lint and all tests pass.
+
+**Not yet seen:** Safari, which is what Garreth uses.
+
+---
+
 ## 2026-09-28 — The bell says when an Automated account has gone 3 days without a warmup (PF-13)
 
 **Where it came from:** Garreth, 2026-09-28: "For the 3-day no warmup, add
