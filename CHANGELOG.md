@@ -114,10 +114,13 @@ them new).
 
 **Not yet done or seen:**
 
-- **The token was added to Vercel (Production and Preview) the same day, but
-  only takes effect with the next deploy**, so until this change is on `main`
-  and deployed, the live app has none of this. A copy is in the Keychain on
-  Garreth's Mac ("WARMUP_RUNNER_TOKEN (pm-dashboard)") to hand to the Air.
+- **Live since the same day (PR #32).** The token is in Vercel (Production
+  and Preview), with a copy in the Keychain on Garreth's Mac under
+  "WARMUP_RUNNER_TOKEN (pm-dashboard)" to hand to the Air. **Confirmed live**
+  on the production address: no token and a wrong token are refused, the real
+  token answers 0 accounts and 0 sessions, and ordinary pages still need a
+  login. The runner repository's handover was updated to match (its K3
+  ticked, B10 unblocked).
 - The Air itself has never called it, because the script's B10 is still to be
   built.
 - The dashboard card's tags, light mode, phone width and Safari were not

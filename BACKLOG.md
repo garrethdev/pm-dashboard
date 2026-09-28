@@ -163,7 +163,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
 | PF-10 | Comparison view | ~~Intermediate~~ | **Dropped 2026-09-23 (Garreth):** not needed |
-| PF-13 | Warmup script: the dashboard side (write path, Running, what an Automated account shows) | Long term | **Built 2026-09-28, all three parts**: the script's six web addresses, Running/Stopped on the To-do list, and what an Automated account shows (Garreth's answers the same day). Table applied live, proven with practice rows. Token set in Vercel the same day; live once this is deployed |
+| PF-13 | Warmup script: the dashboard side (write path, Running, what an Automated account shows) | Long term | **Built 2026-09-28, all three parts**: the script's six web addresses, Running/Stopped on the To-do list, and what an Automated account shows (Garreth's answers the same day). Table applied live, proven with practice rows. Live the same day (PR #32), checked on the production address; next is the script's B10 |
 | PF-23 | Warmup script: the build (on the Air, its own repository) | Long term | **Partly ready now** — tasks B0–B11 need no phone (2026-09-25); M1 onward needs WebDriverAgent on a phone. Split from PF-13 on 2026-09-25 (Garreth). Needs PF-13's write path by its step M6 |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
@@ -716,7 +716,7 @@ cohort of the same character. This is what the week-6 review reads.
 *Done when:* Garreth and Yurie can read one moved account's before/after on
 one screen.
 
-## PF-13 · Warmup script: the dashboard side — Built 2026-09-28; token set, waiting on deploy and the Air
+## PF-13 · Warmup script: the dashboard side — Built and live 2026-09-28; waiting on the Air
 
 *Split 2026-09-25 (Garreth):* this ticket is **only the dashboard's part** —
 everything the app and the database need so the script can report in, and so
@@ -759,9 +759,10 @@ The contract for the script's builder is `docs/WARMUP-RUNNER-API.md`.
   check-ins); a finished session is accepted from an account flipped to Manual
   mid-run, if a run was started for it, so the minutes it ran are kept.
 - **Token set in Vercel 2026-09-28** (`WARMUP_RUNNER_TOKEN`, Production and
-  Preview, marked sensitive). It takes effect on the next deploy. The same
-  value is in the Keychain on Garreth's Mac, under "WARMUP_RUNNER_TOKEN
-  (pm-dashboard)", to give to the Air. Still to do: put it on the Air.
+  Preview, marked sensitive). Live since PR #32 the same day, checked on the
+  production address. The same value is in the Keychain on Garreth's Mac,
+  under "WARMUP_RUNNER_TOKEN (pm-dashboard)", to give to the Air. Still to
+  do: put it on the Air.
 
 **Part 3 decided by Garreth and built, 2026-09-28:**
 
