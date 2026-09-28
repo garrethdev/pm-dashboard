@@ -981,9 +981,14 @@ checked; nothing is empty yet.
 
 **Found 2026-09-28: n8n is out of runs.** Since about 10 pm ET on 2026-09-25,
 n8n Cloud has refused every scheduled run ("Execution limit reached"), so no
-workflow has done any work for two days. The Virlo bridge's schedule is named
-"Hourly" but runs every 5 minutes (288 runs a day), the likely reason the
-allowance ran out. Getting runs back is a plan decision for Garreth.
+workflow has done any work for two days. The Virlo bridge was the biggest
+single user (every 5 minutes, 288 of 1,088 runs on 2026-09-25); it now runs
+once a day (2026-09-28, see CHANGELOG). The every-15-minute group still adds up
+to about 24,000 runs a month: Content Analysis Pipeline ~216 a day, PM Carousel
+Shared Analysis and Search ~192, Content Swipe File 96, Carousel Quality Gate
+96. Quality Gate and the Content Analysis "videos" trigger were failing on
+every run before the cutoff, and a failed run still counts. Getting runs back
+is a plan decision for Garreth.
 
 ~~In order: unpublish Warmup Scheduler, GPS drift, the Geelark branch of the
 Posting Agent, Task Detail Poller, Wallet Guard (unpublish, do not delete; keep

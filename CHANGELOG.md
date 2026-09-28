@@ -20,6 +20,33 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-28 — The Virlo filing job runs once a day, not every 5 minutes
+
+**Where it came from:** looking into what used up n8n's run allowance.
+Garreth suspected `[Virlo] References → Story Finder Bridge`, and he was
+right about it being the biggest single user. Its schedule was labelled
+"Hourly" but fired every 5 minutes: 288 runs a day, about a quarter of every
+n8n run on 2026-09-25. Garreth decided to move it to once a day.
+
+**What it does:** Virlo drops the popular posts it finds into a holding
+table. This job files them into the reference library the Trends screens
+will read from, and adds each one to the Content Analysis to-do list. Finds
+arrive a few bursts a day, so almost every 5-minute run found nothing.
+
+**What changed (in n8n, not in this repo's code):**
+
+- Runs once a day at 6 am New York time. The schedule is now named
+  "Daily 6am ET".
+- Files up to 250 finds per run instead of 100. The biggest burst seen was
+  225 in one hour, so one run clears it.
+- New Virlo finds now reach the library up to a day later. Nothing in the
+  live app is waiting on them yet.
+
+**Verified:** published, and n8n reports the new version as the one that
+runs. It has not had a real run yet: n8n is still refusing every run until
+the plan limit is lifted. This saves about 8,600 runs a month. The other
+every-15-minute workflows together still use more than this one did.
+
 ## 2026-09-28 — The bell says when n8n stops running workflows
 
 **Where it came from:** found the same day. n8n Cloud reached its plan's
