@@ -5,6 +5,7 @@ import { OVERDUE_HOURS, getTodoBoard } from "@/lib/data/todo";
 import { dayRangeET } from "@/lib/data/warmup-sessions";
 import { getAllAutomatedOverdue, type OverdueAccount } from "@/lib/data/warmup-runs";
 import { AUTOMATED_WARMUP_OVERDUE_DAYS } from "@/lib/data/warmup-run-state";
+import { getN8nHealth, type N8nHealth } from "@/lib/data/n8n-health";
 import { fleetOfEntity, getPhysicalProfiles } from "@/lib/data/fleet-accounts";
 import type { Fleet } from "@/lib/fleet";
 import {
@@ -395,6 +396,57 @@ async function warmupOverdueNotifications(): Promise<NotificationItem[]> {
   return item ? [item] : [];
 }
 
+/** "Sep 25, 10:00 pm" in New York. */
+function etWhen(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+    .format(new Date(iso))
+    .replace(" AM", " am")
+    .replace(" PM", " pm");
+}
+
+/**
+ * n8n has stopped running workflows (Garreth, 2026-09-28).
+ *
+ * The 2026-09 outage ran for over two days with the dashboard silent: every
+ * scheduled run was refused because the plan's execution limit was reached.
+ * One red item, naming n8n's own reason and the last time anything finished.
+ * It names no fleet: it is about the automation, not an account.
+ *
+ * Keyed on the last success, so dismissing it holds for the whole outage and
+ * the next outage (after a success in between) arrives as a new item.
+ */
+export function n8nDownItem(health: N8nHealth, now: Date = new Date()): NotificationItem | null {
+  const o = health.outage;
+  if (!o) return null;
+  const since = o.lastSuccessAt
+    ? `Nothing has finished since ${etWhen(o.lastSuccessAt)}`
+    : "Nothing has finished recently";
+  return {
+    id: `n8n_down:${o.lastSuccessAt ?? "unknown"}`,
+    markKeys: [`n8n_down:${o.lastSuccessAt ?? "unknown"}`],
+    type: "n8n_down",
+    category: categoryLabel("n8n_down"),
+    severity: "critical",
+    title: "n8n is not running workflows",
+    body: o.reason ? `${o.reason}. ${since}` : `Every recent run failed. ${since}`,
+    target: null,
+    href: "/automation",
+    at: o.lastSuccessAt ?? now.toISOString(),
+    read: false,
+  };
+}
+
+async function n8nNotifications(): Promise<NotificationItem[]> {
+  const item = n8nDownItem((await getN8nHealth()).data);
+  return item ? [item] : [];
+}
+
 /** "Profile 34" -> "34". Empty when the target is not a numbered profile. */
 function profileNum(target: string | null): string {
   return String(target ?? "").replace(/\D/g, "");
@@ -500,15 +552,16 @@ export async function getNotifications(userEmail: string): Promise<NotificationI
       .then((r) => r.data)
       .catch(() => [] as string[]),
   );
-  const [stored, warmup, todo, overdue, seen] = await Promise.all([
+  const [stored, warmup, todo, overdue, n8n, seen] = await Promise.all([
     storedNotifications(physical).catch(() => [] as NotificationItem[]),
     warmupFailNotifications(physical).catch(() => [] as NotificationItem[]),
     todoNotifications().catch(() => [] as NotificationItem[]),
     warmupOverdueNotifications().catch(() => [] as NotificationItem[]),
+    n8nNotifications().catch(() => [] as NotificationItem[]),
     readKeys(userEmail).catch(() => new Set<string>()),
   ]);
   return (
-    [...stored, ...warmup, ...todo, ...overdue]
+    [...stored, ...warmup, ...todo, ...overdue, ...n8n]
       // Read once every key behind it has been seen. For a single-key item that
       // is the old behaviour exactly; for a grouped warmup alert it means a new
       // failing account reopens it and a recovering one does not.

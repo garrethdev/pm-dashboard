@@ -179,6 +179,7 @@ export const DATA_TAGS = [
   "geelark-wallet",
   "inventory-data-v4",
   "n8n-executions",
+  "n8n-health",
   "proxycheap-balance",
   PROXYCHEAP_PROXIES_TAG,
   "pulse-stats",

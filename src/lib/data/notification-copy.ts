@@ -61,6 +61,7 @@ const CATEGORY: Record<string, string> = {
   todo_today: "To-do",
   todo_overdue: "To-do",
   warmup_overdue: "Warmup",
+  n8n_down: "n8n",
 };
 
 export function categoryLabel(type: string): string {

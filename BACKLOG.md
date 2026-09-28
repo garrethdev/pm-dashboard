@@ -83,7 +83,9 @@ harder, not easier, because the count would no longer mean what it says here.
 ## The Virlo research pipeline is not monitored
 
 **A caution from the review. V1. Not part of the 2026-09-11 batch — still
-open.**
+open.** *Partly covered since 2026-09-28:* the bell now says when n8n as a
+whole stops running workflows (it did for two days in September, unnoticed).
+A single research workflow failing on its own is still not flagged.
 
 The automation card tracks a fixed list of 14 workflows by ID. The Virlo
 research, analysis and bridge workflows are not in it, so if they stop, nothing
@@ -962,7 +964,17 @@ Service Role" credential everywhere. The Virlo bridge's only pasted keys were
 in a switched-off old step, now deleted and published. **The Smart Scheduler
 still has its key pasted in**, inside a Code step, and n8n does not let Code
 steps use stored credentials; moving it means rebuilding how that step reads
-and writes the database. Not started. Other workflows have not been swept. **Worth watching** once the last Geelark phone is gone: a
+and writes the database. Not started.
+
+**The sweep, 2026-09-28** (read-only, all 439 workflows; nothing changed).
+**73 of the 158 active workflows have keys pasted in them.** 61 of those hold
+a full-access key to the dashboard's database. In 23 it sits only in request
+steps, which can be switched to the stored "Supabase Service Role" credential
+one by one. In 35 it sits only in Code steps, which need reworking, the Smart
+Scheduler's problem. 3 have both. 12 active workflows also carry pasted
+Anthropic or Google API keys. Old versions in n8n's history keep every key
+ever pasted, so the real fix is still rotating the keys, once they are all
+out of the workflows. Garreth said not to change keys for now. **Worth watching** once the last Geelark phone is gone: a
 workflow that alerts on an empty Geelark reply (Wallet Guard, the Posting
 Agent's "no phones" case) may start raising false alarms. That has not been
 checked; nothing is empty yet.
