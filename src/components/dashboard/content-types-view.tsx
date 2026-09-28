@@ -181,6 +181,44 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
     />
   );
 
+  // Drawn in two places: beside the title on a phone, in the toolbar above it.
+  const filtersDropdown = (
+    <Dropdown
+      label="Filters"
+      icon={<SlidersHorizontal className="size-3.5" />}
+      badge={extraFilters}
+    >
+      {() => (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
+              Status
+            </span>
+            <FilterPills
+              value={status}
+              onChange={setStatus}
+              options={[
+                { value: "all", label: `All ${counts.live + counts.paused}` },
+                { value: "live", label: `Live ${counts.live}` },
+                { value: "paused", label: `Paused ${counts.paused}` },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
+              Character
+            </span>
+            <FilterPills
+              value={character}
+              onChange={setCharacter}
+              options={characterOptions}
+            />
+          </div>
+        </div>
+      )}
+    </Dropdown>
+  );
+
   return (
     <div className="flex flex-col gap-3">
       {/* Header laid out like Analytics: title left, freshness + range right. */}
@@ -215,42 +253,12 @@ export function ContentTypesView({ initial }: { initial: ContentTypesData }) {
 
       <DashCard
         title="Performance"
+        titleAside={filtersDropdown}
         toolbar={
           <div className="flex flex-wrap items-center gap-3">
-            <Dropdown
-              label="Filters"
-              icon={<SlidersHorizontal className="size-3.5" />}
-              badge={extraFilters}
-            >
-              {() => (
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
-                      Status
-                    </span>
-                    <FilterPills
-                      value={status}
-                      onChange={setStatus}
-                      options={[
-                        { value: "all", label: `All ${counts.live + counts.paused}` },
-                        { value: "live", label: `Live ${counts.live}` },
-                        { value: "paused", label: `Paused ${counts.paused}` },
-                      ]}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
-                      Character
-                    </span>
-                    <FilterPills
-                      value={character}
-                      onChange={setCharacter}
-                      options={characterOptions}
-                    />
-                  </div>
-                </div>
-              )}
-            </Dropdown>
+            {/* From `sm:` up Filters stays here; on a phone it sits beside
+                the title instead (Garreth, 2026-09-28). */}
+            <div className="hidden sm:contents">{filtersDropdown}</div>
             <FilterChips chips={chips} onClearAll={clearFilters} />
             <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-text-muted">
               <input

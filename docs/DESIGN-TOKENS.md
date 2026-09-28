@@ -107,6 +107,7 @@ what the same name resolves to under `data-theme="light"`.
 |---|---|---|---|---|
 | `--text-primary` | `#f4f4f5` | `#1b1d21` | `text-text-primary` | Headings, values, anything being read. |
 | `--text-muted` | `#8a8a92` | `#515c6b` | `text-text-muted` | Labels, card titles, column heads, inactive controls. The default for chrome. |
+| `--text-placeholder` | `#8a8a92` | `#465060` | `placeholder:text-text-placeholder` | Example text in an empty box. Same as `--text-muted` in dark; a shade darker in light so it reads clearly without looking typed (P13 B3-3, 2026-09-28). Deliberately fainter placeholders keep `text-text-muted/60`. |
 
 ### Accent
 

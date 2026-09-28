@@ -20,6 +20,48 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-28 — On phones: Analytics has a platform dropdown, cards keep their pills inside Filters, and example text is easier to read
+
+**Where it came from:** Garreth's pass on the leftover findings from the
+2026-09-23 design review (P13), done in Safari on the app running locally.
+
+**What changed:**
+
+- **On a phone, Analytics chooses the platform from a dropdown** that starts
+  on All, with a tick beside the current choice. The row of tabs ran off the
+  edge on the Physical side, where Facebook makes four, and read "Faceboo"
+  unless you knew to swipe (B6-1). The tabs stay as they were on a computer.
+- **The grey example text in empty boxes is a shade darker in light mode**
+  (B3-3, at Garreth's request). For example, "iPhone 12" in Add phone, the
+  search boxes, the login email and the proxy box. It is still clearly lighter
+  than typed text. Dark mode is unchanged.
+- **On a phone, a card's pills now live inside its Filters button, and
+  Filters sits right beside the card's name** (Garreth, 2026-09-28, pointing
+  at the dashboard's Accounts card). It applies to the dashboard's **Accounts**
+  card, where All / Healthy / Needs attention were a row of their own; to
+  **Per-account posting limits** on the Content calendar page, where the
+  status pills fold in the same way; and to **Content types → Performance**,
+  whose pills were already inside Filters but whose button sat on its own
+  line. The Accounts and Incidents pages already worked like this. On a
+  computer all three cards are unchanged. One consequence: the posting-limits
+  card's long name shortens to "Per-account posting lim…" on a phone to make
+  room. The Geelark automation log on an account's page keeps its Executed /
+  Pending pills outside, because they switch between two lists rather than
+  filter one.
+- **Five findings were looked at and kept as they are** (B5-4, B2-4, B1-3,
+  B5-3, B7-1). They are recorded in `docs/P13-REVIEW-FINDINGS.md`, so they are
+  not raised again.
+
+**How it was checked:** type check, lint, the design-system parity test and
+the full test suite pass. Seen in the running app in headless Chrome: the
+dropdown open at phone width in both themes, the desktop tabs unchanged, and
+Add phone in light mode at phone width. The three cards were checked at phone
+width, with Filters open, and on a desktop to confirm nothing moved there, on
+both fleets for the Accounts card. No page scrolls sideways. Garreth reviews it
+in Safari.
+
+---
+
 ## 2026-09-28 — Physical "All time" analytics loads, Retire is easier to read, and the new warmup screens are checked in light mode and on phones
 
 **Where it came from:** Garreth asked for these three on 2026-09-28. The
