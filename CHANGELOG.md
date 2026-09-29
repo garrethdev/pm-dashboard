@@ -20,6 +20,512 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-29 — Carousel Generator connected end to end (PR #31, built 2026-09-25 to 09-29)
+
+**Merged to main 2026-09-29** on Garreth's word ("do the rest"), after the
+review fixes below. The four entries under this one are the first four
+commits of Codex's foundation, which this branch was built on; the 44
+commits Codex added later are not part of it.
+
+**Where it came from:** Garreth asked for the prototyped D1 to D16 screens to
+be finished and connected, with manual click-through testing and a visual
+review against the design export. Branch `claude/carousel-generator-connect`,
+on top of the Codex backend foundation.
+
+**What a person can now do.** Open the Carousel Generator from the Generate
+hub and land on **Overview**; see every carousel type with its supply, its
+last batch and what it is waiting for; open a type and read its template,
+its versions, its batches and the rows sitting in its lane table; write and
+save the type's **Writing** as numbered versions; press **Generate**, choose
+the count, the library, a note, the template's per-batch lines and Auto mode;
+watch the batch write deck by deck with the real writer; regenerate a deck
+with feedback, retry a failed one, discard one, change its track; press
+**Render (n) decks** and see every slide painted; press **Approve (n)
+decks**; find the batch again on **History** and on the type's page; get a
+bell item when a batch is written or finished; browse **Image libraries** and
+their sets; draft a template in the **Studio** from an idea or from a
+reference, edit its boxes and slides, and save it as a new carousel type;
+scroll the **Trends** feed of carousels not yet seen, vote, save, read the
+details window, and accept or reject knowledge rules.
+
+**Database (applied to the live project on 2026-09-25, additive only):** new
+tables for templates and their versions, Writing versions, image libraries
+with sets and images, and the per-person Trends tables (saved, votes, seen)
+and the digest table; new columns and wider status checks on the three draft
+tables, which were empty; a view that unions the two image banks into
+libraries; two seeded read-only libraries and the two seeded templates
+(Glow Up version 1, Covered Eye version 1). Every new table has row-level
+security on with no policies, so only the server reaches it. The migration
+file is `supabase/migrations/20260925120000_carousel_generator_foundation.sql`;
+its second and third steps (asset URLs for the Glow Up bank, and the deck
+version rule) are recorded at its foot.
+
+**Confirmed live:** a three-deck Glow Up batch was written by the real writer
+(Claude Sonnet 4.6 through OpenRouter), gated, given tracks from the music
+library, and shown on the batch page; the Writing version was saved and read
+back by query; the Overview, Carousel types, Generate, batch, History, type
+page and libraries screens were opened in the browser on the live data.
+
+**Visual review:** every screen was captured at desktop and phone width in
+both themes and compared against the design export by a separate reviewing
+agent. Its fixes applied here: status pills sit in a type card's footer and
+Generate is the accent button on every card (D1, D13); the Studio has its own
+full-bleed frame, three start cards and slides that stay dark in light mode
+(D6); Image libraries are mosaic tiles with the count in the title (D8);
+table headers are sentence case and the History filter's active chip is the
+accent outline (D9); the Trends rail has no box, a post carries its platform
+mark, and Recent saves shows only on the Feed (D10). Still open from that
+review, for a later pass: the type page's sticky phone footer and Weekly cap
+tile (D7), the Knowledge tab's two tables with a confidence dropdown (D10),
+the Overview's refresh button in the top bar, and the dashboard's own theme
+bootstrap script, which makes the Next dev overlay complain on every page
+(pre-existing on `main`, not changed here).
+
+**Tidy-up after the review (same day):** the Codex foundation's pieces that
+the build superseded were removed rather than left as a second opinion — the
+owner-only command check, the client-side batch input contract, the pure
+status projection and the Auto decision table (the runner and the status
+words own those rules now), the split-column template loader, and the
+search's own details dialog, which now opens the same details window the
+feed uses. Batch naming and its test stay. Private helpers stopped being
+exported, the Rows count uses a count request instead of fetching ids, and
+Overview reads the batches once instead of twice.
+
+**Found by the click-through on 2026-09-26 and fixed:** the Trends search
+came back "could not be completed" on every query, because the search
+adapter asked `reference_beats` for a `media` column that does not exist;
+it now takes each slide's image from the analysis's media inventory, the
+way the feed does, and a meaning search for "under eye bags" returns
+twenty-five carousels with their matched slide. A template drafted from a
+reference could arrive with no text boxes when the model named its list
+differently; every slide now gets at least one box. The Studio's title row
+overflowed on a phone; its two buttons take a row of their own there.
+Tested the same day, by press or by query: Stop and Continue, the
+one-minute stalled rule, a second batch refused while one runs and allowed
+while one waits, a stale press refused with "Refresh", Retry on a failed
+deck, the Discard hold, Change track, a Studio slide added, deleted and
+brought back with undo, version 2 saved while a running batch kept version
+1 and version 1 made active again, Copy to Studio from a reference, Save on
+Trends with the Saved grid and Recent saves, the datestamp painted on Glow
+Up's last slide, and the phone and light-mode passes.
+
+**Independent QA agent (2026-09-26):** the open-source Browser Use agent
+drove six flows on GPT-4.1 against the dev server. It completed the
+generate, render and approve flow (4 of 5) and the overview walk (3 of 5),
+and it found one real fault: a tab press on the type page waited on a full
+server re-render, so Writing and Go Live looked unchanged for seconds. Tabs
+now switch at once and only the address follows. Its other blockers did not
+hold up when checked by hand: the History table and the library tile both
+work (the agent screenshotted before the dev server had compiled the page),
+and it cannot press and hold, so the Discard hold read as a dead control.
+The search box is now a search input so assistive tools and agents find it.
+
+**After the QA agent's library finding:** every generator page that reads
+the database before it paints (a library, a type, a batch, and the four
+list pages) now shows its title and a pulsing card at once while the read
+runs, so a pressed tile never looks dead. The image modal closes on Escape
+and hands focus back to its tile. Left as is, and worth revisiting once
+uploads land: the libraries grid reads every image row to count them and
+pick its covers, which is fine at today's 155 images and wasteful at
+thousands.
+
+**Error handling and logging pass (2026-09-26, Garreth asked how it stood):**
+every failed read on the generator's pages and routes now leaves a line in
+the server log that starts with `[carousel]` and says what failed (which
+type, which batch, which template), instead of quietly showing an empty
+section. Four routes that answered "could not read" without logging anything
+now log too. A batch whose runner crashes is marked Stopped straight away
+with the reason in the log, rather than looking alive until the one-minute
+stall rule catches it. And the placeholder person `dev@local` is only used
+when the dev bypass is on: on a real deployment a session that cannot be
+read is refused rather than written into the audit log as somebody else.
+Verified by typecheck, lint, the test suite and reloading the touched pages;
+the crash path has not met a real crash yet.
+
+**Polling cut back (2026-09-26, Garreth: the app does not need that
+frequency):** the generator's screens no longer re-read the server on a
+fixed clock. Overview, a type's page, History and a batch page now re-read
+only while a batch on that screen is actually writing or rendering (every
+five seconds, the batch page every two and a half), and go quiet the moment
+it is waiting on a person, stopped or done. A screen that is not polling
+re-reads once when you come back to the tab, so it is never older than the
+last time you looked. Pages that render on the server no longer fetch the
+same data a second time as soon as they open. The bell checks once a minute
+instead of every twenty seconds, and still re-checks when the window
+regains focus. Confirmed live: an open Overview made no requests in a
+minute; pressing Render on a batch produced one read for the press and one
+more two and a half seconds later, then nothing.
+
+**Missing slide images on Trends (2026-09-26, Garreth saw grey covers in
+the feed):** two causes, both in the data rather than the screens. Half of
+the slide images read by the Sep 8 to 12 intake point at TikTok's HEIC
+files, which no browser can show, and every TikTok slide link is signed with
+an expiry a fortnight or so after the scrape: of 578 such links, 459 had
+already expired and the other 119 expired the next day. Three things done.
+The 119 still-live slides were copied into a new public bucket
+`reference-slides` on the live project (HEIC converted to JPEG on the way),
+and their analysis rows now point at the copies, with the original link kept
+beside each as `source_image_url`. A new server route,
+`/api/carousel-generator/image`, converts any HEIC slide from TikTok's CDN
+or Virlo to JPEG on request, for the pipeline's future rows. And an expired
+link is now treated as no image, so the carousel's cover falls back to the
+durable Virlo thumbnail and an inner slide reads "Image gone" instead of a
+blank box. Confirmed live: the feed and the saves rail load 22 carousels
+with no missing cover and no failed image; 38 of their 113 inner slides are
+gone for good until re-scraped. The lasting fix belongs in the enrichment
+worker, which should re-host slides at scrape time; noted in `BACKLOG.md`.
+
+**Zero view counts on Trending (2026-09-26, Garreth: "wrong view count or
+not relevant"):** every reference the intake has written since Sep 12 at
+21:00 UTC carried views, likes and saves of 0 and a score of 0, so the
+Trending panel ranked the newest day's rows in an arbitrary order and
+labelled each "0 views". The real numbers had been collected all along and
+sat in the snapshots table; the bridge workflow in n8n simply writes zeros
+into the reference. Garreth chose to leave the bridge alone and fix the
+data: a one-off backfill on the live project gave 955 zero-count references
+the views, likes and saves from their latest snapshot, scored the way the
+old bridge scored them (12 had no snapshot and stay at zero), and the Trends
+reader now reads the latest snapshot for any reference still at zero, so
+new rows show real counts without waiting for another backfill. Confirmed
+live: the four Trending tiles that read "0 views" now read their real
+counts and rank by them; the feed's first page has no zero-count carousel.
+Ranking of new rows on the Overview and in search still depends on the
+stored score, which the reader cannot fix; that stays with the bridge.
+
+**The Studio's image library can be skipped (2026-09-29, Garreth tried the
+branch: "the user should be able to add an image library or they can skip
+selecting an image library"):** the Studio used to stop on the library step
+until one was picked. That step now has **Skip**, and the draft is made
+without one, so no slide draws from a set. On the canvas, the library name
+under Adjustments is now a picker, so a library can be chosen or changed
+at any point. Garreth chose that a type still cannot be **saved** without a
+library, because its batches need pictures. **Save as carousel type** and
+**Render preview** stay unavailable until one is picked. Changing library
+drops any slide's set that the new library does not have. Confirmed in
+headless Chrome on the running branch: Skip, a draft with no library, both
+buttons unavailable, then a library picked and a preview painted with its
+photos. Nothing was saved. A **New library** choice on that step is still
+DEV-29, not built.
+
+**Fixes from the PR #31 review (2026-09-29; the list is in `BACKLOG.md`,
+Garreth answered the open questions the same day).** Each item was
+reproduced on the running branch before it was changed, and tried again
+after.
+
+- **The image list is locked (item 1, Garreth's yes).** The view
+  `v_image_assets` could be read with the public key. It now runs as the
+  caller and is taken away from the two public roles by name. Checked
+  first: the only reader in the logs was the dashboard's own server.
+  Confirmed live: the public key gets "permission denied", the server still
+  reads its 155 rows. Applied to the live project; recorded as step 4 of the
+  generator's migration file.
+- **A batch pressed while another of its type is running waits its turn
+  (item 2.1, Garreth chose waiting over refusing).** Render, Continue,
+  Regenerate and Retry used to fail with a database error and leave the
+  batch's decks stuck in the queue. The batch now reads **Waiting its
+  turn**, names the batch it is behind, and starts by itself when that one
+  finishes, stops, or has not moved for a minute. A new status word,
+  `waiting`, was added to the live database (step 5 of the migration file).
+  A batch that died while holding its type's slot no longer blocks
+  Generate for that type; Covered Eye had been blocked that way since
+  Sep 26. Confirmed live: Render pressed on one Glow Up batch while another
+  was writing answered "waiting", and its three decks were rendered as soon
+  as the other finished writing.
+- **Render comes back after a rewrite (item 2.2).** With 2 of 3 decks
+  rendered and the third rewritten, the batch now reads "1 to render" and
+  the button is there. Confirmed live.
+- **Approve waits for every deck (item 2.3, Garreth chose blocked).** It is
+  refused while any deck is still to be written, rendered, fixed or
+  retried, and the batch page says why. Finish remains the way to close a
+  batch early. Confirmed live: refused with one deck outstanding, then all
+  three approved once it was rendered.
+- **Stop and Discard stay pressed (item 2.4).** Every write the runner makes
+  after waiting on the writer or the painter now only happens if the deck
+  or the batch is still as the runner left it. Confirmed live: a deck
+  discarded while it was being written stayed discarded, and a batch
+  stopped mid-write was still stopped forty seconds later.
+- **A rewrite keeps its note.** Found while fixing the above: the note typed
+  into Regenerate was saved on the deck but never reached the writer when
+  the runner picked the deck up. It does now.
+- **The Trends feed no longer skips or repeats carousels (item 5).** The
+  next page was found by score and id while the feed is sorted by score,
+  then views, then id. Confirmed live: all 1,254 unseen carousels came back
+  across 63 pages, none twice.
+- **New Studio types meet the rules for new decks (item 8, Garreth chose
+  new types only).** A new type must be 1080 by 1350 or 1080 by 1920. A
+  type that already exists under the older rules, such as Glow Up at 1080
+  by 1440, keeps its size when a new version is saved.
+- **The slide painter no longer trusts the template (item 9).** Box names
+  and every number it writes into a slide are cleaned first, so a crafted
+  template cannot put markup into the batch page.
+- **Not changed, on Garreth's word:** the compliance word check (item 6) is
+  left as it is for now. The music lookup (item 7) waits for his answer.
+
+**The conversations are connected to the AI (DEV-25, 2026-09-29; Garreth
+tried the branch and found canned replies, then put this in scope for the
+pull request).**
+
+- **On the Writing tab** the conversation now answers from Claude. It
+  proposes a full revised direction, shown as what would change against
+  the active Writing, names the accepted rules it drew on, asks at most one
+  question, and says plainly when the direction cannot change something
+  (asked for more slides, it answered that slides are changed in the
+  Studio). **Put in the editor** places the proposal in the editor, not
+  saved. **Save version** stays a person's press and records the rules.
+  The conversation never saves.
+- **An empty type's offer is real.** **Write a first draft** sends one
+  prompt built from the type's template and its slides, and the draft lands
+  in the editor under **Not saved**.
+- **Text box names are pills**, in the Writing and in the conversation's
+  box alike: type `@`, press a name, or drag one in. The editor is the one
+  Codex built on `codex/carousel-backend-foundation`, brought over with its
+  tests and given the app's colours, a placeholder, drop support and a
+  one-line mode.
+- **A failed call** shows under the message with **Retry**.
+- **On a phone** the conversation is a sheet behind a floating button, with
+  the text box names inside the sheet and a dot when something new waits.
+- **In the Studio** the conversation changes the template: slides added,
+  removed and reordered, layouts, image sets, text boxes and their size and
+  place, sample lines, the direction. A change lands on the canvas as one
+  step that Ctrl or Cmd+Z takes back. A text box that keeps its name keeps
+  what was set on it by hand. Asked for pink text in Comic Sans, it said it
+  cannot and where font and alignment are set.
+- **Confirmed in a headless browser on the running branch:** 20 of 21
+  checks on the Writing tab (the miss was a proposal that cited no rule,
+  which is allowed) and 7 of 7 in the Studio. The test type
+  `evening-habit-stomach-over40` went from no Writing to a saved version 1
+  through the offer alone, and the query shows its 9 cited rule keys.
+- **Not part of this:** the conversation does not yet read a reference deck
+  or an image, and the Studio's conversation cannot change fonts or colours.
+
+**Image libraries can be made, filled and tidied (DEV-29, 2026-09-29;
+Garreth asked for the Studio to let him add a library, then put the whole
+ticket in scope).**
+
+- **Upload.** One or many pictures at a time, by the button or by dropping
+  them on the grid: JPEG, PNG, WebP or HEIC, up to 20 MB each. Each file is
+  its own tile while it uploads. One that fails stays as a **Failed** tile
+  with its reason and **Retry**; the rest carry on. Pictures land in no
+  set, unless a set is open when Upload is pressed, in which case the
+  button says **Upload to** that set. Every picture is checked to be a
+  picture, turned the right way up and brought down to a sensible size.
+- **The image window** now does things: **Move to another set**, **Make
+  cover**, **Black and white**, **Background removal**, an **AI edit** and
+  **Retire image**. Black and white and background removal are automatic
+  and add a new image beside the original; nothing is overwritten. An AI
+  edit is shown first and joins the library only on **Keep**; **Discard**
+  throws it away.
+- **Retire is a hold**, because a deck not yet rendered may still point at
+  the image. A retired image is dimmed, marked Retired, and is never picked
+  for a new deck; decks already saved keep it. **Restore** brings it back.
+- **New library from the Studio.** The Studio's library step has **New
+  library**, and **Add pictures** for the library that is chosen, so a type
+  can be started without leaving the Studio. On the libraries page, making
+  a library now opens it.
+- **The two bank libraries stay read-only:** no Upload, no Retire, no edits.
+- **Where things live.** A new public bucket, `image-libraries`, images
+  only. The browser never holds the secret key: for each file the server
+  hands out a one-time link for one path. Applied to the live project and
+  recorded as step 6 of the generator's migration file, with five new
+  columns on the images table and a rule that a library has one cover.
+- **Background removal runs in the browser**, with an open model (MODNet,
+  Apache 2.0, about 25 MB, fetched once). Nothing is sent to a service. It
+  is made for cutting out a person and is less sure with objects: a test
+  on hands holding a jug kept the hands and lost part of the jug.
+- **The AI edit** uses Gemini's image model through the same OpenRouter
+  account as the writer; an edit took about fifteen seconds.
+- **Confirmed in a headless browser on the running branch:** 19 checks on
+  the library page (uploads, the failed tile and Retry, move, cover, black
+  and white, a cut-out, an AI edit kept, Retire by holding, Restore, the
+  read-only bank), no sideways scroll on a phone, and the ticket's finish
+  line: a library made in the Studio, three pictures added there, a
+  template drafted, and a preview painted from those pictures.
+- **Still other tickets:** Generate images (Higgsfield) and Tag with AI.
+
+**Trends slides brought back (2026-09-29; Garreth saw "Image gone" on most
+carousels and asked for a re-scrape).** Two causes, and the larger one was
+ours.
+
+- **The reader looked in one place out of three.** A carousel's slide
+  pictures are kept in the analysis row for the Sep 8 to 12 intake, and in
+  the evidence row for everything brought in since. The Trends reader only
+  read the first, so every carousel since Sep 12 showed its cover and then
+  "Image gone", whether or not its pictures were still there. It now reads
+  the analysis, then our own copy, then the evidence. **Found on the
+  2026-09-26 pass and missed:** that pass counted 459 expired slides because
+  it read the first 1,000 analysis rows only. The database hands back 1,000
+  rows a request; the script now pages.
+- **Live links copied before they expire.** 610 slides whose TikTok links
+  were still alive are now in our own `reference-slides` bucket (119 on
+  Sep 26, 491 today), recorded in a new table, `reference_slide_images`.
+- **Re-scrape through Virlo.** Three one-off n8n workflows, using the Virlo
+  credential already stored in n8n so no key left it, fetched fresh links
+  for 77 carousels; 448 of their slides were copied into our bucket. The
+  workflows are archived. They read from Virlo and wrote only to a holding
+  table of ours, `reference_media_refresh`.
+- **Where it stands, counted over the whole feed of 1,254 carousels and
+  6,702 slides:** carousels with a slide missing went from 426 to 130, and
+  slides missing from 2,605 to 607. On the first page, from 15 of 20 to 5.
+  Confirmed in a headless browser: 118 of the 119 pictures on the first
+  page load.
+- **What is still gone, and why:** 607 slides on 130 carousels. Most came
+  from five Virlo collections that the stored credential returned nothing
+  for; a second stored Virlo credential failed outright. They need the key
+  that reaches those collections, or a re-scrape of the posts themselves.
+- **The script is in the repository** and safe to run again:
+  `node --env-file=.env.local scripts/rehost-reference-slides.mjs`, with
+  `--dry` to count first. Run it within a fortnight of any new scrape until
+  the enrichment worker copies slides itself.
+- **Database, applied live and recorded as step 7 of the migration file:**
+  the two tables above, server only.
+
+**Garreth's three answers (2026-09-29): say when a track is swapped,
+delete the test data, and keep our own copy of every picture.**
+
+- **A swapped track is said out loud (review item 7).** When the music
+  library does not have the song the writer asked for, the deck still gets
+  a library track, but its card now carries **Track substituted**, with the
+  song that was asked for on hover, and **Change track** beside it. The
+  deck is not flagged for it.
+- **The test data is gone from the live tables.** 13 batches with their 30
+  decks and 117 slides, 23 bell items, the Studio-made type
+  `evening-habit-stomach-over40` with its template and its Writing, Glow
+  Up's unused template version 2, and the two test libraries with their 10
+  pictures. Every row and picture was first saved to
+  `~/pm-dashboard-test-data-backup-2026-09-29` on Garreth's Mac. **Kept on
+  purpose:** Glow Up's and Covered Eye's Writing version 1, because they
+  are the only Writing those types have and Generate refuses a type with
+  none; and the saves, votes and seen marks, because the ones made in
+  testing cannot be told from Garreth's own.
+- **Every reference picture is copied into our own storage.** Covers and
+  slides alike, whether they sat on TikTok's links or on Virlo's, into the
+  `reference-slides` bucket, and the Trends screens use our copy first. A
+  daily job does it for new carousels (11:00 UTC, in `vercel.json`), newest
+  first, as many as fit in its time. It is shut until `CRON_SECRET` is set
+  on Vercel. `scripts/copy-reference-slides.mjs` works through a backlog by
+  calling the same job.
+- **Database, applied live, step 8 of the migration file:** position 0 of
+  `reference_slide_images` is the cover.
+
+**Every reference picture is now ours, and the expired ones were
+re-downloaded (2026-09-29, Garreth: "yes redownload").**
+
+- **The backlog is copied.** 7,900 pictures, covers and slides, sit in our
+  own `reference-slides` bucket. Of the 6,699 slides on Trends, 6,448 are
+  shown from our storage and 20 from Virlo's.
+- **Re-download through ScrapeCreators**, with the key already stored in
+  n8n, one credit a post: 133 posts asked for, 126 came back with fresh
+  links. The two one-off workflows are archived.
+- **Where it stands, over the whole feed of 1,253 carousels:** 48 still
+  have a slide missing, 231 slides in all, down from 426 carousels and
+  2,605 slides this morning. Seven posts gave ScrapeCreators nothing, most
+  likely deleted at TikTok; the rest are carousels whose post now has fewer
+  pictures than when it was first read.
+- **265 covers could not be copied** because they were already gone from
+  Virlo's storage. Those carousels show their first slide as the cover.
+- **A fault of mine, found and fixed the same hour.** The first version of
+  the copy job trusted the slide numbers stored with each carousel. All 835
+  analysed carousels number their slides from 0, so every picture was filed
+  one place off and the first slide took the cover's place. The job now
+  counts slides by their order, from 1, the way the Trends screens do. The
+  4,530 misfiled copies were cleared and made again.
+
+**Not built yet, said plainly:**
+- The painter paints each slide as a preview drawing (the picked photos and
+  the copy at the template's true size) and shows it on the batch page. It
+  does **not** yet rasterise to PNG or JPEG with the bundled font files, and
+  nothing is uploaded or written to a lane table, so a rendered deck stays
+  inside the generator's own tables and never reaches the scheduler. That is
+  the step that needs a native image library on the server.
+- Auto mode runs inside the app's own process, kicked off by the request that
+  started or continued the batch. If the process stops mid-batch the batch
+  reads Stopped after a minute and Continue picks it up. Where the worker
+  should live for good (a queue or a scheduled job) is DEV-48's open
+  question and is not decided here.
+- The lane-creation function behind Go Live, the Higgsfield image generation,
+  AI tagging of images, the digest capture from n8n and analysis on demand
+  for an unread reference are shown as unavailable on their screens rather
+  than pretended. (Uploads into a library and the writing conversation were
+  on this list until 2026-09-29; both are built, see above.)
+- The vision check after rendering is not run; a rendered deck is not
+  re-flagged by a model.
+
+## 2026-09-29 — Carousel frontend and integration groundwork (merged with PR #31, written 2026-09-25)
+
+**Where it came from:** Garreth requested implementation against the September
+25 design export, a main-branch duplicate check, a full remaining-ticket ledger,
+manual testing and independent visual review.
+
+**Implemented, not deployed:** type cards and Generate form, authenticated
+registry catalog, Trends search wired to the existing API, and a carousel
+details dialog with slide navigation, saved analysis and transcription. Search
+has cancellation, explicit errors/retry, keyword-fallback disclosure and no
+invented totals. This is not the complete feed/saves/digests workflow. Batch
+submission remains disabled until persistence and providers are connected.
+
+Template validation now checks effective font/style/override and image-rule
+fields while preserving historical fixtures. Batch type keys now accept the
+registry's text identifiers, waiting-for-approval batches no longer occupy an
+active generation slot, and pure runner rules cover naming, stalling and Auto's
+three attempts without permitting automatic approval.
+
+The pure image picker covers deterministic selection, whole-library and named
+sets, cover preference, distinctness, thin-set repeats and Glow Up diagonal
+brightness matching. Database reads and persisted-manifest reuse are still to
+be connected. No library or production lane data was changed.
+
+**Verification:** current main was fetched at `781fb20`, with no newer changes
+to duplicate. Unit/type/lint checks and a Webpack production build passed during
+this pass. Independent vision review covered 14 exported reference screens, not
+the running app. Live browser navigation is blocked by the browser policy check;
+no magic-link email or manual click-through is claimed. No database migration,
+production merge, deployment or posting was performed. The full ledger and
+remaining acceptance checks are in `docs/carousel-implementation-tracker.md`.
+
+## 2026-09-29 — Carousel API documentation (merged with PR #31, written 2026-09-24)
+
+**Where it came from:** Garreth requested Swagger documentation for the backend.
+Added a session-protected Swagger UI and downloadable OpenAPI contract covering
+the four implemented search/detail endpoints, with examples, limits, authentication
+and error responses. Planned generation features are explicitly excluded. Assets
+are served locally; no remote validator receives the contract. Added specification
+validation and documentation-route tests. No production deployment or live database
+verification is implied. OpenAPI validation, all 285 tests, type checking and
+focused lint passed; browser visual and deployed-host checks remain unperformed.
+
+## 2026-09-29 — Carousel search connection and template checks (merged with PR #31, written 2026-09-24)
+
+**Where it came from:** Garreth asked for actual backend integration against the
+approved designs and development tickets, preserving existing work.
+
+**Added locally:** signed-in search, filter-options and reference-detail routes
+using the existing Supabase corpus directly (DEV-39/42/43 groundwork). Query
+embeddings use the corpus model and a short bounded cache; embedding failures
+are labeled keyword fallbacks, as DEV-47 asks. Search is capped at 20 seconds,
+does not rerank, excludes videos and does not pretend its matches are a total.
+Template checks and a row loader (DEV-03 groundwork) reject malformed copy,
+layout and image bindings. Historical templates remain unchanged; generation
+rejects their outdated dimensions and pending risk-gate defaults.
+
+**Verification:** 277 tests pass. Tests use mocked database/provider responses;
+no live query, migration, render, deployment or end-to-end ticket proof is claimed.
+The branch was fast-forwarded to GitHub main at `781fb20` before these additions.
+Remaining release gates and ticket gaps are in `docs/carousel-backend-progress.md`.
+
+## 2026-09-29 — Carousel backend foundation (merged with PR #31, written 2026-09-24)
+
+**Where it came from:** Garreth asked to begin modular backend work using the
+Carousel Generator screens and development tickets, preserving existing code.
+
+**Added locally:** isolated batch-input checks, shared progress/count rules and
+owner/revision checks for human commands, with unit tests. A batch that requested
+50 decks cannot appear finished because only five were saved. Auto has no
+permission to approve. Existing application code and applied migrations are
+unchanged. These functions are not yet connected to database writes or routes.
+
+**Inline documentation:** the new modules explain counting invariants, trusted
+identity/readiness inputs, concurrency responsibilities and persistence boundaries.
+**Release status:** not merged, pushed or deployed. This is not a live fix.
 ## 2026-09-28 — The Virlo filing job runs once a day, not every 5 minutes
 
 **Where it came from:** looking into what used up n8n's run allowance.

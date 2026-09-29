@@ -14,12 +14,19 @@ const PUBLIC_PATHS = ["/login", "/auth/confirm"];
 const RUNNER_API_PREFIX = "/api/warmup-runner/";
 
 /**
+ * Scheduled jobs (the daily copy of reference pictures) are not a person
+ * either. Their routes demand CRON_SECRET (`requireSchedulerToken` in
+ * src/server/carousel/machine.ts). Same string as MAINTENANCE_PREFIX there.
+ */
+const MAINTENANCE_PREFIX = "/api/carousel-generator/maintenance/";
+
+/**
  * Auth gate (Next 16 "proxy", formerly middleware): refreshes the Supabase
  * session cookie and redirects unauthenticated / non-allowlisted visitors to
  * /login. API routes re-check the session themselves — this is the outer door.
  */
 export async function proxy(request: NextRequest) {
-  if (authBypassed() || request.nextUrl.pathname.startsWith(RUNNER_API_PREFIX)) {
+  if (authBypassed() || request.nextUrl.pathname.startsWith(RUNNER_API_PREFIX) || request.nextUrl.pathname.startsWith(MAINTENANCE_PREFIX)) {
     return NextResponse.next({ request });
   }
 
