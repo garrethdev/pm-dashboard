@@ -45,85 +45,29 @@ item comes from reading the code and has not been reproduced yet.** Try each
 one on the running app before fixing it, and do not close an item just because
 the review said so.
 
-## 1. Live now — the image list can be read by anyone with the public key
+## Fixed on the branch 2026-09-29
 
-- **What:** the branch's database change created the view `v_image_assets`
-  (`supabase/migrations/20260925120000_carousel_generator_foundation.sql`,
-  lines 92 and 681). A view is a saved query that works like a table. This
-  one is not locked. The changelog says the generator's new tables are
-  server-only, but this view is not. Anyone holding the public key can read
-  every image-library row through it. The public key is built into web pages
-  and n8n.
-- **Checked live 2026-09-29:** `anon` and `authenticated` can read it; it
-  returns 155 rows.
-- **Fix:** give the view `security_invoker = true` and revoke it from `anon`
-  and `authenticated` by name (see the Supabase grants note: "revoke from
-  public" is not enough). Before that, read the edge logs for anything that
-  already reads it with the public key, the way the 2026-09-21 key clean-up
-  was done. **Waiting on Garreth's yes**, because it changes the live
-  database.
+Items 1, 2.1 to 2.4, 5, 8 and 9 were each reproduced on the running branch,
+fixed, and tried again. The detail is in `CHANGELOG.md` under "Fixes from
+the PR #31 review". Garreth's decisions that shaped them: Approve is blocked
+until every deck is rendered, discarded or dropped; a batch pressed while
+another of its type runs waits its turn; the strict template rules apply to
+new types only; yes to locking the image view.
 
-## 2. Batches that get stuck or behave wrongly
+## Still open from the review
 
-These stop real batches. None of them can post anything yet, because
-rendered decks never reach the scheduler (see the changelog's "Not built
-yet").
-
-1. **Render, Continue and Regenerate can fail halfway.** Only one batch per
-   carousel type may be running. The code moves the decks first and only then
-   marks the batch as running. If another batch of the same type is already
-   running, that last step fails. The press returns an error, the batch
-   shows "Stopped", and its decks are stuck in the queue.
-   `src/server/carousel/services/runner.ts` lines 245, 260 and 286.
-2. **A rewritten deck can never be rendered in a Manual batch.** Say 8 of 10
-   decks are rendered and the 2 flagged ones are regenerated. The Render
-   button only appears when nothing has been rendered yet, so it never comes
-   back. Pressing Approve then finishes the batch without those 2 decks. A
-   retried failed deck ends the same way.
-   `src/server/carousel/status-words.ts` line 90.
-3. **Approve can finish a batch that is still rendering.** It only checks
-   that at least one deck is rendered. With 3 decks done and 7 still waiting,
-   it signs off the 3 and closes the batch, and the 7 are stuck forever.
-   `src/app/api/carousel-generator/batches/[id]/[action]/route.ts` line 37.
-4. **Stop and Discard can be undone.** The loop writes to the batch and its
-   decks after long waits without checking whether someone pressed Stop or
-   Discard in the meantime. A discarded deck can come back and be rendered,
-   and a stopped batch can start again. The fix is the check `claimDeck`
-   already does: only write if the status is still what the loop last read.
-   `src/server/carousel/services/runner.ts` line 124.
-
-## 3. Wrong results
-
-5. **The Trends feed skips carousels when it loads the next page.** Carousels
-   with the same score are sorted by views, but the next page is found by id,
-   so some are skipped and others repeated. A carousel with no score can never
-   be reached. `src/server/carousel/repo/trends.ts` line 164.
 6. **The compliance check reads words inside other words, and never reads the
    caption.** "insecure" and "manicure" are flagged because they contain
    "cure", and in Auto mode such a deck is rewritten three times and then
    dropped. Meanwhile a caption saying "this cures bloating, guaranteed"
-   passes, because the caption is skipped. For health content this second
-   half matters more. `src/server/carousel/services/gate.ts` lines 45 and 58.
+   passes, because the caption is skipped. **Garreth, 2026-09-29: ignore for
+   now.** `src/server/carousel/services/gate.ts` lines 45 and 58.
 7. **The music lookup quietly picks a random track.** If the writer suggests
    a song the library does not have, the lookup attaches the least-used
    library track and marks it "found". The deck is never flagged for a
-   person, although the module's own comment says it should be.
-   `src/server/carousel/services/music.ts` line 41.
-
-## 4. Safety
-
-8. **Studio templates go live on the lighter check.** New templates and new
-   template versions are checked against the old "historical" rules and made
-   active straight away. The stricter "generation" rules never run on this
-   path, so a template with the wrong canvas size can end up used by batches.
-   `src/app/api/carousel-generator/templates/route.ts` line 35 and
-   `templates/[id]/route.ts` line 33.
-9. **A crafted text box name could run code in a viewer's browser.** The
-   name is put into the painted slide unescaped, and the slide is shown on
-   the batch page as raw HTML. Only the allowed logins can reach the Studio,
-   so the risk is low, but the fix is a one-line escape.
-   `src/server/carousel/services/painter.ts` line 99, shown by
-   `src/components/carousel/kit.tsx` line 344.
+   person, although the module's own comment says it should be. **Waiting on
+   Garreth's answer** on whether to flag the deck or to attach a library
+   track and say so. `src/server/carousel/services/music.ts` line 41.
 
 ## 5. What Garreth saw trying the branch (2026-09-29)
 

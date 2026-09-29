@@ -704,3 +704,24 @@ alter table public.carousel_draft_slides add column if not exists rendered_svg t
 -- a deck's version counts per position, not per batch, so the old unique on
 -- (brief_id, version) had to go. The three-column unique above stays.
 alter table public.carousel_drafts drop constraint if exists carousel_drafts_brief_id_version_key;
+
+-- ── Step 4, applied live 2026-09-29 ─────────────────────────────────────
+-- PR #31 review item 1 (Garreth's yes): the image list view was readable
+-- with the public key, because a view is born with the default grants and
+-- runs as its owner. Run it as the caller and take it from the two public
+-- roles by name; a revoke from PUBLIC alone leaves named grants in place.
+-- Checked first: the only reader in the logs and in pg_stat_statements was
+-- the dashboard's own server (service_role).
+alter view public.v_image_assets set (security_invoker = true);
+revoke all on public.v_image_assets from anon, authenticated;
+revoke all on public.v_image_assets from public;
+grant select on public.v_image_assets to service_role;
+
+-- ── Step 5, applied live 2026-09-29 ─────────────────────────────────────
+-- PR #31 review item 2.1 (Garreth: a batch pressed while another of its
+-- type is running waits its turn). One more status word, 'waiting'; it sits
+-- outside the one-running-per-lane index, so any number may wait.
+alter table public.carousel_briefs drop constraint if exists carousel_briefs_status_check;
+alter table public.carousel_briefs add constraint carousel_briefs_status_check
+  check (status in ('draft', 'ready_for_copy', 'in_review', 'approved', 'archived',
+                    'generating', 'rendering', 'waiting', 'stopped', 'failed', 'finished'));

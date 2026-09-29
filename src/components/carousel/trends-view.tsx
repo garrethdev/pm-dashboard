@@ -141,7 +141,7 @@ function Feed({ onOpen }: { onOpen: (id: number) => void }) {
     try {
       if (older === null) {
         const last = items[items.length - 1];
-        const q = last ? `?afterScore=${last.score}&afterId=${last.id}` : "";
+        const q = last ? `?afterId=${last.id}` : "";
         const res = await fetch(`/api/carousel-generator/trends/feed${q}`, { cache: "no-store" });
         if (!res.ok) throw new Error();
         const j = (await res.json()) as { items: Reference[]; more: boolean };

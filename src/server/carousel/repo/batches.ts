@@ -303,6 +303,29 @@ export async function touchBatch(id: string, patch: Record<string, unknown> = {}
   });
 }
 
+/**
+ * The same bump, but only if the batch is still in one of the states the
+ * caller last read. The loop waits on the writer and the painter for many
+ * seconds; without this, its next write could undo a Stop pressed meanwhile.
+ * Answers whether the write happened.
+ */
+export async function touchBatchIf(id: string, from: string[], patch: Record<string, unknown> = {}): Promise<boolean> {
+  const cur = await dbGet<{ revision: number }[]>(`carousel_briefs?select=revision&id=eq.${enc(id)}`);
+  const now = new Date().toISOString();
+  const rows = await dbPatch<{ id: string }>(`carousel_briefs?id=eq.${enc(id)}&status=in.(${from.map(enc).join(",")})`, {
+    ...patch,
+    revision: (cur[0]?.revision ?? 0) + 1,
+    last_movement_at: now,
+    updated_at: now,
+  });
+  return rows.length > 0;
+}
+
+/** The batches of one type in the given states, oldest movement first. */
+export async function listBriefsIn(typeId: string, states: string[]): Promise<BriefRow[]> {
+  return dbGet<BriefRow[]>(`carousel_briefs?select=${BRIEF_COLS}&content_type=eq.${enc(typeId)}&status=in.(${states.map(enc).join(",")})&order=last_movement_at.asc`);
+}
+
 export async function getDeckRow(id: string): Promise<DraftRow | null> {
   const rows = await dbGet<DraftRow[]>(`carousel_drafts?select=${DRAFT_COLS}&id=eq.${enc(id)}`);
   return rows[0] ?? null;

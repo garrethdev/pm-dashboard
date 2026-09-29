@@ -32,16 +32,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   switch (action) {
     case "render":
       if (words.stage !== "to_render") return bad("The batch is not ready to render", 409);
-      return attempt(g.email, "carousel.batch.render", id, () => renderBatch(id).then((n) => ({ queued: n })));
+      return attempt(g.email, "carousel.batch.render", id, () => renderBatch(id));
     case "approve":
-      if (batch.counts.rendered === 0 || batch.lifecycle !== "open") return bad("Nothing is rendered yet", 409);
+      // The batch is signed off whole: nothing may still be waiting to be
+      // written, rendered, fixed or retried (review item 2.3).
+      if (words.stage !== "to_approve") return bad(batch.counts.rendered === 0 ? "Nothing is rendered yet" : `Not ready to approve: ${words.label}`, 409, "NOT_READY");
       return attempt(g.email, "carousel.batch.approve", id, () => approveBatch(id, g.email).then((n) => ({ approved: n })));
     case "stop":
       if (batch.lifecycle !== "open") return bad("The batch is not running", 409);
       return attempt(g.email, "carousel.batch.stop", id, () => stopBatch(id));
     case "continue":
       if (words.stage !== "stopped") return bad("The batch is not stopped", 409);
-      return attempt(g.email, "carousel.batch.continue", id, () => continueBatch(id));
+      return attempt(g.email, "carousel.batch.continue", id, () => continueBatch(id).then((outcome) => ({ outcome })));
     case "finish":
       if (batch.lifecycle === "finished") return bad("Already finished", 409);
       return attempt(g.email, "carousel.batch.finish", id, () => finishBatch(id));

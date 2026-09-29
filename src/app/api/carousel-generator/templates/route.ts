@@ -32,7 +32,9 @@ export async function POST(req: Request) {
   const libraryId = str(b.libraryId, 64) || null;
   const template = b.template;
   try {
-    validateTemplate({ ...(template as Record<string, unknown>), slug, version: 1 }, "historical");
+    // A new type goes live as soon as it is saved, so it meets the rules for
+    // new decks: 1080 by 1350 or 1080 by 1920 (PR #31 review item 8).
+    validateTemplate({ ...(template as Record<string, unknown>), slug, version: 1 }, "generation");
   } catch (err) {
     return bad(`The template is not valid: ${err instanceof Error ? err.message : "unknown"}`, 422);
   }

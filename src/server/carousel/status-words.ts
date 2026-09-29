@@ -21,7 +21,7 @@ import type { BatchSummary } from "@/server/carousel/repo/types";
 
 export const STALL_AFTER_MS = 60_000;
 
-export type BatchStage = "writing" | "rendering" | "to_render" | "to_approve" | "flagged" | "stopped" | "done";
+export type BatchStage = "writing" | "rendering" | "waiting" | "to_render" | "to_approve" | "flagged" | "stopped" | "done";
 
 export interface BatchWords {
   stage: BatchStage;
@@ -52,7 +52,10 @@ export function batchWords(b: BatchSummary, now = Date.now()): BatchWords {
   const dropped = c.dropped > 0 ? `${c.dropped} dropped` : null;
   const flagged = c.flagged > 0 ? `${c.flagged} flagged` : null;
   const aside = dropped && flagged ? `${flagged} · ${dropped}` : (dropped ?? flagged);
-  const working = b.lifecycle === "open" && (writingLeft > 0 || renderingLeft > 0);
+  // A batch waiting for its type's one running slot is not working and
+  // cannot stall: nothing is supposed to move until its turn comes.
+  const waiting = b.lifecycle === "open" && b.phase === "waiting";
+  const working = b.lifecycle === "open" && !waiting && (writingLeft > 0 || renderingLeft > 0);
   const stalled = working && now - Date.parse(b.lastMovementAt) > STALL_AFTER_MS;
   const base = { href, aside, stalled };
 
@@ -61,6 +64,9 @@ export function batchWords(b: BatchSummary, now = Date.now()): BatchWords {
   }
   if (b.lifecycle === "finished") {
     return { ...base, stage: "done", label: "Done", tone: "neutral", needsPerson: false, running: false, progress: null };
+  }
+  if (waiting) {
+    return { ...base, stage: "waiting", label: "Waiting its turn", tone: "neutral", needsPerson: false, running: false, progress: null };
   }
   if (writingLeft > 0) {
     const total = Math.max(1, b.requested - c.dropped - c.discarded);
@@ -86,30 +92,38 @@ export function batchWords(b: BatchSummary, now = Date.now()): BatchWords {
       progress: c.rendered / total,
     };
   }
+  // Written and not yet rendered. After a rewrite this is non-zero again
+  // while other decks are already rendered, and Render has to come back for
+  // it (review item 2.2): those decks would otherwise be left behind.
   const toRender = c.written - c.rendered;
-  if (toRender > 0 && c.rendered === 0 && b.mode !== "auto") {
+  if (toRender > 0 && b.mode !== "auto") {
     return { ...base, stage: "to_render", label: `${toRender} to render`, tone: "neutral", needsPerson: true, running: false, progress: null };
-  }
-  if (c.rendered > 0 && c.approved === 0) {
-    return { ...base, stage: "to_approve", label: `${c.rendered} to approve`, tone: "neutral", needsPerson: true, running: false, progress: null };
-  }
-  if (c.flagged > 0 && c.written === 0) {
-    return { ...base, stage: "flagged", label: `${c.flagged} flagged`, tone: "neutral", needsPerson: true, running: false, progress: null, aside: dropped };
   }
   if (toRender > 0 && b.mode === "auto") {
     // Auto with decks written and nothing queued: the worker is between steps.
     return { ...base, stage: "rendering", label: `Rendering ${c.rendered} of ${c.written}`, tone: "accent", needsPerson: false, running: true, progress: c.rendered / Math.max(1, c.written) };
+  }
+  // A flagged or failed deck holds Approve back (Garreth, 2026-09-29): the
+  // batch is signed off whole, so it says what is in the way. In Auto a
+  // flagged deck is the worker's to retry or drop, so only a failed one counts.
+  const inTheWay = (b.mode === "auto" ? 0 : c.flagged) + c.failed;
+  if (inTheWay > 0) {
+    const label = c.flagged > 0 && b.mode !== "auto" ? `${c.flagged} flagged` : `${c.failed} failed`;
+    return { ...base, stage: "flagged", label, tone: "neutral", needsPerson: true, running: false, progress: null, aside: dropped };
+  }
+  if (c.rendered > 0 && c.approved === 0) {
+    return { ...base, stage: "to_approve", label: `${c.rendered} to approve`, tone: "neutral", needsPerson: true, running: false, progress: null };
   }
   return { ...base, stage: "done", label: "Done", tone: "neutral", needsPerson: false, running: false, progress: null };
 }
 
 /**
  * How often a screen that lists batches should re-read, in milliseconds:
- * `ms` while one is writing or rendering, null otherwise. Stopped, Done and
+ * `ms` while one is writing, rendering or waiting its turn, null otherwise. Stopped, Done and
  * "to approve" only change when a person presses something, so a screen
  * showing only those has nothing to poll for (Garreth, 2026-09-26).
  */
 export function whileMoving(batches: BatchSummary[] | undefined, ms = 5000, now = Date.now()): number | null {
-  const moving = batches?.some((b) => b.lifecycle === "open" && ["writing", "rendering"].includes(batchWords(b, now).stage));
+  const moving = batches?.some((b) => b.lifecycle === "open" && ["writing", "rendering", "waiting"].includes(batchWords(b, now).stage));
   return moving ? ms : null;
 }

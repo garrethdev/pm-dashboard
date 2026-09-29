@@ -93,3 +93,35 @@ describe("when a screen that lists batches should re-read", () => {
     expect(whileMoving([base({ lastMovementAt: "2026-09-25T10:00:00Z", counts: { pending: 17, written: 3 } })])).toBeNull();
   });
 });
+
+describe("PR #31 review: what holds a batch back", () => {
+  it("brings Render back for a deck rewritten after the others were rendered (2.2)", () => {
+    const w = batchWords(base({ phase: "in_review", requested: 10, counts: { requested: 10, decks: 10, written: 10, rendered: 8 } }));
+    expect(w.stage).toBe("to_render");
+    expect(w.label).toBe("2 to render");
+  });
+  it("does not offer Approve while a flagged or failed deck is in the way (2.3)", () => {
+    const flagged = batchWords(base({ phase: "in_review", requested: 10, counts: { requested: 10, decks: 10, written: 8, rendered: 8, flagged: 2 } }));
+    expect(flagged.stage).toBe("flagged");
+    expect(flagged.label).toBe("2 flagged");
+    const failed = batchWords(base({ phase: "in_review", requested: 10, counts: { requested: 10, decks: 10, written: 9, rendered: 9, failed: 1 } }));
+    expect(failed.stage).toBe("flagged");
+    expect(failed.label).toBe("1 failed");
+  });
+  it("offers Approve once every deck is rendered, discarded or dropped", () => {
+    const w = batchWords(base({ phase: "in_review", requested: 10, counts: { requested: 10, decks: 10, written: 8, rendered: 8, discarded: 1, dropped: 1 } }));
+    expect(w.stage).toBe("to_approve");
+    expect(w.label).toBe("8 to approve");
+  });
+  it("reads Waiting for a batch queued behind another of its type, however long it waits (2.1)", () => {
+    const w = batchWords(base({ phase: "waiting", lastMovementAt: "2026-09-25T10:00:00Z", counts: { written: 5, rendering: 5 } }));
+    expect(w.stage).toBe("waiting");
+    expect(w.stalled).toBe(false);
+    expect(w.needsPerson).toBe(false);
+    expect(whileMoving([base({ phase: "waiting", counts: { written: 5, rendering: 5 } })])).toBe(5000);
+  });
+  it("leaves a flagged deck to the worker in Auto", () => {
+    const w = batchWords(base({ mode: "auto", phase: "generating", counts: { written: 8, rendered: 8, flagged: 2 } }));
+    expect(w.stage).not.toBe("flagged");
+  });
+});

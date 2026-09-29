@@ -202,6 +202,60 @@ buttons unavailable, then a library picked and a preview painted with its
 photos. Nothing was saved. A **New library** choice on that step is still
 DEV-29, not built.
 
+**Fixes from the PR #31 review (2026-09-29; the list is in `BACKLOG.md`,
+Garreth answered the open questions the same day).** Each item was
+reproduced on the running branch before it was changed, and tried again
+after.
+
+- **The image list is locked (item 1, Garreth's yes).** The view
+  `v_image_assets` could be read with the public key. It now runs as the
+  caller and is taken away from the two public roles by name. Checked
+  first: the only reader in the logs was the dashboard's own server.
+  Confirmed live: the public key gets "permission denied", the server still
+  reads its 155 rows. Applied to the live project; recorded as step 4 of the
+  generator's migration file.
+- **A batch pressed while another of its type is running waits its turn
+  (item 2.1, Garreth chose waiting over refusing).** Render, Continue,
+  Regenerate and Retry used to fail with a database error and leave the
+  batch's decks stuck in the queue. The batch now reads **Waiting its
+  turn**, names the batch it is behind, and starts by itself when that one
+  finishes, stops, or has not moved for a minute. A new status word,
+  `waiting`, was added to the live database (step 5 of the migration file).
+  A batch that died while holding its type's slot no longer blocks
+  Generate for that type; Covered Eye had been blocked that way since
+  Sep 26. Confirmed live: Render pressed on one Glow Up batch while another
+  was writing answered "waiting", and its three decks were rendered as soon
+  as the other finished writing.
+- **Render comes back after a rewrite (item 2.2).** With 2 of 3 decks
+  rendered and the third rewritten, the batch now reads "1 to render" and
+  the button is there. Confirmed live.
+- **Approve waits for every deck (item 2.3, Garreth chose blocked).** It is
+  refused while any deck is still to be written, rendered, fixed or
+  retried, and the batch page says why. Finish remains the way to close a
+  batch early. Confirmed live: refused with one deck outstanding, then all
+  three approved once it was rendered.
+- **Stop and Discard stay pressed (item 2.4).** Every write the runner makes
+  after waiting on the writer or the painter now only happens if the deck
+  or the batch is still as the runner left it. Confirmed live: a deck
+  discarded while it was being written stayed discarded, and a batch
+  stopped mid-write was still stopped forty seconds later.
+- **A rewrite keeps its note.** Found while fixing the above: the note typed
+  into Regenerate was saved on the deck but never reached the writer when
+  the runner picked the deck up. It does now.
+- **The Trends feed no longer skips or repeats carousels (item 5).** The
+  next page was found by score and id while the feed is sorted by score,
+  then views, then id. Confirmed live: all 1,254 unseen carousels came back
+  across 63 pages, none twice.
+- **New Studio types meet the rules for new decks (item 8, Garreth chose
+  new types only).** A new type must be 1080 by 1350 or 1080 by 1920. A
+  type that already exists under the older rules, such as Glow Up at 1080
+  by 1440, keeps its size when a new version is saved.
+- **The slide painter no longer trusts the template (item 9).** Box names
+  and every number it writes into a slide are cleaned first, so a crafted
+  template cannot put markup into the batch page.
+- **Not changed, on Garreth's word:** the compliance word check (item 6) is
+  left as it is for now. The music lookup (item 7) waits for his answer.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

@@ -2,7 +2,7 @@ import { attempt, bad, body, guard, ok, str } from "@/server/carousel/http";
 import { createBatch, listBatches } from "@/server/carousel/repo/batches";
 import { getCarouselType } from "@/server/carousel/repo/catalog";
 import { getTemplateRecord } from "@/server/carousel/repo/templates";
-import { ensureLoop } from "@/server/carousel/services/runner";
+import { clearDeadHolders, ensureLoop } from "@/server/carousel/services/runner";
 
 export async function GET(req: Request) {
   const g = await guard();
@@ -43,6 +43,8 @@ export async function POST(req: Request) {
   const raw = (b.perBatchText ?? {}) as Record<string, unknown>;
   for (const [k, v] of Object.entries(raw)) if (/^[a-zA-Z0-9_-]{1,100}$/.test(k) && typeof v === "string") perBatchText[k] = v.slice(0, 10_000);
 
+  // A batch the screens already call Stopped must not hold the type's slot.
+  await clearDeadHolders(typeId);
   return attempt(g.email, "carousel.batch.create", typeId, async () => {
     const batch = await createBatch(
       { typeId, requested, auto: b.auto === true, note: str(b.note, 2000), perBatchText, libraryId, createdBy: g.email, rerunOf: str(b.rerunOf, 64) || null },

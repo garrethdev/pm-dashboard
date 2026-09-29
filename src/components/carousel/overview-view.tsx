@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Accent, Btn, LoadError, Pill, SectionHead, ago, compact, shortDate, useJson } from "@/components/carousel/kit";
 import { DetailsWindow } from "@/components/carousel/details-window";
-import { ChevronRight, Flag, Images, LayoutList, Pause, Pencil, Play, SealCheck } from "@/components/ui/icons";
+import { ChevronRight, Flag, History, Images, LayoutList, Pause, Pencil, Play, SealCheck } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { BatchSummary, OverviewData, Reference } from "@/server/carousel/repo/types";
 import { batchWords, whileMoving, type BatchStage } from "@/server/carousel/status-words";
@@ -19,6 +19,7 @@ import { batchWords, whileMoving, type BatchStage } from "@/server/carousel/stat
 const STAGE_ICON: Record<BatchStage, React.ComponentType<{ className?: string }>> = {
   writing: Pencil,
   rendering: Images,
+  waiting: History,
   to_approve: SealCheck,
   to_render: Play,
   flagged: Flag,

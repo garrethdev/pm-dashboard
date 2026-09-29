@@ -18,7 +18,8 @@ interface RefRow {
   views: number | null;
   likes: number | null;
   saves: number | null;
-  total_score: number | string;
+  total_score: number | string | null;
+  views_normalized: number | string | null;
   published_at: string | null;
   created_at: string | null;
   niche_tags: string[] | null;
@@ -50,7 +51,7 @@ interface AnalysisRow {
   updated_at: string;
 }
 
-const REF_COLS = "id,platform,creator_handle,hook_text,source_url,thumbnail_url,views,likes,saves,total_score,published_at,created_at,niche_tags,hook_type";
+const REF_COLS = "id,platform,creator_handle,hook_text,source_url,thumbnail_url,views,likes,saves,total_score,views_normalized,published_at,created_at,niche_tags,hook_type";
 const PAGE = 20;
 
 async function beatsFor(ids: number[]): Promise<Map<number, BeatRow[]>> {
@@ -153,23 +154,63 @@ async function hydrate(rows: RefRow[], viewer: string): Promise<Reference[]> {
 /** The library's ranking (DEV-36): best score first, then views, then id. */
 const ORDER = "order=total_score.desc.nullslast,views_normalized.desc.nullslast,id.asc";
 
-/** The carousels this person has not seen, keyset-paged (DEV-45). */
-export async function unseenFeed(viewer: string, after: { score: number; id: number } | null): Promise<{ items: Reference[]; more: boolean }> {
+export interface FeedCursor {
+  score: number | null;
+  views: number | null;
+  id: number;
+}
+
+/**
+ * Everything that sorts after the cursor row, in the feed's own order:
+ * score, then views, then id, with a missing score or view count last.
+ * The page boundary has to use every column the order uses. It used to use
+ * score and id only, so carousels sharing a score were skipped or repeated
+ * across pages, and one with no score could never be reached (PR #31 review
+ * item 5).
+ */
+export function afterFilter(c: FeedCursor): string {
+  const tie =
+    c.views === null
+      ? `and(views_normalized.is.null,id.gt.${c.id})`
+      : `or(views_normalized.lt.${c.views},views_normalized.is.null,and(views_normalized.eq.${c.views},id.gt.${c.id}))`;
+  return c.score === null
+    ? `&and=(total_score.is.null,${tie})`
+    : `&or=(total_score.lt.${c.score},total_score.is.null,and(total_score.eq.${c.score},${tie}))`;
+}
+
+const numOrNull = (v: number | string | null | undefined): number | null => {
+  if (v === null || v === undefined || v === "") return null;
+  const x = Number(v);
+  return Number.isFinite(x) ? x : null;
+};
+
+/** The carousels this person has not seen, keyset-paged (DEV-45). `afterId` is the last carousel already shown. */
+export async function unseenFeed(viewer: string, afterId: number | null): Promise<{ items: Reference[]; more: boolean }> {
   const seen = await dbGetAll<{ reference_id: number }>(`reference_seen?select=reference_id&seen_by=eq.${enc(viewer)}`);
   const seenIds = new Set(seen.map((s) => s.reference_id));
   const out: RefRow[] = [];
-  let cursor = after;
+  let cursor: FeedCursor | null = null;
+  if (afterId !== null) {
+    const [at] = await dbGet<RefRow[]>(`references_unified?select=id,total_score,views_normalized&id=eq.${afterId}`);
+    if (at) cursor = { score: numOrNull(at.total_score), views: numOrNull(at.views_normalized), id: at.id };
+  }
   let more = true;
   while (out.length < PAGE && more) {
-    const filter = cursor ? `&or=(total_score.lt.${cursor.score},and(total_score.eq.${cursor.score},id.gt.${cursor.id}))` : "";
-    const page = await dbGet<RefRow[]>(`references_unified?select=${REF_COLS}&format=eq.carousel${filter}&${ORDER}&limit=${PAGE * 2}`);
+    const page: RefRow[] = await dbGet<RefRow[]>(`references_unified?select=${REF_COLS}&format=eq.carousel${cursor ? afterFilter(cursor) : ""}&${ORDER}&limit=${PAGE * 2}`);
     more = page.length === PAGE * 2;
-    for (const r of page) if (!seenIds.has(r.id) && out.length < PAGE) out.push(r);
-    const last = page[page.length - 1];
-    if (!last) break;
-    cursor = { score: Number(last.total_score) || 0, id: last.id };
+    let lastTaken: RefRow | null = null;
+    for (const r of page) {
+      if (out.length >= PAGE) break;
+      lastTaken = r;
+      if (!seenIds.has(r.id)) out.push(r);
+    }
+    // Carry on from the last row looked at, not the last row fetched: the
+    // rows after it on this page have not been shown to anyone yet.
+    if (!lastTaken) break;
+    if (lastTaken !== page[page.length - 1]) more = true;
+    cursor = { score: numOrNull(lastTaken.total_score), views: numOrNull(lastTaken.views_normalized), id: lastTaken.id };
   }
-  return { items: await hydrate(out, viewer), more: more || out.length === PAGE };
+  return { items: await hydrate(out, viewer), more };
 }
 
 /** What this person has already seen, most recently seen first. */

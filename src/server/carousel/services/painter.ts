@@ -58,6 +58,19 @@ export interface PaintedSlide {
   svg: string;
 }
 
+/**
+ * Everything that is not text goes into the picture through one of these
+ * two. A template is saved from the Studio and could carry anything in a
+ * field the validator does not read; the painted slide is shown as raw
+ * markup on the batch page, so a number is forced to be a number and a
+ * name is cut down to letters, digits, dash and underscore (review item 9).
+ */
+const n = (v: unknown, fallback = 0): number => {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : fallback;
+};
+const ident = (v: unknown): string => String(v ?? "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60) || "x";
+
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /** Greedy wrap by an estimated bold-sans advance; the real painter measures. */
@@ -96,13 +109,13 @@ function textBlock(box: TextBox, style: Style, text: string, canvas: { width: nu
   const x = align === "end" ? canvas.width - (a.right ?? 0) : canvas.width / 2;
   const shadow = style.shadow;
   const filter = shadow
-    ? `<filter id="sh-${box.role}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="${shadow.dx}" dy="${shadow.dy}" stdDeviation="${shadow.blur / 2}" flood-color="${esc(shadow.color)}" flood-opacity="${shadow.opacity}"/></filter>`
+    ? `<filter id="sh-${ident(box.role)}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="${n(shadow.dx)}" dy="${n(shadow.dy)}" stdDeviation="${n(shadow.blur) / 2}" flood-color="${esc(String(shadow.color))}" flood-opacity="${n(shadow.opacity, 1)}"/></filter>`
     : "";
   const tspans = lines
-    .map((l, i) => `<tspan x="${x}" y="${(top + i * lineHeight + box.size * 0.9).toFixed(1)}">${esc(l)}</tspan>`)
+    .map((l, i) => `<tspan x="${n(x)}" y="${n(top + i * lineHeight + n(box.size) * 0.9).toFixed(1)}">${esc(l)}</tspan>`)
     .join("");
-  const strokeAttr = stroke ? ` stroke="${esc(stroke.color)}" stroke-width="${stroke.width}" stroke-linejoin="round" paint-order="stroke fill"` : "";
-  return `${filter}<text font-family="${esc(fontFamily)}" font-weight="700" font-size="${box.size}" fill="${esc(style.fill ?? "#fff")}" text-anchor="${align}"${strokeAttr}${shadow ? ` filter="url(#sh-${box.role})"` : ""}>${tspans}</text>`;
+  const strokeAttr = stroke ? ` stroke="${esc(String(stroke.color))}" stroke-width="${n(stroke.width)}" stroke-linejoin="round" paint-order="stroke fill"` : "";
+  return `${filter}<text font-family="${esc(fontFamily)}" font-weight="700" font-size="${n(box.size, 48)}" fill="${esc(String(style.fill ?? "#fff"))}" text-anchor="${align}"${strokeAttr}${shadow ? ` filter="url(#sh-${ident(box.role)})"` : ""}>${tspans}</text>`;
 }
 
 export function paintDeck(template: PaintTemplate, assets: ImageAsset[], libraryId: string, deckId: string, copy: Record<string, string>): PaintedSlide[] {
@@ -115,8 +128,8 @@ export function paintDeck(template: PaintTemplate, assets: ImageAsset[], library
       .map((c, i) => {
         const img = picked[i];
         return img
-          ? `<image href="${esc(img.public_url)}" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" preserveAspectRatio="xMidYMid slice"/>`
-          : `<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" fill="#222"/>`;
+          ? `<image href="${esc(img.public_url)}" x="${n(c.x)}" y="${n(c.y)}" width="${n(c.w)}" height="${n(c.h)}" preserveAspectRatio="xMidYMid slice"/>`
+          : `<rect x="${n(c.x)}" y="${n(c.y)}" width="${n(c.w)}" height="${n(c.h)}" fill="#222"/>`;
       })
       .join("");
     const boxCopy: Record<string, string> = {};
@@ -129,8 +142,8 @@ export function paintDeck(template: PaintTemplate, assets: ImageAsset[], library
         return textBlock(box, template.text_styles[box.style] ?? {}, text, template.canvas, family);
       })
       .join("");
-    const bg = template.canvas.background ? `<rect width="100%" height="100%" fill="${esc(template.canvas.background)}"/>` : "";
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${template.canvas.width} ${template.canvas.height}" width="${template.canvas.width}" height="${template.canvas.height}">${bg}${cells}${texts}</svg>`;
+    const bg = template.canvas.background ? `<rect width="100%" height="100%" fill="${esc(String(template.canvas.background))}"/>` : "";
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n(template.canvas.width, 1080)} ${n(template.canvas.height, 1350)}" width="${n(template.canvas.width, 1080)}" height="${n(template.canvas.height, 1350)}">${bg}${cells}${texts}</svg>`;
     return { position: slide.n, imageUrls: picked.map((p) => p.public_url), imageIds: picked.map((p) => p.image_id), boxCopy, svg };
   });
 }

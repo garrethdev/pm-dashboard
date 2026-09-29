@@ -73,3 +73,22 @@ describe("the painter's quote rule", () => {
     expect(quoted[0].imageUrls).toEqual(["https://x/a.jpg"]);
   });
 });
+
+describe("the painter keeps a crafted template out of the page (PR #31 review item 9)", () => {
+  it("cuts a text box name down to a plain name and forces numbers to be numbers", async () => {
+    const { paintDeck } = await import("./painter");
+    const evil = 'x"><script>alert(1)</script><g id="';
+    const template = {
+      slug: "t", version: 1, image_rules: { one: "one" },
+      canvas: { width: '1080" onload="alert(1)', height: 1350, background: null },
+      text_styles: { caption: { fill: "#FFFFFF", align: "center", shadow: { dx: 0, dy: '2"/><script>alert(2)</script>', blur: 4, color: "#000", opacity: 0.5 } } },
+      slides: [{ n: 1, layout: "single", cells: [{ x: 0, y: 0, w: 1080, h: 1350 }], images: { rule: "one" }, text: [{ role: evil, style: "caption", size: 72, anchor: { kind: "top", y: 105 } }] }],
+    };
+    const assets = [{ library_id: "lib", image_id: "a", public_url: "https://x/a.jpg", is_cover: false, set_name: "s", subset_name: null, luminance: null, status: "active" }];
+    const [slide] = paintDeck(template as never, assets, "lib", "deck-1", { [evil]: "a line <b>with</b> markup" });
+    expect(slide.svg).not.toContain("<script");
+    expect(slide.svg).not.toContain("onload");
+    expect(slide.svg).toContain("a line &lt;b&gt;with&lt;/b&gt; markup");
+    expect(slide.svg).toMatch(/id="sh-[a-zA-Z0-9_-]+"/);
+  });
+});

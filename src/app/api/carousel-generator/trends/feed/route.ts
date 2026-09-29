@@ -1,4 +1,5 @@
 import { bad, guard, ok } from "@/server/carousel/http";
+import { logError } from "@/server/carousel/log";
 import { seenFeed, unseenCount, unseenFeed } from "@/server/carousel/repo/trends";
 
 /**
@@ -13,12 +14,11 @@ export async function GET(req: Request) {
   try {
     if (url.searchParams.get("count")) return ok({ unseen: await unseenCount(g.email) });
     if (url.searchParams.get("seen")) return ok(await seenFeed(g.email, url.searchParams.get("before")));
-    const score = url.searchParams.get("afterScore");
-    const id = url.searchParams.get("afterId");
-    const after = score && id ? { score: Number(score), id: Number(id) } : null;
-    return ok(await unseenFeed(g.email, after));
+    // The last carousel already shown; the server reads its place in the order itself.
+    const id = Number(url.searchParams.get("afterId"));
+    return ok(await unseenFeed(g.email, Number.isInteger(id) && id > 0 ? id : null));
   } catch (err) {
-    console.error("carousel feed failed", err);
+    logError("trends feed", err);
     return bad("The feed could not be loaded", 502);
   }
 }

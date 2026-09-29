@@ -18,6 +18,22 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 }
 
+/**
+ * Which rules a new version has to meet (Garreth, 2026-09-29: strict for new
+ * types only). A type whose current template already meets the rules for new
+ * decks stays under them. A type that was brought in under the older rules,
+ * like Glow Up at 1080 by 1440, keeps its size, so it can still be edited.
+ */
+function rulesFor(current: Record<string, unknown> | null): "generation" | "historical" {
+  if (!current) return "generation";
+  try {
+    validateTemplate(current, "generation");
+    return "generation";
+  } catch {
+    return "historical";
+  }
+}
+
 /** Save version (DEV-24): N+1, active in the same pass. A running batch keeps its version. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const g = await guard();
@@ -30,7 +46,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!template) return bad("A template is required");
   const next = (rec.versions[0]?.version ?? 0) + 1;
   try {
-    validateTemplate({ ...template, slug: rec.slug, version: next }, "historical");
+    validateTemplate({ ...template, slug: rec.slug, version: next }, rulesFor(rec.template));
   } catch (err) {
     return bad(`The template is not valid: ${err instanceof Error ? err.message : "unknown"}`, 422);
   }

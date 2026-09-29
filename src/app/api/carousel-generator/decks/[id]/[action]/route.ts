@@ -13,10 +13,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   switch (action) {
     case "regenerate":
       if (["writing", "rendering", "discarded", "approved"].includes(deck.status)) return bad("This deck cannot be regenerated right now", 409);
-      return attempt(g.email, "carousel.deck.regenerate", id, () => regenerateDeck(deck.brief_id, id, str(b.feedback) || null), { feedback: str(b.feedback) });
+      return attempt(g.email, "carousel.deck.regenerate", id, () => regenerateDeck(deck.brief_id, id, str(b.feedback) || null).then((outcome) => ({ outcome })), { feedback: str(b.feedback) });
     case "retry":
       if (deck.status !== "failed") return bad("Only a failed deck can be retried", 409);
-      return attempt(g.email, "carousel.deck.retry", id, () => retryDeck(deck.brief_id, id));
+      return attempt(g.email, "carousel.deck.retry", id, () => retryDeck(deck.brief_id, id).then((outcome) => ({ outcome })));
     case "discard":
       return attempt(g.email, "carousel.deck.discard", id, () => discardDeck(deck.brief_id, id));
     case "track": {

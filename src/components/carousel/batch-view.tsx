@@ -18,6 +18,8 @@ import type { BatchWords } from "@/server/carousel/status-words";
 interface Payload {
   batch: Batch;
   words: BatchWords;
+  /** The batch of the same type this one is waiting behind, when it waits. */
+  waitingFor?: string | null;
 }
 
 export function BatchView({ id, initial }: { id: string; initial: Payload | null }) {
@@ -51,6 +53,9 @@ export function BatchView({ id, initial }: { id: string; initial: Payload | null
   const paused = b.madeInAuto && b.mode === "manual" && b.lifecycle === "open";
   const stalled = w.stalled;
   const done = w.stage === "to_approve" || (w.stage === "done" && c.rendered > 0 && b.lifecycle === "open");
+  // Rendered decks that cannot be approved yet, because others are still to
+  // be rendered, fixed or retried. The batch is signed off whole.
+  const heldBack = b.lifecycle === "open" && c.rendered > 0 && c.approved === 0 && (w.stage === "to_render" || w.stage === "flagged");
   const failed = c.failed;
 
   const act = async (action: string, body?: unknown) => {
@@ -74,7 +79,8 @@ export function BatchView({ id, initial }: { id: string; initial: Payload | null
 
   // The count line, in D12's words.
   let countText: string;
-  if (w.stage === "writing") countText = `${c.written} of ${b.requested - c.dropped - c.discarded} written`;
+  if (w.stage === "waiting") countText = d.waitingFor ? `Waiting for ${d.waitingFor} to finish` : "Waiting its turn";
+  else if (w.stage === "writing") countText = `${c.written} of ${b.requested - c.dropped - c.discarded} written`;
   else if (w.stage === "rendering") countText = `${c.rendered} of ${c.written} rendered`;
   else if (b.lifecycle === "finished") countText = `${c.approved} of ${c.rendered} approved`;
   else if (c.rendered > 0) countText = `${c.rendered} of ${c.written} rendered`;
@@ -88,7 +94,7 @@ export function BatchView({ id, initial }: { id: string; initial: Payload | null
   const approveBtn = done && c.rendered > 0 && (
     <Accent onClick={() => act("approve")} busy={busy === "approve"}>Approve {c.rendered} decks</Accent>
   );
-  const regenAllBtn = (w.stage === "to_render" || done) && (c.flagged + c.dropped > 0) && (
+  const regenAllBtn = (w.stage === "to_render" || w.stage === "flagged" || done) && (c.flagged + c.dropped > 0) && (
     <span className="relative">
       <Btn line onClick={() => setRegenOpen((o) => !o)}><RotateCw className="size-3.5" />Regenerate {c.flagged + c.dropped} decks</Btn>
       {regenOpen && (
@@ -109,7 +115,7 @@ export function BatchView({ id, initial }: { id: string; initial: Payload | null
       {auto ? <><Pause className="size-3.5" />Pause auto</> : <><Play className="size-3.5" />Resume auto</>}
     </Btn>
   );
-  const stopBtn = b.lifecycle === "open" && (w.stage === "writing" || w.stage === "rendering") && !stalled && (
+  const stopBtn = b.lifecycle === "open" && (w.stage === "writing" || w.stage === "rendering" || w.stage === "waiting") && !stalled && (
     <Btn line onClick={() => act("stop")} busy={busy === "stop"}>Stop</Btn>
   );
 
@@ -139,6 +145,8 @@ export function BatchView({ id, initial }: { id: string; initial: Payload | null
           {auto && <Pill tone="accent">Auto</Pill>}
           {paused && <Pill>Auto paused</Pill>}
           {b.lifecycle === "finished" && <Pill>Done</Pill>}
+          {w.stage === "waiting" && <Pill>Waiting</Pill>}
+          {heldBack && <span className="text-xs text-text-muted tnum">Approve opens once every deck is rendered or discarded</span>}
           {c.flagged > 0 && <a href="#flagged" className="text-xs text-danger tnum">{c.flagged} flagged</a>}
           {c.dropped > 0 && <span className="text-xs text-text-muted tnum">{c.dropped} dropped</span>}
           {failed > 0 && <span className="text-xs text-danger tnum">{failed} failed</span>}

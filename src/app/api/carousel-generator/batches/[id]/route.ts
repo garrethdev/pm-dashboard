@@ -1,5 +1,6 @@
 import { bad, guard, ok } from "@/server/carousel/http";
-import { getBatch } from "@/server/carousel/repo/batches";
+import { getBatch, listBriefsIn } from "@/server/carousel/repo/batches";
+import { logError } from "@/server/carousel/log";
 import { reviveIfNeeded } from "@/server/carousel/services/runner";
 import { batchWords } from "@/server/carousel/status-words";
 
@@ -12,9 +13,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const batch = await getBatch(id);
     if (!batch) return bad("Batch not found", 404);
     await reviveIfNeeded(batch);
-    return ok({ batch, words: batchWords(batch) });
+    const words = batchWords(batch);
+    // A waiting batch names the one it is waiting behind.
+    const holder = words.stage === "waiting" ? (await listBriefsIn(batch.typeId, ["generating", "rendering"]))[0] : null;
+    return ok({ batch, words, waitingFor: holder?.batch_name ?? null });
   } catch (err) {
-    console.error("carousel batch read failed", err);
+    logError(`batch ${id} read`, err);
     return bad("The batch could not be loaded", 502);
   }
 }
