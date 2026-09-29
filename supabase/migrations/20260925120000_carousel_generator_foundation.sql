@@ -780,3 +780,10 @@ create table if not exists public.reference_media_refresh (
 );
 alter table public.reference_media_refresh enable row level security;
 revoke all on public.reference_media_refresh from anon, authenticated;
+
+-- ── Step 8, applied live 2026-09-29 ─────────────────────────────────────
+-- Position 0 is the carousel's cover picture, so covers are kept in our own
+-- storage beside the slides (Garreth: store pictures ourselves rather than
+-- point at other systems).
+alter table public.reference_slide_images drop constraint if exists reference_slide_images_position_check;
+alter table public.reference_slide_images add constraint reference_slide_images_position_check check (position >= 0);

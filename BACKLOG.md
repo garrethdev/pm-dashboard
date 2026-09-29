@@ -62,12 +62,8 @@ new types only; yes to locking the image view.
    dropped. Meanwhile a caption saying "this cures bloating, guaranteed"
    passes, because the caption is skipped. **Garreth, 2026-09-29: ignore for
    now.** `src/server/carousel/services/gate.ts` lines 45 and 58.
-7. **The music lookup quietly picks a random track.** If the writer suggests
-   a song the library does not have, the lookup attaches the least-used
-   library track and marks it "found". The deck is never flagged for a
-   person, although the module's own comment says it should be. **Waiting on
-   Garreth's answer** on whether to flag the deck or to attach a library
-   track and say so. `src/server/carousel/services/music.ts` line 41.
+Item 7, the music lookup, was settled and built 2026-09-29: a swapped track
+is labelled on the deck card. See the changelog.
 
 ## 5. What Garreth saw trying the branch (2026-09-29)
 
@@ -97,11 +93,8 @@ new types only; yes to locking the image view.
   `batches/runner.ts` and its test, and `batches/status.ts` and its test.
   Both branches built their own batch runner, so that file is the real work.
   Fixing items 1–4 during that merge saves doing it twice.
-- **Test data sits in the live tables on purpose** (listed in the PR
-  description): Glow Up and Covered Eye batches, Glow Up template version 2,
-  the Studio-made type `evening-habit-stomach-over40`, one Writing version per
-  type, one saved reference and one vote. Decide whether to clear it before
-  real use.
+- **Test data:** deleted 2026-09-29 on Garreth's word, with a backup on his
+  Mac. See the changelog for what was kept and why.
 - **The branch has only been reviewed by the session that built it** and by
   this review. Nobody has approved it on GitHub.
 
@@ -173,10 +166,11 @@ analysis, its own copy and the evidence row in that order. What is left:
   that the n8n credential "Virlo API — Phase 0" returned nothing for; the
   credential "Virlo API" failed outright. They need the key that reaches
   those collections, or a re-scrape of the posts themselves.
-- **The copy is by hand.** The `media_enrich` worker (outside n8n; nobody in
-  the repo knows where it runs) should copy each slide at scrape time. Until
-  it does, the script has to be run within a fortnight of each scrape, or
-  put on a schedule.
+- **Set `CRON_SECRET` on Vercel.** The dashboard now copies new pictures
+  into its own storage once a day, but the job is shut until that setting
+  exists (any long random string). Until then the pictures of new carousels
+  are only copied when `scripts/copy-reference-slides.mjs` is run by hand,
+  and TikTok's links last about a fortnight.
 - **New references still arrive with zero views** (the bridge writes zeros;
   Garreth chose to leave it, 2026-09-26). The Trends reader shows the
   snapshot's numbers, but ranking uses the stored score, so the one-off

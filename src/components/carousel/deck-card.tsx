@@ -107,6 +107,7 @@ export function DeckCard({ deck, batch, layout, onAction }: { deck: Deck; batch:
   const rendering = s === "render_queued" || s === "rendering";
   const autoTries = batch.madeInAuto && deck.tries > 1 && (s === "writing" || s === "flagged" || s === "pending");
   const musicBad = deck.musicStatus === "not_found";
+  const musicSwapped = deck.musicStatus === "substituted";
   const canRegen = s === "written" || flagged || rendered || dropped;
   const label = `Deck ${deck.position}`;
 
@@ -183,13 +184,18 @@ export function DeckCard({ deck, batch, layout, onAction }: { deck: Deck; batch:
                   {musicBad ? <AlertTriangle className="size-3.5 shrink-0" /> : <MusicNote className="size-3.5 shrink-0" />}
                   <span className="truncate">{deck.music || (musicBad ? "Track not found" : "No track")}</span>
                 </span>
+                {musicSwapped && (
+                  <span title={deck.musicAsked ? `The writer asked for ${deck.musicAsked}, which the music library does not have` : "The music library did not have the track the writer asked for"}>
+                    <Pill tone="warn">Track substituted</Pill>
+                  </span>
+                )}
                 {musicBad && !dropped && (
                   <span className="ml-auto flex items-center gap-1">
                     <Btn line onClick={() => onAction(deck.id, "track", { track: deck.music ?? "" })} disabled={!deck.music}><RotateCw className="size-3.5" />Retry music lookup</Btn>
                     <Btn line onClick={() => setTrack(true)}>Change track</Btn>
                   </span>
                 )}
-                {!musicBad && rendered && s !== "approved" && (
+                {!musicBad && (rendered || (musicSwapped && s === "written")) && s !== "approved" && (
                   <button type="button" onClick={() => setTrack(true)} className="ml-auto text-xs text-text-muted hover:text-text-primary">Change track</button>
                 )}
               </>

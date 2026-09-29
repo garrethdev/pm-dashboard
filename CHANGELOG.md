@@ -374,6 +374,34 @@ ours.
 - **Database, applied live and recorded as step 7 of the migration file:**
   the two tables above, server only.
 
+**Garreth's three answers (2026-09-29): say when a track is swapped,
+delete the test data, and keep our own copy of every picture.**
+
+- **A swapped track is said out loud (review item 7).** When the music
+  library does not have the song the writer asked for, the deck still gets
+  a library track, but its card now carries **Track substituted**, with the
+  song that was asked for on hover, and **Change track** beside it. The
+  deck is not flagged for it.
+- **The test data is gone from the live tables.** 13 batches with their 30
+  decks and 117 slides, 23 bell items, the Studio-made type
+  `evening-habit-stomach-over40` with its template and its Writing, Glow
+  Up's unused template version 2, and the two test libraries with their 10
+  pictures. Every row and picture was first saved to
+  `~/pm-dashboard-test-data-backup-2026-09-29` on Garreth's Mac. **Kept on
+  purpose:** Glow Up's and Covered Eye's Writing version 1, because they
+  are the only Writing those types have and Generate refuses a type with
+  none; and the saves, votes and seen marks, because the ones made in
+  testing cannot be told from Garreth's own.
+- **Every reference picture is copied into our own storage.** Covers and
+  slides alike, whether they sat on TikTok's links or on Virlo's, into the
+  `reference-slides` bucket, and the Trends screens use our copy first. A
+  daily job does it for new carousels (11:00 UTC, in `vercel.json`), newest
+  first, as many as fit in its time. It is shut until `CRON_SECRET` is set
+  on Vercel. `scripts/copy-reference-slides.mjs` works through a backlog by
+  calling the same job.
+- **Database, applied live, step 8 of the migration file:** position 0 of
+  `reference_slide_images` is the cover.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

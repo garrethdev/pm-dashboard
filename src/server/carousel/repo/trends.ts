@@ -71,8 +71,9 @@ function mediaOf(a: AnalysisRow | undefined): (string | null)[] {
 /**
  * Where a carousel's slide pictures can be found, best first:
  *
- * 1. the analysis's media inventory (the Sep 8 to 12 intake wrote one);
- * 2. our own copy in `reference_slide_images`, which does not expire;
+ * 1. our own copy in `reference_slide_images`, which does not expire and
+ *    does not depend on anybody else's storage (position 0 is the cover);
+ * 2. the analysis's media inventory (the Sep 8 to 12 intake wrote one);
  * 3. the evidence row's media list, which is all the intake since Sep 12
  *    keeps, on Virlo's storage or on TikTok's signed links.
  *
@@ -151,16 +152,17 @@ async function hydrate(rows: RefRow[], viewer: string): Promise<Reference[]> {
     const evidence = pictures.evidence.get(r.id) ?? [];
     const known = Math.max(inventory.length, evidence.length, ours ? Math.max(...ours.keys()) : 0);
     // Slide by slide, the first place that still has the picture.
-    const media = Array.from({ length: known }, (_, i) => inventory[i] ?? ours?.get(i + 1) ?? evidence[i] ?? null);
+    const media = Array.from({ length: known }, (_, i) => ours?.get(i + 1) ?? inventory[i] ?? evidence[i] ?? null);
+    const cover = ours?.get(0) ?? r.thumbnail_url;
     const b = beats.get(r.id) ?? [];
     const slides: Reference["slides"] = (b.length ? b : media.map((_, i) => ({ position: i + 1, visible_copy: null, visual_description: null, narrative_role: null }))).map((s, i) => ({
       position: s.position,
-      media: media[s.position - 1] ?? media[i] ?? (i === 0 ? r.thumbnail_url : null),
+      media: media[s.position - 1] ?? media[i] ?? (i === 0 ? cover : null),
       copy: s.visible_copy,
       visual: s.visual_description,
       role: s.narrative_role,
     }));
-    if (!slides.length) slides.push({ position: 1, media: r.thumbnail_url, copy: null, visual: null, role: null });
+    if (!slides.length) slides.push({ position: 1, media: cover, copy: null, visual: null, role: null });
     const topicText = a?.topic ?? "";
     const topics = [...new Set([...topicText.split(",").map((t) => t.trim()).filter(Boolean), ...((a?.inferred?.topic_tags as string[] | undefined) ?? [])])].slice(0, 4);
     return {
@@ -169,7 +171,7 @@ async function hydrate(rows: RefRow[], viewer: string): Promise<Reference[]> {
       handle: r.creator_handle,
       hook: r.hook_text,
       sourceUrl: r.source_url,
-      thumbnail: r.thumbnail_url,
+      thumbnail: cover,
       slides,
       views: counts.views,
       likes: counts.likes,

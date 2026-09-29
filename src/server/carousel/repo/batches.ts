@@ -46,6 +46,7 @@ export interface DraftRow {
   copy: Record<string, string> | null;
   music: string | null;
   music_status: string | null;
+  generation_metadata?: Record<string, unknown> | null;
   score: number | string | null;
   flag_kind: string | null;
   flag_reason: string | null;
@@ -73,7 +74,7 @@ interface SlideRow {
 const BRIEF_COLS =
   "id,title,status,content_type,rerun_of,template_id,template_version,image_library_id,writing_version_id,batch_name,requested,auto_mode,mode,note,per_batch_text,revision,last_movement_at,render_requested_at,approved_at,finished_at,created_by,created_at,updated_at";
 const DRAFT_COLS =
-  "id,brief_id,version,position,status,auto_tries,hook,caption,copy,music,music_status,score,flag_kind,flag_reason,last_error,feedback,lane_row_id,rendered_at,approved_at,human_approved,created_at,updated_at";
+  "id,brief_id,version,position,status,auto_tries,hook,caption,copy,music,music_status,generation_metadata,score,flag_kind,flag_reason,last_error,feedback,lane_row_id,rendered_at,approved_at,human_approved,created_at,updated_at";
 const SLIDE_COLS = "id,draft_id,position,box_copy,image_ids,image_url,rendered_url,rendered_svg";
 
 function deckState(status: string): DeckState {
@@ -111,7 +112,8 @@ export function toDeck(r: DraftRow, slides: SlideRow[] = []): Deck {
     caption: r.caption,
     copy: r.copy ?? {},
     music: r.music,
-    musicStatus: ms === "found" || ms === "not_found" || ms === "checking" ? ms : null,
+    musicStatus: ms === "found" || ms === "substituted" || ms === "not_found" || ms === "checking" ? ms : null,
+    musicAsked: ms === "substituted" && typeof r.generation_metadata?.music_asked === "string" ? r.generation_metadata.music_asked : null,
     score: num(r.score),
     flagKind: r.flag_kind,
     flagReason: r.flag_reason,

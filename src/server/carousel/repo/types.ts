@@ -112,7 +112,10 @@ export interface Deck {
   /** Copy by role, as the writer returned it. */
   copy: Record<string, string>;
   music: string | null;
-  musicStatus: "found" | "not_found" | "checking" | null;
+  /** "substituted": the library did not have what the writer asked for, so another track was attached. */
+  musicStatus: "found" | "substituted" | "not_found" | "checking" | null;
+  /** What the writer asked for, when the track was substituted. */
+  musicAsked: string | null;
   score: number | null;
   flagKind: string | null;
   flagReason: string | null;

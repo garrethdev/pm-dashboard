@@ -206,7 +206,7 @@ async function writeOne(ctx: Context, row: DraftRow, feedback: string | null): P
     });
     const copy = { ...settledRoles(ctx.contract, batch.perBatchText), ...result.copy };
     const gate = gateDeck(copy, ctx.contract, result.hook, others);
-    const music = await lookupTrack(result.musicHint, row.id, ctx.pillar).catch(fallback(`music lookup for deck ${row.id}`, { music: result.musicHint ?? "", status: "not_found" as const }));
+    const music = await lookupTrack(result.musicHint, row.id, ctx.pillar).catch(fallback(`music lookup for deck ${row.id}`, { music: result.musicHint ?? "", status: "not_found" as const, asked: result.musicHint ?? null }));
     const flagged = gate.flagged || music.status === "not_found";
     // Only if the deck is still ours: a Discard pressed while the writer was
     // working wins, and the copy is thrown away.
@@ -220,7 +220,7 @@ async function writeOne(ctx: Context, row: DraftRow, feedback: string | null): P
       flag_kind: gate.flagged ? gate.kind : music.status === "not_found" ? "music" : null,
       flag_reason: gate.flagged ? gate.reason : music.status === "not_found" ? "Track not found" : null,
       feedback: gate.flagged ? gate.fix : null,
-      generation_metadata: { writer: result.writer, model: result.model, gate },
+      generation_metadata: { writer: result.writer, model: result.model, gate, music_asked: music.asked },
     });
   } catch (err) {
     await claimDeck(row.id, ["writing"], "failed", { last_error: err instanceof Error ? err.message : "Writing failed" });
