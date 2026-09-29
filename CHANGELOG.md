@@ -20,7 +20,12 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## Unmerged branch — Carousel Generator connected end to end (2026-09-25)
+## 2026-09-29 — Carousel Generator connected end to end (PR #31, built 2026-09-25 to 09-29)
+
+**Merged to main 2026-09-29** on Garreth's word ("do the rest"), after the
+review fixes below. The four entries under this one are the first four
+commits of Codex's foundation, which this branch was built on; the 44
+commits Codex added later are not part of it.
 
 **Where it came from:** Garreth asked for the prototyped D1 to D16 screens to
 be finished and connected, with manual click-through testing and a visual
@@ -445,7 +450,7 @@ re-downloaded (2026-09-29, Garreth: "yes redownload").**
 - The vision check after rendering is not run; a rendered deck is not
   re-flagged by a model.
 
-## Unmerged branch — Carousel frontend and integration groundwork (2026-09-25)
+## 2026-09-29 — Carousel frontend and integration groundwork (merged with PR #31, written 2026-09-25)
 
 **Where it came from:** Garreth requested implementation against the September
 25 design export, a main-branch duplicate check, a full remaining-ticket ledger,
@@ -477,7 +482,7 @@ no magic-link email or manual click-through is claimed. No database migration,
 production merge, deployment or posting was performed. The full ledger and
 remaining acceptance checks are in `docs/carousel-implementation-tracker.md`.
 
-## Unmerged branch — Carousel API documentation (2026-09-24)
+## 2026-09-29 — Carousel API documentation (merged with PR #31, written 2026-09-24)
 
 **Where it came from:** Garreth requested Swagger documentation for the backend.
 Added a session-protected Swagger UI and downloadable OpenAPI contract covering
@@ -488,7 +493,7 @@ validation and documentation-route tests. No production deployment or live datab
 verification is implied. OpenAPI validation, all 285 tests, type checking and
 focused lint passed; browser visual and deployed-host checks remain unperformed.
 
-## Unmerged branch — Carousel search connection and template checks (2026-09-24)
+## 2026-09-29 — Carousel search connection and template checks (merged with PR #31, written 2026-09-24)
 
 **Where it came from:** Garreth asked for actual backend integration against the
 approved designs and development tickets, preserving existing work.
@@ -507,7 +512,7 @@ no live query, migration, render, deployment or end-to-end ticket proof is claim
 The branch was fast-forwarded to GitHub main at `781fb20` before these additions.
 Remaining release gates and ticket gaps are in `docs/carousel-backend-progress.md`.
 
-## Unmerged branch — Carousel backend foundation (2026-09-24)
+## 2026-09-29 — Carousel backend foundation (merged with PR #31, written 2026-09-24)
 
 **Where it came from:** Garreth asked to begin modular backend work using the
 Carousel Generator screens and development tickets, preserving existing code.
