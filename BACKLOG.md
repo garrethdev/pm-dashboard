@@ -3,7 +3,7 @@
 Six lists. Check which one you are in before picking something up — they have
 different bars for "done".
 
-- **[Carousel Generator — issues found before merging PR #31](#carousel-generator--issues-found-before-merging-pr-31)**
+- **[Carousel Generator — issues found before merging PR #31](#carousel-generator--issues-found-before-merging-pr-31)** (merged 2026-09-29; what is still open is listed there)
   is what the 2026-09-29 review and Garreth's own try-out found on this
   branch. It is the bar for merging: nothing in its first two groups should
   reach `main` unfixed.
@@ -78,25 +78,26 @@ is labelled on the deck card. See the changelog.
 - **The Studio should let you add a new library.** Done on this branch
   2026-09-29 with the rest of DEV-29; see the changelog.
 
-## 6. Before it can merge
+## 6. Merged 2026-09-29
 
-- **It clashes with `main`** in `CHANGELOG.md` and
-  `src/lib/data/notification-copy.ts`. GitHub marks the PR "conflicting".
-- **The Codex branch went its own way.** `codex/carousel-backend-foundation`
-  shares its first 4 commits with this branch. After that it added 44 more
-  that PR #31 does not have. They include the real slide painter (PNG output,
-  fonts, uploads), the writer's quality gate and the @-mentions in the Writing
-  editor. The PR's description says it "includes those commits", which was
-  only true when it was written. Merging the two conflicts in 10 files:
-  `package.json`, `package-lock.json`, `carousel-detail.tsx`,
-  `trends-search.tsx`, `trends/client.ts` and its test,
-  `batches/runner.ts` and its test, and `batches/status.ts` and its test.
-  Both branches built their own batch runner, so that file is the real work.
-  Fixing items 1–4 during that merge saves doing it twice.
-- **Test data:** deleted 2026-09-29 on Garreth's word, with a backup on his
-  Mac. See the changelog for what was kept and why.
-- **The branch has only been reviewed by the session that built it** and by
-  this review. Nobody has approved it on GitHub.
+PR #31 was merged to `main` on Garreth's word and is live. What this
+section used to hold, and where each point went:
+
+- **The clash with `main`** was resolved on the branch before the merge.
+- **Codex's branch** (`codex/carousel-backend-foundation`) was not merged
+  and should not be merged whole. It is 44 commits of library code that no
+  screen uses. Its mention editor was brought over. **Still to bring over,
+  as its own pull request:** the PNG painter with its fonts and uploads,
+  which is the piece that lets a rendered deck reach a lane table and the
+  scheduler. Its batch runner and status words are left behind; the ones on
+  `main` are the ones that were run against the live database.
+- **Test data** was deleted, with a backup on Garreth's Mac.
+- **Review:** the branch was reviewed by the session that built it and by
+  the 2026-09-29 code review. Nobody else approved it on GitHub.
+- **The daily copy of reference pictures** is switched on: `CRON_SECRET` is
+  set on Vercel and the live site answers for it. Its first scheduled run
+  is 11:00 UTC on 2026-09-30; check the next day that new carousels on
+  Trends show pictures from our own storage.
 
 ---
 
@@ -164,11 +165,10 @@ analysis, its own copy and the evidence row in that order. What is left:
 - **231 slides on 48 carousels are still gone** after the re-download of
   2026-09-29. Seven posts returned nothing from ScrapeCreators, most likely
   deleted at TikTok. Nothing more can be done for those.
-- **Set `CRON_SECRET` on Vercel.** The dashboard now copies new pictures
-  into its own storage once a day, but the job is shut until that setting
-  exists (any long random string). Until then the pictures of new carousels
-  are only copied when `scripts/copy-reference-slides.mjs` is run by hand,
-  and TikTok's links last about a fortnight.
+- **The daily copy is on a once-a-day schedule** (11:00 UTC), and does as
+  much as fits in its time. If a day's scrape is ever larger than one run
+  can copy, run `scripts/copy-reference-slides.mjs` against the live site
+  to clear the rest; TikTok's links last about a fortnight.
 - **New references still arrive with zero views** (the bridge writes zeros;
   Garreth chose to leave it, 2026-09-26). The Trends reader shows the
   snapshot's numbers, but ranking uses the stored score, so the one-off
