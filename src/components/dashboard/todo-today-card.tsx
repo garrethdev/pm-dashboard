@@ -269,6 +269,8 @@ function AccountGroup({
             {item.automated && <AutomatedMark side="left" />}
             {item.status === "postedNoLink" && <StatusPill tone="warn">Link</StatusPill>}
             {item.status === "failed" && <StatusPill tone="danger">Failed</StatusPill>}
+            {item.run?.state === "running" && <StatusPill tone="info">Running</StatusPill>}
+            {item.run?.state === "stopped" && <StatusPill tone="danger">Stopped</StatusPill>}
             {/* The same 24 hours as the bell (P12); only while still open. */}
             {item.status === "todo" && item.overdueFor && (
               <StatusPill tone="danger">Overdue</StatusPill>

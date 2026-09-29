@@ -62,6 +62,9 @@
   --border: #242426;
   --text-primary: #f4f4f5;
   --text-muted: #8a8a92;
+  /* Example text in an empty box. The same as --text-muted in dark mode; a
+   * shade darker in light mode (P13 B3-3, Garreth 2026-09-28). */
+  --text-placeholder: #8a8a92;
 
   /* Atmospherics. The glow has to exist before glass reads as glass: a blur
    * over a flat fill produces nothing, so the light source comes first and the
@@ -111,6 +114,10 @@
   /* Severity step between yellow and red: collapsing / system error. */
   --orange: #fb923c;
   --danger: #f87171;
+  /* The ground of a danger-tone hold button (Retire). 15%, not the 25% it
+   * had as `bg-danger/25`: at 25% the red label sat at 4.61:1 on a card but
+   * 4.18:1 on a raised panel. 15% is 5.56:1 and 5.03:1 (P13 B2-1's follow-up). */
+  --danger-soft: rgba(248, 113, 113, 0.15);
   /* Deeper red for the one state worse than "collapsing" (shadowbanned). */
   --danger-deep: #dc2626;
   --info: #60a5fa;
@@ -167,6 +174,9 @@
   --border: #e4e4e6;
   --text-primary: #1b1d21;
   --text-muted: #515c6b;
+  /* 7.0:1 on a raised field instead of --text-muted's 5.9:1, and still well
+   * short of typed text's 14.6:1, so a blank form does not read as filled. */
+  --text-placeholder: #465060;
 
   /* Flat by decision (Garreth 2026-09-07): light mode keeps the layout and
    * drops the atmospherics rather than inventing a second visual language. */
@@ -205,6 +215,9 @@
   --warn-soft: rgba(146, 64, 14, 0.15);
   --orange: #9a3412;
   --danger: #b91c1c;
+  /* 12%: at 25% Retire's label was 3.93:1 on a card and 3.66:1 on a raised
+   * panel; 12% is 4.95:1 and 4.59:1 (P13 B2-1's follow-up). */
+  --danger-soft: rgba(185, 28, 28, 0.12);
   --danger-deep: #7f1d1d;
   --info: #1d4ed8;
 
@@ -249,6 +262,7 @@
   --color-border: var(--border);
   --color-text-primary: var(--text-primary);
   --color-text-muted: var(--text-muted);
+  --color-text-placeholder: var(--text-placeholder);
   --color-accent: var(--accent);
   --color-accent-deep: var(--accent-deep);
   --color-accent-soft: var(--accent-soft);
@@ -257,6 +271,7 @@
   --color-warn-soft: var(--warn-soft);
   --color-orange: var(--orange);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --color-danger-deep: var(--danger-deep);
   --color-info: var(--info);
   --color-pill-bg: var(--pill-bg);

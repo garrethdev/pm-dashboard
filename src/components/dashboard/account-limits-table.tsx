@@ -106,59 +106,73 @@ export function AccountLimitsTable({
       : []),
   ];
 
+  const statusOptions: { value: StatusFilter; label: string }[] = [
+    { value: "all", label: `All ${data.rows.length}` },
+    { value: "blocked", label: `Blocked ${data.blocked}` },
+    { value: "throttled", label: `Throttled ${data.throttled}` },
+    { value: "full", label: "Full cadence" },
+    ...(data.paused > 0 ? [{ value: "paused" as StatusFilter, label: `Paused ${data.paused}` }] : []),
+  ];
+
+  // One Filters button, drawn in two places: beside the title on a phone and
+  // in the toolbar from `sm:` up. On a phone the status pills fold into it
+  // too (Garreth, 2026-09-28), so the section starts with its rows.
+  const filtersDropdown = (
+    <Dropdown
+      label="Filters"
+      icon={<SlidersHorizontal className="size-3.5" />}
+      badge={extraFilters}
+    >
+      {() => (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5 sm:hidden">
+            <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
+              Status
+            </span>
+            <FilterPills value={status} onChange={setStatus} options={statusOptions} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
+              Platform
+            </span>
+            <FilterPills
+              value={platform}
+              onChange={setPlatform}
+              options={platformFilterOptions(
+                platformsToOffer(
+                  fleet,
+                  data.rows.map((r) => toPlatform(r.platform)),
+                ),
+              )}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
+              Character
+            </span>
+            <FilterPills
+              value={character}
+              onChange={setCharacter}
+              options={characterOptions}
+            />
+          </div>
+        </div>
+      )}
+    </Dropdown>
+  );
+
   return (
     <DashCard
       title="Per-account posting limits"
+      titleAside={filtersDropdown}
       toolbar={
-        <div className="flex flex-wrap items-center gap-2">
-          <FilterPills
-            value={status}
-            onChange={setStatus}
-            options={[
-              { value: "all", label: `All ${data.rows.length}` },
-              { value: "blocked", label: `Blocked ${data.blocked}` },
-              { value: "throttled", label: `Throttled ${data.throttled}` },
-              { value: "full", label: "Full cadence" },
-              ...(data.paused > 0
-                ? [{ value: "paused" as StatusFilter, label: `Paused ${data.paused}` }]
-                : []),
-            ]}
-          />
-          <Dropdown
-            label="Filters"
-            icon={<SlidersHorizontal className="size-3.5" />}
-            badge={extraFilters}
-          >
-            {() => (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
-                    Platform
-                  </span>
-                  <FilterPills
-                    value={platform}
-                    onChange={setPlatform}
-                    options={platformFilterOptions(
-                      platformsToOffer(
-                        fleet,
-                        data.rows.map((r) => toPlatform(r.platform)),
-                      ),
-                    )}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[11px] font-medium tracking-wider text-text-muted uppercase">
-                    Character
-                  </span>
-                  <FilterPills
-                    value={character}
-                    onChange={setCharacter}
-                    options={characterOptions}
-                  />
-                </div>
-              </div>
-            )}
-          </Dropdown>
+        // Hidden outright on a phone when there is nothing left in it to
+        // show: an empty row would still take its share of the header's gap.
+        <div className={cn("flex flex-wrap items-center gap-2", chips.length === 0 && "hidden sm:flex")}>
+          <div className="hidden sm:contents">
+            <FilterPills value={status} onChange={setStatus} options={statusOptions} />
+            {filtersDropdown}
+          </div>
           <FilterChips
             chips={chips}
             onClearAll={() => {

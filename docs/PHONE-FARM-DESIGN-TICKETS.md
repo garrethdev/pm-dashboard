@@ -94,7 +94,7 @@ purpose; the changelog has them.
 | P8 | Add the checklist for a ban on a real phone | **Approved and built 2026-09-23** (PF-11). The app releases queued posts itself; the proxy is kept while other accounts use it (Garreth). Proven live with a practice phone, since deleted. `/todo?todo=ban` and `/accounts?demo=1` still draw the sample states |
 | P9 | Add the Live view page and link to it from the dashboard | Not started |
 | P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. **Built 2026-09-23:** PF-03 saves the single move, PF-15 the batch (all or nothing) |
-| P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | Calendar half built; after-Cloud half not started |
+| P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | **Done.** Calendar half built 2026-09-23. After-Cloud half **not needed** (Garreth, 2026-09-28): Cloud stays, empty |
 | P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Built 2026-09-23.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. The stale row is **approved and built 2026-09-23**: a red Overdue pill on the bell's 24-hour rule (Garreth). Not yet seen with a real post |
 | P13 | Review and fix everything already built (B1 to B7) at desktop and phone width, in dark then light mode | **Reviewed 2026-09-23** (`docs/P13-REVIEW-FINDINGS.md`). **Six items approved and done the same day:** five fixed (not-found pages, the Physical calendar's short pills, "Infinity days", the WebGL crash, the Facebook tab's range choices) and "No phones yet" found to be correct already. **Eight more fixed 2026-09-23 after Garreth approved them:** the tap targets on phones, the fleet switch you could not read in light mode, the faint amber hold button and the faint grey pill (B1-1, B1-2, B2-1, B2-2, B2-3, B2-5, B3-2, B7-2). Measured in headless Chrome; not yet seen in Safari |
 | P14 | Put an account's settings behind a ⋯ menu on its row, with Edit account and Retire account | **Approved and built 2026-09-23.** Live on every Physical row; Cloud unchanged (proven by screenshot). Phone numbers now belong to accounts |
@@ -1093,9 +1093,10 @@ action is `CtaButton`, never a hand-rolled `bg-accent` button.**
   words: To post, Link needed, Posted (with a link to open the post), Failed
   (opens to the person's note, no Geelark code) and Skipped. The month grid
   adds an amber "N links needed" beside "N failed". Cloud is unchanged. The
-  sample data is deleted; the calendar reads real `post_deliveries` rows. The
-  after-Cloud half is not started: it waits on where Cloud's history should
-  go.
+  sample data is deleted; the calendar reads real `post_deliveries` rows.
+  **The after-Cloud half is not needed (Garreth, 2026-09-28):** Cloud's
+  infrastructure stays as it is, with no phones and no active accounts, so
+  nothing is removed and its history stays where it is.
 - **Backlog:** PF-19, PF-16.
 - **Design:** how a post made by hand shows on the Content calendar (queued,
   posted and waiting for its link, posted, failed), since today the calendar

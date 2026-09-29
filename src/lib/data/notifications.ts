@@ -3,6 +3,9 @@ import { sbRest } from "@/lib/data/supabase";
 import { getOpenDeliveries } from "@/lib/data/post-deliveries";
 import { OVERDUE_HOURS, getTodoBoard } from "@/lib/data/todo";
 import { dayRangeET } from "@/lib/data/warmup-sessions";
+import { getAllAutomatedOverdue, type OverdueAccount } from "@/lib/data/warmup-runs";
+import { AUTOMATED_WARMUP_OVERDUE_DAYS } from "@/lib/data/warmup-run-state";
+import { getN8nHealth, type N8nHealth } from "@/lib/data/n8n-health";
 import { fleetOfEntity, getPhysicalProfiles } from "@/lib/data/fleet-accounts";
 import type { Fleet } from "@/lib/fleet";
 import {
@@ -334,6 +337,116 @@ async function todoNotifications(): Promise<NotificationItem[]> {
   return items;
 }
 
+/**
+ * Automated accounts gone three days without a finished warmup — PF-13
+ * (Garreth, 2026-09-28: "3 days no warmup = problem", then "add that as a
+ * notification").
+ *
+ * Why the bell: an Automated account is nobody's work on the To-do list, and
+ * a PAUSED one is not on it at all (his call the same day), so a warmup
+ * script that has quietly died would otherwise only show on pages somebody
+ * has to think to open. The account's page and its phone's line say the same
+ * thing in red; this is what makes somebody go and look.
+ *
+ * One item for all of them, like the warmup failures: several accounts going
+ * quiet together is one fault — the script — not several. Three or more is
+ * red for the same reason the failure cohort is. Keyed per account AND per
+ * streak (`since`), so dismissing it holds while those accounts stay behind,
+ * a newly overdue account reopens it, and an account that recovers and later
+ * falls behind again counts as new.
+ */
+export function warmupOverdueItem(
+  accounts: OverdueAccount[],
+  now: Date = new Date(),
+): NotificationItem | null {
+  if (accounts.length === 0) return null;
+  const sorted = [...accounts].sort((a, b) => b.days - a.days || a.id.localeCompare(b.id));
+  const name = (a: OverdueAccount) => (a.username ? `@${a.username}` : (a.profile ?? `Account ${a.id}`));
+  const listed = sorted.map((a) => `${name(a)} (${plural(a.days, "day")})`);
+  const one = sorted.length === 1 ? sorted[0]! : null;
+  const profile = one?.profile?.replace(/\D/g, "");
+  return {
+    fleet: "physical",
+    id: `warmup_overdue:${createHash("sha1").update(sorted.map((a) => `${a.id}@${a.since}`).join(",")).digest("hex").slice(0, 8)}`,
+    markKeys: sorted.map((a) => `warmup_overdue:${a.id}:${a.since}`),
+    type: "warmup_overdue",
+    category: categoryLabel("warmup_overdue"),
+    severity: sorted.length >= 3 ? "critical" : "warning",
+    title: one
+      ? `${name(one)} not warmed in ${plural(one.days, "day")}`
+      : `${sorted.length} automated accounts not warmed in ${AUTOMATED_WARMUP_OVERDUE_DAYS}+ days`,
+    body:
+      (one
+        ? "Set to Automated, so nobody is asked to warm it"
+        : joinList(listed.length > 6 ? [...listed.slice(0, 6), `${listed.length - 6} more`] : listed)) +
+      ". The warmup script may have stopped",
+    target: null,
+    href: profile ? `/accounts/${profile}` : "/accounts",
+    // The start of today in New York, like the day's to-do item: steady
+    // across reads, and it does not print a second, different day count
+    // beside the title's (the last warmup's timestamp read "4d" against a
+    // title that counts 5 New York days).
+    at: dayRangeET(0, now).from.toISOString(),
+    read: false,
+  };
+}
+
+async function warmupOverdueNotifications(): Promise<NotificationItem[]> {
+  const item = warmupOverdueItem(await getAllAutomatedOverdue());
+  return item ? [item] : [];
+}
+
+/** "Sep 25, 10:00 pm" in New York. */
+function etWhen(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+    .format(new Date(iso))
+    .replace(" AM", " am")
+    .replace(" PM", " pm");
+}
+
+/**
+ * n8n has stopped running workflows (Garreth, 2026-09-28).
+ *
+ * The 2026-09 outage ran for over two days with the dashboard silent: every
+ * scheduled run was refused because the plan's execution limit was reached.
+ * One red item, naming n8n's own reason and the last time anything finished.
+ * It names no fleet: it is about the automation, not an account.
+ *
+ * Keyed on the last success, so dismissing it holds for the whole outage and
+ * the next outage (after a success in between) arrives as a new item.
+ */
+export function n8nDownItem(health: N8nHealth, now: Date = new Date()): NotificationItem | null {
+  const o = health.outage;
+  if (!o) return null;
+  const since = o.lastSuccessAt
+    ? `Nothing has finished since ${etWhen(o.lastSuccessAt)}`
+    : "Nothing has finished recently";
+  return {
+    id: `n8n_down:${o.lastSuccessAt ?? "unknown"}`,
+    markKeys: [`n8n_down:${o.lastSuccessAt ?? "unknown"}`],
+    type: "n8n_down",
+    category: categoryLabel("n8n_down"),
+    severity: "critical",
+    title: "n8n is not running workflows",
+    body: o.reason ? `${o.reason}. ${since}` : `Every recent run failed. ${since}`,
+    target: null,
+    href: "/automation",
+    at: o.lastSuccessAt ?? now.toISOString(),
+    read: false,
+  };
+}
+
+async function n8nNotifications(): Promise<NotificationItem[]> {
+  const item = n8nDownItem((await getN8nHealth()).data);
+  return item ? [item] : [];
+}
+
 /** "Profile 34" -> "34". Empty when the target is not a numbered profile. */
 function profileNum(target: string | null): string {
   return String(target ?? "").replace(/\D/g, "");
@@ -447,14 +560,16 @@ export async function getNotifications(userEmail: string): Promise<NotificationI
       .then((r) => r.data)
       .catch(() => [] as string[]),
   );
-  const [stored, warmup, todo, seen] = await Promise.all([
+  const [stored, warmup, todo, overdue, n8n, seen] = await Promise.all([
     storedNotifications(physical).catch(() => [] as NotificationItem[]),
     warmupFailNotifications(physical).catch(() => [] as NotificationItem[]),
     todoNotifications().catch(() => [] as NotificationItem[]),
+    warmupOverdueNotifications().catch(() => [] as NotificationItem[]),
+    n8nNotifications().catch(() => [] as NotificationItem[]),
     readKeys(userEmail).catch(() => new Set<string>()),
   ]);
   return (
-    [...stored, ...warmup, ...todo]
+    [...stored, ...warmup, ...todo, ...overdue, ...n8n]
       // Read once every key behind it has been seen. For a single-key item that
       // is the old behaviour exactly; for a grouped warmup alert it means a new
       // failing account reopens it and a recovering one does not.

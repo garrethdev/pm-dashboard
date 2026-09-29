@@ -205,7 +205,9 @@ lifted, and the `media_enrich` worker has to be found first.
 ## The Virlo research pipeline is not monitored
 
 **A caution from the review. V1. Not part of the 2026-09-11 batch — still
-open.**
+open.** *Partly covered since 2026-09-28:* the bell now says when n8n as a
+whole stops running workflows (it did for two days in September, unnoticed).
+A single research workflow failing on its own is still not flagged.
 
 The automation card tracks a fixed list of 14 workflows by ID. The Virlo
 research, analysis and bridge workflows are not in it, so if they stop, nothing
@@ -285,12 +287,12 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-09 | Health detector + Incidents read both delivery sources | Intermediate | **Built 2026-09-22**, applied live, awaiting a real hand-posted row. Existing numbers proven unchanged |
 | PF-12 | Day's work + stale-post alert (the bell, not email) | Intermediate | **Done 2026-09-22.** Built as two recomputed bell items after Garreth replaced the email with a notification. Proven on test rows across every wording; no real phone or post has used it |
 | PF-10 | Comparison view | ~~Intermediate~~ | **Dropped 2026-09-23 (Garreth):** not needed |
-| PF-13 | Warmup script: the dashboard side (write path, Running, what an Automated account shows) | Long term | **Ready now** — PF-04 landed 2026-09-22; `warmup_sessions` already holds `mode = script` and a finished-at time. Split from the script build on 2026-09-25 (Garreth); can be built and proven with practice rows before the script exists |
+| PF-13 | Warmup script: the dashboard side (write path, Running, what an Automated account shows) | Long term | **Built 2026-09-28, all three parts**: the script's six web addresses, Running/Stopped on the To-do list, and what an Automated account shows (Garreth's answers the same day). Table applied live, proven with practice rows. Live the same day (PR #32), checked on the production address; next is the script's B10 |
 | PF-23 | Warmup script: the build (on the Air, its own repository) | Long term | **Partly ready now** — tasks B0–B11 need no phone (2026-09-25); M1 onward needs WebDriverAgent on a phone. Split from PF-13 on 2026-09-25 (Garreth). Needs PF-13's write path by its step M6 |
 | PF-14 | Live view page on the Air, linked from the dashboard | Long term | Blocked by hardware (Air + WebDriverAgent installed) |
 | PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
-| PF-16 | Retire Geelark: workflows, app code, keys | Long term | Blocked by the last account moving, and by the n8n credential move |
-| PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query. **Bug found 2026-09-23, not fixed:** Physical + "All time" never returns while Physical has no posts (`analytics_rollup_fleet(null, *, 'physical')` hits the statement timeout; its date series starts at `-infinity`) |
+| PF-16 | Retire Geelark: workflows, app code, keys | Long term | **Narrowed 2026-09-28 (Garreth): Cloud stays, empty.** Nothing is removed from the app or n8n. What is left is the key rotation, blocked by the n8n credential move |
+| PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query. ~~Bug found 2026-09-23, not fixed: Physical + "All time" never returns while Physical has no posts~~ **Fixed 2026-09-28**: with no posts in range, "All time" now starts its chart from today, so it answers at once with an empty chart. Every other range proven unchanged (migration `analytics_rollup_all_time_empty`) |
 | PF-18 | Inventory per fleet (no content labels: Cloud stops posting, so the unassigned pool is Physical's) | Intermediate | Built and on `main` 2026-09-18; **numbers unproven until accounts are unpaused** |
 | PF-19 | Calendar and Content types per fleet | Intermediate | **Built 2026-09-22** as four new `_fleet` functions beside the untouched originals; no Physical data to show yet |
 | PF-20 | Incidents and the bell per fleet | Intermediate | **Done 2026-09-22.** Incidents had followed the switch since 2026-09-18; the bell half was settled by Garreth — it shows BOTH fleets and names which on every item. Proven in the running app, dark and light, desktop and phone, against a temporary phone/account/post that was deleted afterwards. No real phone or post has used it |
@@ -838,7 +840,7 @@ cohort of the same character. This is what the week-6 review reads.
 *Done when:* Garreth and Yurie can read one moved account's before/after on
 one screen.
 
-## PF-13 · Warmup script: the dashboard side — Ready now
+## PF-13 · Warmup script: the dashboard side — Built and live 2026-09-28; waiting on the Air
 
 *Split 2026-09-25 (Garreth):* this ticket is **only the dashboard's part** —
 everything the app and the database need so the script can report in, and so
@@ -861,6 +863,53 @@ The work, in build order:
    done and which cannot take a zero-minute row. Not built.
 3. **What an Automated account shows**, the stopped-script threshold, and the
    mid-day flip back to Manual — the three items P4 handed over, below.
+
+**Parts 1 and 2 built 2026-09-28** (branch `garrethdev/pf-13-warmup-dashboard`).
+The contract for the script's builder is `docs/WARMUP-RUNNER-API.md`.
+
+- **The write path is the endpoint** (Garreth's choice, 2026-09-27, recorded in
+  the runner repo). Six addresses under `/api/warmup-runner/`, opened by a
+  token (`WARMUP_RUNNER_TOKEN`) instead of a sign-in. Two reads (eligible
+  accounts, a day's sessions), because the tables are locked to the master key,
+  and four writes (start, check in, close, finished session). The request's
+  account and phone are checked against the five eligibility rules. A
+  retried request never counts twice.
+- **Running lives in `warmup_runs`**, one row per run, as recommended. The To-do
+  list and the dashboard card show **Running** while the last check-in is
+  under 3 minutes old, and **Stopped** in red once it is older with the run
+  never closed. The page re-reads itself every 30 seconds while a scripted
+  warmup is open today.
+- **Decided while building, open to change:** the 3 minutes (two missed
+  check-ins); a finished session is accepted from an account flipped to Manual
+  mid-run, if a run was started for it, so the minutes it ran are kept.
+- **Token set in Vercel 2026-09-28** (`WARMUP_RUNNER_TOKEN`, Production and
+  Preview, marked sensitive). Live since PR #32 the same day, checked on the
+  production address. The same value is in the Keychain on Garreth's Mac,
+  under "WARMUP_RUNNER_TOKEN (pm-dashboard)", to give to the Air. Still to
+  do: put it on the Air.
+
+**Part 3 decided by Garreth and built, 2026-09-28:**
+
+- **3 days with no finished warmup is a problem.** Counted in New York days
+  from the last session that reached 15 minutes, by anyone; an account never
+  warmed counts from the day it moved onto its phone. Shown as a red "No
+  warmup in N days" on the account's page and on its line on the phone's page.
+- **Switched back to Manual mid-day: the rest of the day is Manual.** The
+  warmups lose the robot and go on the To-do list for a person, and any minutes
+  the script already did still count. This is how the list already worked (it
+  follows the account's current setting, and minutes add up); a test now holds
+  it there.
+- **A paused Automated account stays off the To-do list**, as it is today. So
+  it is also absent from the phone page's "Today" block, which reads the same
+  list. Its own page still shows it.
+- **What an Automated account shows.** On its own page, its two warmups are
+  listed in place of the Log warmup card: rows nobody can press, each with the
+  robot and one word (Done with the time and minutes, Running, Stopped, or Not
+  yet). On the phone's page it keeps its one line (Garreth, 2026-09-22: no
+  detailed list there): the warmup pill carries the robot, cannot be pressed,
+  and says Stopped, Running, Warmup done or Warmup N of 2. The Accounts page is
+  unchanged: nobody's daily warmups are listed there, and its Warmup column
+  already counts the script's sessions (kept uncoloured, Garreth 2026-09-07).
 
 
 *Heading corrected 2026-09-22: it read "Blocked by PF-04", which the summary
@@ -1019,9 +1068,51 @@ other three stayed on Cloud with no new audit rows.
 
 **Left to do:** the first real batch, the day phones arrive.
 
-## PF-16 · Retire Geelark — Blocked by the last account moving
+## PF-16 · Retire Geelark — Narrowed 2026-09-28: Cloud stays, only the keys remain
 
-In order: unpublish Warmup Scheduler, GPS drift, the Geelark branch of the
+**Garreth, 2026-09-28:** keep Cloud's infrastructure as it is, with no phones
+and no active accounts, rather than removing it. So the removal below is
+**cancelled**: the Cloud side of the app (the switch, its menu, the Geelark
+wallet, every Cloud page) stays and simply shows its empty states, and the
+Geelark workflows in n8n stay published and find nothing to do each run. It
+also closes the after-Cloud half of design ticket P11: there is no "app without
+Cloud" to design.
+
+**Still worth doing, and needs no phones:** move the plain-text Supabase keys
+in the Posting Agent, Smart Scheduler and Virlo bridge into n8n credentials,
+then rotate them. **Progress 2026-09-28 (keys NOT rotated, Garreth: "do not
+change the keys for now"):** the Posting Agent already used the "Supabase
+Service Role" credential everywhere. The Virlo bridge's only pasted keys were
+in a switched-off old step, now deleted and published. **The Smart Scheduler
+still has its key pasted in**, inside a Code step, and n8n does not let Code
+steps use stored credentials; moving it means rebuilding how that step reads
+and writes the database. Not started.
+
+**The sweep, 2026-09-28** (read-only, all 439 workflows; nothing changed).
+**73 of the 158 active workflows have keys pasted in them.** 61 of those hold
+a full-access key to the dashboard's database. In 23 it sits only in request
+steps, which can be switched to the stored "Supabase Service Role" credential
+one by one. In 35 it sits only in Code steps, which need reworking, the Smart
+Scheduler's problem. 3 have both. 12 active workflows also carry pasted
+Anthropic or Google API keys. Old versions in n8n's history keep every key
+ever pasted, so the real fix is still rotating the keys, once they are all
+out of the workflows. Garreth said not to change keys for now. **Worth watching** once the last Geelark phone is gone: a
+workflow that alerts on an empty Geelark reply (Wallet Guard, the Posting
+Agent's "no phones" case) may start raising false alarms. That has not been
+checked; nothing is empty yet.
+
+**Found 2026-09-28: n8n is out of runs.** Since about 10 pm ET on 2026-09-25,
+n8n Cloud has refused every scheduled run ("Execution limit reached"), so no
+workflow has done any work for two days. The Virlo bridge was the biggest
+single user (every 5 minutes, 288 of 1,088 runs on 2026-09-25); it now runs
+once a day (2026-09-28, see CHANGELOG). The every-15-minute group still adds up
+to about 24,000 runs a month: Content Analysis Pipeline ~216 a day, PM Carousel
+Shared Analysis and Search ~192, Content Swipe File 96, Carousel Quality Gate
+96. Quality Gate and the Content Analysis "videos" trigger were failing on
+every run before the cutoff, and a failed run still counts. Getting runs back
+is a plan decision for Garreth.
+
+~~In order: unpublish Warmup Scheduler, GPS drift, the Geelark branch of the
 Posting Agent, Task Detail Poller, Wallet Guard (unpublish, do not delete; keep
 `geelark_tasks` read-only for forensics). Then remove from the app:
 `src/lib/data/geelark.ts` phone list, `wallet.ts`, `geelark-writes.ts`,
@@ -1031,7 +1122,8 @@ key rotation is also blocked by the plaintext keys in the Posting Agent, Smart
 Scheduler and Virlo bridge — move those to n8n credentials first (see the n8n
 credentials note in memory).
 *Done when:* no live workflow or app route calls Geelark and the old key is
-dead.
+dead.~~ *Done when (narrowed):* the inline keys are in n8n credentials and
+rotated.
 
 ## PF-17 to PF-20 · Each fleet gets its own numbers
 

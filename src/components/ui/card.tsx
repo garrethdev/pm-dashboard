@@ -58,6 +58,8 @@ export function DashCard({
   toolbar,
   toolbarBelow = false,
   actions,
+  hideActionsOnPhone = false,
+  titleAside,
   headerAction,
   viewAllHref,
   sunken = false,
@@ -74,6 +76,14 @@ export function DashCard({
   toolbarBelow?: boolean;
   /** Controls pinned to the right of the header row, before "View all". */
   actions?: React.ReactNode;
+  /** Leave `actions` out on a phone — for a card whose Filters button moves up
+   *  beside the title there instead (`titleAside`). */
+  hideActionsOnPhone?: boolean;
+  /** On a phone only, right beside the title: a card's Filters button, with
+   *  its pills folded inside it (Garreth, 2026-09-28, the same shape Incidents
+   *  already had). From `sm:` up it is not drawn here; the caller keeps its
+   *  desktop copy in `toolbar` or `actions`, where it has always been. */
+  titleAside?: React.ReactNode;
   /** The card's one way out — a CTA that behaves like "View all" does: paired
    *  with the title on a phone, at the end of the row on a desktop. Filters and
    *  counts are `actions` and stay below the title; this is not. */
@@ -107,9 +117,12 @@ export function DashCard({
           {/* A step larger on a phone. At 14px the card's own name was quieter
               than everything it contained, so a scrolling reader lost track of
               which card they were in. */}
-          <h2 className="min-w-0 truncate text-base font-medium text-text-muted sm:text-sm">
-            {title}
-          </h2>
+          <div className="flex min-w-0 items-center gap-2.5 sm:contents">
+            <h2 className="min-w-0 truncate text-base font-medium text-text-muted sm:text-sm">
+              {title}
+            </h2>
+            {titleAside && <div className="shrink-0 sm:hidden">{titleAside}</div>}
+          </div>
           {headerAction && (
             <div className={cn("shrink-0 sm:order-last", !actions && "sm:ml-auto")}>
               {headerAction}
@@ -131,7 +144,12 @@ export function DashCard({
         </div>
         {!toolbarBelow && toolbar}
         {actions && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:ml-auto sm:shrink-0 sm:flex-nowrap">
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-x-3 gap-y-2 sm:ml-auto sm:shrink-0 sm:flex-nowrap",
+              hideActionsOnPhone && "hidden sm:flex",
+            )}
+          >
             {actions}
           </div>
         )}

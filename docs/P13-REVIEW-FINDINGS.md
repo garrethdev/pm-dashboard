@@ -92,7 +92,7 @@ Screens: `b2-settings-real-*`, `b2-settings-demo-*`, `b2-move-dialog-demo-*`,
 | B2-6 | light (both widths) | cosmetic | While nothing is picked, the batch button "Move onto phones" and the dialog's "Move onto a phone" are faded to 1.7–2.7:1 in light. That is allowed while switched off, but they are hard to read. | `CtaButton` / `HoldButton` disabled style (shared) | `b2-batch-demo-390-light.png`, `b2-move-dialog-demo-390-light.png` | Optional: fade switched-off buttons less (60% instead of 40%). |
 | B2-7 | — | Safari? | The tick boxes are the browser's own, coloured with `accent-color`, so Safari draws them differently from Chrome. | `account-management.tsx` | — | Look at Select mode once on an iPhone. |
 
-**B2-1, B2-2, B2-3, B2-5 — Fixed 2026-09-23.** The warn hold button uses a lighter 15% fill (`--warn-soft`), measured 5.29:1 in light mode (4.89:1 on a raised panel) and 6.40:1 in dark, and no hold button fades on hover any more. The move dialog's ✕ is 44 × 44, and in Select mode a tap anywhere on the card ticks it. The move pill has a › and is 44 px tall on phones. The grey StatusPill label uses its own `--pill-muted` (#909098), 4.77:1 in dark; `--text-muted` is unchanged elsewhere. Measured in headless Chrome, not yet seen in Safari. **Not fixed:** the red (danger) hold button, Retire, also misses 4.5:1 (3.93:1 on a light card); it was not in the approved list.
+**B2-1, B2-2, B2-3, B2-5 — Fixed 2026-09-23.** The warn hold button uses a lighter 15% fill (`--warn-soft`), measured 5.29:1 in light mode (4.89:1 on a raised panel) and 6.40:1 in dark, and no hold button fades on hover any more. The move dialog's ✕ is 44 × 44, and in Select mode a tap anywhere on the card ticks it. The move pill has a › and is 44 px tall on phones. The grey StatusPill label uses its own `--pill-muted` (#909098), 4.77:1 in dark; `--text-muted` is unchanged elsewhere. Measured in headless Chrome, not yet seen in Safari. ~~**Not fixed:** the red (danger) hold button, Retire, also misses 4.5:1 (3.93:1 on a light card); it was not in the approved list.~~ **Fixed 2026-09-28 (Garreth approved it):** Retire's ground is now its own `--danger-soft`, 12% in light (4.95:1 on a card, 4.59:1 on a raised panel) and 15% in dark (5.56:1 and 5.03:1). Dark had also been under 4.5:1 on a raised panel (4.18:1) at the old 25%. Measured in headless Chrome, not yet seen in Safari.
 
 ## B3 — Devices page, Add phone, and the page per phone
 
@@ -178,6 +178,31 @@ circle, one quiet line, card to the bottom of the screen.
 ---
 
 **B7-2 — Fixed 2026-09-23.** To-do's ‹ › day arrows are 44 × 44 tap targets on phones; the visible circle stays 28 px.
+
+## Garreth's pass on the leftovers, 2026-09-28
+
+Garreth checked the findings that were never on an approved list, in Safari on
+the running app.
+
+- **B6-1 — Changed.** On a phone, the platform choice on Analytics is now a
+  dropdown that starts on All (his design: "the selector of the platform
+  should be in a dropdown with the default of all"). Desktop keeps its tabs.
+- **B3-3 — Changed, the other way from the suggestion.** The review suggested
+  a *lighter* grey for the example text. Garreth asked for it a little
+  *darker*. It is now its own colour, `--text-placeholder`: unchanged in dark
+  mode, and in light mode `#465060` (7.0:1) instead of `#515c6b` (5.9:1).
+  That is still far from typed text (14.6:1). It is used by every text box
+  that had the standard placeholder colour, not only Add phone, so the forms
+  stay alike.
+- **Accepted as they are, no change:** B5-4 (the icon-only Add account on a
+  phone), B2-4 (the faded switched-off phone, in both themes), B1-3 (page
+  names cut beside the switch), B5-3 (the bare empty Views chart) and B7-1
+  (the plain-text empty lists).
+- **Also accepted as they are (Garreth, later the same day):** B2-6 (faint
+  switched-off move buttons) and B6-2 (the Facebook dot). The Geelark
+  automation log on an account's page keeps its Executed / Pending pills
+  outside Filters on a phone. Could not be checked without real data: B3-4, B3-5. Code
+  only: B4-1.
 
 ## Found on the way (shared by every screen, not B1–B7 themselves)
 

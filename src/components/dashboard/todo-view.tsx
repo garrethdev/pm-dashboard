@@ -630,6 +630,10 @@ function ItemStatus({ item }: { item: TodoItem }) {
   if (item.status === "postedNoLink") return <StatusPill tone="warn">Link needed</StatusPill>;
   if (item.status === "failed") return <StatusPill tone="danger">Failed</StatusPill>;
   if (item.status === "skipped") return <StatusPill tone="gray">Skipped</StatusPill>;
+  // The script's own state (PF-13). Stopped is red: it is the silent failure
+  // this status exists to make loud.
+  if (item.run?.state === "running") return <StatusPill tone="info">Running</StatusPill>;
+  if (item.run?.state === "stopped") return <StatusPill tone="danger">Stopped</StatusPill>;
   // Only while it is still open: once posted, it is no longer late (P12).
   if (item.overdueFor && !isItemFinished(item)) return <StatusPill tone="danger">Overdue</StatusPill>;
   return null;
@@ -654,6 +658,9 @@ function ItemDetail({ item }: { item: TodoItem }) {
           ? `${item.loggedMinutes} min`
           : `${item.targetMinutes} min`,
     );
+  }
+  if (item.run) {
+    bits.push(item.run.state === "running" ? `started ${item.run.at}` : `last heard ${item.run.at}`);
   }
   if (item.videoReady === false) bits.push("Video not ready");
   if (item.doneAt) bits.push(item.status === "failed" ? `Failed ${item.doneAt}` : item.doneAt);

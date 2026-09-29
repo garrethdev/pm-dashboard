@@ -351,6 +351,297 @@ unchanged. These functions are not yet connected to database writes or routes.
 **Inline documentation:** the new modules explain counting invariants, trusted
 identity/readiness inputs, concurrency responsibilities and persistence boundaries.
 **Release status:** not merged, pushed or deployed. This is not a live fix.
+## 2026-09-28 — The Virlo filing job runs once a day, not every 5 minutes
+
+**Where it came from:** looking into what used up n8n's run allowance.
+Garreth suspected `[Virlo] References → Story Finder Bridge`, and he was
+right about it being the biggest single user. Its schedule was labelled
+"Hourly" but fired every 5 minutes: 288 runs a day, about a quarter of every
+n8n run on 2026-09-25. Garreth decided to move it to once a day.
+
+**What it does:** Virlo drops the popular posts it finds into a holding
+table. This job files them into the reference library the Trends screens
+will read from, and adds each one to the Content Analysis to-do list. Finds
+arrive a few bursts a day, so almost every 5-minute run found nothing.
+
+**What changed (in n8n, not in this repo's code):**
+
+- Runs once a day at 6 am New York time. The schedule is now named
+  "Daily 6am ET".
+- Files up to 250 finds per run instead of 100. The biggest burst seen was
+  225 in one hour, so one run clears it.
+- New Virlo finds now reach the library up to a day later. Nothing in the
+  live app is waiting on them yet.
+
+**Verified:** published, and n8n reports the new version as the one that
+runs. It has not had a real run yet: n8n is still refusing every run until
+the plan limit is lifted. This saves about 8,600 runs a month. The other
+every-15-minute workflows together still use more than this one did.
+
+## 2026-09-28 — The bell says when n8n stops running workflows
+
+**Where it came from:** found the same day. n8n Cloud reached its plan's
+monthly run limit at about 10 pm ET on 2026-09-25 and refused every scheduled
+run for more than two days: the scheduler, the stats collection, gatekeeping
+and the research pipelines. Nothing in the dashboard said so. Garreth asked
+for an alert.
+
+**What changed:**
+
+- **A red bell item, "n8n is not running workflows"**, with n8n's own reason
+  and the last time anything finished, for example: "Execution limit reached.
+  Consider upgrading your plan. Nothing has finished since Sep 25, 10:00 pm".
+  It opens the Automation page.
+- **When it appears:** when n8n's latest 20 real runs have all failed, and
+  nothing has succeeded for over an hour. One workflow failing on its own does
+  not set it off; the Automation page covers that. Test runs and the
+  error-alert workflow are not counted. The error-alert workflow kept
+  succeeding all through the outage, so counting it would have hidden it.
+- **Dismissing it holds for the rest of that outage.** A later outage alerts
+  again.
+- **It costs no n8n runs.** It reads n8n's run history, at most every five
+  minutes, and only opens the one failed run it needs to read the reason.
+
+**How it was checked:** eight new tests (245 pass, with type check and lint).
+Then live against the real, still-running outage: the local app's bell showed
+the item with the exact reason and "since Sep 25, 10:00 pm", at the top and in
+red, at phone width in headless Chrome.
+
+**Not yet seen:** the item clearing itself once n8n runs again.
+
+---
+
+## 2026-09-28 — On phones: Analytics has a platform dropdown, cards keep their pills inside Filters, and example text is easier to read
+
+**Where it came from:** Garreth's pass on the leftover findings from the
+2026-09-23 design review (P13), done in Safari on the app running locally.
+
+**What changed:**
+
+- **On a phone, Analytics chooses the platform from a dropdown** that starts
+  on All, with a tick beside the current choice. The row of tabs ran off the
+  edge on the Physical side, where Facebook makes four, and read "Faceboo"
+  unless you knew to swipe (B6-1). The tabs stay as they were on a computer.
+- **The grey example text in empty boxes is a shade darker in light mode**
+  (B3-3, at Garreth's request). For example, "iPhone 12" in Add phone, the
+  search boxes, the login email and the proxy box. It is still clearly lighter
+  than typed text. Dark mode is unchanged.
+- **On a phone, a card's pills now live inside its Filters button, and
+  Filters sits right beside the card's name** (Garreth, 2026-09-28, pointing
+  at the dashboard's Accounts card). It applies to the dashboard's **Accounts**
+  card, where All / Healthy / Needs attention were a row of their own; to
+  **Per-account posting limits** on the Content calendar page, where the
+  status pills fold in the same way; and to **Content types → Performance**,
+  whose pills were already inside Filters but whose button sat on its own
+  line. The Accounts and Incidents pages already worked like this. On a
+  computer all three cards are unchanged. One consequence: the posting-limits
+  card's long name shortens to "Per-account posting lim…" on a phone to make
+  room. The Geelark automation log on an account's page keeps its Executed /
+  Pending pills outside, because they switch between two lists rather than
+  filter one.
+- **Five findings were looked at and kept as they are** (B5-4, B2-4, B1-3,
+  B5-3, B7-1). They are recorded in `docs/P13-REVIEW-FINDINGS.md`, so they are
+  not raised again.
+
+**How it was checked:** type check, lint, the design-system parity test and
+the full test suite pass. Seen in the running app in headless Chrome: the
+dropdown open at phone width in both themes, the desktop tabs unchanged, and
+Add phone in light mode at phone width. The three cards were checked at phone
+width, with Filters open, and on a desktop to confirm nothing moved there, on
+both fleets for the Accounts card. No page scrolls sideways. Garreth reviews it
+in Safari.
+
+---
+
+## 2026-09-28 — Physical "All time" analytics loads, Retire is easier to read, and the new warmup screens are checked in light mode and on phones
+
+**Where it came from:** Garreth asked for these three on 2026-09-28. The
+analytics bug was found on 2026-09-23 (PF-17). The Retire button was left over
+from the 2026-09-23 design review (P13), because it was not on the list
+approved that day. The screen check covers today's PF-13 work, which had only
+been seen in dark mode on a desktop-sized window.
+
+**What changed:**
+
+- **Analytics on Physical with "All time" now loads.** It used to spin
+  forever: with no posts, it tried to count chart weeks from the beginning of
+  time. It now answers at once, with zeros and an empty chart. Nothing changed
+  for any other range or for Cloud.
+- **The red Retire button is easier to read.** Its pale red background was
+  strong enough to drown the red label: 3.93:1 in light mode, where 4.5:1 is
+  the bar, and 4.18:1 in dark mode on the lighter panels. It now has its own
+  lighter background (12% in light, 15% in dark), and every surface is between
+  4.59:1 and 5.56:1. Same approach as the amber hold button's fix on
+  2026-09-23.
+- **Today's warmup screens were checked in light mode and at phone width**
+  (390 px): the To-do list, the dashboard's To-do card, the account's page,
+  the phone's page and the bell. Nothing needed fixing. None of them scrolls
+  sideways on a phone, and every tag and warning reads in both themes. One
+  thing noticed: in the dashboard card, a warmup with a Running or Stopped tag
+  shortens its name to "Warmup, ...". The 08:30 / 19:00 time beside it still
+  tells the two apart, so it was left alone.
+
+**How it was checked:**
+
+- *The analytics fix:* the fixed version ran beside the live one before it
+  went in, and gave identical answers on eleven ordinary ranges and on Cloud's
+  "All time", checked by fingerprint. Physical "All time" went from never
+  answering to a quarter of a second. It was then seen loading on the page.
+- *Retire:* its colours were read off the running page. The dialog was opened
+  in both themes, but the button was never pressed, because holding it starts
+  a real retirement.
+- *All checks* were in headless Chrome, with practice rows that were deleted
+  afterwards. Type check, lint and all tests pass.
+
+**Not yet seen:** Safari, which is what Garreth uses.
+
+---
+
+## 2026-09-28 — The bell says when an Automated account has gone 3 days without a warmup (PF-13)
+
+**Where it came from:** Garreth, 2026-09-28: "For the 3-day no warmup, add
+that as a notification." Earlier the same day, the warning only showed on the
+account's page and its phone's page, so it was only seen by someone who went
+looking.
+
+**What changed:**
+
+- **A new bell item**, labelled Physical. For one account it reads, for
+  example, "@handle not warmed in 5 days". For several it is one item, "3
+  automated accounts not warmed in 3+ days", listing each with its days, worst
+  first. It says the warmup script may have stopped.
+- **Amber for one or two accounts, red for three or more**, because several
+  going quiet at once points to the script itself. This is the same rule the
+  bell already uses for Geelark warmup failures.
+- **It includes paused accounts.** The script warms them, but they are not on
+  the To-do list (Garreth, 2026-09-28), so the bell is the one place a dead
+  script shows for them.
+- **Dismissing it holds** while those accounts stay behind. It comes back if
+  another account falls behind, or if the same one recovers and later falls
+  behind again.
+- One account's item opens that account's page; several open Accounts.
+
+**How it was checked:** four new tests (237 in all pass, with type check and
+lint). In the running app, in headless Chrome, dark mode, desktop width, a
+paused practice account last warmed 5 days earlier showed up in the bell as
+"@pf13_practice not warmed in 5 days", labelled Physical, linking to its page.
+The first look showed "4d" beside the title's "5 days", because the item was
+timed from the last warmup. It is now timed from the start of the New York
+day, like the day's to-do item. The practice rows were deleted afterwards.
+
+**Not yet seen:** a real account behind, light mode, phone width, Safari.
+
+---
+
+## 2026-09-28 — The warmup script can report in, and the app shows what it is doing (PF-13)
+
+**Where it came from:** PF-13, the dashboard side of the warmup script. Garreth
+asked for parts 1 and 2 on 2026-09-28. Before building, the script's own
+repository (`garrethdev/warmup-runner`) was read: its tasks B0 to B12 are done
+on pretend phones, and its reporting step, B10, was blocked waiting for this.
+Garreth chose the secured endpoint over the master key on 2026-09-27, and
+chose the Running status on 2026-09-25.
+
+**What changed:**
+
+- **The script has its own way in.** There are six web addresses under
+  `/api/warmup-runner/`, opened with a token instead of a sign-in. Two let the
+  script read what it could not read before, because those tables are locked:
+  which accounts it may warm, and which sessions are already done that day.
+  Four let it write: a run has started, still running (once a minute), the run
+  is over, and the finished session. It can do nothing else. It cannot change
+  an account, a phone or a post.
+- **It is refused when something is wrong.** A call is refused for an account
+  that is not set to Automated on a phone, or is retired or banned, and for
+  the wrong phone. It is also refused when the minutes are more than the clock
+  allows, or the start time is far off. Every refusal carries a sentence and a
+  short code, so the script can log why.
+- **A retry never counts twice.** If the Air sends the same thing again after
+  a slow connection, the dashboard recognises it and changes nothing. A new
+  database rule makes sure one run can only ever write one session.
+- **The To-do list says Running and Stopped.** On an Automated account's
+  warmup, a blue **Running** tag shows while the script is checking in, with
+  the time it started. A red **Stopped** tag shows when the check-ins have gone
+  quiet for 3 minutes and the run was never closed, with the time it was last
+  heard from. Before this, a script that died halfway looked the same as one
+  that had not started. The dashboard's To-do card shows the same two tags.
+- **The list updates itself** every 30 seconds while an Automated warmup is
+  still open today, so nobody has to refresh to see a run start or finish.
+- **Two calls made while building, both open to change:** 3 minutes before
+  Stopped (two missed check-ins). And if an account is switched back to Manual
+  halfway through a run, the minutes that run did are still kept.
+- **For the script's builder:** `docs/WARMUP-RUNNER-API.md` sets out every
+  address, what to send, and every refusal.
+
+**Part 3, after Garreth's answers the same day:**
+
+- **An Automated account's own page lists its two warmups** where a Manual
+  account has its Log warmup card. They are rows nobody can press, each with
+  the robot and one word: Done (with the time and minutes), Running, Stopped,
+  or Not yet.
+- **On the phone's page, an Automated account keeps its one line.** The
+  warmup tag gets the robot, can't be pressed, and says Stopped, Running,
+  Warmup done, or Warmup 1 of 2. Before, it was a grey tag that sent you to
+  the To-do list, where there was nothing to do.
+- **Three days without a finished warmup shows in red** ("No warmup in 4
+  days"), on the account's page and on its line on the phone's page, but only
+  for Automated accounts. Garreth: "3 days no warmup = problem."
+- **Switching an account back to Manual mid-day** makes the rest of its day
+  Manual. Its warmups go on the To-do list for a person, and the script's
+  minutes still count. The list already behaved this way; a test now makes
+  sure it keeps doing so.
+- **A paused Automated account stays off the To-do list**, as Garreth
+  decided, so it is also missing from the phone page's Today block. Its own
+  page still shows it.
+- The Accounts page is unchanged. Its Warmup column already counts the
+  script's sessions.
+
+**How it was checked:** the new table was added to the live database. It is
+readable only with the master key, which was confirmed by reading its
+permissions back, and the database's record of the change matches the file.
+With a practice phone and two practice accounts, every address was called
+against the running app, as the script would call it, and every refusal was
+triggered on purpose. On the To-do page (headless Chrome, dark mode, desktop
+width):
+
+- Running showed while the run was checking in.
+- Stopped showed after its check-ins had really gone quiet for more than 3
+  minutes. Nothing was backdated.
+- With the page left open, the script's 17-minute session was written, and
+  within 30 seconds the warmup was ticked, with no reload.
+
+The repeat write and the repeat close were both recognised and changed
+nothing. Part 3 was then looked at on a practice account last warmed 5 days
+earlier (run states set directly in the database for this check):
+
+- Its own page showed "No warmup in 5 days" with the morning warmup Stopped
+  and the evening one Running.
+- Its phone's line showed the robot, Stopped and the red warning.
+- After the morning session was written, the page showed Done with 17 min,
+  and the warning was gone.
+- The To-do list read the same as before the change.
+
+All practice rows were deleted afterwards, and the database is back to 0
+phones, 0 sessions and 0 runs. Type check, lint and all 233 tests pass (22 of
+them new).
+
+**Not yet done or seen:**
+
+- **Live since the same day (PR #32).** The token is in Vercel (Production
+  and Preview), with a copy in the Keychain on Garreth's Mac under
+  "WARMUP_RUNNER_TOKEN (pm-dashboard)" to hand to the Air. **Confirmed live**
+  on the production address: no token and a wrong token are refused, the real
+  token answers 0 accounts and 0 sessions, and ordinary pages still need a
+  login. The runner repository's handover was updated to match (its K3
+  ticked, B10 unblocked).
+- The Air itself has never called it, because the script's B10 is still to be
+  built.
+- The dashboard card's tags, light mode, phone width and Safari were not
+  looked at. Every check was in headless Chrome, dark mode, desktop width.
+- A dead script only shows on screens someone has to open. Nothing reaches
+  the bell.
+
+---
 
 ## 2026-09-23 — The calendar tells you where each hand-made post stands (P11)
 

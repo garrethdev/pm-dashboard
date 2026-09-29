@@ -185,7 +185,7 @@ export function HealthReviewModal({
               maxLength={500}
               rows={6}
               placeholder="e.g. checked the profile, recent reels are getting normal reach"
-              className="min-h-36 w-full resize-y rounded-nested border border-border bg-card-raised px-3 py-2 text-sm outline-none placeholder:text-text-muted focus:border-accent"
+              className="min-h-36 w-full resize-y rounded-nested border border-border bg-card-raised px-3 py-2 text-sm outline-none placeholder:text-text-placeholder focus:border-accent"
             />
           </div>
 

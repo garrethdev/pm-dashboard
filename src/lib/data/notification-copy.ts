@@ -62,6 +62,8 @@ const CATEGORY: Record<string, string> = {
   todo_overdue: "To-do",
   carousel_batch_written: "Carousel Generator",
   carousel_batch_finished: "Carousel Generator",
+  warmup_overdue: "Warmup",
+  n8n_down: "n8n",
 };
 
 export function categoryLabel(type: string): string {
