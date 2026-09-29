@@ -72,10 +72,9 @@ new types only; yes to locking the image view.
 ## 5. What Garreth saw trying the branch (2026-09-29)
 
 - **Trends shows only the cover of most carousels; the other slides read
-  "Image gone".** The links have expired at TikTok. This is not a screen bug.
-  The fix is in the collectors; see "Slide images expire before anyone looks
-  at them" further down this file. On the first page of the feed, 9 of 20 carousels are
-  affected.
+  "Image gone".** Mostly fixed on this branch 2026-09-29, and it was partly
+  a screen bug after all: see the changelog, and "Slide images expire before
+  anyone looks at them" in this file for the 607 slides still gone.
 - **The AI in the conversation does not work.** Done on this branch
   2026-09-29 for the Writing tab and the Studio; see the changelog.
 - **The Studio should let you skip the image library.** Done on this branch
@@ -162,43 +161,26 @@ harder, not easier, because the count would no longer mean what it says here.
 
 ## Slide images expire before anyone looks at them
 
-Found 2026-09-26 while fixing grey covers on Trends. The `media_enrich`
-worker (outside n8n; nobody in the repo knows where it runs, see
-`docs/CAROUSEL-GENERATOR-PLAN.md` open questions) stores TikTok's signed
-slide links in `reference_analysis.observed.media_inventory`. Those links
-expire roughly two weeks after the scrape, and about half are HEIC files no
-browser can show. 459 slides across 89 carousels are already gone. What is
-needed:
+Found 2026-09-26, widened 2026-09-29. TikTok's signed slide links expire
+about two weeks after a scrape, and about half are HEIC files no browser
+can show. The dashboard now copies slides into its own bucket
+(`reference-slides`, recorded in `reference_slide_images`) with
+`scripts/rehost-reference-slides.mjs`, and reads pictures from the
+analysis, its own copy and the evidence row in that order. What is left:
 
-- The worker should copy each slide into the `reference-slides` bucket
-  (created 2026-09-26, public) at scrape time and store that link, the way
-  the one-off backfill did for the 119 links that were still live.
-- The 459 expired slides need a fresh scrape of their source post to come
-  back; the Virlo API can return new links by slideshow id.
-- Until then the dashboard shows the Virlo thumbnail as the cover and "Image
-  gone" for the inner slides.
-
-**Decision (Garreth, 2026-09-29): fix it where the images are collected.**
-He tried the Trends feed on PR #31 and saw only the cover of most carousels;
-9 of the first 20 in the feed had every inner slide gone. He chose the
-lasting fix — the collectors save their own copy of each slide as they go —
-over a one-off re-scrape that would start expiring again two weeks later.
-Two collectors are involved, and both have to change:
-
-- **The `media_enrich` worker** (outside n8n, location still unknown) writes
-  the slide links the app reads, in `reference_analysis.observed.media_inventory`.
-  It has written nothing since 2026-09-12.
-- **The n8n "[Virlo] References → Story Finder Bridge"** (`O8RNjCtOR77d8WvA`)
-  writes `source_discovery_evidence.media_urls`, also TikTok's expiring links.
-  The newer carousels (the `phase0-multiformat-v1` analyses) have their slides
-  only here and none in the analysis, so the app shows them as "Image gone"
-  even while the links still work. Either the app reads this list too, or the
-  collector copies the slides into the analysis.
-
-**Blocked:** the n8n account is over its plan's run limit, and every trigger
-run has been refused since 2026-09-26. Nothing new has arrived since
-2026-09-24. The Virlo bridge cannot be changed and tested until that is
-lifted, and the `media_enrich` worker has to be found first.
+- **607 slides on 130 carousels are still gone.** Most came from five Virlo
+  collections (`1a447aa4`, `c23a71da`, `d7a4ea55`, `3b056ffe`, `7a5b6e30`)
+  that the n8n credential "Virlo API — Phase 0" returned nothing for; the
+  credential "Virlo API" failed outright. They need the key that reaches
+  those collections, or a re-scrape of the posts themselves.
+- **The copy is by hand.** The `media_enrich` worker (outside n8n; nobody in
+  the repo knows where it runs) should copy each slide at scrape time. Until
+  it does, the script has to be run within a fortnight of each scrape, or
+  put on a schedule.
+- **New references still arrive with zero views** (the bridge writes zeros;
+  Garreth chose to leave it, 2026-09-26). The Trends reader shows the
+  snapshot's numbers, but ranking uses the stored score, so the one-off
+  backfill has to be repeated for new rows to rank.
 
 ## The Virlo research pipeline is not monitored
 

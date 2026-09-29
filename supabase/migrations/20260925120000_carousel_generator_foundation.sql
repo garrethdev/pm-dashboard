@@ -753,3 +753,30 @@ alter table public.image_library_images
 -- One cover per library.
 create unique index if not exists image_library_images_one_cover
   on public.image_library_images (library_id) where is_cover;
+
+-- ── Step 7, applied live 2026-09-29 (slide images that do not expire) ───
+-- Our own copy of a reference carousel's slide images, by position. TikTok's
+-- links expire about two weeks after a scrape; these do not. Filled by
+-- scripts/rehost-reference-slides.mjs. Server only.
+create table if not exists public.reference_slide_images (
+  reference_id bigint not null references public.references_unified(id) on delete cascade,
+  position integer not null check (position > 0),
+  url text not null,
+  source_url text,
+  copied_at timestamptz not null default now(),
+  primary key (reference_id, position)
+);
+alter table public.reference_slide_images enable row level security;
+revoke all on public.reference_slide_images from anon, authenticated;
+
+-- A holding table for fresh slide links fetched from Virlo by the one-off
+-- n8n workflow, read by the same script. Server only.
+create table if not exists public.reference_media_refresh (
+  reference_id bigint primary key references public.references_unified(id) on delete cascade,
+  source_url text not null,
+  images jsonb not null default '[]'::jsonb,
+  fetched_at timestamptz not null default now(),
+  rehosted_at timestamptz
+);
+alter table public.reference_media_refresh enable row level security;
+revoke all on public.reference_media_refresh from anon, authenticated;

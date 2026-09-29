@@ -337,6 +337,43 @@ ticket in scope).**
   template drafted, and a preview painted from those pictures.
 - **Still other tickets:** Generate images (Higgsfield) and Tag with AI.
 
+**Trends slides brought back (2026-09-29; Garreth saw "Image gone" on most
+carousels and asked for a re-scrape).** Two causes, and the larger one was
+ours.
+
+- **The reader looked in one place out of three.** A carousel's slide
+  pictures are kept in the analysis row for the Sep 8 to 12 intake, and in
+  the evidence row for everything brought in since. The Trends reader only
+  read the first, so every carousel since Sep 12 showed its cover and then
+  "Image gone", whether or not its pictures were still there. It now reads
+  the analysis, then our own copy, then the evidence. **Found on the
+  2026-09-26 pass and missed:** that pass counted 459 expired slides because
+  it read the first 1,000 analysis rows only. The database hands back 1,000
+  rows a request; the script now pages.
+- **Live links copied before they expire.** 610 slides whose TikTok links
+  were still alive are now in our own `reference-slides` bucket (119 on
+  Sep 26, 491 today), recorded in a new table, `reference_slide_images`.
+- **Re-scrape through Virlo.** Three one-off n8n workflows, using the Virlo
+  credential already stored in n8n so no key left it, fetched fresh links
+  for 77 carousels; 448 of their slides were copied into our bucket. The
+  workflows are archived. They read from Virlo and wrote only to a holding
+  table of ours, `reference_media_refresh`.
+- **Where it stands, counted over the whole feed of 1,254 carousels and
+  6,702 slides:** carousels with a slide missing went from 426 to 130, and
+  slides missing from 2,605 to 607. On the first page, from 15 of 20 to 5.
+  Confirmed in a headless browser: 118 of the 119 pictures on the first
+  page load.
+- **What is still gone, and why:** 607 slides on 130 carousels. Most came
+  from five Virlo collections that the stored credential returned nothing
+  for; a second stored Virlo credential failed outright. They need the key
+  that reaches those collections, or a re-scrape of the posts themselves.
+- **The script is in the repository** and safe to run again:
+  `node --env-file=.env.local scripts/rehost-reference-slides.mjs`, with
+  `--dry` to count first. Run it within a fortnight of any new scrape until
+  the enrichment worker copies slides itself.
+- **Database, applied live and recorded as step 7 of the migration file:**
+  the two tables above, server only.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

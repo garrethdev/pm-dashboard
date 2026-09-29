@@ -68,6 +68,35 @@ function mediaOf(a: AnalysisRow | undefined): (string | null)[] {
   return [...inv].sort((x, y) => x.position - y.position).map((m) => displayUrl(m.image_url));
 }
 
+/**
+ * Where a carousel's slide pictures can be found, best first:
+ *
+ * 1. the analysis's media inventory (the Sep 8 to 12 intake wrote one);
+ * 2. our own copy in `reference_slide_images`, which does not expire;
+ * 3. the evidence row's media list, which is all the intake since Sep 12
+ *    keeps, on Virlo's storage or on TikTok's signed links.
+ *
+ * Until 2026-09-29 only the first was read, so every carousel brought in
+ * since Sep 12 showed its cover and then "Image gone" for each slide after
+ * it, whether or not the pictures were still there.
+ */
+async function picturesFor(ids: number[]): Promise<{ ours: Map<number, Map<number, string>>; evidence: Map<number, (string | null)[]> }> {
+  const ours = new Map<number, Map<number, string>>();
+  const evidence = new Map<number, (string | null)[]>();
+  if (!ids.length) return { ours, evidence };
+  const list = ids.join(",");
+  const [copies, rows] = await Promise.all([
+    dbGetAll<{ reference_id: number; position: number; url: string }>(`reference_slide_images?select=reference_id,position,url&reference_id=in.(${list})`).catch(fallback("slide copies", [])),
+    dbGetAll<{ source_reference_id: number; media_urls: string[] | null }>(`source_discovery_evidence?select=source_reference_id,media_urls&source_reference_id=in.(${list})`).catch(fallback("evidence media", [])),
+  ]);
+  for (const c of copies) {
+    if (!ours.has(c.reference_id)) ours.set(c.reference_id, new Map());
+    ours.get(c.reference_id)!.set(c.position, c.url);
+  }
+  for (const r of rows) if (Array.isArray(r.media_urls) && r.media_urls.length && !evidence.has(r.source_reference_id)) evidence.set(r.source_reference_id, r.media_urls.map((u) => displayUrl(u)));
+  return { ours, evidence };
+}
+
 async function analysesFor(ids: number[]): Promise<Map<number, AnalysisRow>> {
   const map = new Map<number, AnalysisRow>();
   if (!ids.length) return map;
@@ -113,11 +142,16 @@ async function personal(viewer: string, ids: number[]): Promise<{ saved: Set<num
 async function hydrate(rows: RefRow[], viewer: string): Promise<Reference[]> {
   const ids = rows.map((r) => r.id);
   const zero = rows.filter((r) => !r.views).map((r) => r.id);
-  const [beats, analyses, me, snaps] = await Promise.all([beatsFor(ids), analysesFor(ids), personal(viewer, ids), snapshotsFor(zero)]);
+  const [beats, analyses, me, snaps, pictures] = await Promise.all([beatsFor(ids), analysesFor(ids), personal(viewer, ids), snapshotsFor(zero), picturesFor(ids)]);
   return rows.map((r) => {
     const a = analyses.get(r.id);
     const counts = r.views ? { views: r.views, likes: r.likes, saves: r.saves } : (snaps.get(r.id) ?? { views: r.views, likes: r.likes, saves: r.saves });
-    const media = mediaOf(a);
+    const inventory = mediaOf(a);
+    const ours = pictures.ours.get(r.id);
+    const evidence = pictures.evidence.get(r.id) ?? [];
+    const known = Math.max(inventory.length, evidence.length, ours ? Math.max(...ours.keys()) : 0);
+    // Slide by slide, the first place that still has the picture.
+    const media = Array.from({ length: known }, (_, i) => inventory[i] ?? ours?.get(i + 1) ?? evidence[i] ?? null);
     const b = beats.get(r.id) ?? [];
     const slides: Reference["slides"] = (b.length ? b : media.map((_, i) => ({ position: i + 1, visible_copy: null, visual_description: null, narrative_role: null }))).map((s, i) => ({
       position: s.position,
