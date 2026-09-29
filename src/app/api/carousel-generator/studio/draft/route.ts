@@ -8,12 +8,13 @@ export async function POST(req: Request) {
   const g = await guard();
   if (g.denied) return g.denied;
   const b = await body(req);
+  // No library is allowed: the draft leaves every slide's set empty and the
+  // library is picked on the canvas before saving (Garreth, 2026-09-29).
   const libraryId = str(b.libraryId, 64);
-  if (!libraryId) return bad("Choose an image library first");
-  const library = await getLibrary(libraryId).catch(fallback(`draft library ${libraryId}`, null));
-  if (!library) return bad("Library not found", 404);
+  const library = libraryId ? await getLibrary(libraryId).catch(fallback(`draft library ${libraryId}`, null)) : null;
+  if (libraryId && !library) return bad("Library not found", 404);
   const size: StudioSize = b.size === "9:16" ? "9:16" : "4:5";
-  const sets = library.sets.filter((s) => !s.parentId && s.count > 0).map((s) => s.name);
+  const sets = library?.sets.filter((s) => !s.parentId && s.count > 0).map((s) => s.name) ?? [];
   const idea = str(b.idea, 2000).trim();
   const referenceId = Number(b.referenceId);
   try {

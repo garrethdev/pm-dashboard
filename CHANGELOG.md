@@ -187,6 +187,21 @@ counts and rank by them; the feed's first page has no zero-count carousel.
 Ranking of new rows on the Overview and in search still depends on the
 stored score, which the reader cannot fix; that stays with the bridge.
 
+**The Studio's image library can be skipped (2026-09-29, Garreth tried the
+branch: "the user should be able to add an image library or they can skip
+selecting an image library"):** the Studio used to stop on the library step
+until one was picked. That step now has **Skip**, and the draft is made
+without one, so no slide draws from a set. On the canvas, the library name
+under Adjustments is now a picker, so a library can be chosen or changed
+at any point. Garreth chose that a type still cannot be **saved** without a
+library, because its batches need pictures. **Save as carousel type** and
+**Render preview** stay unavailable until one is picked. Changing library
+drops any slide's set that the new library does not have. Confirmed in
+headless Chrome on the running branch: Skip, a draft with no library, both
+buttons unavailable, then a library picked and a preview painted with its
+photos. Nothing was saved. A **New library** choice on that step is still
+DEV-29, not built.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

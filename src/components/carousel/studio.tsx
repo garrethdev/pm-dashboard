@@ -88,12 +88,13 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
 
   const say = (m: Msg) => setMsgs((x) => [...x.filter((y) => !y.busy), m]);
 
-  const draft = async (idea: string | null) => {
-    if (!libraryId) return;
+  // The library can be skipped here and picked on the canvas before saving
+  // (Garreth, 2026-09-29).
+  const draft = async (idea: string | null, lib: string | null = libraryId) => {
     setBusy("draft");
     setStage("studio");
     setMsgs((m) => [...m, ...(idea ? [{ who: "me" as const, text: idea }] : []), { who: "ai" as const, text: referenceId && !idea ? "Analysing the reference" : "Drafting", busy: true }]);
-    const res = await post<{ template: Template; sample: Record<string, string>; reference?: { handle: string | null; slides: { media: string | null; copy: string | null }[]; analysed: boolean } }>("/api/carousel-generator/studio/draft", { idea, referenceId: idea ? null : referenceId, libraryId, size, character: saveForm.character });
+    const res = await post<{ template: Template; sample: Record<string, string>; reference?: { handle: string | null; slides: { media: string | null; copy: string | null }[]; analysed: boolean } }>("/api/carousel-generator/studio/draft", { idea, referenceId: idea ? null : referenceId, libraryId: lib, size, character: saveForm.character });
     setBusy(null);
     if (res.error || !res.data) {
       say({ who: "ai", text: res.error ?? "The draft failed", err: true });
@@ -106,6 +107,17 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
     if (res.data.reference) setRefStrip(res.data.reference);
     setDirty(true);
     say({ who: "ai", text: `Drafted ${res.data.template.slides.length} slides${res.data.template.slides.some((s) => s.images.pools?.length) ? ", each drawing from a set of the library" : ""}. Click a text box to change it, or tell me what to change.` });
+  };
+
+  const leaveLibrary = (lib: string | null) => (via === "reference" && referenceId ? void draft(null, lib) : setStage("idea"));
+  // Switching library drops any slide's set the new library does not have.
+  const chooseLibrary = (id: string | null) => {
+    setLibraryId(id);
+    setPreviews({});
+    setDirty(true);
+    if (!template) return;
+    const names = new Set(libraries.find((l) => l.id === id)?.sets.filter((s) => !s.parentId).map((s) => s.name) ?? []);
+    setTemplate({ ...template, slides: template.slides.map((s) => (s.images.pools?.some((p) => !names.has(p)) ? { ...s, images: { ...s.images, pools: undefined } } : s)) });
   };
 
   const regenSample = async () => {
@@ -269,7 +281,8 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
               </button>
             ))}
             <div className="mt-2 flex justify-end gap-2 border-t border-border pt-3">
-              <Accent disabled={!libraryId} onClick={() => (via === "reference" && referenceId ? void draft(null) : setStage("idea"))}>Continue</Accent>
+              <Btn onClick={() => { setLibraryId(null); leaveLibrary(null); }}>Skip</Btn>
+              <Accent disabled={!libraryId} onClick={() => leaveLibrary(libraryId)}>Continue</Accent>
             </div>
           </div>
         </div>
@@ -366,7 +379,12 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
             <p className="text-xs text-text-muted">Click a slide, then a text box.</p>
           )}
           <div className="mt-auto flex flex-col gap-2 border-t border-border pt-3">
-            <span className="flex items-center gap-2 text-xs text-text-muted"><Images className="size-3.5" />{library?.name ?? "No library"}</span>
+            <label className="flex items-center gap-2 text-xs text-text-muted"><Images className="size-3.5" aria-hidden />
+              <select value={libraryId ?? ""} onChange={(e) => chooseLibrary(e.target.value || null)} aria-label="Image library" className="min-w-0 flex-1 rounded-nested border border-border bg-bg/60 px-2 py-1 text-xs text-text-primary">
+                <option value="">No library</option>
+                {libraries.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </label>
             <div className="flex flex-wrap gap-1">{sets.map((s) => <Pill key={s.id} className="tnum">{s.name} <b className="ml-1 text-text-primary">{s.count}</b></Pill>)}</div>
           </div>
         </aside>
@@ -376,7 +394,7 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
             {busy === "draft" ? <span className="inline-flex items-center gap-1.5 px-2 text-xs text-text-muted"><Loader2 className="size-3.5 animate-spin" />Drafting</span> : (
               <>
                 <span className="hidden px-2 text-xs text-text-muted tnum sm:inline">{selected ? `Slide ${selected.slide + 1} of ${t?.slides.length ?? 0}` : `${t?.slides.length ?? 0} slides`}</span>
-                <Btn onClick={renderPreview} busy={busy === "render"} disabled={!t}><Play className="size-3.5" />Render preview</Btn>
+                <Btn onClick={renderPreview} busy={busy === "render"} disabled={!t || !libraryId}><Play className="size-3.5" />Render preview</Btn>
                 <Btn onClick={regenSample} busy={busy === "sample"} disabled={!t}><RotateCw className="size-3.5" />Regenerate sample</Btn>
               </>
             )}

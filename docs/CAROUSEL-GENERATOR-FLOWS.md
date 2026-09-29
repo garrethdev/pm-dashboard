@@ -554,7 +554,10 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
      name. **Proposed:** it is asked first so the draft and Render preview use
      real images; it can be changed at any point before saving. New library
      arrives in Phase 4 with upload and generation, so in Phase 3 only an
-     existing library can be chosen.
+     existing library can be chosen. **The step can be skipped** (Garreth,
+     2026-09-29): the draft is made with no library, and a picker on the
+     canvas chooses one later. Save as carousel type and Render preview
+     wait until one is chosen.
   2. The conversation opens. Describe the idea. The chat box grows with the
      prompt, up to eight lines before it scrolls; Shift+Enter starts a new
      line and Enter sends (Garreth, 2026-09-15).
@@ -1420,7 +1423,8 @@ Nothing is left to decide before the screens.
     square, and a generated image joins the library only when a person presses
     Keep (F7).
 20. The Studio asks for the image library first, so the draft and Render
-    preview use real images (F8).
+    preview use real images (F8). It can be skipped and picked on the canvas
+    later, and saving waits for it (Garreth, 2026-09-29).
 21. Repointing a content type on the Generate form is saved as a new template
     version, so later batches use that library too (F1).
 22. Generate is unavailable while the chosen library has no images in a set

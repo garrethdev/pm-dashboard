@@ -1,8 +1,12 @@
 # Backlog
 
-Five lists. Check which one you are in before picking something up — they have
+Six lists. Check which one you are in before picking something up — they have
 different bars for "done".
 
+- **[Carousel Generator — issues found before merging PR #31](#carousel-generator--issues-found-before-merging-pr-31)**
+  is what the 2026-09-29 review and Garreth's own try-out found on this
+  branch. It is the bar for merging: nothing in its first two groups should
+  reach `main` unfixed.
 - **[From the 2026-09-09 code review](#from-the-2026-09-09-external-code-review)**
   is what is still open from the first review of this codebase by someone
   outside the project. **Nearly all of it is now closed** — as of 2026-09-11
@@ -25,6 +29,140 @@ different bars for "done".
   screen. These are safe to do in any order and none of them block a release.
 
 Newest first within each list.
+
+---
+
+# Carousel Generator — issues found before merging PR #31
+
+Found 2026-09-29. Garreth asked whether PR #31 (`claude/carousel-generator-connect`)
+had been checked. It had passed the automatic checks, but nobody had reviewed
+it. So a code review was run against `main`, and Garreth then tried the branch
+himself on his own computer.
+
+**How far each item has been checked.** The image-view item was checked on the
+live database. Garreth's four items are things he saw himself. **Every other
+item comes from reading the code and has not been reproduced yet.** Try each
+one on the running app before fixing it, and do not close an item just because
+the review said so.
+
+## 1. Live now — the image list can be read by anyone with the public key
+
+- **What:** the branch's database change created the view `v_image_assets`
+  (`supabase/migrations/20260925120000_carousel_generator_foundation.sql`,
+  lines 92 and 681). A view is a saved query that works like a table. This
+  one is not locked. The changelog says the generator's new tables are
+  server-only, but this view is not. Anyone holding the public key can read
+  every image-library row through it. The public key is built into web pages
+  and n8n.
+- **Checked live 2026-09-29:** `anon` and `authenticated` can read it; it
+  returns 155 rows.
+- **Fix:** give the view `security_invoker = true` and revoke it from `anon`
+  and `authenticated` by name (see the Supabase grants note: "revoke from
+  public" is not enough). Before that, read the edge logs for anything that
+  already reads it with the public key, the way the 2026-09-21 key clean-up
+  was done. **Waiting on Garreth's yes**, because it changes the live
+  database.
+
+## 2. Batches that get stuck or behave wrongly
+
+These stop real batches. None of them can post anything yet, because
+rendered decks never reach the scheduler (see the changelog's "Not built
+yet").
+
+1. **Render, Continue and Regenerate can fail halfway.** Only one batch per
+   carousel type may be running. The code moves the decks first and only then
+   marks the batch as running. If another batch of the same type is already
+   running, that last step fails. The press returns an error, the batch
+   shows "Stopped", and its decks are stuck in the queue.
+   `src/server/carousel/services/runner.ts` lines 245, 260 and 286.
+2. **A rewritten deck can never be rendered in a Manual batch.** Say 8 of 10
+   decks are rendered and the 2 flagged ones are regenerated. The Render
+   button only appears when nothing has been rendered yet, so it never comes
+   back. Pressing Approve then finishes the batch without those 2 decks. A
+   retried failed deck ends the same way.
+   `src/server/carousel/status-words.ts` line 90.
+3. **Approve can finish a batch that is still rendering.** It only checks
+   that at least one deck is rendered. With 3 decks done and 7 still waiting,
+   it signs off the 3 and closes the batch, and the 7 are stuck forever.
+   `src/app/api/carousel-generator/batches/[id]/[action]/route.ts` line 37.
+4. **Stop and Discard can be undone.** The loop writes to the batch and its
+   decks after long waits without checking whether someone pressed Stop or
+   Discard in the meantime. A discarded deck can come back and be rendered,
+   and a stopped batch can start again. The fix is the check `claimDeck`
+   already does: only write if the status is still what the loop last read.
+   `src/server/carousel/services/runner.ts` line 124.
+
+## 3. Wrong results
+
+5. **The Trends feed skips carousels when it loads the next page.** Carousels
+   with the same score are sorted by views, but the next page is found by id,
+   so some are skipped and others repeated. A carousel with no score can never
+   be reached. `src/server/carousel/repo/trends.ts` line 164.
+6. **The compliance check reads words inside other words, and never reads the
+   caption.** "insecure" and "manicure" are flagged because they contain
+   "cure", and in Auto mode such a deck is rewritten three times and then
+   dropped. Meanwhile a caption saying "this cures bloating, guaranteed"
+   passes, because the caption is skipped. For health content this second
+   half matters more. `src/server/carousel/services/gate.ts` lines 45 and 58.
+7. **The music lookup quietly picks a random track.** If the writer suggests
+   a song the library does not have, the lookup attaches the least-used
+   library track and marks it "found". The deck is never flagged for a
+   person, although the module's own comment says it should be.
+   `src/server/carousel/services/music.ts` line 41.
+
+## 4. Safety
+
+8. **Studio templates go live on the lighter check.** New templates and new
+   template versions are checked against the old "historical" rules and made
+   active straight away. The stricter "generation" rules never run on this
+   path, so a template with the wrong canvas size can end up used by batches.
+   `src/app/api/carousel-generator/templates/route.ts` line 35 and
+   `templates/[id]/route.ts` line 33.
+9. **A crafted text box name could run code in a viewer's browser.** The
+   name is put into the painted slide unescaped, and the slide is shown on
+   the batch page as raw HTML. Only the allowed logins can reach the Studio,
+   so the risk is low, but the fix is a one-line escape.
+   `src/server/carousel/services/painter.ts` line 99, shown by
+   `src/components/carousel/kit.tsx` line 344.
+
+## 5. What Garreth saw trying the branch (2026-09-29)
+
+- **Trends shows only the cover of most carousels; the other slides read
+  "Image gone".** The links have expired at TikTok. This is not a screen bug.
+  The fix is in the collectors; see "Slide images expire before anyone looks
+  at them" further down this file. On the first page of the feed, 9 of 20 carousels are
+  affected.
+- **The AI in the conversation does not work.** It is not connected yet. On
+  the Writing tab and in the Studio, the conversation gives canned replies,
+  and the Studio's can only change the number of slides. That is **DEV-25
+  (Writing conversation)**, still open.
+- **The Studio should let you skip the image library.** Done on this branch
+  2026-09-29; see the changelog.
+- **The Studio should let you add a new library.** Not built. That is
+  **DEV-29 (Libraries: new, upload, retire)**, still open.
+
+## 6. Before it can merge
+
+- **It clashes with `main`** in `CHANGELOG.md` and
+  `src/lib/data/notification-copy.ts`. GitHub marks the PR "conflicting".
+- **The Codex branch went its own way.** `codex/carousel-backend-foundation`
+  shares its first 4 commits with this branch. After that it added 44 more
+  that PR #31 does not have. They include the real slide painter (PNG output,
+  fonts, uploads), the writer's quality gate and the @-mentions in the Writing
+  editor. The PR's description says it "includes those commits", which was
+  only true when it was written. Merging the two conflicts in 10 files:
+  `package.json`, `package-lock.json`, `carousel-detail.tsx`,
+  `trends-search.tsx`, `trends/client.ts` and its test,
+  `batches/runner.ts` and its test, and `batches/status.ts` and its test.
+  Both branches built their own batch runner, so that file is the real work.
+  Fixing items 1–4 during that merge saves doing it twice.
+- **Test data sits in the live tables on purpose** (listed in the PR
+  description): Glow Up and Covered Eye batches, Glow Up template version 2,
+  the Studio-made type `evening-habit-stomach-over40`, one Writing version per
+  type, one saved reference and one vote. Decide whether to clear it before
+  real use.
+- **The branch has only been reviewed by the session that built it** and by
+  this review. Nobody has approved it on GitHub.
 
 ---
 
@@ -97,6 +235,28 @@ needed:
   back; the Virlo API can return new links by slideshow id.
 - Until then the dashboard shows the Virlo thumbnail as the cover and "Image
   gone" for the inner slides.
+
+**Decision (Garreth, 2026-09-29): fix it where the images are collected.**
+He tried the Trends feed on PR #31 and saw only the cover of most carousels;
+9 of the first 20 in the feed had every inner slide gone. He chose the
+lasting fix — the collectors save their own copy of each slide as they go —
+over a one-off re-scrape that would start expiring again two weeks later.
+Two collectors are involved, and both have to change:
+
+- **The `media_enrich` worker** (outside n8n, location still unknown) writes
+  the slide links the app reads, in `reference_analysis.observed.media_inventory`.
+  It has written nothing since 2026-09-12.
+- **The n8n "[Virlo] References → Story Finder Bridge"** (`O8RNjCtOR77d8WvA`)
+  writes `source_discovery_evidence.media_urls`, also TikTok's expiring links.
+  The newer carousels (the `phase0-multiformat-v1` analyses) have their slides
+  only here and none in the analysis, so the app shows them as "Image gone"
+  even while the links still work. Either the app reads this list too, or the
+  collector copies the slides into the analysis.
+
+**Blocked:** the n8n account is over its plan's run limit, and every trigger
+run has been refused since 2026-09-26. Nothing new has arrived since
+2026-09-24. The Virlo bridge cannot be changed and tested until that is
+lifted, and the `media_enrich` worker has to be found first.
 
 ## The Virlo research pipeline is not monitored
 
