@@ -293,6 +293,50 @@ pull request).**
 - **Not part of this:** the conversation does not yet read a reference deck
   or an image, and the Studio's conversation cannot change fonts or colours.
 
+**Image libraries can be made, filled and tidied (DEV-29, 2026-09-29;
+Garreth asked for the Studio to let him add a library, then put the whole
+ticket in scope).**
+
+- **Upload.** One or many pictures at a time, by the button or by dropping
+  them on the grid: JPEG, PNG, WebP or HEIC, up to 20 MB each. Each file is
+  its own tile while it uploads. One that fails stays as a **Failed** tile
+  with its reason and **Retry**; the rest carry on. Pictures land in no
+  set, unless a set is open when Upload is pressed, in which case the
+  button says **Upload to** that set. Every picture is checked to be a
+  picture, turned the right way up and brought down to a sensible size.
+- **The image window** now does things: **Move to another set**, **Make
+  cover**, **Black and white**, **Background removal**, an **AI edit** and
+  **Retire image**. Black and white and background removal are automatic
+  and add a new image beside the original; nothing is overwritten. An AI
+  edit is shown first and joins the library only on **Keep**; **Discard**
+  throws it away.
+- **Retire is a hold**, because a deck not yet rendered may still point at
+  the image. A retired image is dimmed, marked Retired, and is never picked
+  for a new deck; decks already saved keep it. **Restore** brings it back.
+- **New library from the Studio.** The Studio's library step has **New
+  library**, and **Add pictures** for the library that is chosen, so a type
+  can be started without leaving the Studio. On the libraries page, making
+  a library now opens it.
+- **The two bank libraries stay read-only:** no Upload, no Retire, no edits.
+- **Where things live.** A new public bucket, `image-libraries`, images
+  only. The browser never holds the secret key: for each file the server
+  hands out a one-time link for one path. Applied to the live project and
+  recorded as step 6 of the generator's migration file, with five new
+  columns on the images table and a rule that a library has one cover.
+- **Background removal runs in the browser**, with an open model (MODNet,
+  Apache 2.0, about 25 MB, fetched once). Nothing is sent to a service. It
+  is made for cutting out a person and is less sure with objects: a test
+  on hands holding a jug kept the hands and lost part of the jug.
+- **The AI edit** uses Gemini's image model through the same OpenRouter
+  account as the writer; an edit took about fifteen seconds.
+- **Confirmed in a headless browser on the running branch:** 19 checks on
+  the library page (uploads, the failed tile and Retry, move, cover, black
+  and white, a cut-out, an AI edit kept, Retire by holding, Restore, the
+  read-only bank), no sideways scroll on a phone, and the ticket's finish
+  line: a library made in the Studio, three pictures added there, a
+  template drafted, and a preview painted from those pictures.
+- **Still other tickets:** Generate images (Higgsfield) and Tag with AI.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It
@@ -306,9 +350,10 @@ pull request).**
   should live for good (a queue or a scheduled job) is DEV-48's open
   question and is not decided here.
 - The lane-creation function behind Go Live, the Higgsfield image generation,
-  uploads into a library, AI tagging of images, the digest capture from n8n,
-  analysis on demand for an unread reference, and the writing conversation on
-  Claude are shown as unavailable on their screens rather than pretended.
+  AI tagging of images, the digest capture from n8n and analysis on demand
+  for an unread reference are shown as unavailable on their screens rather
+  than pretended. (Uploads into a library and the writing conversation were
+  on this list until 2026-09-29; both are built, see above.)
 - The vision check after rendering is not run; a rendered deck is not
   re-flagged by a model.
 

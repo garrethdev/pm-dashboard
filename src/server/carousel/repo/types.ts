@@ -207,6 +207,10 @@ export interface LibraryImage {
   status: string;
   /** DEV-41 details, when the image has been read. */
   details: Record<string, unknown> | null;
+  /** The set it sits in, for an image a person added; bank images have none. */
+  setId?: string | null;
+  /** How it was made: upload, black_and_white, background_removal, ai_edit. */
+  madeBy?: string | null;
 }
 
 export interface Library {

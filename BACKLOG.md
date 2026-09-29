@@ -80,8 +80,8 @@ new types only; yes to locking the image view.
   2026-09-29 for the Writing tab and the Studio; see the changelog.
 - **The Studio should let you skip the image library.** Done on this branch
   2026-09-29; see the changelog.
-- **The Studio should let you add a new library.** Not built. That is
-  **DEV-29 (Libraries: new, upload, retire)**, still open.
+- **The Studio should let you add a new library.** Done on this branch
+  2026-09-29 with the rest of DEV-29; see the changelog.
 
 ## 6. Before it can merge
 

@@ -14,6 +14,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Accent, Btn, Pill, SlideFace, post } from "@/components/carousel/kit";
+import { uploadPicture } from "@/components/carousel/library-upload";
 import { HoldButton } from "@/components/ui/hold-button";
 import { Check, ChevronDown, ChevronLeft, DotsThree, Images, LayoutList, Loader2, Minus, Pencil, Play, Plus, RotateCw, Sparkles, Undo, X } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,7 @@ function fitsChars(box: Box, t: Template): number {
   return perLine * 3;
 }
 
-export function Studio({ libraries, referenceId, editing, writing, sample: initialSample }: { libraries: Library[]; referenceId: number | null; editing?: TemplateRecord; writing?: string | null; sample?: Record<string, string> | null }) {
+export function Studio({ libraries: given, referenceId, editing, writing, sample: initialSample }: { libraries: Library[]; referenceId: number | null; editing?: TemplateRecord; writing?: string | null; sample?: Record<string, string> | null }) {
   const router = useRouter();
   const [stage, setStage] = useState<"start" | "library" | "idea" | "studio">(editing ? "studio" : referenceId ? "library" : "start");
   const [via, setVia] = useState<"idea" | "reference">(referenceId ? "reference" : "idea");
@@ -60,6 +61,12 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
   const [refStrip, setRefStrip] = useState<{ handle: string | null; slides: { media: string | null; copy: string | null }[]; analysed: boolean } | null>(null);
   const [dirty, setDirty] = useState(false);
   const panRef = useRef<HTMLDivElement>(null);
+  // Libraries made here, on the library step, join the ones the page came with.
+  const [made, setMade] = useState<Library[]>([]);
+  const libraries = useMemo(() => [...given.map((g) => made.find((m) => m.id === g.id) ?? g), ...made.filter((m) => !given.some((g) => g.id === m.id))], [given, made]);
+  const [newLib, setNewLib] = useState<{ name: string; busy: boolean; error: string | null } | null>(null);
+  const [adding, setAdding] = useState<{ done: number; failed: number; left: number } | null>(null);
+  const libPicker = useRef<HTMLInputElement>(null);
   const library = libraries.find((l) => l.id === libraryId) ?? null;
   const sets = useMemo(() => library?.sets.filter((s) => !s.parentId) ?? [], [library]);
 
@@ -107,6 +114,39 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
     if (res.data.reference) setRefStrip(res.data.reference);
     setDirty(true);
     say({ who: "ai", text: `Drafted ${res.data.template.slides.length} slides${res.data.template.slides.some((s) => s.images.pools?.length) ? ", each drawing from a set of the library" : ""}. Click a text box to change it, or tell me what to change.` });
+  };
+
+  const createLibrary = async () => {
+    if (!newLib?.name.trim()) return;
+    setNewLib({ ...newLib, busy: true, error: null });
+    const res = await post<Library>("/api/carousel-generator/libraries", { name: newLib.name.trim() });
+    if (res.error || !res.data) { setNewLib({ ...newLib, busy: false, error: res.error ?? "The library could not be made" }); return; }
+    setMade((m) => [...m, res.data!]);
+    setLibraryId(res.data.id);
+    setNewLib(null);
+  };
+  // Pictures added on the library step go into the chosen library, in no set.
+  const addPictures = async (files: FileList | null) => {
+    if (!files || !libraryId) return;
+    const list = [...files].slice(0, 40);
+    let done = 0;
+    let failed = 0;
+    setAdding({ done, failed, left: list.length });
+    for (const file of list) {
+      const res = await uploadPicture(libraryId, file);
+      if (res.error) failed++;
+      else done++;
+      setAdding({ done, failed, left: list.length - done - failed });
+      if (res.image) {
+        const url = res.image.url;
+        setMade((m) => {
+          const cur = m.find((x) => x.id === libraryId) ?? given.find((x) => x.id === libraryId);
+          if (!cur) return m;
+          const next = { ...cur, count: cur.count + 1, cover: cur.cover ?? url, covers: cur.covers.length < 3 ? [...cur.covers, url] : cur.covers };
+          return [...m.filter((x) => x.id !== libraryId), next];
+        });
+      }
+    }
   };
 
   const leaveLibrary = (lib: string | null) => (via === "reference" && referenceId ? void draft(null, lib) : setStage("idea"));
@@ -293,6 +333,25 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
                 <span className="ml-auto">{libraryId === l.id && <Check className="size-4 text-accent" />}</span>
               </button>
             ))}
+            {newLib ? (
+              <form onSubmit={(e) => { e.preventDefault(); void createLibrary(); }} className="flex flex-col gap-2 rounded-nested border border-border p-2">
+                <input autoFocus value={newLib.name} onChange={(e) => setNewLib({ ...newLib, name: e.target.value, error: null })} placeholder="Name of the new library" aria-label="Library name" maxLength={80} className="w-full rounded-[10px] border border-border bg-bg/60 px-3 py-1.5 text-sm outline-none placeholder:text-text-muted" />
+                {newLib.error && <p role="alert" className="text-xs text-danger">{newLib.error}</p>}
+                <div className="flex justify-end gap-2"><Btn onClick={() => setNewLib(null)}>Cancel</Btn><Btn type="submit" disabled={!newLib.name.trim()} busy={newLib.busy}>Create</Btn></div>
+              </form>
+            ) : (
+              <button type="button" onClick={() => setNewLib({ name: "", busy: false, error: null })} className="flex items-center gap-3 rounded-nested border border-dashed border-border px-2 py-2 text-left text-sm text-text-muted hover:text-text-primary">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-card-sunken"><Plus className="size-4" /></span>
+                New library
+              </button>
+            )}
+            {library && !library.readOnly && (
+              <div className="flex flex-wrap items-center gap-2 px-2 pt-1 text-xs text-text-muted">
+                <input ref={libPicker} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden onChange={(e) => { void addPictures(e.target.files); e.target.value = ""; }} />
+                <Btn onClick={() => libPicker.current?.click()} disabled={Boolean(adding?.left)}>Add pictures to {library.name}</Btn>
+                {adding ? <span role="status" className="tnum">{adding.left > 0 ? `Adding, ${adding.left} to go` : `${adding.done} added`}{adding.failed > 0 ? `, ${adding.failed} failed` : ""}</span> : library.count === 0 ? <span>It is empty. A preview needs at least one picture.</span> : null}
+              </div>
+            )}
             <div className="mt-2 flex justify-end gap-2 border-t border-border pt-3">
               <Btn onClick={() => { setLibraryId(null); leaveLibrary(null); }}>Skip</Btn>
               <Accent disabled={!libraryId} onClick={() => leaveLibrary(libraryId)}>Continue</Accent>

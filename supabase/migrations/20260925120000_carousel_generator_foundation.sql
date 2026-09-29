@@ -725,3 +725,31 @@ alter table public.carousel_briefs drop constraint if exists carousel_briefs_sta
 alter table public.carousel_briefs add constraint carousel_briefs_status_check
   check (status in ('draft', 'ready_for_copy', 'in_review', 'approved', 'archived',
                     'generating', 'rendering', 'waiting', 'stopped', 'failed', 'finished'));
+
+-- ── Step 6, applied live 2026-09-29 (DEV-29: library uploads) ───────────
+-- Uploaded library images live in their own public bucket. Images only,
+-- 20 MB each. Writes go through the server (service role) or a one-time
+-- signed upload link the server hands out; there are no policies for the
+-- public roles, so nobody else can write or list.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('image-libraries', 'image-libraries', true, 20971520, array['image/jpeg','image/png','image/webp','image/heic','image/heif'])
+on conflict (id) do update set public = excluded.public, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+-- The Trends slide copies made on 2026-09-26 (see the changelog) sit in a
+-- bucket that was created through the storage API; recorded here.
+insert into storage.buckets (id, name, public) values ('reference-slides', 'reference-slides', true)
+on conflict (id) do nothing;
+
+-- Where an image came from when it was made from another (black and white,
+-- a cut-out, an AI edit), so the original can be found again.
+alter table public.image_library_images
+  add column if not exists derived_from uuid references public.image_library_images(id) on delete set null,
+  add column if not exists made_by text,
+  add column if not exists width integer,
+  add column if not exists height integer,
+  add column if not exists retired_at timestamptz,
+  add column if not exists retired_by text;
+
+-- One cover per library.
+create unique index if not exists image_library_images_one_cover
+  on public.image_library_images (library_id) where is_cover;
