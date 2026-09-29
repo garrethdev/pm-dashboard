@@ -256,6 +256,43 @@ after.
 - **Not changed, on Garreth's word:** the compliance word check (item 6) is
   left as it is for now. The music lookup (item 7) waits for his answer.
 
+**The conversations are connected to the AI (DEV-25, 2026-09-29; Garreth
+tried the branch and found canned replies, then put this in scope for the
+pull request).**
+
+- **On the Writing tab** the conversation now answers from Claude. It
+  proposes a full revised direction, shown as what would change against
+  the active Writing, names the accepted rules it drew on, asks at most one
+  question, and says plainly when the direction cannot change something
+  (asked for more slides, it answered that slides are changed in the
+  Studio). **Put in the editor** places the proposal in the editor, not
+  saved. **Save version** stays a person's press and records the rules.
+  The conversation never saves.
+- **An empty type's offer is real.** **Write a first draft** sends one
+  prompt built from the type's template and its slides, and the draft lands
+  in the editor under **Not saved**.
+- **Text box names are pills**, in the Writing and in the conversation's
+  box alike: type `@`, press a name, or drag one in. The editor is the one
+  Codex built on `codex/carousel-backend-foundation`, brought over with its
+  tests and given the app's colours, a placeholder, drop support and a
+  one-line mode.
+- **A failed call** shows under the message with **Retry**.
+- **On a phone** the conversation is a sheet behind a floating button, with
+  the text box names inside the sheet and a dot when something new waits.
+- **In the Studio** the conversation changes the template: slides added,
+  removed and reordered, layouts, image sets, text boxes and their size and
+  place, sample lines, the direction. A change lands on the canvas as one
+  step that Ctrl or Cmd+Z takes back. A text box that keeps its name keeps
+  what was set on it by hand. Asked for pink text in Comic Sans, it said it
+  cannot and where font and alignment are set.
+- **Confirmed in a headless browser on the running branch:** 20 of 21
+  checks on the Writing tab (the miss was a proposal that cited no rule,
+  which is allowed) and 7 of 7 in the Studio. The test type
+  `evening-habit-stomach-over40` went from no Writing to a saved version 1
+  through the offer alone, and the query shows its 9 cited rule keys.
+- **Not part of this:** the conversation does not yet read a reference deck
+  or an image, and the Studio's conversation cannot change fonts or colours.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

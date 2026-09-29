@@ -24,7 +24,7 @@ type Slide = { n: number; layout: "single" | "quad" | "quiz"; cells: { x: number
 type Contract = { role: string; writer: "ai" | "fixed" | "per_batch"; fixed?: string; max_chars?: number; columns?: string[]; painted?: boolean };
 type Template = Record<string, unknown> & { canvas: { width: number; height: number; background: string | null }; slides: Slide[]; copy_contract: Contract[]; name: string; character: string; text_styles: Record<string, { wrap?: { width?: number }; align?: string; fill?: string }> };
 
-type Msg = { who: "me" | "ai"; text: string; busy?: boolean; err?: boolean };
+type Msg = { who: "me" | "ai"; text: string; busy?: boolean; err?: boolean; /** What to send again when the call failed; absent for a failed draft. */ retry?: string };
 
 function renumber(slides: Slide[]): Slide[] {
   return slides.map((s, i) => ({ ...s, n: i + 1 }));
@@ -137,22 +137,35 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
     else say({ who: "ai", text: res.error ?? "The preview failed", err: true });
   };
 
-  const send = () => {
-    const text = input.trim();
-    if (!text) return;
-    setInput("");
-    if (!template) { void draft(text); return; }
-    const m = text.match(/(\d+)\s*slides?/i);
-    if (m) {
-      const n = Math.max(2, Math.min(20, Number(m[1])));
-      let slides = [...template.slides];
-      while (slides.length < n) slides.push({ ...structuredClone(slides[slides.length - 1]), text: slides[slides.length - 1].text.map((b) => ({ ...b, role: `${b.role}_${slides.length + 1}` })) });
-      slides = slides.slice(0, n);
-      push({ ...template, slides: renumber(slides) });
-      setMsgs((x) => [...x, { who: "me", text }, { who: "ai", text: `Made it ${n} slides.` }]);
+  /**
+   * The conversation changes the template (slides, layouts, sets, text
+   * boxes, sample lines, the direction). What comes back lands on the canvas
+   * as one step, so Ctrl or Cmd+Z takes it back. Nothing is saved.
+   */
+  const revise = async (text: string) => {
+    if (!template) return;
+    const past = msgs.filter((m) => !m.busy && !m.err).map((m) => ({ who: m.who, text: m.text }));
+    setMsgs((x) => [...x.filter((m) => !(m.err && m.retry === text)), { who: "me", text }, { who: "ai", text: "Thinking", busy: true }]);
+    setBusy("chat");
+    const res = await post<{ reply: string; template: Template | null; copy: Record<string, string> | null }>("/api/carousel-generator/studio/revise", { message: text, template, copy, libraryId, history: past });
+    setBusy(null);
+    if (res.error || !res.data) {
+      say({ who: "ai", text: res.error ?? "The writer could not be reached", err: true, retry: text });
       return;
     }
-    setMsgs((x) => [...x, { who: "me", text }, { who: "ai", text: "Change it on the canvas: click a text box for its settings, use the three dots on a slide to duplicate, move or delete it, or press Regenerate sample for new words. The conversation edits the slide count for now." }]);
+    if (res.data.template) {
+      push(res.data.template, res.data.copy ?? copy);
+      setPreviews({});
+      setSelected(null);
+    }
+    say({ who: "ai", text: res.data.reply });
+  };
+  const send = () => {
+    const text = input.trim();
+    if (!text || busy === "chat" || busy === "draft") return;
+    setInput("");
+    if (!template) { void draft(text); return; }
+    void revise(text);
   };
 
   // Slide operations (D6 round three).
@@ -487,7 +500,7 @@ export function Studio({ libraries, referenceId, editing, writing, sample: initi
               <div key={i} className={cn("flex", m.who === "me" ? "justify-end" : "justify-start")}>
                 <span className={cn("max-w-[90%] rounded-nested px-3 py-2", m.who === "me" ? "bg-card-raised" : m.err ? "border border-danger/40 text-danger" : "border border-border text-text-muted")}>
                   {m.busy && <Loader2 className="mr-1.5 inline size-3.5 animate-spin" />}{m.text}
-                  {m.err && <button type="button" onClick={() => draft(msgs.find((x) => x.who === "me")?.text ?? null)} className="ml-2 underline">Retry</button>}
+                  {m.err && <button type="button" onClick={() => (m.retry ? void revise(m.retry) : void draft(msgs.find((x) => x.who === "me")?.text ?? null))} className="ml-2 underline">Retry</button>}
                 </span>
               </div>
             ))}

@@ -10,10 +10,13 @@
  */
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Accent, Btn, LoadError, PageHead, Pill, WordsPill, post, shortDate, typeMeta, useJson } from "@/components/carousel/kit";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Check, ChevronDown, ChevronRight, Pencil, Table } from "@/components/ui/icons";
+import { Check, ChevronDown, ChevronRight, Pencil, Sparkles, Table } from "@/components/ui/icons";
+import { Mentioned, WritingEditor } from "@/components/carousel/writing-editor";
+import type { CopyRole } from "@/lib/carousel/template/validate";
+import { diffWords } from "@/lib/carousel/writer/diff";
 import { cn } from "@/lib/utils";
 import type { BatchSummary, CarouselType, LaneRow, TemplateRecord, WritingVersion } from "@/server/carousel/repo/types";
 import { batchWords, whileMoving } from "@/server/carousel/status-words";
@@ -168,50 +171,165 @@ function Overview({ d, onChange }: { d: Payload; onChange: () => void }) {
   );
 }
 
+interface ChatMsg {
+  id: number;
+  who: "me" | "ai";
+  text: string;
+  /** The full revised direction the conversation proposes, if it proposed one. */
+  proposal?: string | null;
+  cited?: string[];
+  /** Waiting on the writer. */
+  pending?: boolean;
+  /** The call failed; Retry sends the same thing again. */
+  failed?: { message: string | null };
+}
+
+/** A proposal, shown as what would change against the active Writing. */
+function Proposal({ against, proposal, cited, used, onUse }: { against: string; proposal: string; cited: string[]; used: boolean; onUse: () => void }) {
+  const parts = useMemo(() => diffWords(against, proposal), [against, proposal]);
+  return (
+    <div className="flex flex-col gap-2 rounded-nested border border-border bg-bg/60 p-3">
+      <p className="max-h-64 overflow-y-auto whitespace-pre-wrap text-[13px] leading-5">
+        {parts.map((part, i) =>
+          part.kind === "same" ? (
+            <span key={i} className="text-text-muted">{part.text}</span>
+          ) : part.kind === "added" ? (
+            <ins key={i} className="rounded-[3px] bg-accent-soft text-text-primary no-underline">{part.text}</ins>
+          ) : (
+            <del key={i} className="text-danger/80">{part.text}</del>
+          ),
+        )}
+      </p>
+      {cited.length > 0 && (
+        <p className="flex flex-wrap items-center gap-1 text-[11px] text-text-muted">
+          <span>Rules used</span>
+          {cited.map((k) => <span key={k} className="rounded-full bg-pill-bg px-2 py-px">{k}</span>)}
+        </p>
+      )}
+      <div className="flex items-center gap-2">
+        <Btn onClick={onUse} disabled={used}>{used ? "In the editor" : "Put in the editor"}</Btn>
+        <span className="text-[11px] text-text-muted">Not saved until you press Save version</span>
+      </div>
+    </div>
+  );
+}
+
 function Writing({ d, onChange }: { d: Payload; onChange: () => void }) {
   const active = d.writing.find((w) => w.active) ?? null;
   const [text, setText] = useState(active?.body ?? "");
   const [shown, setShown] = useState<WritingVersion | null>(active);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [chat, setChat] = useState<{ q: string; a: string }[]>([]);
+  const [chat, setChat] = useState<ChatMsg[]>([]);
   const [q, setQ] = useState("");
+  // The rules behind the proposal now in the editor; Save version records them.
+  const [rules, setRules] = useState<string[]>([]);
+  const [sheet, setSheet] = useState(false);
+  const [unread, setUnread] = useState(false);
+  const nextId = useRef(1);
   const dirty = text !== (shown?.body ?? "");
-  const boxes = useMemo(() => {
-    const slides = (d.template?.template?.slides as { text?: { role: string }[] }[] | undefined) ?? [];
-    return [...new Set(slides.flatMap((s) => (s.text ?? []).map((t) => t.role)))];
+  const slideCount = d.type.slides ?? ((d.template?.template?.slides as unknown[] | undefined)?.length ?? 0);
+  // Only the boxes the painter draws are text boxes; hidden contract fields are not.
+  const roles = useMemo<CopyRole[]>(() => {
+    const t = d.template?.template as { slides?: { text?: { role: string }[] }[]; copy_contract?: CopyRole[] } | null | undefined;
+    const painted = [...new Set((t?.slides ?? []).flatMap((sl) => (sl.text ?? []).map((x) => x.role)))];
+    const byRole = new Map((t?.copy_contract ?? []).map((c) => [c.role, c]));
+    return painted.map((role) => byRole.get(role) ?? ({ role, columns: [role], writer: "ai" } as CopyRole));
   }, [d.template]);
+  const typeUrl = `/api/carousel-generator/types/${encodeURIComponent(d.type.id)}/writing`;
 
   const save = async () => {
     setBusy("save");
     setErr(null);
-    const res = await post<WritingVersion>(`/api/carousel-generator/types/${encodeURIComponent(d.type.id)}/writing`, { body: text });
+    const res = await post<WritingVersion>(typeUrl, { body: text, citedRuleKeys: rules });
     if (res.error) setErr(res.error);
     else {
       setShown(res.data);
+      setRules([]);
       onChange();
     }
     setBusy(null);
   };
   const activate = async (v: WritingVersion) => {
     setBusy(v.id);
-    await post(`/api/carousel-generator/types/${encodeURIComponent(d.type.id)}/writing`, { versionId: v.id }, "PATCH");
+    await post(typeUrl, { versionId: v.id }, "PATCH");
     setBusy(null);
     onChange();
   };
-  const firstDraft = () => {
-    const n = d.type.slides ?? boxes.length;
-    const draft = `Open on something the reader can picture in their own mirror. Keep every line under twelve words, warm and plain, never clinical. Write in the first person as ${d.type.character || "the character"}.\n\nThe deck has ${n} slides. ${boxes.length ? `Boxes: ${boxes.map((b) => `@${b}`).join(", ")}.` : ""} The opening line is the hook and earns the swipe; the middle slides each carry one honest tip; the last slide names one habit and never a product. The caption ends on a question the reader wants to answer.`;
-    setText(draft);
+
+  const answer = (id: number, patch: Partial<ChatMsg>) => {
+    setChat((c) => c.map((m) => (m.id === id ? { ...m, pending: false, ...patch } : m)));
+    setUnread(true);
+  };
+  /** One exchange with the writer. `message` null is the first-draft offer. */
+  const exchange = async (message: string | null, replyId?: number) => {
+    const id = replyId ?? nextId.current++;
+    const history = chat.filter((m) => !m.pending && !m.failed).map((m) => ({ who: m.who, text: m.proposal ? `${m.text}\n\nProposed direction:\n${m.proposal}` : m.text }));
+    setChat((c) => (replyId ? c.map((m) => (m.id === id ? { ...m, pending: true, failed: undefined, text: message === null ? "Writing a first draft" : "Thinking" } : m)) : [...c, ...(message !== null ? [{ id: nextId.current++, who: "me" as const, text: message }] : []), { id, who: "ai" as const, text: message === null ? "Writing a first draft" : "Thinking", pending: true }]));
+    setBusy("chat");
+    const res = await post<{ reply: string; proposal: string | null; citedRuleKeys: string[] }>(`${typeUrl}/conversation`, message === null ? { mode: "first_draft" } : { message, draft: text, history });
+    setBusy(null);
+    if (res.error || !res.data) {
+      // The offer's own failure leaves the editor empty (D13b).
+      answer(id, { text: res.error ?? "The writer could not be reached", failed: { message } });
+      return;
+    }
+    if (message === null && res.data.proposal) {
+      // A first draft lands in the editor, unsaved. Save version stays a person's press.
+      setText(res.data.proposal);
+      setRules(res.data.citedRuleKeys);
+      answer(id, { text: `${res.data.reply} It is in the editor, not saved.`, cited: res.data.citedRuleKeys });
+      return;
+    }
+    answer(id, { text: res.data.reply, proposal: res.data.proposal, cited: res.data.citedRuleKeys });
   };
   const ask = () => {
-    if (!q.trim()) return;
-    const a = shown
-      ? `To ${q.trim().toLowerCase().replace(/[.?!]$/, "")}, change the direction above and press Save version. The conversation proposes; it never saves.`
-      : "There is nothing written yet. Press Write a first draft, edit it, then Save version.";
-    setChat((c) => [...c, { q, a }]);
+    const message = q.trim();
+    if (!message || busy === "chat") return;
     setQ("");
+    void exchange(message);
   };
+  const use = (m: ChatMsg) => {
+    if (!m.proposal) return;
+    setText(m.proposal);
+    setRules(m.cited ?? []);
+    setSheet(false);
+  };
+
+  const offer = (
+    <div className="flex flex-col items-center gap-1">
+      <Btn onClick={() => void exchange(null)} busy={busy === "chat"}>Write a first draft</Btn>
+      <span className="text-xs text-text-muted">{slideCount > 0 ? `from the active template and its ${slideCount} slides` : "from the type's name and character; it has no template yet"}</span>
+    </div>
+  );
+  const empty = !shown && !text;
+  const conversation = (
+    <>
+      <div className="flex min-h-40 flex-col gap-3 text-sm">
+        {chat.length === 0 && empty && (
+          <div className="flex flex-col items-start gap-2 text-text-muted">
+            <p>Nothing written for this type yet.</p>
+            {offer}
+          </div>
+        )}
+        {chat.length === 0 && !empty && <p className="text-text-muted">Say what should change. The conversation proposes a revised direction; it never saves.</p>}
+        {chat.map((m) =>
+          m.who === "me" ? (
+            <p key={m.id} className="max-w-[90%] self-end whitespace-pre-wrap rounded-nested bg-card-raised px-3 py-2"><Mentioned text={m.text} roles={roles} /></p>
+          ) : (
+            <div key={m.id} className="flex flex-col gap-2">
+              <p className={cn("whitespace-pre-wrap rounded-nested border border-border px-3 py-2", m.failed ? "text-danger" : "text-text-muted", m.pending && "animate-pulse")}>
+                <Mentioned text={m.text} roles={roles} />
+              </p>
+              {m.failed && <span><Btn onClick={() => void exchange(m.failed!.message, m.id)} busy={busy === "chat"}>Retry</Btn></span>}
+              {m.proposal && <Proposal against={active?.body ?? ""} proposal={m.proposal} cited={m.cited ?? []} used={text === m.proposal} onUse={() => use(m)} />}
+            </div>
+          ),
+        )}
+      </div>
+      <WritingEditor single label="" value={q} roles={roles} onChange={setQ} onSubmit={ask} disabled={busy === "chat"} placeholder={d.writing.length ? "What should change?" : "What should this type sound like?"} aside={<Btn onClick={ask} disabled={!q.trim()} busy={busy === "chat"}>Send</Btn>} />
+    </>
+  );
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -225,61 +343,49 @@ function Writing({ d, onChange }: { d: Payload; onChange: () => void }) {
           </>
         }
       >
-        {!shown && !text ? (
+        {empty ? (
           <div className="flex flex-col">
             <EmptyState icon={Pencil}>Nothing written for this type yet.</EmptyState>
-            <div className="flex flex-col items-center gap-1 pb-4">
-              <Btn onClick={firstDraft}>Write a first draft</Btn>
-              <span className="text-xs text-text-muted">from the active template and its {d.type.slides ?? boxes.length} slides</span>
-            </div>
+            <div className="pb-4">{offer}</div>
           </div>
         ) : (
-          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={14} aria-label="Writing" className="w-full resize-y rounded-nested border border-border bg-bg/60 px-4 py-3 text-sm leading-6 outline-none focus:border-text-muted" />
+          <WritingEditor value={text} roles={roles} onChange={setText} disabled={busy === "save"} />
         )}
         {err && <p role="alert" className="text-xs text-danger">{err}</p>}
-        {boxes.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-text-muted">Text boxes</span>
-            {boxes.map((b) => (
-              <button key={b} type="button" draggable onDragStart={(e) => e.dataTransfer.setData("text/plain", `@${b}`)} onClick={() => setText((t) => `${t}${t && !t.endsWith(" ") ? " " : ""}@${b}`)} className="rounded-full bg-pill-bg px-2.5 py-0.5 text-xs font-medium text-text-muted hover:text-text-primary">@{b}</button>
-            ))}
-          </div>
-        )}
+        {rules.length > 0 && dirty && <p className="text-xs text-text-muted">Saving records the {rules.length} {rules.length === 1 ? "rule" : "rules"} this draft drew on.</p>}
         {d.writing.length > 0 && (
           <div className="flex flex-col gap-1 border-t border-border pt-3">
             <span className="text-xs font-medium text-text-muted">Versions</span>
             {d.writing.map((v) => (
-              <button key={v.id} type="button" onClick={() => { setShown(v); setText(v.body); }} className={cn("flex items-center gap-3 rounded-[10px] px-2 py-1.5 text-left text-sm hover:bg-card-raised", shown?.id === v.id && "bg-card-raised")}>
+              <button key={v.id} type="button" onClick={() => { setShown(v); setText(v.body); setRules([]); }} className={cn("flex items-center gap-3 rounded-[10px] px-2 py-1.5 text-left text-sm hover:bg-card-raised", shown?.id === v.id && "bg-card-raised")}>
                 <b className="tnum">Version {v.version}</b>
                 <span className="text-xs text-text-muted tnum">{shortDate(v.createdAt)}</span>
                 {v.createdBy && <span className="truncate text-xs text-text-muted">{v.createdBy}</span>}
+                {v.citedRuleKeys.length > 0 && <span className="text-xs text-text-muted tnum">{v.citedRuleKeys.length} {v.citedRuleKeys.length === 1 ? "rule" : "rules"}</span>}
                 <span className="ml-auto">{v.active && <Pill tone="ok">Active</Pill>}</span>
               </button>
             ))}
           </div>
         )}
       </Card>
-      <Card title="Conversation" className="max-lg:order-first">
-        <div className="flex min-h-40 flex-col gap-3 text-sm">
-          {chat.length === 0 && !shown && (
-            <div className="flex flex-col items-start gap-2 text-text-muted">
-              <p>Nothing written for this type yet.</p>
-              <Btn onClick={firstDraft}>Write a first draft</Btn>
+      {/* Beside the writing on a wide screen; a sheet behind the floating button on a phone. */}
+      <Card title="Conversation" className="max-lg:hidden">{conversation}</Card>
+      <button type="button" onClick={() => { setSheet(true); setUnread(false); }} aria-label={unread ? "Conversation, something new is waiting" : "Conversation"} className="fixed right-4 bottom-20 z-30 flex size-12 items-center justify-center rounded-full bg-accent text-bg shadow-card lg:hidden">
+        <Sparkles className="size-5" />
+        {unread && <span aria-hidden className="absolute top-1 right-1 size-2.5 rounded-full bg-danger ring-2 ring-bg" />}
+      </button>
+      {sheet && (
+        <div role="dialog" aria-modal="true" aria-label="Conversation" className="fixed inset-0 z-40 flex flex-col justify-end lg:hidden">
+          <button type="button" aria-label="Close" onClick={() => setSheet(false)} className="absolute inset-0 bg-black/40" />
+          <div className="relative flex max-h-[85dvh] flex-col gap-3 overflow-y-auto rounded-t-[24px] border-t border-border bg-card p-4 pb-8">
+            <div className="flex items-center">
+              <h2 className="text-sm font-medium text-text-muted">Conversation</h2>
+              <button type="button" onClick={() => setSheet(false)} className="ml-auto text-xs text-text-muted hover:text-text-primary">Close</button>
             </div>
-          )}
-          {chat.map((m, i) => (
-            <div key={i} className="flex flex-col gap-1.5">
-              <p className="self-end rounded-nested bg-card-raised px-3 py-2">{m.q}</p>
-              <p className="rounded-nested border border-border px-3 py-2 text-text-muted">{m.a}</p>
-            </div>
-          ))}
+            {conversation}
+          </div>
         </div>
-        <div className="flex gap-2">
-          <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") ask(); }} placeholder={shown ? "What should change?" : "What should this type sound like?"} aria-label="Ask about the writing" className="w-full rounded-full border border-border bg-card-raised px-3.5 py-1.5 text-sm outline-none placeholder:text-text-muted" />
-          <Btn onClick={ask}>Send</Btn>
-        </div>
-        <p className="text-[11px] text-text-muted">The writing conversation on Claude is not connected yet; this proposes and never saves.</p>
-      </Card>
+      )}
     </div>
   );
 }

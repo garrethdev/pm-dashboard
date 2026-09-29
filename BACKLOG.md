@@ -76,10 +76,8 @@ new types only; yes to locking the image view.
   The fix is in the collectors; see "Slide images expire before anyone looks
   at them" further down this file. On the first page of the feed, 9 of 20 carousels are
   affected.
-- **The AI in the conversation does not work.** It is not connected yet. On
-  the Writing tab and in the Studio, the conversation gives canned replies,
-  and the Studio's can only change the number of slides. That is **DEV-25
-  (Writing conversation)**, still open.
+- **The AI in the conversation does not work.** Done on this branch
+  2026-09-29 for the Writing tab and the Studio; see the changelog.
 - **The Studio should let you skip the image library.** Done on this branch
   2026-09-29; see the changelog.
 - **The Studio should let you add a new library.** Not built. That is

@@ -98,6 +98,46 @@ export function templateFromSpec(base: Record<string, unknown>, spec: DraftSpec)
   return { ...base, name: spec.name || base.name, slides, copy_contract: contract, directions: { ...(base.directions as object), copy: spec.direction }, sample_copy: spec.sample };
 }
 
+/**
+ * Put the conversation's slides onto the template the person has been
+ * editing. A box that keeps its name keeps everything the person set on it
+ * by hand (style, alignment, wrap width, colour, who writes it, its limit);
+ * only what the conversation can change is taken from the conversation.
+ */
+export function applySlides(template: Record<string, unknown>, slides: DraftSlide[], direction: string | null): Record<string, unknown> {
+  const canvas = template.canvas as { width: number; height: number };
+  type OldBox = Record<string, unknown> & { role: string };
+  const oldBoxes = new Map<string, OldBox>();
+  for (const s of (template.slides as { text?: OldBox[] }[] | undefined) ?? []) for (const b of s.text ?? []) oldBoxes.set(b.role, b);
+  const oldContract = new Map(((template.copy_contract as CopyRole[] | undefined) ?? []).map((c) => [c.role, c]));
+  const styles = Object.keys((template.text_styles as Record<string, unknown> | undefined) ?? {});
+  const contract: CopyRole[] = [];
+  const next = slides.map((s, i) => {
+    const quad = s.layout === "quad";
+    const cells = quad
+      ? [
+          { x: 0, y: 0, w: canvas.width / 2, h: canvas.height / 2 },
+          { x: canvas.width / 2, y: 0, w: canvas.width / 2, h: canvas.height / 2 },
+          { x: 0, y: canvas.height / 2, w: canvas.width / 2, h: canvas.height / 2 },
+          { x: canvas.width / 2, y: canvas.height / 2, w: canvas.width / 2, h: canvas.height / 2 },
+        ]
+      : [{ x: 0, y: 0, w: canvas.width, h: canvas.height }];
+    const text = s.boxes.map((b) => {
+      const old = oldBoxes.get(b.name);
+      contract.push(oldContract.get(b.name) ?? { role: b.name, columns: [b.name], writer: "ai", max_chars: 120 });
+      return { ...(old ?? { style: styles[0] ?? "caption" }), role: b.name, size: b.size, anchor: { kind: "block_centre_y", at: b.at }, purpose: b.purpose || (old?.purpose as string | undefined) || "" };
+    });
+    return { n: i + 1, layout: quad ? "quad" : "single", cells, images: { rule: quad ? "distinct" : "one", ...(s.set ? { pools: [s.set] } : {}) }, text };
+  });
+  const unpainted = ((template.copy_contract as CopyRole[] | undefined) ?? []).filter((c) => !contract.some((k) => k.role === c.role) && !oldBoxes.has(c.role));
+  return {
+    ...template,
+    slides: next,
+    copy_contract: [...contract, ...unpainted],
+    directions: direction ? { ...(template.directions as object), copy: direction } : template.directions,
+  };
+}
+
 async function askModel(prompt: string): Promise<string> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPENROUTER_API_KEY is not configured");
