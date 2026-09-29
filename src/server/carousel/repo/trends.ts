@@ -153,7 +153,10 @@ async function hydrate(rows: RefRow[], viewer: string): Promise<Reference[]> {
     const known = Math.max(inventory.length, evidence.length, ours ? Math.max(...ours.keys()) : 0);
     // Slide by slide, the first place that still has the picture.
     const media = Array.from({ length: known }, (_, i) => ours?.get(i + 1) ?? inventory[i] ?? evidence[i] ?? null);
-    const cover = ours?.get(0) ?? r.thumbnail_url;
+    // Our copy of the cover, else our copy of the first slide (some covers
+    // were already gone from Virlo's storage when we came to copy them),
+    // else the link the intake gave us.
+    const cover = ours?.get(0) ?? ours?.get(1) ?? r.thumbnail_url;
     const b = beats.get(r.id) ?? [];
     const slides: Reference["slides"] = (b.length ? b : media.map((_, i) => ({ position: i + 1, visible_copy: null, visual_description: null, narrative_role: null }))).map((s, i) => ({
       position: s.position,

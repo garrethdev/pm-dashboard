@@ -161,11 +161,9 @@ can show. The dashboard now copies slides into its own bucket
 `scripts/rehost-reference-slides.mjs`, and reads pictures from the
 analysis, its own copy and the evidence row in that order. What is left:
 
-- **607 slides on 130 carousels are still gone.** Most came from five Virlo
-  collections (`1a447aa4`, `c23a71da`, `d7a4ea55`, `3b056ffe`, `7a5b6e30`)
-  that the n8n credential "Virlo API — Phase 0" returned nothing for; the
-  credential "Virlo API" failed outright. They need the key that reaches
-  those collections, or a re-scrape of the posts themselves.
+- **231 slides on 48 carousels are still gone** after the re-download of
+  2026-09-29. Seven posts returned nothing from ScrapeCreators, most likely
+  deleted at TikTok. Nothing more can be done for those.
 - **Set `CRON_SECRET` on Vercel.** The dashboard now copies new pictures
   into its own storage once a day, but the job is shut until that setting
   exists (any long random string). Until then the pictures of new carousels

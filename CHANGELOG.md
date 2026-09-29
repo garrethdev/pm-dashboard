@@ -402,6 +402,29 @@ delete the test data, and keep our own copy of every picture.**
 - **Database, applied live, step 8 of the migration file:** position 0 of
   `reference_slide_images` is the cover.
 
+**Every reference picture is now ours, and the expired ones were
+re-downloaded (2026-09-29, Garreth: "yes redownload").**
+
+- **The backlog is copied.** 7,900 pictures, covers and slides, sit in our
+  own `reference-slides` bucket. Of the 6,699 slides on Trends, 6,448 are
+  shown from our storage and 20 from Virlo's.
+- **Re-download through ScrapeCreators**, with the key already stored in
+  n8n, one credit a post: 133 posts asked for, 126 came back with fresh
+  links. The two one-off workflows are archived.
+- **Where it stands, over the whole feed of 1,253 carousels:** 48 still
+  have a slide missing, 231 slides in all, down from 426 carousels and
+  2,605 slides this morning. Seven posts gave ScrapeCreators nothing, most
+  likely deleted at TikTok; the rest are carousels whose post now has fewer
+  pictures than when it was first read.
+- **265 covers could not be copied** because they were already gone from
+  Virlo's storage. Those carousels show their first slide as the cover.
+- **A fault of mine, found and fixed the same hour.** The first version of
+  the copy job trusted the slide numbers stored with each carousel. All 835
+  analysed carousels number their slides from 0, so every picture was filed
+  one place off and the first slide took the cover's place. The job now
+  counts slides by their order, from 1, the way the Trends screens do. The
+  4,530 misfiled copies were cleared and made again.
+
 **Not built yet, said plainly:**
 - The painter paints each slide as a preview drawing (the picked photos and
   the copy at the template's true size) and shows it on the batch page. It

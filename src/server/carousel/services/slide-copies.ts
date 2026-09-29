@@ -80,9 +80,13 @@ async function outstanding(): Promise<{ todo: Wanted[]; record: { reference_id: 
     if (!Array.isArray(a.inventory) || !a.inventory.length) continue;
     const cur = lists.get(a.source_reference_id);
     if (cur && cur.rank >= rank(a.analysis_version)) continue;
+    // A slide's place is where it falls in the order, counted from 1. The
+    // stored number cannot be trusted for that: some inventories count from
+    // 0, which would put the first slide in the cover's place and every
+    // other slide one off. The Trends reader counts the same way.
     const slides = [...a.inventory]
       .sort((x, y) => (x.position ?? 0) - (y.position ?? 0))
-      .map((m, i) => ({ position: m.position ?? i + 1, url: m.image_url ?? "", was: m.source_image_url ?? null }))
+      .map((m, i) => ({ position: i + 1, url: m.image_url ?? "", was: m.source_image_url ?? null }))
       .filter((s) => isLink(s.url));
     lists.set(a.source_reference_id, { rank: rank(a.analysis_version), slides });
   }
