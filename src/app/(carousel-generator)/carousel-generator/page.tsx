@@ -1,13 +1,23 @@
-import { SectionStub } from "@/components/ui/section-stub";
+import { OverviewView } from "@/components/carousel/overview-view";
+import { authBypassed } from "@/lib/auth";
+import { actingUserEmail } from "@/lib/data/writes";
+import { fallback, logError } from "@/server/carousel/log";
+import { overviewData } from "@/server/carousel/repo/catalog";
 
 /*
- * Carousel types — the Carousel Generator's first screen, where the Generate
- * page's Carousel card lands.
- *
- * A placeholder until Phase 2 builds it here (plan §6.1). The route exists now
- * so the card goes somewhere real instead of a 404, and so the address the plan
- * and flows use is already the one in the app.
+ * Overview (D16): the generator's front page. Read-only; every press opens
+ * the screen that owns the work.
  */
-export default function CarouselTypesPage() {
-  return <SectionStub title="Carousel types" phase="Phase 2" />;
+export const dynamic = "force-dynamic";
+
+export default async function OverviewPage() {
+  // Under the dev bypass there is no session to read, so the placeholder
+  // person's saves and votes are shown. Anywhere else a missing session means
+  // no personal sections rather than somebody else's.
+  const viewer = await actingUserEmail().catch((err: unknown) => {
+    if (!authBypassed()) logError("overview session read", err);
+    return authBypassed() ? "dev@local" : "";
+  });
+  const data = await overviewData(viewer).catch(fallback("overview", null));
+  return <OverviewView initial={data} />;
 }

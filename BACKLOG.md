@@ -1,8 +1,12 @@
 # Backlog
 
-Five lists. Check which one you are in before picking something up — they have
+Six lists. Check which one you are in before picking something up — they have
 different bars for "done".
 
+- **[Carousel Generator — issues found before merging PR #31](#carousel-generator--issues-found-before-merging-pr-31)** (merged 2026-09-29; what is still open is listed there)
+  is what the 2026-09-29 review and Garreth's own try-out found on this
+  branch. It is the bar for merging: nothing in its first two groups should
+  reach `main` unfixed.
 - **[From the 2026-09-09 code review](#from-the-2026-09-09-external-code-review)**
   is what is still open from the first review of this codebase by someone
   outside the project. **Nearly all of it is now closed** — as of 2026-09-11
@@ -25,6 +29,75 @@ different bars for "done".
   screen. These are safe to do in any order and none of them block a release.
 
 Newest first within each list.
+
+---
+
+# Carousel Generator — issues found before merging PR #31
+
+Found 2026-09-29. Garreth asked whether PR #31 (`claude/carousel-generator-connect`)
+had been checked. It had passed the automatic checks, but nobody had reviewed
+it. So a code review was run against `main`, and Garreth then tried the branch
+himself on his own computer.
+
+**How far each item has been checked.** The image-view item was checked on the
+live database. Garreth's four items are things he saw himself. **Every other
+item comes from reading the code and has not been reproduced yet.** Try each
+one on the running app before fixing it, and do not close an item just because
+the review said so.
+
+## Fixed on the branch 2026-09-29
+
+Items 1, 2.1 to 2.4, 5, 8 and 9 were each reproduced on the running branch,
+fixed, and tried again. The detail is in `CHANGELOG.md` under "Fixes from
+the PR #31 review". Garreth's decisions that shaped them: Approve is blocked
+until every deck is rendered, discarded or dropped; a batch pressed while
+another of its type runs waits its turn; the strict template rules apply to
+new types only; yes to locking the image view.
+
+## Still open from the review
+
+6. **The compliance check reads words inside other words, and never reads the
+   caption.** "insecure" and "manicure" are flagged because they contain
+   "cure", and in Auto mode such a deck is rewritten three times and then
+   dropped. Meanwhile a caption saying "this cures bloating, guaranteed"
+   passes, because the caption is skipped. **Garreth, 2026-09-29: ignore for
+   now.** `src/server/carousel/services/gate.ts` lines 45 and 58.
+Item 7, the music lookup, was settled and built 2026-09-29: a swapped track
+is labelled on the deck card. See the changelog.
+
+## 5. What Garreth saw trying the branch (2026-09-29)
+
+- **Trends shows only the cover of most carousels; the other slides read
+  "Image gone".** Mostly fixed on this branch 2026-09-29, and it was partly
+  a screen bug after all: see the changelog, and "Slide images expire before
+  anyone looks at them" in this file for the 607 slides still gone.
+- **The AI in the conversation does not work.** Done on this branch
+  2026-09-29 for the Writing tab and the Studio; see the changelog.
+- **The Studio should let you skip the image library.** Done on this branch
+  2026-09-29; see the changelog.
+- **The Studio should let you add a new library.** Done on this branch
+  2026-09-29 with the rest of DEV-29; see the changelog.
+
+## 6. Merged 2026-09-29
+
+PR #31 was merged to `main` on Garreth's word and is live. What this
+section used to hold, and where each point went:
+
+- **The clash with `main`** was resolved on the branch before the merge.
+- **Codex's branch** (`codex/carousel-backend-foundation`) was not merged
+  and should not be merged whole. It is 44 commits of library code that no
+  screen uses. Its mention editor was brought over. **Still to bring over,
+  as its own pull request:** the PNG painter with its fonts and uploads,
+  which is the piece that lets a rendered deck reach a lane table and the
+  scheduler. Its batch runner and status words are left behind; the ones on
+  `main` are the ones that were run against the live database.
+- **Test data** was deleted, with a backup on Garreth's Mac.
+- **Review:** the branch was reviewed by the session that built it and by
+  the 2026-09-29 code review. Nobody else approved it on GitHub.
+- **The daily copy of reference pictures** is switched on: `CRON_SECRET` is
+  set on Vercel and the live site answers for it. Its first scheduled run
+  is 11:00 UTC on 2026-09-30; check the next day that new carousels on
+  Trends show pictures from our own storage.
 
 ---
 
@@ -79,6 +152,27 @@ function must leave its grants alone. `content_type_stats` was rewritten on
 09-11 and its `anon`/`authenticated` EXECUTE grants were deliberately preserved
 — hardening one function inside an unrelated fix would make the eventual audit
 harder, not easier, because the count would no longer mean what it says here.
+
+## Slide images expire before anyone looks at them
+
+Found 2026-09-26, widened 2026-09-29. TikTok's signed slide links expire
+about two weeks after a scrape, and about half are HEIC files no browser
+can show. The dashboard now copies slides into its own bucket
+(`reference-slides`, recorded in `reference_slide_images`) with
+`scripts/rehost-reference-slides.mjs`, and reads pictures from the
+analysis, its own copy and the evidence row in that order. What is left:
+
+- **231 slides on 48 carousels are still gone** after the re-download of
+  2026-09-29. Seven posts returned nothing from ScrapeCreators, most likely
+  deleted at TikTok. Nothing more can be done for those.
+- **The daily copy is on a once-a-day schedule** (11:00 UTC), and does as
+  much as fits in its time. If a day's scrape is ever larger than one run
+  can copy, run `scripts/copy-reference-slides.mjs` against the live site
+  to clear the rest; TikTok's links last about a fortnight.
+- **New references still arrive with zero views** (the bridge writes zeros;
+  Garreth chose to leave it, 2026-09-26). The Trends reader shows the
+  snapshot's numbers, but ranking uses the stored score, so the one-off
+  backfill has to be repeated for new rows to rank.
 
 ## The Virlo research pipeline is not monitored
 

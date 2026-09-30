@@ -68,6 +68,24 @@ import {
   Wallet as PhWallet,
   Warning as PhWarning,
   X as PhX,
+  BookmarkSimple as PhBookmarkSimple,
+  ClockCounterClockwise as PhClockCounterClockwise,
+  DotsThree as PhDotsThree,
+  Flag as PhFlag,
+  MusicNote as PhMusicNote,
+  PaintBrushBroad as PhPaintBrushBroad,
+  Pause as PhPause,
+  SealCheck as PhSealCheck,
+  Table as PhTable,
+  ThumbsDown as PhThumbsDown,
+  ThumbsUp as PhThumbsUp,
+  TrendUp as PhTrendUp,
+  ArrowCounterClockwise as PhArrowCounterClockwise,
+  ArrowsOutSimple as PhArrowsOutSimple,
+  GridFour as PhGridFour,
+  Funnel as PhFunnel,
+  Trash as PhTrash,
+  Upload as PhUpload,
 } from "@phosphor-icons/react/ssr";
 import type { Icon as PhIcon, IconWeight } from "@phosphor-icons/react/lib";
 
@@ -208,3 +226,23 @@ export const Pencil = icon(PhPencilSimple, "Pencil");
 /* Retire, in the account menu: the account stops for good, which a bin
  * would misstate — nothing is deleted. */
 export const Prohibit = icon(PhProhibit, "Prohibit");
+
+/* The Carousel Generator's own vocabulary (D1 to D16), at the house weight. */
+export const Bookmark = icon(PhBookmarkSimple, "Bookmark");
+export const History = icon(PhClockCounterClockwise, "History");
+export const DotsThree = icon(PhDotsThree, "DotsThree", "bold");
+export const Flag = icon(PhFlag, "Flag");
+export const MusicNote = icon(PhMusicNote, "MusicNote");
+export const PaintBrush = icon(PhPaintBrushBroad, "PaintBrush");
+export const Pause = icon(PhPause, "Pause");
+export const SealCheck = icon(PhSealCheck, "SealCheck");
+export const Table = icon(PhTable, "Table");
+export const ThumbsDown = icon(PhThumbsDown, "ThumbsDown");
+export const ThumbsUp = icon(PhThumbsUp, "ThumbsUp");
+export const TrendUp = icon(PhTrendUp, "TrendUp");
+export const Undo = icon(PhArrowCounterClockwise, "Undo", "bold");
+export const Expand = icon(PhArrowsOutSimple, "Expand", "bold");
+export const GridFour = icon(PhGridFour, "GridFour");
+export const Funnel = icon(PhFunnel, "Funnel");
+export const Trash = icon(PhTrash, "Trash");
+export const Upload = icon(PhUpload, "Upload", "bold");
