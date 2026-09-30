@@ -100,8 +100,11 @@ Posted with the link or Failed with the reason.
 comparison page, the morning reminder and the stuck-post alert, the ban cleanup
 for real-phone accounts. On the Air: Yurie installs
 [Xcode](https://apps.apple.com/us/app/xcode/id497799835) and signs in the
-company's developer Apple ID, switches on Developer Mode on each iPhone and taps
-Trust; Czedrick then installs Apple's testing agent
+company's developer Apple ID. Then, for each iPhone: she plugs it into the Air
+and taps Trust on the phone, opens Xcode and waits while it prepares the phone,
+and only then switches on Developer Mode (Settings, Privacy & Security, at the
+bottom; it stays hidden until Xcode has seen the phone), restarts, and taps Turn
+On. Czedrick then installs Apple's testing agent
 ([WebDriverAgent](https://github.com/appium/WebDriverAgent)) on both phones
 remotely, ready for the scripts. Until the wake schedule exists, Yurie and
 Czedrick agree on when the Air needs to be on.

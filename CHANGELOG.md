@@ -20,6 +20,24 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-09-30 — The iPhone Developer Mode steps are in the right order
+
+**Where it came from:** Yurie could not find Developer Mode on the iPhone.
+The instructions sent her straight to Settings, but Apple keeps that switch
+hidden until the phone has been plugged into a Mac with Xcode open. They also
+had her tapping Trust after the restart, when the phone actually asks at the
+very start, as soon as it is plugged in.
+
+**What changed:** the set-up steps in `docs/PHONE-FARM-TOOLING.md` and
+`docs/REAL-PHONE-MASTERPLAN.md` now go: plug in and tap Trust, open Xcode and
+let it prepare the phone, then switch on Developer Mode at the bottom of
+Privacy & Security, restart, and tap Turn On. The same task on the Geelark
+Exit Plan spreadsheet is not in this repo and still needs changing by hand.
+
+**Verified:** not yet. The corrected order has not been run on our phones.
+
+---
+
 ## 2026-09-28 — The Virlo filing job runs once a day, not every 5 minutes
 
 **Where it came from:** looking into what used up n8n's run allowance.

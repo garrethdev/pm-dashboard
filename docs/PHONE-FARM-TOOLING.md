@@ -158,8 +158,12 @@ These are on the Geelark Exit Plan spreadsheet as of 2026-09-17:
 - Garreth: enrol in the Apple Developer Program now.
 - Yurie, who manages the Air: install Xcode from the Mac App Store and sign
   the company's developer Apple ID into it.
-- Yurie, when Czedrick asks: switch on Developer Mode on each iPhone and tap
-  Trust when the Air asks.
+- Yurie, when Czedrick asks, for each iPhone: plug it into the Air and tap
+  Trust when the phone asks. Open Xcode and leave it running for a minute or two
+  with the phone unlocked, until it stops "preparing" the phone. Only then does
+  Developer Mode appear, at the very bottom of Settings, Privacy & Security.
+  Switch it on, let the phone restart, and tap Turn On when it asks. (The switch
+  is hidden until Xcode has seen the phone, and does not exist below iOS 16.)
 - Czedrick, remotely, once that is done: install WebDriverAgent on both phones.
 - Czedrick, before writing the TikTok script: clone iOS Farm, read the agent
   supervision, the doomscroll plugin and the live view; skim Kevs-IOS-Agents'
