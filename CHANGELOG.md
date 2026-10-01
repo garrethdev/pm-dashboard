@@ -20,6 +20,31 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-02 — The Live view buttons work: phone 1 is live from anywhere
+
+**Where it came from:** the live view's phone day (PF-14, design P9; tracker
+`docs/LIVE-VIEW-TRACKER.md`, step 6), done by Czedrick at the Air over Screen
+Sharing once phone 1 had its testing agent. Czedrick asked for `LIVE_VIEW_URL`
+to be set on Vercel after his tap test passed.
+
+**What changed:** no code. The live view now runs on the Air and shows phone 1
+at `https://yuries-macbook-air-1.tail85d8ff.ts.net`, reachable over Tailscale
+only. `LIVE_VIEW_URL` is set on Vercel production to that address and
+production was redeployed with it, so the Live view button on Iphone 1's page
+and the Live view link on the Devices card are no longer inert. When the Air
+does not answer, the button reads "Air offline", as built on 2026-10-01.
+
+**Verified:** live, phone 1 only. From Czedrick's Mac the page loaded, the Air
+listed "iPhone 1" as live, pictures arrived about twice a second, and
+Czedrick's tap in the page landed on the phone. The Air answers the
+production dashboard's "is it there?" check. Czedrick then opened Iphone 1's
+page in production and the button worked.
+
+**Decided the same day (Czedrick):** the live view only has to work while the
+robot is warming a phone up. Between warmups a phone will show Offline, which
+is expected, not a fault. Phone 1 is live today only because its connections
+were opened by hand for this test; they end when the Air restarts.
+
 ## 2026-10-01 — The first phone can be screenshotted and tapped from Czedrick's Mac
 
 **Where it came from:** the Geelark Exit Plan's rows 35 and 36: install

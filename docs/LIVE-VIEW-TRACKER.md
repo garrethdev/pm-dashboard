@@ -9,17 +9,23 @@ Started 2026-10-01 at Czedrick's request. Update this file as each step moves.
 
 ## Start here
 
-**Where it stands (2026-10-01):** built and approved on pretend phones. Steps
-1–5 are done and saved: the dashboard links are on `main` (PR #38), and the
-page, its server and the robot's busy mark are on warmup-runner `main`
-(commit `a3b0bd3`). Nothing is live yet: `LIVE_VIEW_URL` is not set on
-Vercel, so the dashboard's Live view buttons are inert.
+**Where it stands (2026-10-02): live on phone 1.** The live view runs on the
+Air and shows phone 1 at `https://yuries-macbook-air-1.tail85d8ff.ts.net`;
+Czedrick tapped it from his own Mac and the tap landed. `LIVE_VIEW_URL` is set
+on Vercel production and the dashboard was redeployed with it, so the Live
+view buttons are switched on. Phone 2 has not arrived.
 
-**Next step: phone day on the Air (step 6).** WebDriverAgent is on phone 1
-and answers on the Air (2026-10-01; steps and status in
-`docs/PHONE-AGENT-SETUP.md`). Czedrick's Mac has screenshotted and tapped it over
-Tailscale. Phone 2 has not arrived. Then follow "Still to do on
-phone day" below.
+**Next:**
+
+- **The live view is for watching warmups, not always on** (Czedrick,
+  2026-10-02; see Decisions). Between warmups a phone shows Offline, and that
+  is expected. Phone 1 is live today only because it was set up by hand.
+- **When phone 2 arrives:** the agent (`docs/PHONE-AGENT-SETUP.md`, "Each new
+  phone") and its entry in the Air's phone list. No connections to open by
+  hand: the robot opens them when it starts a warmup.
+- **Before the robot's first real run on the Air:** stop the two connections
+  opened by hand on 2026-10-02 (`pkill iproxy` in phonefarm). They hold the
+  ports Appium will want. A restart of the Air also ends them.
 
 **Optional, any time, no Air needed:**
 
@@ -30,8 +36,9 @@ phone day" below.
 - The first seconds of a warmup, before Running, are not marked busy, so a
   tap could land then. Covering it means changing the runner's session steps;
   a decision for Garreth and Czedrick, not urgent.
-- The Devices card link has never been seen: it shows only once a phone is
-  registered in the dashboard.
+- The dashboard buttons have not been looked at in production yet. Phone 1
+  is registered as dashboard device 25 ("Iphone 1"), so its page and the
+  Devices card should both show the link now.
 
 **To pick it up:** the runner is cloned at `~/Documents/warmup-runner` on
 Czedrick's Mac. The live view's own notes are `live-view/README.md` there;
@@ -74,12 +81,16 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[!]` blocke
   card has a Live view link. Both read the Air's address from `LIVE_VIEW_URL`;
   unset, they stay inert as before. When the Air does not answer, the button
   reads "Air offline" and cannot be pressed. **On `main` since 2026-10-01
-  (PR #38). `LIVE_VIEW_URL` is not set on Vercel yet**, so production looks
-  unchanged until phone day.
-- [ ] **6. Phone day, on the Air.** WebDriverAgent is on phone 1 since
-  2026-10-01; phone 2 is not here yet.
-- [!] **7. Done when** Czedrick opens the page from his own Mac, sees both
-  phones live and taps one.
+  (PR #38).** `LIVE_VIEW_URL` set on Vercel production and redeployed
+  2026-10-02.
+- [x] **6. Phone day, on the Air** (2026-10-02, phone 1). See "What was done
+  on the Air" below. Phone 2 repeats the phone parts when it arrives.
+- [~] **7. Done when** Czedrick opens the page from his own Mac, sees both
+  phones live and taps one. Phone 1: seen live and tapped, 2026-10-02, on
+  connections opened by hand. Phone 2: not here yet. Since the live view only
+  runs during warmups (Decisions, 2026-10-02), the real proof is the robot's
+  first warmup on the Air (runner M3): the phone shows live while it runs,
+  taps are refused, and it goes Offline when the warmup ends.
 
 ## Facts checked so far
 
@@ -134,6 +145,16 @@ in a loop. A slow link shows fewer pictures rather than falling behind.
 
 ## Decisions
 
+- **The live view only has to work while a warmup is running** (Czedrick,
+  2026-10-02). Appium starts and owns the agent on each phone, as the runner's
+  plan already says; nothing keeps it running between warmups, so a phone
+  shows Offline then. The always-on alternative (a "phone keeper" on the Air
+  owning the agent, with Appium plugging into it, the iOS Farm way) was
+  offered and turned down. Consequences: taps are refused during warmups and
+  the phone is Offline between them, so **in practice the live view is for
+  watching**; tapping a phone by hand stays with Screen Sharing. And the robot
+  must have Appium open the picture connection when a session starts, or the
+  live view shows Offline even during warmups: runner TASKS.md, M3.
 - **Taps are refused while the robot is warming a phone up** (Garreth and
   Czedrick, 2026-10-01). Built in the live view the same day: the phone's
   pill reads Running, a tap or swipe shows "The robot is warming up this
@@ -152,6 +173,38 @@ in a loop. A slow link shows fewer pictures rather than falling behind.
   the same Air, and `LIVE_VIEW_URL` will be that. Being https is what lets the
   dashboard show "Air offline" instead of a tab that spins. Not tried on the
   Air yet: it was offline.
+
+## What was done on the Air (2026-10-02)
+
+Czedrick at the Air over Screen Sharing, in the **phonefarm** account (its
+Tailscale is `yuries-macbook-air-1`, 100.85.112.50), pasting commands.
+
+- **The runner's code** is at `~/warmup-runner`, warmup-runner `main`
+  `a3b0bd3`, with `npm ci` run. It was sent from Czedrick's Mac over Tailscale
+  (`tailscale file cp`), not cloned: GitHub refused the Air with "Error in the
+  HTTP2 framing layer", and this way no GitHub login sits on the Air. **It is
+  not a git copy**, so an update means sending a new package.
+- **The phone list** (`config/fleet.json` on the Air only) holds phone 1 as
+  device `25`, the dashboard's number for it, so the dashboard's button opens
+  the right phone. Name "iPhone 1", control port 8100, picture port 9100, no
+  accounts. The made-up practice phones were taken out of the Air's copy.
+- **The phone's two connections** opened with `iproxy` (8100 and 9100) in the
+  background; logs in `~/warmup-runner/logs/`. Started by hand: they do not
+  come back after a restart or a log-out.
+- **The live view** installed with `live-view/air/install.sh` (starts at
+  log-in, restarts if it stops), and put on Tailscale with `tailscale serve
+  --bg 4600`. The Tailscale command on this Mac is
+  `/Applications/Tailscale.app/Contents/MacOS/Tailscale`; plain `tailscale`
+  is not on the path.
+
+**Checked from Czedrick's Mac:** the page loads at the address above; the Air
+lists one phone, "iPhone 1", live, robot not running; pictures arrived in 0.35
+to 0.6 seconds each, about 55 KB, through Tailscale's Hong Kong relay rather
+than a direct connection (so about two a second, the slow case); the Air
+answers the dashboard's "is it there?" check for
+`https://pm-dashboard-ashen.vercel.app`. **Czedrick tapped the phone from the
+page in his browser and the tap landed.** Not measured: several phones at
+once, since there is only one.
 
 ## Still to do on phone day (step 6)
 
@@ -206,3 +259,10 @@ Oldest first.
   and answering (`"ready" : true`). Phone 2 not here yet.
 - **2026-10-01** — From Czedrick's Mac: a session on phone 1 through the
   Air's Appium, a screenshot, and a tap that opened General. Runner M1 met.
+- **2026-10-02** — Phone day for phone 1. Runner code sent to the Air, phone 1
+  in the Air's phone list as device 25, its connections opened, the live view
+  installed and put on Tailscale. Live from Czedrick's Mac, and his tap
+  landed. `LIVE_VIEW_URL` set on Vercel production; production redeployed.
+- **2026-10-02** — Decided (Czedrick): the live view only during warmups, not
+  always on. No phone keeper. The robot opens the phone's connections when it
+  starts a warmup.
