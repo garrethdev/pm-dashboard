@@ -20,6 +20,28 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-01 — Each post shows its song, and the download button says what it fetches
+
+**Where it came from:** Garreth asked how a carousel is handled. Almost every
+lane picks a song for each post (for example "Tinashe - Nasty" on a Rich Life
+carousel). When the robot posts to TikTok it attaches that song itself; posting
+by hand, Yurie has to pick the sound in TikTok, and the To-do list never told
+her which one. And the download button said "Download video" on a carousel.
+
+**What changed:** every post on the To-do list now shows its song under its
+name, with a copy button, so it pastes straight into TikTok's sound search.
+Posts whose lane picks no song (filler, Celebrity Peptide, Cleora) show none.
+The download button now says **Download video**, **Download slides** or
+**Download image**, by what the post is.
+
+**Verified:** in headless Chrome on a throwaway page with a real Glow Up
+carousel: the song showed with its copy button, the button read "Download
+slides", and a tap downloaded all seven slides (about 10 MB) and turned the
+picture into the share button. Not seen on the real To-do list, because no
+post has been handed to a phone yet, and not tried in Safari.
+
+---
+
 ## 2026-10-01 — Tap a post's picture to post it
 
 **Where it came from:** Garreth, after the accounts moved to real phones:
