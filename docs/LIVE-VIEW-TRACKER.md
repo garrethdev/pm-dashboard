@@ -7,6 +7,35 @@ Tickets: PF-14 in `BACKLOG.md`, P9 in `docs/PHONE-FARM-DESIGN-TICKETS.md`.
 
 Started 2026-10-01 at Czedrick's request. Update this file as each step moves.
 
+## Start here
+
+**Where it stands (2026-10-01):** built and approved on pretend phones. Steps
+1–5 are done and saved: the dashboard links are on `main` (PR #38), and the
+page, its server and the robot's busy mark are on warmup-runner `main`
+(commit `a3b0bd3`). Nothing is live yet: `LIVE_VIEW_URL` is not set on
+Vercel, so the dashboard's Live view buttons are inert.
+
+**Next step: phone day on the Air (step 6).** It is waiting on hardware, not
+on code: WebDriverAgent has to be installed on at least one phone first (the
+runner's step M1; set-up order in `docs/PHONE-FARM-TOOLING.md`, "Set-up tasks
+this adds"). Then follow "Still to do on phone day" below.
+
+**Optional, any time, no Air needed:**
+
+- Garreth has not looked at the live view; it can be shown on pretend phones
+  (warmup-runner `live-view/README.md`, "Try it on pretend phones").
+- A test against Apple's pretend iPhone, which runs the real WebDriverAgent:
+  needs Xcode on Czedrick's Mac (about 10 GB, no developer account).
+- The first seconds of a warmup, before Running, are not marked busy, so a
+  tap could land then. Covering it means changing the runner's session steps;
+  a decision for Garreth and Czedrick, not urgent.
+- The Devices card link has never been seen: it shows only once a phone is
+  registered in the dashboard.
+
+**To pick it up:** the runner is cloned at `~/Documents/warmup-runner` on
+Czedrick's Mac. The live view's own notes are `live-view/README.md` there;
+its tasks are L1–L6 in that repository's `TASKS.md`.
+
 Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[!]` blocked
 
 ## Where the code lives
@@ -65,13 +94,16 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[!]` blocke
 
 ## What was checked, and how
 
-All on Czedrick's Mac, 2026-10-01, in **headless Chrome**. Not in Safari.
+All on Czedrick's Mac, 2026-10-01, on pretend phones. Built and checked in
+headless Chrome; then reviewed and **approved by Czedrick in Safari** (step 4)
+after the changes in the log. Nothing has run on a real phone or on the Air.
 
-- **Tests:** 18 for the live view (fleet list, the tap arithmetic, reading
-  pictures out of the stream, and the server against pretend phones,
-  including that it borrows an open session rather than ending it). The
-  runner's other 309 tests still pass. The dashboard's 406 tests pass; types
-  and lint are clean.
+- **Tests:** 29 for the live view (fleet list, settings, the tap arithmetic,
+  reading pictures out of the stream, and the server against pretend phones,
+  including that it borrows an open session rather than ending it and refuses
+  taps while the robot runs). The runner's other 317 tests pass, 346 in all,
+  including 8 for the busy mark. The dashboard's 406 tests pass; types and
+  lint are clean.
 - **Six pretend phones, one off:** every live phone showed its picture, the
   off one said Offline, the count said "5 of 6 live". Desktop and phone
   widths, dark and light.
@@ -103,15 +135,15 @@ in a loop. A slow link shows fewer pictures rather than falling behind.
 - **Taps are refused while the robot is warming a phone up** (Garreth and
   Czedrick, 2026-10-01). Built in the live view the same day: the phone's
   pill reads Running, a tap or swipe shows "The robot is warming up this
-  phone", and nothing reaches the phone. It knows from a mark the runner keeps per phone
-  (warmup-runner `live-view/README.md`, "The robot's mark").
+  phone", and nothing reaches the phone. It knows from a mark the runner
+  keeps per phone (warmup-runner `live-view/README.md`, "The robot's mark").
   **The runner leaves that mark** (runner task L6, built 2026-10-01 with
   Czedrick's OK): up at Running, refreshed every minute, down when the
   session ends however it ends. Checked on the pretend phone only. Not
   covered: the first seconds of a session, before Running, while the robot
   opens TikTok and checks the username.
-- **The Air's address is 100.85.112.50** (Garreth and Czedrick, 2026-10-01): the
-  `yuries-macbook-air-1` entry in Tailscale. **HTTPS certificates were
+- **The Air's address is 100.85.112.50** (Garreth and Czedrick,
+  2026-10-01): the `yuries-macbook-air-1` entry in Tailscale. **HTTPS certificates were
   switched on for the Tailscale network the same day** (confirmed from
   Czedrick's MacBook Pro, which now reports a certificate address), so the
   live view's address is `https://yuries-macbook-air-1.tail85d8ff.ts.net`,
@@ -139,27 +171,32 @@ Air. In short:
 
 ## Log
 
+Oldest first.
+
 - **2026-10-01** — Steps written down. WebDriverAgent's addresses and session
-  rule checked in its source. Steps 1, 2, 3 and 5 built and checked on
-  pretend phones; step 4 is Garreth's review.
-- **2026-10-01** — Garreth and Czedrick decided both open questions. Taps refused while the
-  robot runs: built in the live view and checked on pretend phones (5 new
-  tests, 23 in all); the runner's side waits for Czedrick's OK. Address
-  100.85.112.50 written into the Air steps.
-- **2026-10-01** — After approval: the dashboard button checked at a phone's
-  width; the Air's install script and phone-day checklist written.
-- **2026-10-01** — **Approved by Czedrick** in Safari (step 4).
-- **2026-10-01** — Rows sized to the window's height, phones centred and
-  never stretched across the width (Czedrick: one to a row was unreadable).
-- **2026-10-01** — Settings added at Czedrick's request: phones per row (1–6,
-  default 4) and which phones to show (all by default), remembered per
-  browser. Checked in headless Chrome, not yet in Safari.
-- **2026-10-01** — Czedrick's first review in Safari: four phones to a row
-  across the full width (done); the screens flickered several times a second
-  (fixed: pictures are painted on a canvas instead of swapped, not yet
-  re-checked in Safari); dragging selected the phone names (fixed).
-- **2026-10-01** — Runner task L6 built: the robot marks a phone busy while
-  it warms it up, so the live view's refusal now works end to end on pretend
-  phones (340 runner tests pass).
+  rule checked in its source.
+- **2026-10-01** — Steps 1, 2, 3 and 5 built and checked on pretend phones.
+  The first design streamed video and would have stalled at six phones (see
+  "A change of plan on the way").
+- **2026-10-01** — Garreth and Czedrick decided both open questions: taps
+  refused while the robot runs (built in the live view, 5 new tests), and the
+  Air at 100.85.112.50.
 - **2026-10-01** — HTTPS certificates switched on for the Tailscale network.
   The Air steps now use `https://yuries-macbook-air-1.tail85d8ff.ts.net`.
+- **2026-10-01** — Runner task L6 built, with Czedrick's OK: the robot marks
+  a phone busy while it warms it up, so the refusal works end to end on
+  pretend phones.
+- **2026-10-01** — Czedrick's first review in Safari: four phones to a row
+  (done); the screens flickered several times a second (fixed: pictures are
+  painted on a canvas instead of swapped); dragging selected the phone names
+  (fixed).
+- **2026-10-01** — Settings added at Czedrick's request: phones per row (1–6,
+  default 4) and which phones to show (all by default), remembered per
+  browser.
+- **2026-10-01** — Rows sized to the window's height, phones centred and
+  never stretched across the width (Czedrick: one to a row was unreadable).
+- **2026-10-01** — **Approved by Czedrick** in Safari (step 4).
+- **2026-10-01** — After approval: the dashboard button checked at a phone's
+  width; the Air's install script and phone-day checklist written.
+- **2026-10-01** — Saved: warmup-runner `main` `a3b0bd3`; dashboard PR #38
+  merged into `main`. Next is phone day.
