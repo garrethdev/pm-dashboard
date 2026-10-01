@@ -33,12 +33,18 @@ import { cn } from "@/lib/utils";
  * A new account is **paused** unless it is switched the other way here. An
  * account that is live the second it is written is picked up by the next
  * planning run, and a brand-new account has not been warmed yet.
+ *
+ * A **Facebook account on a phone posts its Instagram's videos** (Garreth,
+ * 2026-10-01), so the form asks which Instagram account that is, and starts on
+ * the one already on the chosen phone. It is still its own account, with its
+ * own warmups and its own posting tasks.
  */
 export function AddAccountModal({
   characters,
   phones,
   fleet,
   suggestedProfile,
+  instagramAccounts,
   onClose,
   onCreated,
 }: {
@@ -50,6 +56,9 @@ export function AddAccountModal({
   fleet: Fleet;
   /** The lowest free Profile number, as the field's placeholder. */
   suggestedProfile: string;
+  /** Active Instagram accounts on the Physical side, for a Facebook account to
+   *  follow. */
+  instagramAccounts: MirrorOption[];
   onClose: () => void;
   /** `deviceError` is set when the account saved but its phone had just filled up. */
   onCreated: (profile: string, deviceError: string | null) => void;
@@ -65,6 +74,9 @@ export function AddAccountModal({
   const [paused, setPaused] = useState(true);
   // The account's own number (P14: numbers belong to accounts, not phones).
   const [phoneNumber, setPhoneNumber] = useState("");
+  // Empty until picked; `follows` below falls back to the Instagram account on
+  // the chosen phone, so the usual case needs no choice at all.
+  const [mirrorsPicked, setMirrorsPicked] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,8 +114,19 @@ export function AddAccountModal({
   const restated =
     cleanProfile && cleanProfile !== profile.trim() ? `Saves as ${cleanProfile}` : null;
 
+  const asksMirror = platform === "facebook" && mode === "physical";
+  const mirrors =
+    mirrorsPicked ||
+    instagramAccounts.find((a) => deviceId !== "" && String(a.deviceId) === deviceId)?.profile ||
+    "";
+
   const ready =
-    !!cleanProfile && !!cleanUsername && character !== "" && createdOn !== "" && !busy;
+    !!cleanProfile &&
+    !!cleanUsername &&
+    character !== "" &&
+    createdOn !== "" &&
+    (!asksMirror || mirrors !== "") &&
+    !busy;
 
   async function submit() {
     if (!ready) return;
@@ -122,6 +145,7 @@ export function AddAccountModal({
           deviceId: mode === "physical" && deviceId !== "" ? Number(deviceId) : null,
           createdOn,
           phoneNumber: mode === "physical" ? phoneNumber : null,
+          mirrorsProfile: asksMirror ? mirrors : null,
           paused,
         }),
       });
@@ -215,6 +239,26 @@ export function AddAccountModal({
                 options={PLATFORMS.map((p) => ({ value: p, label: PLATFORM_LABEL[p] }))}
               />
             </Group>
+
+            {asksMirror && (
+              <Field label="Same videos as" className="sm:col-span-2">
+                <select
+                  value={mirrors}
+                  onChange={(e) => setMirrorsPicked(e.target.value)}
+                  disabled={busy || instagramAccounts.length === 0}
+                  className={cn(DEVICE_INPUT, "appearance-none")}
+                >
+                  <option value="" disabled>
+                    {instagramAccounts.length === 0 ? "No Instagram account on Physical" : "Choose"}
+                  </option>
+                  {instagramAccounts.map((a) => (
+                    <option key={a.profile} value={a.profile}>
+                      {mirrorLabel(a)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
 
             <Group label="Fleet" className="sm:col-span-2">
               <FilterPills
@@ -358,6 +402,17 @@ function Group({
       {children}
     </div>
   );
+}
+
+/** An Instagram account a Facebook account can post the same videos as. */
+export interface MirrorOption {
+  profile: string;
+  username: string | null;
+  deviceId: number | null;
+}
+
+export function mirrorLabel(a: MirrorOption): string {
+  return a.username ? `@${a.username} · ${a.profile}` : a.profile;
 }
 
 /** Today where the person is, not where the server is. */

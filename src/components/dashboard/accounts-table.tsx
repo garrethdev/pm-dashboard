@@ -1177,6 +1177,9 @@ export function AccountsTable({
           account={editing}
           phones={phones}
           characters={characters ?? characterOptions.slice(1).map((o) => o.value)}
+          instagramAccounts={allRows
+            .filter((r) => r.isActive && r.platform === "instagram" && r.deliveryMode === "manual")
+            .map((r) => ({ profile: r.profile, username: r.username, deviceId: r.deviceId }))}
           options={contentTypeOptions[editing.character] ?? []}
           // The invented farm reuses real Profile names, so nothing on it
           // may be written.

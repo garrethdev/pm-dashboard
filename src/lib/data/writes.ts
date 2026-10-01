@@ -598,6 +598,39 @@ export async function saveCadence(
   );
 }
 
+/**
+ * Set up a new character (Garreth, 2026-10-01): the `characters` row and its
+ * scheduler overrides in one transaction, inside `setup_character()`, which
+ * also writes the audit row. Skipped posting amounts are written as a daily
+ * cap of 0, so the new character's accounts are given nothing.
+ */
+export async function setupCharacter(
+  fields: { character: string; notes: string | null; maxPerDay: number | null; perWeek: number | null },
+  userEmail: string,
+): Promise<void> {
+  await sbRpcWrite(
+    "setup_character",
+    {
+      p_character: fields.character,
+      p_notes: fields.notes,
+      p_max_per_day: fields.maxPerDay,
+      p_week: fields.perWeek,
+      p_user_email: userEmail,
+    },
+    `Setting up ${fields.character} failed`,
+  );
+}
+
+/** A character's description, from Edit on the Characters sheet. */
+export async function setCharacterNotes(character: string, notes: string | null): Promise<void> {
+  const res = await sbFetch(`characters?character=eq.${encodeURIComponent(character)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ notes, updated_at: new Date().toISOString() }),
+  });
+  if (!res.ok) throw new Error(`Saving the description failed (HTTP ${res.status}). Nothing was changed`);
+}
+
 /* ── Character cadence (Adjust Cadence, scoped to one character) ────────────
  * The character layer sits between the fleet defaults and the per-account
  * override. Character 5 is the first to use it: 7 GLP a week against the

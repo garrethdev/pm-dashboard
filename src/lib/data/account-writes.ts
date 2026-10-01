@@ -1,4 +1,4 @@
-import { PLATFORM_LABEL } from "@/lib/platform";
+import { PLATFORM_LABEL, toPlatform } from "@/lib/platform";
 import {
   profileTakenMessage,
   usernameTakenMessage,
@@ -120,7 +120,13 @@ const RETURNED_COLS =
  */
 export async function createAccount(
   fields: NewAccountFields,
-  args: { userEmail: string; today: string },
+  args: {
+    userEmail: string;
+    today: string;
+    /** The Instagram account a Facebook one posts the same videos as, already
+     *  checked by `mirrorTarget`. */
+    mirrorsAccountId?: AccountId | null;
+  },
 ): Promise<CreatedAccount> {
   const note =
     `${args.today} ${args.userEmail}: account added in the dashboard` +
@@ -139,6 +145,7 @@ export async function createAccount(
         delivery_mode: fields.deliveryMode,
         device_id: fields.deviceId,
         phone_number: fields.phoneNumber,
+        mirrors_account_id: args.mirrorsAccountId ?? null,
         account_created_on: fields.createdOn,
         is_active: true,
         posting_paused: fields.paused,
@@ -208,11 +215,15 @@ export interface EditableAccount {
   delivery_mode: string;
   device_id: number | null;
   phone_number: string | null;
+  /** Text, like `id`. Set on a Facebook account that posts its Instagram's
+   *  videos (Garreth, 2026-10-01). */
+  mirrors_account_id: AccountId | null;
   is_active: boolean;
 }
 
 const EDITABLE_COLS =
-  `${ACCOUNT_ID_COL},geelark_profile,username,character,platform,delivery_mode,device_id,phone_number,is_active`;
+  `${ACCOUNT_ID_COL},geelark_profile,username,character,platform,delivery_mode,device_id,phone_number,` +
+  "mirrors_account_id:mirrors_account_id::text,is_active";
 
 export async function getEditableAccount(profile: string): Promise<EditableAccount | null> {
   const res = await sbFetch(
@@ -246,7 +257,9 @@ export async function usernameTakenByOther(
  */
 export async function updateAccount(
   id: AccountId,
-  columns: Partial<Pick<EditableAccount, "username" | "character" | "device_id" | "phone_number">>,
+  columns: Partial<
+    Pick<EditableAccount, "username" | "character" | "device_id" | "phone_number" | "mirrors_account_id">
+  >,
 ): Promise<EditableAccount> {
   const res = await sbFetch(
     `accounts?id=eq.${id}&delivery_mode=eq.manual&select=${EDITABLE_COLS}`,
@@ -268,4 +281,40 @@ export async function updateAccount(
   const rows = (await res.json()) as EditableAccount[];
   if (!rows[0]) throw new AccountWriteError("That account is not on the Physical side.", 409);
   return rows[0];
+}
+
+/**
+ * The Instagram account a Facebook account is to post the same videos as
+ * (Garreth, 2026-10-01), checked and returned as its id.
+ *
+ * Every post handed to that Instagram account is copied to the Facebook one
+ * by the database (copy_delivery_to_mirrors), so the target has to be one
+ * that actually gets posts by hand: an active Instagram account on the
+ * Physical side. Read live, the same as every other check on this path.
+ */
+export async function mirrorTarget(profile: string, selfId?: AccountId): Promise<AccountId> {
+  const res = await sbFetch(
+    `accounts?select=${ACCOUNT_ID_COL},platform,delivery_mode,is_active` +
+      `&geelark_profile=eq.${encodeURIComponent(profile)}&limit=1`,
+    {},
+  );
+  if (!res.ok) throw new Error(`Couldn't read ${profile} (HTTP ${res.status})`);
+  const row = (
+    (await res.json()) as {
+      id: AccountId;
+      platform: string | null;
+      delivery_mode: string | null;
+      is_active: boolean;
+    }[]
+  )[0];
+  if (!row) throw new AccountWriteError(`${profile} no longer exists.`, 404);
+  if (row.id === selfId) throw new AccountWriteError("An account cannot post its own videos twice.", 400);
+  if (toPlatform(row.platform) !== "instagram") {
+    throw new AccountWriteError(`${profile} is not an Instagram account.`, 400);
+  }
+  if (!row.is_active) throw new AccountWriteError(`${profile} is retired.`, 409);
+  if (row.delivery_mode !== "manual") {
+    throw new AccountWriteError(`${profile} is on the Cloud side, where nothing is posted by hand.`, 409);
+  }
+  return row.id;
 }

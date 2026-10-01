@@ -192,3 +192,35 @@ describe("parseAccountEdit", () => {
     expect(parseAccountEdit({ deviceId: "iPhone 1" })).toMatchObject({ ok: false });
   });
 });
+
+describe("a Facebook account posts its Instagram's videos (2026-10-01)", () => {
+  it("asks a Physical Facebook account which Instagram account it follows", () => {
+    const r = parseNewAccount(body({ platform: "facebook" }), { today: TODAY });
+    expect(r.ok).toBe(false);
+  });
+
+  it("keeps the Instagram account it was given, as a Profile name", () => {
+    const r = parseNewAccount(body({ platform: "facebook", mirrorsProfile: "profile 8" }), {
+      today: TODAY,
+    });
+    expect(r.ok && r.fields.mirrorsProfile).toBe("Profile 8");
+  });
+
+  it("ignores it on any other account", () => {
+    const tiktok = parseNewAccount(body({ mirrorsProfile: "Profile 8" }), { today: TODAY });
+    expect(tiktok.ok && tiktok.fields.mirrorsProfile).toBe(null);
+    const cloud = parseNewAccount(
+      body({ platform: "facebook", deliveryMode: "geelark", mirrorsProfile: "Profile 8" }),
+      { today: TODAY },
+    );
+    expect(cloud.ok && cloud.fields.mirrorsProfile).toBe(null);
+  });
+
+  it("lets Edit account change it", () => {
+    expect(parseAccountEdit({ mirrorsProfile: "Profile 8" })).toEqual({
+      ok: true,
+      fields: { mirrorsProfile: "Profile 8" },
+    });
+    expect(parseAccountEdit({ mirrorsProfile: "" }).ok).toBe(false);
+  });
+});

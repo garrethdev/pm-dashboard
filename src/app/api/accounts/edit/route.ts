@@ -8,6 +8,7 @@ import {
   AccountWriteError,
   getActiveCharacters,
   getEditableAccount,
+  mirrorTarget,
   updateAccount,
   usernameTakenByOther,
   type EditableAccount,
@@ -18,7 +19,8 @@ import { PLATFORM_LABEL, toPlatform } from "@/lib/platform";
 /**
  * POST /api/accounts/edit — the details half of Edit account (P14, Garreth
  * 2026-09-23): the handle, the character, the account's own phone number and
- * which phone it is on.
+ * which phone it is on — and, for a Facebook account, which Instagram account
+ * it posts the same videos as (Garreth, 2026-10-01).
  *
  * Posting, the cadence and the warmup mode keep the routes they already have
  * (`pause`, `scheduler-override`, `warmup-mode`); the window calls those for
@@ -101,6 +103,17 @@ export async function POST(request: Request) {
         }
       }
       columns.device_id = fields.deviceId;
+    }
+    if (fields.mirrorsProfile !== undefined) {
+      // Only a Facebook account follows an Instagram one (Garreth, 2026-10-01).
+      if (toPlatform(account.platform) !== "facebook") {
+        return NextResponse.json(
+          { error: "Only a Facebook account posts another account's videos." },
+          { status: 400 },
+        );
+      }
+      const target = await mirrorTarget(fields.mirrorsProfile, account.id);
+      if (target !== account.mirrors_account_id) columns.mirrors_account_id = target;
     }
 
     if (Object.keys(columns).length === 0) {

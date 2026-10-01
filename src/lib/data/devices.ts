@@ -1,4 +1,5 @@
 import { cachedFetcher, DEVICES_TAG, TTL, type Cached } from "@/lib/data/cache";
+import { signStorageUrls } from "@/lib/data/storage-sign";
 import { sbRest } from "@/lib/data/supabase";
 import { toPlatform, type Platform } from "@/lib/data/accounts";
 import { ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
@@ -184,33 +185,9 @@ export function getDeviceForProfile(
  * A failure returns no links rather than throwing — a missing thumbnail should
  * not take the whole Devices page down with it.
  */
-export async function signProofUrls(
+export function signProofUrls(
   paths: string[],
   expiresInSeconds = 600,
 ): Promise<Record<string, string>> {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const base = process.env.SUPABASE_URL;
-  if (!key || !base || paths.length === 0) return {};
-  try {
-    const res = await fetch(`${base}/storage/v1/object/sign/device-proofs`, {
-      method: "POST",
-      headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ expiresIn: expiresInSeconds, paths }),
-      signal: AbortSignal.timeout(10_000),
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      console.error(`device proof signing failed (HTTP ${res.status})`);
-      return {};
-    }
-    const rows = (await res.json()) as { path: string; signedURL: string | null; error: string | null }[];
-    const out: Record<string, string> = {};
-    for (const r of rows) {
-      if (r.signedURL) out[r.path] = `${base}/storage/v1${r.signedURL}`;
-    }
-    return out;
-  } catch (err) {
-    console.error("device proof signing failed", err);
-    return {};
-  }
+  return signStorageUrls("device-proofs", paths, expiresInSeconds);
 }
