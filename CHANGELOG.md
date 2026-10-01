@@ -139,6 +139,36 @@ yet.** Not tried in Safari or with an iPhone camera photo.
 
 ---
 
+## 2026-10-01 — The Live view button opens the phones' live screens
+
+**Where it came from:** PF-14 and design ticket P9. Czedrick asked for it to
+be built now on pretend phones, with the steps written down and tracked as
+they are done; they are in `docs/LIVE-VIEW-TRACKER.md`.
+
+**What changed:** the live view itself, a page that shows every phone's screen
+and passes taps and swipes on, is in the warmup-runner repository, because it
+runs on the MacBook Air. Here, two links to it:
+
+- **A phone's page:** the Live view button at the top right, drawn but inert
+  since P5, now opens that phone enlarged in a new tab.
+- **The Devices card** on the Physical dashboard gets a Live view link to every
+  phone at once.
+- **When the Air does not answer**, the button reads "Air offline" and cannot
+  be pressed, rather than opening a tab that spins.
+
+Both need the Air's address in a new setting, `LIVE_VIEW_URL`. Garreth and
+Czedrick chose the Air (100.85.112.50) the same day, and Czedrick switched on
+HTTPS certificates for the Tailscale network, so the address will be
+`https://yuries-macbook-air-1.tail85d8ff.ts.net`. It is not set on Vercel yet,
+so until it is, both links stay inert and nothing changes for anyone.
+
+**Verified:** on Czedrick's Mac against pretend phones, in headless Chrome,
+not Safari. The phone-page button was seen as a working link with the Air up
+and as "Air offline" with it down. The Devices card link was not seen, because
+no phone is registered yet. Nothing has run against a real phone.
+
+---
+
 ## 2026-09-30 — The iPhone Developer Mode steps are in the right order
 
 **Where it came from:** Yurie could not find Developer Mode on the iPhone.

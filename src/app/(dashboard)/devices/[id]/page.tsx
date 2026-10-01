@@ -16,6 +16,7 @@ import {
 } from "@/lib/data/warmup-sessions";
 import { etDateTime } from "@/lib/data/format";
 import { getAutomatedOverdue } from "@/lib/data/warmup-runs";
+import { liveViewUrl } from "@/lib/live-view";
 
 /**
  * One phone — design ticket P5.
@@ -54,7 +55,18 @@ export default async function DevicePage({
       phoneNumbers: null,
       accounts: [],
     };
-    return <DeviceDetail device={device} proofUrl={null} assignable={[]} demo={demo} />;
+    // The live view address is passed here too, so the Live view button's
+    // states can be judged on the invented phone; it opens the all-phones
+    // view's `?phone=0`, which says the phone is not on the Air.
+    return (
+      <DeviceDetail
+        device={device}
+        proofUrl={null}
+        assignable={[]}
+        liveView={liveViewUrl()}
+        demo={demo}
+      />
+    );
   }
 
   const id = parseRowId(rawId);
@@ -130,6 +142,7 @@ export default async function DevicePage({
       warmupProgress={progress}
       today={today}
       warmupOverdue={Object.fromEntries(overdue)}
+      liveView={liveViewUrl()}
       initialNotice={
         query.proof === "failed" && !device.proofPath
           ? "The phone was saved, but the screenshot did not upload. Add it here."
