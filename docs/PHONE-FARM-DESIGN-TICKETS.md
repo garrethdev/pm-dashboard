@@ -92,7 +92,7 @@ purpose; the changelog has them.
 | P6 | Track proxy expiry for real phones on Proxies & numbers | **Approved and built 2026-09-23.** One row per real phone, its accounts, proxy and numbers. Joins proven live with a test phone, since deleted. **Numbers moved from the phone to each account the same day (P14, Garreth)**; the numbers view is now one line per account |
 | P7 | ~~Add the before-and-after comparison for moved accounts~~ | Dropped 2026-09-23 |
 | P8 | Add the checklist for a ban on a real phone | **Approved and built 2026-09-23** (PF-11). The app releases queued posts itself; the proxy is kept while other accounts use it (Garreth). Proven live with a practice phone, since deleted. `/todo?todo=ban` and `/accounts?demo=1` still draw the sample states |
-| P9 | Add the Live view page and link to it from the dashboard | Not started |
+| P9 | Add the Live view page and link to it from the dashboard | **APPROVED 2026-10-01** by Czedrick in Safari, on pretend phones, after four rounds (four to a row, no flicker, Settings, rows as tall as the window). Phone day next. Tracked in `docs/LIVE-VIEW-TRACKER.md` |
 | P10 | Move accounts onto phones in one step, and several at once | **APPROVED 2026-09-22** (dark + light, desktop + phone), after five rounds of feedback — the last removed the three-accounts-per-phone limit outright. Settings → Account management: the single move picks the phone in the dialog that flips the fleet, and a Select mode adds the batch. **Built 2026-09-23:** PF-03 saves the single move, PF-15 the batch (all or nothing) |
 | P11 | Show hand-made posts on the calendar, and prepare the app for retiring Cloud | **Done.** Calendar half built 2026-09-23. After-Cloud half **not needed** (Garreth, 2026-09-28): Cloud stays, empty |
 | P12 | Add the day's-work reminder, overdue items, and bell items that name their fleet | **Built 2026-09-23.** The email was dropped for a bell notification (Garreth), and PF-12's two items are built and live. The fleet label landed the same day with PF-20 — the bell shows both fleets and names which. The stale row is **approved and built 2026-09-23**: a red Overdue pill on the bell's 24-hour rule (Garreth). Not yet seen with a real post |
@@ -968,7 +968,11 @@ The Carousel Generator's rules apply (`CAROUSEL-GENERATOR-DESIGN-TICKETS.md`,
 
 ## P9. Add the Live view page and link to it from the dashboard
 
-- **Status:** not started. Garreth, 2026-09-17: required, not optional.
+- **Status:** **APPROVED 2026-10-01** by Czedrick, in Safari, on pretend
+  phones. Garreth has not looked at it yet. Garreth, 2026-09-17: required, not optional. Drawn by building
+  it: the page runs on pretend phones that show the runner's TikTok
+  screenshots, so the review is of the real page, not a picture of it. How to
+  open it and what to look at: `docs/LIVE-VIEW-TRACKER.md` step 4.
 - **Backlog:** PF-14. The page itself is served from the MacBook Air, not from
   the dashboard, and is reachable over Tailscale only; the dashboard links to
   it.
