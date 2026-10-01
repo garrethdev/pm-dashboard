@@ -165,6 +165,7 @@ These are on the Geelark Exit Plan spreadsheet as of 2026-09-17:
   Switch it on, let the phone restart, and tap Turn On when it asks. (The switch
   is hidden until Xcode has seen the phone, and does not exist below iOS 16.)
 - Czedrick, remotely, once that is done: install WebDriverAgent on both phones.
+  Steps and progress in `docs/PHONE-AGENT-SETUP.md` (phone 1 done 2026-10-01).
 - Czedrick, before writing the TikTok script: clone iOS Farm, read the agent
   supervision, the doomscroll plugin and the live view; skim Kevs-IOS-Agents'
   Instagram warmup.

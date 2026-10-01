@@ -15,10 +15,11 @@ page, its server and the robot's busy mark are on warmup-runner `main`
 (commit `a3b0bd3`). Nothing is live yet: `LIVE_VIEW_URL` is not set on
 Vercel, so the dashboard's Live view buttons are inert.
 
-**Next step: phone day on the Air (step 6).** It is waiting on hardware, not
-on code: WebDriverAgent has to be installed on at least one phone first (the
-runner's step M1; set-up order in `docs/PHONE-FARM-TOOLING.md`, "Set-up tasks
-this adds"). Then follow "Still to do on phone day" below.
+**Next step: phone day on the Air (step 6).** WebDriverAgent is on phone 1
+and answers on the Air (2026-10-01; steps and status in
+`docs/PHONE-AGENT-SETUP.md`). Czedrick's Mac has screenshotted and tapped it over
+Tailscale. Phone 2 has not arrived. Then follow "Still to do on
+phone day" below.
 
 **Optional, any time, no Air needed:**
 
@@ -75,7 +76,8 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[!]` blocke
   reads "Air offline" and cannot be pressed. **On `main` since 2026-10-01
   (PR #38). `LIVE_VIEW_URL` is not set on Vercel yet**, so production looks
   unchanged until phone day.
-- [!] **6. Phone day, on the Air.** Needs WebDriverAgent on at least one phone.
+- [ ] **6. Phone day, on the Air.** WebDriverAgent is on phone 1 since
+  2026-10-01; phone 2 is not here yet.
 - [!] **7. Done when** Czedrick opens the page from his own Mac, sees both
   phones live and taps one.
 
@@ -200,3 +202,7 @@ Oldest first.
   width; the Air's install script and phone-day checklist written.
 - **2026-10-01** — Saved: warmup-runner `main` `a3b0bd3`; dashboard PR #38
   merged into `main`. Next is phone day.
+- **2026-10-01** — WebDriverAgent installed on phone 1 by Czedrick on the Air
+  and answering (`"ready" : true`). Phone 2 not here yet.
+- **2026-10-01** — From Czedrick's Mac: a session on phone 1 through the
+  Air's Appium, a screenshot, and a tap that opened General. Runner M1 met.

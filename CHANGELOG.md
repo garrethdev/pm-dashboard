@@ -20,6 +20,32 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-01 — The first phone can be screenshotted and tapped from Czedrick's Mac
+
+**Where it came from:** the Geelark Exit Plan's rows 35 and 36: install
+Apple's testing agent on each phone from the Air, then screenshot and tap the
+phone from Czedrick's own Mac. Czedrick did the install on the Air over Screen
+Sharing; Claude ran the screenshot and tap from Czedrick's Mac at his request. Garreth asked for the steps to be written down
+so phone 2 can follow when it arrives.
+
+**What changed:** a new `docs/PHONE-AGENT-SETUP.md` says what is already set
+up on the Air (Homebrew, Node, Appium, the signing in Xcode), so nobody redoes
+it, the steps for each new phone, the screenshot-and-tap test from
+Czedrick's Mac (row 36), and the errors met on the way. `PHONE-FARM-TOOLING.md`
+and the live view tracker point to it, and the live view's phone day is no
+longer marked as blocked.
+
+**Verified:** live on phone 1 (iOS 18.5). Asked whether it was ready, the
+agent answered `"ready" : true` on the Air. Then, from Czedrick's own Mac
+over Tailscale, with no Screen Sharing: a session started on the Air, a
+screenshot of the phone's Settings screen came back, and a tap on General
+opened General on the phone. Garreth scoped rows 35 and 36 to phone 1 for
+now, so both are done. Phone 2 has not arrived and follows the same steps
+when it does. Only a tap on a named button was tried, not a swipe or a tap at
+a position on screen.
+
+---
+
 ## 2026-10-01 — Each post shows its song, and the download button says what it fetches
 
 **Where it came from:** Garreth asked how a carousel is handled. Almost every
