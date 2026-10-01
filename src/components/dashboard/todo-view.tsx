@@ -10,7 +10,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Copy,
   Download,
   Film,
   LinkSimple,
@@ -44,7 +43,8 @@ import {
   type TodoItem,
   type TodoState,
 } from "@/lib/data/todo-placeholder";
-import type { TodoExtras } from "@/lib/data/todo";
+import type { TodoExtras, TodoPost } from "@/lib/data/todo";
+import { CopiedIcon, PostMediaCard, usePostMedia } from "@/components/dashboard/post-media";
 import { cn } from "@/lib/utils";
 
 /**
@@ -78,6 +78,10 @@ import { cn } from "@/lib/utils";
  *    control to press, when the thing it found could simply be pointed at.
  *  - A FINISHED ITEM STAYS, struck through, with the time it was finished, for
  *    the rest of the day.
+ *  - THE POST'S PICTURE IS THE WAY TO POST IT (Garreth, 2026-10-01). Tapping
+ *    it copies the caption and opens the phone's share menu with the video
+ *    attached; see `post-media.tsx` for why a big video can take two taps.
+ *    Download video and Copy caption do the two halves on their own.
  *  - ANY DAY IS ONE PRESS AWAY: "Today" with an arrow either side.
  *  - GRID OR LIST (Garreth, 2026-09-22). List is one phone per full-width
  *    row, as before, and is the default. Grid stands the phones side by side,
@@ -181,6 +185,7 @@ export function TodoView({
                 <DeviceCard
                   key={device.id}
                   device={device}
+                  extras={board.live ? board.extras : undefined}
                   onOpenItem={board.open}
                   onStepSaved={board.live ? board.reload : undefined}
                 />
@@ -358,10 +363,13 @@ function DayStepper({ day, onChange }: { day: TodoDay; onChange: (d: TodoDay) =>
 
 function DeviceCard({
   device,
+  extras,
   onOpenItem,
   onStepSaved,
 }: {
   device: TodoDevice;
+  /** The caption and media behind each post, on the live list only. */
+  extras?: TodoExtras;
   onOpenItem: (t: SheetTarget) => void;
   /** On the live list: re-read it once a tick has saved. Absent on a `?todo=`
    *  design state, where a tick is held here and saved nowhere. */
@@ -444,6 +452,7 @@ function DeviceCard({
             <AccountGroup
               key={account.id}
               account={account}
+              extras={extras}
               deviceId={Number(device.id)}
               onOpenItem={onOpenItem}
             />
@@ -456,10 +465,12 @@ function DeviceCard({
 
 function AccountGroup({
   account,
+  extras,
   deviceId,
   onOpenItem,
 }: {
   account: TodoAccount;
+  extras?: TodoExtras;
   /** The phone this account sits on, carried into the sheet so a warmup
    *  logged from the list records where it was done (PF-04). */
   deviceId?: number;
@@ -497,6 +508,7 @@ function AccountGroup({
           <ItemRow
             key={item.id}
             item={item}
+            post={extras?.[item.id]}
             onOpen={() => onOpenItem({ item, handle: account.handle, deviceId })}
           />
         ))}
@@ -530,15 +542,18 @@ function RowButton({
   short,
   children,
   disabled,
+  onClick,
 }: {
   /** Stands in for the verb where the label is cut to its noun. */
   icon: React.ReactNode;
   short: string;
   children: string;
   disabled?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
+      onClick={onClick}
       disabled={disabled}
       aria-label={children}
       className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1 rounded-full border border-border px-1.5 text-[11px] font-medium text-text-muted transition-colors disabled:opacity-40 enabled:hover:border-text-muted/50 enabled:hover:text-text-primary @lg:flex-none @lg:shrink-0 @lg:gap-1.5 @lg:px-2.5"
@@ -550,9 +565,21 @@ function RowButton({
   );
 }
 
-function ItemRow({ item, onOpen }: { item: TodoItem; onOpen: () => void }) {
+function ItemRow({
+  item,
+  post,
+  onOpen,
+}: {
+  item: TodoItem;
+  /** Its caption and media. Absent on a `?todo=` design state, where the
+   *  buttons are drawn and do nothing. */
+  post?: TodoPost;
+  onOpen: () => void;
+}) {
   const finished = isItemFinished(item);
   const isPost = item.kind === "post";
+  const media = usePostMedia(post);
+  const firstMedia = post?.media[0];
 
   return (
     /* Four columns on a phone (Garreth, 2026-09-22): the tick, the mark, the
@@ -603,6 +630,7 @@ function ItemRow({ item, onOpen }: { item: TodoItem; onOpen: () => void }) {
           <ItemStatus item={item} />
         </span>
         <ItemDetail item={item} />
+        {!finished && isPost && firstMedia && <PostMediaCard media={media} url={firstMedia} />}
       </div>
 
       {!finished && isPost && item.status !== "postedNoLink" && (
@@ -613,12 +641,18 @@ function ItemRow({ item, onOpen }: { item: TodoItem; onOpen: () => void }) {
           <RowButton
             icon={<Download className="size-3.5" />}
             short="Video"
-            disabled={item.videoReady === false}
+            disabled={item.videoReady === false || (post !== undefined && post.media.length === 0)}
+            onClick={post ? () => void media.download() : undefined}
           >
             Download video
           </RowButton>
-          <RowButton icon={<Copy className="size-3.5" />} short="Caption">
-            Copy caption
+          <RowButton
+            icon={<CopiedIcon copied={media.copied} />}
+            short={media.copied ? "Copied" : "Caption"}
+            disabled={post !== undefined && !post.caption}
+            onClick={post ? () => void media.copyCaption() : undefined}
+          >
+            {media.copied ? "Caption copied" : "Copy caption"}
           </RowButton>
         </div>
       )}

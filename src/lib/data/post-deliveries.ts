@@ -59,6 +59,10 @@ export interface PostDelivery {
   doneBy: string | null;
   doneAt: string | null;
   createdAt: string;
+  /** Set on a Facebook account's copy of its Instagram account's post: the
+   *  delivery it copies (Garreth, 2026-10-01). A copy never touches the
+   *  content row, which belongs to the Instagram post. */
+  mirrorOf: number | null;
 }
 
 interface RawDelivery {
@@ -74,10 +78,11 @@ interface RawDelivery {
   done_by: string | null;
   done_at: string | null;
   created_at: string;
+  mirror_of: number | null;
 }
 
 const COLS =
-  `id,content_type,source_table,source_id,${ACCOUNT_FK_COL},device_id,status,post_url,note,done_by,done_at,created_at`;
+  `id,content_type,source_table,source_id,${ACCOUNT_FK_COL},device_id,status,post_url,note,done_by,done_at,created_at,mirror_of`;
 
 function toDelivery(row: RawDelivery): PostDelivery {
   return {
@@ -96,6 +101,7 @@ function toDelivery(row: RawDelivery): PostDelivery {
     doneBy: row.done_by,
     doneAt: row.done_at,
     createdAt: row.created_at,
+    mirrorOf: row.mirror_of ?? null,
   };
 }
 
@@ -280,6 +286,10 @@ export async function closeContentRow(
   delivery: PostDelivery,
   status: "Posted" | "Failed" | "Ready",
 ): Promise<void> {
+  // A Facebook copy shares the Instagram post's content row. Its Posted or
+  // Failed is its own; the content row follows the Instagram post alone, so a
+  // Facebook failure can never burn content the Instagram account posted.
+  if (delivery.mirrorOf !== null) return;
   try {
     const rows = await (
       await sbFetch(

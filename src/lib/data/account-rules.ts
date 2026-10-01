@@ -94,6 +94,9 @@ export interface AccountEditFields {
   phoneNumber?: string | null;
   /** The phone it is on, or null to take it off its phone. */
   deviceId?: number | null;
+  /** Facebook only: the Profile name of the Instagram account whose videos it
+   *  posts (Garreth, 2026-10-01). */
+  mirrorsProfile?: string;
 }
 
 /**
@@ -140,8 +143,18 @@ export function parseAccountEdit(
     }
   }
 
+  if (body.mirrorsProfile !== undefined) {
+    const mirrors = normaliseProfile(body.mirrorsProfile);
+    if (!mirrors) return { ok: false, error: MIRRORS_MISSING };
+    fields.mirrorsProfile = mirrors;
+  }
+
   return { ok: true, fields };
 }
+
+/** Said when a Facebook account has not been told whose videos it posts. */
+export const MIRRORS_MISSING =
+  "Choose the Instagram account this Facebook account posts the same videos as.";
 
 /** The fields a new account row is made from. */
 export interface NewAccountFields {
@@ -161,6 +174,10 @@ export interface NewAccountFields {
   paused: boolean;
   /** The account's own number, or null (P14). */
   phoneNumber: string | null;
+  /** A Physical Facebook account posts the same videos as one Instagram
+   *  account, named here by its Profile name (Garreth, 2026-10-01). Null on
+   *  every other account. */
+  mirrorsProfile: string | null;
 }
 
 function validDate(value: string): boolean {
@@ -241,9 +258,19 @@ export function parseNewAccount(
   const phoneNumber = normalisePhoneNumber(body.phoneNumber);
   if (!phoneNumber.ok) return phoneNumber;
 
+  // Only a Facebook account on a real phone follows an Instagram: the daily
+  // planner skips a following account entirely, and on Cloud nothing would
+  // ever hand it the copies.
+  let mirrorsProfile: string | null = null;
+  if (platform === "facebook" && deliveryMode === "manual") {
+    mirrorsProfile = normaliseProfile(body.mirrorsProfile);
+    if (!mirrorsProfile) return { ok: false, error: MIRRORS_MISSING };
+  }
+
   return {
     ok: true,
     fields: {
+      mirrorsProfile,
       phoneNumber: phoneNumber.value,
       profile,
       username,

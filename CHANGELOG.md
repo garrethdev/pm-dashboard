@@ -20,6 +20,125 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-01 — Tap a post's picture to post it
+
+**Where it came from:** Garreth, after the accounts moved to real phones:
+could tapping a posting task open the phone's TikTok, Instagram or Facebook
+with the video ready, and the caption already in? We found on the way that the
+**Download video** and **Copy caption** buttons on the To-do list had never
+done anything. They were drawn in the design step and never connected.
+
+**What changed:** every post on the To-do list now shows its video's first
+frame (or a carousel's first slide). Tapping it copies the caption and opens
+the phone's share menu with the video attached. Yurie picks the app, it opens
+a new post with the video in it, and she pastes the caption. A big video can
+take a second tap: the phone only opens its share menu straight after a tap,
+and the video has to download first. The picture turns into a cyan share
+button when it is ready, so the second tap is instant. **Download video** now
+saves the video (on a phone, through the same menu, where "Save Video" lives).
+**Copy caption** now copies, and says so.
+
+**What it cannot do:** fill the caption in. Instagram's and Facebook's rules
+forbid other apps from doing that, and TikTok ignores text sent with a video,
+so one paste is as close as this gets. It also only works when the To-do list
+is open on the phone that is doing the posting.
+
+**Found on the way, not fixed:** every filler post's video link points at a
+storage folder that no longer exists, so a filler post's video cannot be
+downloaded from the list. Three lanes (Dismissed Grandma, Gym ASMR, Mito
+Hooks) use links that expire, so an old post in those lanes can fail the same
+way. The picture shows a warning mark when that happens.
+
+**Verified:** in headless Chrome, with a real stored video: the picture
+draws, the tap downloads it, and the card turns into the share button.
+**Not yet tried on an iPhone or in Safari**, which is where it matters. No post
+has been handed to a phone yet (every account is paused), so it has not met a
+real task.
+
+---
+
+## 2026-10-01 — A Facebook account posts the same videos as its Instagram
+
+**Where it came from:** Garreth. Each phone will carry one persona's Instagram
+and the same persona's Facebook. The Facebook account posts the same videos as
+the Instagram one, but it is its own account, with its own warmups and its
+own posting tasks.
+
+**What changed:** **Add account** with Facebook picked now asks **Same videos
+as**, and offers the Instagram accounts on the Physical side. It picks the one
+already on the chosen phone by itself. **Edit account** on a Facebook account
+has the same field. From then on, every post handed to that Instagram account
+is handed to the Facebook account too, as its own task on the To-do list, with
+its own Posted or Failed. Marking the Facebook copy Failed does not mark the
+video as used up, because the Instagram post owns that. The daily planner no
+longer plans anything for a linked Facebook account, so it never gets videos
+of its own. Its warmups needed no change: every account on a phone already
+gets two a day.
+
+To add one: **Add account** → Facebook → Physical → its phone → Same videos as.
+
+**Verified:** in the live database, inside a test that undid itself: a post
+handed to hey.imani.vaughn produced exactly one copy for a linked test
+Facebook account, a repeat of the same hand-out added nothing, a paused linked
+account got no copy, and the planner dropped the linked account from its list.
+The forms were checked in headless Chrome. No real Facebook account exists
+yet.
+
+---
+
+## 2026-10-01 — Characters, on the Accounts page: set one up, or edit one
+
+**Where it came from:** Garreth wanted the accounts moved onto phones to be
+Character 5 or Character 6, and Character 6 did not exist. Changing an
+account's character was already possible (⋯ → Edit account → Character); what
+was missing was a way to make a new one. He then asked how a character set up
+without its posting amounts would get them later, and chose to manage
+characters from one sheet on this page.
+
+**What changed:** a **Characters** button sits to the left of **Add account**
+on the Physical Accounts page. It opens every character, each with how many
+content types and accounts it has, an **Edit** button, and **Set up
+Character 6** at the bottom.
+
+- **Set up** makes the next character with a description and, if you want,
+  how many posts a day and a week its accounts make. **Leave the amounts empty
+  and its accounts get no posts at all.** It does not ask for content types
+  (Garreth's choice): a content type belongs to exactly one character, so a
+  new character has none until its own are built, and **until then its
+  accounts get no posts whatever the amounts say.** Once made, it is in the
+  Character list on Add account and Edit account.
+- **Edit** changes the description of any character. The posting amounts
+  can be changed there only while the character owns no content types. Once
+  it owns some, its amounts are shown with a link to **Adjust cadence**
+  (Content calendar), because there its content types' numbers have to add up
+  to its weekly number, and one character out of balance stops Adjust cadence
+  saving for every character. Edit also lists the content types it owns.
+- **Each character has a profile photo** (Garreth). Edit or Set up shows a
+  round photo with **Upload photo** / **Change photo**; it shows in the list
+  too, with the character's number where there is none. The phone crops the
+  middle square and shrinks it before sending (a 1 MB picture went up as 4
+  KB), and it is kept private: the photos are the personas' faces, so they
+  are shown only through links that expire after an hour, the way phone proof
+  screenshots are.
+- The existing characters' descriptions are the notes developers left on
+  them (for example "Seeded 31 Jul 2026…"). Replacing one is fine; the old
+  text is kept in the audit log.
+
+The row's three controls (the **By account / By phone** switch, Characters
+and Add account) now share one height, text size and padding, so they read
+as one set (Garreth). Add account keeps its colour as the page's main button.
+
+**Verified:** in the live database, inside a test that undid itself: a
+character set up with no amounts gave its account a daily cap of 0, and one
+set up with 2 a day gave 2. The sheet, Edit on Character 5 and Set up were
+checked in headless Chrome against the live list. A test photo was uploaded
+to Character 5 through the sheet, showed in the list, was replaced (the old
+file was deleted) and was then removed again, so Character 5 has no photo.
+**No description, posting amount or new character has been saved through it
+yet.** Not tried in Safari or with an iPhone camera photo.
+
+---
+
 ## 2026-09-30 — The iPhone Developer Mode steps are in the right order
 
 **Where it came from:** Yurie could not find Developer Mode on the iPhone.

@@ -12,6 +12,7 @@ import {
   AccountWriteError,
   createAccount,
   getActiveCharacters,
+  mirrorTarget,
   profileHolder,
   usernameTaken,
 } from "@/lib/data/account-writes";
@@ -106,7 +107,12 @@ export async function POST(request: Request) {
       if (refusal) return NextResponse.json({ error: refusal, field: "device" }, { status: 409 });
     }
 
-    const account = await createAccount(fields, { userEmail, today });
+    // A Facebook account on a phone posts its Instagram's videos (Garreth,
+    // 2026-10-01); which Instagram is checked before anything is written.
+    const mirrorsAccountId =
+      fields.mirrorsProfile !== null ? await mirrorTarget(fields.mirrorsProfile) : null;
+
+    const account = await createAccount(fields, { userEmail, today, mirrorsAccountId });
 
     // No re-count: a phone has no maximum any more (Garreth, 2026-09-22), so
     // there is no longer such a thing as it filling up while you typed.

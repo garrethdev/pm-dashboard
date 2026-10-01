@@ -9,6 +9,7 @@ export function FilterPills<T extends string>({
   onChange,
   inline = false,
   className,
+  pillClassName,
 }: {
   /** `marked` puts a dot on the pill — used for "this one is not on the
    *  default" (a character with its own cadence). Optional and additive; every
@@ -25,6 +26,10 @@ export function FilterPills<T extends string>({
    *  rather than pushing the heading off the screen. */
   inline?: boolean;
   className?: string;
+  /** Added to every pill. With a height on `className` and `self-stretch`
+   *  here, the switch can match the buttons beside it (the Accounts title row,
+   *  Garreth 2026-10-01). */
+  pillClassName?: string;
 }) {
   return (
     <div
@@ -61,6 +66,7 @@ export function FilterPills<T extends string>({
             value === o.value
               ? "bg-accent font-medium text-bg"
               : "text-text-muted hover:text-text-primary",
+            pillClassName,
           )}
         >
           {o.icon}

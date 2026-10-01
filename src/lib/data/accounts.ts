@@ -37,6 +37,10 @@ export interface AccountRow {
   warmupMode: WarmupMode;
   /** The account's own number (P14: numbers belong to accounts, not phones). */
   phoneNumber: string | null;
+  /** A Facebook account's Instagram twin, by Profile name: every post handed
+   *  to that Instagram account is handed to this one too (Garreth,
+   *  2026-10-01). Absent on the invented demo rows. */
+  mirrorsProfile?: string | null;
   isActive: boolean;
   paused: boolean;
   healthStatus: string;
@@ -107,6 +111,9 @@ interface RawAccount {
   device_id: number | null;
   warmup_mode: string | null;
   phone_number: string | null;
+  /** Both text, never numbers (account-id.ts, PF-22). */
+  id: string;
+  mirrors_account_id: string | null;
   is_active: boolean;
   posting_paused: boolean | null;
   health_status: string | null;
@@ -144,7 +151,8 @@ async function fetchAccounts(): Promise<AccountRow[]> {
     effective,
   ] = await Promise.all([
     sbRest<RawAccount[]>(
-      "accounts?select=geelark_profile,username,character,platform,delivery_mode,device_id,warmup_mode,phone_number,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
+      "accounts?select=geelark_profile,username,character,platform,delivery_mode,device_id,warmup_mode,phone_number," +
+        "id:id::text,mirrors_account_id:mirrors_account_id::text,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
     ),
     sbRest<{ platform: string; account: string; median_views_last5: number; posts_counted: number }[]>(
       "v_dashboard_last5_views?select=platform,account,median_views_last5,posts_counted",
@@ -222,6 +230,10 @@ async function fetchAccounts(): Promise<AccountRow[]> {
   const liveByProfile = new Map(liveHealth.map((m) => [m.geelark_profile, m]));
   const reviewByProfile = new Map(reviews.map((r) => [r.geelark_profile, r]));
 
+  // A Facebook account's Instagram twin is stored by id; the screens name
+  // accounts by Profile, so the id is looked up among the rows read here.
+  const profileById = new Map(accounts.map((a) => [a.id, a.geelark_profile]));
+
   const rows = accounts.map((a): AccountRow => {
     const live = liveByProfile.get(a.geelark_profile);
     const err = errorsByProfile.get(a.geelark_profile);
@@ -273,6 +285,7 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       // reads as the default rather than as a third state.
       warmupMode: a.warmup_mode === "script" ? "script" : "manual",
       phoneNumber: a.phone_number,
+      mirrorsProfile: a.mirrors_account_id ? (profileById.get(a.mirrors_account_id) ?? null) : null,
       isActive: a.is_active,
       paused: a.posting_paused === true,
       healthStatus: health,

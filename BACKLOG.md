@@ -270,6 +270,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-20 | Incidents and the bell per fleet | Intermediate | **Done 2026-09-22.** Incidents had followed the switch since 2026-09-18; the bell half was settled by Garreth — it shows BOTH fleets and names which on every item. Proven in the running app, dark and light, desktop and phone, against a temporary phone/account/post that was deleted afterwards. No real phone or post has used it |
 | PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
 | PF-22 | Account ids too large for the app to hold exactly | Immediate | **Built 2026-09-23.** Account ids are carried as text on the Physical side (`src/lib/data/account-id.ts`). Proven live with a practice account whose id was as long as the real ones; not yet seen with one of the five real accounts on a phone |
+| PF-24 | Facebook analytics | Intermediate | **Not started (added 2026-10-01, Garreth).** Facebook accounts can be added and get their own posting tasks, but no robot reads their numbers. First step is finding out whether these profiles can be read at all |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -1278,6 +1279,44 @@ profile to create.
 
 ---
 
+## PF-24 · Facebook analytics — Not started
+
+*Added 2026-10-01 (Garreth).* Each phone now carries a persona's Instagram
+and the same persona's Facebook, and the Facebook account posts the same
+videos as the Instagram one (CHANGELOG 2026-10-01). But nothing collects a
+Facebook account's views, likes or comments. TikTok numbers come from a
+public data service looked up by handle; Instagram numbers come from Meta's
+own API after each account is connected once. Facebook has neither.
+
+What is already in place: Facebook is a platform on every account screen
+(PF-08), and the Analytics page has a Facebook tab that has been empty since
+2026-09-19. The app keeps every Facebook account out of the views and
+health numbers on purpose (`hasAnalytics` in `src/lib/platform.ts`), so a
+Facebook account reads as "no data" rather than as dead.
+
+**The question to answer first: can these profiles be read at all?** Meta's
+API gives post statistics for Facebook Pages, and possibly for personal
+profiles switched to professional mode; it gives nothing for an ordinary
+personal profile, which is what the accounts are today (the first one,
+hey.imani.vaughn's twin, is `profile.php?id=61588896089516`). Options, none
+checked yet:
+
+1. Switch each Facebook profile to professional mode and read it through
+   Meta's API, the way Instagram is connected. Needs checking whether the
+   API covers professional-mode profiles and what the app review asks for.
+2. A public data service looked up by profile, the way TikTok works (check
+   whether ScrapeCreators or similar covers Facebook profiles' posts).
+3. Have Yurie type the numbers in by hand from the post. Last resort.
+
+**Also to decide:** whether a Facebook account counts toward the health
+checks and the incident list once it has numbers, or only shows on
+Analytics.
+
+*Done when:* a Facebook account's recent posts show their views on the
+Analytics page's Facebook tab, read by a robot, and the Facebook post is
+matched to the video it came from (the link Yurie pastes on Posted is the
+key, as it is for the others).
+
 # V1 — open work
 
 ## Move accounts off Geelark onto real iPhones
@@ -1287,6 +1326,25 @@ above.** Decided 2026-09-16 (Garreth); tickets PF-01 to PF-16 carry the
 scope, the blockers and the done-whens. Plan of record:
 `docs/REAL-PHONE-MASTERPLAN.md`; tooling decisions: `docs/PHONE-FARM-TOOLING.md`;
 task sheet for Yurie and Czedrick: `~/Documents/Geelark Exit Plan.xlsx`.
+
+## Try one-tap posting on a real iPhone (added 2026-10-01)
+
+Tapping a post's picture on the To-do list copies the caption and opens the
+share menu with the video (CHANGELOG 2026-10-01). It has only been checked in
+headless Chrome. **Done when:** on a farm iPhone, in Safari, one tap copies the
+caption and a second at most opens the share menu, and TikTok, Instagram and
+Facebook each open a new post with the video in it. If an app is missing from
+the menu, write down which.
+
+## Filler videos point at a storage folder that no longer exists (found 2026-10-01)
+
+Every filler post's `media_url` reads `…/object/public/viral-filler/…`, and the
+project has no `viral-filler` folder. Older filler posts already went out,
+so this matters only if filler is handed to a phone: its video cannot be
+downloaded from the To-do list. Three more lanes (Dismissed Grandma, Gym ASMR,
+Mito Hooks) store time-limited links, which also fail once they expire. Not
+looked into further; find where filler renders live now before Physical
+accounts post filler.
 
 ## Verify Character 5's first scheduled run
 

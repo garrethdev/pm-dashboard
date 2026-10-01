@@ -19,6 +19,7 @@ import { StatusPill } from "@/components/ui/pill";
 import { DEVICE_INPUT, errorFrom } from "@/components/dashboard/device-fields";
 import { CadenceFields, useCadenceForm } from "@/components/dashboard/cadence-form";
 import type { PhoneOption } from "@/components/dashboard/accounts-by-phone";
+import { mirrorLabel, type MirrorOption } from "@/components/dashboard/add-account-modal";
 import type { AccountRow, WarmupMode } from "@/lib/data/accounts";
 import type { ContentTypeOption } from "@/lib/data/scheduler-overrides";
 import { PLATFORM_LABEL } from "@/lib/platform";
@@ -62,6 +63,7 @@ export function EditAccountModal({
   account,
   phones,
   characters,
+  instagramAccounts = [],
   options,
   sample = false,
   onClose,
@@ -70,6 +72,9 @@ export function EditAccountModal({
   account: AccountRow;
   phones: PhoneOption[];
   characters: string[];
+  /** For a Facebook account: the Instagram accounts it may post the same
+   *  videos as (Garreth, 2026-10-01). */
+  instagramAccounts?: MirrorOption[];
   /** The content types this account's character may post. */
   options: ContentTypeOption[];
   sample?: boolean;
@@ -82,6 +87,8 @@ export function EditAccountModal({
   const [character, setCharacter] = useState(account.character);
   const [phoneId, setPhoneId] = useState<string>(account.deviceId ? String(account.deviceId) : "");
   const [number, setNumber] = useState(account.phoneNumber ?? "");
+  const [mirrors, setMirrors] = useState(account.mirrorsProfile ?? "");
+  const isFacebook = account.platform === "facebook";
   const [paused, setPaused] = useState(account.paused);
   const [warmup, setWarmup] = useState<WarmupMode>(account.warmupMode);
   const [cadenceOpen, setCadenceOpen] = useState(false);
@@ -128,6 +135,9 @@ export function EditAccountModal({
     if (handle.trim().replace(/^@+/, "") !== (account.username ?? "")) details.username = handle;
     if (character !== account.character) details.character = character;
     if (number.trim() !== (account.phoneNumber ?? "")) details.phoneNumber = number;
+    if (isFacebook && mirrors !== "" && mirrors !== (account.mirrorsProfile ?? "")) {
+      details.mirrorsProfile = mirrors;
+    }
     if (phoneId !== (account.deviceId ? String(account.deviceId) : "")) {
       details.deviceId = phoneId === "" ? null : Number(phoneId);
     }
@@ -260,6 +270,31 @@ export function EditAccountModal({
                   ))}
                 </select>
               </Field>
+              {isFacebook && (
+                <Field label="Same videos as" className="sm:col-span-2">
+                  <select
+                    value={mirrors}
+                    onChange={(e) => setMirrors(e.target.value)}
+                    disabled={busy}
+                    className={cn(DEVICE_INPUT, "appearance-none")}
+                  >
+                    {/* Only while nothing is set yet: once linked it can be
+                        moved to another Instagram account, not unlinked, or
+                        the daily planner would start giving it posts of its
+                        own. */}
+                    {!account.mirrorsProfile && (
+                      <option value="" disabled>
+                        Choose
+                      </option>
+                    )}
+                    {instagramAccounts.map((a) => (
+                      <option key={a.profile} value={a.profile}>
+                        {mirrorLabel(a)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
             </div>
           </Section>
 
@@ -403,9 +438,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className={cn("flex flex-col gap-1.5", className)}>
       <span className="text-xs text-text-muted">{label}</span>
       {children}
     </label>
