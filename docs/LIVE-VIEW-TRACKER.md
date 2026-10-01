@@ -43,8 +43,9 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[!]` blocke
   phone's page now opens that phone enlarged in a new tab, and the Devices
   card has a Live view link. Both read the Air's address from `LIVE_VIEW_URL`;
   unset, they stay inert as before. When the Air does not answer, the button
-  reads "Air offline" and cannot be pressed. **Not on `main` yet, and
-  `LIVE_VIEW_URL` is not set on Vercel**, so production is unchanged.
+  reads "Air offline" and cannot be pressed. **On `main` since 2026-10-01
+  (PR #38). `LIVE_VIEW_URL` is not set on Vercel yet**, so production looks
+  unchanged until phone day.
 - [!] **6. Phone day, on the Air.** Needs WebDriverAgent on at least one phone.
 - [!] **7. Done when** Czedrick opens the page from his own Mac, sees both
   phones live and taps one.
