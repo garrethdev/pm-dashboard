@@ -225,6 +225,7 @@ interface RawUnified {
   media_url: string | null;
   media_urls: string[] | null;
   caption: string | null;
+  music_label: string | null;
 }
 
 /** The New York calendar date of an instant, as YYYY-MM-DD. */
@@ -258,6 +259,10 @@ export interface TodoPost {
   caption: string | null;
   /** Everything there is to download: one video, or a carousel's slides. */
   media: string[];
+  /** The song picked for the post, "Artist - Title". The robot attaches it
+   *  when it posts to TikTok; posting by hand, the person has to add it
+   *  (Garreth, 2026-10-01). Null where the lane picks none. */
+  song: string | null;
 }
 
 /** What the screens need beyond the item itself: the caption to copy and the
@@ -399,6 +404,7 @@ export async function getTodoBoard(
       deliveryId: row.id,
       caption: content?.caption ?? null,
       media: content?.media_urls?.length ? content.media_urls : content?.media_url ? [content.media_url] : [],
+      song: content?.music_label?.trim() || null,
     };
   }
 
@@ -482,7 +488,7 @@ async function readUnified(deliveries: RawDelivery[]): Promise<Map<string, RawUn
   if (deliveries.length === 0) return out;
 
   const ids = [...new Set(deliveries.map((d) => d.source_id))];
-  const cols = "content_type,content_id,posting_date,posting_time,media_url,media_urls,caption";
+  const cols = "content_type,content_id,posting_date,posting_time,media_url,media_urls,caption,music_label";
   const quoted = ids.map((id) => `"${id.replace(/"/g, '\\"')}"`).join(",");
   let rows: RawUnified[] = [];
   try {

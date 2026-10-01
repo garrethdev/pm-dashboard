@@ -44,7 +44,8 @@ import {
   type TodoState,
 } from "@/lib/data/todo-placeholder";
 import type { TodoExtras, TodoPost } from "@/lib/data/todo";
-import { CopiedIcon, PostMediaCard, usePostMedia } from "@/components/dashboard/post-media";
+import { CopiedIcon, PostMediaCard, SongLine, usePostMedia } from "@/components/dashboard/post-media";
+import { DOWNLOAD_LABEL, mediaKind } from "@/lib/post-media-kind";
 import { cn } from "@/lib/utils";
 
 /**
@@ -81,7 +82,9 @@ import { cn } from "@/lib/utils";
  *  - THE POST'S PICTURE IS THE WAY TO POST IT (Garreth, 2026-10-01). Tapping
  *    it copies the caption and opens the phone's share menu with the video
  *    attached; see `post-media.tsx` for why a big video can take two taps.
- *    Download video and Copy caption do the two halves on their own.
+ *    Download video and Copy caption do the two halves on their own. The
+ *    download button names what it fetches (video, slides or image), and the
+ *    post's song sits under its name with a copy button (Garreth, 2026-10-01).
  *  - ANY DAY IS ONE PRESS AWAY: "Today" with an arrow either side.
  *  - GRID OR LIST (Garreth, 2026-09-22). List is one phone per full-width
  *    row, as before, and is the default. Grid stands the phones side by side,
@@ -580,6 +583,9 @@ function ItemRow({
   const isPost = item.kind === "post";
   const media = usePostMedia(post);
   const firstMedia = post?.media[0];
+  // Says what is downloaded: a video, a carousel's slides or one picture. The
+  // design states have no media, and keep the original words.
+  const download = DOWNLOAD_LABEL[post ? mediaKind(post.media) : "video"];
 
   return (
     /* Four columns on a phone (Garreth, 2026-09-22): the tick, the mark, the
@@ -630,6 +636,7 @@ function ItemRow({
           <ItemStatus item={item} />
         </span>
         <ItemDetail item={item} />
+        {isPost && post?.song && <SongLine song={post.song} />}
         {!finished && isPost && firstMedia && <PostMediaCard media={media} url={firstMedia} />}
       </div>
 
@@ -640,11 +647,11 @@ function ItemRow({
         <div className="flex w-full min-w-0 items-center gap-2 @lg:w-auto @lg:shrink-0 @lg:self-center">
           <RowButton
             icon={<Download className="size-3.5" />}
-            short="Video"
+            short={download.short}
             disabled={item.videoReady === false || (post !== undefined && post.media.length === 0)}
             onClick={post ? () => void media.download() : undefined}
           >
-            Download video
+            {download.full}
           </RowButton>
           <RowButton
             icon={<CopiedIcon copied={media.copied} />}

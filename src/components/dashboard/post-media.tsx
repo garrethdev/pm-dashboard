@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, Loader2, TriangleAlert, Upload } from "@/components/ui/icons";
+import { Check, Copy, Loader2, MusicNote, TriangleAlert, Upload } from "@/components/ui/icons";
 import type { TodoPost } from "@/lib/data/todo";
+import { isVideo } from "@/lib/post-media-kind";
 import { cn } from "@/lib/utils";
 
 /**
@@ -61,9 +62,6 @@ function typeOf(name: string, served: string): string {
   return TYPES[ext] ?? served ?? "application/octet-stream";
 }
 
-export function isVideo(url: string): boolean {
-  return /\.(mp4|mov|webm)(\?|#|$)/i.test(url);
-}
 
 /** True where the browser can hand files to the phone's share menu. */
 function canShareFiles(files: File[]): boolean {
@@ -291,6 +289,45 @@ export function PostMediaCard({ media, url }: { media: PostMedia; url: string })
         </span>
       )}
     </button>
+  );
+}
+
+/**
+ * The post's song, with a button to copy it (Garreth, 2026-10-01). The robot
+ * attaches the song itself when it posts to TikTok; posting by hand, the
+ * person adds it in the app, so the name has to be on the task. Copied, it
+ * pastes straight into TikTok's sound search.
+ */
+export function SongLine({ song }: { song: string }) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+
+  async function copy() {
+    if (!(await copyText(song))) return;
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), 2500);
+  }
+
+  return (
+    <span className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-text-muted">
+      <MusicNote className="size-3.5 shrink-0" />
+      <span className="min-w-0 truncate">{song}</span>
+      <button
+        type="button"
+        onClick={() => void copy()}
+        aria-label={copied ? "Song copied" : "Copy song"}
+        className="-my-2 flex size-9 shrink-0 items-center justify-center rounded-full hover:text-text-primary"
+      >
+        {copied ? <Check className="size-3.5 text-accent" /> : <Copy className="size-3.5" />}
+      </button>
+    </span>
   );
 }
 
