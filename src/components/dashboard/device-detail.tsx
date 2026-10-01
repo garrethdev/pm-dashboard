@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  ExternalLink,
   Hand,
   ListChecks,
   Loader2,
@@ -37,6 +36,7 @@ import {
   type WarmupSession,
 } from "@/lib/data/todo-placeholder";
 import { WarmupLogSheet } from "@/components/dashboard/warmup-log-sheet";
+import { LiveViewLink } from "@/components/dashboard/live-view-link";
 import { AutomatedWarmupPill, OverdueWarmup } from "@/components/dashboard/automated-warmups";
 import { SESSIONS_PER_DAY, type SessionProgress } from "@/lib/data/warmup-sessions";
 import { healthTone } from "@/lib/health";
@@ -200,9 +200,11 @@ function demoLines(demo: DevicePagePlaceholder): AccountLine[] {
  *    switched).
  *  - WARMUP HISTORY is the phone's recent sessions, a person's and the
  *    script's told apart by the same two marks.
- *  - LIVE VIEW sits where the in-use switch used to, at the top right. It is
- *    INERT until PF-14 builds the page it opens on the MacBook Air; it is a
- *    link out, never something embedded here.
+ *  - LIVE VIEW sits where the in-use switch used to, at the top right. It
+ *    opens PF-14's page on the MacBook Air with this phone enlarged, in a new
+ *    tab; it is a link out, never something embedded here. Inert while no
+ *    address is set, and reads "Air offline" when the Air does not answer
+ *    (LiveViewLink).
  *
  * Every write still goes to the server, which is where the rules live (three
  * accounts at most, none onto a phone that is off). This screen only hides the
@@ -224,6 +226,7 @@ export function DeviceDetail({
   warmupProgress = {},
   today: liveToday,
   warmupOverdue = {},
+  liveView = null,
   demo = null,
 }: {
   device: Device;
@@ -242,6 +245,8 @@ export function DeviceDetail({
   /** Automated accounts past three days with no finished warmup, and by how
    *  many days (PF-13, Garreth 2026-09-28). */
   warmupOverdue?: Record<string, number>;
+  /** The live view's address on the Air (PF-14), or null while none is set. */
+  liveView?: string | null;
   /** The invented phone for the P5 review, or null for a real one. */
   demo?: DevicePagePlaceholder | null;
 }) {
@@ -357,11 +362,9 @@ export function DeviceDetail({
               {device.isActive ? "Active" : "Off"}
             </StatusPill>
           </div>
-          {/* PF-14's page on the MacBook Air. Drawn in its place and inert
-              until that page exists; it opens there, it is not embedded. */}
-          <button type="button" disabled className={QUIET_BUTTON}>
-            Live view <ExternalLink className="size-3.5" />
-          </button>
+          {/* PF-14's page on the MacBook Air, this phone enlarged. It opens
+              there, it is not embedded. */}
+          <LiveViewLink base={liveView} phone={String(device.id)} className={QUIET_BUTTON} />
         </Card>
 
         {/* ---- the phone's daily work ---- */}
