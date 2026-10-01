@@ -261,7 +261,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-10 | Comparison view | ~~Intermediate~~ | **Dropped 2026-09-23 (Garreth):** not needed |
 | PF-13 | Warmup script: the dashboard side (write path, Running, what an Automated account shows) | Long term | **Built 2026-09-28, all three parts**: the script's six web addresses, Running/Stopped on the To-do list, and what an Automated account shows (Garreth's answers the same day). Table applied live, proven with practice rows. Live the same day (PR #32), checked on the production address; next is the script's B10 |
 | PF-23 | Warmup script: the build (on the Air, its own repository) | Long term | **Partly ready now** — tasks B0–B11 need no phone (2026-09-25); M1 onward needs WebDriverAgent on a phone. Split from PF-13 on 2026-09-25 (Garreth). Needs PF-13's write path by its step M6 |
-| PF-14 | Live view page on the Air, linked from the dashboard | Long term | **Built on pretend phones and approved 2026-10-01** (Czedrick, in Safari): the page in warmup-runner `live-view/`, the dashboard's links here. Next is phone day. Tracked in `docs/LIVE-VIEW-TRACKER.md` |
+| PF-14 | Live view page on the Air, linked from the dashboard | Long term | **Live on phone 1 since 2026-10-02**: running on the Air, tapped from Czedrick's Mac, dashboard buttons on in production. Warmup-only by decision (Czedrick, 2026-10-02). Closes at the robot's first warmup on the Air (runner M3) and phone 2. Tracked in `docs/LIVE-VIEW-TRACKER.md` |
 | PF-15 | Batch flips by character | Long term | **Built 2026-09-23.** The batch dialog saves, all or nothing, through one database function with the single move's rules. Proven live on practice rows only; never run on a real account |
 | PF-16 | Retire Geelark: workflows, app code, keys | Long term | **Narrowed 2026-09-28 (Garreth): Cloud stays, empty.** Nothing is removed from the app or n8n. What is left is the key rotation, blocked by the n8n credential move |
 | PF-17 | Analytics per fleet | Intermediate | Built and on `main` 2026-09-18; parity confirmed by query. ~~Bug found 2026-09-23, not fixed: Physical + "All time" never returns while Physical has no posts~~ **Fixed 2026-09-28**: with no posts in range, "All time" now starts its chart from today, so it answers at once with an empty chart. Every other range proven unchanged (migration `analytics_rollup_all_time_empty`) |
@@ -993,14 +993,23 @@ the script nor the dashboard keeps track of it.
 *Done when:* M9 passes — one real account warmed by the script for two weeks
 with no restriction message and views holding.
 
-## PF-14 · Live view page — Built on pretend phones, phone day blocked by hardware
+## PF-14 · Live view page — Live on phone 1, closes at the first real warmup
 
-**2026-10-01:** the page, its server and pretend phones are built in the
-warmup-runner repository (`live-view/`), and the dashboard's Live view button
-and Devices card link are built here, behind `LIVE_VIEW_URL`. Checked on
-pretend phones only. Step by step, with what was and was not checked:
-`docs/LIVE-VIEW-TRACKER.md`. Two open questions there for Garreth (taps while
-the robot is warming up; one Tailscale address for the Air).
+**2026-10-02:** live on phone 1. The live view runs on the Air at
+`https://yuries-macbook-air-1.tail85d8ff.ts.net` (Tailscale only), Czedrick's
+tap from his own Mac landed, and `LIVE_VIEW_URL` is set on Vercel production,
+so the Live view button and the Devices card link work (Czedrick checked the
+button). **Decided the same day (Czedrick):** it only has to work while a
+warmup is running; between warmups a phone shows Offline, and taps are refused
+during warmups, so in practice it is for watching. **Left:** the robot has to
+open the phone's connections when a warmup starts (runner TASKS.md, M3), and
+that first real warmup is the proof; phone 2 needs its agent and a line in
+the Air's phone list. Step by step: `docs/LIVE-VIEW-TRACKER.md`.
+
+**2026-10-01:** the page, its server and pretend phones built in the
+warmup-runner repository (`live-view/`), and the dashboard's links here.
+Approved by Czedrick in Safari. Both open questions decided by Garreth and
+Czedrick (taps refused while the robot runs; the Air at 100.85.112.50).
 
 Garreth, 2026-09-17: required, not optional. WebDriverAgent serves each phone's
 screen as an MJPEG stream on its own port. A small page served from the Air
@@ -1011,6 +1020,8 @@ rather than embedding it. Reference: iOS Farm's live-view panel
 handling, not the app. Blocked until the Air has Xcode signed in and the agent
 installed on at least one phone.
 *Done when:* Czedrick sees both phones live from his own Mac and can tap one.
+Since 2026-10-02 that reads: each phone shows live during a real warmup, taps
+are refused, and it goes Offline when the warmup ends.
 
 ## PF-15 · Batch flips — Built 2026-09-23
 
