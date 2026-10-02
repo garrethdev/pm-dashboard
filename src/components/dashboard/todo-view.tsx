@@ -668,29 +668,36 @@ function ItemRow({
 }
 
 function ItemStatus({ item }: { item: TodoItem }) {
-  if (item.status === "postedNoLink") return <StatusPill tone="warn">Link needed</StatusPill>;
-  if (item.status === "failed") return <StatusPill tone="danger">Failed</StatusPill>;
-  if (item.status === "skipped") return <StatusPill tone="gray">Skipped</StatusPill>;
+  const pill = statusPill(item);
+  return pill && <StatusPill tone={pill.tone}>{pill.label}</StatusPill>;
+}
+
+function statusPill(item: TodoItem): { tone: "warn" | "danger" | "gray" | "info"; label: string } | null {
+  if (item.status === "postedNoLink") return { tone: "warn", label: "Link needed" };
+  if (item.status === "failed") return { tone: "danger", label: "Failed" };
+  if (item.status === "skipped") return { tone: "gray", label: "Skipped" };
   // The script's own state (PF-13). Stopped is red: it is the silent failure
   // this status exists to make loud.
-  if (item.run?.state === "running") return <StatusPill tone="info">Running</StatusPill>;
-  if (item.run?.state === "stopped") return <StatusPill tone="danger">Stopped</StatusPill>;
+  if (item.run?.state === "running") return { tone: "info", label: "Running" };
+  if (item.run?.state === "stopped") return { tone: "danger", label: "Stopped" };
   // Only while it is still open: once posted, it is no longer late (P12).
-  if (item.overdueFor && !isItemFinished(item)) return <StatusPill tone="danger">Overdue</StatusPill>;
+  if (item.overdueFor && !isItemFinished(item)) return { tone: "danger", label: "Overdue" };
   return null;
 }
 
-/** The second line: why it is late, how far a warmup got, why it failed. */
+/**
+ * The second line: how far a warmup got, and what no pill says.
+ *
+ * Under a pill it does not repeat or explain the pill (Garreth, 2026-10-02:
+ * "the pill is enough"), so an overdue post no longer reads "Due yesterday ·
+ * waiting 26 h", and a failed one no longer adds its time and reason. Those
+ * are still in the item's sheet, which opens on a tap.
+ */
 function ItemDetail({ item }: { item: TodoItem }) {
+  const pill = statusPill(item) !== null;
   const bits: string[] = [];
 
-  if (item.carriedOverFrom) bits.push(`Due ${item.carriedOverFrom}`);
-  // The last day says what matters more than how long: tomorrow it is gone
-  // from the list (P12).
-  if (!isItemFinished(item)) {
-    if (item.lastDay) bits.push("last day on the list");
-    else if (item.overdueFor) bits.push(`waiting\u00a0${item.overdueFor}`);
-  }
+  if (item.carriedOverFrom && !pill) bits.push(`Due ${item.carriedOverFrom}`);
   if (item.kind === "warmup" && item.targetMinutes) {
     bits.push(
       item.loggedMinutes && !isItemFinished(item)
@@ -700,12 +707,8 @@ function ItemDetail({ item }: { item: TodoItem }) {
           : `${item.targetMinutes} min`,
     );
   }
-  if (item.run) {
-    bits.push(item.run.state === "running" ? `started ${item.run.at}` : `last heard ${item.run.at}`);
-  }
   if (item.videoReady === false) bits.push("Video not ready");
-  if (item.doneAt) bits.push(item.status === "failed" ? `Failed ${item.doneAt}` : item.doneAt);
-  if (item.reason) bits.push(item.reason);
+  if (item.doneAt && !pill) bits.push(item.doneAt);
 
   if (bits.length === 0) return null;
   return <p className="tnum text-xs text-text-muted">{bits.join(" · ")}</p>;
