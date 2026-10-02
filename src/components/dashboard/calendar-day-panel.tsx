@@ -9,7 +9,7 @@ import type {
   HandDelivery,
 } from "@/lib/data/calendar";
 import { PlatformIcon } from "@/components/ui/platform-icon";
-import { isPlatform } from "@/lib/platform";
+import { handleLabel, isPlatform, toPlatform } from "@/lib/platform";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
 import { StaleNotice } from "@/components/ui/stale-notice";
 import { healthTone } from "@/lib/health";
@@ -356,7 +356,7 @@ function AccountRow({ account }: { account: CalendarDayAccount }) {
         <span className="text-sm font-medium">{account.profile}</span>
         <PlatformGlyph platform={account.platform} />
         {account.username && (
-          <span className="truncate text-xs text-text-muted">@{account.username}</span>
+          <span className="truncate text-xs text-text-muted">{handleLabel(toPlatform(account.platform), account.username)}</span>
         )}
         <span className="text-xs text-text-muted">{account.character}</span>
         {account.health && (

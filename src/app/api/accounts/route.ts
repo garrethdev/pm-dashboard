@@ -18,7 +18,6 @@ import {
 } from "@/lib/data/account-writes";
 import { assignRefusal } from "@/lib/data/device-rules";
 import { countDeviceAccounts, getDeviceState } from "@/lib/data/device-writes";
-import { PLATFORM_LABEL } from "@/lib/platform";
 
 /**
  * POST /api/accounts — add an account by hand (PF-21).
@@ -77,7 +76,7 @@ export async function POST(request: Request) {
     if (await usernameTaken(fields.username, fields.platform)) {
       return NextResponse.json(
         {
-          error: usernameTakenMessage(fields.username, PLATFORM_LABEL[fields.platform]),
+          error: usernameTakenMessage(fields.username, fields.platform),
           field: "username",
         },
         { status: 409 },

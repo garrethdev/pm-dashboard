@@ -14,7 +14,7 @@
  * Nothing in this file talks to Supabase; `account-writes.ts` does that.
  */
 
-import { isPlatform, type Platform } from "@/lib/platform";
+import { handleLabel, isPlatform, PLATFORM_LABEL, type Platform } from "@/lib/platform";
 import type { DeliveryMode } from "@/lib/data/accounts";
 
 /** Accepts "Profile 19", "profile  19", "Profile 019" and a bare "19". */
@@ -58,11 +58,68 @@ export function nextProfileName(existing: Iterable<string | null | undefined>): 
   return `Profile ${highest + 1}`;
 }
 
-/** A handle as it is stored: no leading "@", no surrounding space. */
-export function normaliseUsername(raw: unknown): string | null {
+const HANDLE = /^[A-Za-z0-9._-]{1,60}$/;
+const FACEBOOK_ID = /^\d{5,20}$/;
+
+/**
+ * A handle as it is stored: no leading "@", no surrounding space.
+ *
+ * A **Facebook** account is given by its link instead (Yurie, 2026-10-02: a
+ * Facebook account often has no username at all, only a numbered page), so
+ * for Facebook this also reads a pasted facebook.com link and keeps the part
+ * that finds the page again — see `facebookKey`.
+ */
+export function normaliseUsername(raw: unknown, platform?: Platform): string | null {
   if (typeof raw !== "string") return null;
   const handle = raw.trim().replace(/^@+/, "");
-  return /^[A-Za-z0-9._-]{1,60}$/.test(handle) ? handle : null;
+  if (HANDLE.test(handle)) return handle;
+  return platform === "facebook" ? facebookKey(handle) : null;
+}
+
+/** One-word paths on facebook.com that are not somebody's page. */
+const FACEBOOK_NOT_A_PAGE = new Set([
+  "me", "home.php", "login", "watch", "reel", "reels", "marketplace", "groups",
+  "pages", "events", "friends", "gaming", "messages", "notifications", "search",
+]);
+
+/**
+ * What is kept from a Facebook link, in the shape `platformProfileUrl` turns
+ * back into the same link:
+ *
+ *  - facebook.com/jane.doe              → "jane.doe" (it has a username)
+ *  - facebook.com/profile.php?id=6155…  → "6155…" (it has none; the number is the page)
+ *  - facebook.com/people/Jane-Doe/6155… → "6155…" (the same page, written another way)
+ *  - facebook.com/share/1AbCdEf/        → "share/1AbCdEf" (what the app's Copy link gives)
+ *
+ * Anything else — a post, a group, another site — is refused.
+ */
+function facebookKey(text: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
+  } catch {
+    return null;
+  }
+  if (!/(^|\.)(facebook\.com|fb\.com)$/i.test(url.hostname)) return null;
+  const parts = url.pathname.split("/").filter(Boolean);
+
+  if (parts.length === 1 && parts[0].toLowerCase() === "profile.php") {
+    const id = url.searchParams.get("id") ?? "";
+    return FACEBOOK_ID.test(id) ? id : null;
+  }
+  if (parts.length === 3 && parts[0] === "people" && FACEBOOK_ID.test(parts[2])) return parts[2];
+  if (parts.length === 2 && parts[0] === "share" && HANDLE.test(parts[1])) return `share/${parts[1]}`;
+  if (parts.length === 1 && HANDLE.test(parts[0]) && !FACEBOOK_NOT_A_PAGE.has(parts[0].toLowerCase())) {
+    return parts[0];
+  }
+  return null;
+}
+
+/** The refusal for a handle that will not do, worded for the platform. */
+export function usernameRefusal(platform?: Platform): string {
+  return platform === "facebook"
+    ? "Paste the account's Facebook link — the address of its page, or the link from Copy link."
+    : "Give the account its handle — letters, numbers, dots, dashes and underscores only.";
 }
 
 /**
@@ -106,17 +163,13 @@ export interface AccountEditFields {
  */
 export function parseAccountEdit(
   body: Record<string, unknown>,
+  platform?: Platform,
 ): { ok: true; fields: AccountEditFields } | { ok: false; error: string } {
   const fields: AccountEditFields = {};
 
   if (body.username !== undefined) {
-    const username = normaliseUsername(body.username);
-    if (!username) {
-      return {
-        ok: false,
-        error: "Give the account its handle — letters, numbers, dots, dashes and underscores only.",
-      };
-    }
+    const username = normaliseUsername(body.username, platform);
+    if (!username) return { ok: false, error: usernameRefusal(platform) };
     fields.username = username;
   }
 
@@ -204,21 +257,17 @@ export function parseNewAccount(
     return { ok: false, error: "Give the account a Profile name, like Profile 79." };
   }
 
-  const username = normaliseUsername(body.username);
-  if (!username) {
-    return {
-      ok: false,
-      error: "Give the account its handle — letters, numbers, dots, dashes and underscores only.",
-    };
-  }
-
-  const character = typeof body.character === "string" ? body.character.trim() : "";
-  if (character === "") return { ok: false, error: "Choose which character this account is." };
-
   if (!isPlatform(body.platform)) {
     return { ok: false, error: "Choose TikTok, Instagram or Facebook." };
   }
   const platform: Platform = body.platform;
+
+  // After the platform, because a Facebook account is given by its link.
+  const username = normaliseUsername(body.username, platform);
+  if (!username) return { ok: false, error: usernameRefusal(platform) };
+
+  const character = typeof body.character === "string" ? body.character.trim() : "";
+  if (character === "") return { ok: false, error: "Choose which character this account is." };
 
   if (body.deliveryMode !== "geelark" && body.deliveryMode !== "manual") {
     return { ok: false, error: "Choose the Cloud or the Physical fleet." };
@@ -292,6 +341,6 @@ export function profileTakenMessage(profile: string, heldBy: string | null): str
 }
 
 /** What the screen says when that handle is already on that platform. */
-export function usernameTakenMessage(username: string, platformLabel: string): string {
-  return `${platformLabel} account @${username} is already in the list. Check the Profile it is on before adding it again.`;
+export function usernameTakenMessage(username: string, platform: Platform): string {
+  return `${PLATFORM_LABEL[platform]} account ${handleLabel(platform, username)} is already in the list. Check the Profile it is on before adding it again.`;
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, Sliders, X } from "@/components/ui/icons";
 import type { AccountRow } from "@/lib/data/accounts";
+import { handleLabel } from "@/lib/platform";
 import type { AccountOverride, ContentTypeOption, EffectiveConfig } from "@/lib/data/scheduler-overrides";
 import { StatusPill } from "@/components/ui/pill";
 import { CtaButton } from "@/components/ui/cta-button";
@@ -119,7 +120,7 @@ export function PostingSettingsModal({
               <h2 className="text-base font-semibold">Posting: {account.profile}</h2>
               <p className="text-xs text-text-muted">
                 {account.character || "no character"}
-                {account.username ? ` @${account.username}` : ""}
+                {account.username ? ` ${handleLabel(account.platform, account.username)}` : ""}
               </p>
             </div>
           </div>

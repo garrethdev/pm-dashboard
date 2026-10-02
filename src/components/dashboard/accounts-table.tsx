@@ -47,6 +47,7 @@ import { Pencil, Prohibit } from "@/components/ui/icons";
 import {
   PLATFORM_LABEL,
   type Platform,
+  handleLabel,
   platformFilterOptions,
   platformsToOffer,
   platformProfileUrl,
@@ -1138,7 +1139,7 @@ export function AccountsTable({
           // P8 design review: the invented accounts of `?demo=1`, drawn with
           // invented facts. The hold saves nothing.
           <PhoneRetireModal
-            handle={retiring.username ? `@${retiring.username}` : retiring.profile}
+            handle={handleLabel(retiring.platform, retiring.username) ?? retiring.profile}
             sample={{
               phone: phones.find((p) => p.id === retiring.deviceId)?.name ?? "its phone",
               others: allRows.filter(
@@ -1156,7 +1157,7 @@ export function AccountsTable({
           // Chosen by the account's own delivery mode, not by which fleet is
           // on screen, so it cannot be sent to the robot from anywhere.
           <PhoneRetireModal
-            handle={retiring.username ? `@${retiring.username}` : retiring.profile}
+            handle={handleLabel(retiring.platform, retiring.username) ?? retiring.profile}
             profile={retiring.profile}
             onClose={() => setRetiring(null)}
             onRetired={() => {

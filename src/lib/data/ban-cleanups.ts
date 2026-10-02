@@ -1,6 +1,6 @@
 import { proxyForDisplay } from "@/lib/data/device-rules";
 import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
-import { toPlatform } from "@/lib/platform";
+import { handleLabel, toPlatform } from "@/lib/platform";
 import type { BanCleanup, BanStep } from "@/lib/data/todo-placeholder";
 
 /**
@@ -299,7 +299,7 @@ export async function getCleanupsByDevice(
 
     const cleanup: BanCleanup = {
       accountId,
-      handle: a?.username ? `@${a.username}` : (a?.geelark_profile ?? `Account ${accountId}`),
+      handle: handleLabel(toPlatform(a?.platform), a?.username) ?? a?.geelark_profile ?? `Account ${accountId}`,
       platform: toPlatform(a?.platform),
       steps: mine.map<BanStep>((s) => ({
         id: String(s.id),

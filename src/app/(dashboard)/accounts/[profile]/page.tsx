@@ -15,7 +15,7 @@ import { getAccountAnalytics } from "@/lib/data/account-analytics";
 import { getAccountDetail } from "@/lib/data/account-detail";
 import { healthTone } from "@/lib/health";
 import { formatEtDate } from "@/lib/data/format";
-import { PLATFORM_LABEL, type Platform, hasAnalytics } from "@/lib/platform";
+import { PLATFORM_LABEL, type Platform, handleLabel, hasAnalytics } from "@/lib/platform";
 
 /** Route is /accounts/20 — the bare profile number, not "Profile%2020". */
 function toProfileName(slug: string): string {
@@ -162,7 +162,7 @@ export default async function AccountDetailPage({
                   rel="noopener noreferrer"
                   className="inline-flex w-fit items-center gap-1 text-sm leading-5 text-accent hover:opacity-80"
                 >
-                  @{data.username}
+                  {handleLabel(data.platform, data.username)}
                   <ExternalLink className="size-3" />
                 </a>
               ) : (

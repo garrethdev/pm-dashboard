@@ -14,7 +14,7 @@ import {
   type EditableAccount,
 } from "@/lib/data/account-writes";
 import { getDeviceState } from "@/lib/data/device-writes";
-import { PLATFORM_LABEL, toPlatform } from "@/lib/platform";
+import { toPlatform } from "@/lib/platform";
 
 /**
  * POST /api/accounts/edit — the details half of Edit account (P14, Garreth
@@ -46,14 +46,15 @@ export async function POST(request: Request) {
   }
   const profile = body.profile;
 
-  const parsed = parseAccountEdit(body);
-  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
-  const fields = parsed.fields;
-
   try {
     const userEmail = await actingUserEmail();
     const account = await getEditableAccount(profile);
     if (!account) return NextResponse.json({ error: "That account no longer exists." }, { status: 404 });
+
+    // Read after the account, because a Facebook account is given by its link.
+    const parsed = parseAccountEdit(body, toPlatform(account.platform));
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const fields = parsed.fields;
     if (account.delivery_mode !== "manual") {
       return NextResponse.json(
         { error: `${profile} is on the Cloud side, which is edited there.` },
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
       const platform = toPlatform(account.platform);
       if (await usernameTakenByOther(fields.username, platform, account.id)) {
         return NextResponse.json(
-          { error: usernameTakenMessage(fields.username, PLATFORM_LABEL[platform]), field: "username" },
+          { error: usernameTakenMessage(fields.username, platform), field: "username" },
           { status: 409 },
         );
       }
