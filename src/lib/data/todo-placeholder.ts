@@ -1,4 +1,5 @@
 import type { Platform } from "@/lib/platform";
+import type { TodoExtras } from "@/lib/data/todo";
 
 /**
  * PLACEHOLDER DATA FOR THE P1 AND P2 DESIGN REVIEW — NOT LIVE DATA.
@@ -713,6 +714,43 @@ export function todoPlaceholder(state: TodoState, day: TodoDay = 0): TodoDevice[
   if (state === "stress") return STRESS;
   if (state === "ban") return BAN;
   return WORK;
+}
+
+/**
+ * Something real for the drawn posts to hand to a phone, so the one-tap share
+ * (2026-10-01) can be tried from `?todo=` without a real task on the list
+ * (Garreth, 2026-10-02: test it on Czedrick's phone with dummy content).
+ *
+ * Real stored files, so the download and the share menu are the real ones:
+ * a 5 MB video and a 5-slide carousel, taking turns down the list. The caption
+ * says it is a test in case it ever gets pasted. Nothing here saves, because
+ * every write on the To-do list waits for the live board; the delivery id is
+ * never sent.
+ */
+const SAMPLE_STORAGE = "https://qlcmgxgwpzmiebzxflai.supabase.co/storage/v1/object/public";
+const SAMPLE_VIDEO = [`${SAMPLE_STORAGE}/rich-life-images/owg_renders/2BA-267-V1.mp4`];
+const SAMPLE_CAROUSEL = [1, 2, 3, 4, 5].map(
+  (n) => `${SAMPLE_STORAGE}/carousel-renders/SI-2VHRUH-1/slide_0${n}.jpg`,
+);
+const SAMPLE_CAPTION = "TEST POST, do not publish. Checking the one-tap share from the To-do list.";
+
+export function todoPlaceholderExtras(devices: TodoDevice[]): TodoExtras {
+  const extras: TodoExtras = {};
+  let n = 0;
+  for (const device of devices) {
+    for (const account of device.accounts) {
+      for (const item of account.items) {
+        if (item.kind !== "post") continue;
+        extras[item.id] = {
+          deliveryId: -1,
+          caption: SAMPLE_CAPTION,
+          media: n++ % 2 === 0 ? SAMPLE_VIDEO : SAMPLE_CAROUSEL,
+          song: null,
+        };
+      }
+    }
+  }
+  return extras;
 }
 
 /** Whether the emptiness is "no phones at all" or "phones, nothing due". */

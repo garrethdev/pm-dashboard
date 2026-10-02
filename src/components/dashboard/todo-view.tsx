@@ -188,7 +188,7 @@ export function TodoView({
                 <DeviceCard
                   key={device.id}
                   device={device}
-                  extras={board.live ? board.extras : undefined}
+                  extras={board.extras}
                   onOpenItem={board.open}
                   onStepSaved={board.live ? board.reload : undefined}
                 />
@@ -574,8 +574,8 @@ function ItemRow({
   onOpen,
 }: {
   item: TodoItem;
-  /** Its caption and media. Absent on a `?todo=` design state, where the
-   *  buttons are drawn and do nothing. */
+  /** Its caption and media. On a `?todo=` design state these are the
+   *  samples from `todo-placeholder.ts`, so the share can be tried there. */
   post?: TodoPost;
   onOpen: () => void;
 }) {

@@ -20,6 +20,25 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-02 — Tap-to-post can be tried on the demo To-do, with dummy posts
+
+**Where it came from:** Garreth: test yesterday's tap-to-post on Czedrick's
+phone with dummy content, without posting for real.
+
+**What changed:** the demo To-do list (`/todo?todo=work`, on the Physical
+side) used to draw its posts with no video behind them, so there was nothing
+to tap. Its open posts now carry a sample video and a sample 5-slide carousel,
+taking turns, and a caption that reads "TEST POST, do not publish." Tapping a
+picture there does what it does on the real list: copies the caption and opens
+the phone's share menu with the files. Nothing on the demo list saves, so
+ticking or tapping there cannot touch a real account or a real task.
+
+**Verified:** in WebKit set up like an iPhone: the demo list shows 6 post
+pictures; a tap downloads the sample video and the picture turns into the
+share button; no save was sent. The share menu itself only exists on a real
+phone, so whether TikTok, Instagram and Facebook open with the video is what
+the test on Czedrick's phone is for. Not yet on `main`.
+
 ## 2026-10-02 — On a phone, pages no longer slide sideways into an empty strip
 
 **Where it came from:** Garreth, using the dashboard on his phone: the page
@@ -38,7 +57,8 @@ first version cannot stretch the page. The button looks the same.
 before the change, Overview, Analytics and Cloud To-do could be scrolled
 sideways; after it, none of 16 pages could, on either the Cloud or the
 Physical side. Chrome showed the bug on none of them. This was a test browser
-on the Mac, not Garreth's actual phone, and it is not yet on `main`.
+on the Mac, not Garreth's actual phone. Merged and deployed the same day (pull
+request #43); not yet checked on a real phone.
 
 ## 2026-10-02 — A Facebook account has a name, shown instead of its page number
 

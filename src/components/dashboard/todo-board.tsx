@@ -14,6 +14,7 @@ import {
   isCleanupDone,
   isItemFinished,
   todoPlaceholder,
+  todoPlaceholderExtras,
   type BanCleanup,
   type BanStep,
   type TodoDay,
@@ -109,6 +110,9 @@ export function useTodoBoard(
   const [readError, setReadError] = useState<string | null>(null);
 
   const placeholder = todoPlaceholder(state, day);
+  // Sample captions and media for the drawn posts, so the one-tap share can
+  // be tried on a phone without a real task (todo-placeholder.ts).
+  const placeholderExtras = useMemo(() => todoPlaceholderExtras(placeholder), [placeholder]);
 
   // The live board for the day being looked at: the server's first answer
   // while that is still the day, then whatever the last fetch returned.
@@ -239,7 +243,7 @@ export function useTodoBoard(
 
   return {
     devices,
-    extras: liveBoard?.extras ?? {},
+    extras: live ? (liveBoard?.extras ?? {}) : placeholderExtras,
     live: Boolean(live),
     loading,
     readError,
