@@ -368,10 +368,15 @@ export function SpecularButton({
 
   const inner = (
     <>
+      {/* overflow-hidden: the canvas arrives at its default 300px width and is
+          shrunk a moment later. Safari kept the page as wide as that first
+          canvas, so on a phone the whole page scrolled sideways into an empty
+          strip (2026-10-02). The canvas ends up exactly this box's size (PAD is
+          the -inset-5), so clipping to it hides nothing. */}
       <span
         ref={fxRef}
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-5 z-[1] [&_canvas]:block [&_canvas]:h-full [&_canvas]:w-full"
+        className="pointer-events-none absolute -inset-5 z-[1] overflow-hidden [&_canvas]:block [&_canvas]:h-full [&_canvas]:w-full"
       />
       {/* A flex row, not a bare span: the published component wraps children in
           a plain inline span, so a label plus an icon laid out as inline text
