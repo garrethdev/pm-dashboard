@@ -722,7 +722,8 @@ export function todoPlaceholder(state: TodoState, day: TodoDay = 0): TodoDevice[
  * (Garreth, 2026-10-02: test it on Czedrick's phone with dummy content).
  *
  * Real stored files, so the download and the share menu are the real ones:
- * a 5 MB video and a 5-slide carousel, taking turns down the list. The caption
+ * a 5 MB video and a 5-slide carousel, taking turns down the list, each with
+ * the song its lane picks most (a null song draws no song line). The caption
  * says it is a test in case it ever gets pasted. Nothing here saves, because
  * every write on the To-do list waits for the live board; the delivery id is
  * never sent.
@@ -741,11 +742,12 @@ export function todoPlaceholderExtras(devices: TodoDevice[]): TodoExtras {
     for (const account of device.accounts) {
       for (const item of account.items) {
         if (item.kind !== "post") continue;
+        const video = n++ % 2 === 0;
         extras[item.id] = {
           deliveryId: -1,
           caption: SAMPLE_CAPTION,
-          media: n++ % 2 === 0 ? SAMPLE_VIDEO : SAMPLE_CAROUSEL,
-          song: null,
+          media: video ? SAMPLE_VIDEO : SAMPLE_CAROUSEL,
+          song: video ? "Muni Long - Made For Me" : "Miley Cyrus - Flowers",
         };
       }
     }

@@ -318,7 +318,9 @@ export function SongLine({ song }: { song: string }) {
   return (
     <span className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-text-muted">
       <MusicNote className="size-3.5 shrink-0" />
-      <span className="min-w-0 truncate">{song}</span>
+      {/* Wraps rather than truncates: beside the picture on a phone there is
+          room for about ten letters, and a cut-off song cannot be read. */}
+      <span className="min-w-0 break-words">{song}</span>
       <button
         type="button"
         onClick={() => void copy()}
