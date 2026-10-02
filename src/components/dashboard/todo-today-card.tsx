@@ -262,7 +262,9 @@ function AccountGroup({
               )}
             >
               {item.label}
-              {item.carriedOverFrom && (
+              {/* Not beside the Overdue pill, which already says it (Garreth,
+                  2026-10-02: "the pill is enough"). */}
+              {item.carriedOverFrom && !(item.status === "todo" && item.overdueFor) && (
                 <span className="no-underline"> · from {item.carriedOverFrom}</span>
               )}
             </span>

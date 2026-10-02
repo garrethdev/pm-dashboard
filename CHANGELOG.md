@@ -20,6 +20,32 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-02 — On the To-do list, the pill is enough
+
+**Where it came from:** Garreth, looking at the To-do list on a phone: an
+overdue post showed the red Overdue pill and, under it, "Due yesterday ·
+waiting 26 h". The pill is enough.
+
+**What changed:** a task with a status pill no longer has a grey line under it
+that repeats or explains the pill:
+
+- **Overdue:** no more "Due yesterday", "waiting 26 h" or "last day on the
+  list".
+- **Failed:** no more time and reason.
+- **Link needed:** no more time it was posted.
+- **Running / Stopped** (the warmup script): no more "started 10:02" or "last
+  heard 10:05".
+
+The times and the failure reason are still in the task's sheet, which opens on
+a tap. Text that no pill covers stays: a warmup's minutes, "Video not ready",
+the time a task was done, and "Due yesterday" on a post carried over from
+yesterday that is not yet 24 hours late (it has no pill, so that line is the
+only thing saying where it came from). On the Overview's To-do card, an overdue
+post likewise loses its "· from yesterday".
+
+**Verified:** on the demo To-do in WebKit set up like an iPhone: the Overdue
+pills show and no "waiting" or "last day" text remains. Not yet on `main`.
+
 ## 2026-10-02 — A post's song can be read on a phone, and the demo posts have one
 
 **Where it came from:** Czedrick's phone test of the demo To-do, through
