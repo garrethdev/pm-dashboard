@@ -20,6 +20,26 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-02 — On a phone, pages no longer slide sideways into an empty strip
+
+**Where it came from:** Garreth, using the dashboard on his phone: the page
+could be dragged sideways, showing empty space on the right.
+
+**What changed:** The cause was the shiny cyan button style (the "View
+analysis" button on Top posts, and the same style on other screens). Its shine
+is drawn on a hidden layer that starts out 300 pixels wide and is shrunk to the
+button's size a moment later. Chrome notices the shrink; Safari does not, so on
+an iPhone the page stayed as wide as that first layer. The Overview and
+Analytics pages came out about 118 pixels wider than the screen, and the Cloud
+To-do page did too. The shine layer is now cut off at its final size, so the
+first version cannot stretch the page. The button looks the same.
+
+**Verified:** in WebKit, the engine Safari uses, set up like an iPhone 14:
+before the change, Overview, Analytics and Cloud To-do could be scrolled
+sideways; after it, none of 16 pages could, on either the Cloud or the
+Physical side. Chrome showed the bug on none of them. This was a test browser
+on the Mac, not Garreth's actual phone, and it is not yet on `main`.
+
 ## 2026-10-02 — A Facebook account has a name, shown instead of its page number
 
 **Where it came from:** Garreth, adding the first Facebook account (Profile 79)
