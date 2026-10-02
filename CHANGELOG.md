@@ -20,6 +20,21 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-02 — A post's song can be read on a phone, and the demo posts have one
+
+**Where it came from:** Czedrick's phone test of the demo To-do, through
+Garreth: tap-to-post worked, but no song showed on the posts.
+
+**What changed:** the demo posts had been given no song, so the list drew no
+song line for them. The sample video now carries "Muni Long - Made For Me" and
+the sample carousel "Miley Cyrus - Flowers", the songs those two lanes pick
+most. Adding them showed a problem on the real list too: on a phone the song
+name was cut off after about ten letters ("Miley Cyru…"), so it could not be
+read without copying it. It now wraps onto a second line instead.
+
+**Verified:** in WebKit set up like an iPhone: both songs show in full on the
+demo list. Not yet on `main` or seen on a real phone.
+
 ## 2026-10-02 — Tap-to-post can be tried on the demo To-do, with dummy posts
 
 **Where it came from:** Garreth: test yesterday's tap-to-post on Czedrick's
