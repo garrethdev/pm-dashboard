@@ -1,4 +1,4 @@
-import { PLATFORM_LABEL, toPlatform } from "@/lib/platform";
+import { handleLabel, toPlatform } from "@/lib/platform";
 import {
   profileTakenMessage,
   usernameTakenMessage,
@@ -76,7 +76,7 @@ export async function profileHolder(profile: string): Promise<string | null> {
   if (!res.ok) throw new Error(`Couldn't check the Profile name (HTTP ${res.status})`);
   const row = ((await res.json()) as { username: string | null; platform: string | null; is_active: boolean }[])[0];
   if (!row) return null;
-  const who = row.username ? `@${row.username}` : "an account with no handle yet";
+  const who = handleLabel(toPlatform(row.platform), row.username) ?? "an account with no handle yet";
   return row.is_active ? who : `${who}, retired`;
 }
 
@@ -168,7 +168,7 @@ export async function createAccount(
       }
       if (body.includes("username")) {
         throw new AccountWriteError(
-          usernameTakenMessage(fields.username, PLATFORM_LABEL[fields.platform]),
+          usernameTakenMessage(fields.username, fields.platform),
           409,
         );
       }

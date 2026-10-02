@@ -16,6 +16,7 @@ import { CtaButton } from "@/components/ui/cta-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
+import { handleLabel } from "@/lib/platform";
 import { Tooltip } from "@/components/ui/tooltip";
 import {
   DEVICE_INPUT,
@@ -66,7 +67,7 @@ function toForm(d: Device): DeviceFormValues {
 }
 
 function accountName(a: DeviceAccount): string {
-  return a.username ? `@${a.username}` : (a.profile ?? `Account ${a.id}`);
+  return handleLabel(a.platform, a.username) ?? a.profile ?? `Account ${a.id}`;
 }
 
 /** /accounts/20 for "Profile 20"; null for an account with no profile number. */

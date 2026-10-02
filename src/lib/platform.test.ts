@@ -68,6 +68,13 @@ describe("platformProfileUrl", () => {
     expect(platformProfileUrl("facebook", "cleora.asmr")).toBe("https://www.facebook.com/cleora.asmr");
   });
 
+  it("turns a Facebook page number or share code back into its link", () => {
+    expect(platformProfileUrl("facebook", "61551234567890")).toBe(
+      "https://www.facebook.com/profile.php?id=61551234567890",
+    );
+    expect(platformProfileUrl("facebook", "share/1AbCdEfGh")).toBe("https://www.facebook.com/share/1AbCdEfGh/");
+  });
+
   it("returns nothing when the account has no handle yet", () => {
     expect(platformProfileUrl("facebook", null)).toBeNull();
     expect(platformProfileUrl("facebook", "  ")).toBeNull();

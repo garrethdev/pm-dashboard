@@ -2,7 +2,7 @@ import { getDevices } from "@/lib/data/devices";
 import { proxyForDisplay } from "@/lib/data/device-rules";
 import { getProxySubscriptions } from "@/lib/data/proxycheap";
 import { getPhoneRentals } from "@/lib/data/textverified";
-import type { Platform } from "@/lib/platform";
+import { handleLabel, type Platform } from "@/lib/platform";
 
 /**
  * Proxies & numbers for the real phones — design ticket P6, approved
@@ -98,7 +98,7 @@ export async function getPhoneProxyData(): Promise<PhoneProxyData> {
       accounts: d.accounts
         .filter((a) => a.isActive)
         .map((a) => ({
-          handle: a.username ? `@${a.username}` : (a.profile ?? `Account ${a.id}`),
+          handle: handleLabel(a.platform, a.username) ?? a.profile ?? `Account ${a.id}`,
           platform: a.platform,
         })),
       proxyHost: host || null,
@@ -120,7 +120,7 @@ export async function getPhoneProxyData(): Promise<PhoneProxyData> {
         return {
           number,
           account: {
-            handle: a.username ? `@${a.username}` : (a.profile ?? `Account ${a.id}`),
+            handle: handleLabel(a.platform, a.username) ?? a.profile ?? `Account ${a.id}`,
             platform: a.platform,
           },
           rental: rental

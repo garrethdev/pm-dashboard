@@ -56,10 +56,26 @@ export function platformProfileUrl(
     case "instagram":
       return `https://www.instagram.com/${h}/`;
     case "facebook":
+      // A Facebook account with no username is kept as its page number, and
+      // one given by the app's Copy link as "share/<code>" (account-rules.ts).
+      if (/^\d+$/.test(handle)) return `https://www.facebook.com/profile.php?id=${handle}`;
+      if (handle.startsWith("share/")) {
+        return `https://www.facebook.com/share/${encodeURIComponent(handle.slice("share/".length))}/`;
+      }
       return `https://www.facebook.com/${h}`;
     case "tiktok":
       return `https://www.tiktok.com/@${h}`;
   }
+}
+
+/**
+ * A handle as it is shown: "@cleora" on TikTok and Instagram. Facebook has no
+ * @-names, and its accounts are often kept as a page number or a share code,
+ * so a Facebook one is shown as it is stored. Null when there is no handle.
+ */
+export function handleLabel(platform: Platform, username: string | null | undefined): string | null {
+  if (!username) return null;
+  return platform === "facebook" ? username : `@${username}`;
 }
 
 /** Which platforms a filter should offer: all three in Physical, the ones in the list in Cloud. */

@@ -108,7 +108,7 @@ export function AddAccountModal({
   const switchedOn = useMemo(() => phones.filter((p) => p.isActive), [phones]);
 
   const cleanProfile = normaliseProfile(profile);
-  const cleanUsername = normaliseUsername(username);
+  const cleanUsername = normaliseUsername(username, platform);
   // Only when the text would be stored differently from the way it was typed,
   // so the name that ties everything together is never changed silently.
   const restated =
@@ -202,16 +202,18 @@ export function AddAccountModal({
               {restated && <span className="text-xs text-text-muted">{restated}</span>}
             </Field>
 
-            <Field label="Handle">
+            {/* Facebook is given by its link: many Facebook accounts have no
+                username at all (Yurie, 2026-10-02). */}
+            <Field label={platform === "facebook" ? "Facebook link" : "Handle"}>
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={busy}
-                maxLength={61}
+                maxLength={platform === "facebook" ? 300 : 61}
                 autoComplete="off"
                 autoCapitalize="off"
                 spellCheck={false}
-                placeholder="@handle"
+                placeholder={platform === "facebook" ? "facebook.com/…" : "@handle"}
                 className={DEVICE_INPUT}
               />
             </Field>

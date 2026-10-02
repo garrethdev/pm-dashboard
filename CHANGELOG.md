@@ -20,6 +20,35 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-02 — A Facebook account is added by its link, not a username
+
+**Where it came from:** Yurie, setting up Facebook accounts, could not fill in
+the Handle box: many Facebook accounts have no username at all, only a
+numbered page. Garreth asked for the box to take a Facebook link instead.
+
+**What changed:** when the platform is Facebook, the box on Add account and
+Edit account is called **Facebook link** and takes whatever Facebook gives
+you: the page's address (including the `profile.php?id=…` kind that accounts
+without a username have), a `facebook.com/people/…` address, the link from
+the app's **Copy link**, or a plain username. The app keeps just the part that
+finds the page again, so the account's link in the Accounts list still opens
+the right Facebook page. A link to a post, a group or another site is refused
+with a message asking for the account's own link. TikTok and Instagram are
+unchanged. Facebook accounts are now shown without an "@" in front, since
+Facebook does not use @-names and a page number with one would look wrong —
+on the account page, the Accounts list, To-do, the phone pages, Proxies &
+numbers, the calendar and the retire and ban-cleanup windows. The one place
+still adding an "@" is the bell's overdue-warmup alert, which is not told the
+platform.
+
+One limit: Copy link can give a different code each time it is pressed, so the
+"already in the list" check cannot catch the same Facebook account added twice
+by two different Copy links.
+
+**Verified:** by tests only (every link shape above, and that each is turned
+back into a working address). No Facebook account exists yet, so nothing
+already saved needed converting. Not yet tried in the browser or by Yurie.
+
 ## 2026-10-02 — The Live view buttons work: phone 1 is live from anywhere
 
 **Where it came from:** the live view's phone day (PF-14, design P9; tracker

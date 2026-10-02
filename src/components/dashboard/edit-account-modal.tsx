@@ -22,7 +22,8 @@ import type { PhoneOption } from "@/components/dashboard/accounts-by-phone";
 import { mirrorLabel, type MirrorOption } from "@/components/dashboard/add-account-modal";
 import type { AccountRow, WarmupMode } from "@/lib/data/accounts";
 import type { ContentTypeOption } from "@/lib/data/scheduler-overrides";
-import { PLATFORM_LABEL } from "@/lib/platform";
+import { PLATFORM_LABEL, handleLabel, platformProfileUrl } from "@/lib/platform";
+import { normaliseUsername } from "@/lib/data/account-rules";
 import { cn } from "@/lib/utils";
 
 /**
@@ -83,7 +84,11 @@ export function EditAccountModal({
    *  part failed and the window stays open to say so. */
   onSaved: (close: boolean) => void;
 }) {
-  const [handle, setHandle] = useState(account.username ?? "");
+  // A Facebook account is edited as its link (account-rules.ts keeps only the
+  // part that finds the page, which is not always something you could type).
+  const [handle, setHandle] = useState(
+    (account.platform === "facebook" ? platformProfileUrl("facebook", account.username) : account.username) ?? "",
+  );
   const [character, setCharacter] = useState(account.character);
   const [phoneId, setPhoneId] = useState<string>(account.deviceId ? String(account.deviceId) : "");
   const [number, setNumber] = useState(account.phoneNumber ?? "");
@@ -132,7 +137,9 @@ export function EditAccountModal({
 
     // Only what changed, each to the route that owns it.
     const details: Record<string, unknown> = {};
-    if (handle.trim().replace(/^@+/, "") !== (account.username ?? "")) details.username = handle;
+    if ((normaliseUsername(handle, account.platform) ?? handle) !== (account.username ?? "")) {
+      details.username = handle;
+    }
     if (character !== account.character) details.character = character;
     if (number.trim() !== (account.phoneNumber ?? "")) details.phoneNumber = number;
     if (isFacebook && mirrors !== "" && mirrors !== (account.mirrorsProfile ?? "")) {
@@ -224,7 +231,7 @@ export function EditAccountModal({
               <h2 className="text-base font-semibold">Edit account</h2>
               <p className="truncate text-xs text-text-muted">
                 {account.profile}
-                {account.username ? ` · @${account.username}` : ""}
+                {account.username ? ` · ${handleLabel(account.platform, account.username)}` : ""}
               </p>
             </div>
           </div>
@@ -243,16 +250,16 @@ export function EditAccountModal({
             <div className="grid gap-3 sm:grid-cols-2">
               <Locked label="Profile name" value={account.profile} />
               <Locked label="Platform" value={PLATFORM_LABEL[account.platform]} />
-              <Field label="Handle">
+              <Field label={isFacebook ? "Facebook link" : "Handle"}>
                 <input
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
                   disabled={busy}
-                  maxLength={61}
+                  maxLength={isFacebook ? 300 : 61}
                   autoComplete="off"
                   autoCapitalize="off"
                   spellCheck={false}
-                  placeholder="@handle"
+                  placeholder={isFacebook ? "facebook.com/…" : "@handle"}
                   className={DEVICE_INPUT}
                 />
               </Field>

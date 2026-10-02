@@ -3,7 +3,7 @@ import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, parseAccountId, type AccountId } from "
 import { sbRest } from "@/lib/data/supabase";
 import { runStateFor, type RunRow } from "@/lib/data/warmup-run-state";
 import { getRunsOnDay } from "@/lib/data/warmup-runs";
-import { toPlatform } from "@/lib/platform";
+import { handleLabel, toPlatform } from "@/lib/platform";
 import {
   SESSION_TARGET_MINUTES,
   dayRangeET,
@@ -427,7 +427,7 @@ export async function getTodoBoard(
       .filter((a) => a.device_id === d.id)
       .map<TodoAccount>((a) => ({
         id: a.id,
-        handle: a.username ? `@${a.username}` : (a.geelark_profile ?? `Account ${a.id}`),
+        handle: handleLabel(toPlatform(a.platform), a.username) ?? a.geelark_profile ?? `Account ${a.id}`,
         platform: toPlatform(a.platform),
         character: a.character ?? "—",
         items: itemsByAccount.get(a.id) ?? [],

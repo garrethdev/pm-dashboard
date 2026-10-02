@@ -5,6 +5,7 @@ import {
   normalisePhoneNumber,
   normaliseUsername,
   parseAccountEdit,
+  usernameRefusal,
   parseNewAccount,
 } from "@/lib/data/account-rules";
 
@@ -79,6 +80,61 @@ describe("normaliseUsername", () => {
     expect(normaliseUsername("cleora glp")).toBeNull();
     expect(normaliseUsername("tiktok.com/@cleora")).toBeNull();
     expect(normaliseUsername("")).toBeNull();
+  });
+});
+
+describe("a Facebook account is given by its link (Yurie, 2026-10-02)", () => {
+  const fb = (raw: string) => normaliseUsername(raw, "facebook");
+
+  it("keeps the page number of an account with no username", () => {
+    expect(fb("https://www.facebook.com/profile.php?id=61551234567890")).toBe("61551234567890");
+    expect(fb("m.facebook.com/profile.php?id=61551234567890&mibextid=ZbWKwL")).toBe("61551234567890");
+    expect(fb("https://www.facebook.com/people/Jane-Doe/61551234567890/")).toBe("61551234567890");
+  });
+
+  it("keeps the code of a link from the app's Copy link", () => {
+    expect(fb("https://www.facebook.com/share/1AbCdEfGh/")).toBe("share/1AbCdEfGh");
+    expect(fb("https://www.facebook.com/share/1AbCdEfGh/?mibextid=wwXIfr")).toBe("share/1AbCdEfGh");
+  });
+
+  it("keeps the username when the link has one, and still takes a bare username", () => {
+    expect(fb("https://www.facebook.com/jane.doe/")).toBe("jane.doe");
+    expect(fb("facebook.com/jane.doe")).toBe("jane.doe");
+    expect(fb("@jane.doe")).toBe("jane.doe");
+  });
+
+  it("refuses a post, a group, another site and Facebook's own pages", () => {
+    expect(fb("https://www.facebook.com/share/p/1AbCdEfGh/")).toBeNull();
+    expect(fb("https://www.facebook.com/groups/12345678")).toBeNull();
+    expect(fb("https://www.facebook.com/profile.php")).toBeNull();
+    expect(fb("https://www.facebook.com/watch")).toBeNull();
+    expect(fb("https://notfacebook.com/jane.doe")).toBeNull();
+    expect(fb("https://instagram.com/jane.doe")).toBeNull();
+  });
+
+  it("is only for Facebook: a link is still refused for TikTok and Instagram", () => {
+    expect(normaliseUsername("https://www.facebook.com/jane.doe", "instagram")).toBeNull();
+    expect(normaliseUsername("https://www.facebook.com/jane.doe")).toBeNull();
+  });
+
+  it("asks for the link, not a handle, when it will not do", () => {
+    expect(
+      parseNewAccount(
+        {
+          profile: "Profile 90",
+          username: "https://www.facebook.com/groups/1",
+          character: "Character 1",
+          platform: "facebook",
+          deliveryMode: "geelark",
+          createdOn: "2026-10-01",
+        },
+        { today: "2026-10-02" },
+      ),
+    ).toEqual({ ok: false, error: usernameRefusal("facebook") });
+    expect(parseAccountEdit({ username: "facebook.com/share/1AbC" }, "facebook")).toEqual({
+      ok: true,
+      fields: { username: "share/1AbC" },
+    });
   });
 });
 
