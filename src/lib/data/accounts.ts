@@ -25,6 +25,9 @@ export type WarmupMode = "manual" | "script";
 export interface AccountRow {
   profile: string;
   username: string | null;
+  /** Facebook only: the name shown in place of its page number (Garreth,
+   *  2026-10-02). Null on every other account. */
+  displayName: string | null;
   character: string; // "Character 3"
   platform: Platform;
   /** Who delivers posts: a Geelark cloud phone, or a person on a real iPhone (PF-01). */
@@ -111,6 +114,7 @@ interface RawAccount {
   device_id: number | null;
   warmup_mode: string | null;
   phone_number: string | null;
+  display_name: string | null;
   /** Both text, never numbers (account-id.ts, PF-22). */
   id: string;
   mirrors_account_id: string | null;
@@ -151,7 +155,7 @@ async function fetchAccounts(): Promise<AccountRow[]> {
     effective,
   ] = await Promise.all([
     sbRest<RawAccount[]>(
-      "accounts?select=geelark_profile,username,character,platform,delivery_mode,device_id,warmup_mode,phone_number," +
+      "accounts?select=geelark_profile,username,display_name,character,platform,delivery_mode,device_id,warmup_mode,phone_number," +
         "id:id::text,mirrors_account_id:mirrors_account_id::text,is_active,posting_paused,health_status,health_confidence,median_views_7d,median_views_28d,account_created_on,banned_at,status_note&or=(character.like.Character*,username.not.is.null,is_active.eq.false)",
     ),
     sbRest<{ platform: string; account: string; median_views_last5: number; posts_counted: number }[]>(
@@ -277,6 +281,7 @@ async function fetchAccounts(): Promise<AccountRow[]> {
     return {
       profile: a.geelark_profile,
       username: a.username,
+      displayName: a.display_name,
       character: a.character,
       platform,
       deliveryMode: a.delivery_mode === "manual" ? "manual" : "geelark",

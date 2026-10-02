@@ -162,7 +162,7 @@ export default async function AccountDetailPage({
                   rel="noopener noreferrer"
                   className="inline-flex w-fit items-center gap-1 text-sm leading-5 text-accent hover:opacity-80"
                 >
-                  {handleLabel(data.platform, data.username)}
+                  {data.platform === "facebook" ? "Facebook page" : handleLabel(data.platform, data.username)}
                   <ExternalLink className="size-3" />
                 </a>
               ) : (

@@ -89,6 +89,7 @@ export function EditAccountModal({
   const [handle, setHandle] = useState(
     (account.platform === "facebook" ? platformProfileUrl("facebook", account.username) : account.username) ?? "",
   );
+  const [displayName, setDisplayName] = useState(account.displayName ?? "");
   const [character, setCharacter] = useState(account.character);
   const [phoneId, setPhoneId] = useState<string>(account.deviceId ? String(account.deviceId) : "");
   const [number, setNumber] = useState(account.phoneNumber ?? "");
@@ -139,6 +140,9 @@ export function EditAccountModal({
     const details: Record<string, unknown> = {};
     if ((normaliseUsername(handle, account.platform) ?? handle) !== (account.username ?? "")) {
       details.username = handle;
+    }
+    if (isFacebook && displayName.trim().replace(/\s+/g, " ") !== (account.displayName ?? "")) {
+      details.displayName = displayName;
     }
     if (character !== account.character) details.character = character;
     if (number.trim() !== (account.phoneNumber ?? "")) details.phoneNumber = number;
@@ -231,7 +235,7 @@ export function EditAccountModal({
               <h2 className="text-base font-semibold">Edit account</h2>
               <p className="truncate text-xs text-text-muted">
                 {account.profile}
-                {account.username ? ` · ${handleLabel(account.platform, account.username)}` : ""}
+                {account.username ? ` · ${handleLabel(account.platform, account.username, account.displayName)}` : ""}
               </p>
             </div>
           </div>
@@ -250,6 +254,21 @@ export function EditAccountModal({
             <div className="grid gap-3 sm:grid-cols-2">
               <Locked label="Profile name" value={account.profile} />
               <Locked label="Platform" value={PLATFORM_LABEL[account.platform]} />
+              {isFacebook && (
+                <Field label="Name" className="sm:col-span-2">
+                  <input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    disabled={busy}
+                    maxLength={80}
+                    autoComplete="off"
+                    autoCapitalize="words"
+                    spellCheck={false}
+                    placeholder="Imani Vaughn"
+                    className={DEVICE_INPUT}
+                  />
+                </Field>
+              )}
               <Field label={isFacebook ? "Facebook link" : "Handle"}>
                 <input
                   value={handle}

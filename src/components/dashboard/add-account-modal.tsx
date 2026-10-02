@@ -65,6 +65,8 @@ export function AddAccountModal({
 }) {
   const [profile, setProfile] = useState("");
   const [username, setUsername] = useState("");
+  // Facebook only: the name to show instead of the page number (2026-10-02).
+  const [displayName, setDisplayName] = useState("");
   const [character, setCharacter] = useState(characters[0] ?? "");
   const [platform, setPlatform] = useState<Platform>("tiktok");
   const [mode, setMode] = useState<Fleet>(fleet);
@@ -123,6 +125,7 @@ export function AddAccountModal({
   const ready =
     !!cleanProfile &&
     !!cleanUsername &&
+    (platform !== "facebook" || displayName.trim() !== "") &&
     character !== "" &&
     createdOn !== "" &&
     (!asksMirror || mirrors !== "") &&
@@ -145,6 +148,7 @@ export function AddAccountModal({
           deviceId: mode === "physical" && deviceId !== "" ? Number(deviceId) : null,
           createdOn,
           phoneNumber: mode === "physical" ? phoneNumber : null,
+          displayName: platform === "facebook" ? displayName : null,
           mirrorsProfile: asksMirror ? mirrors : null,
           paused,
         }),
@@ -241,6 +245,24 @@ export function AddAccountModal({
                 options={PLATFORMS.map((p) => ({ value: p, label: PLATFORM_LABEL[p] }))}
               />
             </Group>
+
+            {/* A Facebook account is often only a page number, so it is
+                given the name it is shown by (Garreth, 2026-10-02). */}
+            {platform === "facebook" && (
+              <Field label="Name" className="sm:col-span-2">
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  disabled={busy}
+                  maxLength={80}
+                  autoComplete="off"
+                  autoCapitalize="words"
+                  spellCheck={false}
+                  placeholder="Imani Vaughn"
+                  className={DEVICE_INPUT}
+                />
+              </Field>
+            )}
 
             {asksMirror && (
               <Field label="Same videos as" className="sm:col-span-2">

@@ -272,10 +272,11 @@ export async function getCleanupsByDevice(
         id: AccountId;
         geelark_profile: string | null;
         username: string | null;
+        display_name: string | null;
         platform: string | null;
       }[]
     >(
-      `accounts?select=${ACCOUNT_ID_COL},geelark_profile,username,platform&id=in.${inList}`,
+      `accounts?select=${ACCOUNT_ID_COL},geelark_profile,username,display_name,platform&id=in.${inList}`,
       "the banned accounts",
     ),
   ]);
@@ -299,7 +300,7 @@ export async function getCleanupsByDevice(
 
     const cleanup: BanCleanup = {
       accountId,
-      handle: handleLabel(toPlatform(a?.platform), a?.username) ?? a?.geelark_profile ?? `Account ${accountId}`,
+      handle: handleLabel(toPlatform(a?.platform), a?.username, a?.display_name) ?? a?.geelark_profile ?? `Account ${accountId}`,
       platform: toPlatform(a?.platform),
       steps: mine.map<BanStep>((s) => ({
         id: String(s.id),

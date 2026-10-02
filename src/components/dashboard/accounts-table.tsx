@@ -387,6 +387,7 @@ export function AccountsTable({
         q === "" ||
         r.profile.toLowerCase().includes(q) ||
         (r.username?.toLowerCase().includes(q) ?? false) ||
+        (r.displayName?.toLowerCase().includes(q) ?? false) ||
         r.character.toLowerCase().includes(q) ||
         r.healthStatus.toLowerCase().includes(q)),
   );
@@ -646,7 +647,8 @@ export function AccountsTable({
                             rel="noreferrer"
                             className="inline-flex items-center gap-1 text-accent hover:opacity-80"
                           >
-                            {row.username} <ExternalLink className="size-3" />
+                            {row.platform === "facebook" ? (row.displayName ?? row.username) : row.username}{" "}
+                            <ExternalLink className="size-3" />
                           </a>
                         ) : (
                           <span className="text-text-muted">—</span>
@@ -1139,7 +1141,7 @@ export function AccountsTable({
           // P8 design review: the invented accounts of `?demo=1`, drawn with
           // invented facts. The hold saves nothing.
           <PhoneRetireModal
-            handle={handleLabel(retiring.platform, retiring.username) ?? retiring.profile}
+            handle={handleLabel(retiring.platform, retiring.username, retiring.displayName) ?? retiring.profile}
             sample={{
               phone: phones.find((p) => p.id === retiring.deviceId)?.name ?? "its phone",
               others: allRows.filter(
@@ -1157,7 +1159,7 @@ export function AccountsTable({
           // Chosen by the account's own delivery mode, not by which fleet is
           // on screen, so it cannot be sent to the robot from anywhere.
           <PhoneRetireModal
-            handle={handleLabel(retiring.platform, retiring.username) ?? retiring.profile}
+            handle={handleLabel(retiring.platform, retiring.username, retiring.displayName) ?? retiring.profile}
             profile={retiring.profile}
             onClose={() => setRetiring(null)}
             onRetired={() => {

@@ -98,7 +98,7 @@ export async function getPhoneProxyData(): Promise<PhoneProxyData> {
       accounts: d.accounts
         .filter((a) => a.isActive)
         .map((a) => ({
-          handle: handleLabel(a.platform, a.username) ?? a.profile ?? `Account ${a.id}`,
+          handle: handleLabel(a.platform, a.username, a.displayName) ?? a.profile ?? `Account ${a.id}`,
           platform: a.platform,
         })),
       proxyHost: host || null,
@@ -120,7 +120,7 @@ export async function getPhoneProxyData(): Promise<PhoneProxyData> {
         return {
           number,
           account: {
-            handle: handleLabel(a.platform, a.username) ?? a.profile ?? `Account ${a.id}`,
+            handle: handleLabel(a.platform, a.username, a.displayName) ?? a.profile ?? `Account ${a.id}`,
             platform: a.platform,
           },
           rental: rental

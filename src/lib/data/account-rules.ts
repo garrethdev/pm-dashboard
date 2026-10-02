@@ -115,6 +115,25 @@ function facebookKey(text: string): string | null {
   return null;
 }
 
+/**
+ * The name shown for an account whose handle is not a name (Garreth,
+ * 2026-10-02): a Facebook account kept as its page number. Blank means none;
+ * anything else is kept tidied, up to 80 characters.
+ */
+export function normaliseDisplayName(
+  raw: unknown,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (raw === null || raw === undefined) return { ok: true, value: null };
+  if (typeof raw !== "string") return { ok: false, error: "The name must be text." };
+  const name = raw.trim().replace(/\s+/g, " ");
+  if (name === "") return { ok: true, value: null };
+  if (name.length > 80) return { ok: false, error: "Keep the name to 80 characters." };
+  return { ok: true, value: name };
+}
+
+/** Said when a Facebook account is added without its name. */
+export const DISPLAY_NAME_MISSING = "Give the Facebook account its name, as it shows on the page.";
+
 /** The refusal for a handle that will not do, worded for the platform. */
 export function usernameRefusal(platform?: Platform): string {
   return platform === "facebook"
@@ -149,6 +168,9 @@ export interface AccountEditFields {
   username?: string;
   character?: string;
   phoneNumber?: string | null;
+  /** Facebook only: the name shown in place of the page number, or null to
+   *  clear it (Garreth, 2026-10-02). */
+  displayName?: string | null;
   /** The phone it is on, or null to take it off its phone. */
   deviceId?: number | null;
   /** Facebook only: the Profile name of the Instagram account whose videos it
@@ -177,6 +199,12 @@ export function parseAccountEdit(
     const character = typeof body.character === "string" ? body.character.trim() : "";
     if (character === "") return { ok: false, error: "Choose which character this account is." };
     fields.character = character;
+  }
+
+  if (body.displayName !== undefined) {
+    const name = normaliseDisplayName(body.displayName);
+    if (!name.ok) return name;
+    fields.displayName = name.value;
   }
 
   if (body.phoneNumber !== undefined) {
@@ -227,6 +255,9 @@ export interface NewAccountFields {
   paused: boolean;
   /** The account's own number, or null (P14). */
   phoneNumber: string | null;
+  /** Facebook only: the name shown in place of its page number (Garreth,
+   *  2026-10-02). Null on every other account. */
+  displayName: string | null;
   /** A Physical Facebook account posts the same videos as one Instagram
    *  account, named here by its Profile name (Garreth, 2026-10-01). Null on
    *  every other account. */
@@ -307,6 +338,16 @@ export function parseNewAccount(
   const phoneNumber = normalisePhoneNumber(body.phoneNumber);
   if (!phoneNumber.ok) return phoneNumber;
 
+  // A Facebook account is kept as its link, often only a page number, so it
+  // is given a name to be shown by. Other platforms' handles are their names.
+  let displayName: string | null = null;
+  if (platform === "facebook") {
+    const name = normaliseDisplayName(body.displayName);
+    if (!name.ok) return name;
+    if (!name.value) return { ok: false, error: DISPLAY_NAME_MISSING };
+    displayName = name.value;
+  }
+
   // Only a Facebook account on a real phone follows an Instagram: the daily
   // planner skips a following account entirely, and on Cloud nothing would
   // ever hand it the copies.
@@ -320,6 +361,7 @@ export function parseNewAccount(
     ok: true,
     fields: {
       mirrorsProfile,
+      displayName,
       phoneNumber: phoneNumber.value,
       profile,
       username,

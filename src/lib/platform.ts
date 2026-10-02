@@ -71,11 +71,16 @@ export function platformProfileUrl(
 /**
  * A handle as it is shown: "@cleora" on TikTok and Instagram. Facebook has no
  * @-names, and its accounts are often kept as a page number or a share code,
- * so a Facebook one is shown as it is stored. Null when there is no handle.
+ * so a Facebook one is shown by its name (accounts.display_name, Garreth
+ * 2026-10-02), or as it is stored when it has none. Null when there is neither.
  */
-export function handleLabel(platform: Platform, username: string | null | undefined): string | null {
-  if (!username) return null;
-  return platform === "facebook" ? username : `@${username}`;
+export function handleLabel(
+  platform: Platform,
+  username: string | null | undefined,
+  displayName?: string | null,
+): string | null {
+  if (platform === "facebook") return displayName || username || null;
+  return username ? `@${username}` : null;
 }
 
 /** Which platforms a filter should offer: all three in Physical, the ones in the list in Cloud. */

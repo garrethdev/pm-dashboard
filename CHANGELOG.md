@@ -20,6 +20,29 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-02 — A Facebook account has a name, shown instead of its page number
+
+**Where it came from:** Garreth, adding the first Facebook account (Profile 79)
+with the change below. Its link had no username in it, so the dashboard kept
+its page number, and every screen showed the account as `61588896089516`.
+
+**What changed:** Add account and Edit account have a **Name** box for
+Facebook accounts. A new Facebook account cannot be saved without one; an
+existing one gets it from Edit account. The name is what the Accounts list,
+the account's page, To-do, the phone pages, Proxies & numbers and the retire
+and ban-cleanup windows show for it, and the Accounts search finds it by name.
+On the account's page the link under the name now reads "Facebook page"
+rather than the number. The calendar's day view still shows the number; it is
+read through a database function that was left alone.
+
+The database has one new column for it, `accounts.display_name`, empty on
+every other account. It was applied live the same day. It is not added to the
+`accounts_with_content_types` view, because that view can be read with the
+public key.
+
+**Verified:** by tests, and the new column exists live. Not yet seen in the
+browser. Profile 79 has no name until somebody sets one in Edit account.
+
 ## 2026-10-02 — A Facebook account is added by its link, not a username
 
 **Where it came from:** Yurie, setting up Facebook accounts, could not fill in

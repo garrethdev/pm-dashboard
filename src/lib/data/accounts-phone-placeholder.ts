@@ -62,6 +62,7 @@ function account(partial: {
   return {
     profile: partial.profile,
     username: partial.username,
+    displayName: null,
     character: partial.character,
     platform: partial.platform,
     deliveryMode: "manual",

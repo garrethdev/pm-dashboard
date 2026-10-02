@@ -67,7 +67,7 @@ function toForm(d: Device): DeviceFormValues {
 }
 
 function accountName(a: DeviceAccount): string {
-  return handleLabel(a.platform, a.username) ?? a.profile ?? `Account ${a.id}`;
+  return handleLabel(a.platform, a.username, a.displayName) ?? a.profile ?? `Account ${a.id}`;
 }
 
 /** /accounts/20 for "Profile 20"; null for an account with no profile number. */
