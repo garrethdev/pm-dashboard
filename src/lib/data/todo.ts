@@ -191,6 +191,7 @@ interface RawAccount {
   id: AccountId;
   geelark_profile: string | null;
   username: string | null;
+  display_name: string | null;
   character: string | null;
   platform: string | null;
   device_id: number | null;
@@ -301,7 +302,7 @@ export async function getTodoBoard(
         (onePhone ? `&id=eq.${only.deviceId}` : ""),
     ),
     sbRest<RawAccount[]>(
-      `accounts?select=${ACCOUNT_ID_COL},geelark_profile,username,character,platform,device_id,` +
+      `accounts?select=${ACCOUNT_ID_COL},geelark_profile,username,display_name,character,platform,device_id,` +
         "warmup_mode,posting_paused&is_active=eq.true&order=id.asc" +
         (onePhone ? `&device_id=eq.${only.deviceId}` : "&device_id=not.is.null"),
     ),
@@ -427,7 +428,7 @@ export async function getTodoBoard(
       .filter((a) => a.device_id === d.id)
       .map<TodoAccount>((a) => ({
         id: a.id,
-        handle: handleLabel(toPlatform(a.platform), a.username) ?? a.geelark_profile ?? `Account ${a.id}`,
+        handle: handleLabel(toPlatform(a.platform), a.username, a.display_name) ?? a.geelark_profile ?? `Account ${a.id}`,
         platform: toPlatform(a.platform),
         character: a.character ?? "—",
         items: itemsByAccount.get(a.id) ?? [],

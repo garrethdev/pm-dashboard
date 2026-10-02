@@ -19,6 +19,8 @@ export interface DeviceAccount {
   id: AccountId;
   profile: string | null;
   username: string | null;
+  /** Facebook only: the name shown in place of its page number. */
+  displayName: string | null;
   character: string | null;
   platform: Platform;
   isActive: boolean;
@@ -60,6 +62,7 @@ interface RawDeviceAccount {
   id: AccountId;
   geelark_profile: string | null;
   username: string | null;
+  display_name: string | null;
   character: string | null;
   platform: string | null;
   is_active: boolean;
@@ -69,13 +72,14 @@ interface RawDeviceAccount {
 
 const DEVICE_COLS =
   "id,name,model,ios_version,proxy,timezone,whoer_screenshot_path,is_active,notes,phone_numbers";
-const ACCOUNT_COLS = `${ACCOUNT_ID_COL},geelark_profile,username,character,platform,is_active,device_id,phone_number`;
+const ACCOUNT_COLS = `${ACCOUNT_ID_COL},geelark_profile,username,display_name,character,platform,is_active,device_id,phone_number`;
 
 function toAccount(a: RawDeviceAccount): DeviceAccount {
   return {
     id: a.id,
     profile: a.geelark_profile,
     username: a.username,
+    displayName: a.display_name,
     character: a.character,
     platform: toPlatform(a.platform),
     isActive: a.is_active,

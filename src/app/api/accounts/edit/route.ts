@@ -89,6 +89,14 @@ export async function POST(request: Request) {
       }
       columns.character = fields.character;
     }
+    // A name only means something on Facebook, whose handle is often a number.
+    if (
+      fields.displayName !== undefined &&
+      toPlatform(account.platform) === "facebook" &&
+      fields.displayName !== account.display_name
+    ) {
+      columns.display_name = fields.displayName;
+    }
     if (fields.phoneNumber !== undefined && fields.phoneNumber !== account.phone_number) {
       columns.phone_number = fields.phoneNumber;
     }

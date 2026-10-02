@@ -120,7 +120,7 @@ export function PostingSettingsModal({
               <h2 className="text-base font-semibold">Posting: {account.profile}</h2>
               <p className="text-xs text-text-muted">
                 {account.character || "no character"}
-                {account.username ? ` ${handleLabel(account.platform, account.username)}` : ""}
+                {account.username ? ` ${handleLabel(account.platform, account.username, account.displayName)}` : ""}
               </p>
             </div>
           </div>

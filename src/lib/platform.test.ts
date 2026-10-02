@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   PLATFORMS,
+  handleLabel,
   PLATFORM_LABEL,
   PLATFORM_SHORT_LABEL,
   hasAnalytics,
@@ -127,5 +128,18 @@ describe("platformsToOffer", () => {
   it("keeps Cloud on the platforms it has", () => {
     const options = platformFilterOptions(platformsToOffer("cloud", ["tiktok", "instagram"]));
     expect(options.map((o) => o.value)).toEqual(["all", "tiktok", "instagram"]);
+  });
+});
+
+describe("handleLabel", () => {
+  it("puts an @ on TikTok and Instagram handles", () => {
+    expect(handleLabel("tiktok", "cleora")).toBe("@cleora");
+    expect(handleLabel("instagram", "cleora", "Cleora")).toBe("@cleora");
+  });
+
+  it("shows a Facebook account by its name, or as stored when it has none", () => {
+    expect(handleLabel("facebook", "61588896089516", "Imani Vaughn")).toBe("Imani Vaughn");
+    expect(handleLabel("facebook", "61588896089516", null)).toBe("61588896089516");
+    expect(handleLabel("facebook", null, null)).toBeNull();
   });
 });

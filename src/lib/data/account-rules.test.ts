@@ -6,6 +6,8 @@ import {
   normaliseUsername,
   parseAccountEdit,
   usernameRefusal,
+  normaliseDisplayName,
+  DISPLAY_NAME_MISSING,
   parseNewAccount,
 } from "@/lib/data/account-rules";
 
@@ -256,9 +258,10 @@ describe("a Facebook account posts its Instagram's videos (2026-10-01)", () => {
   });
 
   it("keeps the Instagram account it was given, as a Profile name", () => {
-    const r = parseNewAccount(body({ platform: "facebook", mirrorsProfile: "profile 8" }), {
-      today: TODAY,
-    });
+    const r = parseNewAccount(
+      body({ platform: "facebook", mirrorsProfile: "profile 8", displayName: "Imani Vaughn" }),
+      { today: TODAY },
+    );
     expect(r.ok && r.fields.mirrorsProfile).toBe("Profile 8");
   });
 
@@ -266,7 +269,7 @@ describe("a Facebook account posts its Instagram's videos (2026-10-01)", () => {
     const tiktok = parseNewAccount(body({ mirrorsProfile: "Profile 8" }), { today: TODAY });
     expect(tiktok.ok && tiktok.fields.mirrorsProfile).toBe(null);
     const cloud = parseNewAccount(
-      body({ platform: "facebook", deliveryMode: "geelark", mirrorsProfile: "Profile 8" }),
+      body({ platform: "facebook", deliveryMode: "geelark", mirrorsProfile: "Profile 8", displayName: "Imani" }),
       { today: TODAY },
     );
     expect(cloud.ok && cloud.fields.mirrorsProfile).toBe(null);
@@ -278,5 +281,34 @@ describe("a Facebook account posts its Instagram's videos (2026-10-01)", () => {
       fields: { mirrorsProfile: "Profile 8" },
     });
     expect(parseAccountEdit({ mirrorsProfile: "" }).ok).toBe(false);
+  });
+});
+
+describe("a Facebook account is shown by its name (Garreth, 2026-10-02)", () => {
+  const fb = (extra: Record<string, unknown>) =>
+    parseNewAccount(body({ platform: "facebook", mirrorsProfile: "Profile 8", ...extra }), { today: TODAY });
+
+  it("asks a new Facebook account for its name", () => {
+    expect(fb({})).toEqual({ ok: false, error: DISPLAY_NAME_MISSING });
+    expect(fb({ displayName: "   " })).toEqual({ ok: false, error: DISPLAY_NAME_MISSING });
+  });
+
+  it("keeps the name tidied", () => {
+    const r = fb({ displayName: "  Imani   Vaughn " });
+    expect(r.ok && r.fields.displayName).toBe("Imani Vaughn");
+  });
+
+  it("keeps no name on other platforms, whose handle is the name", () => {
+    const r = parseNewAccount(body({ displayName: "Imani Vaughn" }), { today: TODAY });
+    expect(r.ok && r.fields.displayName).toBe(null);
+  });
+
+  it("refuses a name over 80 characters", () => {
+    expect(normaliseDisplayName("x".repeat(81)).ok).toBe(false);
+  });
+
+  it("lets Edit account change it, or clear it with a blank", () => {
+    expect(parseAccountEdit({ displayName: "Imani V" })).toEqual({ ok: true, fields: { displayName: "Imani V" } });
+    expect(parseAccountEdit({ displayName: "" })).toEqual({ ok: true, fields: { displayName: null } });
   });
 });

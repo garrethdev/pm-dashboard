@@ -349,8 +349,10 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
     ),
     // Read off the table itself: accounts_with_content_types predates the
     // column and does not carry it.
-    sbRest<{ delivery_mode: string | null }[]>(
-      `accounts?select=delivery_mode&geelark_profile=eq.${enc}`,
+    // The name too: a Facebook account's own name lives only on accounts, and
+    // the view above is readable with the public key, so it is not added there.
+    sbRest<{ delivery_mode: string | null; display_name: string | null }[]>(
+      `accounts?select=delivery_mode,display_name&geelark_profile=eq.${enc}`,
     ),
   ]);
 
@@ -393,7 +395,8 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
     accountCreatedOn: a.account_created_on,
     profileUrl: platformProfileUrl(platform, a.username),
     avatarUrl: card.avatarUrl,
-    displayName: card.displayName,
+    // Facebook has no lookup, so its name is the one given in the dashboard.
+    displayName: card.displayName ?? modeRows[0]?.display_name ?? null,
     followers: card.followers,
     medianViews7d: measured ? (healthRows[0]?.median_7d_r ?? null) : null,
     highestViews: nums.length ? Math.max(...nums) : null,

@@ -70,13 +70,19 @@ export async function getActiveCharacters(): Promise<string[]> {
  */
 export async function profileHolder(profile: string): Promise<string | null> {
   const res = await sbFetch(
-    `accounts?select=username,platform,is_active&geelark_profile=eq.${encodeURIComponent(profile)}&limit=1`,
+    `accounts?select=username,display_name,platform,is_active&geelark_profile=eq.${encodeURIComponent(profile)}&limit=1`,
     {},
   );
   if (!res.ok) throw new Error(`Couldn't check the Profile name (HTTP ${res.status})`);
-  const row = ((await res.json()) as { username: string | null; platform: string | null; is_active: boolean }[])[0];
+  const row = ((await res.json()) as {
+    username: string | null;
+    display_name: string | null;
+    platform: string | null;
+    is_active: boolean;
+  }[])[0];
   if (!row) return null;
-  const who = handleLabel(toPlatform(row.platform), row.username) ?? "an account with no handle yet";
+  const who =
+    handleLabel(toPlatform(row.platform), row.username, row.display_name) ?? "an account with no handle yet";
   return row.is_active ? who : `${who}, retired`;
 }
 
@@ -145,6 +151,7 @@ export async function createAccount(
         delivery_mode: fields.deliveryMode,
         device_id: fields.deviceId,
         phone_number: fields.phoneNumber,
+        display_name: fields.displayName,
         mirrors_account_id: args.mirrorsAccountId ?? null,
         account_created_on: fields.createdOn,
         is_active: true,
@@ -215,6 +222,7 @@ export interface EditableAccount {
   delivery_mode: string;
   device_id: number | null;
   phone_number: string | null;
+  display_name: string | null;
   /** Text, like `id`. Set on a Facebook account that posts its Instagram's
    *  videos (Garreth, 2026-10-01). */
   mirrors_account_id: AccountId | null;
@@ -222,7 +230,7 @@ export interface EditableAccount {
 }
 
 const EDITABLE_COLS =
-  `${ACCOUNT_ID_COL},geelark_profile,username,character,platform,delivery_mode,device_id,phone_number,` +
+  `${ACCOUNT_ID_COL},geelark_profile,username,character,platform,delivery_mode,device_id,phone_number,display_name,` +
   "mirrors_account_id:mirrors_account_id::text,is_active";
 
 export async function getEditableAccount(profile: string): Promise<EditableAccount | null> {
@@ -258,7 +266,10 @@ export async function usernameTakenByOther(
 export async function updateAccount(
   id: AccountId,
   columns: Partial<
-    Pick<EditableAccount, "username" | "character" | "device_id" | "phone_number" | "mirrors_account_id">
+    Pick<
+      EditableAccount,
+      "username" | "character" | "device_id" | "phone_number" | "display_name" | "mirrors_account_id"
+    >
   >,
 ): Promise<EditableAccount> {
   const res = await sbFetch(
