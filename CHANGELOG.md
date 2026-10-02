@@ -78,7 +78,14 @@ ticking or tapping there cannot touch a real account or a real task.
 pictures; a tap downloads the sample video and the picture turns into the
 share button; no save was sent. The share menu itself only exists on a real
 phone, so whether TikTok, Instagram and Facebook open with the video is what
-the test on Czedrick's phone is for. Not yet on `main`.
+the test on Czedrick's phone is for.
+
+**Then confirmed on a real iPhone** (Czedrick's, the same day, through
+Garreth): tap-to-post works. The slides were fast; the video was slow to be
+ready, because our file storage serves files slowly and unevenly (the same 5 MB
+video took 3 to 31 seconds on a fast line on the Mac). Nothing was posted. The
+storage speed is not fixed: starting the downloads when the list opens was
+offered and not taken up.
 
 ## 2026-10-02 — On a phone, pages no longer slide sideways into an empty strip
 
@@ -121,8 +128,9 @@ every other account. It was applied live the same day. It is not added to the
 `accounts_with_content_types` view, because that view can be read with the
 public key.
 
-**Verified:** by tests, and the new column exists live. Not yet seen in the
-browser. Profile 79 has no name until somebody sets one in Edit account.
+**Verified:** live. Garreth set Profile 79's name ("Imani Vaughn") in Edit
+account after the merge, the database has it, and he confirmed the screens
+show the name instead of the number.
 
 ## 2026-10-02 — A Facebook account is added by its link, not a username
 
@@ -149,9 +157,9 @@ One limit: Copy link can give a different code each time it is pressed, so the
 "already in the list" check cannot catch the same Facebook account added twice
 by two different Copy links.
 
-**Verified:** by tests only (every link shape above, and that each is turned
-back into a working address). No Facebook account exists yet, so nothing
-already saved needed converting. Not yet tried in the browser or by Yurie.
+**Verified:** live. Garreth added the first Facebook account (Profile 79) with
+a `profile.php?id=` link after the merge; it saved as its page number, posting
+the same videos as Profile 8.
 
 ## 2026-10-02 — The Live view buttons work: phone 1 is live from anywhere
 
