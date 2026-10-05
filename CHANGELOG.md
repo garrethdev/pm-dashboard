@@ -20,6 +20,36 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-05 — Viral Theories and 3-Slide Journey can be given to phone accounts
+
+**Where it came from:** Garreth, preparing the phone farm: Character 6's two
+carousel lanes need to reach Yurie's To-do list, and the production sheet read
+0 for both because the system did not know them.
+
+**What changed (in the database):**
+
+- Both are now Character 6 content types, 7 a week each (Character 6's limit is
+  14 a week), at most one a day each. Character 6 is allowed to post them.
+- Viral Theories got the automatic "ready" switch every other lane has: a piece
+  counts once it is approved and has all six slides and a caption.
+- Both now appear in the list the posting robot and the To-do read, and in the
+  stock count the planner and the Inventory page use.
+
+**Verified:** every other content type reads exactly the same in both lists as
+before the change. Both new lanes show 0 in stock, which is correct: nothing in
+them is approved yet.
+
+**Same day, in n8n:** the Smart Scheduler (now version 1.1.2) knows which
+column holds each new lane's slides, so it only plans pieces that have them.
+Compared line by line before publishing: three lines changed (the version,
+a note, the slide list) and nothing else in the workflow.
+
+**Still to do before Yurie gets any:** approve the pieces (run the
+Pre-Publish Gate form), finish the 3-Slide Journey slides and captions, and
+unpause Profile 31.
+
+---
+
 ## 2026-10-05 — The phone-farm production sheet fills in its own stock
 
 **Where it came from:** Garreth wanted the phone-farm production sheet (Miss
@@ -46,6 +76,13 @@ much is needed per week, how much we have, and how much to make. He chose
 **Same day, from Garreth:** the column is now headed **Need to produce (next
 2 weeks)**, so the sheet says which window the number covers. The script
 renames the old header in place rather than adding a second column.
+
+**Later the same day, from Garreth:** Cleora ASMR gets its own row on the
+sheet (table `cleora_asmr`), since Character 5 posts two kinds of Cleora and
+the sheet only had one. Its stock follows the planner's rule for that lane,
+which also needs a song attached. Run locally: the sheet's numbers matched the
+planner's stock for all four rows (Cleora 32, Cleora ASMR 42, Viral Theories 0,
+3-Slide Journey 0).
 
 **Verified:** run locally against the live database: the right password got
 Cleora 32, Viral Theories 0, 3-Slide Journey 0; no password or a wrong one was
