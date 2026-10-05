@@ -43,6 +43,10 @@ much is needed per week, how much we have, and how much to make. He chose
   place, so both doors work the same way. The warmup script's behaviour is
   unchanged (its tests pass).
 
+**Same day, from Garreth:** the column is now headed **Need to produce (next
+2 weeks)**, so the sheet says which window the number covers. The script
+renames the old header in place rather than adding a second column.
+
 **Verified:** run locally against the live database: the right password got
 Cleora 32, Viral Theories 0, 3-Slide Journey 0; no password or a wrong one was
 refused; the rest of the app still sent a signed-out visitor to the login page.

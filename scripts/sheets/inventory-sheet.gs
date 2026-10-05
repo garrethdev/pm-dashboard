@@ -19,7 +19,7 @@
  *   Supabase Table            read: which table a row is
  *   Amount Posting per week   read: the cadence, typed by hand
  *   Have                      written: approved, not yet given to an account
- *   Need to produce           written: a formula, posts per week × 2 − Have
+ *   Need to produce (next 2 weeks)   written: posts per week × 2 − Have
  */
 
 const TOKEN = 'PASTE_TOKEN_HERE';
@@ -66,7 +66,13 @@ function refreshInventory() {
   const cadenceCol = col('Amount Posting per week');
   if (!tableCol || !cadenceCol) throw new Error('Row 1 needs "Supabase Table" and "Amount Posting per week".');
   const haveCol = ensure('Have');
-  const needCol = ensure('Need to produce');
+  // The header names the window, so a change to WEEKS_OF_BUFFER relabels it.
+  // The first version wrote a bare "Need to produce"; that column is renamed
+  // in place rather than left behind beside a new one.
+  const needLabel = 'Need to produce (next ' + WEEKS_OF_BUFFER + ' weeks)';
+  const oldNeedCol = col('Need to produce');
+  if (oldNeedCol) sheet.getRange(1, oldNeedCol).setValue(needLabel);
+  const needCol = ensure(needLabel);
 
   const last = sheet.getLastRow();
   if (last < 2) return;
