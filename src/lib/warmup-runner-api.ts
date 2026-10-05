@@ -1,5 +1,5 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { requireBearerToken } from "@/lib/api-token";
 import { parseAccountId } from "@/lib/data/account-id";
 import { RunnerError, type RunKey } from "@/lib/data/warmup-runs";
 
@@ -17,23 +17,11 @@ import { RunnerError, type RunKey } from "@/lib/data/warmup-runs";
 export const RUNNER_API_PREFIX = "/api/warmup-runner/";
 
 export function requireRunnerToken(request: Request): NextResponse | null {
-  const expected = process.env.WARMUP_RUNNER_TOKEN;
-  if (!expected) {
-    return NextResponse.json(
-      { error: "The warmup script's access is not set up on the dashboard.", code: "not_configured" },
-      { status: 503 },
-    );
-  }
-  const header = request.headers.get("authorization") ?? "";
-  const given = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  // Compared as hashes of equal length, in constant time, so neither the
-  // length nor the content of the token leaks through how long a refusal took.
-  const a = createHash("sha256").update(given).digest();
-  const b = createHash("sha256").update(expected).digest();
-  if (!given || !timingSafeEqual(a, b)) {
-    return NextResponse.json({ error: "Wrong or missing token.", code: "unauthorized" }, { status: 401 });
-  }
-  return null;
+  return requireBearerToken(
+    request,
+    process.env.WARMUP_RUNNER_TOKEN,
+    "The warmup script's access is not set up on the dashboard.",
+  );
 }
 
 /** A JSON body, or null when there is none or it is not an object. */

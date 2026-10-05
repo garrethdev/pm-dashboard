@@ -20,6 +20,37 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-05 — The phone-farm production sheet fills in its own stock
+
+**Where it came from:** Garreth wanted the phone-farm production sheet (Miss
+Cleora, Viral Theories, 3-Slide Journey) to show, like the Inventory page, how
+much is needed per week, how much we have, and how much to make. He chose
+"have" = approved and not yet given to an account, and a two-week buffer.
+
+**What changed:**
+
+- A new address on the dashboard, `/api/sheet-inventory`, answers one thing:
+  how many approved, unused pieces each of those three tables holds. It uses
+  the same rule the posting planner uses to count stock, so Cleora reads the
+  same number as the Inventory page (32 today). It is not behind the sign-in;
+  it needs its own password (`SHEET_INVENTORY_TOKEN`), and it stays shut while
+  that is not set.
+- A small Google script for the sheet, `scripts/sheets/inventory-sheet.gs`,
+  calls that address every hour and fills a **Have** column and a **Need to
+  produce** column (posts per week × 2 − Have, never below zero). The weekly
+  amount stays typed by hand in "Amount Posting per week".
+- The password check the warmup script already used now lives in one shared
+  place, so both doors work the same way. The warmup script's behaviour is
+  unchanged (its tests pass).
+
+**Verified:** run locally against the live database: the right password got
+Cleora 32, Viral Theories 0, 3-Slide Journey 0; no password or a wrong one was
+refused; the rest of the app still sent a signed-out visitor to the login page.
+**Not yet verified:** the Google script itself has never run, and the address
+is not live until this is deployed and the password is added in Vercel.
+
+---
+
 ## 2026-10-02 — On the To-do list, the pill is enough
 
 **Where it came from:** Garreth, looking at the To-do list on a phone: an

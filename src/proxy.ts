@@ -21,12 +21,19 @@ const RUNNER_API_PREFIX = "/api/warmup-runner/";
 const MAINTENANCE_PREFIX = "/api/carousel-generator/maintenance/";
 
 /**
+ * The phone-farm production sheet's hourly Apps Script. It demands
+ * SHEET_INVENTORY_TOKEN (src/app/api/sheet-inventory/route.ts).
+ */
+const SHEET_INVENTORY_PATH = "/api/sheet-inventory";
+
+/**
  * Auth gate (Next 16 "proxy", formerly middleware): refreshes the Supabase
  * session cookie and redirects unauthenticated / non-allowlisted visitors to
  * /login. API routes re-check the session themselves — this is the outer door.
  */
 export async function proxy(request: NextRequest) {
-  if (authBypassed() || request.nextUrl.pathname.startsWith(RUNNER_API_PREFIX) || request.nextUrl.pathname.startsWith(MAINTENANCE_PREFIX)) {
+  const p = request.nextUrl.pathname;
+  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH) {
     return NextResponse.next({ request });
   }
 
