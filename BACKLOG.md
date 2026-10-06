@@ -2300,6 +2300,32 @@ Each of these is deliberately parked, not unfinished. Every one records why it
 was deferred and what is already confirmed, so it can start from evidence rather
 than from a fresh investigation.
 
+## Tap-to-post: download the next video before it is tapped
+
+**Deferred by Garreth on 2026-10-02**, after Czedrick's iPhone test of
+tap-to-post on the demo To-do. Slides were fast; the video was slow to be
+ready. Nothing is broken.
+
+**Why it is slow.** The app does no processing. A tap downloads the file from
+our Supabase storage, and storage serves it slowly and unevenly: the same 5 MB
+sample took 3, 8.5, 9.8 and 31 seconds on a line that pulls 10 MB from
+elsewhere in 1.6. The files are served with `cache-control: no-cache`, so no
+nearby copy is kept. Downloading in six pieces at once was tried and was
+slower (63 seconds). Real posts are 6 to 75 MB. A slow download also costs a
+second tap, because an iPhone only opens the share menu straight after a tap.
+
+**The idea.** When the To-do list opens, start downloading the next one or two
+posts due, one at a time, and the next as each is finished. The tap then finds
+the video already on the phone and the share menu opens at once.
+
+**What to watch.** The files are held inside the open page, so downloading
+the whole day at once could run Safari out of memory on an iPhone and reload
+the page, losing everything. It also spends mobile data on posts that are not
+tapped. Keep it to the next one or two. It does not make storage faster; a tap
+in the first seconds still waits. The code is `usePostMedia` in
+`src/components/dashboard/post-media.tsx`, and the demo list
+(`/todo?todo=work`) carries real sample media to test it on.
+
 ## Trends feed and search — what v1 deliberately leaves out
 
 **Deferred by Garreth on 2026-09-17**, deciding the second round of the Trends

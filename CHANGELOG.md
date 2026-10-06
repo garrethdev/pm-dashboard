@@ -55,6 +55,41 @@ list on the screen itself (checked in the database only), and an unattended
 
 ---
 
+## 2026-10-06 — kadelamater@gmail.com can sign in to the dashboard
+
+**Where it came from:** Garreth asked for this address to be added to the
+allowlist.
+
+**What changed (settings, not code):** the address was added to
+`ALLOWED_EMAILS` in `.env.local`, and a login account was created for it in
+Supabase. New sign-ups have been switched off since 2026-09-21, so without that
+account their first sign-in would fail. The account was created directly, so
+no invite email went out. **Still to do:** add the address to `ALLOWED_EMAILS`
+on Vercel and redeploy. The live site does not let them in until that is done.
+**Not verified:** nobody has signed in with this address yet.
+
+---
+
+## 2026-10-06 — The 40 Viral Theories carousels moved to the live table
+
+**Where it came from:** Garreth was told 30 Viral Theories carousels were
+ready, but the sheet read 0. They had been saved in a different table
+(`leanne_transformation_carousel`) from the one the posting system reads
+(`viral_theories_carousel`), and every one was marked `pending`, which the
+approval check skips for good.
+
+**What changed (in the database):** all 40 (batches LEA-B1 and LEA-B2) copied
+into `viral_theories_carousel`, with the caption and hashtags joined into one
+caption and the approval mark cleared so the check will look at them. The old
+table is untouched apart from a note in Supabase marking it retired. New
+handover for whoever makes the next batch: `docs/VIRAL-THEORIES-HANDOVER.md`.
+
+**Verified:** 40 copied, slides, links, copy and songs identical to the
+originals, none clashing with an existing ID. **Not yet done:** the approval
+check has not been run on them, so they do not count as stock yet.
+
+---
+
 ## 2026-10-05 — Viral Theories and 3-Slide Journey can be given to phone accounts
 
 **Where it came from:** Garreth, preparing the phone farm: Character 6's two
