@@ -20,6 +20,41 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-06 — The Smart Scheduler plans posts again; phone posts reach every account
+
+**Where it came from:** Garreth unpaused three accounts on Iphone 1 (Profiles 8,
+31 and 79) and their To-do list showed no posts.
+
+**What was wrong (two faults, both in n8n, not in this repo):**
+
+- **The Smart Scheduler had planned nothing since 2026-09-13.** Supabase had
+  rejected the key typed into its code every morning since 2026-09-14
+  (Supabase's own logs confirm it). n8n still showed each run as a success and
+  only sent an alert email. That email goes to Czedrick's address, not
+  Garreth's. With every account paused, an empty plan looked normal, so nobody
+  noticed for three weeks.
+- **The Posting Agent could not hand a post to an account with a very long
+  ID.** Profile 8's ID is 17 digits long, and n8n rounded it to a number that
+  belongs to no account, so the hand-out was refused. This had never come up
+  because Profile 8 had never been given a post to do by hand. Profile 64 and
+  the other accounts with long IDs would have hit the same fault.
+
+**What changed:** the scheduler now uses the dashboard's working key, still
+typed into its code (Code nodes cannot use n8n's stored keys). The Posting
+Agent now reads account IDs as text, so they are not rounded. Both changes are
+published in n8n. Garreth then had the scheduler and the Posting Agent run once
+by hand so the posts would land today.
+
+**Confirmed live:** the scheduler run at 11:39 ET logged a success: 2 posts
+planned and saved, no shortfall. The Posting Agent queued three posts for
+Iphone 1: LEA-B1-01 for Profile 31 (TikTok), CAS-009 for Profile 8
+(Instagram), and the automatic Facebook copy of CAS-009 for Profile 79.
+Profile 31's post was not doubled by the second run. **Not yet seen:** the
+list on the screen itself (checked in the database only), and an unattended
+06:30 run, which happens tomorrow.
+
+---
+
 ## 2026-10-05 — Viral Theories and 3-Slide Journey can be given to phone accounts
 
 **Where it came from:** Garreth, preparing the phone farm: Character 6's two
