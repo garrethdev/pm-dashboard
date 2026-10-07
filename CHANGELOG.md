@@ -83,9 +83,38 @@ profiles as they are.
 - The Content types page and the dashboard's "last 5 views" strip do not
   read Facebook yet (BACKLOG PF-24).
 - A Facebook account page has no profile picture or follower count.
-- The analytics freshness alarm does not watch the Facebook robot yet. It
-  is switched on once the robot is deployed; before that it would report
-  Facebook as stale every day.
+- **Merged and deployed the same evening (PR #49).** The analytics
+  freshness alarm was then switched on for Facebook: it emails if no
+  Facebook numbers arrive for 48 hours, as it does for TikTok. The robot's
+  first scheduled run is Thursday 2026-10-08; it has not happened yet.
+
+### Same day, evening — full parity with TikTok and Instagram
+
+**Where it came from:** Garreth, after the merge: "Yes I want full parity."
+
+- **Content types page:** each lane's figures now count Facebook reels
+  (the Cleora ASMR lane on Physical went from 1 post to 2).
+- **Accounts list:** the "median of the last 5 posts" figure now works for
+  Facebook accounts.
+- **Account page header:** a Facebook account shows its profile picture
+  and follower count (Imani Vaughn: 5 followers), looked up through
+  ScrapeCreators like TikTok and Instagram and kept for a week.
+- **Weekly report:** the Facebook section now has the same AI brief as
+  TikTok, written from each account's best and worst reels of the week.
+  Facebook posts are not judged, so the brief works from views and
+  captions and says so. It only appears when there were Facebook reels to
+  write about.
+
+**Checked:** Cloud content-type figures and every TikTok and Instagram
+"last 5" figure came out identical before and after; the account header and
+Content types page were looked at in the running app (headless Chrome,
+desktop, dark). The weekly report change was read back and compared before
+publishing; it has not run yet (next run Friday 2026-10-09).
+
+**Still different, and why:** no AI post scores for Facebook, because the
+scoring service is broken for all three platforms; Facebook has no watch
+time or saves to report; and likes on older reels stop updating after a
+few days.
 
 ### Same day, later — Facebook in the other workflows
 

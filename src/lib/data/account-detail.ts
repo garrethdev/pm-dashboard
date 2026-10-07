@@ -141,14 +141,14 @@ const CARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /**
  * When the avatar URL's own signature runs out.
  *
- * Both platforms hand out signed CDN links that die long before our 7-day
+ * All three platforms hand out signed CDN links that die long before our 7-day
  * cache does — measured 2026-09-07: a TikTok avatar cached 114h earlier had
  * expired 3 days prior, an Instagram one 9 hours prior, and both answered 403.
  * The row was still "fresh" by TTL, so the dashboard kept serving a dead link
  * and the account showed a broken image.
  *
- * TikTok puts the epoch seconds in `x-expires`; Instagram puts them in `oe` as
- * hex. Reading the URL's own deadline refreshes exactly when it must, instead
+ * TikTok puts the epoch seconds in `x-expires`; Instagram and Facebook (the
+ * same fbcdn servers) put them in `oe` as hex. Reading the URL's own deadline refreshes exactly when it must, instead
  * of cutting the TTL for everyone and burning ScrapeCreators credits on cards
  * that were still fine.
  */
@@ -178,10 +178,16 @@ interface CachedCard {
 async function fetchProfileCard(handle: string, platform: string): Promise<ProfileCard> {
   const key = process.env.SCRAPECREATORS_API_KEY;
   if (!key) throw new Error("SCRAPECREATORS_API_KEY is not configured");
+  // Facebook is looked up by its profile link, not a handle: the accounts are
+  // kept as a page number, a vanity name or a share code (PF-24).
+  const fbLink = platform === "facebook" ? platformProfileUrl("facebook", handle) : null;
+  if (platform === "facebook" && !fbLink) throw new Error("no facebook profile link");
   const url =
     platform === "instagram"
       ? `https://api.scrapecreators.com/v1/instagram/profile?handle=${encodeURIComponent(handle)}`
-      : `https://api.scrapecreators.com/v1/tiktok/profile?handle=${encodeURIComponent(handle)}`;
+      : platform === "facebook"
+        ? `https://api.scrapecreators.com/v1/facebook/profile?url=${encodeURIComponent(fbLink!)}`
+        : `https://api.scrapecreators.com/v1/tiktok/profile?handle=${encodeURIComponent(handle)}`;
 
   const res = await fetch(url, {
     headers: { "x-api-key": key },
@@ -201,6 +207,17 @@ async function fetchProfileCard(handle: string, platform: string): Promise<Profi
       displayName: (u.full_name ?? null) as string | null,
       followers:
         ((u.edge_followed_by as Record<string, unknown>)?.count as number | undefined) ?? null,
+    };
+  }
+
+  if (platform === "facebook") {
+    if (!body.name && !body.profilePicLarge) {
+      throw new Error("scrapecreators: no facebook profile in response");
+    }
+    return {
+      avatarUrl: (body.profilePicLarge ?? body.profilePicMedium ?? null) as string | null,
+      displayName: (body.name ?? null) as string | null,
+      followers: body.followerCount == null ? null : Number(body.followerCount),
     };
   }
 

@@ -74,8 +74,9 @@ describe("perfTable", () => {
 });
 
 describe("hasProfileLookup", () => {
-  it("keeps a Facebook handle away from the TikTok profile lookup", () => {
-    expect(hasProfileLookup("facebook")).toBe(false);
+  it("covers all three platforms", () => {
+    expect(hasProfileLookup("facebook")).toBe(true);
+    expect(hasProfileLookup("instagram")).toBe(true);
     expect(hasProfileLookup("tiktok")).toBe(true);
   });
 });
