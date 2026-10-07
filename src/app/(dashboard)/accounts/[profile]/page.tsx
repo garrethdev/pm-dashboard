@@ -77,8 +77,9 @@ async function AnalyticsPanel({
   username: string | null;
   platform: Platform;
 }) {
-  // Nothing collects Facebook views yet (PF-08). Say so, rather than look the
-  // handle up in the TikTok table and report an account nobody is watching.
+  // A platform with no views feed says so, rather than look the handle up in
+  // the TikTok table and report an account nobody is watching. Every platform
+  // has one since the Facebook robot (PF-24, 2026-10-07).
   if (!hasAnalytics(platform)) {
     return (
       <p className="text-sm text-text-muted">

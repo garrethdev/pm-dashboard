@@ -1,6 +1,7 @@
 import { ANALYTICS_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { deliveryModeOfFleet, type Fleet } from "@/lib/fleet";
 import { sbRest, sbRpc } from "@/lib/data/supabase";
+import { handleLabel, toPlatform } from "@/lib/platform";
 
 /**
  * Analytics page (plan §7) — the web version of the weekly combined report.
@@ -16,7 +17,10 @@ import { sbRest, sbRpc } from "@/lib/data/supabase";
  * is rendered next to the range selector.
  */
 
-export type PlatformKey = "all" | "tiktok" | "instagram";
+// Facebook is read by the PF-24 robot from 2026-10-07; its accounts all live
+// on Physical, so the page only offers it there.
+export type PlatformKey = "all" | "tiktok" | "instagram" | "facebook";
+export const PLATFORM_KEYS: PlatformKey[] = ["all", "tiktok", "instagram", "facebook"];
 export type RangeKey = "7d" | "14d" | "30d" | "all";
 
 export const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
@@ -35,15 +39,20 @@ export interface SeriesPoint {
   engagementRate: number;
   tiktokViews: number;
   instagramViews: number;
+  facebookViews: number;
   /** null = the platform posted nothing in this bucket (a gap, not a zero). */
   tiktokAvgViews: number | null;
   instagramAvgViews: number | null;
+  facebookAvgViews: number | null;
   tiktokPosts: number;
   instagramPosts: number;
+  facebookPosts: number;
 }
 
 export interface BestAccount {
   account: string;
+  /** How the account is named on screen: "@handle", or a Facebook name. */
+  label: string;
   platform: string;
   geelarkProfile: string | null;
   views: number;
@@ -56,6 +65,8 @@ export interface BestAccount {
 
 export interface AccountPerfRow {
   account: string;
+  /** How the account is named on screen: "@handle", or a Facebook name. */
+  label: string;
   platform: string;
   /** e.g. "Profile 20" — lets a row link through to the detail page. */
   geelarkProfile: string | null;
@@ -179,6 +190,9 @@ interface RawRollup {
     instagram_avg_views: number | null;
     tiktok_posts: number | null;
     instagram_posts: number | null;
+    facebook_views?: number;
+    facebook_avg_views?: number | null;
+    facebook_posts?: number | null;
   }[];
   accounts: {
     account: string;
@@ -246,7 +260,7 @@ async function fetchAnalytics(
   platform: PlatformKey,
   fleet: Fleet,
 ): Promise<AnalyticsData> {
-  const [raw, liveAccounts] = await Promise.all([
+  const [raw, liveAccounts, fbNames] = await Promise.all([
     // analytics_rollup_fleet is analytics_rollup limited to one fleet's
     // accounts (PF-17). An account's data follows the account: whatever fleet
     // it is in today, all of its history counts there (Garreth, 2026-09-18).
@@ -260,7 +274,17 @@ async function fetchAnalytics(
     sbRest<{ character: string | null }[]>(
       `accounts?select=character&is_active=eq.true&character=like.Character*&delivery_mode=eq.${deliveryModeOfFleet(fleet)}`,
     ).catch((): { character: string | null }[] => []),
+    // A Facebook account is kept as its page number, so it is shown by its
+    // name instead (accounts.display_name, as on the Accounts page).
+    sbRest<{ username: string; display_name: string | null }[]>(
+      "accounts?select=username,display_name&platform=eq.facebook&display_name=not.is.null",
+    ).catch((): { username: string; display_name: string | null }[] => []),
   ]);
+  const fbName = new Map(fbNames.map((a) => [a.username, a.display_name]));
+  const labelOf = (account: string, platform: string) => {
+    const p = toPlatform(platform);
+    return handleLabel(p, account, p === "facebook" ? fbName.get(account) : null) ?? account;
+  };
 
   const characterOptions = [
     ...new Set(liveAccounts.map((a) => a.character).filter((c): c is string => Boolean(c))),
@@ -299,6 +323,7 @@ async function fetchAnalytics(
     bestAccount: raw.best_account
       ? {
           account: raw.best_account.account,
+          label: labelOf(raw.best_account.account, raw.best_account.platform),
           platform: raw.best_account.platform,
           views: n(raw.best_account.views),
           posts: n(raw.best_account.posts),
@@ -322,9 +347,13 @@ async function fetchAnalytics(
       instagramAvgViews: s.instagram_avg_views == null ? null : Number(s.instagram_avg_views),
       tiktokPosts: n(s.tiktok_posts),
       instagramPosts: n(s.instagram_posts),
+      facebookViews: n(s.facebook_views),
+      facebookAvgViews: s.facebook_avg_views == null ? null : Number(s.facebook_avg_views),
+      facebookPosts: n(s.facebook_posts),
     })),
     accounts: (raw.accounts ?? []).map((a) => ({
       account: a.account,
+      label: labelOf(a.account, a.platform),
       platform: a.platform,
       geelarkProfile: a.geelark_profile,
       isActive: a.is_active === true,

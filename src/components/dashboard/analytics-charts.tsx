@@ -13,7 +13,6 @@ import {
   ChartBar,
   Check,
   ExternalLink,
-  FacebookLogo,
   Users,
 } from "@/components/ui/icons";
 import type { Fleet } from "@/lib/fleet";
@@ -82,6 +81,28 @@ function Tip({ title, rows }: { title: string; rows: [string, string][] }) {
 
 type Metric = "avg" | "total";
 
+/**
+ * The platforms the trend can draw, in drawing order. Facebook (PF-24) has no
+ * colour of its own in the palette, and the cyan accent is rationed, so it is
+ * drawn in the muted text colour rather than a new token.
+ */
+const TREND_PLATFORMS = [
+  { key: "tiktok", label: "TikTok", color: "var(--accent)", grad: "ttG", views: "tiktokViews", avg: "tiktokAvgViews", posts: "tiktokPosts" },
+  { key: "instagram", label: "Instagram", color: "var(--info)", grad: "igG", views: "instagramViews", avg: "instagramAvgViews", posts: "instagramPosts" },
+  { key: "facebook", label: "Facebook", color: "var(--text-muted)", grad: "fbG", views: "facebookViews", avg: "facebookAvgViews", posts: "facebookPosts" },
+] as const;
+
+/**
+ * Which lines a selection draws. On All, TikTok and Instagram always show (as
+ * they always have), Facebook only when it posted in the range: Cloud has no
+ * Facebook accounts, and a flat Facebook line there would read as dead.
+ */
+function trendPlatforms(platform: PlatformKey, data: SeriesPoint[]) {
+  if (platform !== "all") return TREND_PLATFORMS.filter((p) => p.key === platform);
+  const fbPosted = data.some((d) => d.facebookPosts > 0);
+  return TREND_PLATFORMS.filter((p) => p.key !== "facebook" || fbPosted);
+}
+
 function ViewsTrend({
   data,
   platform,
@@ -91,6 +112,7 @@ function ViewsTrend({
   platform: PlatformKey;
   metric: Metric;
 }) {
+  const lines = trendPlatforms(platform, data);
   return (
     // -mb-5 only: the plot keeps its own left/right gutter so the axis labels
     // line up under the card title instead of running into the card edge.
@@ -98,14 +120,12 @@ function ViewsTrend({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
           <defs>
-            <linearGradient id="ttG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.2} />
-              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="igG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--info)" stopOpacity={0.2} />
-              <stop offset="100%" stopColor="var(--info)" stopOpacity={0} />
-            </linearGradient>
+            {TREND_PLATFORMS.map((p) => (
+              <linearGradient key={p.grad} id={p.grad} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={p.color} stopOpacity={0.2} />
+                <stop offset="100%" stopColor={p.color} stopOpacity={0} />
+              </linearGradient>
+            ))}
           </defs>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="2 4" />
           <XAxis dataKey="label" {...AXIS} interval="preserveStartEnd" minTickGap={28} padding={{ left: 8, right: 8 }} />
@@ -135,77 +155,35 @@ function ViewsTrend({
                 ["Avg views", nf(d.avgViews)],
               ];
               if (platform === "all") {
-                rows.push(
-                  [
-                    "TikTok",
+                for (const p of lines) {
+                  const avg = d[p.avg];
+                  const posts = d[p.posts];
+                  rows.push([
+                    p.label,
                     metric === "avg"
-                      ? `${d.tiktokAvgViews == null ? "no posts" : nf(d.tiktokAvgViews)}${d.tiktokPosts ? ` (${d.tiktokPosts}p)` : ""}`
-                      : nf(d.tiktokViews),
-                  ],
-                  [
-                    "Instagram",
-                    metric === "avg"
-                      ? `${d.instagramAvgViews == null ? "no posts" : nf(d.instagramAvgViews)}${d.instagramPosts ? ` (${d.instagramPosts}p)` : ""}`
-                      : nf(d.instagramViews),
-                  ],
-                );
+                      ? `${avg == null ? "no posts" : nf(avg)}${posts ? ` (${posts}p)` : ""}`
+                      : nf(d[p.views]),
+                  ]);
+                }
               }
               return <Tip title={String(label)} rows={rows} />;
             }}
           />
-          {metric === "avg" ? (
-            // Not stacked: these are averages, and stacking two averages would
-            // draw a number that means nothing.
-            <>
-              {platform !== "instagram" && (
-                <Area
-                  type="monotone"
-                  dataKey="tiktokAvgViews"
-                  connectNulls={false}
-                  stroke="var(--accent)"
-                  strokeWidth={2}
-                  fill="url(#ttG)"
-                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
-                />
-              )}
-              {platform !== "tiktok" && (
-                <Area
-                  type="monotone"
-                  dataKey="instagramAvgViews"
-                  connectNulls={false}
-                  stroke="var(--info)"
-                  strokeWidth={2}
-                  fill="url(#igG)"
-                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
-                />
-              )}
-            </>
-          ) : (
-            <>
-              {platform !== "instagram" && (
-                <Area
-                  type="monotone"
-                  dataKey="tiktokViews"
-                  stackId="v"
-                  stroke="var(--accent)"
-                  strokeWidth={2}
-                  fill="url(#ttG)"
-                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
-                />
-              )}
-              {platform !== "tiktok" && (
-                <Area
-                  type="monotone"
-                  dataKey="instagramViews"
-                  stackId="v"
-                  stroke="var(--info)"
-                  strokeWidth={2}
-                  fill="url(#igG)"
-                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
-                />
-              )}
-            </>
-          )}
+          {/* Averages are not stacked: stacking two averages would draw a
+              number that means nothing. Totals are. */}
+          {lines.map((p) => (
+            <Area
+              key={p.key}
+              type="monotone"
+              dataKey={metric === "avg" ? p.avg : p.views}
+              connectNulls={metric === "avg" ? false : undefined}
+              stackId={metric === "avg" ? undefined : "v"}
+              stroke={p.color}
+              strokeWidth={2}
+              fill={`url(#${p.grad})`}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--bg)" }}
+            />
+          ))}
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -225,31 +203,12 @@ function TrendLegend({
   // Weighted (sum views / sum posts), not a mean of the daily means — a 2-post
   // day must not count as much as a 40-post day.
   const avgOf = (views: number, posts: number) => (posts ? Math.round(views / posts) : 0);
-  const ttViews = data.reduce((n2, d) => n2 + d.tiktokViews, 0);
-  const ttPosts = data.reduce((n2, d) => n2 + d.tiktokPosts, 0);
-  const igViews = data.reduce((n2, d) => n2 + d.instagramViews, 0);
-  const igPosts = data.reduce((n2, d) => n2 + d.instagramPosts, 0);
 
-  const items: [string, string, string][] = [
-    ...(platform === "instagram"
-      ? []
-      : ([
-          [
-            "TikTok",
-            "var(--accent)",
-            metric === "avg" ? `${nf(avgOf(ttViews, ttPosts))} avg` : compact(ttViews),
-          ],
-        ] as [string, string, string][])),
-    ...(platform === "tiktok"
-      ? []
-      : ([
-          [
-            "Instagram",
-            "var(--info)",
-            metric === "avg" ? `${nf(avgOf(igViews, igPosts))} avg` : compact(igViews),
-          ],
-        ] as [string, string, string][])),
-  ];
+  const items: [string, string, string][] = trendPlatforms(platform, data).map((p) => {
+    const views = data.reduce((n2, d) => n2 + d[p.views], 0);
+    const posts = data.reduce((n2, d) => n2 + d[p.posts], 0);
+    return [p.label, p.color, metric === "avg" ? `${nf(avgOf(views, posts))} avg` : compact(views)];
+  });
   // Each platform now carries its own figure, so a combined headline only adds
   // something in Total mode, where the sum is meaningful.
   const total = data.reduce((sum, d) => sum + d.views, 0);
@@ -351,7 +310,7 @@ function BestAccountTile({ data }: { data: AnalyticsData }) {
       <span className="flex min-w-0 flex-col">
         <span className="flex items-center gap-1.5">
           {b && <PlatformIcon platform={b.platform} className="size-3 shrink-0 text-text-muted" />}
-          <span className="truncate text-sm font-semibold text-text-primary">@{b?.account}</span>
+          <span className="truncate text-sm font-semibold text-text-primary">{b?.label}</span>
         </span>
         <span className="text-xs tnum text-text-muted">
           {b ? `${nf(b.views)} views, ${nf(b.posts)} posts` : ""}
@@ -660,7 +619,7 @@ function AccountPerformance({ rows }: { rows: AccountPerfRow[] }) {
                     className="inline-flex items-center gap-1.5 font-medium text-accent hover:opacity-80"
                   >
                     <PlatformIcon platform={r.platform} className="size-3 shrink-0" />
-                    @{r.account}
+                    {r.label}
                     <ExternalLink className="size-3 opacity-70" />
                   </a>
                   {/* Retired accounts keep their posts in the totals — those
@@ -710,12 +669,11 @@ function AccountPerformance({ rows }: { rows: AccountPerfRow[] }) {
 const SERVER_KEY = "7d|all";
 
 export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; fleet?: Fleet }) {
-  const [platform, setPlatform] = useState<PlatformKey>("all");
-  // Facebook is a tab in Physical, where Facebook accounts live, but there is
-  // nothing to chart: views are not collected for Facebook yet. So it is not a
-  // PlatformKey and never reaches the fetch; choosing it only swaps the charts
-  // for a line that says so, rather than drawing zeros that read as "dead".
-  const [facebook, setFacebook] = useState(false);
+  const [picked, setPlatform] = useState<PlatformKey>("all");
+  // Facebook is a tab in Physical only, where Facebook accounts live; its
+  // numbers come from the daily Facebook robot (PF-24, 2026-10-07). Switching
+  // to Cloud with it picked falls back to All rather than an empty page.
+  const platform: PlatformKey = picked === "facebook" && fleet !== "physical" ? "all" : picked;
   const [range, setRange] = useState<RangeKey>("7d");
   const [ctChar, setCtChar] = useState<string>("all");
   const [metric, setMetric] = useState<Metric>("avg");
@@ -788,7 +746,8 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
   const loadedLabel = (() => {
     const [r, p] = loadedKey.split("|");
     const rl = RANGES.find((x) => x.key === r)?.label ?? r;
-    const pl = p === "all" ? "All platforms" : p === "tiktok" ? "TikTok" : "Instagram";
+    const pl =
+      p === "all" ? "All platforms" : p === "tiktok" ? "TikTok" : p === "facebook" ? "Facebook" : "Instagram";
     return `${rl} · ${pl}`;
   })();
 
@@ -806,12 +765,9 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
     { value: "instagram", label: "Instagram" },
     ...(fleet === "physical" ? [{ value: "facebook", label: "Facebook" }] : []),
   ];
-  const platformValue = facebook ? "facebook" : platform;
+  const platformValue = platform;
   const platformLabel = platformOptions.find((o) => o.value === platformValue)?.label ?? "All";
-  const choosePlatform = (v: string) => {
-    setFacebook(v === "facebook");
-    if (v !== "facebook") setPlatform(v as PlatformKey);
-  };
+  const choosePlatform = (v: string) => setPlatform(v as PlatformKey);
 
   const ctCharacters = [
     ...new Set([...data.characterOptions, ...data.contentTypes.map((t) => t.character)]),
@@ -867,10 +823,7 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
             />
           </div>
         </div>
-        {/* Hidden on Facebook: there is nothing to chart, so a range (and the
-            date the TikTok/Instagram numbers were read) would choose nothing
-            (P13 review, 2026-09-23). They return with the other tabs. */}
-        <div hidden={facebook} className="flex flex-wrap items-center gap-3 sm:ml-auto">
+        <div className="flex flex-wrap items-center gap-3 sm:ml-auto">
           {/* Not real-time: both perf tables are filled by scheduled ingests. */}
           <span className={cn("text-xs whitespace-nowrap text-text-muted", loading && "animate-pulse")}>
             {loading ? "updating…" : `as of ${formatEtDate(data.lastIngest)}`}
@@ -883,13 +836,7 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
         </div>
       </div>
 
-      {facebook && (
-        <Card className="flex flex-col">
-          <EmptyState icon={FacebookLogo}>Views are not collected for Facebook yet</EmptyState>
-        </Card>
-      )}
-
-      {!facebook && showingOtherSlice && (
+      {showingOtherSlice && (
         <div
           role="status"
           className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-text"
@@ -902,7 +849,7 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
         </div>
       )}
 
-      <div hidden={facebook} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3">
         {/* While a range or platform switch is in flight, everything below is
             derived from `data` and so is genuinely stale — show the same
             skeleton the route uses rather than the old numbers.

@@ -5,6 +5,8 @@ import {
   PLATFORM_LABEL,
   PLATFORM_SHORT_LABEL,
   hasAnalytics,
+  hasProfileLookup,
+  perfTable,
   isPlatform,
   platformFilterOptions,
   platformsToOffer,
@@ -58,7 +60,23 @@ describe("hasAnalytics", () => {
   it("is true only where a views feed exists", () => {
     expect(hasAnalytics("tiktok")).toBe(true);
     expect(hasAnalytics("instagram")).toBe(true);
-    expect(hasAnalytics("facebook")).toBe(false);
+    // The Facebook robot (PF-24) feeds fb_post_performance since 2026-10-07.
+    expect(hasAnalytics("facebook")).toBe(true);
+  });
+});
+
+describe("perfTable", () => {
+  it("never sends a platform to another platform's table", () => {
+    expect(perfTable("tiktok")).toBe("tt_post_performance");
+    expect(perfTable("instagram")).toBe("post_performance");
+    expect(perfTable("facebook")).toBe("fb_post_performance");
+  });
+});
+
+describe("hasProfileLookup", () => {
+  it("keeps a Facebook handle away from the TikTok profile lookup", () => {
+    expect(hasProfileLookup("facebook")).toBe(false);
+    expect(hasProfileLookup("tiktok")).toBe(true);
   });
 });
 

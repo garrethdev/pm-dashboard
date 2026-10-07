@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/carousel-generator/maintenance/copy-slides", "schedule": "0 11 * * *" }
+    { "path": "/api/carousel-generator/maintenance/copy-slides", "schedule": "0 11 * * *" },
+    { "path": "/api/facebook-analytics/ingest", "schedule": "45 13 * * *" }
   ]
 }

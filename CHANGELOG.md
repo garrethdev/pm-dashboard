@@ -20,6 +20,118 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-07 — Facebook accounts get their numbers (PF-24)
+
+**Where it came from:** Garreth's ticket PF-24 (2026-10-01). Facebook accounts
+could post but nothing read their views, so the Facebook tab on Analytics
+said "Views are not collected for Facebook yet". On 2026-10-07 he chose the
+ScrapeCreators route and decided Facebook counts toward the health checks.
+
+**Why ScrapeCreators:** the Facebook accounts are ordinary personal
+profiles. Meta's own system only reports on Facebook Pages, and switching a
+profile to "professional mode" does not help (BACKLOG PF-24 has the
+evidence). ScrapeCreators, the service that already reads TikTok, reads these
+profiles as they are.
+
+**What changed:**
+
+- **A Facebook robot.** It follows TikTok's rhythm exactly (Garreth: "fully
+  match TikTok"). TikTok gets a full read on Sunday, Monday, Wednesday and
+  Friday and a lighter one-page read on Tuesday, Thursday and Saturday, so
+  Facebook does the same, every day shortly after TikTok. A full run reads
+  every live Facebook account's reels from the last 30 days (views) and its
+  newest few posts (likes and comments); a light run reads one page of each.
+  About 2–4 ScrapeCreators credits per account on a full day, 2 on a light
+  day. Unlike TikTok, a reel's views are re-read on every run while it is
+  young, so a reel that climbs shows it.
+- **Each reel is matched to what Yurie posted.** The link she pastes on
+  Posted is a Facebook share link. The robot follows it to the post it names
+  and ties the reel to that To-do row and its video, so the reel also counts
+  toward its content type (Cleora ASMR for the first one).
+- **Facebook counts toward health.** The health checks read Facebook beside
+  TikTok and Instagram, with the same rules. Imani Vaughn's Facebook now reads
+  "watch", the label any account gets until it has four posts older than two
+  days.
+- **Analytics shows Facebook.** On Physical, the Facebook tab has the same
+  charts and tables as the other tabs, "All" counts Facebook in its totals
+  and draws it as a third (grey) line, and Top posts can show Facebook
+  reels. Facebook accounts are named by their name (Imani Vaughn), not their
+  page number.
+- **An account's own page** shows its Facebook views, its top and latest
+  posts, and the headline numbers, instead of "Views are not collected".
+
+**Checked:**
+
+- **First real run, 2026-10-07:** 2 credits spent. It found Imani Vaughn's
+  one reel at 13 views and matched it to Yurie's Posted row for CAS-009.
+  The Analytics page, Top posts and the account page all showed it (checked
+  in headless Chrome, dark mode, desktop width).
+- **No TikTok or Instagram number moved.** At the same instant, old and new
+  versions gave identical health for all 64 TikTok and Instagram accounts.
+  Every Cloud analytics figure (7 and 30 days, every platform tab) was
+  unchanged. On Physical only "All" and Top posts changed, by the Facebook
+  reel.
+
+**Not yet:**
+
+- **The schedule only runs once this is merged and deployed.** The
+  database side is already live. The app side (the robot, the screens) is on
+  the branch `garrethdev/fb-analytics`.
+- **No second scheduled run has happened yet,** so a reel's views being
+  re-read is still untested.
+- Likes and comments on older reels stop updating after the first few days.
+- The Content types page and the dashboard's "last 5 views" strip do not
+  read Facebook yet (BACKLOG PF-24).
+- A Facebook account page has no profile picture or follower count.
+- The analytics freshness alarm does not watch the Facebook robot yet. It
+  is switched on once the robot is deployed; before that it would report
+  Facebook as stale every day.
+
+### Same day, later — Facebook in the other workflows
+
+**Where it came from:** Garreth asked for Facebook to be wired into the other
+workflows that read TikTok and Instagram numbers ("winner analysis, etc").
+
+- **Daily view snapshots** (inside the database, 9:30 am) now keep a daily
+  copy of each Facebook reel's numbers too. Checked: run side by side, the
+  Instagram (19) and TikTok (439) snapshots came out identical and Facebook
+  added its one reel.
+- **Winner-pattern analysis** (n8n, 1st and 15th of the month) now reads
+  Facebook. A Facebook winner is a reel with at least 2,000 views, top 15,
+  the same rule as TikTok (Garreth). Winners get their winner date stamped,
+  the playbook compares all three platforms, and rules it learns can be
+  marked Facebook.
+- **The winner analysis had silently stopped working.** On 2026-10-01 there
+  were no Instagram posts in its window (the fleet is paused), and an empty
+  Instagram read stopped the whole run at its first step: TikTok was never
+  read, no playbook was written, and n8n still said "success". It now reads
+  each platform even when another has nothing. A second fault in the same
+  place is fixed too: when Instagram did have posts, the TikTok read ran
+  once per Instagram post, which could fill the top 15 with copies of the
+  same TikTok posts.
+- **Two steps in that workflow shared an internal ID** with two others,
+  which made n8n refuse any edit. They were recreated unchanged (one now
+  uses the saved Supabase login instead of a key typed into the step).
+- **The weekly report** (n8n, Sun/Mon/Wed/Fri 10 am, to Garreth, Czed and
+  Milan) has a Facebook section after TikTok: posts and views this week,
+  each account by name, top posts this week and all time. No AI summary for
+  Facebook yet, because Facebook posts are not judged. A Facebook read that
+  fails can no longer stop the email; that section just says "No data".
+- **The account health email** already includes Facebook, with nothing to
+  change: it reads the same health checks as the dashboard.
+
+**Checked:** each n8n change was read back after saving and compared with
+the intended code byte for byte before it was published; the new Facebook
+section was run locally against Imani Vaughn's real reel and against an
+empty week. **Not yet:** neither workflow has run with these changes. The
+weekly report's next run is Friday 2026-10-09 and the winner analysis's is
+2026-10-15. Post judging (the AI scoring each post) does not cover Facebook,
+and is deliberately not wired: on 2026-10-07 it was found broken for
+Instagram and TikTok too. The outside scoring service's Gemini key is
+rejected, and videos have not been scorable for weeks (BACKLOG PF-24).
+
+---
+
 ## 2026-10-06 — The Smart Scheduler plans posts again; phone posts reach every account
 
 **Where it came from:** Garreth unpaused three accounts on Iphone 1 (Profiles 8,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { getFleet } from "@/lib/fleet-server";
-import { RANGES, getAnalytics, type PlatformKey, type RangeKey } from "@/lib/data/analytics";
+import { PLATFORM_KEYS, RANGES, getAnalytics, type PlatformKey, type RangeKey } from "@/lib/data/analytics";
 
 /** GET /api/analytics?range=7d&platform=all — powers the page's range/platform
  *  switchers without a full navigation. */
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   if (!RANGES.some((r) => r.key === range)) {
     return NextResponse.json({ error: "invalid range" }, { status: 400 });
   }
-  if (!["all", "tiktok", "instagram"].includes(platform)) {
+  if (!(PLATFORM_KEYS as string[]).includes(platform)) {
     return NextResponse.json({ error: "invalid platform" }, { status: 400 });
   }
 

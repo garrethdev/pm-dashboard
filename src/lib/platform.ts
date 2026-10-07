@@ -3,16 +3,17 @@
  * name one (PF-08). Kept free of server imports so tables, filters and the
  * later Posting To-Do and warmup pages can all read from here.
  *
- * Facebook is an account platform only. Nothing ingests Facebook performance
- * yet, so `hasAnalytics` is what every views/top-posts path checks before it
- * picks a performance table. A Facebook account must never be read out of the
- * TikTok tables: it would come back as zero views and look dead.
+ * Each platform has its own performance table (`perfTable`). Facebook's is
+ * filled by the daily Facebook robot since 2026-10-07 (PF-24); before that it
+ * had none, and `hasAnalytics` kept every views path away from it. A Facebook
+ * account must never be read out of the TikTok tables: it would come back as
+ * zero views and look dead.
  */
 export const PLATFORMS = ["tiktok", "instagram", "facebook"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 /** The platforms that have a performance feed behind them today. */
-export type AnalyticsPlatform = "tiktok" | "instagram";
+export type AnalyticsPlatform = "tiktok" | "instagram" | "facebook";
 
 export const PLATFORM_LABEL: Record<Platform, string> = {
   tiktok: "TikTok",
@@ -41,6 +42,27 @@ export function toPlatform(raw: string | null | undefined): Platform {
 }
 
 export function hasAnalytics(platform: Platform): platform is AnalyticsPlatform {
+  return platform === "tiktok" || platform === "instagram" || platform === "facebook";
+}
+
+/** The table a platform's post numbers live in. */
+export function perfTable(platform: AnalyticsPlatform): string {
+  switch (platform) {
+    case "instagram":
+      return "post_performance";
+    case "facebook":
+      return "fb_post_performance";
+    case "tiktok":
+      return "tt_post_performance";
+  }
+}
+
+/**
+ * Whether the account header can look the profile up (avatar, name,
+ * followers). ScrapeCreators' profile lookup is only wired for TikTok and
+ * Instagram; a Facebook handle sent to it would be looked up as a TikTok one.
+ */
+export function hasProfileLookup(platform: Platform): boolean {
   return platform === "tiktok" || platform === "instagram";
 }
 

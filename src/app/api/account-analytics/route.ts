@@ -24,10 +24,10 @@ export async function GET(request: Request) {
   const range: AccountRangeKey = ACCOUNT_RANGES.some((r) => r.key === rawRange)
     ? (rawRange as AccountRangeKey)
     : "7d";
-  // Missing still means TikTok, as it always has. A platform with no
-  // performance feed (Facebook) is refused rather than read as TikTok.
+  // Missing still means TikTok, as it always has. Anything that is not a
+  // platform with a performance feed is refused rather than read as TikTok.
   const rawPlatform = params.get("platform") ?? "tiktok";
-  if (rawPlatform !== "tiktok" && rawPlatform !== "instagram") {
+  if (rawPlatform !== "tiktok" && rawPlatform !== "instagram" && rawPlatform !== "facebook") {
     return NextResponse.json({ error: "no analytics for this platform" }, { status: 400 });
   }
   const platform = rawPlatform;
