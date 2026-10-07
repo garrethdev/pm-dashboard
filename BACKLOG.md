@@ -270,7 +270,8 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-20 | Incidents and the bell per fleet | Intermediate | **Done 2026-09-22.** Incidents had followed the switch since 2026-09-18; the bell half was settled by Garreth — it shows BOTH fleets and names which on every item. Proven in the running app, dark and light, desktop and phone, against a temporary phone/account/post that was deleted afterwards. No real phone or post has used it |
 | PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
 | PF-22 | Account ids too large for the app to hold exactly | Immediate | **Built 2026-09-23.** Account ids are carried as text on the Physical side (`src/lib/data/account-id.ts`). Proven live with a practice account whose id was as long as the real ones; not yet seen with one of the five real accounts on a phone |
-| PF-24 | Facebook analytics | Intermediate | **Live 2026-10-07 (PR #49 merged and deployed).** A robot on TikTok's days (Sun/Mon/Wed/Fri) reads every live Facebook account through ScrapeCreators into `fb_post_performance`; health, the Analytics page and the account page read it. First live run: Imani Vaughn's reel, 13 views, matched to Yurie's Posted row. Not running on its own until the branch is merged and deployed |
+| PF-24 | Facebook analytics | Intermediate | **Done 2026-10-07 (Garreth; PRs #49 and #50 merged and deployed).** A daily robot on TikTok's rhythm reads every live Facebook account through ScrapeCreators into `fb_post_performance`; health, Analytics, Content types, the account page and the n8n reports read it, at parity with TikTok and Instagram. Two first runs still to see: the robot's first scheduled run (2026-10-08) and the weekly report with Facebook (2026-10-09). AI post scoring moved to PF-25 |
+| PF-25 | AI post scoring is broken for every platform | Intermediate | **Not started (added 2026-10-07).** The outside scoring service's Gemini key is rejected and videos have not been scorable for weeks; Facebook scoring waits on the fix |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -1297,7 +1298,7 @@ profile to create.
 
 ---
 
-## PF-24 · Facebook analytics — Live 2026-10-07
+## PF-24 · Facebook analytics — Done 2026-10-07
 
 *Added 2026-10-01 (Garreth).* Each phone now carries a persona's Instagram
 and the same persona's Facebook, and the Facebook account posts the same
@@ -1401,6 +1402,52 @@ the health checks.
 Analytics page's Facebook tab, read by a robot, and the Facebook post is
 matched to the video it came from (the link Yurie pastes on Posted is the
 key, as it is for the others).
+
+**Closed 2026-10-07 (Garreth).** Met, and taken on to full parity with
+TikTok and Instagram (PRs #49 and #50). Two first runs are still to be
+seen, and a fault in either is a fix to this work, not a new ticket: the
+robot's first scheduled run (Thursday 2026-10-08, a light day; check that
+`fb_post_performance.ingested_at` moved and Imani Vaughn's reel has a fresh
+view count), and the weekly report on Friday 2026-10-09 (check that its
+Facebook section and Facebook AI brief arrived). AI post scoring is PF-25.
+
+---
+
+## PF-25 · AI post scoring is broken for every platform — Not started
+
+*Added 2026-10-07, split out of PF-24 (Garreth).* Each week the TikTok and
+Instagram robots send every account's best and worst posts to an outside
+scoring service, `analysis-engine-gamma.vercel.app`, which gives each a
+score and a "why it won / lost" verdict. Those feed the weekly report's AI
+brief and the winner analysis's playbook. The service's code is not in this
+repo, and where it lives is not yet known.
+
+What was found on 2026-10-07:
+
+- **Nothing is scored at all.** That morning both robots got "API key not
+  valid" back: the service's Google Gemini key is rejected. n8n still showed
+  the runs as successful, because the service answers normally with a
+  "failed" count inside.
+- **Videos had not been scorable for weeks before that.** On 2026-09-21 and
+  09-25 only carousels were scored; every TikTok video failed with "video
+  download failed: 403", and Instagram videos come back "no judgeable
+  media". The phone accounts post mostly videos.
+- **The deeper Instagram analysis has never run.** The `post_analysis`
+  table the winner analysis reads for "why it won" has never had a row.
+
+In order:
+
+1. Find where the service's code lives and who can deploy it.
+2. Put a working Gemini key in its Vercel settings; prove a carousel scores.
+3. Fix the video download for TikTok and Instagram; prove a video scores.
+4. Add Facebook (a `route-and-judge-facebook` endpoint, and a scoring step
+   in the Facebook robot or n8n), as PF-24's follow-on.
+5. Make a failed score visible: today a run that scores nothing still reads
+   as a success.
+
+*Done when:* that week's best and worst posts on all three platforms,
+videos included, come back with a score and a verdict, and a run that
+scores nothing raises an alarm.
 
 # V1 — open work
 
