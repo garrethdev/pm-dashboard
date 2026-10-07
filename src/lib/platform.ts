@@ -59,11 +59,12 @@ export function perfTable(platform: AnalyticsPlatform): string {
 
 /**
  * Whether the account header can look the profile up (avatar, name,
- * followers). ScrapeCreators' profile lookup is only wired for TikTok and
- * Instagram; a Facebook handle sent to it would be looked up as a TikTok one.
+ * followers). All three are wired since PF-24 parity (2026-10-07: Facebook by
+ * its profile link); a platform added later starts without one rather than
+ * being looked up as a TikTok handle.
  */
 export function hasProfileLookup(platform: Platform): boolean {
-  return platform === "tiktok" || platform === "instagram";
+  return platform === "tiktok" || platform === "instagram" || platform === "facebook";
 }
 
 /** Public profile page for a handle; null when there is no handle yet. */

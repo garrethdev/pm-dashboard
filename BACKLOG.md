@@ -270,7 +270,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-20 | Incidents and the bell per fleet | Intermediate | **Done 2026-09-22.** Incidents had followed the switch since 2026-09-18; the bell half was settled by Garreth — it shows BOTH fleets and names which on every item. Proven in the running app, dark and light, desktop and phone, against a temporary phone/account/post that was deleted afterwards. No real phone or post has used it |
 | PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
 | PF-22 | Account ids too large for the app to hold exactly | Immediate | **Built 2026-09-23.** Account ids are carried as text on the Physical side (`src/lib/data/account-id.ts`). Proven live with a practice account whose id was as long as the real ones; not yet seen with one of the five real accounts on a phone |
-| PF-24 | Facebook analytics | Intermediate | **Built 2026-10-07 (branch `garrethdev/fb-analytics`, not merged).** A robot on TikTok's days (Sun/Mon/Wed/Fri) reads every live Facebook account through ScrapeCreators into `fb_post_performance`; health, the Analytics page and the account page read it. First live run: Imani Vaughn's reel, 13 views, matched to Yurie's Posted row. Not running on its own until the branch is merged and deployed |
+| PF-24 | Facebook analytics | Intermediate | **Live 2026-10-07 (PR #49 merged and deployed).** A robot on TikTok's days (Sun/Mon/Wed/Fri) reads every live Facebook account through ScrapeCreators into `fb_post_performance`; health, the Analytics page and the account page read it. First live run: Imani Vaughn's reel, 13 views, matched to Yurie's Posted row. Not running on its own until the branch is merged and deployed |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -1297,7 +1297,7 @@ profile to create.
 
 ---
 
-## PF-24 · Facebook analytics — Built 2026-10-07, not merged
+## PF-24 · Facebook analytics — Live 2026-10-07
 
 *Added 2026-10-01 (Garreth).* Each phone now carries a persona's Instagram
 and the same persona's Facebook, and the Facebook account posts the same
@@ -1354,15 +1354,17 @@ the health checks.
 
 *Built 2026-10-07* — see CHANGELOG. What is still open:
 
-- **Merge and deploy.** The schedule (`vercel.json`, daily 13:45 UTC: 9:45 am
+- **Merged and deployed 2026-10-07 (PR #49).** The schedule (`vercel.json`, daily 13:45 UTC: 9:45 am
   New York in summer, 8:45 am in winter, after TikTok's 8:30 either way,
   since Vercel's schedule has no time zone; full read Sun/Mon/Wed/Fri, light
   read Tue/Thu/Sat, as TikTok's two workflows do) only runs from the live
   site. The database side is already live.
-- **Right after deploy: the freshness alarm.** Add a "Facebook analytics"
-  feed to `analytics_freshness_check()` (max age 48 hours, like TikTok), so
-  the daily [Health] Analytics Freshness Alarm notices if the robot stops.
-  Held back on purpose: before deploy it would report Facebook stale daily.
+- **Freshness alarm: done 2026-10-07** after the deploy. A "Facebook
+  analytics" feed (48 hours, like TikTok) in `analytics_freshness_check()`,
+  so the daily [Health] Analytics Freshness Alarm notices if the robot stops.
+- **First scheduled run** is 2026-10-08 13:45 UTC (a light day). Not yet
+  seen; the live route answers "unauthorized" to a wrong token, as it
+  should.
 - **Credits.** About 2–4 ScrapeCreators credits per Facebook account on a
   full day, 2 on a light day
   (reels list for views, posts list for likes and comments), plus one per new
@@ -1388,12 +1390,12 @@ the health checks.
   fix first: a new Gemini key in that service's Vercel settings, then the
   video download. Facebook judging (a `route-and-judge-facebook` endpoint
   in that service) comes after.
-- **Not yet reading Facebook:** the Content types page
-  (`content_type_stats_fleet`), the dashboard's last-five-views strip
-  (`v_dashboard_last5_views`), the older fleet-less `analytics_rollup` and
-  the outlier views. None is used for health.
-- **No avatar or follower count** on a Facebook account page: the profile
-  lookup is TikTok/Instagram only (`hasProfileLookup`).
+- **Parity done 2026-10-07 (Garreth: "full parity"):** Content types page,
+  the accounts list's last-5 median, the account header's picture and
+  followers, and the weekly report's AI brief (from `v_fb_latest_outliers`)
+  all read Facebook. Left alone because nothing in the app or n8n reads
+  them: the fleet-less `analytics_rollup` / `analytics_top_content`,
+  `v_analytics_summary`, `v_analytics_weekly`, `v_account_leaderboard`.
 
 *Done when:* a Facebook account's recent posts show their views on the
 Analytics page's Facebook tab, read by a robot, and the Facebook post is
