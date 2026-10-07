@@ -270,7 +270,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-20 | Incidents and the bell per fleet | Intermediate | **Done 2026-09-22.** Incidents had followed the switch since 2026-09-18; the bell half was settled by Garreth — it shows BOTH fleets and names which on every item. Proven in the running app, dark and light, desktop and phone, against a temporary phone/account/post that was deleted afterwards. No real phone or post has used it |
 | PF-21 | Add accounts from the app, with their Profile name | Intermediate | **Built 2026-09-22.** Add account on the Physical Accounts page: Profile name, handle, character, platform, fleet, phone, created-on, and whether it starts paused. A taken Profile name is refused by name, "profile 019" saves as "Profile 19", and the suggested number counts on from the highest rather than filling a gap. Proven live with one account created and deleted. Still to see: the phone dropdown with a real phone in it, and the screen in Safari |
 | PF-22 | Account ids too large for the app to hold exactly | Immediate | **Built 2026-09-23.** Account ids are carried as text on the Physical side (`src/lib/data/account-id.ts`). Proven live with a practice account whose id was as long as the real ones; not yet seen with one of the five real accounts on a phone |
-| PF-24 | Facebook analytics | Intermediate | **Not started (added 2026-10-01, Garreth).** Facebook accounts can be added and get their own posting tasks, but no robot reads their numbers. First step is finding out whether these profiles can be read at all |
+| PF-24 | Facebook analytics | Intermediate | **Built 2026-10-07 (branch `garrethdev/fb-analytics`, not merged).** A robot on TikTok's days (Sun/Mon/Wed/Fri) reads every live Facebook account through ScrapeCreators into `fb_post_performance`; health, the Analytics page and the account page read it. First live run: Imani Vaughn's reel, 13 views, matched to Yurie's Posted row. Not running on its own until the branch is merged and deployed |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -1297,7 +1297,7 @@ profile to create.
 
 ---
 
-## PF-24 · Facebook analytics — Not started
+## PF-24 · Facebook analytics — Built 2026-10-07, not merged
 
 *Added 2026-10-01 (Garreth).* Each phone now carries a persona's Instagram
 and the same persona's Facebook, and the Facebook account posts the same
@@ -1326,9 +1326,74 @@ checked yet:
    whether ScrapeCreators or similar covers Facebook profiles' posts).
 3. Have Yurie type the numbers in by hand from the post. Last resort.
 
-**Also to decide:** whether a Facebook account counts toward the health
-checks and the incident list once it has numbers, or only shows on
-Analytics.
+*Checked 2026-10-07 — option 2 works, option 1 looks closed:*
+
+- **Option 2 (ScrapeCreators) — tested live on hey.imani.vaughn's twin.**
+  The personal profile can be read as it is, with no switch and no login.
+  `/v1/facebook/profile/reels` listed its one reel (posted 2026-10-06) with
+  **13 views**, the date posted and the reel link; `/v1/facebook/post` on
+  that link gave the same 13 views plus likes (by reaction type) and shares.
+  Comments came back blank on that call and as 0 from the posts list.
+  `/v1/facebook/profile/posts` gives likes and comments but **no views**,
+  so views have to come from the reels list. One credit per call, the same
+  key the TikTok side already uses. The reel link has the form
+  `facebook.com/reel/<number>`. The link Yurie pastes on Posted is a share
+  link (`facebook.com/share/r/<code>`); followed, it lands on
+  `story.php?story_fbid=<post id>`, the same post id the reels list gives,
+  so the match is exact (checked the same day on her first post).
+- **Option 1 (Meta's API after professional mode) — not tested, and the
+  evidence is against it.** Meta's documentation covers post statistics for
+  Pages only and says nothing about professional-mode profiles. A developer
+  on Meta's own forum reports that a profile's posts come back *empty* once
+  it is switched to professional mode, and the scheduling tools (Hootsuite,
+  Buffer and the like) do not support professional-mode profiles. It would
+  also need Meta's app review. Not worth pursuing while option 2 works.
+
+**Decided 2026-10-07 (Garreth):** build option 2, and Facebook counts toward
+the health checks.
+
+*Built 2026-10-07* — see CHANGELOG. What is still open:
+
+- **Merge and deploy.** The schedule (`vercel.json`, daily 13:45 UTC: 9:45 am
+  New York in summer, 8:45 am in winter, after TikTok's 8:30 either way,
+  since Vercel's schedule has no time zone; full read Sun/Mon/Wed/Fri, light
+  read Tue/Thu/Sat, as TikTok's two workflows do) only runs from the live
+  site. The database side is already live.
+- **Right after deploy: the freshness alarm.** Add a "Facebook analytics"
+  feed to `analytics_freshness_check()` (max age 48 hours, like TikTok), so
+  the daily [Health] Analytics Freshness Alarm notices if the robot stops.
+  Held back on purpose: before deploy it would report Facebook stale daily.
+- **Credits.** About 2–4 ScrapeCreators credits per Facebook account on a
+  full day, 2 on a light day
+  (reels list for views, posts list for likes and comments), plus one per new
+  top-post cover. 1,803 credits were left on 2026-10-07. Watch it as more
+  Facebook twins are added.
+- **Likes on older reels freeze.** Only the newest ~6 posts get likes and
+  comments refreshed each day; views are refreshed for 30 days.
+- **Wired into n8n 2026-10-07:** winner-pattern analysis (Facebook winners
+  = TikTok's rule, >= 2,000 views, top 15) and the weekly report (Facebook
+  section, no AI brief). Daily view snapshots include Facebook. The health
+  email needed nothing. Neither n8n change has run yet.
+- **Post judging** (the AI score and "why it won") does not cover Facebook,
+  so Facebook winners carry no explanation in the playbook. **Not wired on
+  purpose: judging is broken for Instagram and TikTok too (checked
+  2026-10-07).** Both robots send their weekly best and worst posts to an
+  outside scoring service, `analysis-engine-gamma.vercel.app` (its code is
+  not in this repo). On 2026-10-07 it failed with "API key not valid": its
+  Google Gemini key is rejected, so nothing was scored, while n8n still
+  showed the runs as successful. Before that (2026-09-21 and 09-25) only
+  carousels were scored; every TikTok video failed with "video download
+  failed: 403", and Instagram videos come back "no judgeable media". The
+  `post_analysis` table the winner analysis reads has never had a row. To
+  fix first: a new Gemini key in that service's Vercel settings, then the
+  video download. Facebook judging (a `route-and-judge-facebook` endpoint
+  in that service) comes after.
+- **Not yet reading Facebook:** the Content types page
+  (`content_type_stats_fleet`), the dashboard's last-five-views strip
+  (`v_dashboard_last5_views`), the older fleet-less `analytics_rollup` and
+  the outlier views. None is used for health.
+- **No avatar or follower count** on a Facebook account page: the profile
+  lookup is TikTok/Instagram only (`hasProfileLookup`).
 
 *Done when:* a Facebook account's recent posts show their views on the
 Analytics page's Facebook tab, read by a robot, and the Facebook post is

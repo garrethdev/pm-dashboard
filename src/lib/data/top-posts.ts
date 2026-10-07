@@ -1,14 +1,15 @@
 import type { Fleet } from "@/lib/fleet";
-import { toPlatform } from "@/lib/platform";
+import { type Platform, toPlatform } from "@/lib/platform";
 import { sbRest } from "@/lib/data/supabase";
 
 /**
- * Top Posts (handover 2026-09-01): combined IG + TikTok, top 5 by views.
+ * Top Posts (handover 2026-09-01): combined IG + TikTok (+ Facebook since
+ * PF-24, 2026-10-07), top 5 by views.
  * Thumbnails resolved via oEmbed and cached in post_thumbnails (raw_payload
  * cover URLs expire, so never render those directly).
  */
 export interface TopPost {
-  platform: "tiktok" | "instagram";
+  platform: Platform;
   account: string;
   postId: string;
   postUrl: string;
@@ -36,7 +37,7 @@ export type TopRange = "week" | "month" | "all";
 
 const RANGE_DAYS: Record<TopRange, number | null> = { week: 7, month: 30, all: null };
 
-export type TopPlatform = "all" | "tiktok" | "instagram";
+export type TopPlatform = "all" | Platform;
 
 /**
  * PostgREST filter that limits a views table to one fleet (PF-17).
@@ -70,18 +71,20 @@ async function topRows(range: TopRange, platform: TopPlatform, fleet: Fleet): Pr
 
   // Skip the table for a platform that was filtered out rather than fetching
   // and discarding it — each side is a separate round trip.
-  const wantTt = platform !== "instagram";
-  const wantIg = platform !== "tiktok";
+  const wantTt = platform === "all" || platform === "tiktok";
+  const wantIg = platform === "all" || platform === "instagram";
+  const wantFb = platform === "all" || platform === "facebook";
 
   const physical = await sbRest<{ username: string; platform: string | null }[]>(
     "accounts?select=username,platform&delivery_mode=eq.manual&username=not.is.null",
   );
-  const handlesOn = (p: "tiktok" | "instagram") =>
+  const handlesOn = (p: Platform) =>
     physical.filter((a) => toPlatform(a.platform) === p).map((a) => a.username);
   const ttFleet = fleetHandleFilter(fleet, handlesOn("tiktok"));
   const igFleet = fleetHandleFilter(fleet, handlesOn("instagram"));
+  const fbFleet = fleetHandleFilter(fleet, handlesOn("facebook"));
 
-  const [tt, ig] = await Promise.all([
+  const [tt, ig, fb] = await Promise.all([
     wantTt && ttFleet !== null
       ? sbRest<Omit<RawPost, "platform">[]>(
           `tt_post_performance?select=${cols}${filter}${ttFleet}&order=views.desc.nullslast&limit=5`,
@@ -92,11 +95,17 @@ async function topRows(range: TopRange, platform: TopPlatform, fleet: Fleet): Pr
           `post_performance?select=${cols}${filter}${igFleet}&order=views.desc.nullslast&limit=5`,
         )
       : Promise.resolve([]),
+    wantFb && fbFleet !== null
+      ? sbRest<Omit<RawPost, "platform">[]>(
+          `fb_post_performance?select=${cols}${filter}${fbFleet}&order=views.desc.nullslast&limit=5`,
+        )
+      : Promise.resolve([]),
   ]);
 
   return [
     ...tt.map((r) => ({ ...r, platform: "tiktok" })),
     ...ig.map((r) => ({ ...r, platform: "instagram" })),
+    ...fb.map((r) => ({ ...r, platform: "facebook" })),
   ]
     .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
     .slice(0, 5);
@@ -153,6 +162,22 @@ async function resolveViaScrapeCreators(postUrl: string): Promise<string | null>
   }
 }
 
+/** A Facebook reel's cover, one ScrapeCreators credit, cached like the rest. */
+async function resolveViaScrapeCreatorsFacebook(postUrl: string): Promise<string | null> {
+  const key = process.env.SCRAPECREATORS_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(
+      `https://api.scrapecreators.com/v1/facebook/post?url=${encodeURIComponent(postUrl)}`,
+      { headers: { "x-api-key": key }, signal: AbortSignal.timeout(12_000), cache: "no-store" },
+    );
+    if (!res.ok) return null;
+    return deepFind(await res.json(), ["thumbnail", "thumbnail_url", "image_url"]);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Resolve a thumbnail for one post, cached in post_thumbnails (with TTL).
  *
@@ -182,7 +207,9 @@ export async function resolveThumbnail(post: {
   const url =
     post.platform === "tiktok"
       ? await resolveViaTikTok(post.post_url)
-      : await resolveViaScrapeCreators(post.post_url);
+      : post.platform === "facebook"
+        ? await resolveViaScrapeCreatorsFacebook(post.post_url)
+        : await resolveViaScrapeCreators(post.post_url);
 
   // Persist (even null, so we don't hammer the resolver every load).
   try {
@@ -216,7 +243,7 @@ export async function getTopPosts(
   const rows = await topRows(range, platform, fleet);
   const thumbs = await Promise.all(rows.map(resolveThumbnail));
   return rows.map((r, i) => ({
-    platform: r.platform === "instagram" ? "instagram" : "tiktok",
+    platform: toPlatform(r.platform),
     account: r.account,
     postId: r.post_id,
     postUrl: r.post_url,

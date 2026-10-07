@@ -9,9 +9,11 @@ import { DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstagramIcon, TikTokIcon } from "@/components/ui/brand-icons";
+import { FacebookLogo } from "@/components/ui/icons";
+import { type Platform, handleLabel } from "@/lib/platform";
 
 interface TopPost {
-  platform: "tiktok" | "instagram";
+  platform: Platform;
   account: string;
   postId: string;
   postUrl: string;
@@ -55,6 +57,8 @@ function PostThumb({ post }: { post: TopPost }) {
       <span className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-white text-black shadow">
         {post.platform === "tiktok" ? (
           <TikTokIcon className="size-3" />
+        ) : post.platform === "facebook" ? (
+          <FacebookLogo className="size-3" />
         ) : (
           <InstagramIcon className="size-3" />
         )}
@@ -63,7 +67,7 @@ function PostThumb({ post }: { post: TopPost }) {
         <ExternalLink className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
         <div className="min-w-0">
           <div className="text-sm font-semibold tnum leading-none">{fmt(post.views)} views</div>
-          <div className="truncate text-[10px] text-white/70">@{post.account}</div>
+          <div className="truncate text-[10px] text-white/70">{handleLabel(post.platform, post.account)}</div>
         </div>
       </div>
     </Link>
@@ -80,7 +84,7 @@ export function TopPostsCard({
   platform = "all",
 }: {
   className?: string;
-  platform?: "all" | "tiktok" | "instagram";
+  platform?: "all" | "tiktok" | "instagram" | "facebook";
 }) {
   const [range, setRange] = useState<Range>("week");
   const [posts, setPosts] = useState<TopPost[] | null>(null);
@@ -114,7 +118,9 @@ export function TopPostsCard({
           ? "TikTok top posts"
           : platform === "instagram"
             ? "Instagram top posts"
-            : "Top posts"
+            : platform === "facebook"
+              ? "Facebook top posts"
+              : "Top posts"
       }
       className={className}
       toolbar={

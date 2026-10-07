@@ -262,10 +262,8 @@ async function fetchAccounts(): Promise<AccountRow[]> {
       : null;
     // Honesty rule (plan §10.2): a tracking-broken account's stale median must
     // never render as a number — the analytics feed is blind, not the account.
-    // Same rule for a platform with no performance feed at all (Facebook,
-    // PF-08): the health view joins posts on the handle alone, so a Facebook
-    // account sharing its character's Instagram handle would otherwise borrow
-    // that account's numbers.
+    // Same rule for any platform with no performance feed (Facebook had none
+    // until PF-24, 2026-10-07): its numbers stay blank rather than look dead.
     const platform = toPlatform(a.platform);
     const analyticsTrustworthy = health !== "tracking broken" && hasAnalytics(platform);
 

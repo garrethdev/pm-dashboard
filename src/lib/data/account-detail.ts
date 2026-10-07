@@ -1,6 +1,6 @@
 import { TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest, sbRestAll } from "@/lib/data/supabase";
-import { type Platform, hasAnalytics, platformProfileUrl, toPlatform } from "@/lib/platform";
+import { type Platform, hasAnalytics, hasProfileLookup, perfTable, platformProfileUrl, toPlatform } from "@/lib/platform";
 
 /**
  * Everything the single-account page needs (plan §4 detail view).
@@ -360,9 +360,9 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
   if (!a) return null;
 
   const platform = toPlatform(a.platform);
-  // Facebook has no performance feed and no profile lookup yet (PF-08). Its
-  // numbers stay empty rather than being read from the TikTok side, where the
-  // handle would either find nothing (and look dead) or find a stranger.
+  // Every platform has a performance table since PF-24 (Facebook, 2026-10-07);
+  // the check stays so a platform added later starts empty rather than being
+  // read from the TikTok side, where its handle would find a stranger.
   const measured = hasAnalytics(platform);
 
   // Views live in two tables PostgREST cannot UNION, so pull the account's rows
@@ -370,15 +370,14 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
   // but paged rather than taken in one gulp, because PostgREST stops at 1000
   // rows without saying so, and "highest" and "total views" computed over a
   // silent prefix would just be wrong numbers with no way to tell.
-  const perfTable = platform === "instagram" ? "post_performance" : "tt_post_performance";
   const views = a.username && measured
     ? await sbRestAll<{ views: number | null }>(
-        `${perfTable}?select=views&account=eq.${encodeURIComponent(a.username)}&order=post_id.asc`,
+        `${perfTable(platform)}?select=views&account=eq.${encodeURIComponent(a.username)}&order=post_id.asc`,
       ).catch(() => [])
     : [];
   const nums = views.map((v) => v.views ?? 0).filter((n) => Number.isFinite(n));
 
-  const card = a.username && measured
+  const card = a.username && measured && hasProfileLookup(platform)
     ? await getProfileCard(a.username, platform)
     : { avatarUrl: null, displayName: null, followers: null };
 
