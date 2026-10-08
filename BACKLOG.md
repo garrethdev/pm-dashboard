@@ -111,10 +111,13 @@ listed here.
 
 ## Open
 
-- **Figma import.** Garreth will send a sample Figma link; the import
-  (designs D11-FigmaPrompt, FigmaReading, FigmaDraft, FigmaNoAccess) is
-  built once it arrives. The Start screen's fourth card stays disabled until
-  then.
+- **`FIGMA_TOKEN`.** The Figma import is built (see the changelog) but has
+  only run against a fixture, because the app has no Figma token. Garreth
+  makes a personal access token in Figma (Settings → Security → Personal
+  access tokens, with file content read) and adds it as `FIGMA_TOKEN` in
+  `.env.local` and on Vercel; then the sample link
+  (`figma.com/design/ZqDGTufoZyJX3EnRvdJyVi`, "3-Slide Journey Carousel")
+  should be imported once for real and the result checked on the canvas.
 - **`OPENROUTER_API_KEY` on the live site.** It was missing on Vercel
   (confirmed 2026-10-08 in Garreth's own browser), which is why Czedrick saw
   "Api key not set" on every AI feature. Garreth added it on 2026-10-08; it

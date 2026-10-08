@@ -68,18 +68,39 @@ nine pages of screenshots) and Garreth's answers of 2026-10-08. Branch
 - **Overview lists every live carousel type** with its own Generate button
   (design D16-Main), the ones that ran most recently first. Before, a type
   that had never run was left out and the panel said "No type generated yet".
+- **Start from a Figma link** (Garreth's sample "3-Slide Journey Carousel",
+  2026-10-08; designs D11-FigmaPrompt, FigmaReading, FigmaDraft,
+  FigmaNoAccess). The fourth Start card is live. Paste a link to a page, a
+  section or a frame; the chip under it says the file's name, how many
+  frames, their size and how many samples, or "Not connected" / "No access".
+  Each frame becomes a slide at the frames' size; a picture filling a frame
+  is the slide's image cell; each text layer becomes a text box where it
+  sits, with its font, weight, size, colour, alignment, stroke and shadow (a
+  font we do not have is stood in for by Inter, and the conversation says
+  so). Frames are read in the order they sit on the page, row by row, not by
+  their names, because the sample's second row is numbered 4, 5, 6 but laid
+  out 5, 4, 6. With two or more samples in sections, a line that reads the
+  same in every sample is fixed and a picture that repeats (the sample's
+  "Directed by" card) is copied into our storage and pinned to that slide;
+  everything else is for the writer and the library. Instructions typed
+  under the link go to the writer after the import. Needs `FIGMA_TOKEN` on
+  the server (a Figma personal access token with file read); without it the
+  chip says "Not connected" and nothing else is touched.
 - **Trends is brought to its design (D10-Main):** the section rail is icon
   cards, the search box carries its search type on the right with a filter
   icon beside it, Copy to Studio reads as the main action under a post, and
   Recent saves ends in a View all saves button.
 
 **Verified:** `tsc`, `eslint`, `vitest` (11 new unit tests on the Studio's
-model helpers), `next build`, and 51 headless-browser checks on the local dev
+model helpers, 7 on the Figma reader against a fixture shaped like the
+sample file), `next build`, and 56 headless-browser checks on the local dev
 server (un-tick, scratch deck, every inspector control, font and weight on
 the canvas, drag and undo, pin by click and by drag, unpin, render preview,
 size switch, pan, fold, save dialog; linking Character 6, its set and
-thumbnails, a render from the bucket, deleting a throwaway link). Not yet
-used on the live site.
+thumbnails, a render from the bucket, deleting a throwaway link; the Figma
+screen's hint, chip and disabled import without a token). **The Figma import
+has not yet read a real file:** no `FIGMA_TOKEN` exists locally or on
+Vercel. Not yet used on the live site.
 
 ---
 

@@ -10,12 +10,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Accent, Btn, compact, post, shortDate } from "@/components/carousel/kit";
 import { uploadPicture } from "@/components/carousel/library-upload";
-import { Check, ChevronLeft, LayoutList, Loader2, Pencil, Play, Plus, Sparkles, SquaresFour } from "@/components/ui/icons";
+import { Check, ChevronLeft, LayoutList, Loader2, Pencil, Play, Plus, Sparkles, SquaresFour, X } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { Library, Reference } from "@/server/carousel/repo/types";
 import type { StudioSize } from "@/components/carousel/studio-model";
 
-export type Way = "reference" | "idea" | "scratch";
+export type Way = "reference" | "idea" | "scratch" | "figma";
+
+export type FigmaPeek = { name: string; node: string; frames: number; samples: number; width: number; height: number; size: StudioSize };
 
 export function Head({ name, onBack, back = "Back" }: { name: string; onBack: () => void; back?: string }) {
   return (
@@ -36,7 +38,7 @@ export function StartScreen({ name, onBack, onPick }: { name: string; onBack: ()
           <button type="button" onClick={() => onPick("reference")} className={card}><span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><LayoutList className="size-5" /></span><span className="flex flex-col gap-1"><b className="text-sm">Start from a reference deck</b><span className="text-xs text-text-muted">A deck you saved on Trends, redrawn as a type.</span></span></button>
           <button type="button" onClick={() => onPick("idea")} className={card}><span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><Sparkles className="size-5" /></span><span className="flex flex-col gap-1"><b className="text-sm">Discuss your idea</b><span className="text-xs text-text-muted">Describe it and the writer drafts the slides.</span></span></button>
           <button type="button" onClick={() => onPick("scratch")} className={card}><span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><SquaresFour className="size-5" /></span><span className="flex flex-col gap-1"><b className="text-sm">Start from scratch</b><span className="text-xs text-text-muted">Five plain slides to build by hand. No AI.</span></span></button>
-          <button type="button" disabled title="Figma import is not connected yet" className={cn(card, "opacity-50")}><span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><Pencil className="size-5" /></span><span className="flex flex-col gap-1"><b className="text-sm">Start from a Figma link</b><span className="text-xs text-text-muted">Not connected yet.</span></span></button>
+          <button type="button" onClick={() => onPick("figma")} className={card}><span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><Pencil className="size-5" /></span><span className="flex flex-col gap-1"><b className="text-sm">Start from a Figma link</b><span className="text-xs text-text-muted">A frame per slide; samples in sections.</span></span></button>
         </div>
       </div>
     </div>
@@ -186,5 +188,70 @@ export function IdeaStep({ name, onBack, value, onChange, onSend }: { name: stri
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Start from a Figma link (D11-FigmaPrompt, FigmaNoAccess). The link is
+ * read as soon as it is pasted, and the chip says what the file holds, or
+ * that it cannot be read. The instructions go to the writer after the
+ * import; they can be left empty.
+ */
+export function FigmaStep({ name, onBack, onImport }: { name: string; onBack: () => void; onImport: (url: string, prompt: string) => void }) {
+  const [url, setUrl] = useState("");
+  const [prompt, setPrompt] = useState("");
+  // What the last read of a link found; a link not yet read is "busy" until its answer lands.
+  const [read, setRead] = useState<{ url: string; info: FigmaPeek | null; error: string | null; code: string | null }>({ url: "", info: null, error: null, code: null });
+  const looksLikeFigma = /figma\.com\/(design|file)\//.test(url);
+  useEffect(() => {
+    if (!looksLikeFigma) return;
+    let live = true;
+    const timer = setTimeout(() => {
+      void post<FigmaPeek>("/api/carousel-generator/studio/figma", { url, peek: true }).then((res) => {
+        if (!live) return;
+        if (res.error || !res.data) setRead({ url, info: null, error: res.error ?? "The file could not be read", code: res.code ?? null });
+        else setRead({ url, info: res.data, error: null, code: null });
+      });
+    }, 300);
+    return () => { live = false; clearTimeout(timer); };
+  }, [url, looksLikeFigma]);
+  const peek = read.url === url ? { ...read, busy: false } : { url, info: null, error: null, code: null, busy: looksLikeFigma };
+  const ready = Boolean(peek.info) && !peek.busy;
+  const send = () => { if (ready) onImport(url, prompt.trim()); };
+  const short = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").split("?")[0].slice(0, 40);
+  return (
+    <div className="flex flex-1 flex-col gap-5">
+      <Head name={name} onBack={onBack} />
+      <div className="flex flex-1 flex-col items-center justify-center">
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex w-full max-w-2xl flex-col gap-3 rounded-card border border-border bg-card p-4">
+          <input autoFocus value={url} onChange={(e) => setUrl(e.target.value.trim())} placeholder="Paste the Figma link (a page, a section or a frame)" aria-label="Figma link" className="w-full rounded-full border border-border bg-bg/60 px-4 py-2 text-sm outline-none placeholder:text-text-muted" />
+          {url && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn("inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs", peek.error ? "border-danger/50" : "border-border")} role={peek.error ? "alert" : undefined}>
+                <FigmaMark />
+                {peek.busy ? <><Loader2 className="size-3.5 animate-spin" />Reading the file</> : peek.info ? <><b>{peek.info.name}</b><span className="text-text-muted tnum">{peek.info.frames} frames · {peek.info.width}×{peek.info.height}{peek.info.samples > 1 ? ` · ${peek.info.samples} samples` : ""}</span></> : peek.error ? <><span className="text-text-muted">{short(url)}</span><span className="text-danger">{peek.code === "NO_TOKEN" ? "Not connected" : peek.code === "NO_ACCESS" ? "No access" : "Cannot read"}</span></> : <span className="text-text-muted">{short(url)}</span>}
+                <button type="button" onClick={() => setUrl("")} aria-label="Remove link" className="text-text-muted hover:text-text-primary"><X className="size-3" /></button>
+              </span>
+              {peek.error && <span className="text-xs text-danger">{peek.error}</span>}
+              {!looksLikeFigma && <span className="text-xs text-text-muted">A Figma design link looks like figma.com/design/…</span>}
+            </div>
+          )}
+          <div className="flex items-end gap-2">
+            <span className="mb-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"><Sparkles className="size-4" /></span>
+            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} rows={3} placeholder="Optional: what to keep from the file and what to change. For example: keep the layout, write it for Character 6, make the hook a question." aria-label="Instructions" className="min-h-16 w-full resize-y bg-transparent py-1.5 text-sm outline-none placeholder:text-text-muted" />
+            <button type="submit" disabled={!ready} aria-label="Import" className="mb-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-text-primary text-bg disabled:opacity-30"><Play className="size-3.5" /></button>
+          </div>
+          <p className="text-xs text-text-muted">Each frame becomes a slide, each text layer a text box where it sits. With two or more samples in sections, a line that reads the same in every sample is fixed, and a picture that repeats is copied and pinned.</p>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function FigmaMark() {
+  return (
+    <svg width="12" height="16" viewBox="0 0 12 18" aria-hidden className="shrink-0">
+      <path d="M3 0h3v6H3a3 3 0 0 1 0-6Z" fill="#F24E1E" /><path d="M6 0h3a3 3 0 0 1 0 6H6V0Z" fill="#FF7262" /><path d="M6 6h3a3 3 0 1 1-3 3V6Z" fill="#1ABCFE" /><path d="M3 6h3v6H3a3 3 0 0 1 0-6Z" fill="#A259FF" /><path d="M3 12h3v3a3 3 0 1 1-3-3Z" fill="#0ACF83" />
+    </svg>
   );
 }

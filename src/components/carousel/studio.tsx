@@ -21,11 +21,11 @@ import { ChevronDown, ChevronLeft, Cursor, DotsThree, Hand, ImageIcon, Images, L
 import { cn } from "@/lib/utils";
 import type { Library, TemplateRecord } from "@/server/carousel/repo/types";
 import { Adjustments, readImageDrag } from "@/components/carousel/studio-panel";
-import { IdeaStep, LibraryStep, ReferenceGrid, StartScreen, type Way } from "@/components/carousel/studio-start";
+import { FigmaStep, IdeaStep, LibraryStep, ReferenceGrid, StartScreen, type Way } from "@/components/carousel/studio-start";
 import { centreOf, cssOf, fitZoom, movedTo, patchBox, pinOf, pinned, renumber, resized, sizeOf, slugOf, wrapWidthOf, type Box, type Contract, type Selection, type Slide, type StudioSize, type Template } from "@/components/carousel/studio-model";
 
 type Msg = { who: "me" | "ai"; text: string; busy?: boolean; err?: boolean; /** What to send again when the call failed; absent for a failed draft. */ retry?: string };
-type Stage = "start" | "reference" | "library" | "idea" | "studio";
+type Stage = "start" | "reference" | "library" | "idea" | "figma" | "studio";
 type Drag = { slide: number; role: string; x: number; y: number; startX: number; startY: number; fromX: number; fromY: number; moved: boolean };
 
 const CHARACTERS = ["Character 2", "Character 3", "Character 4", "Character 5", "Character 6"];
@@ -139,8 +139,23 @@ export function Studio({ libraries: given, referenceId: givenReference, editing,
     say({ who: "ai", text: "Five plain slides. Click a text box to change it, drag it to move it, add slides from the end, or pin pictures from the library." });
   };
 
+  /** Start from a Figma link (D11): the file becomes the deck; the instructions, if any, then go to the writer. */
+  const importFigma = async (url: string, prompt: string) => {
+    setBusy("draft");
+    setStage("studio");
+    setMsgs((m) => [...m, ...(prompt ? [{ who: "me" as const, text: prompt }] : []), { who: "ai" as const, text: "Reading the Figma file", busy: true }]);
+    const res = await post<{ template: Template; sample: Record<string, string>; notes: string[]; file: { name: string; frames: number; samples: number } }>("/api/carousel-generator/studio/figma", { url, libraryId, character: saveForm.character });
+    setBusy(null);
+    if (res.error || !res.data) { say({ who: "ai", text: res.error ?? "The Figma file could not be read", err: true }); return; }
+    took(res.data.template, res.data.sample);
+    setSize(sizeOf(res.data.template));
+    say({ who: "ai", text: [`${res.data.file.frames} slides from ${res.data.file.name}${res.data.file.samples > 1 ? `, read across ${res.data.file.samples} samples` : ""}.`, ...res.data.notes].join(" ") });
+    if (prompt) await reviseWith(prompt, res.data.template, res.data.sample);
+  };
+
   const leaveLibrary = (lib: string | null) => {
     if (way === "scratch") return void scratch(lib);
+    if (way === "figma") return setStage("figma");
     if (way === "reference" && referenceId) return void draft(null, lib);
     setStage("idea");
   };
@@ -180,19 +195,22 @@ export function Studio({ libraries: given, referenceId: givenReference, editing,
    * boxes, sample lines, the direction). What comes back lands on the canvas
    * as one step, so Ctrl or Cmd+Z takes it back. Nothing is saved.
    */
-  const revise = async (text: string) => {
-    if (!template) return;
+  const revise = (text: string) => (template ? reviseWith(text, template, copy) : Promise.resolve());
+  const reviseWith = async (text: string, t: Template, c: Record<string, string>) => {
     const past = msgs.filter((m) => !m.busy && !m.err).map((m) => ({ who: m.who, text: m.text }));
-    setMsgs((x) => [...x.filter((m) => !(m.err && m.retry === text)), { who: "me", text }, { who: "ai", text: "Thinking", busy: true }]);
+    setMsgs((x) => [...x.filter((m) => !(m.err && m.retry === text) && !(m.who === "me" && m.text === text)), { who: "me", text }, { who: "ai", text: "Thinking", busy: true }]);
     setBusy("chat");
-    const res = await post<{ reply: string; template: Template | null; copy: Record<string, string> | null }>("/api/carousel-generator/studio/revise", { message: text, template, copy, libraryId, history: past });
+    const res = await post<{ reply: string; template: Template | null; copy: Record<string, string> | null }>("/api/carousel-generator/studio/revise", { message: text, template: t, copy: c, libraryId, history: past });
     setBusy(null);
     if (res.error || !res.data) {
       say({ who: "ai", text: res.error ?? "The writer could not be reached", err: true, retry: text });
       return;
     }
     if (res.data.template) {
-      push(res.data.template, res.data.copy ?? copy);
+      setHistory((h) => [...h.slice(-40), { template: t, copy: c }]);
+      setTemplate(res.data.template);
+      setCopy(res.data.copy ?? c);
+      setDirty(true);
       setPreviews({});
       setSelected(null);
     }
@@ -415,11 +433,12 @@ export function Studio({ libraries: given, referenceId: givenReference, editing,
         onMade={(lib) => setMade((m) => [...m.filter((x) => x.id !== lib.id), lib])}
         onContinue={() => leaveLibrary(libraryId)}
         onSkip={() => { setLibraryId(null); leaveLibrary(null); }}
-        continueLabel={way === "scratch" ? "Open the canvas" : way === "reference" ? "Draft from the reference" : "Continue"}
+        continueLabel={way === "scratch" ? "Open the canvas" : way === "reference" ? "Draft from the reference" : way === "figma" ? "Paste the link" : "Continue"}
       />
     );
   }
   if (stage === "idea") return <IdeaStep name={name} onBack={() => setStage("library")} value={input} onChange={setInput} onSend={send} />;
+  if (stage === "figma") return <FigmaStep name={name} onBack={() => setStage("library")} onImport={(url, prompt) => void importFigma(url, prompt)} />;
 
   // ── The canvas ──
   const t = template;
@@ -486,7 +505,7 @@ export function Studio({ libraries: given, referenceId: givenReference, editing,
 
         <div className="relative flex min-h-0 flex-col overflow-hidden rounded-card border border-border bg-card-sunken [background-image:radial-gradient(var(--border)_1px,transparent_1.2px)] [background-size:18px_18px]">
           <div className="absolute top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-border glass-overlay px-2 py-1">
-            {busy === "draft" ? <span className="inline-flex items-center gap-1.5 px-2 text-xs text-text-muted"><Loader2 className="size-3.5 animate-spin" />{way === "scratch" ? "Setting up" : "Drafting"}</span> : (
+            {busy === "draft" ? <span className="inline-flex items-center gap-1.5 px-2 text-xs text-text-muted"><Loader2 className="size-3.5 animate-spin" />{way === "scratch" ? "Setting up" : way === "figma" ? "Reading the Figma file" : "Drafting"}</span> : (
               <>
                 <span className="hidden px-2 text-xs text-text-muted tnum sm:inline">{selected ? `Slide ${selected.slide + 1} of ${t?.slides.length ?? 0}` : `${t?.slides.length ?? 0} slides`}</span>
                 <Tool onClick={renderPreview} busy={busy === "render"} disabled={!t || !libraryId} title={!libraryId ? "Pick a library first" : undefined}><Play className="size-3.5" />Render preview</Tool>
@@ -632,7 +651,8 @@ export function Studio({ libraries: given, referenceId: givenReference, editing,
                 <div key={i} className={cn("flex", m.who === "me" ? "justify-end" : "justify-start")}>
                   <span className={cn("max-w-[90%] rounded-nested px-3 py-2", m.who === "me" ? "bg-card-raised" : m.err ? "border border-danger/40 text-danger" : "border border-border text-text-muted")}>
                     {m.busy && <Loader2 className="mr-1.5 inline size-3.5 animate-spin" />}{m.text}
-                    {m.err && <button type="button" onClick={() => (m.retry ? void revise(m.retry) : way === "scratch" ? void scratch() : void draft(msgs.find((x) => x.who === "me")?.text ?? null))} className="ml-2 underline">Retry</button>}
+                    {m.err && (m.retry || way !== "figma") && <button type="button" onClick={() => (m.retry ? void revise(m.retry) : way === "scratch" ? void scratch() : void draft(msgs.find((x) => x.who === "me")?.text ?? null))} className="ml-2 underline">Retry</button>}
+                    {m.err && !m.retry && way === "figma" && <button type="button" onClick={() => { setMsgs([]); setStage("figma"); }} className="ml-2 underline">Back to the link</button>}
                   </span>
                 </div>
               ))}
