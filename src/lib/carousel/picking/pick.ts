@@ -16,6 +16,8 @@ export interface PickingTemplate {
   slides: { n: number; cells: unknown[]; images: {
     rule: string; pools?: string[]; body_pools?: string[]; evidence_pools?: string[];
     prefer_cover?: boolean; distinct_group?: string;
+    /** Pictures a person dropped onto cells in the Studio: that picture, every deck. */
+    pinned?: { cell: number; url: string; image_id?: string }[];
   } }[];
 }
 export interface ImageManifest {
@@ -130,7 +132,14 @@ export function pickImages(template: PickingTemplate, assets: readonly ImageAsse
       });
       if (config.distinct_group) groups.set(config.distinct_group, used);
     } else return fail(`unsupported image rule "${config.rule}"`);
-    return { n: slide.n, cells: selected.map((a, cell) => ({ cell, image_id: a.image_id, public_url: a.public_url })) };
+    const pinned = new Map((config.pinned ?? []).map(p => [p.cell, p]));
+    return {
+      n: slide.n,
+      cells: selected.map((a, cell) => {
+        const pin = pinned.get(cell);
+        return pin ? { cell, image_id: pin.image_id ?? `pinned:${pin.url}`, public_url: pin.url } : { cell, image_id: a.image_id, public_url: a.public_url };
+      }),
+    };
   });
   return { deck_id: deckId, library_id: libraryId, template: { slug: template.slug, version: template.version }, slides };
 }

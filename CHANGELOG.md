@@ -20,6 +20,47 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-08 — Studio round two: fonts, drag to place, pin a picture, start from scratch
+
+**Where it came from:** Czedrick's testing notes ("Issues with Carousel App",
+nine pages of screenshots) and Garreth's answers of 2026-10-08. Branch
+`claude/carousel-generator-round-2`; not on `main` yet.
+
+- **The library step un-ticks.** Clicking the ticked library again now leaves
+  nothing chosen (Czedrick could not unselect it).
+- **Four ways in.** Start from a reference deck now shows the saved decks as a
+  grid to pick from (design D6-Reference). Start from scratch is new: five plain
+  slides, one line each, no AI call. Discuss your idea is unchanged; Figma stays
+  disabled until the sample link arrives.
+- **The left panel matches the design (D6-Main, D11-Layers).** Slide size
+  (4:5 or 9:16, which stretches the cells), then for a text box: Name, Written
+  by, Fits, Font, Weight, Size, Stroke on/off with width, Shadow off/hard/soft
+  with offset and blur, Alignment left/centre/right, Wrap width, Colour, Sample
+  text, Remove. A Layers list for the slide; the library with its sets and
+  thumbnails underneath, with Upload images (Generate with AI still disabled).
+- **Ten fonts** from Google Fonts: TikTok Sans, Inter, Montserrat, Poppins,
+  Bebas Neue, Anton, Oswald, Playfair Display, Caveat, Permanent Marker, each
+  with its weights. The painter now draws a box's own font, weight, colour,
+  alignment, stroke and shadow (before, a box's own alignment, colour and wrap
+  width were ignored by the painter).
+- **Free placement.** Drag a text box anywhere on its slide; it lands there
+  (a new `free` anchor with x and y). Undo brings it back.
+- **Pin a picture to one slide.** Drag a thumbnail from the library onto a
+  slide (or select the cell and click the thumbnail). That slide alone uses
+  that picture in every deck; the other slides keep drawing from the library.
+  A conversation revision keeps the pins.
+- **Both side panels fold away;** the canvas pans in every direction by
+  dragging the background or with the hand tool; the first deck opens at a
+  zoom that shows a whole slide.
+- Save as carousel type offers Character 6.
+
+**Verified:** `tsc`, `eslint`, and 43 headless-browser checks on the local dev
+server (un-tick, scratch deck, every inspector control, font and weight on the
+canvas, drag and undo, pin by click and by drag, unpin, render preview, size
+switch, pan, fold, save dialog). Not yet used on the live site.
+
+---
+
 ## 2026-10-07 — Facebook accounts get their numbers (PF-24)
 
 **Where it came from:** Garreth's ticket PF-24 (2026-10-01). Facebook accounts

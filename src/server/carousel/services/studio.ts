@@ -11,6 +11,7 @@ import { listAssets } from "@/server/carousel/repo/libraries";
 import { getReference } from "@/server/carousel/repo/trends";
 import { paintDeck, type PaintTemplate } from "@/server/carousel/services/painter";
 import { settledRoles, writeDeck, writerAvailable, type CopyRole } from "@/server/carousel/services/writer";
+import { SLIDE_FONTS, fontEntry } from "@/lib/carousel/fonts";
 
 export type StudioSize = "4:5" | "9:16";
 
@@ -49,7 +50,8 @@ export function blankTemplate(slug: string, name: string, character: string, siz
     output: { format: "jpeg", quality: 92, bucket: "carousel-renders", path: `${slug}/{deck_id}/slide_{nn}.jpg` },
     fit: { mode: "cover", position: "centre", resample: "lanczos", exif_transpose: true },
     text_origin: "ascender",
-    fonts: { caption: { family: "Inter", weight: 700, file: "Inter-Bold.ttf" } },
+    // Every font the Studio offers is declared, so a box may name any of them.
+    fonts: { caption: { family: "Inter", weight: 700, file: "Inter-Bold.ttf" }, ...Object.fromEntries(SLIDE_FONTS.map((f) => [f.key, fontEntry(f.key)])) },
     text_styles: {
       caption: {
         font: "caption",
@@ -112,7 +114,10 @@ export function applySlides(template: Record<string, unknown>, slides: DraftSlid
   const oldContract = new Map(((template.copy_contract as CopyRole[] | undefined) ?? []).map((c) => [c.role, c]));
   const styles = Object.keys((template.text_styles as Record<string, unknown> | undefined) ?? {});
   const contract: CopyRole[] = [];
+  // A picture pinned to a slide by hand stays on that slide through a revision.
+  const oldSlides = (template.slides as { images?: { pinned?: unknown[] } }[] | undefined) ?? [];
   const next = slides.map((s, i) => {
+    const pinned = oldSlides[i]?.images?.pinned;
     const quad = s.layout === "quad";
     const cells = quad
       ? [
@@ -127,7 +132,7 @@ export function applySlides(template: Record<string, unknown>, slides: DraftSlid
       contract.push(oldContract.get(b.name) ?? { role: b.name, columns: [b.name], writer: "ai", max_chars: 120 });
       return { ...(old ?? { style: styles[0] ?? "caption" }), role: b.name, size: b.size, anchor: { kind: "block_centre_y", at: b.at }, purpose: b.purpose || (old?.purpose as string | undefined) || "" };
     });
-    return { n: i + 1, layout: quad ? "quad" : "single", cells, images: { rule: quad ? "distinct" : "one", ...(s.set ? { pools: [s.set] } : {}) }, text };
+    return { n: i + 1, layout: quad ? "quad" : "single", cells, images: { rule: quad ? "distinct" : "one", ...(s.set ? { pools: [s.set] } : {}), ...(Array.isArray(pinned) && pinned.length ? { pinned } : {}) }, text };
   });
   const unpainted = ((template.copy_contract as CopyRole[] | undefined) ?? []).filter((c) => !contract.some((k) => k.role === c.role) && !oldBoxes.has(c.role));
   return {
@@ -190,6 +195,22 @@ function fixtureSpec(idea: string, sets: string[]): DraftSpec {
       { layout: "single", boxes: [{ name: "after", purpose: "One habit, never a product", size: 52, at: 0.5 }], set: pick(4) },
     ],
     sample: { hook: "I stopped chasing the scale and started chasing sleep.", before: "Four years stuck. I did not give up a single thing.", tip_one: "Water before coffee. Every morning.", tip_two: "A walk after dinner, no phone.", after: "Honestly the habit was the cheat code." },
+  };
+}
+
+/**
+ * Start from scratch (Garreth, 2026-10-08): a plain deck to build by hand.
+ * Five single-photo slides, one text box each, the first the hook, with
+ * sample lines so the canvas is not blank. No model call.
+ */
+export function scratchSpec(slides = 5): DraftSpec {
+  const n = Math.max(2, Math.min(20, slides));
+  const names = Array.from({ length: n }, (_, i) => (i === 0 ? "hook" : `line_${i + 1}`));
+  return {
+    name: "New carousel",
+    direction: "Warm, plain, first person. Each line under twelve words. The last slide names one habit, never a product.",
+    slides: names.map((name, i) => ({ layout: "single" as const, set: null, boxes: [{ name, purpose: i === 0 ? "The opening line that earns the swipe" : `Line ${i + 1}`, size: i === 0 ? 64 : 54, at: 0.5 }] })),
+    sample: Object.fromEntries(names.map((name, i) => [name, i === 0 ? "Your hook goes here" : `Slide ${i + 1} line`])),
   };
 }
 

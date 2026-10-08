@@ -17,6 +17,7 @@ import { pickImages, type ImageAsset, type PickingTemplate } from "@/lib/carouse
 
 interface Style {
   fill?: string;
+  weight?: number;
   stroke?: { width: number; color: string } | null;
   shadow?: { kind: string; dx: number; dy: number; blur: number; color: string; opacity: number } | null;
   line_height?: { px?: number; ratio?: number };
@@ -25,13 +26,16 @@ interface Style {
   font?: string;
 }
 
-interface TextBox {
+/**
+ * A box carries the same fields a style does, and a box's own value wins:
+ * the Studio writes font, fill, alignment, wrap width, stroke and shadow on
+ * the box a person adjusted, and leaves the shared style alone.
+ */
+interface TextBox extends Style {
   role: string;
   style: string;
   size: number;
-  anchor: { kind: string; y?: number; margin?: number; at?: number; right?: number; top?: number };
-  line_height?: Style["line_height"];
-  stroke?: Style["stroke"];
+  anchor: { kind: string; y?: number; margin?: number; at?: number; right?: number; top?: number; x?: number };
   quote?: { when_hook_type?: string[]; open: string; close: string };
 }
 
@@ -46,7 +50,7 @@ interface Slide {
 export interface PaintTemplate extends PickingTemplate {
   canvas: { width: number; height: number; background: string | null };
   text_styles: Record<string, Style>;
-  fonts?: Record<string, { family?: string }>;
+  fonts?: Record<string, { family?: string; weight?: number }>;
   slides: Slide[];
 }
 
@@ -92,9 +96,10 @@ export function wrapText(text: string, size: number, width: number): string[] {
   return out;
 }
 
-function textBlock(box: TextBox, style: Style, text: string, canvas: { width: number; height: number }, fontFamily: string): string {
-  const stroke = box.stroke === undefined ? style.stroke : box.stroke;
-  const lh = box.line_height ?? style.line_height;
+function textBlock(box: TextBox, shared: Style, text: string, canvas: { width: number; height: number }, fonts: Record<string, { family?: string; weight?: number }>): string {
+  const style: Style = { ...shared, ...Object.fromEntries(Object.entries(box).filter(([k, v]) => ["fill", "weight", "stroke", "shadow", "line_height", "wrap", "align", "font"].includes(k) && v !== undefined)) };
+  const stroke = style.stroke;
+  const lh = style.line_height;
   const lineHeight = lh?.px ?? box.size * (lh?.ratio ?? 1.2);
   const wrapW = style.wrap?.rule === "greedy_whitespace" ? (style.wrap.width ?? canvas.width * 0.88) : canvas.width;
   const lines = style.wrap?.rule === "explicit_newlines" ? text.split("\n") : wrapText(text, box.size, wrapW);
@@ -104,9 +109,15 @@ function textBlock(box: TextBox, style: Style, text: string, canvas: { width: nu
   if (a.kind === "top") top = a.y ?? 0;
   else if (a.kind === "bottom") top = canvas.height - (a.margin ?? 0) - blockH;
   else if (a.kind === "stack_right") top = a.top ?? 0;
+  else if (a.kind === "free") top = canvas.height * n(a.y, 0.5) - blockH / 2;
   else top = canvas.height * (a.at ?? 0.5) - blockH / 2;
-  const align = style.align === "right" || a.kind === "stack_right" ? "end" : "middle";
-  const x = align === "end" ? canvas.width - (a.right ?? 0) : canvas.width / 2;
+  const align = style.align === "right" || a.kind === "stack_right" ? "end" : style.align === "left" ? "start" : "middle";
+  // A free box is placed by its centre; its text lines up inside its own width.
+  const centreX = a.kind === "free" ? canvas.width * n(a.x, 0.5) : canvas.width / 2;
+  const x = a.kind === "stack_right" ? canvas.width - (a.right ?? 0) : align === "end" ? centreX + wrapW / 2 : align === "start" ? centreX - wrapW / 2 : centreX;
+  const fontName = style.font && fonts[style.font]?.family ? fonts[style.font].family! : (Object.values(fonts)[0]?.family ?? "Inter");
+  const fontFamily = `${fontName}, Inter, Arial, sans-serif`;
+  const weight = n(style.weight, n(style.font && fonts[style.font]?.weight, 700));
   const shadow = style.shadow;
   const filter = shadow
     ? `<filter id="sh-${ident(box.role)}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="${n(shadow.dx)}" dy="${n(shadow.dy)}" stdDeviation="${n(shadow.blur) / 2}" flood-color="${esc(String(shadow.color))}" flood-opacity="${n(shadow.opacity, 1)}"/></filter>`
@@ -115,13 +126,12 @@ function textBlock(box: TextBox, style: Style, text: string, canvas: { width: nu
     .map((l, i) => `<tspan x="${n(x)}" y="${n(top + i * lineHeight + n(box.size) * 0.9).toFixed(1)}">${esc(l)}</tspan>`)
     .join("");
   const strokeAttr = stroke ? ` stroke="${esc(String(stroke.color))}" stroke-width="${n(stroke.width)}" stroke-linejoin="round" paint-order="stroke fill"` : "";
-  return `${filter}<text font-family="${esc(fontFamily)}" font-weight="700" font-size="${n(box.size, 48)}" fill="${esc(String(style.fill ?? "#fff"))}" text-anchor="${align}"${strokeAttr}${shadow ? ` filter="url(#sh-${ident(box.role)})"` : ""}>${tspans}</text>`;
+  return `${filter}<text font-family="${esc(fontFamily)}" font-weight="${weight}" font-size="${n(box.size, 48)}" fill="${esc(String(style.fill ?? "#fff"))}" text-anchor="${align}"${strokeAttr}${shadow ? ` filter="url(#sh-${ident(box.role)})"` : ""}>${tspans}</text>`;
 }
 
 export function paintDeck(template: PaintTemplate, assets: ImageAsset[], libraryId: string, deckId: string, copy: Record<string, string>): PaintedSlide[] {
   const manifest = pickImages(template, assets, libraryId, deckId);
-  const font = Object.values(template.fonts ?? {})[0]?.family ?? "Inter";
-  const family = `${font}, Inter, Arial, sans-serif`;
+  const fonts = (template.fonts ?? {}) as Record<string, { family?: string; weight?: number }>;
   return template.slides.map((slide) => {
     const picked = manifest.slides.find((s) => s.n === slide.n)?.cells ?? [];
     const cells = slide.cells
@@ -139,7 +149,7 @@ export function paintDeck(template: PaintTemplate, assets: ImageAsset[], library
         if (box.quote && copy.hook_type && box.quote.when_hook_type?.includes(copy.hook_type)) text = `${box.quote.open}${text}${box.quote.close}`;
         if (!text) return "";
         boxCopy[box.role] = text;
-        return textBlock(box, template.text_styles[box.style] ?? {}, text, template.canvas, family);
+        return textBlock(box, template.text_styles[box.style] ?? {}, text, template.canvas, fonts);
       })
       .join("");
     const bg = template.canvas.background ? `<rect width="100%" height="100%" fill="${esc(String(template.canvas.background))}"/>` : "";

@@ -1,5 +1,13 @@
 import {
   ArrowDown as PhArrowDown,
+  ArrowLineDown as PhArrowLineDown,
+  ArrowLineUp as PhArrowLineUp,
+  Cursor as PhCursor,
+  Image as PhImage,
+  TextAlignCenter as PhTextAlignCenter,
+  TextAlignLeft as PhTextAlignLeft,
+  TextAlignRight as PhTextAlignRight,
+  TextT as PhTextT,
   DotsThreeVertical as PhDotsThreeVertical,
   LockSimple as PhLockSimple,
   PencilSimple as PhPencilSimple,
@@ -246,3 +254,13 @@ export const GridFour = icon(PhGridFour, "GridFour");
 export const Funnel = icon(PhFunnel, "Funnel");
 export const Trash = icon(PhTrash, "Trash");
 export const Upload = icon(PhUpload, "Upload", "bold");
+// The Studio's tool strip and inspector (D6, D11).
+export const Cursor = icon(PhCursor, "Cursor");
+export const TextT = icon(PhTextT, "TextT", "bold");
+export const ImageIcon = icon(PhImage, "ImageIcon");
+export const SidebarSimple = icon(PhSidebarSimple, "SidebarSimple");
+export const TextAlignLeft = icon(PhTextAlignLeft, "TextAlignLeft", "bold");
+export const TextAlignCenter = icon(PhTextAlignCenter, "TextAlignCenter", "bold");
+export const TextAlignRight = icon(PhTextAlignRight, "TextAlignRight", "bold");
+export const ArrowLineUp = icon(PhArrowLineUp, "ArrowLineUp", "bold");
+export const ArrowLineDown = icon(PhArrowLineDown, "ArrowLineDown", "bold");
