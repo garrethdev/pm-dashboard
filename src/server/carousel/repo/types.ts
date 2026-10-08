@@ -229,6 +229,8 @@ export interface Library {
   /** Which types draw from this library. */
   usedBy: string[];
   untagged: number;
+  /** A live link to a bucket folder, listed each time (2026-10-08); null for a library kept here. */
+  linked: { bucket: string; prefix: string } | null;
 }
 
 export interface LibraryDetail extends Library {

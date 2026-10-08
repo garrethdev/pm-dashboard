@@ -65,11 +65,15 @@ export async function overviewData(viewer: string): Promise<OverviewData> {
     if (isToday(b.renderRequestedAt)) today.rendered += b.counts.rendered;
     if (isToday(b.approvedAt)) today.approved += b.counts.approved;
   }
-  const generated = types.filter((t) => t.lastBatch).sort((a, b) => (b.lastBatch!.createdAt).localeCompare(a.lastBatch!.createdAt));
+  // Every live type, with a Generate button each (design D16-Main; Garreth,
+  // 2026-10-08): the ones that have run most recently first, then the rest.
+  const live = types.filter((t) => t.lifecycle !== "retired");
+  const generated = live.filter((t) => t.lastBatch).sort((a, b) => (b.lastBatch!.createdAt).localeCompare(a.lastBatch!.createdAt));
+  const listed = [...generated, ...live.filter((t) => !t.lastBatch)];
   return {
     today,
     tasks,
-    types: generated.slice(0, 5),
+    types: listed.slice(0, 8),
     totalTypes: types.filter((t) => t.lifecycle !== "retired").length,
     trending: trend,
     saved,

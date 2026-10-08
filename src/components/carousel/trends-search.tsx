@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { CatalogImage } from "./catalog-image";
 import { DetailsWindow } from "./details-window";
 import { SEARCH_CHANNELS, mediaUrl, plainText, safeWebUrl, searchSummary, type SearchChannel, type SearchResponse } from "@/lib/carousel/trends/presentation";
+import { ChevronDown, Funnel, MagnifyingGlass, X } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 
 /** Submit-driven search, not a substitute for DEV-36/45's ranked unseen feed.
  * A request sequence prevents a slower old search replacing a newer result.
@@ -62,16 +64,23 @@ export function TrendsSearch({ compact = false, onSearching, initialQuery = "" }
   const filterCount = Number(Boolean(creator.trim())) + Number(Boolean(topic.trim()));
   return <section aria-label="Search" className={compact ? "flex w-full flex-col gap-4" : "mx-auto flex w-full max-w-5xl flex-col gap-5"}>
     {!compact && <header className="flex flex-wrap items-center justify-between gap-4"><h1 className="text-xl font-semibold">Trends</h1><span className="text-xs text-text-muted">Carousel search</span></header>}
-    <form onSubmit={event => { event.preventDefault(); void search(); }} className="flex flex-wrap items-center gap-2">
-      <div className="flex min-w-0 flex-1 items-center rounded-full border border-border bg-card px-4">
+    {/* One rounded group (D10-Main): the search box with the search type on its right, then the filter button. */}
+    <form onSubmit={event => { event.preventDefault(); void search(); }} className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-1 items-stretch overflow-hidden rounded-full border border-border bg-card">
         <label htmlFor="carousel-search" className="sr-only">Search carousels</label>
-        <input id="carousel-search" type="search" value={query} onChange={event => setQuery(event.target.value)} maxLength={1000} placeholder="Search carousels…" className="min-w-0 flex-1 bg-transparent py-3 text-sm" />
-        {query && <button type="button" onClick={clear} aria-label="Clear search" className="px-2 text-text-muted">×</button>}
-        <button type="submit" disabled={!query.trim()} aria-label="Search" className="rounded-full px-2 py-2 text-sm disabled:opacity-30">⌕</button>
+        <button type="submit" disabled={!query.trim()} aria-label="Search" className="flex items-center pl-4 pr-1 text-text-muted disabled:opacity-60"><MagnifyingGlass className="size-4" /></button>
+        <input id="carousel-search" type="search" value={query} onChange={event => setQuery(event.target.value)} maxLength={1000} placeholder="Search carousels or creators" className="min-w-0 flex-1 bg-transparent px-2 py-2.5 text-sm placeholder:text-text-muted" />
+        {query && <button type="button" onClick={clear} aria-label="Clear search" className="flex items-center px-2 text-text-muted"><X className="size-3.5" /></button>}
+        <label className="sr-only" htmlFor="search-channel">Search type</label>
+        <span className="relative flex items-center border-l border-border">
+          <select id="search-channel" value={channel} onChange={event => setChannel(event.target.value as SearchChannel)} className="h-full appearance-none bg-transparent py-2.5 pr-8 pl-3 text-xs text-text-muted outline-none">{SEARCH_CHANNELS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+          <ChevronDown className="pointer-events-none absolute right-3 size-3 text-text-muted" />
+        </span>
       </div>
-      <label className="sr-only" htmlFor="search-channel">Search type</label>
-      <select id="search-channel" value={channel} onChange={event => setChannel(event.target.value as SearchChannel)} className="max-w-full rounded-full border border-border bg-card px-3 py-3 text-xs">{SEARCH_CHANNELS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-      <button type="button" aria-expanded={filterOpen} aria-controls="search-filters" onClick={() => setFilterOpen(value => !value)} className="rounded-full border border-border px-4 py-3 text-xs">Filters{filterCount ? ` (${filterCount})` : ""}</button>
+      <button type="button" aria-expanded={filterOpen} aria-controls="search-filters" aria-label={`Filters${filterCount ? ` (${filterCount})` : ""}`} title="Filters" onClick={() => setFilterOpen(value => !value)} className={cn("relative flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-text-muted hover:text-text-primary", filterOpen && "text-text-primary")}>
+        <Funnel className="size-4" />
+        {filterCount > 0 && <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-bg tnum">{filterCount}</span>}
+      </button>
     </form>
     {filterOpen && <form id="search-filters" onSubmit={event => { event.preventDefault(); void search(); }} className="grid gap-4 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2">
       <label className="text-xs text-text-muted">Creator<input value={creator} onChange={event => setCreator(event.target.value)} maxLength={200} placeholder="Creator handle" className="mt-2 block w-full rounded-xl border border-border bg-transparent p-3 text-sm text-text-primary" /></label>

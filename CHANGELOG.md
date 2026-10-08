@@ -53,11 +53,33 @@ nine pages of screenshots) and Garreth's answers of 2026-10-08. Branch
   dragging the background or with the hand tool; the first deck opens at a
   zoom that shows a whole slide.
 - Save as carousel type offers Character 6.
+- **A library can be a live link to a storage folder** (Garreth: "live link",
+  Character 6 first). New library now offers Upload here or Link a storage
+  folder, with a bucket list and a folder browser. The library lists the
+  folder every time it is opened, so it always shows what the bucket holds;
+  each subfolder is a set; it is read-only in the app. Character 6 was linked
+  on 2026-10-08 to `rich-life-images/character-6/carousel-basis` (217
+  pictures, one set). The picker, the Studio thumbnails and the render
+  preview all draw from it. Two new columns on `image_libraries`
+  (`source_bucket`, `source_prefix`), applied live the same day.
+- **A library can be deleted** (or a link removed) with a hold on its page.
+  Refused while a carousel type draws from it, and for the two seeded banks.
+  Deleting an uploaded library also removes its files from the bucket.
+- **Overview lists every live carousel type** with its own Generate button
+  (design D16-Main), the ones that ran most recently first. Before, a type
+  that had never run was left out and the panel said "No type generated yet".
+- **Trends is brought to its design (D10-Main):** the section rail is icon
+  cards, the search box carries its search type on the right with a filter
+  icon beside it, Copy to Studio reads as the main action under a post, and
+  Recent saves ends in a View all saves button.
 
-**Verified:** `tsc`, `eslint`, and 43 headless-browser checks on the local dev
-server (un-tick, scratch deck, every inspector control, font and weight on the
-canvas, drag and undo, pin by click and by drag, unpin, render preview, size
-switch, pan, fold, save dialog). Not yet used on the live site.
+**Verified:** `tsc`, `eslint`, `vitest` (11 new unit tests on the Studio's
+model helpers), `next build`, and 51 headless-browser checks on the local dev
+server (un-tick, scratch deck, every inspector control, font and weight on
+the canvas, drag and undo, pin by click and by drag, unpin, render preview,
+size switch, pan, fold, save dialog; linking Character 6, its set and
+thumbnails, a render from the bucket, deleting a throwaway link). Not yet
+used on the live site.
 
 ---
 

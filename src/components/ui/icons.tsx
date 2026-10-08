@@ -1,6 +1,8 @@
 import {
   ArrowDown as PhArrowDown,
   ArrowLineDown as PhArrowLineDown,
+  BookOpen as PhBookOpen,
+  EnvelopeSimple as PhEnvelopeSimple,
   ArrowLineUp as PhArrowLineUp,
   Cursor as PhCursor,
   Image as PhImage,
@@ -264,3 +266,7 @@ export const TextAlignCenter = icon(PhTextAlignCenter, "TextAlignCenter", "bold"
 export const TextAlignRight = icon(PhTextAlignRight, "TextAlignRight", "bold");
 export const ArrowLineUp = icon(PhArrowLineUp, "ArrowLineUp", "bold");
 export const ArrowLineDown = icon(PhArrowLineDown, "ArrowLineDown", "bold");
+// Trends (D10): the section rail and the search box.
+export const EnvelopeSimple = icon(PhEnvelopeSimple, "EnvelopeSimple");
+export const BookOpen = icon(PhBookOpen, "BookOpen");
+export const MagnifyingGlass = icon(PhMagnifyingGlass, "MagnifyingGlass", "bold");
