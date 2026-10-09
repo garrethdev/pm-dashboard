@@ -260,10 +260,15 @@ export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet
     // the interval or the bell would be empty until it fired. Once a minute,
     // plus a re-read whenever the window regains focus (Garreth, 2026-09-26:
     // the app does not need constant polling).
+    // Every two minutes since 2026-10-09, and a focus re-read only when the
+    // last one is older than half a minute: the feed is cached a minute on the
+    // server now, so asking more often only costs round trips.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-    const t = setInterval(load, 60_000);
-    const onFocus = () => load();
+    let last = Date.now();
+    const again = () => { last = Date.now(); void load(); };
+    const t = setInterval(again, 120_000);
+    const onFocus = () => { if (Date.now() - last > 30_000) again(); };
     window.addEventListener("focus", onFocus);
     return () => {
       clearInterval(t);

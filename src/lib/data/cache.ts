@@ -139,6 +139,17 @@ export const PROXYCHEAP_PROXIES_TAG = "proxycheap-proxies";
 export const DEVICES_TAG = "devices";
 
 /**
+ * The bell's feed and the day's to-do list (2026-10-09). Both were read live
+ * on every request until the database stalled under them: the bell is polled
+ * by every open tab and fans out to a dozen reads, and the list is read by
+ * the home page, the To-do page, each phone's page and the bell itself. Any
+ * write that changes the day's work expires TODO_TAG.
+ */
+export const NOTIFICATIONS_TAG = "notifications-feed-v1";
+export const TODO_TAG = "todo-board-v1";
+
+
+/**
  * Shared tags for the caches whose keys carry a date or a range, so Refresh
  * can expire the whole family without enumerating every key it might hold.
  *
@@ -189,6 +200,8 @@ export const DATA_TAGS = [
   "scheduler-effective-config",
   "textverified-balance",
   "textverified-rentals",
+  NOTIFICATIONS_TAG,
+  TODO_TAG,
 ] as const;
 
 /** Per-profile detail cache, e.g. accountDetailTag("Profile 20"). */

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { TODO_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { parseRowId } from "@/lib/data/device-rules";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
@@ -31,6 +33,7 @@ export async function DELETE(
       action: "warmup_undone",
       target: String(id),
     });
+    revalidateTag(TODO_TAG, { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json(

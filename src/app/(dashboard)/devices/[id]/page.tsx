@@ -95,7 +95,7 @@ export default async function DevicePage({
   const [history, todaysSessions, board] = await Promise.all([
     getRecentSessions({ deviceId: id, limit: 25 }).catch(() => []),
     getSessionsToday({ deviceId: id }).catch(() => []),
-    getTodoBoard(0, new Date(), { deviceId: id }).catch(() => null),
+    getTodoBoard(0, undefined, { deviceId: id }).catch(() => null),
   ]);
   const onBoard = board?.devices.find((d) => d.id === String(id));
   // Only the accounts' own work. A ban's clean-up (P8) is for an account that

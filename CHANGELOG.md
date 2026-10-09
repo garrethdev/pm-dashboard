@@ -20,6 +20,49 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-09 — The bell and the to-do list read from a cache
+
+**Where it came from:** production hung for eight minutes at 15:20 UTC on
+2026-10-09, straight after the round-two merge. Every signed-in page waited
+on the database; only the login page, which needs none, loaded. The logs
+showed a burst of nearly eight hundred rejected connections at the pooler's
+client limit and then the dashboard's heavy views (account warmup health,
+scheduler pool, failed deliveries) taking ten to thirty seconds each until
+the statement timeout cancelled them. Garreth: "we barely used the app, you
+need to set up caches or something similar."
+
+**What was wrong.** Most reads already sat behind a one-minute server cache,
+but two did not: the notification bell, which every open tab asked for every
+minute and again on every window focus, and which fans out to about a dozen
+reads including the heaviest view in the database; and the day's to-do list,
+read live by the home page, the To-do page, each phone's page and the bell
+itself. Under any slowness those piled up on each other.
+
+**What changed:**
+
+- The bell's feed is built once a minute at most, however many tabs are
+  open. Only who-has-read-what stays per person and live.
+- The to-do list is read once a minute per day and phone. Every write that
+  changes the day's work (a warmup logged or undone, a ban clean-up step
+  ticked, a proof uploaded, an account moved between phones, a delivery mode
+  changed, a post-ban decision) expires it at once, so nobody sees a stale
+  list after their own action. The Refresh button expires it too.
+- The bell polls every two minutes instead of every minute, and a window
+  focus only re-reads when the last read is over thirty seconds old.
+
+**What was not the cause:** the carousel code. None of the queries that
+timed out were carousel queries, and no n8n workflow ran in that window. The
+source of the connection burst could not be named from the logs: the pooler
+refused those connections before they identified themselves, and Postgres
+connection logging is off.
+
+**Verified:** `tsc`, `eslint`, `vitest` (479 tests, including the one that
+checks every cache tag is reachable from Refresh), `next build`, and timed
+reads on the local dev server: the second and third reads of the bell and the
+list come back from the cache. Not yet seen under real load.
+
+---
+
 ## 2026-10-09 — Report an issue from any page
 
 **Where it came from:** Garreth's request on 2026-10-09: give Yurie and the

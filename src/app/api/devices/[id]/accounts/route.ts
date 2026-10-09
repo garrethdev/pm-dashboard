@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { ACCOUNTS_TAG, DEVICES_TAG } from "@/lib/data/cache";
+import { ACCOUNTS_TAG, DEVICES_TAG, TODO_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
 import { assignRefusal, parseRowId } from "@/lib/data/device-rules";
@@ -82,6 +82,7 @@ export async function POST(request: Request, ctx: Ctx) {
     });
 
     revalidateTag(DEVICES_TAG, { expire: 0 });
+    revalidateTag(TODO_TAG, { expire: 0 });
     revalidateTag(ACCOUNTS_TAG, { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -123,6 +124,7 @@ export async function DELETE(request: Request, ctx: Ctx) {
     });
 
     revalidateTag(DEVICES_TAG, { expire: 0 });
+    revalidateTag(TODO_TAG, { expire: 0 });
     revalidateTag(ACCOUNTS_TAG, { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (err) {

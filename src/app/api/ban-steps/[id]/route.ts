@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { TODO_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { parseRowId } from "@/lib/data/device-rules";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
@@ -40,6 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         action: body.done ? "ban_step_done" : "ban_step_undone",
         target: `ban_cleanup_steps:${id}`,
       });
+    revalidateTag(TODO_TAG, { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (err) {
     if (err instanceof RetireError) {

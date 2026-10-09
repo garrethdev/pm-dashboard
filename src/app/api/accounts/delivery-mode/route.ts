@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { ACCOUNTS_TAG, DEVICES_TAG } from "@/lib/data/cache";
+import { ACCOUNTS_TAG, DEVICES_TAG, TODO_TAG } from "@/lib/data/cache";
 import { accountDetailTag } from "@/lib/data/account-detail";
 import { requireSession } from "@/lib/api-auth";
 import { parseRowId } from "@/lib/data/device-rules";
@@ -103,6 +103,7 @@ export async function POST(request: Request) {
     revalidateTag(ACCOUNTS_TAG, { expire: 0 });
     // The phone's page lists its accounts, on both ends of the move.
     revalidateTag(DEVICES_TAG, { expire: 0 });
+    revalidateTag(TODO_TAG, { expire: 0 });
     // The account page has its own cache entry; without this it would keep
     // showing the old answer for up to a minute after the flip.
     revalidateTag(accountDetailTag(body.profile), { expire: 0 });

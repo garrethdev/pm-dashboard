@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
-import { ACCOUNTS_TAG } from "@/lib/data/cache";
+import { ACCOUNTS_TAG, TODO_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { actingUserEmail, auditLog, getAccountState, validProfile } from "@/lib/data/writes";
 import { insertNotification } from "@/lib/data/notifications";
@@ -184,6 +184,7 @@ export async function POST(request: Request) {
           newValue: { mode: "Live (perform cleanup)", outcome: "unverified" },
         });
         revalidateTag(ACCOUNTS_TAG, { expire: 0 });
+    revalidateTag(TODO_TAG, { expire: 0 });
         return;
       }
 
@@ -205,6 +206,7 @@ export async function POST(request: Request) {
         newValue: { mode: "Live (perform cleanup)", summary: n.body },
       });
       revalidateTag(ACCOUNTS_TAG, { expire: 0 });
+    revalidateTag(TODO_TAG, { expire: 0 });
     } catch (err) {
       // Timeout, network drop or a non-2xx. The request WAS sent, so "nothing
       // was changed" — which this used to claim — is a guess, and the one guess
