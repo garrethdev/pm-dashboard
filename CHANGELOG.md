@@ -20,6 +20,63 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-09 — Report an issue from any page
+
+**Where it came from:** Garreth's request on 2026-10-09: give Yurie and the
+rest of the team a way to report a problem from inside the dashboard, so
+Czedrick, Milan or Garreth can pick it up and fix it. Three decisions the same
+day: the Issues page shows who reported each issue, an issue is Open, In
+progress or Fixed, and the page is reached from the new button only, not from
+the menu.
+
+**What changed:**
+
+- **A floating button in the bottom-right corner of every page**, including
+  the Carousel Generator. Pressed, two buttons rise out of it, **Report an
+  issue** on top and **See issues** beneath, and its flag icon (the usual sign
+  for "report") turns into an X that folds them away again. Escape or a press anywhere else closes it too.
+- **Report an issue** opens a short form: a category (Warmup, Posting,
+  Accounts, Devices & proxies, Content & generator, Data & numbers, Dashboard,
+  Other), what happened, and an optional screenshot that can be chosen,
+  dropped in, or pasted straight from the clipboard. There is no date to fill
+  in: the issue is dated the moment it is sent. It also notes who sent it and
+  which page they were on. Large pictures (a phone photo, an iPhone HEIC) are
+  shrunk in the browser before they are sent; ordinary screenshots go up
+  untouched so the text in them stays sharp.
+- **The Issues page** lists every report, newest first: when, who, category,
+  what happened, the screenshot (press it to see it full size), the page, and
+  a status pill that opens Open, In progress or Fixed. It is laid out like
+  Accounts: the page's name and a **Filters** button above the table, with
+  the status filter inside that button. A report sent from the landing page
+  shows "-" for its page, since "/" said nothing about where the problem was.
+  On a phone each issue is a card instead of a table row,
+  because the table ran off the side of the screen and hid what happened and
+  its status. This is the one place the app names a person, by Garreth's
+  decision: the person fixing an issue needs to know who to ask.
+- **Every page has a little more room at the bottom**, so the last thing on a
+  page can always be scrolled clear of the button. Without it the button sat
+  on top of the wallet card's **Top up** on a phone.
+- **A new `issues` table and a private `issue-screenshots` folder in
+  Supabase.** Only the dashboard's own server can read or write them; the
+  public key used by n8n and the renderer has no access, which was checked by
+  reading the permissions back. A screenshot is only ever shown through a link
+  that expires after an hour. Sending a report and changing a status are both
+  written to the audit log.
+
+**Garreth's review the same day**, after trying it with a dummy issue: the bug
+icon became a flag, Report an issue moved to the top, the status filters moved
+into a Filters button, the page took the Accounts layout with more space above
+the table, "/" became "-", and the status pill lost the gap on its right. That
+gap came from the browser's built-in dropdown, which is always as wide as its
+longest option ("In progress"), so the pill now opens its own small menu.
+
+**Verified:** the table and folder were created live and the migration file
+matches what ran. A real report with a screenshot was sent through the form on
+this branch, shown on the Issues page, opened full size and moved to In
+progress, then checked in the database. Pictures were taken in dark mode,
+light mode and at phone width. That was headless Chrome, not Safari. The three
+test reports and their screenshots were deleted afterwards; their audit-log
+lines remain. Nobody has used it on the live site yet.
 ## 2026-10-08 — Studio round two: fonts, drag to place, pin a picture, start from scratch
 
 **Where it came from:** Czedrick's testing notes ("Issues with Carousel App",

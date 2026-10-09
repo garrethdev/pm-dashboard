@@ -96,6 +96,7 @@ import {
   Funnel as PhFunnel,
   Trash as PhTrash,
   Upload as PhUpload,
+  NotePencil as PhNotePencil,
 } from "@phosphor-icons/react/ssr";
 import type { Icon as PhIcon, IconWeight } from "@phosphor-icons/react/lib";
 
@@ -270,3 +271,8 @@ export const ArrowLineDown = icon(PhArrowLineDown, "ArrowLineDown", "bold");
 export const EnvelopeSimple = icon(PhEnvelopeSimple, "EnvelopeSimple");
 export const BookOpen = icon(PhBookOpen, "BookOpen");
 export const MagnifyingGlass = icon(PhMagnifyingGlass, "MagnifyingGlass", "bold");
+
+/* "Report an issue", one of the two actions under the floating issue button
+ * in the bottom-right corner (Garreth, 2026-10-09). The button itself is the
+ * Flag above. */
+export const NotePencil = icon(PhNotePencil, "NotePencil");
