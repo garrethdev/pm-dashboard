@@ -1,3 +1,4 @@
+import { IssueButton } from "@/components/shell/issue-button";
 import { MobileNavProvider, ShellColumn } from "@/components/shell/mobile-nav";
 import { PageGlow } from "@/components/shell/page-glow";
 import { Sidebar, type SidebarNav } from "@/components/shell/sidebar";
@@ -42,11 +43,15 @@ export async function AppShell({ nav, children }: { nav: SidebarNav; children: R
           {/* A flex column so an empty list can fill the space below it (design
               rule, Garreth 2026-09-19): anything that contains a full-size
               EmptyState grows to take the room that is left. See empty-state.tsx. */}
-          <main className="flex w-full flex-1 flex-col px-6 py-6 [&_:has([data-empty-fill])]:grow">
+          {/* pb-24: room under the last card for the floating issue button,
+              so whatever ends a page can always be scrolled clear of it. */}
+          <main className="flex w-full flex-1 flex-col px-6 pt-6 pb-24 [&_:has([data-empty-fill])]:grow">
             {children}
           </main>
         </ShellColumn>
       </div>
+      {/* Report or see issues, from every page (Garreth, 2026-10-09). */}
+      <IssueButton />
     </MobileNavProvider>
   );
 }
