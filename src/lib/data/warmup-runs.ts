@@ -10,7 +10,8 @@
  * Six operations and nothing else (warmup-runner docs/DASHBOARD-CONNECTION.md):
  * list the eligible accounts, read a day's sessions, start a run, check in,
  * close a run, and write a finished session. The script never changes an
- * account, a phone or a post.
+ * account, a phone or a post. A seventh, the warmup's report (Garreth,
+ * 2026-10-09), lives in `warmup-reports.ts`.
  *
  * Every refusal is a RunnerError with a short code the script can log and a
  * sentence a person can read.

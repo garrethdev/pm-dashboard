@@ -20,6 +20,63 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-10 — The warmup robot reports every warmup, with its diary, on the account page
+
+**Where it came from:** Garreth, in chat on 2026-10-09. The first live
+scheduled warmup (maya_journey8, 12:41 ET) stopped after a minute with
+`device_lost`, and nobody could see why without fetching a log file off the
+MacBook Air. He asked for a Geelark-style row for each warmup on the
+dashboard, and for the robot's full diary of each warmup to be kept there so
+Claude can read it and see what went wrong. He approved the robot writing
+this one extra thing to the dashboard.
+
+**What changed:**
+
+- **The robot has a seventh address to call**, after every warmup that
+  reached the phone, finished or stopped, including one that stopped before
+  it was ever shown as Running. It sends:
+  - how it ended, the stop reason and the minutes
+  - what it did: videos, photo posts, Claude checks (and how many were on
+    topic), likes, saves, follows
+  - its whole diary for that warmup
+  - a picture of the screen when it stopped
+
+  Sending the same report twice stores it once. A diary over 1,000,000
+  characters or a picture over 3,000,000 is refused, and so is a picture that
+  is not a PNG. The same token as the other six addresses opens it, and
+  nothing else changed for them.
+- **Kept:** the summary for good, like Geelark's history. The diary and the
+  picture for 30 days; the dashboard clears older ones whenever a new report
+  arrives, so no scheduled job is needed.
+- **The account page has a Warmup Robot Log tab** on any account the robot
+  has reported on. One row per warmup, newest first:
+  - when (New York time), Warmup 1 or 2
+  - Finished in green or Stopped in red, with the stop reason
+  - the minutes and the counts
+
+  Clicking a row opens the diary: each line with its New York time, info /
+  WARNING / PROBLEM, and the message, plus the stop picture. **Copy for
+  Claude** copies a short header (account, phone, warmup, times, outcome,
+  counts) followed by the robot's raw lines, ready to paste into a chat.
+  **Download** saves the same text as a `.log` file. A diary older than 30
+  days says it was cleared. The list itself never loads a diary or a picture,
+  so the page stays quick.
+- A new database table, `warmup_reports`, readable and writable only with the
+  master key, like the other phone tables. Described in
+  `docs/WARMUP-RUNNER-API.md`.
+
+**Verified:** built and tested on a laptop only. The new checks cover:
+- what the robot may send and what is refused
+- sending the same report twice
+- the 30-day clear-out
+- how the diary lines and the copied text read
+
+The table was **created in the database on 2026-10-09** (migration
+`20261009171409_warmup_reports.sql`; the database's copy matches the file,
+and only the dashboard's server can read or write it). The code reaches the
+dashboard when this change is merged. No report from the robot has arrived
+yet: the Air needs the robot's update first.
+
 ## 2026-10-09 — "All posts" tab on every account; no Geelark tab on real-phone accounts
 
 **Where it came from:** Czedrick, 2026-10-09, while checking DA-02. First:
