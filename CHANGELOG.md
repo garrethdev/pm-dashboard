@@ -197,6 +197,48 @@ resolves to its id, the way a reel's does, is also untested.
 
 ---
 
+## 2026-10-09 — Library pictures load as small copies, a few at a time
+
+**Where it came from:** the production outage of 2026-10-09 15:20 UTC,
+traced second by second through the Supabase logs at Garreth's request. The
+trigger was the Character 6 library page: its grid asked the browser for all
+217 pictures at once, each the full original (up to 1.5 MB), none of them
+ever served before. Supabase's storage service opened a database connection
+for every one of those requests, hit the connection pooler's client limit at
+15:20:05, and from then on refused new connections for seven seconds while
+the database saturated; the REST layer's own pool emptied, sign-in checks
+took 35 seconds, and every page hung until about 15:28. The two bank
+libraries never did this because they hold 55 to 69 smaller pictures. The
+folder listing added for linked libraries was not the heavy part; the
+browser fetching every original was.
+
+**What changed:**
+
+- **Small copies instead of originals.** Everywhere a library picture is
+  drawn (the library grid, the library tiles, the Studio's thumbnail pane,
+  its library covers, a pinned picture's preview, the pinned cell on the
+  canvas, the saved-deck grid), the link now asks Supabase for a resized
+  copy at the width the screen needs. Supabase resizes once and its CDN
+  keeps the result: a 255 KB original comes back as a 42 KB thumbnail.
+  Links that are not in our storage are left alone.
+- **Lazy loading.** The library grid and the Studio pane ask for a picture
+  only when its tile is within a few hundred pixels of the screen, instead
+  of background pictures that all load at once. (The browser's own lazy
+  loading was tried first and still fetched 120 on first paint, because it
+  looks more than a thousand pixels ahead.)
+- **A page at a time in the Studio.** The thumbnail pane shows sixty
+  pictures, with a "Show 60 more" link, instead of 120 at once.
+
+**Verified:** `tsc`, `eslint`, `vitest` (3 new tests on the link rewrite),
+`next build`, and a headless browser run against the local dev server on the
+Character 6 library (200 pictures today; the bucket held 217 yesterday and
+the live link reports what is there): 36 resized copies fetched on first
+paint instead of 217 originals, none of them an original, 84 after a
+scroll; the Studio pane shows sixty and adds sixty on request.
+Not yet merged or exercised on the live site; the merge is Garreth's call.
+
+---
+
 ## 2026-10-09 — The bell and the to-do list read from a cache
 
 **Where it came from:** production hung for eight minutes at 15:20 UTC on

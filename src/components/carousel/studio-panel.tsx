@@ -11,10 +11,12 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn, Pill } from "@/components/carousel/kit";
+import { LazyPicture } from "@/components/carousel/lazy-picture";
 import { uploadPicture } from "@/components/carousel/library-upload";
 import { COLOURS, SIZES, WEIGHT_NAMES, fitsChars, fontOf, lookOf, pinOf, wrapWidthOf, type Box, type Contract, type Selection, type StudioSize, type Template } from "@/components/carousel/studio-model";
 import { ArrowLineDown, ArrowLineUp, Check, ChevronDown, ImageIcon, Loader2, Minus, Plus, SidebarSimple, Sparkles, TextAlignCenter, TextAlignLeft, TextAlignRight, TextT, Trash, Upload } from "@/components/ui/icons";
 import { SLIDE_FONTS } from "@/lib/carousel/fonts";
+import { thumbUrl } from "@/lib/carousel/thumb";
 import { cn } from "@/lib/utils";
 import type { Library, LibraryDetail, LibraryImage } from "@/server/carousel/repo/types";
 
@@ -81,7 +83,7 @@ export function Adjustments(p: PanelProps) {
           </Row>
           {pinOf(slide, cell) ? (
             <div className="flex items-center gap-3 rounded-nested border border-border p-2">
-              <span className="block size-12 shrink-0 rounded-[6px] bg-card-sunken bg-cover bg-center" style={{ backgroundImage: `url("${pinOf(slide, cell)!.url}")` }} aria-hidden />
+              <span className="block size-12 shrink-0 rounded-[6px] bg-card-sunken bg-cover bg-center" style={{ backgroundImage: `url("${thumbUrl(pinOf(slide, cell)!.url, 160)}")` }} aria-hidden />
               <span className="flex min-w-0 flex-1 flex-col text-xs"><b>Pinned picture</b><span className="text-text-muted">Only this slide uses it.</span></span>
               <Btn onClick={() => p.onPin(selected!.slide, cell, null)}>Unpin</Btn>
             </div>
@@ -220,8 +222,14 @@ function LibraryPane({ libraries, libraryId, onLibrary, selected, slide, onPin }
   const { images, loading, error, reload } = useLibraryImages(libraryId);
   const [adding, setAdding] = useState<{ done: number; failed: number; left: number } | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+  // A page of thumbnails at a time (2026-10-09): 120 originals at once was
+  // part of what took production down. More on request; the chip resets it.
+  const PAGE = 60;
+  const [pages, setPages] = useState<{ key: string; n: number }>({ key: "", n: 1 });
   const sets = library?.sets.filter((s) => !s.parentId) ?? [];
   const shown = (images ?? []).filter((i) => i.status === "active" && (!set || i.setName === set));
+  const pageKey = `${libraryId}:${set ?? ""}`;
+  const limit = (pages.key === pageKey ? pages.n : 1) * PAGE;
   const targetCell = selected && slide && !selected.box ? (selected.cell ?? 0) : null;
 
   const addPictures = async (files: FileList | null) => {
@@ -242,7 +250,7 @@ function LibraryPane({ libraries, libraryId, onLibrary, selected, slide, onPin }
   return (
     <section className="flex flex-col gap-2 p-4" aria-label="Library">
       <div className="flex items-center gap-3">
-        <span className="size-10 shrink-0 rounded-[8px] border border-border bg-card-sunken bg-cover bg-center" style={library?.cover ? { backgroundImage: `url("${library.cover}")` } : undefined} aria-hidden />
+        <span className="size-10 shrink-0 rounded-[8px] border border-border bg-card-sunken bg-cover bg-center" style={library?.cover ? { backgroundImage: `url("${thumbUrl(library.cover, 120)}")` } : undefined} aria-hidden />
         <span className="flex min-w-0 flex-1 flex-col"><b className="truncate text-sm">{library?.name ?? "No library"}</b><span className="text-xs text-text-muted tnum">{library ? `${library.count} images` : "Pick one to render"}</span></span>
         <button type="button" onClick={() => setChanging((c) => !c)} className="text-xs text-text-muted hover:text-text-primary">Change</button>
       </div>
@@ -250,7 +258,7 @@ function LibraryPane({ libraries, libraryId, onLibrary, selected, slide, onPin }
         <div role="listbox" aria-label="Image library" className="flex flex-col rounded-nested border border-border p-1">
           {libraries.map((l) => (
             <button key={l.id} type="button" role="option" aria-selected={libraryId === l.id} onClick={() => { onLibrary(libraryId === l.id ? null : l.id); setChanging(false); }} className={cn("flex items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-sm hover:bg-card-raised", libraryId === l.id && "bg-card-raised")}>
-              <span className="size-6 shrink-0 rounded-[4px] bg-card-sunken bg-cover bg-center" style={l.cover ? { backgroundImage: `url("${l.cover}")` } : undefined} aria-hidden />
+              <span className="size-6 shrink-0 rounded-[4px] bg-card-sunken bg-cover bg-center" style={l.cover ? { backgroundImage: `url("${thumbUrl(l.cover, 80)}")` } : undefined} aria-hidden />
               <span className="min-w-0 flex-1 truncate">{l.name}</span><span className="text-xs text-text-muted tnum">{l.count}</span>
               {libraryId === l.id && <Check className="size-3.5 text-accent" />}
             </button>
@@ -265,7 +273,7 @@ function LibraryPane({ libraries, libraryId, onLibrary, selected, slide, onPin }
           </div>
           {loading && !images ? <p className="flex items-center gap-1.5 text-xs text-text-muted"><Loader2 className="size-3.5 animate-spin" />Loading pictures</p> : error ? <p role="alert" className="text-xs text-danger">{error}</p> : shown.length === 0 ? <p className="text-xs text-text-muted">No pictures{set ? " in this set" : ""}.</p> : (
             <div className="grid grid-cols-3 gap-1.5" aria-label="Pictures">
-              {shown.slice(0, 120).map((img) => (
+              {shown.slice(0, limit).map((img) => (
                 <button
                   key={img.id}
                   type="button"
@@ -274,13 +282,19 @@ function LibraryPane({ libraries, libraryId, onLibrary, selected, slide, onPin }
                   onClick={() => { if (targetCell !== null && selected) onPin(selected.slide, targetCell, { url: img.url, image_id: img.id }); }}
                   title={targetCell !== null ? `Pin to slide ${slide!.n}` : "Drag onto a slide to pin it there"}
                   aria-label={img.setName ? `${img.setName} picture` : "Picture"}
-                  className="aspect-square cursor-grab rounded-[6px] border border-border bg-card-sunken bg-cover bg-center hover:border-accent active:cursor-grabbing"
-                  style={{ backgroundImage: `url("${img.url}")` }}
-                />
+                  className="relative aspect-square cursor-grab overflow-hidden rounded-[6px] border border-border bg-card-sunken hover:border-accent active:cursor-grabbing"
+                >
+                  <LazyPicture src={img.url} width={240} className="absolute inset-0 block" />
+                </button>
               ))}
             </div>
           )}
-          {shown.length > 120 && <p className="text-[11px] text-text-muted tnum">Showing 120 of {shown.length}. Pick a set to narrow it.</p>}
+          {shown.length > limit && (
+            <div className="flex items-center gap-2 text-[11px] text-text-muted tnum">
+              <span>Showing {limit} of {shown.length}.</span>
+              <button type="button" onClick={() => setPages({ key: pageKey, n: (pages.key === pageKey ? pages.n : 1) + 1 })} className="underline hover:text-text-primary">Show {Math.min(PAGE, shown.length - limit)} more</button>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <input ref={picker} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden onChange={(e) => { void addPictures(e.target.files); e.target.value = ""; }} />
             <Btn onClick={() => picker.current?.click()} disabled={library.readOnly || Boolean(adding?.left)} title={library.readOnly ? "This library is read-only" : undefined}><Upload className="size-3.5" />Upload images</Btn>

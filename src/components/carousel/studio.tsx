@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Accent, Pill, SlideFace, post } from "@/components/carousel/kit";
 import { HoldButton } from "@/components/ui/hold-button";
 import { ChevronDown, ChevronLeft, Cursor, DotsThree, Hand, ImageIcon, Images, Loader2, Minus, Pencil, Play, Plus, RotateCw, SidebarSimple, SlidersHorizontal, TextT, Undo, X } from "@/components/ui/icons";
+import { thumbUrl } from "@/lib/carousel/thumb";
 import { cn } from "@/lib/utils";
 import type { Library, TemplateRecord } from "@/server/carousel/repo/types";
 import { Adjustments, readImageDrag } from "@/components/carousel/studio-panel";
@@ -581,7 +582,7 @@ export function Studio({ libraries: given, referenceId: givenReference, editing,
                             aria-label={`Slide ${s.n} image ${k + 1}${p ? ", pinned" : ""}`}
                             onClick={(e) => { e.stopPropagation(); if (tool === "select") setSelected({ slide: i, box: null, cell: k }); }}
                             className={cn("absolute flex items-end justify-start bg-cover bg-center text-[10px] text-white/60", hot ? "ring-2 ring-accent ring-inset" : on ? "ring-1 ring-accent/70 ring-inset" : "", !p && "bg-white/5")}
-                            style={{ left: `${(c.x / cw) * 100}%`, top: `${(c.y / ch) * 100}%`, width: `${(c.w / cw) * 100}%`, height: `${(c.h / ch) * 100}%`, backgroundImage: p ? `url("${p.url}")` : undefined }}
+                            style={{ left: `${(c.x / cw) * 100}%`, top: `${(c.y / ch) * 100}%`, width: `${(c.w / cw) * 100}%`, height: `${(c.h / ch) * 100}%`, backgroundImage: p ? `url("${thumbUrl(p.url, 720)}")` : undefined }}
                           >
                             <span className={cn("m-1 rounded-full px-1.5 py-0.5", p ? "bg-black/60 text-white" : "bg-transparent")}>{p ? "Pinned" : hot ? "Drop to pin" : (s.images.pools?.[0] ?? "library")}</span>
                           </div>
