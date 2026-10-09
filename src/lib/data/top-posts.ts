@@ -97,7 +97,8 @@ async function topRows(range: TopRange, platform: TopPlatform, fleet: Fleet): Pr
       : Promise.resolve([]),
     wantFb && fbFleet !== null
       ? sbRest<Omit<RawPost, "platform">[]>(
-          `fb_post_performance?select=${cols}${filter}${fbFleet}&order=views.desc.nullslast&limit=5`,
+          // Photo posts have no views and cannot rank on them.
+          `fb_post_performance?select=${cols}${filter}${fbFleet}&views=not.is.null&order=views.desc&limit=5`,
         )
       : Promise.resolve([]),
   ]);

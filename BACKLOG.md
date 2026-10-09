@@ -1470,6 +1470,15 @@ Facebook section and Facebook AI brief arrived). AI post scoring is PF-25.
 
 ---
 
+## DA-01 to DA-09 · Deep content analytics — Opened 2026-10-09, DA-01 built the same day
+
+Czedrick's plan (2026-10-09) for the numbers underneath views and likes: skip
+rate, reach, follows per post, watch time, retention curves, traffic sources.
+The tickets live in `docs/DEEP-ANALYTICS-TICKETS.md`; this entry only points
+there. **DA-01, Instagram's free deeper numbers, is built and live (2026-10-09). DA-02, the account-page tiles, is built and awaiting Czedrick's check.** TikTok
+Business accounts and paid dashboards such as Metricool are ruled out, and
+the reasons are in that file.
+
 ## PF-25 · AI post scoring is broken for every platform — Not started
 
 *Added 2026-10-07, split out of PF-24 (Garreth).* Each week the TikTok and
