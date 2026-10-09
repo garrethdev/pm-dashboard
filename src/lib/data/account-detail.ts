@@ -392,7 +392,8 @@ async function fetchDetail(profile: string): Promise<AccountDetail | null> {
         `${perfTable(platform)}?select=views&account=eq.${encodeURIComponent(a.username)}&order=post_id.asc`,
       ).catch(() => [])
     : [];
-  const nums = views.map((v) => v.views ?? 0).filter((n) => Number.isFinite(n));
+  // A Facebook photo post has no view count; it is left out, not counted as 0.
+  const nums = views.flatMap((v) => (v.views === null ? [] : [v.views])).filter((n) => Number.isFinite(n));
 
   const card = a.username && measured && hasProfileLookup(platform)
     ? await getProfileCard(a.username, platform)

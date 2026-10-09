@@ -18,11 +18,17 @@
  * read back far enough to cover health's 28-day window; the posts list only
  * for the newest few, and older reels keep the likes they last had.
  *
- * Matching a reel to what Yurie posted: the link she pastes on Posted is
+ * Photo posts (carousels and single photos) are in the posts list only, and
+ * Facebook shows no view count on them to anyone but the owner, so their row
+ * has likes and comments and views left empty (Czedrick, 2026-10-09: most
+ * content will be carousels). Empty, not 0: every view-based figure skips
+ * them rather than reading them as dead posts.
+ *
+ * Matching a post to what Yurie posted: the link she pastes on Posted is
  * usually a share link (facebook.com/share/r/<code>), which Facebook redirects
- * to story.php?story_fbid=<post id>. That post id is the reels list's
- * post_id, so the match is exact. A pasted /reel/<number> link matches on the
- * video id instead.
+ * to story.php?story_fbid=<post id>. That post id is the lists' post id, so
+ * the match is exact. A pasted /reel/<number> link matches on the video id
+ * instead, and a photo post's /posts/pfbid... link on the pfbid in its link.
  */
 import { platformProfileUrl } from "@/lib/platform";
 
@@ -51,7 +57,16 @@ const MATCH_LOOKBACK_DAYS = 35;
 // Pure parts (tested in facebook-analytics.test.ts)
 // ---------------------------------------------------------------------------
 
-export type PostRef = { kind: "post"; id: string } | { kind: "video"; id: string } | { kind: "share"; url: string };
+export type PostRef =
+  | { kind: "post"; id: string }
+  | { kind: "video"; id: string }
+  | { kind: "pfbid"; id: string }
+  | { kind: "share"; url: string };
+
+/** Facebook's scrambled post id, as photo posts' links carry it. */
+export function pfbidOf(raw: string | null | undefined): string | null {
+  return raw?.match(/pfbid0[0-9A-Za-z]+/)?.[0] ?? null;
+}
 
 /**
  * What a pasted Facebook link names, as far as the link alone can say.
@@ -68,6 +83,8 @@ export function parseFacebookLink(raw: string | null | undefined): PostRef | nul
   if (!/(^|\.)facebook\.com$|(^|\.)fb\.watch$/i.test(u.hostname)) return null;
   const story = u.searchParams.get("story_fbid");
   if (story && /^\d+$/.test(story)) return { kind: "post", id: story };
+  const pfbid = pfbidOf(story) ?? pfbidOf(u.pathname);
+  if (pfbid) return { kind: "pfbid", id: pfbid };
   const fbid = u.searchParams.get("fbid");
   if (fbid && /^\d+$/.test(fbid)) return { kind: "post", id: fbid };
   const reel = u.pathname.match(/\/reels?\/(\d+)/);
@@ -95,7 +112,16 @@ export interface ScReel {
 
 export interface ScPost {
   id?: string;
+  text?: string | null;
+  url?: string | null;
+  permalink?: string | null;
+  creation_time?: string | null;
+  /** Filled on a reel, empty or missing on a photo post. */
+  videoDetails?: Record<string, unknown> | null;
+  /** One address per photo; a carousel has several. */
+  images?: string[] | null;
   reactionCount?: number | null;
+  reaction_counts?: Record<string, number> | null;
   commentCount?: number | null;
 }
 
@@ -149,6 +175,50 @@ export function reelToRow(account: string, r: ScReel, now: string): ReelRow | nu
       view_count: r.view_count ?? null,
       play_time_in_ms: r.play_time_in_ms ?? null,
       music: r.music?.track_title ?? null,
+    },
+    ingested_at: now,
+  };
+}
+
+export interface PhotoRow extends ReelRow {
+  likes: number | null;
+  comments: number | null;
+  total_engagement: number | null;
+}
+
+/**
+ * One photo post from the posts list as a row, views empty. Null for a reel
+ * (the reels list has it, with views), a post with no photos (a status or a
+ * shared link), or one with no post id.
+ */
+export function photoToRow(account: string, p: ScPost, now: string): PhotoRow | null {
+  if (!p.id) return null;
+  const link = p.url ?? p.permalink ?? null;
+  const isReel = Object.keys(p.videoDetails ?? {}).length > 0 || /\/(reel|videos|watch)\b/.test(link ?? "");
+  const photos = p.images?.length ?? 0;
+  if (isReel || photos === 0) return null;
+  const posted = p.creation_time ?? null;
+  const likes = p.reactionCount ?? null;
+  const comments = p.commentCount ?? null;
+  return {
+    account,
+    post_id: String(p.id),
+    video_id: null,
+    post_url: link,
+    posted_at: posted,
+    format: photos > 1 ? "carousel" : "photo",
+    caption_snippet: p.text ? p.text.slice(0, 200) : null,
+    views: null,
+    likes,
+    comments,
+    total_engagement: likes === null && comments === null ? null : (likes ?? 0) + (comments ?? 0),
+    week_of: weekOf(posted),
+    source: "scrapecreators",
+    // The photo links are signed, expiring CDN addresses; only the count is kept.
+    raw_payload: {
+      post_id: p.id,
+      photo_count: photos,
+      reaction_counts: p.reaction_counts ?? null,
     },
     ingested_at: now,
   };
@@ -301,6 +371,7 @@ export interface AccountReport {
   profile: string | null;
   reels: number;
   withViews: number;
+  photoPosts: number;
   engagementRead: number;
   matched: number;
   unmatchedLinks: string[];
@@ -365,6 +436,7 @@ async function readAccount(
     profile: a.geelark_profile,
     reels: 0,
     withViews: 0,
+    photoPosts: 0,
     engagementRead: 0,
     matched: 0,
     unmatchedLinks: [],
@@ -380,9 +452,18 @@ async function readAccount(
   report.reels = byPost.size;
   report.withViews = [...byPost.values()].filter((r) => r.views !== null).length;
 
-  // Likes and comments for the newest posts, written only onto reels we hold:
-  // the posts list also carries photos and status updates.
+  // The posts list: photo posts become rows of their own, reels get their
+  // likes and comments, status updates are passed over.
   const posts = await readPosts(profileUrl, credits, limits.posts);
+  const photos = new Map(
+    posts
+      .map((p) => photoToRow(a.username, p, now))
+      .filter((r): r is PhotoRow => r !== null)
+      .map((r) => [r.post_id, r]),
+  );
+  await upsert([...photos.values()] as unknown as Record<string, unknown>[]);
+  report.photoPosts = photos.size;
+
   const engagement = posts
     .filter((p) => p.id && byPost.has(String(p.id)))
     .map((p) => {
@@ -399,16 +480,29 @@ async function readAccount(
   await upsert(engagement);
   report.engagementRead = engagement.length;
 
-  // Match what Yurie marked Posted to the reel it became.
+  // Match what Yurie marked Posted to the reel or photo post it became.
   const mine = deliveries.filter((d) => d.account_id === a.id);
   const done = await alreadyMatched(mine.map((d) => d.id));
+  const all = new Map<string, ReelRow>([...byPost, ...photos]);
   const byVideo = new Map([...byPost.values()].filter((r) => r.video_id).map((r) => [r.video_id!, r]));
+  const byPfbid = new Map(
+    [...photos.values()].flatMap((r) => {
+      const id = pfbidOf(r.post_url);
+      return id ? [[id, r] as const] : [];
+    }),
+  );
   for (const d of mine) {
     if (done.has(d.id)) continue;
     let ref = parseFacebookLink(d.post_url);
     if (ref?.kind === "share") ref = await resolveShareLink(ref.url).catch(() => null);
     const row =
-      ref?.kind === "post" ? byPost.get(ref.id) : ref?.kind === "video" ? byVideo.get(ref.id) : undefined;
+      ref?.kind === "post"
+        ? all.get(ref.id)
+        : ref?.kind === "video"
+          ? byVideo.get(ref.id)
+          : ref?.kind === "pfbid"
+            ? byPfbid.get(ref.id)
+            : undefined;
     if (!row) {
       if (d.post_url) report.unmatchedLinks.push(d.post_url);
       continue;
@@ -443,6 +537,7 @@ export async function runFacebookIngest(mode: RunMode = modeFor(new Date())): Pr
         profile: a.geelark_profile,
         reels: 0,
         withViews: 0,
+        photoPosts: 0,
         engagementRead: 0,
         matched: 0,
         unmatchedLinks: [],
