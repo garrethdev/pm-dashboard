@@ -12,9 +12,11 @@ import { AccountDetailTabs } from "@/components/dashboard/account-detail-tabs";
 import { AccountDeviceCard } from "@/components/dashboard/account-device-card";
 import { AccountPostsView } from "@/components/dashboard/account-posts-view";
 import { AccountTaskLog } from "@/components/dashboard/account-task-log";
+import { WarmupReportLog } from "@/components/dashboard/warmup-report-log";
 import { getAccountAnalytics } from "@/lib/data/account-analytics";
 import { getAccountDetail } from "@/lib/data/account-detail";
 import { getAccountPosts } from "@/lib/data/account-posts";
+import { getWarmupReportsForProfile } from "@/lib/data/warmup-reports";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { healthTone } from "@/lib/health";
 import { formatEtDate } from "@/lib/data/format";
@@ -127,9 +129,14 @@ export default async function AccountDetailPage({
   params: Promise<{ profile: string }>;
 }) {
   const { profile } = await params;
+  // The warmup robot's reports (Garreth, 2026-10-09), read alongside the
+  // account and fresh, not through its cache, so a warmup that just stopped
+  // shows on the next load. A failed read hides the tab rather than erroring a
+  // page about something else; so does an account the robot never reported on.
+  const reportsRead = getWarmupReportsForProfile(toProfileName(profile)).catch(() => []);
   const { data } = await getAccountDetail(toProfileName(profile));
   if (!data) notFound();
-
+  const reports = await reportsRead;
 
   const isIg = data.platform === "instagram";
 
@@ -248,6 +255,7 @@ export default async function AccountDetailPage({
             <AccountTaskLog executed={data.tasks} pending={data.pendingTasks} />
           )
         }
+        robot={reports.length > 0 ? <WarmupReportLog reports={reports} /> : null}
         posts={
           <Suspense fallback={<TableSkeleton rows={8} />}>
             <PostsPanel username={data.username} platform={data.platform} />
