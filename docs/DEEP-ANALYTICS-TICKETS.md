@@ -316,6 +316,16 @@ quiet for 7 days, so each post must be read inside its first week.
 
 Empty, not 0, for anything a screen did not show.
 
+**Shown in the All posts tab** (Czedrick, 2026-10-09): each number the robot
+reads becomes a column in that platform's All posts list, beside the ones
+there today. Expected:
+- TikTok: average watch time, % watched to the end, total watch time, new
+  followers, and where views came from.
+- Facebook: reach, plus watch time and retention on reels.
+
+The exact list is what DA-05 finds on each app's screens. As today, a post the
+robot has not read, or a number its screen did not show, gets a dash.
+
 ---
 
 ## DA-09 · Hook and retention comparisons in the dashboard — After DA-02, DA-03, DA-08
