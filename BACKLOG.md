@@ -101,6 +101,63 @@ section used to hold, and where each point went:
 
 ---
 
+# Carousel Generator — round two (2026-10-08)
+
+Czedrick tested the merged app on his own computer and sent nine pages of
+screenshots ("Issues with Carousel App"). Garreth answered the questions on
+2026-10-08. Everything he asked for is built, merged to `main` as PR #51 on
+2026-10-09, and in the changelog, except what is listed here.
+
+## Open
+
+- **`FIGMA_TOKEN`.** The Figma import is built (see the changelog) but has
+  only run against a fixture, because the app has no Figma token. Garreth
+  makes a personal access token in Figma (Settings → Security → Personal
+  access tokens, with file content read) and adds it as `FIGMA_TOKEN` in
+  `.env.local` and on Vercel; then the sample link
+  (`figma.com/design/ZqDGTufoZyJX3EnRvdJyVi`, "3-Slide Journey Carousel")
+  should be imported once for real and the result checked on the canvas.
+- **`OPENROUTER_API_KEY` on the live site.** It was missing on Vercel
+  (confirmed 2026-10-08 in Garreth's own browser), which is why Czedrick saw
+  "Api key not set" on every AI feature. Garreth added it on 2026-10-08; it
+  takes effect on the next deployment. The key was pasted into a chat on the
+  way, so it should be rotated on OpenRouter afterwards.
+- **Generate with AI** in the Studio's library pane and on a library's page
+  is still a disabled button (Higgsfield is not connected).
+- **Rendered PNGs.** The Studio's preview is SVG drawn in the browser. The
+  painter that writes JPEGs for a lane table is still Codex's unported
+  branch (see the PR #31 section). The free anchor, per-box fonts, stroke and
+  shadow, and pinned pictures are all in the template model and in the SVG
+  painter, so the PNG painter will have them to read when it is ported.
+- **Linked libraries and the ten fonts on the live renderer.** A deck from a
+  linked library points at public bucket links, which the renderer can fetch.
+  The ten Google fonts are loaded in the browser only; the `fonts` entries in
+  a template name a `.ttf` file that the future PNG painter must have on
+  disk.
+
+- **The database stall of 2026-10-09 15:20 UTC.** Fixed on the app side the
+  same day (the bell and the to-do list now read from a one-minute cache; see
+  the changelog), but the source of the burst of rejected pooler connections
+  was never named: the pooler refused them before they said who they were,
+  and Postgres connection logging is off. Two things worth doing: turn on
+  connection logging in Supabase so the next burst names its client, and
+  look at the home page's phone-farm views (account warmup health, scheduler
+  pool, account health v3), which average a quarter of a second but reach
+  twenty to thirty seconds whenever the database is busy.
+
+## Decided
+
+- **Delete rules** (Garreth: "Question 9 ignore"): deletion is refused while
+  a carousel type draws from the library; the two seeded banks cannot be
+  deleted; removing a link never touches the folder in the bucket.
+- **Pinning** is per slide, never per deck or per type ("Just that one slide,
+  not every deck").
+- **Text placement** is free ("Free placement").
+- **Start from scratch** is five plain slides with sample lines and no AI
+  call ("make it easy and flexible").
+
+---
+
 # From the 2026-09-09 external code review
 
 `PM-CODEBASE-REVIEW-2026-09-09.md` — the first review of this codebase by

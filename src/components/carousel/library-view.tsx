@@ -23,19 +23,21 @@ export function LibrariesView({ initial }: { initial: Library[] | null }) {
   const router = useRouter();
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState("");
+  const [source, setSource] = useState<"upload" | "link">("upload");
+  const [folder, setFolder] = useState<{ bucket: string; prefix: string; pictures: number | null }>({ bucket: "", prefix: "", pictures: null });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const libs = data?.libraries ?? initial;
   const create = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || (source === "link" && !folder.bucket)) return;
     setBusy(true);
     setErr(null);
-    const res = await post<Library>("/api/carousel-generator/libraries", { name: name.trim() });
+    const res = await post<Library>("/api/carousel-generator/libraries", source === "link" ? { name: name.trim(), bucket: folder.bucket, prefix: folder.prefix } : { name: name.trim() });
     setBusy(false);
     if (res.error || !res.data) { setErr(res.error ?? "The library could not be made"); return; }
     setNaming(false);
     setName("");
-    // Straight into the empty library, where Upload is.
+    // Straight into the library: empty with Upload, or the linked folder's pictures.
     router.push(`/carousel-generator/library/${res.data.id}` as never);
   };
   if (!libs) {
@@ -65,7 +67,7 @@ export function LibrariesView({ initial }: { initial: Library[] | null }) {
             </span>
             <span className="flex flex-col px-0.5">
               <span className="truncate text-sm font-semibold">{l.name}</span>
-              <span className="text-xs text-text-muted tnum">{l.count === 0 ? "Nothing in it yet" : `${l.count} images`}{l.untagged ? ` · ${l.untagged} unread` : ""}</span>
+              <span className="text-xs text-text-muted tnum">{l.count === 0 ? "Nothing in it yet" : `${l.count} images`}{l.untagged ? ` · ${l.untagged} unread` : ""}{l.linked ? " · Linked" : ""}</span>
             </span>
           </Link>
         ))}
@@ -77,13 +79,74 @@ export function LibrariesView({ initial }: { initial: Library[] | null }) {
       {naming && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div aria-hidden onClick={() => setNaming(false)} className="absolute inset-0 bg-[var(--scrim)]" />
-          <form role="dialog" aria-label="New library" onSubmit={(e) => { e.preventDefault(); void create(); }} className="relative flex w-full max-w-sm flex-col gap-3 rounded-card border border-border bg-card p-5">
+          <form role="dialog" aria-label="New library" onSubmit={(e) => { e.preventDefault(); void create(); }} className="relative flex w-full max-w-md flex-col gap-3 rounded-card border border-border bg-card p-5">
             <h2 className="text-base font-semibold">New library</h2>
             <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" aria-label="Library name" maxLength={80} className="w-full rounded-nested border border-border bg-bg/60 px-3.5 py-2 text-sm outline-none placeholder:text-text-muted" />
+            <div className="flex flex-col gap-1.5 text-xs text-text-muted">Pictures
+              <div role="radiogroup" aria-label="Pictures" className="grid grid-cols-2 rounded-full bg-card-raised p-0.5">
+                {([["upload", "Upload here"], ["link", "Link a storage folder"]] as const).map(([v, label]) => <button key={v} type="button" role="radio" aria-checked={source === v} onClick={() => setSource(v)} className={cn("rounded-full px-2 py-1.5 text-xs font-medium", source === v ? "bg-accent text-bg" : "text-text-muted")}>{label}</button>)}
+              </div>
+            </div>
+            {source === "link" && <FolderPicker value={folder} onChange={setFolder} />}
+            {source === "link" && <p className="text-xs text-text-muted">A live link: the library always shows what the folder holds, and each subfolder is a set. Pictures are not copied, and the library is read-only here.</p>}
             {err && <p role="alert" className="text-xs text-danger">{err}</p>}
-            <div className="flex justify-end gap-2"><Btn onClick={() => setNaming(false)}>Cancel</Btn><Accent type="submit" disabled={!name.trim()} busy={busy}>Create</Accent></div>
+            <div className="flex justify-end gap-2"><Btn onClick={() => setNaming(false)}>Cancel</Btn><Accent type="submit" disabled={!name.trim() || (source === "link" && !folder.bucket)} busy={busy}>{source === "link" ? "Link" : "Create"}</Accent></div>
           </form>
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Walks our public buckets one folder at a time; the chosen folder becomes the library. */
+function FolderPicker({ value, onChange }: { value: { bucket: string; prefix: string; pictures: number | null }; onChange: (v: { bucket: string; prefix: string; pictures: number | null }) => void }) {
+  const [buckets, setBuckets] = useState<string[] | null>(null);
+  const [view, setView] = useState<{ key: string; folders: string[]; pictures: number; error: string | null } | null>(null);
+  const key = `${value.bucket}/${value.prefix}`;
+  useEffect(() => {
+    let live = true;
+    fetch("/api/carousel-generator/storage", { cache: "no-store" }).then(async (r) => { const j = (await r.json().catch(() => null)) as { buckets?: string[] } | null; if (live) setBuckets(j?.buckets ?? []); }).catch(() => { if (live) setBuckets([]); });
+    return () => { live = false; };
+  }, []);
+  useEffect(() => {
+    if (!value.bucket) return;
+    let live = true;
+    fetch(`/api/carousel-generator/storage?bucket=${encodeURIComponent(value.bucket)}&prefix=${encodeURIComponent(value.prefix)}`, { cache: "no-store" })
+      .then(async (r) => { const j = (await r.json().catch(() => null)) as { folders?: string[]; pictures?: number; error?: string } | null; if (!live) return; setView({ key, folders: j?.folders ?? [], pictures: j?.pictures ?? 0, error: r.ok ? null : (j?.error ?? "The folder could not be listed") }); })
+      .catch(() => { if (live) setView({ key, folders: [], pictures: 0, error: "The folder could not be listed" }); });
+    return () => { live = false; };
+  }, [value.bucket, value.prefix, key]);
+  const cur = view?.key === key ? view : null;
+  const crumbs = value.prefix ? value.prefix.split("/") : [];
+  const go = (prefix: string) => onChange({ bucket: value.bucket, prefix, pictures: null });
+  return (
+    <div className="flex flex-col gap-2 rounded-nested border border-border p-2">
+      <label className="flex items-center gap-2 text-xs text-text-muted">Bucket
+        <span className="relative flex-1">
+          <select value={value.bucket} onChange={(e) => onChange({ bucket: e.target.value, prefix: "", pictures: null })} aria-label="Bucket" className="w-full appearance-none rounded-nested border border-border bg-bg/60 py-1.5 pr-7 pl-3 text-xs text-text-primary outline-none">
+            <option value="">{buckets ? "Pick a bucket" : "Loading"}</option>
+            {buckets?.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+          <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-3 -translate-y-1/2" />
+        </span>
+      </label>
+      {value.bucket && (
+        <>
+          <nav aria-label="Folder" className="flex flex-wrap items-center gap-1 text-xs">
+            <button type="button" onClick={() => go("")} className={cn("rounded-full px-2 py-0.5", crumbs.length ? "text-text-muted hover:text-text-primary" : "bg-card-raised text-text-primary")}>{value.bucket}</button>
+            {crumbs.map((c, i) => <span key={i} className="flex items-center gap-1"><span className="text-text-muted">/</span><button type="button" onClick={() => go(crumbs.slice(0, i + 1).join("/"))} className={cn("rounded-full px-2 py-0.5", i === crumbs.length - 1 ? "bg-card-raised text-text-primary" : "text-text-muted hover:text-text-primary")}>{c}</button></span>)}
+          </nav>
+          {!cur ? <p className="text-xs text-text-muted">Listing</p> : cur.error ? <p role="alert" className="text-xs text-danger">{cur.error}</p> : (
+            <>
+              {cur.folders.length > 0 && (
+                <ul className="max-h-40 overflow-y-auto rounded-nested border border-border" aria-label="Subfolders">
+                  {cur.folders.map((f) => <li key={f}><button type="button" onClick={() => go(value.prefix ? `${value.prefix}/${f}` : f)} className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-card-raised"><Images className="size-3.5 text-text-muted" />{f}</button></li>)}
+                </ul>
+              )}
+              <p className="text-xs text-text-muted tnum">{cur.pictures} {cur.pictures === 1 ? "picture" : "pictures"} directly in this folder{cur.folders.length ? `, ${cur.folders.length} ${cur.folders.length === 1 ? "subfolder" : "subfolders"} as sets` : ""}.</p>
+            </>
+          )}
+        </>
       )}
     </div>
   );
@@ -256,6 +319,14 @@ interface Uploading {
 export function LibraryDetailView({ id, initial }: { id: string; initial: LibraryDetail | null }) {
   const { data, error, reload } = useJson<{ library: LibraryDetail }>(`/api/carousel-generator/libraries/${id}`, { initial: initial ? { library: initial } : null });
   const lib = data?.library ?? initial;
+  const router = useRouter();
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const remove = async () => {
+    setDeleting("busy");
+    const res = await post(`/api/carousel-generator/libraries/${id}`, undefined, "DELETE");
+    if (res.error) { setDeleting(res.error); return; }
+    router.push("/carousel-generator/library" as never);
+  };
   const [set, setSet] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [newSet, setNewSet] = useState(false);
@@ -346,20 +417,27 @@ export function LibraryDetailView({ id, initial }: { id: string; initial: Librar
       <PageHead
         back={{ href: "/carousel-generator/library", label: "Image libraries" }}
         title={lib.name}
-        meta={<><Pill className="tnum">{lib.count} images</Pill>{lib.readOnly && <Pill>Read-only</Pill>}{lib.untagged > 0 && <Pill tone="warn" className="tnum">{lib.untagged} unread</Pill>}</>}
+        meta={<><Pill className="tnum">{lib.count} images</Pill>{lib.linked ? <Pill>Linked · {lib.linked.bucket}{lib.linked.prefix ? `/${lib.linked.prefix}` : ""}</Pill> : lib.readOnly && <Pill>Read-only</Pill>}{lib.untagged > 0 && <Pill tone="warn" className="tnum">{lib.untagged} unread</Pill>}</>}
         actions={
-          lib.readOnly ? null : (
-            <>
-              <span className="hidden gap-2 sm:flex">
-                <Btn disabled title="Higgsfield is not connected yet"><Sparkles className="size-3.5" />Generate images</Btn>
-                <Btn disabled title="Not connected yet">Tag with AI</Btn>
-              </span>
-              <Btn onClick={() => { setSetErr(null); setNewSet(true); }}><Plus className="size-3" />New set</Btn>
-              {uploadBtn}
-            </>
-          )
+          <>
+            {!lib.readOnly && (
+              <>
+                <span className="hidden gap-2 sm:flex">
+                  <Btn disabled title="Higgsfield is not connected yet"><Sparkles className="size-3.5" />Generate images</Btn>
+                  <Btn disabled title="Not connected yet">Tag with AI</Btn>
+                </span>
+                <Btn onClick={() => { setSetErr(null); setNewSet(true); }}><Plus className="size-3" />New set</Btn>
+                {uploadBtn}
+              </>
+            )}
+            {(lib.linked || !lib.readOnly) && (
+              <HoldButton onConfirm={() => void remove()} disabled={deleting === "busy" || lib.usedBy.length > 0} className="bg-transparent border border-border text-text-muted">{lib.linked ? "Remove link" : "Delete library"}</HoldButton>
+            )}
+          </>
         }
       />
+      {lib.usedBy.length > 0 && (lib.linked || !lib.readOnly) && <p className="text-xs text-text-muted">Used by {lib.usedBy.join(", ")}, so it cannot be deleted until {lib.usedBy.length === 1 ? "that type points" : "those types point"} at another library.</p>}
+      {deleting && deleting !== "busy" && <p role="alert" className="text-xs text-danger">{deleting}</p>}
       <input ref={picker} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
       {(note || failed > 0) && (
         <p role="status" className={cn("text-xs", failed > 0 ? "text-danger" : "text-text-muted")}>

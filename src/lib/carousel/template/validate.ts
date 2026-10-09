@@ -68,7 +68,8 @@ function textList(value: unknown, path: string) {
 function validateStyle(style: ObjectValue, path: string, fonts: ObjectValue) {
   requireThat(own(fonts, text(style.font, `${path}.font`)), `${path}.font`, "unknown font");
   text(style.fill, `${path}.fill`);
-  requireThat(["center", "right"].includes(String(style.align)), `${path}.align`, "unsupported alignment");
+  requireThat(["left", "center", "right"].includes(String(style.align)), `${path}.align`, "unsupported alignment");
+  if (style.weight !== undefined) requireThat(Number.isSafeInteger(style.weight) && Number(style.weight) >= 100 && Number(style.weight) <= 900, `${path}.weight`, "expected a font weight from 100 to 900");
   const height = object(style.line_height, `${path}.line_height`);
   requireThat(own(height, "px") !== own(height, "ratio"), `${path}.line_height`, "specify exactly one of px or ratio");
   positive(height.px ?? height.ratio, `${path}.line_height.${own(height, "px") ? "px" : "ratio"}`);
@@ -174,6 +175,17 @@ export function validateTemplate(value: unknown, purpose: "historical" | "genera
     if (["one", "distinct"].includes(String(images.rule)) && images.pools !== undefined) {
       list(images.pools, `${path}.images.pools`).forEach((pool, index) => text(pool, `${path}.images.pools[${index}]`));
     }
+    // A picture a person dropped onto one cell of this slide (Studio,
+    // 2026-10-08): that exact picture, on every deck, in that cell.
+    if (images.pinned !== undefined) {
+      list(images.pinned, `${path}.images.pinned`).forEach((rawPin, index) => {
+        const q = `${path}.images.pinned[${index}]`, pin = object(rawPin, q);
+        const cell = number(pin.cell, `${q}.cell`);
+        requireThat(Number.isSafeInteger(cell) && cell >= 0 && cell < cells.length, `${q}.cell`, "no such cell");
+        text(pin.url, `${q}.url`);
+        requireThat(/^https?:\/\//.test(String(pin.url)), `${q}.url`, "expected an http(s) address");
+      });
+    }
     if (images.rule === "diagonal_pairs") {
       requireThat(slide.layout === "quad", `${path}.images.rule`, "diagonal pairs require four cells");
       textList(images.body_pools, `${path}.images.body_pools`);
@@ -186,10 +198,13 @@ export function validateTemplate(value: unknown, purpose: "historical" | "genera
       validateStyle({ ...object(styles[String(box.style)], `${p}.style`), ...box }, p, fonts);
       number(box.size, `${p}.size`, 1);
       const anchor = object(box.anchor, `${p}.anchor`);
-      requireThat(["top", "bottom", "stack_right", "block_centre_y"].includes(String(anchor.kind)), `${p}.anchor.kind`, "unsupported anchor");
-      const fields = anchor.kind === "top" ? ["y"] : anchor.kind === "bottom" ? ["margin"] : anchor.kind === "stack_right" ? ["right", "top"] : ["at"];
+      requireThat(["top", "bottom", "stack_right", "block_centre_y", "free"].includes(String(anchor.kind)), `${p}.anchor.kind`, "unsupported anchor");
+      // "free" (Studio, 2026-10-08): the block's centre sits at (x, y), each a
+      // fraction of the canvas, wherever a person dragged it.
+      const fields = anchor.kind === "top" ? ["y"] : anchor.kind === "bottom" ? ["margin"] : anchor.kind === "stack_right" ? ["right", "top"] : anchor.kind === "free" ? ["x", "y"] : ["at"];
       for (const field of fields) number(anchor[field], `${p}.anchor.${field}`);
       if (anchor.kind === "block_centre_y") requireThat(Number(anchor.at) <= 1, `${p}.anchor.at`, "expected ratio <= 1");
+      if (anchor.kind === "free") requireThat(Number(anchor.x) <= 1 && Number(anchor.y) <= 1, `${p}.anchor`, "expected ratios <= 1");
     });
   });
   if (purpose === "generation" && t.lane !== null && t.lane !== undefined) {

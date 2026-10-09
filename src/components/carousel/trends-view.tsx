@@ -16,17 +16,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { DetailsWindow } from "@/components/carousel/details-window";
 import { Btn, Pill, compact, post, shortDate, useJson } from "@/components/carousel/kit";
 import { TrendsSearch } from "@/components/carousel/trends-search";
-import { Bookmark, Check, ChevronLeft, ChevronRight, LayoutList, Loader2, PaintBrush, ThumbsDown, ThumbsUp, TrendUp } from "@/components/ui/icons";
+import { BookOpen, Bookmark, Check, ChevronLeft, ChevronRight, EnvelopeSimple, LayoutList, Loader2, PaintBrush, Rows, ThumbsDown, ThumbsUp, TrendUp } from "@/components/ui/icons";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { cn } from "@/lib/utils";
 import type { Digest, KnowledgeRule, Reference } from "@/server/carousel/repo/types";
 
 type Section = "feed" | "digests" | "knowledge" | "saved";
-const SECTIONS: { id: Section; label: string }[] = [
-  { id: "feed", label: "Feed" },
-  { id: "digests", label: "Digests" },
-  { id: "knowledge", label: "Knowledge" },
-  { id: "saved", label: "Saved" },
+const SECTIONS: { id: Section; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "feed", label: "Feed", icon: Rows },
+  { id: "digests", label: "Digests", icon: EnvelopeSimple },
+  { id: "knowledge", label: "Knowledge", icon: BookOpen },
+  { id: "saved", label: "Saved", icon: Bookmark },
 ];
 
 function numbersLine(r: Reference): string {
@@ -61,7 +61,7 @@ function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () =>
   const slides = r.slides;
   const cur = slides[i];
   return (
-    <article ref={ref} aria-label={`${r.handle ?? "Carousel"}, ${slides.length} slides`} className="flex flex-col gap-2.5 border-b border-border py-5 last:border-b-0">
+    <article ref={ref} aria-label={`${r.handle ?? "Carousel"}, ${slides.length} slides`} className="flex flex-col gap-2.5 py-4">
       <div className="flex items-center gap-2.5">
         <span className="flex size-8 items-center justify-center rounded-full bg-card-raised" aria-hidden><PlatformIcon platform={r.platform} className="size-4 text-text-primary" /></span>
         <span className="flex min-w-0 flex-col">
@@ -91,8 +91,8 @@ function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () =>
         <button type="button" aria-pressed={r.vote === "up"} aria-label="Useful" onClick={() => onVote("up")} className={cn("flex size-8 items-center justify-center rounded-full border border-border", r.vote === "up" ? "bg-text-primary text-bg" : "text-text-muted hover:text-text-primary")}><ThumbsUp className="size-4" /></button>
         <button type="button" aria-pressed={r.vote === "down"} aria-label="Not useful" onClick={() => onVote("down")} className={cn("flex size-8 items-center justify-center rounded-full border border-border", r.vote === "down" ? "bg-text-primary text-bg" : "text-text-muted hover:text-text-primary")}><ThumbsDown className="size-4" /></button>
         <span className="flex-1" />
-        <Link href={`/carousel-generator/studio?reference=${r.id}` as never} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted hover:text-text-primary"><PaintBrush className="size-3.5" />Copy to Studio</Link>
-        <button type="button" onClick={onDetails} className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted hover:text-text-primary">View Details</button>
+        <Link href={`/carousel-generator/studio?reference=${r.id}` as never} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card-raised px-3.5 py-1.5 text-xs font-medium text-text-primary hover:border-text-muted/40"><PaintBrush className="size-3.5" />Copy to Studio</Link>
+        <button type="button" onClick={onDetails} className="rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary">View Details</button>
       </div>
       {numbersLine(r) && <span className="text-xs text-text-muted tnum">{numbersLine(r)}</span>}
       {r.hook && <p className="text-sm"><b className="mr-1.5">{r.handle ? `@${r.handle}` : ""}</b><span className="whitespace-pre-line text-text-muted">{cur?.copy ?? r.hook}</span></p>}
@@ -313,11 +313,18 @@ export function TrendsView({ section, query }: { section?: string; query?: strin
         <h1 className="text-xl font-semibold tracking-[-0.02em]">Trends</h1>
       </div>
       <div className={cn("grid min-h-0 flex-1 gap-4", cur === "feed" ? "md:grid-cols-[200px_minmax(0,1fr)_300px]" : "md:grid-cols-[200px_minmax(0,1fr)]")}>
-        <nav aria-label="Sections" className="fixed inset-x-4 bottom-4 z-30 flex justify-around rounded-full border border-border glass-overlay p-1 md:static md:flex-col md:justify-start md:gap-1 md:self-start md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
+        {/* The rail (D10-Main): an icon in a dark square and the label, the current one on a card. */}
+        {/* On a phone the rail floats in a glass bar; on a desktop the bar's wrapper vanishes (display: contents) and the rail sits in the grid. */}
+        <div className="fixed inset-x-4 bottom-4 z-30 rounded-full border border-border glass-overlay p-1 md:contents">
+        <nav aria-label="Sections" className="flex justify-around md:flex-col md:justify-start md:gap-1 md:self-start">
           {SECTIONS.map((s) => (
-            <button key={s.id} type="button" aria-current={cur === s.id ? "page" : undefined} onClick={() => go(s.id)} className={cn("rounded-full px-3 py-1.5 text-sm md:rounded-nested md:px-3 md:text-left", cur === s.id ? "bg-card font-medium text-text-primary" : "text-text-muted hover:text-text-primary")}>{s.label}</button>
+            <button key={s.id} type="button" aria-current={cur === s.id ? "page" : undefined} onClick={() => go(s.id)} className={cn("flex items-center gap-2.5 rounded-full px-3 py-1.5 text-sm md:w-full md:rounded-nested md:border md:px-2 md:py-2 md:text-left", cur === s.id ? "font-medium text-text-primary md:border-border md:bg-card" : "text-text-muted hover:text-text-primary md:border-transparent")}>
+              <span className={cn("hidden size-8 shrink-0 items-center justify-center rounded-[8px] md:flex", cur === s.id ? "bg-text-primary text-bg" : "bg-card-raised text-text-muted")}><s.icon className="size-4" /></span>
+              {s.label}
+            </button>
           ))}
         </nav>
+        </div>
         <div className="no-scrollbar min-h-0 overflow-y-auto pb-16 md:pb-0">
           <div className="mx-auto flex w-full max-w-[500px] flex-col gap-2">
             <TrendsSearch compact onSearching={onSearching} initialQuery={query} />
@@ -337,7 +344,7 @@ export function TrendsView({ section, query }: { section?: string; query?: strin
               </button>
             ))}
             {recent && recent.items.length === 0 && <p className="text-xs text-text-muted">Nothing saved yet</p>}
-            {recent && recent.items.length > 0 && <button type="button" onClick={() => go("saved")} className="mt-1 w-fit text-xs text-text-muted hover:text-text-primary">View all saves</button>}
+            {recent && recent.items.length > 0 && <Btn onClick={() => go("saved")} className="mt-1 self-center">View all saves</Btn>}
           </section>
         </aside>
       </div>

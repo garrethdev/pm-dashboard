@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { ACCOUNTS_TAG, DEVICES_TAG } from "@/lib/data/cache";
+import { ACCOUNTS_TAG, DEVICES_TAG, TODO_TAG } from "@/lib/data/cache";
 import { accountDetailTag } from "@/lib/data/account-detail";
 import { requireSession } from "@/lib/api-auth";
 import { parseBatchMoves } from "@/lib/data/move-rules";
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
 
     revalidateTag(ACCOUNTS_TAG, { expire: 0 });
     revalidateTag(DEVICES_TAG, { expire: 0 });
+    revalidateTag(TODO_TAG, { expire: 0 });
     for (const m of moves) revalidateTag(accountDetailTag(m.profile), { expire: 0 });
     return NextResponse.json({ ok: true, moved: moves.length });
   } catch (err) {

@@ -1,5 +1,6 @@
 import { getCleanupsByDevice } from "@/lib/data/ban-cleanups";
 import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, parseAccountId, type AccountId } from "@/lib/data/account-id";
+import { TODO_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest } from "@/lib/data/supabase";
 import { runStateFor, type RunRow } from "@/lib/data/warmup-run-state";
 import { getRunsOnDay } from "@/lib/data/warmup-runs";
@@ -289,9 +290,21 @@ export interface TodoBoard {
  */
 export async function getTodoBoard(
   dayOffset = 0,
-  now: Date = new Date(),
+  now?: Date,
   only: { deviceId?: number } = {},
 ): Promise<TodoBoard> {
+  // A caller that names the clock (the tests) reads live. Everyone else reads
+  // one copy a minute per day and phone (2026-10-09): the home page, the
+  // To-do page, a phone's page and the bell all asked for the same list, each
+  // with its own round of reads, and the database stalled under the pile.
+  if (now) return readTodoBoard(dayOffset, now, only);
+  const day = etDay(dayRangeET(dayOffset, new Date()).from.toISOString());
+  const key = `${TODO_TAG}:${day}:${dayOffset}:${only.deviceId ?? "all"}`;
+  const read = cachedFetcher(key, TTL.supabase, () => readTodoBoard(dayOffset, new Date(), only), { tags: [TODO_TAG] });
+  return (await read()).data;
+}
+
+async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: number }): Promise<TodoBoard> {
   const { from, to } = dayRangeET(dayOffset, now);
   const day = etDay(from.toISOString());
 

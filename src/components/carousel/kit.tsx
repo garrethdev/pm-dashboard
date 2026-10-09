@@ -271,7 +271,7 @@ export function useJson<T>(url: string | null, opts: { every?: number | ((data: 
 }
 
 /** POST to a generator route and hand back the JSON or the error sentence. */
-export async function post<T = { ok: true }>(url: string, body?: unknown, method: "POST" | "PATCH" = "POST"): Promise<{ data: T | null; error: string | null; code?: string }> {
+export async function post<T = { ok: true }>(url: string, body?: unknown, method: "POST" | "PATCH" | "DELETE" = "POST"): Promise<{ data: T | null; error: string | null; code?: string }> {
   try {
     const res = await fetch(url, {
       method,

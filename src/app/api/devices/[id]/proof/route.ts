@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { DEVICES_TAG } from "@/lib/data/cache";
+import { DEVICES_TAG, TODO_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
 import { parseRowId, proofRefusal } from "@/lib/data/device-rules";
@@ -47,6 +47,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
 
     revalidateTag(DEVICES_TAG, { expire: 0 });
+    revalidateTag(TODO_TAG, { expire: 0 });
     return NextResponse.json({ ok: true, id });
   } catch (err) {
     return NextResponse.json(

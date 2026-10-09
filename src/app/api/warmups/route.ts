@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { TODO_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
 import { WarmupWriteError, logSession } from "@/lib/data/warmup-sessions";
@@ -81,6 +83,7 @@ export async function POST(request: Request) {
       },
     });
 
+    revalidateTag(TODO_TAG, { expire: 0 });
     return NextResponse.json({ ok: true, session });
   } catch (err) {
     if (err instanceof WarmupWriteError) {
