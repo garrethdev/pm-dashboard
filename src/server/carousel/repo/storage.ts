@@ -62,3 +62,105 @@ export async function removeObject(path: string): Promise<void> {
   const res = await fetch(`${base()}/object/${LIBRARY_BUCKET}/${safe(path)}`, { method: "DELETE", headers: auth(), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
   if (!res.ok && res.status !== 404 && res.status !== 400) await fail(res, "remove image");
 }
+
+// ── Linked folders (Garreth, 2026-10-08) ────────────────────────────────
+
+export interface StorageEntry {
+  /** The path inside the bucket. */
+  path: string;
+  name: string;
+  /** A folder has no id in the listing. */
+  folder: boolean;
+  mimetype: string | null;
+  size: number | null;
+}
+
+/** The public link to an object in any of our public buckets. */
+export function bucketUrl(bucket: string, path: string): string {
+  return `${base()}/object/public/${encodeURIComponent(bucket)}/${safe(path)}`;
+}
+
+export async function listBuckets(): Promise<{ id: string; public: boolean }[]> {
+  const res = await fetch(`${base()}/bucket`, { headers: auth(), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
+  if (!res.ok) await fail(res, "list buckets");
+  const rows = (await res.json()) as { id: string; public: boolean }[];
+  return rows.map((b) => ({ id: b.id, public: Boolean(b.public) })).sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** One level of a bucket: its folders and files under a prefix. */
+export async function listFolder(bucket: string, prefix: string): Promise<StorageEntry[]> {
+  const out: StorageEntry[] = [];
+  const page = 1000;
+  for (let offset = 0; ; offset += page) {
+    const res = await fetch(`${base()}/object/list/${encodeURIComponent(bucket)}`, {
+      method: "POST",
+      headers: auth({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ prefix, limit: page, offset, sortBy: { column: "name", order: "asc" } }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      cache: "no-store",
+    });
+    if (!res.ok) await fail(res, "list folder");
+    const rows = (await res.json()) as { name: string; id: string | null; metadata: { mimetype?: string; size?: number } | null }[];
+    for (const r of rows) {
+      if (r.name.startsWith(".") || r.name === "_rls_diag_delete_me") continue;
+      out.push({ path: prefix ? `${prefix}/${r.name}` : r.name, name: r.name, folder: !r.id, mimetype: r.metadata?.mimetype ?? null, size: r.metadata?.size ?? null });
+    }
+    if (rows.length < page) break;
+  }
+  return out;
+}
+
+const IMAGE = /^image\/(jpeg|png|webp|gif|avif)$/;
+
+/**
+ * Every picture under a prefix, up to three folders deep, with the first
+ * folder below the prefix as its set and the next as its subset. The result
+ * is kept for a minute, since the library pages ask for it several times.
+ */
+const walked = new Map<string, { at: number; files: Promise<{ path: string; set: string | null; subset: string | null }[]> }>();
+export async function listPictures(bucket: string, prefix: string): Promise<{ path: string; set: string | null; subset: string | null }[]> {
+  const key = `${bucket}/${prefix}`;
+  const hit = walked.get(key);
+  if (hit && Date.now() - hit.at < 60_000) return hit.files;
+  const files = (async () => {
+    const out: { path: string; set: string | null; subset: string | null }[] = [];
+    const walk = async (p: string, depth: number, set: string | null, subset: string | null) => {
+      const rows = await listFolder(bucket, p);
+      for (const r of rows) {
+        if (r.folder) {
+          if (depth >= 3) continue;
+          await walk(r.path, depth + 1, set ?? r.name, set ? (subset ?? r.name) : null);
+        } else if (!r.mimetype || IMAGE.test(r.mimetype)) {
+          if (!r.mimetype && !/\.(jpe?g|png|webp|gif|avif)$/i.test(r.name)) continue;
+          out.push({ path: r.path, set, subset });
+        }
+      }
+    };
+    await walk(prefix.replace(/^\/+|\/+$/g, ""), 0, null, null);
+    return out;
+  })();
+  walked.set(key, { at: Date.now(), files });
+  files.catch(() => walked.delete(key));
+  return files;
+}
+
+export function forgetPictures(bucket: string, prefix: string): void {
+  walked.delete(`${bucket}/${prefix}`);
+}
+
+/** Every object under a prefix in the library bucket, removed; used when a library is deleted. */
+export async function removeFolder(prefix: string): Promise<number> {
+  const paths: string[] = [];
+  const walk = async (p: string) => {
+    for (const r of await listFolder(LIBRARY_BUCKET, p)) {
+      if (r.folder) await walk(r.path);
+      else paths.push(r.path);
+    }
+  };
+  await walk(prefix);
+  for (let i = 0; i < paths.length; i += 100) {
+    const res = await fetch(`${base()}/object/${LIBRARY_BUCKET}`, { method: "DELETE", headers: auth({ "Content-Type": "application/json" }), body: JSON.stringify({ prefixes: paths.slice(i, i + 100) }), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
+    if (!res.ok) await fail(res, "remove images");
+  }
+  return paths.length;
+}

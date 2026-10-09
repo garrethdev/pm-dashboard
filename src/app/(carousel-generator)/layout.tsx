@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/shell/app-shell";
+import { SlideFonts } from "@/components/carousel/slide-fonts";
 
 /*
  * The Carousel Generator's frame: the dashboard's shell with the generator's
@@ -7,5 +8,10 @@ import { AppShell } from "@/components/shell/app-shell";
  * its parent — it cannot take the dashboard sidebar away.
  */
 export default function CarouselGeneratorLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell nav="carousel">{children}</AppShell>;
+  return (
+    <AppShell nav="carousel">
+      <SlideFonts />
+      {children}
+    </AppShell>
+  );
 }

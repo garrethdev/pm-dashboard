@@ -787,3 +787,12 @@ revoke all on public.reference_media_refresh from anon, authenticated;
 -- point at other systems).
 alter table public.reference_slide_images drop constraint if exists reference_slide_images_position_check;
 alter table public.reference_slide_images add constraint reference_slide_images_position_check check (position >= 0);
+
+-- ── Step 9, applied live 2026-10-08 ─────────────────────────────────────
+-- A library can be a live link to a folder in one of our storage buckets
+-- (Garreth, 2026-10-08: "live link", Character 6 first). The app lists the
+-- folder each time, so the library always shows what the bucket holds; such
+-- a library is read-only here.
+alter table public.image_libraries
+  add column if not exists source_bucket text,
+  add column if not exists source_prefix text;

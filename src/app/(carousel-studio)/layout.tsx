@@ -5,9 +5,12 @@
  * than a nested layout, because a nested layout can only add to the shell,
  * never take the menu away.
  */
+import { SlideFonts } from "@/components/carousel/slide-fonts";
+
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-bg px-4 py-4 text-text-primary md:px-6">
+      <SlideFonts />
       {children}
     </div>
   );

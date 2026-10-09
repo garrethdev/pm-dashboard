@@ -77,6 +77,89 @@ progress, then checked in the database. Pictures were taken in dark mode,
 light mode and at phone width. That was headless Chrome, not Safari. The three
 test reports and their screenshots were deleted afterwards; their audit-log
 lines remain. Nobody has used it on the live site yet.
+## 2026-10-08 — Studio round two: fonts, drag to place, pin a picture, start from scratch
+
+**Where it came from:** Czedrick's testing notes ("Issues with Carousel App",
+nine pages of screenshots) and Garreth's answers of 2026-10-08. Branch
+`claude/carousel-generator-round-2`; not on `main` yet.
+
+- **The library step un-ticks.** Clicking the ticked library again now leaves
+  nothing chosen (Czedrick could not unselect it).
+- **Four ways in.** Start from a reference deck now shows the saved decks as a
+  grid to pick from (design D6-Reference). Start from scratch is new: five plain
+  slides, one line each, no AI call. Discuss your idea is unchanged; Figma stays
+  disabled until the sample link arrives.
+- **The left panel matches the design (D6-Main, D11-Layers).** Slide size
+  (4:5 or 9:16, which stretches the cells), then for a text box: Name, Written
+  by, Fits, Font, Weight, Size, Stroke on/off with width, Shadow off/hard/soft
+  with offset and blur, Alignment left/centre/right, Wrap width, Colour, Sample
+  text, Remove. A Layers list for the slide; the library with its sets and
+  thumbnails underneath, with Upload images (Generate with AI still disabled).
+- **Ten fonts** from Google Fonts: TikTok Sans, Inter, Montserrat, Poppins,
+  Bebas Neue, Anton, Oswald, Playfair Display, Caveat, Permanent Marker, each
+  with its weights. The painter now draws a box's own font, weight, colour,
+  alignment, stroke and shadow (before, a box's own alignment, colour and wrap
+  width were ignored by the painter).
+- **Free placement.** Drag a text box anywhere on its slide; it lands there
+  (a new `free` anchor with x and y). Undo brings it back.
+- **Pin a picture to one slide.** Drag a thumbnail from the library onto a
+  slide (or select the cell and click the thumbnail). That slide alone uses
+  that picture in every deck; the other slides keep drawing from the library.
+  A conversation revision keeps the pins.
+- **Both side panels fold away;** the canvas pans in every direction by
+  dragging the background or with the hand tool; the first deck opens at a
+  zoom that shows a whole slide.
+- Save as carousel type offers Character 6.
+- **A library can be a live link to a storage folder** (Garreth: "live link",
+  Character 6 first). New library now offers Upload here or Link a storage
+  folder, with a bucket list and a folder browser. The library lists the
+  folder every time it is opened, so it always shows what the bucket holds;
+  each subfolder is a set; it is read-only in the app. Character 6 was linked
+  on 2026-10-08 to `rich-life-images/character-6/carousel-basis` (217
+  pictures, one set). The picker, the Studio thumbnails and the render
+  preview all draw from it. Two new columns on `image_libraries`
+  (`source_bucket`, `source_prefix`), applied live the same day.
+- **A library can be deleted** (or a link removed) with a hold on its page.
+  Refused while a carousel type draws from it, and for the two seeded banks.
+  Deleting an uploaded library also removes its files from the bucket.
+- **Overview lists every live carousel type** with its own Generate button
+  (design D16-Main), the ones that ran most recently first. Before, a type
+  that had never run was left out and the panel said "No type generated yet".
+- **Start from a Figma link** (Garreth's sample "3-Slide Journey Carousel",
+  2026-10-08; designs D11-FigmaPrompt, FigmaReading, FigmaDraft,
+  FigmaNoAccess). The fourth Start card is live. Paste a link to a page, a
+  section or a frame; the chip under it says the file's name, how many
+  frames, their size and how many samples, or "Not connected" / "No access".
+  Each frame becomes a slide at the frames' size; a picture filling a frame
+  is the slide's image cell; each text layer becomes a text box where it
+  sits, with its font, weight, size, colour, alignment, stroke and shadow (a
+  font we do not have is stood in for by Inter, and the conversation says
+  so). Frames are read in the order they sit on the page, row by row, not by
+  their names, because the sample's second row is numbered 4, 5, 6 but laid
+  out 5, 4, 6. With two or more samples in sections, a line that reads the
+  same in every sample is fixed and a picture that repeats (the sample's
+  "Directed by" card) is copied into our storage and pinned to that slide;
+  everything else is for the writer and the library. Instructions typed
+  under the link go to the writer after the import. Needs `FIGMA_TOKEN` on
+  the server (a Figma personal access token with file read); without it the
+  chip says "Not connected" and nothing else is touched.
+- **Trends is brought to its design (D10-Main):** the section rail is icon
+  cards, the search box carries its search type on the right with a filter
+  icon beside it, Copy to Studio reads as the main action under a post, and
+  Recent saves ends in a View all saves button.
+
+**Verified:** `tsc`, `eslint`, `vitest` (11 new unit tests on the Studio's
+model helpers, 7 on the Figma reader against a fixture shaped like the
+sample file), `next build`, and 56 headless-browser checks on the local dev
+server (un-tick, scratch deck, every inspector control, font and weight on
+the canvas, drag and undo, pin by click and by drag, unpin, render preview,
+size switch, pan, fold, save dialog; linking Character 6, its set and
+thumbnails, a render from the bucket, deleting a throwaway link; the Figma
+screen's hint, chip and disabled import without a token). **The Figma import
+has not yet read a real file:** no `FIGMA_TOKEN` exists locally or on
+Vercel. Not yet used on the live site.
+
+---
 
 ## 2026-10-07 — Facebook accounts get their numbers (PF-24)
 
