@@ -39,6 +39,11 @@ export interface AccountSeriesPoint {
   avgViews: number;
   /** Engagement as a % of views in this bucket — the 4th tile's sparkline. */
   engagementRate: number;
+  /** Instagram only (DA-01); null elsewhere or when no post in the bucket has it. */
+  skipRate: number | null;
+  reach: number | null;
+  follows: number | null;
+  profileVisits: number | null;
 }
 
 export interface AccountPost {
@@ -46,10 +51,18 @@ export interface AccountPost {
   postUrl: string;
   postedAt: string;
   caption: string | null;
-  views: number;
+  /** Null on a Facebook photo post: Facebook shows nobody but the owner its views. */
+  views: number | null;
   likes: number;
   comments: number;
   engagement: number;
+  /** Instagram's deeper numbers (DA-01). Null when the post does not have it:
+   *  skip rate is Reels only, follows and profile visits carousels and photos
+   *  only, and none of the four exists on TikTok or Facebook. */
+  reach: number | null;
+  skipRate: number | null;
+  follows: number | null;
+  profileVisits: number | null;
   thumbnailUrl: string | null;
 }
 
@@ -65,6 +78,15 @@ export interface AccountAnalytics {
     avgViews: number;
     engagement: number;
     engagementRate: number;
+    /** % of viewers who swiped away within 3 seconds, weighted by views. Null
+     *  off Instagram or when no post in range has one. Lower is better. */
+    skipRate: number | null;
+    /** People reached, summed over posts. Null off Instagram. */
+    reach: number | null;
+    /** Follows and profile visits won by posts, summed. Instagram carousels and
+     *  photos only, so null on an account whose posts in range are all Reels. */
+    follows: number | null;
+    profileVisits: number | null;
   };
   /** % change vs the equally-long window before this range; null for All time. */
   deltas: {
@@ -72,6 +94,10 @@ export interface AccountAnalytics {
     views: number | null;
     avgViews: number | null;
     engagementRate: number | null;
+    skipRate: number | null;
+    reach: number | null;
+    follows: number | null;
+    profileVisits: number | null;
   };
   series: AccountSeriesPoint[];
   topPosts: AccountPost[];
@@ -88,9 +114,45 @@ interface RawRow {
   comments: number | null;
   total_engagement: number | null;
   ingested_at: string | null;
+  // Instagram only (DA-01); absent on the other platforms' rows.
+  reach?: number | null;
+  skip_rate?: number | string | null;
+  follows?: number | null;
+  profile_visits?: number | null;
 }
 
 const n = (v: number | null | undefined) => Number(v ?? 0);
+/** A number the post may not have: kept as null rather than read as 0. */
+const maybe = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v));
+
+/**
+ * Skip rate across posts, weighted by views. A plain average lets a post seen
+ * by one person (and so skipped 0% or 100%) count as much as one seen by a
+ * hundred.
+ */
+export function weightedSkipRate(rows: RawRow[]): number | null {
+  let skipped = 0;
+  let viewers = 0;
+  for (const r of rows) {
+    const rate = maybe(r.skip_rate);
+    if (rate === null || !n(r.views)) continue;
+    skipped += rate * n(r.views);
+    viewers += n(r.views);
+  }
+  return viewers ? Math.round((skipped / viewers) * 10) / 10 : null;
+}
+
+/** One of the deeper numbers summed over the posts that have it; null when
+ *  none does, so "no carousels this week" never reads as "0 follows". */
+function sumGiven(rows: RawRow[], key: "reach" | "follows" | "profile_visits"): number | null {
+  const has = rows.filter((r) => r[key] !== null && r[key] !== undefined);
+  return has.length ? has.reduce((a, r) => a + n(r[key]), 0) : null;
+}
+
+/** Reach summed over the posts that have it; null when none does. */
+export function totalReach(rows: RawRow[]): number | null {
+  return sumGiven(rows, "reach");
+}
 
 /** % change, or null when there is no baseline to compare against. */
 function delta(now: number, before: number): number | null {
@@ -134,7 +196,11 @@ function bucketLabel(key: string, bucket: "day" | "week"): string {
 // one can fall through to the TikTok table.
 async function rowsFor(account: string, platform: AnalyticsPlatform, sinceIso: string | null) {
   const table = perfTable(platform);
-  const cols = "post_id,post_url,posted_at,caption_snippet,views,likes,comments,total_engagement,ingested_at";
+  // The deeper numbers exist on the Instagram table only; asking another
+  // table for them would fail the whole read.
+  const cols =
+    "post_id,post_url,posted_at,caption_snippet,views,likes,comments,total_engagement,ingested_at" +
+    (platform === "instagram" ? ",reach,skip_rate,follows,profile_visits" : "");
   const since = sinceIso ? `&posted_at=gte.${sinceIso}` : "";
   return sbRestAll<RawRow>(
     `${table}?select=${cols}&account=eq.${encodeURIComponent(account)}${since}` +
@@ -144,15 +210,23 @@ async function rowsFor(account: string, platform: AnalyticsPlatform, sinceIso: s
 
 function summarise(rows: RawRow[]) {
   const posts = rows.length;
-  const views = rows.reduce((a, r) => a + n(r.views), 0);
+  // Averages and rates only over posts that have a view count. A Facebook
+  // photo post has none, and counting it as 0 would drag the average down.
+  const seen = rows.filter((r) => r.views !== null);
+  const views = seen.reduce((a, r) => a + n(r.views), 0);
   const engagement = rows.reduce((a, r) => a + n(r.total_engagement), 0);
+  const seenEngagement = seen.reduce((a, r) => a + n(r.total_engagement), 0);
   return {
     posts,
     views,
     engagement,
-    avgViews: posts ? Math.round(views / posts) : 0,
+    avgViews: seen.length ? Math.round(views / seen.length) : 0,
     // Against views, not posts: "how many of the people who saw it reacted".
-    engagementRate: views ? Math.round((engagement / views) * 1000) / 10 : 0,
+    engagementRate: views ? Math.round((seenEngagement / views) * 1000) / 10 : 0,
+    skipRate: weightedSkipRate(rows),
+    reach: totalReach(rows),
+    follows: sumGiven(rows, "follows"),
+    profileVisits: sumGiven(rows, "profile_visits"),
   };
 }
 
@@ -162,10 +236,16 @@ function toPost(r: RawRow, thumb: string | null): AccountPost {
     postUrl: r.post_url,
     postedAt: r.posted_at,
     caption: r.caption_snippet,
-    views: n(r.views),
+    views: r.views === null ? null : n(r.views),
     likes: n(r.likes),
     comments: n(r.comments),
     engagement: n(r.total_engagement),
+    reach: maybe(r.reach),
+    // With no viewers there is nothing to skip: Instagram reports 0%, which
+    // would read as a perfect hook.
+    skipRate: n(r.views) ? maybe(r.skip_rate) : null,
+    follows: maybe(r.follows),
+    profileVisits: maybe(r.profile_visits),
     thumbnailUrl: thumb,
   };
 }
@@ -182,8 +262,17 @@ async function fetchAccountAnalytics(
     rangeDays: days,
     bucket,
     lastIngest: null,
-    summary: { posts: 0, views: 0, avgViews: 0, engagement: 0, engagementRate: 0 },
-    deltas: { posts: null, views: null, avgViews: null, engagementRate: null },
+    summary: { posts: 0, views: 0, avgViews: 0, engagement: 0, engagementRate: 0, skipRate: null, reach: null, follows: null, profileVisits: null },
+    deltas: {
+      posts: null,
+      views: null,
+      avgViews: null,
+      engagementRate: null,
+      skipRate: null,
+      reach: null,
+      follows: null,
+      profileVisits: null,
+    },
     series: [],
     topPosts: [],
     recentPosts: [],
@@ -206,13 +295,21 @@ async function fetchAccountAnalytics(
   const before = summarise(previous);
 
   // Series, oldest first so the line reads left to right.
-  const byBucket = new Map<string, { posts: number; views: number; engagement: number }>();
+  const byBucket = new Map<
+    string,
+    { posts: number; seen: number; views: number; engagement: number; rows: RawRow[] }
+  >();
   for (const r of current) {
     const k = bucketKey(r.posted_at, bucket);
-    const b = byBucket.get(k) ?? { posts: 0, views: 0, engagement: 0 };
+    const b = byBucket.get(k) ?? { posts: 0, seen: 0, views: 0, engagement: 0, rows: [] };
     b.posts += 1;
-    b.views += n(r.views);
-    b.engagement += n(r.total_engagement);
+    b.rows.push(r);
+    // As in summarise: posts with no view count stay out of views and rates.
+    if (r.views !== null) {
+      b.seen += 1;
+      b.views += n(r.views);
+      b.engagement += n(r.total_engagement);
+    }
     byBucket.set(k, b);
   }
   const series: AccountSeriesPoint[] = [...byBucket.entries()]
@@ -222,11 +319,16 @@ async function fetchAccountAnalytics(
       label: bucketLabel(key, bucket),
       posts: v.posts,
       views: v.views,
-      avgViews: v.posts ? Math.round(v.views / v.posts) : 0,
+      avgViews: v.seen ? Math.round(v.views / v.seen) : 0,
       engagementRate: v.views ? Math.round((v.engagement / v.views) * 1000) / 10 : 0,
+      skipRate: weightedSkipRate(v.rows),
+      reach: totalReach(v.rows),
+      follows: sumGiven(v.rows, "follows"),
+      profileVisits: sumGiven(v.rows, "profile_visits"),
     }));
 
-  const top = [...current].sort((a, b) => n(b.views) - n(a.views)).slice(0, 5);
+  // Top by views, so only posts that have them.
+  const top = current.filter((r) => r.views !== null).sort((a, b) => n(b.views) - n(a.views)).slice(0, 5);
   // `current` is already posted_at desc.
   const recent = current.slice(0, 5);
 
@@ -261,6 +363,17 @@ async function fetchAccountAnalytics(
       views: days ? delta(summary.views, before.views) : null,
       avgViews: days ? delta(summary.avgViews, before.avgViews) : null,
       engagementRate: days ? delta(summary.engagementRate, before.engagementRate) : null,
+      skipRate:
+        days && summary.skipRate !== null && before.skipRate !== null
+          ? delta(summary.skipRate, before.skipRate)
+          : null,
+      reach: days && summary.reach !== null && before.reach !== null ? delta(summary.reach, before.reach) : null,
+      follows:
+        days && summary.follows !== null && before.follows !== null ? delta(summary.follows, before.follows) : null,
+      profileVisits:
+        days && summary.profileVisits !== null && before.profileVisits !== null
+          ? delta(summary.profileVisits, before.profileVisits)
+          : null,
     },
     series,
     topPosts: top.map((r) => toPost(r, thumbs.get(r.post_id) ?? null)),
@@ -290,8 +403,11 @@ export function getAccountAnalytics(
   // here, characters are posted to both — served whichever platform's numbers
   // were fetched first, under the other one's heading. Bumped to v2 so the
   // v1 entries that were computed under the ambiguous key cannot be read back.
+  // v4 (2026-10-09, DA-01/02): the payload gained skipRate, reach, follows and
+  // profileVisits; an older entry lacks them and would render "undefined%".
+  // (v3 was the same day's first cut, before the follows/visits tiles.)
   return cachedFetcher(
-    `account-analytics-v2:${account ?? "none"}:${platform}:${range}`,
+    `account-analytics-v4:${account ?? "none"}:${platform}:${range}`,
     TTL.supabase,
     () => fetchAccountAnalytics(account, platform, days),
     // Two tags, two jobs. The per-handle one lets a write about one account

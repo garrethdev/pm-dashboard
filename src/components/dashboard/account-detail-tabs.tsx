@@ -10,22 +10,29 @@ import { cn } from "@/lib/utils";
  * Both panels are rendered on the server and passed in, so switching is instant
  * and neither refetches.
  */
-type Tab = "analytics" | "logs";
+type Tab = "analytics" | "posts" | "logs";
 
 /** Analytics leads: "how is this account doing" is the question people open an
  *  account to answer, and the automation log is the follow-up when it is doing
  *  badly. */
 const TABS: [Tab, string][] = [
   ["analytics", "Account Analytics"],
+  // Every post with its numbers, in the place the Geelark log used to hold
+  // (Czedrick, 2026-10-09).
+  ["posts", "All posts"],
   ["logs", "Geelark Automation Logs"],
 ];
 
 export function AccountDetailTabs({
   logs,
   analytics,
+  posts,
   className,
 }: {
-  logs: React.ReactNode;
+  posts: React.ReactNode;
+  /** Null on a real-phone (Physical) account: Geelark never touches it, so
+   *  its automation log would only ever be empty (Czedrick, 2026-10-09). */
+  logs: React.ReactNode | null;
   analytics: React.ReactNode;
   /** Spacing belongs to the page that places this, not to the tabs. */
   className?: string;
@@ -50,7 +57,7 @@ export function AccountDetailTabs({
       {/* Underline tabs over a full-width rule, so the row reads as a section
           heading rather than a control floating above the content. */}
       <div role="tablist" aria-label="Account detail" className="flex gap-6 border-b border-border">
-        {TABS.map(([key, label]) => (
+        {TABS.filter(([key]) => key !== "logs" || logs !== null).map(([key, label]) => (
           <button
             key={key}
             role="tab"
@@ -74,7 +81,8 @@ export function AccountDetailTabs({
       {/* Mounted on first use, then kept mounted and merely hidden, so the
           range you picked survives flipping back and forth. */}
       <div hidden={tab !== "analytics"}>{analytics}</div>
-      {seen.has("logs") && <div hidden={tab !== "logs"}>{logs}</div>}
+      {seen.has("posts") && <div hidden={tab !== "posts"}>{posts}</div>}
+      {logs !== null && seen.has("logs") && <div hidden={tab !== "logs"}>{logs}</div>}
     </div>
   );
 }

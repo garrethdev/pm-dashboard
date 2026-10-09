@@ -41,6 +41,7 @@ type Metric = "avg" | "total";
 const AXIS = { stroke: "var(--text-muted)", fontSize: 11, tickLine: false, axisLine: false } as const;
 const nf = (v: number) => v.toLocaleString("en-US");
 const compact = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v));
+const present = (vs: (number | null)[]) => vs.filter((v): v is number => v !== null);
 
 export function AccountAnalyticsView({
   initial,
@@ -146,6 +147,41 @@ export function AccountAnalyticsView({
             delta={data.deltas.engagementRate}
             spark={data.series.map((p) => p.engagementRate)}
           />
+          {/* Instagram's deeper numbers (DA-01); no other platform gives them. */}
+          {platform === "instagram" && (
+            <>
+              <MetricTile
+                id="skip"
+                label="Skip rate"
+                value={s.skipRate === null ? "—" : `${s.skipRate}%`}
+                delta={data.deltas.skipRate}
+                spark={present(data.series.map((p) => p.skipRate))}
+                lowerIsBetter
+              />
+              <MetricTile
+                id="reach"
+                label="Reach"
+                value={s.reach === null ? "—" : nf(s.reach)}
+                delta={data.deltas.reach}
+                spark={present(data.series.map((p) => p.reach))}
+              />
+              {/* Carousels and photos only; "—" when the range has none. */}
+              <MetricTile
+                id="follows"
+                label="Follows"
+                value={s.follows === null ? "—" : nf(s.follows)}
+                delta={data.deltas.follows}
+                spark={present(data.series.map((p) => p.follows))}
+              />
+              <MetricTile
+                id="visits"
+                label="Profile visits"
+                value={s.profileVisits === null ? "—" : nf(s.profileVisits)}
+                delta={data.deltas.profileVisits}
+                spark={present(data.series.map((p) => p.profileVisits))}
+              />
+            </>
+          )}
         </div>
 
         <DashCard
@@ -290,12 +326,15 @@ function MetricTile({
   spark,
   delta,
   id,
+  lowerIsBetter = false,
 }: {
   label: string;
   value: string;
   spark: number[];
   delta: number | null;
   id: string;
+  /** Skip rate: a fall is the good news, so the colours swap. */
+  lowerIsBetter?: boolean;
 }) {
   const data = spark.map((v, i) => ({ i, v }));
   // A single bucket has no shape to plot, so the sparkline is dropped rather
@@ -303,8 +342,9 @@ function MetricTile({
   const plottable = data.length > 1;
   const up = (delta ?? 0) > 0;
   const flat = delta === null || delta === 0;
-  // Every metric here reads better when it rises, so up is green throughout.
-  const tone = flat ? "var(--text-muted)" : up ? "var(--ok)" : "var(--danger)";
+  // Most metrics here read better when they rise; skip rate is the exception.
+  const good = lowerIsBetter ? !up : up;
+  const tone = flat ? "var(--text-muted)" : good ? "var(--ok)" : "var(--danger)";
   const Icon = up ? ArrowUpRight : ArrowDownRight;
 
   return (
@@ -318,7 +358,7 @@ function MetricTile({
           <span
             className={cn(
               "inline-flex items-center gap-0.5 text-xs font-medium tnum",
-              up ? "text-ok" : "text-danger",
+              good ? "text-ok" : "text-danger",
             )}
           >
             <Icon className="size-3" />
@@ -463,11 +503,11 @@ function TopThumb({ post, platform }: { post: AccountPost; platform: string }) {
       )}
       <span className="relative bg-gradient-to-t from-black/80 to-transparent px-1.5 pt-4 pb-1">
         <span className="block text-[11px] font-semibold tnum text-white">
-          {compact(post.views)}
+          {compact(post.views ?? 0)}
         </span>
       </span>
       <span className="sr-only">
-        {platform} post, {nf(post.views)} views
+        {platform} post, {nf(post.views ?? 0)} views
       </span>
     </Link>
   );
@@ -504,11 +544,19 @@ function RecentRow({ post, platform }: { post: AccountPost; platform: string }) 
           <span className="line-clamp-2 text-xs leading-snug text-text-primary">
             {post.caption?.trim() || <span className="text-text-muted">No caption</span>}
           </span>
-          <span className="flex items-center gap-3 text-[11px] text-text-muted">
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-text-muted">
             <span className="tnum">{formatEtDate(post.postedAt)}</span>
-            <span className="tnum">{nf(post.views)} views</span>
+            {post.views !== null && <span className="tnum">{nf(post.views)} views</span>}
             <span className="tnum">{nf(post.likes)} likes</span>
             <span className="tnum">{nf(post.comments)} comments</span>
+            {/* Only the numbers this post has (DA-01): skip rate on Reels,
+                follows and profile visits on carousels and photos. */}
+            {post.skipRate !== null && <span className="tnum">{post.skipRate}% skipped</span>}
+            {post.reach !== null && <span className="tnum">{nf(post.reach)} reached</span>}
+            {post.follows !== null && <span className="tnum">{nf(post.follows)} follows</span>}
+            {post.profileVisits !== null && (
+              <span className="tnum">{nf(post.profileVisits)} profile visits</span>
+            )}
           </span>
         </span>
 

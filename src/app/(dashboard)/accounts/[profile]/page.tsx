@@ -10,9 +10,12 @@ import { PlatformIcon } from "@/components/ui/platform-icon";
 import { AccountAnalyticsView } from "@/components/dashboard/account-analytics-view";
 import { AccountDetailTabs } from "@/components/dashboard/account-detail-tabs";
 import { AccountDeviceCard } from "@/components/dashboard/account-device-card";
+import { AccountPostsView } from "@/components/dashboard/account-posts-view";
 import { AccountTaskLog } from "@/components/dashboard/account-task-log";
 import { getAccountAnalytics } from "@/lib/data/account-analytics";
 import { getAccountDetail } from "@/lib/data/account-detail";
+import { getAccountPosts } from "@/lib/data/account-posts";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { healthTone } from "@/lib/health";
 import { formatEtDate } from "@/lib/data/format";
 import { PLATFORM_LABEL, type Platform, handleLabel, hasAnalytics } from "@/lib/platform";
@@ -96,6 +99,26 @@ async function AnalyticsPanel({
     return <p className="text-sm text-text-muted">Analytics unavailable: {message}</p>;
   }
   return <AccountAnalyticsView initial={analytics} account={username} platform={platform} />;
+}
+
+/** The All posts tab: every post, streamed like the analytics panel. */
+async function PostsPanel({ username, platform }: { username: string | null; platform: Platform }) {
+  if (!hasAnalytics(platform)) {
+    return (
+      <p className="text-sm text-text-muted">Posts are not collected for {PLATFORM_LABEL[platform]} accounts yet.</p>
+    );
+  }
+  if (!username) {
+    return <p className="text-sm text-text-muted">This account has no username recorded yet, so there are no posts to list.</p>;
+  }
+  let posts;
+  try {
+    ({ data: posts } = await getAccountPosts(username, platform));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown error";
+    return <p className="text-sm text-text-muted">Posts unavailable: {message}</p>;
+  }
+  return <AccountPostsView posts={posts} platform={platform} />;
 }
 
 export default async function AccountDetailPage({
@@ -218,7 +241,18 @@ export default async function AccountDetailPage({
           and at 12px it read as another row of the header card. */}
       <AccountDetailTabs
         className="mt-6"
-        logs={<AccountTaskLog executed={data.tasks} pending={data.pendingTasks} />}
+        logs={
+          // Real-phone accounts are posted by hand, not by Geelark, so they have
+          // no automation log to show.
+          data.deliveryMode === "manual" ? null : (
+            <AccountTaskLog executed={data.tasks} pending={data.pendingTasks} />
+          )
+        }
+        posts={
+          <Suspense fallback={<TableSkeleton rows={8} />}>
+            <PostsPanel username={data.username} platform={data.platform} />
+          </Suspense>
+        }
         analytics={
           <Suspense fallback={<AnalyticsSkeleton />}>
             <AnalyticsPanel username={data.username} platform={data.platform} />
