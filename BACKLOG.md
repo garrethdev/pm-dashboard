@@ -135,6 +135,16 @@ screenshots ("Issues with Carousel App"). Garreth answered the questions on
   a template name a `.ttf` file that the future PNG painter must have on
   disk.
 
+- **The database stall of 2026-10-09 15:20 UTC.** Fixed on the app side the
+  same day (the bell and the to-do list now read from a one-minute cache; see
+  the changelog), but the source of the burst of rejected pooler connections
+  was never named: the pooler refused them before they said who they were,
+  and Postgres connection logging is off. Two things worth doing: turn on
+  connection logging in Supabase so the next burst names its client, and
+  look at the home page's phone-farm views (account warmup health, scheduler
+  pool, account health v3), which average a quarter of a second but reach
+  twenty to thirty seconds whenever the database is busy.
+
 ## Decided
 
 - **Delete rules** (Garreth: "Question 9 ignore"): deletion is refused while

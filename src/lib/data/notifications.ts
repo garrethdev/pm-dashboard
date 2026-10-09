@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { NOTIFICATIONS_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest } from "@/lib/data/supabase";
 import { getOpenDeliveries } from "@/lib/data/post-deliveries";
 import { OVERDUE_HOURS, getTodoBoard } from "@/lib/data/todo";
@@ -226,7 +227,7 @@ async function todoNotifications(): Promise<NotificationItem[]> {
   const day = etDayOf(dayStart);
 
   const [board, open] = await Promise.all([
-    getTodoBoard(0, now),
+    getTodoBoard(0),
     getOpenDeliveries().catch(() => []),
   ]);
 
@@ -554,22 +555,38 @@ async function readKeys(userEmail: string): Promise<Set<string>> {
  * failed read of the fleet list is treated the same way: an empty set reads
  * every account as Cloud, which mislabels rather than hides.
  */
-export async function getNotifications(userEmail: string): Promise<NotificationItem[]> {
+async function buildFeed(): Promise<NotificationItem[]> {
   const physical = new Set(
     await getPhysicalProfiles()
       .then((r) => r.data)
       .catch(() => [] as string[]),
   );
-  const [stored, warmup, todo, overdue, n8n, seen] = await Promise.all([
+  const [stored, warmup, todo, overdue, n8n] = await Promise.all([
     storedNotifications(physical).catch(() => [] as NotificationItem[]),
     warmupFailNotifications(physical).catch(() => [] as NotificationItem[]),
     todoNotifications().catch(() => [] as NotificationItem[]),
     warmupOverdueNotifications().catch(() => [] as NotificationItem[]),
     n8nNotifications().catch(() => [] as NotificationItem[]),
+  ]);
+  return [...stored, ...warmup, ...todo, ...overdue, ...n8n];
+}
+
+/**
+ * The feed everyone sees, read once a minute at most however many tabs are
+ * polling (2026-10-09, after the database stalled with every page hanging:
+ * this was read live by each open tab every minute and on every window
+ * focus, a dozen reads a time, one of them the heaviest view in the
+ * database). Who has read what stays per person and live, below.
+ */
+const getFeed = cachedFetcher(NOTIFICATIONS_TAG, TTL.supabase, buildFeed);
+
+export async function getNotifications(userEmail: string): Promise<NotificationItem[]> {
+  const [feed, seen] = await Promise.all([
+    getFeed().then((r) => r.data),
     readKeys(userEmail).catch(() => new Set<string>()),
   ]);
   return (
-    [...stored, ...warmup, ...todo, ...overdue, ...n8n]
+    feed
       // Read once every key behind it has been seen. For a single-key item that
       // is the old behaviour exactly; for a grouped warmup alert it means a new
       // failing account reopens it and a recovering one does not.
