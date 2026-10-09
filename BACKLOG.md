@@ -105,9 +105,8 @@ section used to hold, and where each point went:
 
 Czedrick tested the merged app on his own computer and sent nine pages of
 screenshots ("Issues with Carousel App"). Garreth answered the questions on
-2026-10-08. Everything he asked for is built on
-`claude/carousel-generator-round-2` and in the changelog, except what is
-listed here.
+2026-10-08. Everything he asked for is built, merged to `main` as PR #51 on
+2026-10-09, and in the changelog, except what is listed here.
 
 ## Open
 

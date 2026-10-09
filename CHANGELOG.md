@@ -81,7 +81,7 @@ lines remain. Nobody has used it on the live site yet.
 
 **Where it came from:** Czedrick's testing notes ("Issues with Carousel App",
 nine pages of screenshots) and Garreth's answers of 2026-10-08. Branch
-`claude/carousel-generator-round-2`; not on `main` yet.
+`claude/carousel-generator-round-2`, merged to `main` as PR #51 on 2026-10-09.
 
 - **The library step un-ticks.** Clicking the ticked library again now leaves
   nothing chosen (Czedrick could not unselect it).
@@ -157,7 +157,7 @@ size switch, pan, fold, save dialog; linking Character 6, its set and
 thumbnails, a render from the bucket, deleting a throwaway link; the Figma
 screen's hint, chip and disabled import without a token). **The Figma import
 has not yet read a real file:** no `FIGMA_TOKEN` exists locally or on
-Vercel. Not yet used on the live site.
+Vercel. Merged 2026-10-09; the first real use on the live site is still to come.
 
 ---
 
