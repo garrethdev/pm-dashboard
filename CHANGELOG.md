@@ -20,6 +20,183 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-09 — "All posts" tab on every account; no Geelark tab on real-phone accounts
+
+**Where it came from:** Czedrick, 2026-10-09, while checking DA-02. First:
+"for physical system in the dashboard, let's remove the" Geelark Automation
+Logs tab. Then he asked whether we see data on each post, and asked for a
+list of every post "in replacement of the geelark automation logs page in
+each account".
+
+**What changed:**
+
+- **Every account page has an All posts tab**, beside Account Analytics:
+  - every post the account has made, newest first
+  - a 7 days / 2 weeks / 1 month / All time filter and a count
+  - every number we hold for each post, any column sortable
+
+  The columns follow what each platform measures:
+  - Instagram: views, likes, comments, shares, saves, reach, skip rate, watch
+    time, follows and visits
+  - TikTok: views, likes, comments, shares, saves
+  - Facebook: views, likes, comments
+
+  A post without a given number shows a dash, never 0. That covers skip rate
+  on a carousel, follows on a Reel, views on a Facebook photo post, and skip
+  rate on a post nobody viewed. On a phone, each post is a block with its
+  numbers underneath. There are no thumbnails, because each one is an outside
+  lookup, and on Facebook a paid one.
+- **Real-phone accounts no longer show the Geelark Automation Logs tab.**
+  Geelark never touches them, so it could only ever be empty. Cloud accounts
+  keep it, now as the third tab; nothing is posting on Cloud, but its log is
+  real history.
+
+**Verified:** checked in the running app on 2026-10-09:
+- hey.imani.vaughn (Instagram, 160 posts)
+- maya_journey8 (TikTok, 113 posts, photo posts shown as "Carousel")
+- the Facebook account (3 reels)
+- a Cloud TikTok account, which shows all three tabs
+
+All at desktop width; Instagram also at phone width. The Facebook list
+already includes the Oct 8 reel that the morning's Facebook read picked up.
+
+---
+
+## 2026-10-09 — Skip rate, reach, follows and profile visits on Instagram account pages (DA-02)
+
+**Where it came from:** ticket DA-02 in Czedrick's deeper-analytics plan
+(`docs/DEEP-ANALYTICS-TICKETS.md`), built the same day as DA-01. Czedrick
+asked to check it himself rather than wait for a design round.
+
+**What changed:**
+
+- **An Instagram account's page has two more tiles**:
+  - **Skip rate**: the account's hook number, the share of viewers who swiped
+    away within 3 seconds. Lower is better, so a fall shows green and a rise
+    red, the reverse of every other tile.
+  - **Reach**: how many people its posts reached.
+
+  Two more tiles, **Follows** and **Profile visits**, count what carousels and
+  photos won. Czedrick asked for them on 2026-10-09, since most content will
+  be carousels. They show "—" for a range with no carousels, because Reels
+  never carry these numbers.
+
+  TikTok and Facebook accounts do not get these tiles, since their platforms
+  give us neither number.
+- **The account's skip rate is weighted by views.** A Reel seen by one person
+  is skipped 0% or 100% by definition. A plain average would let it count as
+  much as a Reel seen by a hundred, so busier posts count for more.
+- **Each recent post shows the numbers it has:**
+  - "% skipped" and "reached" on Reels
+  - "reached", "follows" and "profile visits" on carousels and photos
+
+  A number a post does not have is left off rather than shown as 0. That
+  includes skip rate on a Reel nobody viewed: Instagram reports it as 0%,
+  which would read as a perfect hook.
+
+**Verified:** checked in the running app against live data on 2026-10-09.
+hey.imani.vaughn's page shows a 51.5% skip rate and 98 reached, at desktop
+and phone width. A TikTok account's page is unchanged. **Not verified:** a
+carousel row, since no connected Instagram account has a recent carousel.
+
+---
+
+## 2026-10-09 — Instagram skip rate, reach, follows and profile visits (DA-01)
+
+**Where it came from:** Czedrick's deeper-analytics plan of 2026-10-09
+(`docs/DEEP-ANALYTICS-TICKETS.md`), ticket DA-01. Instagram already offered
+these numbers through the connection we have; we had never asked for them.
+
+**What changed:**
+
+- **Four new numbers per Instagram post**, from the n8n "Analysis Engine"
+  workflow:
+  - **skip rate**: % of viewers who swiped away within 3 seconds. Instagram's
+    own hook number, so lower is better.
+  - **reach**: different people who saw the post.
+  - **follows** and **profile visits**: how many people followed the account,
+    or opened its profile, from the post.
+
+  Skip rate exists for Reels only; follows and profile visits exist for
+  carousels and photos only. Each is left empty, never 0, when Instagram does
+  not give it for that kind of post.
+- **Posts are read for 28 days instead of 7**, so reach and the other numbers
+  keep updating after a post's first week. The "week" a post is filed under
+  in the weekly reports is unchanged: only posts from the last 7 days are
+  stamped with the current run's date, as before.
+- **Fixed: one failed Instagram request could put the wrong numbers on
+  posts.** The workflow matched Instagram's answers to posts by their position
+  in a list. When one request failed, every later post took the next post's
+  numbers, silently. Each post's request now keeps its own answer. A post
+  whose request fails is skipped and keeps the numbers it had, rather than
+  being overwritten.
+
+**Verified:** confirmed live. Two runs on 2026-10-09 wrote reach and skip rate
+for all 9 Reels across the 5 connected accounts. For example,
+hey.imani.vaughn's Reel of 2026-10-08 shows 113 views, 98 reached and a 51.5%
+skip rate, the same figures Instagram returns when asked directly. The first
+run also stamped six September posts with this week's date. That is how the
+"week" problem above was found, and their dates were put back by the same
+rule earlier runs used. **Not verified:** the carousel numbers. No connected
+account has posted a carousel that Instagram will still answer for, so
+follows and profile visits have not met a real post yet. Before going live,
+a test with a deliberately broken post confirmed that one failure drops only
+that post.
+
+---
+
+## 2026-10-09 — Facebook carousels are tracked (likes and comments, no views)
+
+**Where it came from:** Czedrick asked on 2026-10-09 whether we can see views
+on a Facebook carousel, then asked for photo posts to be added, noting that
+most content from here on will be carousels.
+
+**What we found:** the Facebook robot (PF-24) kept reels only, so a carousel or
+single photo posted on Facebook got no numbers at all, not even likes.
+Facebook shows the view count of a photo post to nobody but the account's
+owner, and ScrapeCreators can only read what is public. So **views on a
+Facebook carousel are not available to us**. Likes and comments are, from the
+posts list the robot was already reading, so they cost no extra credits.
+
+**What changed:**
+
+- **The robot keeps photo posts.** Each one gets a row with its link, date,
+  caption, likes (with the reaction types) and comments. It is marked
+  "carousel" when it has more than one photo and "photo" when it has one.
+  Its views are left **empty, not 0**.
+- **Matching a photo post to what Yurie marked Posted**: by its post id, as
+  for reels. A photo post's link also carries a scrambled id
+  ("pfbid…"), and the robot matches on that too.
+- **Every view-based figure now skips posts with no view count.** Before this,
+  an empty view count read as 0, so each carousel would have counted as a dead
+  post. A dry run on live data showed what one Facebook carousel would have
+  done: average views dropped from 12 to 8 and the engagement rate jumped to
+  183%. Where the skipping happens:
+  - **Account health.** It judges on views, so it judges on Facebook reels
+    only. Carousels still count as posts, so an account posting only
+    carousels shows as posting, not as "tracking broken". But with no views
+    to judge, its health cannot say more than "watch".
+  - **Analytics page**: averages, medians, the under-10-views share and the
+    engagement rate. Post counts and like totals still include carousels.
+  - **Content types page.** Its figures are per measured post, and a post with
+    no views is not measured.
+  - **The top-posts lists** (Analytics and the account page), **the weekly
+    report's Facebook top and bottom posts**, and **the account page's
+    averages**. On the account page, a carousel's row shows its likes and
+    comments and no views figure.
+
+**Verified:** the new tests pass. Before the database change went live, a
+throwaway run against live data checked every Analytics, Content types and
+health output for TikTok and Instagram before and after: they came out
+identical. That holds because none of their 3,383 rows has an empty view count.
+A second throwaway run with a fake Facebook carousel confirmed the figures
+above. **Not verified:** our Facebook accounts have posted no photos yet, so
+the robot has not met a real one of ours. The shape it reads was taken from a
+public page's two-photo post. Whether Yurie's share link for a photo post
+resolves to its id, the way a reel's does, is also untested.
+
+---
+
 ## 2026-10-09 — Report an issue from any page
 
 **Where it came from:** Garreth's request on 2026-10-09: give Yurie and the
@@ -263,9 +440,12 @@ allowlist.
 `ALLOWED_EMAILS` in `.env.local`, and a login account was created for it in
 Supabase. New sign-ups have been switched off since 2026-09-21, so without that
 account their first sign-in would fail. The account was created directly, so
-no invite email went out. **Still to do:** add the address to `ALLOWED_EMAILS`
-on Vercel and redeploy. The live site does not let them in until that is done.
-**Not verified:** nobody has signed in with this address yet.
+no invite email went out. On Vercel the address went first into the
+Development copy of `ALLOWED_EMAILS`, which the live site does not read, so
+Yurie's first sign-in still said "This email isn't on the allowlist". The
+Production and Preview copies were then set to the same seven addresses and
+the live site was redeployed (2026-10-06). **Not verified:** nobody has
+signed in with this address since the fix.
 
 ---
 
