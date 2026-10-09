@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Accent, Btn, compact, post, shortDate } from "@/components/carousel/kit";
 import { uploadPicture } from "@/components/carousel/library-upload";
 import { Check, ChevronLeft, LayoutList, Loader2, Pencil, Play, Plus, Sparkles, SquaresFour, X } from "@/components/ui/icons";
+import { thumbUrl } from "@/lib/carousel/thumb";
 import { cn } from "@/lib/utils";
 import type { Library, Reference } from "@/server/carousel/repo/types";
 import type { StudioSize } from "@/components/carousel/studio-model";
@@ -70,7 +71,7 @@ export function ReferenceGrid({ name, onBack, onPick }: { name: string; onBack: 
                   const img = r.slides[0]?.media ?? r.thumbnail;
                   return (
                     <button key={r.id} type="button" onClick={() => onPick(r.id)} className="flex flex-col gap-2 text-left" aria-label={`${r.hook ?? r.handle ?? "Deck"}, ${r.slides.length} slides`}>
-                      <span className="block aspect-[4/5] w-full rounded-xl border border-border bg-card-sunken bg-cover bg-center transition-[opacity,transform] hover:opacity-90 active:scale-[0.98]" style={img ? { backgroundImage: `url("${img}")` } : undefined} />
+                      <span className="block aspect-[4/5] w-full rounded-xl border border-border bg-card-sunken bg-cover bg-center transition-[opacity,transform] hover:opacity-90 active:scale-[0.98]" style={img ? { backgroundImage: `url("${thumbUrl(img, 480)}")` } : undefined} />
                       <span className="truncate text-xs text-text-primary">{r.hook ?? (r.handle ? `@${r.handle}` : "Deck")}</span>
                       <span className="text-[11px] text-text-muted tnum">{r.slides.length} slides · {compact(r.views) ?? "0"} · {shortDate(r.publishedAt ?? r.createdAt)}</span>
                     </button>
@@ -142,7 +143,7 @@ export function LibraryStep({ name, libraries, libraryId, size, onSize, onBack, 
           <p className="px-2 pb-1 text-xs text-text-muted">Click a library to choose it; click it again to leave it unchosen.</p>
           {libraries.map((l) => (
             <button key={l.id} type="button" role="option" aria-selected={libraryId === l.id} onClick={() => onPick(libraryId === l.id ? null : l.id)} className={cn("flex items-center gap-3 rounded-nested px-2 py-2 text-left text-sm hover:bg-card-raised", libraryId === l.id && "bg-card-raised")}>
-              <span className="size-9 shrink-0 rounded-[8px] border border-border bg-card-sunken bg-cover bg-center" style={l.cover ? { backgroundImage: `url("${l.cover}")` } : undefined} aria-hidden />
+              <span className="size-9 shrink-0 rounded-[8px] border border-border bg-card-sunken bg-cover bg-center" style={l.cover ? { backgroundImage: `url("${thumbUrl(l.cover, 120)}")` } : undefined} aria-hidden />
               <span className="flex min-w-0 flex-col"><span className="truncate">{l.name}</span><span className="text-xs text-text-muted tnum">{l.count} images{l.sets.length ? ` · ${l.sets.filter((s) => !s.parentId).length} sets` : ""}</span></span>
               <span className="ml-auto">{libraryId === l.id && <Check className="size-4 text-accent" />}</span>
             </button>

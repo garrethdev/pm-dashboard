@@ -13,8 +13,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Accent, Btn, LoadError, PageHead, Pill, post, useJson } from "@/components/carousel/kit";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cutOut, pictureType, uploadPicture } from "@/components/carousel/library-upload";
+import { LazyPicture } from "@/components/carousel/lazy-picture";
 import { HoldButton } from "@/components/ui/hold-button";
 import { ChevronDown, Images, Plus, Sparkles, Upload, X } from "@/components/ui/icons";
+import { thumbUrl } from "@/lib/carousel/thumb";
 import { cn } from "@/lib/utils";
 import type { Library, LibraryDetail, LibraryImage } from "@/server/carousel/repo/types";
 
@@ -60,7 +62,7 @@ export function LibrariesView({ initial }: { initial: Library[] | null }) {
             {/* The tile is a mosaic of the library's own images: one large, two stacked. */}
             <span className="grid aspect-[4/5] w-full grid-cols-[2fr_1fr] grid-rows-2 gap-1 overflow-hidden rounded-nested bg-card-sunken">
               {[0, 1, 2].map((i) => (
-                <span key={i} className={cn("bg-card-raised bg-cover bg-center", i === 0 && "row-span-2")} style={l.covers[i] ? { backgroundImage: `url("${l.covers[i]}")` } : undefined}>
+                <span key={i} className={cn("bg-card-raised bg-cover bg-center", i === 0 && "row-span-2")} style={l.covers[i] ? { backgroundImage: `url("${thumbUrl(l.covers[i], i === 0 ? 480 : 240)}")` } : undefined}>
                   {i === 0 && !l.covers[0] && <span className="flex h-full items-center justify-center text-text-muted"><Images className="size-6" /></span>}
                 </span>
               ))}
@@ -491,7 +493,9 @@ export function LibraryDetailView({ id, initial }: { id: string; initial: Librar
                 </div>
               ))}
               {shown.map((img) => (
-                <button key={img.id} type="button" onClick={() => setOpenId(img.id)} aria-label={`${img.setName ?? "Image"}${img.subsetName ? ` · ${img.subsetName}` : ""}${img.status !== "active" ? ", retired" : ""}`} className={cn("relative aspect-[4/5] overflow-hidden rounded-[10px] border border-border bg-card-sunken bg-cover bg-center transition-[opacity,transform] hover:opacity-90 active:scale-[0.98]", img.status !== "active" && "opacity-40")} style={{ backgroundImage: `url("${img.url}")` }}>
+                <button key={img.id} type="button" onClick={() => setOpenId(img.id)} aria-label={`${img.setName ?? "Image"}${img.subsetName ? ` · ${img.subsetName}` : ""}${img.status !== "active" ? ", retired" : ""}`} className={cn("relative aspect-[4/5] overflow-hidden rounded-[10px] border border-border bg-card-sunken transition-[opacity,transform] hover:opacity-90 active:scale-[0.98]", img.status !== "active" && "opacity-40")}>
+                  {/* A small copy, fetched only when the tile is near the screen (2026-10-09): the grid used to ask for every original at once. */}
+                  <LazyPicture src={img.url} width={400} className="absolute inset-0 block" />
                   {img.isCover && <span className="absolute top-1.5 left-1.5 rounded-full bg-black/50 px-1.5 text-[10px] leading-4 text-white">Cover</span>}
                   {img.status !== "active" && <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-1.5 text-[10px] leading-4 text-white">Retired</span>}
                   {!img.details && !lib.readOnly && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-warn" aria-hidden />}
