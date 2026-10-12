@@ -1595,6 +1595,11 @@ builds what is on it.
   with its prompt, shape, base images and who kept it recorded, and stays
   **untagged** until it is read. One failed image shows Retry; out of credits
   shows the reason on every waiting tile.
+- **Every render is degraded before anything else sees it** (Garreth,
+  2026-10-12). Call `degrade(bytes, <job id>)` from
+  `src/server/carousel/services/degrade.ts` as the last step of downloading
+  each result, and store and show only its JPEG, never the raw render. It is
+  the same step the AI edit uses; see `docs/DEGRADE-PASS.md`.
 - **Done when:** eight images are generated into a new library, some kept and
   some discarded, and only the kept ones are available to a template.
 
