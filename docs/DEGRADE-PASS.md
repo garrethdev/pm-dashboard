@@ -12,7 +12,7 @@ the original script, `character-6/after-review/degrade.py`.
 | C2PA / Content Credentials manifest | Yes. The picture is decoded to pixels and saved fresh. |
 | EXIF, XMP, ICC, IPTC, text labels (such as the AI-content label some models write into a PNG) | Yes, for the same reason. |
 | A visible watermark in the pixels | No. Nothing in the pass looks for one. |
-| SynthID or another invisible pixel watermark | **Not proven.** Gemini / Nano Banana output carries SynthID, which is built to survive mild edits. A clean detector result is a detector result, not proof. |
+| SynthID or another invisible pixel watermark | **No. SynthID survives the pass** (checked 2026-10-12: the first live AI edit, after the pass, was flagged by Google's SynthID Detector at synthid.com as "made or edited with Google AI"). Every Gemini / Nano Banana picture carries it. The pass only removes what is written in the file. |
 
 ## Where it runs
 

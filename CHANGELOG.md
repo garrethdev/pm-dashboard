@@ -57,8 +57,8 @@ on 2026-10-12 narrowed the work to the app's own AI image step first.
   were degraded from their PNG masters with the script, re-uploaded to the
   same storage paths, and checked by downloading them back.
 
-**What it does not do:** it does not prove SynthID, Google's invisible
-watermark, is removed. Pictures made outside the app and uploaded, and the
+**What it does not do:** it does not remove SynthID, Google's invisible
+watermark (see below). Pictures made outside the app and uploaded, and the
 458 images already in storage that were never degraded, are not touched yet.
 Both are in `BACKLOG.md`.
 
@@ -66,8 +66,14 @@ Both are in `BACKLOG.md`.
 carrying planted C2PA, EXIF, ICC and AI-label blocks; the same seed gives
 the same file; a plain re-save is refused. The full suite passes. The pass
 was also run on five real stored images and compared with the Mac script.
-**Not yet run against the real image model:** the OpenRouter key is only on
-Vercel, so the first real AI edit after deployment is the first true test.
+**Confirmed live on 2026-10-12, after deployment:** Garreth made one AI
+edit in the "test" library and kept it. The stored file passed the app's
+checks, and a byte-level read found no C2PA, EXIF, colour profile, XMP or
+AI label. The pending file was removed. **But Google's SynthID Detector
+(synthid.com) still flagged it as made or edited with Google AI**, so the
+invisible watermark survives the pass, as the handover warned it might.
+Gemini also returned the picture at 768 × 1365 from a 1350 × 2400
+original; that is the model's output size, not the pass.
 The two new columns (`degraded`, `degrade_seed`) were **added to the live
 database on 2026-10-12**, before deployment (migration
 `20261012100055_library_images_degraded.sql`; the database's copy matches
