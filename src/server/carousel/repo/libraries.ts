@@ -244,6 +244,8 @@ export async function addImage(input: {
   madeBy?: string | null;
   prompt?: string | null;
   by: string;
+  /** Set when the picture went through the degrade pass: the seed it used. */
+  degradeSeed?: string | null;
 }): Promise<ImageRow> {
   const [row] = await dbInsert<ImageRow>("image_library_images", {
     library_id: input.libraryId,
@@ -257,6 +259,8 @@ export async function addImage(input: {
     made_by: input.madeBy ?? "upload",
     prompt: input.prompt ?? null,
     kept_by: input.by,
+    // Only named when set, so every other image is saved as it was before.
+    ...(input.degradeSeed ? { degraded: true, degrade_seed: input.degradeSeed } : {}),
   });
   return row;
 }

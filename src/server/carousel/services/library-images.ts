@@ -2,12 +2,15 @@
  * What happens to a library image on the server (DEV-29): taking in an
  * upload, the black and white copy, and the AI edit. Everything made from
  * an image is a new image beside the original; nothing is overwritten.
+ * What an image model makes goes through the degrade pass before it is
+ * stored or shown (degrade.ts).
  */
 import decode from "heic-decode";
 import sharp from "sharp";
 import { randomUUID } from "node:crypto";
 import { readObject, removeObject, writeObject } from "@/server/carousel/repo/storage";
 import { addImage, type ImageRow } from "@/server/carousel/repo/libraries";
+import { assertDegraded, assertNoMetadata, degrade } from "@/server/carousel/services/degrade";
 
 const MAX_EDGE = 2400;
 export const IMAGE_MODEL = process.env.CAROUSEL_IMAGE_MODEL || "google/gemini-3.1-flash-image";
@@ -40,6 +43,7 @@ async function measure(img: sharp.Sharp): Promise<number | null> {
 async function land(input: { libraryId: string; setId: string | null; img: sharp.Sharp; keepAlpha: boolean; by: string; derivedFrom?: string | null; madeBy: string; prompt?: string | null }): Promise<ImageRow> {
   const sized = input.img.resize({ width: MAX_EDGE, height: MAX_EDGE, fit: "inside", withoutEnlargement: true });
   const out = input.keepAlpha ? await sized.png().toBuffer({ resolveWithObject: true }) : await sized.flatten({ background: "#ffffff" }).jpeg({ quality: 90 }).toBuffer({ resolveWithObject: true });
+  assertNoMetadata(out.data);
   const path = `${input.libraryId}/${randomUUID()}.${input.keepAlpha ? "png" : "jpg"}`;
   await writeObject(path, out.data, input.keepAlpha ? "image/png" : "image/jpeg");
   const luminance = await measure(sharp(out.data));
@@ -54,6 +58,9 @@ async function land(input: { libraryId: string; setId: string | null; img: sharp
 export async function takeUpload(input: { libraryId: string; setId: string | null; path: string; by: string; madeBy?: string; derivedFrom?: string | null; prompt?: string | null; keepAlpha?: boolean }): Promise<ImageRow> {
   const file = await readObject(input.path);
   if (!file) throw new Error("The upload did not arrive. Try again");
+  // A pending file is an AI edit's, already through the degrade pass.
+  if (/\/pending\//.test(input.path) !== (input.madeBy === "ai_edit")) throw new Error("Unknown upload");
+  if (input.madeBy === "ai_edit") return keepEdit({ ...input, bytes: file.bytes });
   try {
     const img = await open(file.bytes, isHeic(input.path, file.type));
     const meta = await img.metadata();
@@ -64,6 +71,30 @@ export async function takeUpload(input: { libraryId: string; setId: string | nul
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
     throw new Error(/too small/.test(message) ? message : "That file could not be read as a picture");
+  } finally {
+    await removeObject(input.path).catch(() => undefined);
+  }
+}
+
+/**
+ * Keep, for an AI edit: the degraded JPEG is stored as it is. Saving it
+ * again would put a second loss on top of the pass's. The pending file's
+ * id was the pass's seed, so it is recorded with the image.
+ */
+async function keepEdit(input: { libraryId: string; setId: string | null; path: string; by: string; derivedFrom?: string | null; prompt?: string | null; bytes: Buffer }): Promise<ImageRow> {
+  try {
+    const seed = /\/pending\/([0-9a-f-]{36})\.jpg$/i.exec(input.path)?.[1];
+    if (!seed) throw new Error("This edit was made before the phone-quality pass. Make it again");
+    let size: { width: number; height: number };
+    try {
+      size = assertDegraded(input.bytes);
+    } catch {
+      throw new Error("This edit was made before the phone-quality pass. Make it again");
+    }
+    const path = `${input.libraryId}/${randomUUID()}.jpg`;
+    await writeObject(path, input.bytes, "image/jpeg");
+    const luminance = await measure(sharp(input.bytes));
+    return await addImage({ libraryId: input.libraryId, setId: input.setId, path, luminance, ...size, derivedFrom: input.derivedFrom ?? null, madeBy: "ai_edit", prompt: input.prompt ?? null, by: input.by, degradeSeed: seed });
   } finally {
     await removeObject(input.path).catch(() => undefined);
   }
@@ -82,8 +113,10 @@ export async function blackAndWhite(row: ImageRow, by: string): Promise<ImageRow
 }
 
 /**
- * An AI edit. The result is stored as a pending file and shown to the
- * person; it joins the library only on Keep, and Discard removes the file.
+ * An AI edit. The model's picture goes through the degrade pass first, and
+ * only the degraded JPEG is stored, as a pending file shown to the person;
+ * the raw picture is never stored. It joins the library only on Keep, and
+ * Discard removes the file.
  */
 export async function aiEdit(row: ImageRow, prompt: string): Promise<{ path: string }> {
   const key = process.env.OPENROUTER_API_KEY;
@@ -117,7 +150,9 @@ export async function aiEdit(row: ImageRow, prompt: string): Promise<{ path: str
   const bytes = Buffer.from(m[2], "base64");
   const checked = await sharp(bytes).metadata();
   if (!checked.width || !checked.height) throw new Error("The image model returned something that is not a picture");
-  const path = `${row.library_id}/pending/${randomUUID()}.${EXT[m[1].toLowerCase()] ?? "png"}`;
-  await writeObject(path, bytes, m[1]);
+  const id = randomUUID();
+  const degraded = await degrade(bytes, id);
+  const path = `${row.library_id}/pending/${id}.jpg`;
+  await writeObject(path, degraded.bytes, "image/jpeg");
   return { path };
 }

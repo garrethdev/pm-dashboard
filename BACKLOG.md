@@ -123,7 +123,31 @@ screenshots ("Issues with Carousel App"). Garreth answered the questions on
   takes effect on the next deployment. The key was pasted into a chat on the
   way, so it should be rotated on OpenRouter afterwards.
 - **Generate with AI** in the Studio's library pane and on a library's page
-  is still a disabled button (Higgsfield is not connected).
+  is still a disabled button (Higgsfield is not connected). When DEV-30
+  builds it, every downloaded render goes through `degrade()` before it is
+  stored or shown, as the AI edit's does (`docs/DEGRADE-PASS.md`).
+- **The degrade pass on uploads to AI libraries.** Agreed with Garreth
+  2026-10-12: a per-library switch, on for AI character libraries, so a
+  picture made outside the app (Higgsfield by hand, the Mac scripts) is
+  degraded when it is uploaded. Not built: on 2026-10-12 he narrowed the
+  work to the app's own AI image step first.
+- **Backfilling the images already stored.** A scan on 2026-10-12 of all
+  498 stored images (`carousel_images`, the Glow Up and Covered Eye banks)
+  found no C2PA manifest anywhere, but only 36 degraded files. Ten
+  `character_2_*.png` files (rows 104–115) carry an AI-content label in a
+  text tag, and about 50 more carry ordinary EXIF, XMP or IPTC. The four
+  shipped files that were never degraded (rows 425, 428, 430, 431) were
+  fixed that day; a trial on five more looked right, and the remaining 458
+  were paused by Garreth. Before a full run, decide where the degraded
+  copies go: the Character 6 library lists its folder live, and decks
+  already drawn point at the original files.
+- **A copy made from a degraded image does not say so.** A black and white
+  copy or cut-out of an AI edit is saved with `degraded = false`, though its
+  pixels went through the pass. It only matters once uploads can be
+  degraded, where it is what stops a picture being degraded twice.
+- **The PNG painter's upload, when it is ported**, should run
+  `assertNoMetadata` on each slide before it is stored. Not the degrade
+  itself: that would grain the text and degrade the photo a second time.
 - **Rendered PNGs.** The Studio's preview is SVG drawn in the browser. The
   painter that writes JPEGs for a lane table is still Codex's unported
   branch (see the PR #31 section). The free anchor, per-box fonts, stroke and

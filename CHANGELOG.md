@@ -20,6 +20,60 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-12 — AI edits come out as phone-camera JPEGs, with no AI metadata
+
+**Where it came from:** Garreth's *Degrade Pass Wiring Handover*
+(2026-10-12). Every generated picture has to go through the degrade script
+before it is stored or shown, and until now that was a manual step run per
+batch on his Mac. He asked for it to be automatic in the carousel app, and
+on 2026-10-12 narrowed the work to the app's own AI image step first.
+
+**What changed:**
+
+- **An AI edit's picture is degraded before anything sees it.** The picture
+  Gemini sends back is softened, given grain and phone-style sharpening, and
+  saved as a fresh JPEG. Saving it fresh drops everything the model wrote
+  into the file, including any C2PA content credentials. The preview, the
+  pending file and the kept image are all that JPEG. Before, the model's raw
+  file was stored and shown as it came, metadata and all.
+- **Keep stores that JPEG as it is**, instead of saving it a second time,
+  and the image records that it was degraded and with which seed.
+- **The steps are the handover's script, in the app's own language**, with
+  the same numbers in the same order. The result is not byte-identical to
+  the Mac script's, because the random grain and the JPEG saving are done by
+  different code. On five stored images it came out within 1% on file size
+  and grain, and the two differ about as much as the script differs from
+  itself with another seed.
+- **The checks stop the step, they do not just log it.** Every result must
+  be a quality-68 JPEG of the same width and height, with no metadata of any
+  kind and a believable size, or nothing is saved and the person sees why.
+  Every other library save (uploads, black and white, cut-outs) is now also
+  checked for metadata before it is stored.
+- **DEV-30 (Generate images with Higgsfield) now says** its downloads go
+  through the same step. `docs/DEGRADE-PASS.md` describes the pass.
+- **Outside the repo, the same day:** four of the 40 shipped Character 6
+  pictures (rows 425, 428, 430, 431) had never been through the degrade
+  script. They were plain quality-90 copies from `finalize-batch.py`. They
+  were degraded from their PNG masters with the script, re-uploaded to the
+  same storage paths, and checked by downloading them back.
+
+**What it does not do:** it does not prove SynthID, Google's invisible
+watermark, is removed. Pictures made outside the app and uploaded, and the
+458 images already in storage that were never degraded, are not touched yet.
+Both are in `BACKLOG.md`.
+
+**Verified:** 11 new tests: no metadata survives from a PNG or JPEG
+carrying planted C2PA, EXIF, ICC and AI-label blocks; the same seed gives
+the same file; a plain re-save is refused. The full suite passes. The pass
+was also run on five real stored images and compared with the Mac script.
+**Not yet run against the real image model:** the OpenRouter key is only on
+Vercel, so the first real AI edit after deployment is the first true test.
+The two new columns (`degraded`, `degrade_seed`) were **added to the live
+database on 2026-10-12**, before deployment (migration
+`20261012100055_library_images_degraded.sql`; the database's copy matches
+the file). Read back: `degraded` is required and defaults to false,
+`degrade_seed` is optional, and the table still has 0 rows.
+
 ## 2026-10-10 — The warmup robot reports every warmup, with its diary, on the account page
 
 **Where it came from:** Garreth, in chat on 2026-10-09. The first live
