@@ -20,6 +20,29 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-15 — The ⋯ on the last account row can be pressed again
+
+**Where it came from:** a bug Garreth reported on the Physical Accounts page:
+the ⋯ menu on the very last account in the table did nothing when pressed,
+whichever account happened to be last.
+
+**What was wrong:** the floating Issues button in the bottom-right corner
+(added 2026-10-09) sits in an invisible box big enough to hold its two hidden
+actions, *Report an issue* and *See issues*. While those were hidden, the empty
+box still caught every press in that corner. With the page scrolled to the
+bottom, the last row's ⋯ sat underneath it. The page's extra bottom space
+cleared the round button, but not that taller invisible box.
+
+**What changed:** presses now pass straight through the empty box. Only the
+round button, and the two actions once they are open, take a press. This
+applied to every page, not only Accounts: anything in that corner was
+affected the same way.
+
+**Verified:** in the running app (headless Chrome, not Safari), scrolled to
+the bottom of Physical Accounts. Before the fix, a press on the last row's ⋯
+(Profile 9) landed on the Issues button's box. After it, the press reaches the
+⋯. The Issues button and both its actions still open and take presses.
+
 ## 2026-10-12 — AI edits come out as phone-camera JPEGs, with no AI metadata
 
 **Where it came from:** Garreth's *Degrade Pass Wiring Handover*
