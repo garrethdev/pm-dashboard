@@ -20,6 +20,38 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-15 — The nightly safety check now runs for every lane, and Week 2 content is in the pool
+
+**Where it came from:** checking whether the Week 2 handover content (70 pieces
+across Miss Cleora, Cleora ASMR, Viral Theories and 3 Slide Journey) was ready
+to post, at Garreth's request.
+
+**What was wrong:** the nightly safety check (the n8n "[Content Audit] Daily
+Scheduler", 10 pm ET) goes through the content types one at a time. When a type
+had nothing new to check, the loop got nothing back and quietly stopped there.
+Every night since at least 2026-10-06 it checked only `filler` and quit after
+three seconds, while n8n still reported success. New content in every other
+lane sat unchecked, so it never entered the pool. Separately, the 21 ASMR
+pieces were marked "pending", a value the nightly check never looks at.
+
+**What changed:**
+- The loop now carries on when a type has nothing to check, or when one type
+  fails. Published in n8n and confirmed live (the published version matches
+  the saved one).
+- The 70 Week 2 pieces were sent to the same safety check by hand, with the
+  same approve/reject rule: 68 approved, 2 rejected. J3-072 and J3-073 name a
+  pound number in the hook, which is printed on slide 1, so they need a new
+  hook and a re-render.
+- Confirmed live: the pool went from 27 to 48 (Cleora), 37 to 58 (ASMR), 29 to
+  43 (Viral Theories) and 29 to 41 (Journey). The Inventory page and the
+  digest email's figures both show it: Character 5 has 106 ready and
+  Character 6 has 84.
+
+**Still to see:** tonight's run is the first one with the fix. It will check
+about 380 rows in 11 lanes that were never checked, including Journey hooks
+that have no caption yet. Their caption will not be checked again once it is
+written.
+
 ## 2026-10-15 — The ⋯ on the last account row can be pressed again
 
 **Where it came from:** a bug Garreth reported on the Physical Accounts page:
