@@ -20,6 +20,49 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-16 — Six days a week: a day off with nothing scheduled (Sunday)
+
+**Where it came from:** Garreth's decision in chat, 2026-10-16: warmups and
+posting six days a week, nothing on Sundays, the day off easy to change, and
+work left over on Saturday done on Monday.
+
+**What changed:**
+- **A "Days off" setting on the Settings page**, Sunday to start with. Press a
+  day to make it a day off (or a working day again), then Save. At least one
+  working day has to be left. It is one setting, kept in the database, that the
+  dashboard, the Smart Scheduler and the warmup robot all read.
+- **The To-do list asks for nothing on a day off**: no warmups and no open
+  posts. It says "Sunday is a day off" instead of "Nothing due", on the To-do
+  page, the home page card, each phone's page and an Automated account's page.
+  A ban's clean-up still shows: it cannot wait a day.
+- **Saturday's leftovers come back on Monday.** The day off does not count
+  towards a post's three days of carry-over, nor towards "overdue": a post
+  handed out Saturday at 10:00 goes overdue on Monday at 10:00, not on Sunday.
+  The bell says nothing about overdue posts on the day off itself.
+- **The red "No warmup in 3 days" warning skips days off**, so an account last
+  warmed on Friday is not flagged on Monday.
+- **The warmup robot is told there is nothing to warm on a day off**, so it
+  plans an empty day. No change was needed on the robot.
+- **Posting limits count working days:** at 1 post a day an account can post
+  at most 6 times a week, not 7. The account Posting and Edit windows, Adjust
+  cadence, and setting up or editing a character all check against 6, and say
+  "in a 6-day week". So GLP 6 a week at 1 a day is accepted with no "idle
+  slot" warning, and if a weekly number is raised later it is spread over the
+  six days.
+- **Database** (`20261016074025_work_week_days_off.sql`, then `20261016074038_work_week_service_role_only.sql` locking it to the service key): the `work_week`
+  setting (Sunday), and the "set up a character" check now counts working days
+  too.
+- **The Smart Scheduler (n8n)** plans nothing on a day off and spreads each
+  week's posts over the working days left. That change is made in n8n, not in
+  this repository.
+
+**Checked:** 535 tests pass, with new ones for the day-off arithmetic
+(including the 25-hour Sunday when the clocks go back on 1 November), overdue
+posts across a Sunday, the 3-day warning, and the 6-day posting limits; the
+type check and lint are clean. **Not yet checked live**: the database change,
+this deploy and the n8n change still have to go out, and the first day off is
+Sunday 18 October.
+
 ## 2026-10-15 — The nightly safety check now runs for every lane, and Week 2 content is in the pool
 
 **Where it came from:** checking whether the Week 2 handover content (70 pieces

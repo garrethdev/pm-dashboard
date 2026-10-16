@@ -143,17 +143,23 @@ describe("the two together", () => {
 describe("weeklyBudgetError", () => {
   it("passes a split that fits the week", () => {
     // 3 a day is 21 a week; 11 + 3 = 14.
-    expect(weeklyBudgetError(3, 11, 3)).toBeNull();
+    expect(weeklyBudgetError(3, 11, 3, 7)).toBeNull();
   });
 
   it("passes a split that exactly fills the week", () => {
-    expect(weeklyBudgetError(2, 10, 4)).toBeNull();
+    expect(weeklyBudgetError(2, 10, 4, 7)).toBeNull();
   });
 
   it("refuses more posts than there are slots", () => {
-    const message = weeklyBudgetError(1, 11, 3);
-    expect(message).toContain("can post 7 times a week");
+    const message = weeklyBudgetError(1, 11, 3, 7);
+    expect(message).toContain("can post 7 times in a 7-day week");
     expect(message).toContain("comes to 14");
+  });
+
+  // The six-day week (Garreth, 2026-10-16): 1 a day is 6 a week, not 7.
+  it("counts only the working days", () => {
+    expect(weeklyBudgetError(1, 6, 0, 6)).toBeNull();
+    expect(weeklyBudgetError(1, 7, 0, 6)).toContain("can post 6 times in a 6-day week");
   });
 });
 

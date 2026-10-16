@@ -14,6 +14,10 @@
  * starts with none and is given its own when they are built.
  */
 
+/** Days a week an account posts on when nothing else is said: 6, with Sunday
+ *  off (Garreth, 2026-10-16). The route passes the real setting. */
+const DEFAULT_WORKING_DAYS = 6;
+
 /** Highest the form allows. A day of 10 is the planner's own ceiling. */
 export const MAX_POSTS_PER_DAY = 10;
 export const MAX_POSTS_PER_WEEK = 70;
@@ -49,6 +53,7 @@ function amount(raw: unknown): number | null | "bad" {
 /** The two posting amounts: both given, or both left empty (none). */
 function parseAmounts(
   body: Record<string, unknown>,
+  workingDays: number,
 ): { ok: true; maxPerDay: number | null; perWeek: number | null } | { ok: false; error: string } {
   const maxPerDay = amount(body.maxPerDay);
   const perWeek = amount(body.perWeek);
@@ -64,10 +69,13 @@ function parseAmounts(
   if (perWeek !== null && (perWeek < 1 || perWeek > MAX_POSTS_PER_WEEK)) {
     return { ok: false, error: `Posts a week is between 1 and ${MAX_POSTS_PER_WEEK}.` };
   }
-  if (maxPerDay !== null && perWeek !== null && perWeek > maxPerDay * 7) {
+  // A week holds posts a day times the working days, not seven (2026-10-16).
+  if (maxPerDay !== null && perWeek !== null && perWeek > maxPerDay * workingDays) {
     return {
       ok: false,
-      error: `${perWeek} a week will not fit into ${maxPerDay} a day. The most is ${maxPerDay * 7}.`,
+      error:
+        `${perWeek} a week will not fit into ${maxPerDay} a day over ${workingDays} working days. ` +
+        `The most is ${maxPerDay * workingDays}.`,
     };
   }
   return { ok: true, maxPerDay, perWeek };
@@ -81,6 +89,7 @@ function parseNotes(raw: unknown): { ok: true; notes: string | null } | { ok: fa
 
 export function parseNewCharacter(
   body: Record<string, unknown>,
+  workingDays: number = DEFAULT_WORKING_DAYS,
 ): { ok: true; fields: NewCharacterFields } | { ok: false; error: string } {
   const character = typeof body.character === "string" ? body.character.trim() : "";
   if (!NAME.test(character)) {
@@ -88,7 +97,7 @@ export function parseNewCharacter(
   }
   const notes = parseNotes(body.notes);
   if (!notes.ok) return notes;
-  const amounts = parseAmounts(body);
+  const amounts = parseAmounts(body, workingDays);
   if (!amounts.ok) return amounts;
   return {
     ok: true,
@@ -114,6 +123,7 @@ export interface CharacterEditFields {
 
 export function parseCharacterEdit(
   body: Record<string, unknown>,
+  workingDays: number = DEFAULT_WORKING_DAYS,
 ): { ok: true; fields: CharacterEditFields } | { ok: false; error: string } {
   const character = typeof body.character === "string" ? body.character.trim() : "";
   if (character === "") return { ok: false, error: "Which character?" };
@@ -124,7 +134,7 @@ export function parseCharacterEdit(
     fields.notes = notes.notes;
   }
   if (body.maxPerDay !== undefined) {
-    const amounts = parseAmounts(body);
+    const amounts = parseAmounts(body, workingDays);
     if (!amounts.ok) return amounts;
     fields.amounts = { maxPerDay: amounts.maxPerDay, perWeek: amounts.perWeek };
   }

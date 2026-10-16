@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { ACCOUNTS_TAG, CADENCE_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { parseCharacterEdit, parseNewCharacter } from "@/lib/data/character-rules";
+import { getDaysOff, workingDaysPerWeek } from "@/lib/data/work-week";
 import { getCharacterSummaries } from "@/lib/data/characters";
 import { upstreamMessage } from "@/lib/data/upstream-error";
 import {
@@ -63,7 +64,7 @@ export async function PATCH(request: Request) {
   } catch {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
-  const parsed = parseCharacterEdit(body);
+  const parsed = parseCharacterEdit(body, workingDaysPerWeek(await getDaysOff()));
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   const { character, notes, amounts } = parsed.fields;
 
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
 
-  const parsed = parseNewCharacter(body);
+  const parsed = parseNewCharacter(body, workingDaysPerWeek(await getDaysOff()));
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {
