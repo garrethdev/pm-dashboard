@@ -3,10 +3,14 @@ import { sbRest, sbRpc } from "@/lib/data/supabase";
 import { deliveryModeOfFleet, type Fleet } from "@/lib/fleet";
 
 /**
- * Inventory (plan §5) — rendered from the same views the Mon/Fri digest reads,
- * so the dashboard can never disagree with the email. Verified 2026-08-31:
- * inventory_check is one row per character × bucket over the 14-day window
- * (geelark_profile holds the character rollup label).
+ * Inventory (plan §5) — one row per character × bucket over a window.
+ *
+ * Since 2026-10-16 demand is each account's own cadence (posts a week and a
+ * day, from v_scheduler_account_config, the view the Smart Scheduler plans
+ * from) over the working days only, via inventory_lane_demand_fleet. The
+ * Mon/Fri digest still reads inventory_check, which counts the content types'
+ * listed weekly amounts, so the two now disagree on purpose (Garreth,
+ * 2026-09-04: the dashboard replaces the emails).
  */
 export interface InventoryBucket {
   character: string;
@@ -21,12 +25,12 @@ export interface InventoryBucket {
 }
 
 /**
- * v_scheduler_production_order — the Smart Scheduler 1.0.1 view that tells
- * production *what to make next*, per character x content type. It is the
- * scheduler's own arithmetic (usable pool after quarantine, weekly demand from
- * the registry cadence, days of cover, and the make-up quantity to reach a
- * 21-day buffer), so the Inventory page cannot disagree with what the
- * scheduler will actually be able to place.
+ * scheduler_production_order_fleet — what to make next, per character x
+ * content type: usable pool after quarantine, weekly demand, days of cover,
+ * and the make-up quantity to reach a 21-day buffer. Weekly demand is each
+ * account's own cadence shared between its content types (2026-10-16), not
+ * the registry cadence times the number of accounts that
+ * v_scheduler_production_order (the Monday email's view) still uses.
  *
  * Full Inventory page only — deliberately not on the homepage card, which
  * stays at the character x bucket rollup.
@@ -72,9 +76,9 @@ export interface InventoryData {
 async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
   const mode = deliveryModeOfFleet(fleet);
   const [rollup, orderRaw, accounts, poolsRaw, newAcct] = await Promise.all([
-    // PF-18: inventory_rollup_fleet(14) is inventory_check for one fleet. The
-    // view itself is still what the digest email reads, and it stays
-    // fleet-wide; the dashboard no longer reads it.
+    // PF-18: inventory_rollup_fleet(14) is the 14-day demand for one fleet,
+    // from each account's own cadence since 2026-10-16. inventory_check is
+    // still what the digest email reads; the dashboard no longer reads it.
     sbRpc<RawRollupRow[]>("inventory_rollup_fleet", {
       p_days: 14,
       p_new_accounts: 0,
@@ -221,9 +225,9 @@ export function getInventory(fleet: Fleet = "cloud") {
  * function added 2026-09-04 alongside the view rather than replacing it, because
  * the Mon/Fri digest email reads `inventory_check` directly.
  *
- * Verified at migration time: inventory_rollup(14) reproduces inventory_check
- * row-for-row (target, scheduled, pool, shortfall — 0 mismatches over 6 rows),
- * so the dashboard still cannot disagree with the email.
+ * Until 2026-10-16 inventory_rollup(14) reproduced inventory_check row for
+ * row. inventory_rollup_fleet, which this reads, now counts each account's own
+ * cadence and only the working days in the window, so it no longer does.
  */
 export type InventoryRangeKey = "7d" | "14d" | "30d";
 

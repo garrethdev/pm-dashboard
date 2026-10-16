@@ -20,6 +20,56 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-16 — Inventory follows each account's own posts a week
+
+**Where it came from:** Garreth asked for a check of the Inventory page
+against the Physical accounts that are posting, then asked: "shouldn't the
+inventory page compute based on the number of posts per week I set on each
+account if I am using the custom cadence?" It should have, and it did not.
+
+**What was wrong:** Inventory worked out demand from each content type's
+listed weekly amount (7 cleora + 7 cleora_asmr a week) times the number of
+accounts. That ignored three things:
+- **The posts a week set on each account.** Every Physical account is set to
+  1 a day, 6 a week, but each was counted as 14 a week.
+- **Facebook accounts only copy their Instagram twin's posts.** The "Demand
+  vs supply" card counted them as needing content of their own.
+- **The day off.** It counted 7 working days a week, not 6.
+
+So on the morning of the 16th the page said Character 5 needed **168 posts in
+two weeks and to make 62**, and "What to make next" said make 36 cleora and 26
+cleora_asmr. The real need is **48 (make nothing)**: four accounts take
+content (two TikTok, two Instagram) and each can post 12 in two weeks.
+Character 6 read 56 when it is 12.
+
+**What changed:**
+- **Both Inventory cards now read each account's own limits**, the same
+  numbers the Smart Scheduler plans from: posts a week, posts a day, paused
+  accounts, Facebook copies, new accounts still ramping up, and health
+  throttles. An account's posts are shared between its content types (half
+  each when they are 7 and 7).
+- **Windows count working days only.** Two weeks is 12 posting days with Sunday
+  off, 30 days is 26.
+- **The "what if we add accounts" option** now gives a new account its
+  character's limits over working days, growing into them as before.
+- **Database** (`20261016085759_inventory_reads_account_cadence.sql`): one new
+  calculation both cards share, and the two Inventory calculations changed to
+  use it.
+
+**Not changed:** the Mon/Fri digest email and the Monday production-order
+email still use the old arithmetic (they read different database views), so
+they will now show higher numbers than the dashboard. That is on purpose:
+Garreth decided on 2026-09-04 that the dashboard would follow each account's
+own limits once they existed and the emails would be allowed to disagree,
+because the dashboard is replacing them. Milan also gets the digest.
+
+**Checked:** confirmed live by query after applying: Physical, two weeks,
+Character 5 needs 48 with 106 ready, Character 6 needs 12 with 84 ready, make 0;
+a week of cleora or cleora_asmr is 12, of viral_theories or journey_3slide is 3.
+Matches a count by hand. Cloud shows nothing, as before. The split between a
+character's two content types is an assumption (half each), borne out by
+Profile 8's last two weeks (5 and 5), not something the scheduler promises.
+
 ## 2026-10-16 — Six days a week: a day off with nothing scheduled (Sunday)
 
 **Where it came from:** Garreth's decision in chat, 2026-10-16: warmups and
