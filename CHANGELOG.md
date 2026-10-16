@@ -27,10 +27,11 @@ posting six days a week, nothing on Sundays, the day off easy to change, and
 work left over on Saturday done on Monday.
 
 **What changed:**
-- **A "Days off" setting on the Settings page**, Sunday to start with. Press a
-  day to make it a day off (or a working day again), then Save. At least one
-  working day has to be left. It is one setting, kept in the database, that the
-  dashboard, the Smart Scheduler and the warmup robot all read.
+- **A "Day off" setting on the Settings page**, Sunday to start with: one line
+  and a dropdown of the seven days, saved as soon as a day is picked
+  (simplified the same day at Garreth's request, from seven day buttons, a
+  paragraph and a Save button). It is one setting, kept in the database, that
+  the dashboard, the Smart Scheduler and the warmup robot all read.
 - **The To-do list asks for nothing on a day off**: no warmups and no open
   posts. It says "Sunday is a day off" instead of "Nothing due", on the To-do
   page, the home page card, each phone's page and an Automated account's page.
