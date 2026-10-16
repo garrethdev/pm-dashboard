@@ -226,6 +226,7 @@ export function DeviceDetail({
   warmups: realWarmups = [],
   warmupProgress = {},
   today: liveToday,
+  todayOff = null,
   warmupOverdue = {},
   liveView = null,
   demo = null,
@@ -243,6 +244,8 @@ export function DeviceDetail({
   /** This phone's day from the To-do page's reader (PF-07); null when it could
    *  not be read. Absent on the invented phone, which brings its own. */
   today?: TodoDevice | null;
+  /** "Sunday" when today is a day off (2026-10-16): nothing is owed. */
+  todayOff?: string | null;
   /** Automated accounts past three days with no finished warmup, and by how
    *  many days (PF-13, Garreth 2026-09-28). */
   warmupOverdue?: Record<string, number>;
@@ -395,7 +398,11 @@ export function DeviceDetail({
             </div>
           ) : (
             <EmptyState icon={ListChecks}>
-              {todayUnread ? "Couldn't read today's list" : "Nothing due"}
+              {todayUnread
+                ? "Couldn't read today's list"
+                : todayOff
+                  ? `${todayOff} is a day off`
+                  : "Nothing due"}
             </EmptyState>
           )}
         </DashCard>

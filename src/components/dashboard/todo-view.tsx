@@ -6,6 +6,7 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterPills } from "@/components/ui/filter-pills";
 import {
+  CalendarRange,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -109,7 +110,7 @@ export function TodoView({
   initialDay: TodoDay;
   /** The server's answer for `initialDay`. Absent on a `?todo=` design state,
    *  where the page draws `todo-placeholder.ts` and saves nothing. */
-  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: TodoDay };
+  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: TodoDay; dayOff?: string };
 }) {
   const [day, setDay] = useState<TodoDay>(initialDay);
   /** Empty means every phone. */
@@ -127,7 +128,9 @@ export function TodoView({
       : board.devices.every(
             (d) => d.accounts.every((a) => a.items.length === 0) && !(d.cleanups?.length),
           )
-        ? "nothingDue"
+        ? board.dayOff
+          ? "dayOff"
+          : "nothingDue"
         : null
     : todoEmptyReason(state);
 
@@ -156,8 +159,16 @@ export function TodoView({
 
         {emptyReason ? (
           <Card className="flex flex-col">
-            <EmptyState icon={emptyReason === "noPhones" ? Smartphone : ListChecks}>
-              {emptyReason === "noPhones" ? "No phones yet" : "Nothing due"}
+            <EmptyState
+              icon={emptyReason === "noPhones" ? Smartphone : emptyReason === "dayOff" ? CalendarRange : ListChecks}
+            >
+              {emptyReason === "noPhones"
+                ? "No phones yet"
+                : emptyReason === "dayOff"
+                  ? // Days off: nothing scheduled, and what was left over
+                    // comes back on the next working day (2026-10-16).
+                    `${board.dayOff} is a day off. Nothing is scheduled; anything left over comes back on the next working day.`
+                  : "Nothing due"}
             </EmptyState>
           </Card>
         ) : devices.length === 0 ? (

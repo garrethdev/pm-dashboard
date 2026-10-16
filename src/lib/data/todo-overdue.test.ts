@@ -21,3 +21,14 @@ describe("overdueFor", () => {
     expect(overdueFor(hoursAgo(80), now)).toBe("3 days");
   });
 });
+
+// The six-day week (Garreth, 2026-10-16): Sunday's hours do not count.
+describe("overdueFor with Sunday off", () => {
+  const saturday10am = "2026-10-17T14:00:00Z";
+
+  it("is not overdue on the Sunday, and is on Monday at the same hour", () => {
+    expect(overdueFor(saturday10am, new Date("2026-10-18T20:00:00Z"), [0])).toBeNull();
+    expect(overdueFor(saturday10am, new Date("2026-10-19T13:59:00Z"), [0])).toBeNull();
+    expect(overdueFor(saturday10am, new Date("2026-10-19T14:00:00Z"), [0])).toBe("24 h");
+  });
+});

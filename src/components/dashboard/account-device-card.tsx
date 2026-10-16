@@ -10,6 +10,7 @@ import { getDeviceForProfile } from "@/lib/data/devices";
 import { warmupItemsFor } from "@/lib/data/todo";
 import { getSessionsToday, progressToday } from "@/lib/data/warmup-sessions";
 import { getAutomatedOverdue, getRunsOnDay } from "@/lib/data/warmup-runs";
+import { DAY_NAMES, getDaysOff, isDayOff, weekdayOf } from "@/lib/data/work-week";
 
 /**
  * Which physical phone an account lives on, linking to that phone (PF-02), and
@@ -50,17 +51,22 @@ async function AccountDeviceLink({ profile }: { profile: string }) {
   const progress = accountId ? progressToday(sessions) : null;
 
   // An Automated account has nothing for a person to log (PF-13 part 3): its
-  // two warmups are shown to read, with the script's own state on each.
+  // two warmups are shown to read, with the script's own state on each. None
+  // on a day off (2026-10-16): the robot is given no accounts that day.
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(now);
+  const dayOff = isDayOff(day, await getDaysOff()) ? DAY_NAMES[weekdayOf(day)] : null;
   const scripted =
     accountId && automated
       ? {
-          items: warmupItemsFor(
-            { id: accountId, warmup_mode: "script" },
-            sessions,
-            await getRunsOnDay(0, now, { accountId }).catch(() => []),
-            new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(now),
-            now,
-          ),
+          items: dayOff
+            ? []
+            : warmupItemsFor(
+                { id: accountId, warmup_mode: "script" },
+                sessions,
+                await getRunsOnDay(0, now, { accountId }).catch(() => []),
+                day,
+                now,
+              ),
           overdueDays:
             (await getAutomatedOverdue([accountId], now).catch(() => new Map<AccountId, number>())).get(
               accountId,
@@ -87,7 +93,9 @@ async function AccountDeviceLink({ profile }: { profile: string }) {
         <ChevronRight className="size-4 shrink-0 text-text-muted" />
       </Link>
 
-      {scripted && <AutomatedWarmupToday items={scripted.items} overdueDays={scripted.overdueDays} />}
+      {scripted && (
+        <AutomatedWarmupToday items={scripted.items} overdueDays={scripted.overdueDays} dayOff={dayOff} />
+      )}
 
       {!scripted && accountId !== null && progress && (
         <AccountWarmupToday

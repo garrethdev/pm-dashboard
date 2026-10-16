@@ -148,6 +148,10 @@ export const DEVICES_TAG = "devices";
 export const NOTIFICATIONS_TAG = "notifications-feed-v1";
 export const TODO_TAG = "todo-board-v1";
 
+/** The days off (Garreth, 2026-10-16), read by the To-do list, the bell, the
+ *  posting limits and the warmup robot's accounts. Saving them expires this. */
+export const WORK_WEEK_TAG = "work-week";
+
 
 /**
  * Shared tags for the caches whose keys carry a date or a range, so Refresh
@@ -202,6 +206,7 @@ export const DATA_TAGS = [
   "textverified-rentals",
   NOTIFICATIONS_TAG,
   TODO_TAG,
+  WORK_WEEK_TAG,
 ] as const;
 
 /** Per-profile detail cache, e.g. accountDetailTag("Profile 20"). */

@@ -20,6 +20,7 @@
 import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
 import { sbFetch, startOfDayET, dayRangeET } from "@/lib/data/warmup-sessions";
 import { warmupOverdueDays, type RunRow } from "@/lib/data/warmup-run-state";
+import { getDaysOff } from "@/lib/data/work-week";
 
 export class RunnerError extends Error {
   constructor(
@@ -450,13 +451,15 @@ interface RawOverdueAccount {
 }
 
 async function overdueOf(accounts: RawOverdueAccount[], now: Date): Promise<OverdueAccount[]> {
-  const last = await getLastFinishedWarmups(
-    accounts.map((a) => a.geelark_profile).filter((p): p is string => Boolean(p)),
-  );
+  const [last, daysOff] = await Promise.all([
+    getLastFinishedWarmups(accounts.map((a) => a.geelark_profile).filter((p): p is string => Boolean(p))),
+    getDaysOff(),
+  ]);
   const out: OverdueAccount[] = [];
   for (const a of accounts) {
     const finished = (a.geelark_profile ? last.get(a.geelark_profile) : null) ?? null;
-    const days = warmupOverdueDays(finished, a.moved_to_device_at, now);
+    // Days off do not count towards the three (2026-10-16).
+    const days = warmupOverdueDays(finished, a.moved_to_device_at, now, daysOff);
     const since = finished ?? a.moved_to_device_at;
     if (days !== null && since) {
       out.push({ id: a.id, username: a.username, profile: a.geelark_profile, days, since });

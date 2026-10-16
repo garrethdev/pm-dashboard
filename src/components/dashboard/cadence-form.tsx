@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Minus, Plus, ShieldAlert } from "@/components/ui/icons";
+import { useWorkingDays } from "@/components/dashboard/use-work-week";
 import type { AccountOverride, ContentTypeOption, EffectiveConfig } from "@/lib/data/scheduler-overrides";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,8 @@ export function useCadenceForm({ override, effective, options, paused }: Cadence
   );
 
   const allSelected = types.size === options.length;
+  // Days a week the account can post on: 6 with Sunday off (2026-10-16).
+  const workingDays = useWorkingDays();
 
   function toggleType(ct: string) {
     setTypes((prev) => {
@@ -48,9 +51,9 @@ export function useCadenceForm({ override, effective, options, paused }: Cadence
   // A guard caps how HIGH posts/day can go; it never stops you going lower.
   // So only the increase direction is blocked, and only while bypass is off.
   const dayCeiling = bypass ? null : (effective?.guardDayCap ?? null);
-  // A weekly cap above (posts/day x 7) is unreachable arithmetic, not a setting:
-  // at 1/day the account can post at most 7 times a week, so GLP + filler must
-  // fit inside that. The scheduler would silently plan the smaller number, so
+  // A weekly cap above (posts/day x working days) is unreachable arithmetic,
+  // not a setting: at 1/day with Sunday off the account can post at most 6
+  // times a week (2026-10-16; 7 before), so GLP + filler must fit inside that. The scheduler would silently plan the smaller number, so
   // the fields are bounded here instead of accepting a figure it will ignore.
   // What each field is SHOWING, which is not always what it is holding.
   //
@@ -69,7 +72,7 @@ export function useCadenceForm({ override, effective, options, paused }: Cadence
   const effDay = perDayField.trim() === ""
     ? (effective?.maxPostsPerDay ?? null)
     : Number(perDayField);
-  const weekCeiling = effDay === null || !Number.isFinite(effDay) ? null : effDay * 7;
+  const weekCeiling = effDay === null || !Number.isFinite(effDay) ? null : effDay * workingDays;
   const glpNow = glpField.trim() === "" ? (effective?.glpWeekCap ?? 0) : Number(glpField);
   const fillerNow = fillerField.trim() === "" ? (effective?.fillerWeekCap ?? 0) : Number(fillerField);
   // Each weekly field is bounded by the week's total minus what the other one
@@ -116,6 +119,7 @@ export function useCadenceForm({ override, effective, options, paused }: Cadence
     fillerField,
     effDay,
     weekCeiling,
+    workingDays,
     glpNow,
     fillerNow,
     glpMax,
@@ -175,6 +179,7 @@ export function CadenceFields({
     fillerField,
     effDay,
     weekCeiling,
+    workingDays,
     glpNow,
     fillerNow,
     glpMax,
@@ -245,7 +250,8 @@ export function CadenceFields({
           <p className="text-xs text-danger">
             GLP + filler come to <span className="tnum font-semibold">{glpNow + fillerNow}</span>{" "}
             a week, but at {effDay}/day this account can post at most{" "}
-            <span className="tnum font-semibold">{weekCeiling}</span> times. That is{" "}
+            <span className="tnum font-semibold">{weekCeiling}</span> times in a {workingDays}-day
+            week. That is{" "}
             <span className="tnum font-semibold">{weekOver}</span> too many, so the scheduler
             would quietly plan the smaller number. Raise posts/day, or lower GLP or filler.
           </p>

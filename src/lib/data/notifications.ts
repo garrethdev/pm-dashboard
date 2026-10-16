@@ -3,6 +3,7 @@ import { NOTIFICATIONS_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest } from "@/lib/data/supabase";
 import { getOpenDeliveries } from "@/lib/data/post-deliveries";
 import { OVERDUE_HOURS, getTodoBoard } from "@/lib/data/todo";
+import { getDaysOff, workingMsBetween } from "@/lib/data/work-week";
 import { dayRangeET } from "@/lib/data/warmup-sessions";
 import { getAllAutomatedOverdue, type OverdueAccount } from "@/lib/data/warmup-runs";
 import { AUTOMATED_WARMUP_OVERDUE_DAYS } from "@/lib/data/warmup-run-state";
@@ -289,14 +290,20 @@ async function todoNotifications(): Promise<NotificationItem[]> {
   }
 
   // --- Two: posts that have gone stale ------------------------------------
-  const cutoff = now.getTime() - OVERDUE_HOURS * 3_600_000;
-  const overdue = open
-    .filter((d) => Date.parse(d.createdAt) <= cutoff)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  // In working hours: the day off does not count (2026-10-16). And not on the
+  // day off itself, when the list shows no open posts on purpose and every
+  // one would wrongly read as dropped off it; they come back the next day.
+  const daysOff = await getDaysOff();
+  const waitedMs = (d: { createdAt: string }) => workingMsBetween(new Date(d.createdAt), now, daysOff);
+  const overdue = board.dayOff
+    ? []
+    : open
+        .filter((d) => waitedMs(d) >= OVERDUE_HOURS * 3_600_000)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   if (overdue.length > 0) {
     const oldest = overdue[0]!;
-    const hours = Math.floor((now.getTime() - Date.parse(oldest.createdAt)) / 3_600_000);
+    const hours = Math.floor(waitedMs(oldest) / 3_600_000);
     const waited = hours >= 48 ? plural(Math.floor(hours / 24), "day") : plural(hours, "hour");
     // A post stops carrying over after three days (todo.ts), so it can be
     // queued, overdue, and no longer on the list at all. That is the worst

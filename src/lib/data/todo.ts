@@ -6,6 +6,14 @@ import { runStateFor, type RunRow } from "@/lib/data/warmup-run-state";
 import { getRunsOnDay } from "@/lib/data/warmup-runs";
 import { handleLabel, toPlatform } from "@/lib/platform";
 import {
+  DAY_NAMES,
+  getDaysOff,
+  isDayOff,
+  weekdayOf,
+  workingDaysBetween,
+  workingMsBetween,
+} from "@/lib/data/work-week";
+import {
   SESSION_TARGET_MINUTES,
   dayRangeET,
   getSessionsOnDay,
@@ -49,13 +57,18 @@ import type {
  *  - An account set to Automated still puts its warmups on the list, as items
  *    nobody can tick, so a script that has stopped shows up as work that never
  *    completes rather than as silence (2026-09-22).
+ *  - Nothing is asked for on a day off (Sunday unless changed on Settings;
+ *    2026-10-16): no warmups, no open posts. A post left over from the day
+ *    before comes back on the next working day, and the day off counts
+ *    neither towards its three days of carry-over nor towards overdue.
  *
  * Not cached, the same rule `post-deliveries.ts` gives: this list is written
  * to while it is being looked at, and a cached copy would show an item
  * somebody has just ticked as still outstanding.
  */
 
-/** How many days an unfinished post keeps appearing (Garreth, 2026-09-19). */
+/** How many working days an unfinished post keeps appearing (Garreth,
+ *  2026-09-19). A day off does not count (2026-10-16). */
 export const CARRY_OVER_DAYS = 3;
 
 /**
@@ -68,16 +81,20 @@ export const CARRY_OVER_DAYS = 3;
  * One number for both places that say so — the bell's overdue item and the
  * red Overdue pill on the list (P12, Garreth 2026-09-23) — so the two can
  * never disagree about the same post.
+ *
+ * Hours on a day off are not counted (2026-10-16): a post handed out on
+ * Saturday at 10:00 goes overdue on Monday at 10:00, not on Sunday.
  */
 export const OVERDUE_HOURS = 24;
 
 /**
  * How long an open post has waited, once it is overdue: "26 h" under two
- * days, "3 days" after. Null while it is not overdue yet. The space is a
- * non-breaking one so a phone never splits the number from its unit.
+ * days, "3 days" after, in working hours. Null while it is not overdue yet.
+ * The space is a non-breaking one so a phone never splits the number from its
+ * unit.
  */
-export function overdueFor(createdAt: string, now: Date): string | null {
-  const hours = Math.floor((now.getTime() - Date.parse(createdAt)) / 3_600_000);
+export function overdueFor(createdAt: string, now: Date, daysOff: readonly number[] = []): string | null {
+  const hours = Math.floor(workingMsBetween(new Date(createdAt), now, daysOff) / 3_600_000);
   if (hours < OVERDUE_HOURS) return null;
   return hours >= 48 ? `${Math.floor(hours / 24)}\u00a0days` : `${hours}\u00a0h`;
 }
@@ -278,6 +295,9 @@ export interface TodoBoard {
   /** True when there are no phones at all, which the empty state words
    *  differently from a phone with nothing due. */
   noPhones: boolean;
+  /** Set when the day shown is a day off ("Sunday"): nothing is asked for,
+   *  and the empty state says why rather than "Nothing due". */
+  dayOff?: string;
 }
 
 /**
@@ -309,7 +329,7 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
   const day = etDay(from.toISOString());
 
   const onePhone = only.deviceId !== undefined;
-  const [devices, accounts] = await Promise.all([
+  const [devices, accounts, daysOff] = await Promise.all([
     sbRest<RawDevice[]>(
       "devices?select=id,name,model,is_active&order=name.asc" +
         (onePhone ? `&id=eq.${only.deviceId}` : ""),
@@ -319,7 +339,12 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
         "warmup_mode,posting_paused&is_active=eq.true&order=id.asc" +
         (onePhone ? `&device_id=eq.${only.deviceId}` : "&device_id=not.is.null"),
     ),
+    getDaysOff(),
   ]);
+  // Nothing is asked for on a day off (2026-10-16). Finished posts still show
+  // on the day they were finished, and a ban's clean-up still shows: it is not
+  // warmup or posting, and a banned account's sign-out cannot wait a day.
+  const off = isDayOff(day, daysOff);
   // So a post's row can be named rather than showing its content_type slug.
   // Loaded once per process, not once per read.
   await loadContentLabels();
@@ -385,15 +410,21 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
     if (finished) {
       if (!row.done_at || etDay(row.done_at) !== day) continue;
     } else {
+      // On a day off it waits for the next working day (2026-10-16).
+      if (off) continue;
       if (postDay > day) continue; // not yet its day
-      if (postDay !== day && daysBetween(postDay, day) > CARRY_OVER_DAYS) continue;
+      // Working days: Saturday's post on Monday has used one, not two.
+      if (postDay !== day && workingDaysBetween(postDay, day, daysOff) > CARRY_OVER_DAYS) continue;
     }
 
     // Overdue is about NOW, so only today's list says it (P12). A day stepped
     // back to is a record of that day, and a day ahead has nothing late yet.
-    const waited = !finished && dayOffset === 0 ? overdueFor(row.created_at, now) : null;
+    const waited = !finished && dayOffset === 0 ? overdueFor(row.created_at, now, daysOff) : null;
     const lastDay =
-      !finished && dayOffset === 0 && postDay !== day && daysBetween(postDay, day) === CARRY_OVER_DAYS;
+      !finished &&
+      dayOffset === 0 &&
+      postDay !== day &&
+      workingDaysBetween(postDay, day, daysOff) === CARRY_OVER_DAYS;
 
     const id = `d${row.id}`;
     const item: TodoItem = {
@@ -423,9 +454,9 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
   }
 
   // The two warmups every account owes that day, worked out from what was
-  // logged rather than stored as rows of their own.
+  // logged rather than stored as rows of their own. None on a day off.
   for (const account of working) {
-    if (!workFor(account).warmups) continue;
+    if (off || !workFor(account).warmups) continue;
     const mine = sessions.filter((s) => s.accountId === account.id);
     for (const item of warmupItemsFor(account, mine, runs, day, now)) {
       push(itemsByAccount, account.id, item);
@@ -451,7 +482,7 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
     ...(cleanups.has(d.id) ? { cleanups: cleanups.get(d.id) } : {}),
   }));
 
-  return { devices: board, extras, noPhones: false };
+  return { devices: board, extras, noPhones: false, ...(off ? { dayOff: DAY_NAMES[weekdayOf(day)] } : {}) };
 }
 
 function push<K, T>(map: Map<K, T[]>, key: K, value: T) {

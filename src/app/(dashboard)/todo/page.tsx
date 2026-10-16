@@ -28,7 +28,7 @@ export default async function TodoPage({
   const live = drawn
     ? undefined
     : await getTodoBoard(day)
-        .then((b) => ({ initial: b.devices, extras: b.extras, initialDay: day }))
+        .then((b) => ({ initial: b.devices, extras: b.extras, initialDay: day, dayOff: b.dayOff }))
         .catch(() => undefined);
 
   return <TodoView state={parseTodoState(params.todo)} initialDay={day} live={live} />;

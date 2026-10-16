@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { ACCOUNTS_TAG } from "@/lib/data/cache";
 import { requireSession } from "@/lib/api-auth";
 import { getContentTypeOptions, readEffectiveFor } from "@/lib/data/scheduler-overrides";
+import { getDaysOff, workingDaysPerWeek } from "@/lib/data/work-week";
 import {
   actingUserEmail,
   auditLog,
@@ -94,7 +95,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // A week cannot hold more posts than (posts/day x 7). The UI bounds the
+    // A week cannot hold more posts than (posts/day x working days: 6 with
+    // Sunday off, Garreth 2026-10-16). The UI bounds the
     // steppers, but the rule belongs here too - the endpoint is reachable
     // without it, and a weekly cap the scheduler can never reach is a number
     // that lies to whoever reads it back.
@@ -112,7 +114,8 @@ export async function POST(request: Request) {
     const fillerForWeek =
       (body.fillerWeekCap as number | null | undefined) ?? eff?.fillerWeekCap ?? null;
     if (dayForWeek !== null && (glpForWeek !== null || fillerForWeek !== null)) {
-      const weekCeiling = dayForWeek * 7;
+      const workingDays = workingDaysPerWeek(await getDaysOff());
+      const weekCeiling = dayForWeek * workingDays;
       const wk = (glpForWeek ?? 0) + (fillerForWeek ?? 0);
       if (wk > weekCeiling) {
         const inherited = [
@@ -124,7 +127,8 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error:
-              `At ${dayForWeek} posts/day this account can post at most ${weekCeiling} times a week. ` +
+              `At ${dayForWeek} posts/day this account can post at most ${weekCeiling} times ` +
+              `in a ${workingDays}-day week. ` +
               `GLP + filler come to ${wk}` +
               (inherited.length ? ` (${inherited.join(" and ")} inherited from the defaults)` : "") +
               `. Raise posts/day, or set GLP and filler explicitly.`,

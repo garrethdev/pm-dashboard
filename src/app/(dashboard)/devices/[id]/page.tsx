@@ -106,7 +106,9 @@ export default async function DevicePage({
         id: String(id),
         name: device.name,
         isActive: device.isActive,
-        accounts: onBoard?.accounts ?? [],
+        // Nothing is owed on a day off (2026-10-16), so the block says so
+        // rather than listing every account with nothing under it.
+        accounts: board.dayOff ? [] : (onBoard?.accounts ?? []),
       }
     : null;
   const handleOf = new Map(
@@ -141,6 +143,7 @@ export default async function DevicePage({
       warmups={warmups}
       warmupProgress={progress}
       today={today}
+      todayOff={board?.dayOff ?? null}
       warmupOverdue={Object.fromEntries(overdue)}
       liveView={liveViewUrl()}
       initialNotice={

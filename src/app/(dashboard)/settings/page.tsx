@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AccountManagement } from "@/components/dashboard/account-management";
+import { WorkWeekCard } from "@/components/dashboard/work-week-card";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { getAccounts } from "@/lib/data/accounts";
@@ -7,6 +8,7 @@ import { wantsDemo, PLACEHOLDER_PHONES } from "@/lib/data/accounts-phone-placeho
 import { getDevices } from "@/lib/data/devices";
 import type { MoveTarget } from "@/lib/data/move-rules";
 import { upstreamMessage } from "@/lib/data/upstream-error";
+import { getDaysOff } from "@/lib/data/work-week";
 
 /**
  * The phones the move screens offer (design ticket P10).
@@ -69,6 +71,9 @@ export default async function SettingsPage({
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Settings</h1>
+      {/* The days off (Garreth, 2026-10-16). Never fails: unreadable reads
+          as Sunday, which is what was decided. */}
+      <WorkWeekCard initial={await getDaysOff()} />
       <Suspense fallback={<CardSkeleton title="Account management" lines={10} />}>
         <AccountManagementLive demo={demo} />
       </Suspense>

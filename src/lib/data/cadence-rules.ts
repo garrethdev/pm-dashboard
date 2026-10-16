@@ -102,19 +102,21 @@ export function resolveLaneCharacters(
 }
 
 /**
- * An account cannot post more times in a week than it has days to post in.
+ * An account cannot post more times in a week than it has days to post in:
+ * the working days, 6 with Sunday off (Garreth, 2026-10-16; `work-week.ts`).
  * Returns a message when the split is impossible, or null when it is fine.
  */
 export function weeklyBudgetError(
   maxPostsPerDay: number,
   glpPerWeek: number,
   fillerPerWeek: number,
+  workingDays: number,
 ): string | null {
-  const weekBudget = maxPostsPerDay * 7;
+  const weekBudget = maxPostsPerDay * workingDays;
   if (fillerPerWeek + glpPerWeek <= weekBudget) return null;
   return (
-    `At ${maxPostsPerDay} posts a day an account can post ${weekBudget} times a week, ` +
-    `but filler + GLP comes to ${fillerPerWeek + glpPerWeek}`
+    `At ${maxPostsPerDay} posts a day an account can post ${weekBudget} times in a ` +
+    `${workingDays}-day week, but filler + GLP comes to ${fillerPerWeek + glpPerWeek}`
   );
 }
 

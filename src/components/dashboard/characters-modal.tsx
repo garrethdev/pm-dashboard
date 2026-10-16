@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useWorkingDays } from "@/components/dashboard/use-work-week";
 import Link from "next/link";
 import { ChevronLeft, Loader2, Plus, Users, X } from "@/components/ui/icons";
 import { CtaButton } from "@/components/ui/cta-button";
@@ -290,6 +291,8 @@ function CharacterForm({
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusyState] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Days a week an account posts on: 6 with Sunday off (2026-10-16).
+  const workingDays = useWorkingDays();
 
   const setBusy = (b: boolean) => {
     setBusyState(b);
@@ -305,7 +308,7 @@ function CharacterForm({
   // character that owns content types has no amounts here to check.
   const check = ownsTypes
     ? ({ ok: true } as const)
-    : parseNewCharacter({ character: name, notes, maxPerDay: perDay, perWeek });
+    : parseNewCharacter({ character: name, notes, maxPerDay: perDay, perWeek }, workingDays);
   const hint = !check.ok && perDay !== "" && perWeek !== "" ? check.error : null;
 
   const notesChanged = notes.trim() !== startNotes.trim();
