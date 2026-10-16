@@ -59,9 +59,12 @@ work left over on Saturday done on Monday.
 **Checked:** 535 tests pass, with new ones for the day-off arithmetic
 (including the 25-hour Sunday when the clocks go back on 1 November), overdue
 posts across a Sunday, the 3-day warning, and the 6-day posting limits; the
-type check and lint are clean. **Not yet checked live**: the database change,
-this deploy and the n8n change still have to go out, and the first day off is
-Sunday 18 October.
+type check and lint are clean. **Live, 2026-10-16:** both database changes
+applied (the setting reads Sunday); this deploy is on production; the Smart
+Scheduler 1.2.0 is published in n8n after a practice run on the Friday that
+read Sunday as the day off, counted 2 working days left and planned 5 posts
+without saving any (its practice record was then removed). **Not yet seen on
+a real day off**: the first is Sunday 18 October.
 
 ## 2026-10-15 — The nightly safety check now runs for every lane, and Week 2 content is in the pool
 
