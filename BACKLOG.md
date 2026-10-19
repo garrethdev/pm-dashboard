@@ -1549,6 +1549,23 @@ scope, the blockers and the done-whens. Plan of record:
 `docs/REAL-PHONE-MASTERPLAN.md`; tooling decisions: `docs/PHONE-FARM-TOOLING.md`;
 task sheet for Yurie and Czedrick: `~/Documents/Geelark Exit Plan.xlsx`.
 
+## Inventory does not count accounts that start posting soon (added 2026-10-19)
+
+Found while sizing Divorce Recovery's first two weeks. Inventory takes demand
+from the accounts that can post **today**. An account still in its first 8
+days counts as zero, even when it starts in two days, and an account at 1 a
+day stays at 1 though it will reach 2 at day 23. On 2026-10-19 that left out
+Profiles 84 and 86 (Character 6, both start Oct 23): the page reads 18
+Divorce Recovery for the week where the scheduler will need 24.
+
+The fix is to give each account its daily limit for each day of the window
+as it ages, the way the new-account what-if already does, instead of
+today's limit for the whole window. It touches every new account, not just
+new content types, so it was kept out of the 10-19 change. **Done when:** an
+account under 9 days old adds demand from its day 9 inside the window, and a
+14-day Character 6 reading on 2026-10-19 would have counted 84 and 86 from
+Oct 23.
+
 ## Try one-tap posting on a real iPhone (added 2026-10-01)
 
 Tapping a post's picture on the To-do list copies the caption and opens the

@@ -20,6 +20,101 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-19 — Inventory shows a new content type's priority week
+
+**Where it came from:** Garreth, right after the Smart Scheduler change below:
+the Inventory page still gave a new content type its normal share, so in its
+first week it asked for far less than the scheduler would take.
+
+**What changed** (on the "What to make next" list only):
+
+- A new content type's weekly demand is now what the scheduler gives it:
+  one per account each working day. Divorce Recovery went from about 7 a week
+  to 18 across Character 6's three live accounts. The other Character 6 types
+  go down by the same amount while it lasts.
+- "To produce" counts the priority week once and the normal share after it,
+  instead of three priority weeks. Divorce Recovery for 21 days: 32 (it was
+  21; three weeks at the priority rate would have been 54).
+- New types carry a tag: "New · until Oct 22", or "New · starts at first
+  piece" before their first piece is scheduled.
+- A type squeezed to nothing for a few days by a new one keeps its normal
+  status and days of cover, instead of reading "inactive".
+- The rule for "new" is now written once in the database as well, so the
+  page and the scheduler read the same thing. The scheduler still uses its own
+  copy for now.
+
+**Not changed:** the character totals (the posts a character needs in all)
+are the same, since the priority week only changes which type fills a post.
+The one visible difference: Character 6's 14-day total reads 48 where it read
+49, because the old calculation came to 48.000…05 and rounded up. The emails
+(Mon/Fri digest, Monday production order) are untouched.
+
+**Verification:** live in the database and read back. Divorce Recovery 18 a
+week, 32 for 21 days; Character 5 unchanged. The card was checked running
+locally (headless Chrome, dark and light), and the "to produce" sums have
+tests.
+
+**Still open:** the page only counts accounts that can post today. The two
+Kathy accounts (Profiles 84 and 86) start on Oct 23, so they add nothing yet,
+and this week reads 18 rather than the 24 the scheduler will need. Logged in
+`BACKLOG.md`.
+
+---
+
+## 2026-10-19 — New content types go first in the Smart Scheduler
+
+**Where it came from:** Garreth asked for a newly made content type, such as
+Character 6's Divorce Recovery, to be posted as soon as possible on its accounts
+in the week it arrives. He chose when that week starts (below).
+
+**What changed:** for its first 7 days, a new content type is every account's
+first pick each working day. Before, it only got its normal share (Divorce
+Recovery is 4 of Character 6's 14 a week), so about 1 or 2 posts a week per
+account. Still never twice in one day, and still at most 7 a week per account.
+After the 7 days it goes back to its normal share.
+
+- "New" means the content type was set up in the last 30 days. A newly
+  rendered piece of an old type does not count.
+- The 7 days start when the type's first piece is scheduled, not when the type
+  was set up, so a type with nothing made yet does not lose its week waiting.
+- If two types are new at once, the most recently set up goes first. 3-Slide
+  Journey counts as new until 2026-10-22 (its first piece went out 2026-10-16),
+  so Divorce Recovery is ahead of it.
+- Also fixed: the scheduler did not know which column holds Divorce Recovery's
+  image, so it would not have skipped a piece with no image.
+
+**Verification:** the change is in n8n and live (Smart Scheduler 1.3.0, checked
+by reading the workflow back). It ran read-only against live data for
+2026-10-20, with made-up Divorce Recovery pieces since the table is empty:
+Profiles 31, 65 and 9 each got Divorce Recovery first, Profile 9's second post
+was 3-Slide Journey, and every other character was planned exactly as before.
+It has not met a real Divorce Recovery piece yet. The scheduler lives in n8n,
+not in this repo, so there is no code file for it here.
+
+**Inventory:** at first the Inventory page still used the normal share. It
+was changed to match later the same day (the entry above).
+
+---
+
+## 2026-10-16 — Divorce Recovery capped at 7 a week per account
+
+**Where it came from:** Garreth asked for a check that Character 6's new
+Divorce Recovery content type was wired properly, then asked for this fix.
+
+**What changed:** the most Divorce Recovery posts one account can get in a
+week went from 14 to 7, the same as its two sister types (Viral Theories and
+3-Slide Journey). At 14, if the other two ran out, the scheduler could have
+filled an account's whole week with Divorce Recovery. Its normal amount (4 a
+week) is unchanged. This is a setting in the database, changed directly;
+confirmed live by reading it back.
+
+**Also found in the check, not changed:** the Divorce Recovery table can be
+read and written by anyone with the public key, unlike every other content
+table (left as is for now, Garreth). The wiring itself was done on 2026-10-16
+outside this repo, so there is no migration file for it here.
+
+---
+
 ## 2026-10-16 — Inventory follows each account's own posts a week
 
 **Where it came from:** Garreth asked for a check of the Inventory page

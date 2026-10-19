@@ -32,6 +32,10 @@ export interface InventoryBucket {
  * the registry cadence times the number of accounts that
  * v_scheduler_production_order (the Monday email's view) still uses.
  *
+ * Since 2026-10-19 it also follows a new content type's priority week (the
+ * Smart Scheduler gives it to every account first for 7 days): weeklyDemand
+ * is the rate now, normalWeeklyDemand the rate after currentRateDays.
+ *
  * Full Inventory page only — deliberately not on the homepage card, which
  * stays at the character x bucket rollup.
  */
@@ -49,6 +53,14 @@ export interface ProductionOrderRow {
   produceToReach21d: number;
   /** EMPTY | CRITICAL | low | ok — the view's own label, not ours. */
   status: string;
+  /** The usual share, which weeklyDemand returns to after currentRateDays. */
+  normalWeeklyDemand: number;
+  /** In its priority week (or waiting for its first piece to start it). */
+  isNew: boolean;
+  /** Last day of the priority week; null until the first piece is scheduled. */
+  priorityUntil: string | null;
+  /** Days weeklyDemand still holds; null when no priority week touches it. */
+  currentRateDays: number | null;
 }
 
 /**
@@ -99,6 +111,10 @@ async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
         last_missed: string | null;
         produce_to_reach_21d: string | number | null;
         status: string;
+        normal_weekly_demand: string | number | null;
+        is_new: boolean | null;
+        priority_until: string | null;
+        current_rate_days: number | null;
       }[]
     >("scheduler_production_order_fleet", { p_fleet: fleet }),
     sbRest<{ character: string | null; posting_paused: boolean | null }[]>(
@@ -200,6 +216,10 @@ async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
         lastMissed: o.last_missed,
         produceToReach21d: Number(o.produce_to_reach_21d ?? 0),
         status: o.status,
+        normalWeeklyDemand: Number(o.normal_weekly_demand ?? o.weekly_demand ?? 0),
+        isNew: o.is_new === true,
+        priorityUntil: o.priority_until,
+        currentRateDays: o.current_rate_days == null ? null : Number(o.current_rate_days),
       }),
     ),
     totalToProduce: checks.reduce((acc, c) => acc + (c.grand_total ?? 0), 0),
@@ -211,8 +231,9 @@ async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
 // changes shape — a cache entry written by the previous version has no such
 // field, and the page crashed on `characters.length` reading it back.
 // v5: one entry per fleet (Cloud / Physical).
+// v6: production order rows gained the priority-week fields.
 export function getInventory(fleet: Fleet = "cloud") {
-  return cachedFetcher(`inventory-data-v5:${fleet}`, TTL.supabase, () => fetchInventory(fleet), {
+  return cachedFetcher(`inventory-data-v6:${fleet}`, TTL.supabase, () => fetchInventory(fleet), {
     tags: [INVENTORY_TAG],
   })();
 }
