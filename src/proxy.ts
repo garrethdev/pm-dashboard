@@ -33,13 +33,19 @@ const SHEET_INVENTORY_PATH = "/api/sheet-inventory";
 const FACEBOOK_INGEST_PATH = "/api/facebook-analytics/ingest";
 
 /**
+ * Content tagging (DA-03). It demands CRON_SECRET, like the maintenance jobs
+ * (src/app/api/content-tags/run/route.ts).
+ */
+const CONTENT_TAGS_PATH = "/api/content-tags/run";
+
+/**
  * Auth gate (Next 16 "proxy", formerly middleware): refreshes the Supabase
  * session cookie and redirects unauthenticated / non-allowlisted visitors to
  * /login. API routes re-check the session themselves — this is the outer door.
  */
 export async function proxy(request: NextRequest) {
   const p = request.nextUrl.pathname;
-  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH) {
+  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH) {
     return NextResponse.next({ request });
   }
 

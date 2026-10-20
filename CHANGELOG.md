@@ -54,6 +54,12 @@ yet verified:** the AI's answers. The AI key exists only on the live site, so
 the first real run happens after merge. Check ten by eye before the catch-up
 of the back catalogue.
 
+**Fixed the same day:** once merged, the dashboard's login gate turned the
+tagging job away, sending it to the login page like a visitor. The local test
+missed this because login is switched off on the development machine. The job
+now passes the gate the same way the Facebook robot does, and it still has to
+show the schedule's secret.
+
 **Also:** the deep analytics tickets doc still said DA-02 was waiting for
 Czedrick's check. He checked it and it was merged with PR #53; the doc now
 says so.
