@@ -40,6 +40,7 @@ export const AI_HOOK_TYPES = {
   question: "asks the viewer something",
   surprising_fact: "a claim or fact meant to stop the scroll",
   personal_story: "a first-person moment or confession",
+  relatable: "a moment the viewer knows from their own life, often 'when you…'",
   progress: "a before and after, a day count, a change over time",
   talking_to: "speaks directly to someone or something",
   curiosity_gap: "holds back the answer so you keep watching",
@@ -138,12 +139,19 @@ export function readAiReply(reply: Record<string, unknown>): AiTags {
   };
 }
 
+/**
+ * The words on screen are asked for only when the lane stores none: long
+ * screens of text copied out in full made replies run long enough to be cut
+ * off (5 of the first 40 live, all Cleora screens, 2026-10-20).
+ */
 export function promptFor(knownHook: string | null, wantHookType: boolean): string {
   const lines = [
     "You label one picture from a social media post: the first slide of a carousel, or a frame from the start of a video.",
     'Answer with JSON: {"face": true or false, "words_on_screen": "...", "hook_type": "..."}.',
     "face: true when a person's or a character's face is clearly visible. Puppets, cartoons and illustrated characters count. A face hidden or turned fully away does not.",
-    "words_on_screen: the overlaid caption or text, word for word, as one line. Empty string if there is none.",
+    knownHook
+      ? 'words_on_screen: leave it as "".'
+      : "words_on_screen: the overlaid caption or text, word for word, as one line, at most 40 words. Empty string if there is none.",
   ];
   if (wantHookType) {
     const list = Object.entries(AI_HOOK_TYPES).map(([k, v]) => `  ${k}: ${v}`).join("\n");
@@ -280,7 +288,7 @@ async function askAboutPicture(picture: Buffer, prompt: string): Promise<Record<
     body: JSON.stringify({
       model: MODEL,
       temperature: 0,
-      max_tokens: 400,
+      max_tokens: 600,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -300,13 +308,15 @@ async function askAboutPicture(picture: Buffer, prompt: string): Promise<Record<
   if (!res.ok) throw new Error(`the AI refused this picture (HTTP ${res.status})`);
   const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const content = json.choices?.[0]?.message?.content ?? "";
+  // The start of an unreadable reply goes into `problem`, so the cause shows.
+  const unreadable = new Error(`the AI's reply could not be read: ${content.slice(0, 160) || "(empty)"}`);
   const start = content.indexOf("{");
   const end = content.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("the AI's reply could not be read");
+  if (start < 0 || end <= start) throw unreadable;
   try {
     return JSON.parse(content.slice(start, end + 1)) as Record<string, unknown>;
   } catch {
-    throw new Error("the AI's reply could not be read");
+    throw unreadable;
   }
 }
 

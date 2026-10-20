@@ -101,6 +101,13 @@ describe("promptFor", () => {
   it("asks for a hook type only when the writer recorded none", () => {
     expect(promptFor("He only remembers me for alimony", true)).toContain('The opening line is: "He only remembers me for alimony"');
     expect(promptFor(null, true)).toContain("Judge the words on screen.");
-    expect(promptFor("anything", false)).toContain('leave it as ""');
+    expect(promptFor("anything", false)).toContain('hook_type: leave it as ""');
+  });
+  it("asks for the words on screen only when the lane stores none", () => {
+    expect(promptFor("He only remembers me for alimony", true)).toContain('words_on_screen: leave it as ""');
+    expect(promptFor(null, true)).toContain("word for word");
+  });
+  it("offers 'relatable' for 'when you…' hooks", () => {
+    expect(promptFor("When you avoid every photo taken of you.", true)).toContain("relatable:");
   });
 });

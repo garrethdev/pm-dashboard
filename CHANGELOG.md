@@ -60,6 +60,18 @@ missed this because login is switched off on the development machine. The job
 now passes the gate the same way the Facebook robot does, and it still has to
 show the schedule's secret.
 
+**First live run, same day (40 pieces):** the copied writer tags were all
+right, and the face tags matched the pictures on the four checked by eye. Two
+fixes followed:
+- 5 of the 40 failed with an unreadable AI reply, all Cleora screens full of
+  text. The AI had been asked to copy out words we already hold, which made
+  its replies long enough to be cut off. It now copies words only for lanes
+  that keep none.
+- Before-and-after hooks such as "When you avoid every photo taken of you"
+  were labelled "talking to". A "relatable" type was added for them.
+
+The 40 were cleared and tagged again with the fixes.
+
 **Also:** the deep analytics tickets doc still said DA-02 was waiting for
 Czedrick's check. He checked it and it was merged with PR #53; the doc now
 says so.
