@@ -16,16 +16,20 @@
  * Never asked: why a post did well. On a single post the AI tells a confident
  * story about what was mostly luck (research, 2026-10-09).
  *
- * Runs once a day (vercel.json) on whatever has posted and has no tags yet,
- * newest first. A piece is tagged once; its row says which fields the AI filled.
+ * Runs on Fridays only (vercel.json; Garreth, 2026-10-20) on whatever has
+ * posted and has no tags yet, newest first. A piece is tagged once; its row
+ * says which fields the AI filled.
  */
 import { execFile } from "node:child_process";
 import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
 const MODEL = process.env.CONTENT_TAGS_MODEL || "anthropic/claude-haiku-5.5";
-/** Pieces tagged per run unless the request asks for another number. */
-export const DEFAULT_LIMIT = 40;
+/**
+ * Pieces tagged per run unless the request asks for another number. Enough
+ * for a week of posts, since it runs once a week; about 3 minutes at most.
+ */
+export const DEFAULT_LIMIT = 200;
 /** Pieces worked on at once. Small: each is a download and one AI call. */
 const AT_ONCE = 4;
 /** Stop starting new pieces after this long, inside the route's 300s. */

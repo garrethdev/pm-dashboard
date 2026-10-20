@@ -230,7 +230,8 @@ when the content was made, in each lane's own table:
   `carousel_id`.
 - Each field the AI filled says so (`*_source` = `ai`). A tag that could not be
   read stays empty and `problem` says why.
-- Runs every day at 10:30 am New York time (`/api/content-tags/run`) on
+- Runs every Friday at 10:30 am New York time (`/api/content-tags/run`,
+  up to 200 pieces; Fridays only from 2026-10-20, Garreth) on
   anything that has posted and has no tags yet.
 - Model: Claude Haiku 5.5 through OpenRouter, the key the Carousel Generator
   already uses. About $0.0002 a piece, so the whole back catalogue costs well
@@ -249,11 +250,14 @@ when the content was made, in each lane's own table:
 - Early before-and-after videos are Google Drive links; the tagger rewrites
   them to the file and they read.
 
-**Still to do:**
-1. **After merge, the first live run.** Run with `?limit=10` and compare the
-   face tags and AI hook types against the pictures by eye.
-2. **The catch-up.** The daily run takes 40 pieces. The 2,895 already posted
-   go through in about 20 calls of `?limit=200`.
+**Done 2026-10-20:**
+1. **The first live run** (40 pieces). Face tags were checked by eye on four
+   pictures. Two fixes followed: shorter AI replies, and a "relatable" hook type.
+2. **The catch-up.** All 2,895 posted pieces are tagged: 1,239 in full, and
+   173 with no stored pictures. 1,481 Filler pieces have hook words only,
+   because the `viral-filler` storage bucket no longer exists. That includes
+   59 Filler videos never posted, which would fail if Filler were switched
+   back on.
 
 **Not this:** asking the AI to explain why one post did well. On a single post
 it gives a confident story about what was mostly luck (research, 2026-10-09).
