@@ -71,10 +71,13 @@ subscriptions.
   rule.
 - Two runs wrote reach and skip rate on all 9 Reels of the 5 connected
   accounts.
-- **Still open:** the carousel half, which needs a carousel from a connected
-  account. The three-post "match the Instagram app" check below is still to
-  do; the per-post requests make a mismatch impossible by construction, but
-  nobody has compared by eye.
+- **Carousel half confirmed live 2026-10-20.** The four carousels posted on
+  16 and 18 Oct by trina_triumphs and charlotte459336 came back with reach,
+  follows and profile visits, and skip rate empty, as expected.
+- **Still open:** the three-post "match the Instagram app" check below. The
+  per-post requests make a mismatch impossible by construction, but nobody
+  has compared by eye. Yurie's screenshots for DA-05 cover it: one Reel and
+  two of those carousels.
 
 
 **What we get, per post:**
