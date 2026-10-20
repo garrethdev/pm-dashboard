@@ -72,6 +72,17 @@ fixes followed:
 
 The 40 were cleared and tagged again with the fixes.
 
+**Back catalogue tagged, same day (confirmed live):** all 2,895 posted pieces.
+1,239 have every tag. 173, mostly Rich Life, have no stored pictures, so no
+face tag. 1,481 Filler pieces have only their hook words: the storage folder
+that held Filler's videos (`viral-filler`) no longer exists. Filler has not
+posted since 13 Sept, so nothing live broke. But the 59 Filler videos still
+waiting to post are gone too, and would fail if Filler were switched back on.
+
+**Fridays only (Garreth, same day):** the tagging runs once a week, Friday at
+10:30 am New York time, instead of every day. Each run now takes up to 200
+pieces, enough for a week of posts.
+
 **Also:** the deep analytics tickets doc still said DA-02 was waiting for
 Czedrick's check. He checked it and it was merged with PR #53; the doc now
 says so.

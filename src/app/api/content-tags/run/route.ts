@@ -3,9 +3,9 @@ import { requireSchedulerToken } from "@/server/carousel/machine";
 import { DEFAULT_LIMIT, runContentTags } from "@/server/content-tags";
 
 /**
- * Content tagging (DA-03), run every day by the schedule in `vercel.json`:
- * tags whatever has posted since the last run. `?limit=` takes more at once
- * (the first catch-up), up to 200; `?dry=1` reads and pulls every picture but
+ * Content tagging (DA-03), run every Friday by the schedule in `vercel.json`:
+ * tags whatever has posted since the last run, up to 200 pieces. `?limit=`
+ * asks for fewer; `?dry=1` reads and pulls every picture but
  * neither asks the AI nor writes, and answers with the rows it would write.
  */
 export async function GET(req: Request) {
