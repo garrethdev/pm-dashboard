@@ -1,7 +1,8 @@
 # Deep content analytics — tickets
 
 **Status:** opened 2026-10-09 (Czedrick). **Nine tickets, DA-01 to DA-09.
-DA-01 is built and live (2026-10-09); the rest are not started.** DA-01 and DA-02 are written in full; the rest are outlines, to
+DA-01 and DA-02 are built and live (2026-10-09). DA-03 is built (2026-10-20);
+its first live run comes after it is merged. The rest are not started.** DA-01 and DA-02 are written in full; the rest are outlines, to
 be filled in when the ticket before them is done.
 
 **What this is for.** Today every platform gives us the surface numbers:
@@ -45,8 +46,8 @@ subscriptions.
 | # | Ticket | Platform | Ready? |
 |---|---|---|---|
 | DA-01 | Pull Instagram's free deeper numbers | Instagram | **Built 2026-10-09** |
-| DA-02 | Show the new Instagram numbers in the dashboard | Instagram | **Built 2026-10-09, awaiting Czedrick's check** |
-| DA-03 | Tag every post with what is in it (AI) | All | Ready now, independent |
+| DA-02 | Show the new Instagram numbers in the dashboard | Instagram | **Built 2026-10-09, merged (PR #53)** |
+| DA-03 | Tag every post with what is in it (AI) | All | **Built 2026-10-20, first live run after merge** |
 | DA-04 | Turn on professional mode on the Facebook profiles | Facebook | Ready now, by hand |
 | DA-05 | Screen-reading pilot: Claude reads analytics screenshots | All | Ready now |
 | DA-06 | Robot: open each app's analytics screens on phone 1 | All | After DA-05 |
@@ -160,10 +161,10 @@ request nodes.
 
 ---
 
-## DA-02 · Show the new Instagram numbers in the dashboard — Built 2026-10-09, awaiting Czedrick's check
+## DA-02 · Show the new Instagram numbers in the dashboard — Built 2026-10-09
 
-**Built (2026-10-09), uncommitted, to be checked by Czedrick** (he asked to be
-the one to check, in place of the picture-for-Garreth step).
+**Built (2026-10-09), checked by Czedrick and merged with PR #53** (he asked
+to be the one to check, in place of the picture-for-Garreth step).
 - The account page gains four tiles on Instagram accounts:
   - Skip rate, weighted by views, with its colours reversed
   - Reach
@@ -200,32 +201,60 @@ and leaves it off its carousels.
 
 ---
 
-## DA-03 · Tag every post with what is in it (AI) — Ready now, independent
+## DA-03 · Tag every post with what is in it (AI) — Built 2026-10-20
 
-**What:** for each post, Claude records what the post *is*, as fixed labels
-rather than an essay:
-- hook type
-- the words on slide 1 / the first frame
-- face or no face
-- number of slides
-- video length
-- character
+**Built 2026-10-20; the AI half has not run live yet.** It runs once the
+change is merged. Settled first (Czedrick, 2026-10-20):
+- **Hook types:** each lane keeps the ones its writers recorded. Comparisons
+  are within one account, so lanes need not share a list.
+- **Face:** tagged on carousels and on videos.
 
-The dashboard can then compare tags within the same account: do question
-hooks hold better than statement hooks on this account? Comparing across
-accounts would mix in each account's own reach.
+**What looking into it found.** Most of the tags were already written down
+when the content was made, in each lane's own table:
+
+| Tag | Where it comes from |
+|---|---|
+| Words on slide 1 / the first frame | The lane's table, for 20 of 22 lanes (six different column names). The AI reads them off the picture for Char 2 slideshow and Dating genre, which keep none. |
+| Hook type | The lane's table, for seven lanes: Viral Theories, Journey 3-slide, Glowup, Covered Eye, Rich Life, before-and-after Journey, Embarrassed Angle. The rest get one from a short list the AI picks from: question, surprising fact, personal story, progress, talking to, curiosity gap, other. |
+| Hook family | Journey has about 30 small types ("talk_to_weight:fired") in two families ("declaration" and "talk_to_weight"). Comparisons group by family, because 30 types over a few posts are too thin to compare. |
+| Number of slides | The stored slides |
+| Video length | The video file itself |
+| Face or no face | The AI, looking at slide 1 or the frame half a second into the video. Any face counts, puppets and illustrated characters included, because Cleora is a clay puppet. |
+
+**How it works:**
+- One row per piece of content in `content_tags`, so a carousel posted to
+  TikTok, Instagram and Facebook is tagged once. It joins to the posts on
+  `carousel_id`.
+- Each field the AI filled says so (`*_source` = `ai`). A tag that could not be
+  read stays empty and `problem` says why.
+- Runs every day at 10:30 am New York time (`/api/content-tags/run`) on
+  anything that has posted and has no tags yet.
+- Model: Claude Haiku 5.5 through OpenRouter, the key the Carousel Generator
+  already uses. About $0.0002 a piece, so the whole back catalogue costs well
+  under $1. That replaces the $15–60 a month estimated on 2026-10-09.
+
+**Checked before merging:**
+- Dry run on 12 live pieces (everything except the AI and the write): hook
+  words, hook types, Journey families, slide counts and video lengths (8 to 68
+  seconds) all came out right, in 19 seconds.
+- Every one of the 2,895 posted pieces finds the row it was made from.
+
+**Expected gaps in the back catalogue:**
+- 173 Rich Life carousels have no stored slides anywhere, so no face tag.
+  Their hook and hook type still come from the writer.
+- 51 old Filler videos on Backblaze are gone (404).
+- Early before-and-after videos are Google Drive links; the tagger rewrites
+  them to the file and they read.
+
+**Still to do:**
+1. **After merge, the first live run.** Run with `?limit=10` and compare the
+   face tags and AI hook types against the pictures by eye.
+2. **The catch-up.** The daily run takes 40 pieces. The 2,895 already posted
+   go through in about 20 calls of `?limit=200`.
 
 **Not this:** asking the AI to explain why one post did well. On a single post
 it gives a confident story about what was mostly luck (research, 2026-10-09).
-
-**To settle before building:**
-- the list of hook types
-- whether tagging reads the image file we already hold for each carousel (the
-  generator has them), or the published post
-
-This is separate from the broken "route-and-judge" scoring (PF-25).
-
-**Cost:** about $15–60 a month in Claude, depending on post volume.
+Separate from the broken "route-and-judge" scoring (PF-25).
 
 ---
 

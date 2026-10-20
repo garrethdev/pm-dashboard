@@ -20,6 +20,44 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-20 — Every posted piece gets tagged with what is in it (DA-03)
+
+**Where it came from:** the deep analytics tickets (Czedrick, 2026-10-09),
+DA-03. Picked up on 2026-10-20 as the one ticket that needs neither Yurie nor
+the Air. Two choices were settled that day: each lane keeps the hook types its
+writers recorded, and the face tag covers videos as well as carousels.
+
+**What changed** (nothing on screen yet; the comparison screen is DA-09):
+
+- Each piece of content that has posted now gets a row of tags: the words on
+  its first slide or frame, its hook type, how many slides, how long the video
+  is, and whether a face shows. A carousel posted to TikTok, Instagram and
+  Facebook is tagged once and joins to all three posts.
+- Most tags turned out to exist already, in the tables the content was made
+  from. They are copied, not guessed. The AI looks at one picture per piece:
+  for the face, for the words where a lane keeps none, and for a hook type
+  where the writers recorded none. Each tag the AI filled is marked as such.
+- Journey's 30-odd small hook types are grouped into their two families
+  ("declaration" and "talking to the weight"), so there are enough posts in
+  each group to compare.
+- Runs every day at 10:30 am New York time on whatever has posted since.
+  Model: Claude Haiku 5.5, about $0.0002 a piece. That is well under $1 for
+  the whole back catalogue, not the $15–60 a month first estimated.
+- A tag that cannot be read stays empty with the reason written beside it,
+  never a guess. Known gaps: 173 Rich Life carousels have no stored slides
+  (so no face tag), and 51 old Filler videos have been deleted from storage.
+
+**Verified:** a dry run on 12 live pieces (everything but the AI and the save)
+read the hook words, hook types, slide counts and video lengths correctly, and
+every one of the 2,895 posted pieces finds the row it was made from. **Not
+yet verified:** the AI's answers. The AI key exists only on the live site, so
+the first real run happens after merge. Check ten by eye before the catch-up
+of the back catalogue.
+
+**Also:** the deep analytics tickets doc still said DA-02 was waiting for
+Czedrick's check. He checked it and it was merged with PR #53; the doc now
+says so.
+
 ## 2026-10-19 — Inventory shows a new content type's priority week
 
 **Where it came from:** Garreth, right after the Smart Scheduler change below:
