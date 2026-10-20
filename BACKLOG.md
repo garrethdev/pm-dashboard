@@ -353,6 +353,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-22 | Account ids too large for the app to hold exactly | Immediate | **Built 2026-09-23.** Account ids are carried as text on the Physical side (`src/lib/data/account-id.ts`). Proven live with a practice account whose id was as long as the real ones; not yet seen with one of the five real accounts on a phone |
 | PF-24 | Facebook analytics | Intermediate | **Done 2026-10-07 (Garreth; PRs #49 and #50 merged and deployed).** A daily robot on TikTok's rhythm reads every live Facebook account through ScrapeCreators into `fb_post_performance`; health, Analytics, Content types, the account page and the n8n reports read it, at parity with TikTok and Instagram. Two first runs still to see: the robot's first scheduled run (2026-10-08) and the weekly report with Facebook (2026-10-09). AI post scoring moved to PF-25 |
 | PF-25 | AI post scoring is broken for every platform | Intermediate | **Not started (added 2026-10-07).** The outside scoring service's Gemini key is rejected and videos have not been scorable for weeks; Facebook scoring waits on the fix |
+| PF-26 | Screenshot QA of the manual process | Long term | **Not started (added 2026-10-20).** Save invisible WebDriverAgent screenshots of Yurie's manual sessions and read them with Claude against the step list, to check her process. Needs the always-on agent (reopens the 2026-10-02 live-view decision) and depends on the Air being on. Findings and options in `docs/PHONE-SCREEN-QA.md` |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -1538,6 +1539,67 @@ In order:
 *Done when:* that week's best and worst posts on all three platforms,
 videos included, come back with a score and a verdict, and a run that
 scores nothing raises an alarm.
+
+## PF-26 · Screenshot QA of the manual process — Not started
+
+*Added 2026-10-20 (Garreth).* The goal is to check that Yurie does the manual
+warmup and posting steps correctly, in a way that stays truthful. She already
+knows sessions may be recorded for QA; what she must not know is **when** a
+given session is checked, so she cannot perform only for the camera. Full
+reasoning and the options below are written up in `docs/PHONE-SCREEN-QA.md`.
+
+**The approach.** Save **screenshots, not video**, and read them with Claude
+against the written step list. WebDriverAgent (already on the phones) takes
+screenshots from inside Apple's UI-testing tools, so they show nothing on the
+screen, do not change the status bar, and do not raise the "screen is being
+captured" flag TikTok and Instagram can read. QuickTime (showroom-clock status
+bar) and the phone's built-in recorder (red pill) were both ruled out as
+visible. A small program on the Air asks the agent for one picture every few
+seconds while she works and keeps the frames where the screen changed.
+
+**The agent model (decided 2026-10-20, Garreth).** This is **not** the 24/7
+"phone keeper" turned down on 2026-10-02 (`docs/LIVE-VIEW-TRACKER.md`). The
+agent and the screenshot recorder **start on their own when the Air is powered
+on and run while it is open**, then stop when Yurie closes it — so they cover
+her whole manual session, not only robot warmups, and the phones are never live
+when no one is at them. Before this is switched on: set Auto-Lock to Never on
+every farm phone (a running agent keeps the phone awake; a phone that stops
+locking is a tell).
+
+**The dependency (decided 2026-10-20, Garreth).** Keep Yurie's Air as it is
+now: she opens it whenever she does a warmup or posting session. The recorder
+runs on the Air and the phones plug into it by cable, so the capture only
+happens while the Air is open; Tailscale is only for remote viewing and the
+nightly copy. Because she opens the Air, she controls whether a session is
+captured, so this is covert but not tamper-proof. The dedicated-hub option (a
+machine that is not hers, phones in a fixed spot — the only truly tamper-proof
+option) was considered and set aside; the cross-check below is what makes the
+chosen setup hold.
+
+**The plug-in rule needs a cross-check.** Telling Yurie to always connect the
+phone to the Air is good as a standing rule, but plugging in is her hand, not a
+lock. Close the gap by treating a session with no screenshots behind it as a
+red flag: a post in `unified_posts` / on the platform with no matching frames
+means she did not plug in; for warmups (which do not post), compare the phone's
+Screen Time minutes and TikTok's activity log against the minutes she logs in
+the dashboard.
+
+**Reviewing.** Pick sessions at random (not after a bad week, which teaches her
+when to perform), match them to the logged minutes, and let Claude report which
+steps happened, which were skipped, and where she deviated; a human opens the
+frames only at the flagged moments.
+
+**Where it lives.** The always-on agent, the recorder and the nightly copy go
+in Czedrick's warmup-runner repository, kept separate from the runner as the
+live view is. Each new phone needs the agent installed first
+(`docs/PHONE-AGENT-SETUP.md`). The dashboard needs nothing; there is no
+reviewer-only view today, so keep recordings off it at the start. **Open for
+Czedrick:** whether the recorder reads the agent's picture stream directly or
+asks the live view for frames.
+
+*Done when:* an invisible run of screenshots from a real manual session on a
+phone is saved off the Air and Claude returns a step-by-step verdict against
+the written process, with a session that left no screenshots visibly flagged.
 
 # V1 — open work
 
