@@ -218,7 +218,7 @@ when the content was made, in each lane's own table:
 | Tag | Where it comes from |
 |---|---|
 | Words on slide 1 / the first frame | The lane's table, for 20 of 22 lanes (six different column names). The AI reads them off the picture for Char 2 slideshow and Dating genre, which keep none. |
-| Hook type | The lane's table, for seven lanes: Viral Theories, Journey 3-slide, Glowup, Covered Eye, Rich Life, before-and-after Journey, Embarrassed Angle. The rest get one from a short list the AI picks from: question, surprising fact, personal story, progress, talking to, curiosity gap, other. |
+| Hook type | The lane's table, for seven lanes: Viral Theories, Journey 3-slide, Glowup, Covered Eye, Rich Life, before-and-after Journey, Embarrassed Angle. The rest get one from a short list the AI picks from: question, surprising fact, personal story, relatable ("when you…"), progress, talking to, curiosity gap, other. |
 | Hook family | Journey has about 30 small types ("talk_to_weight:fired") in two families ("declaration" and "talk_to_weight"). Comparisons group by family, because 30 types over a few posts are too thin to compare. |
 | Number of slides | The stored slides |
 | Video length | The video file itself |
