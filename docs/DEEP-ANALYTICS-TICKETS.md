@@ -309,6 +309,8 @@ screen, what Claude read and whether they match.
 
 ## DA-06 · Robot: open each app's analytics screens on phone 1 — After DA-05
 
+**Runs on Fridays only** (Garreth, 2026-10-20; see DA-07).
+
 **What:** WebDriverAgent (already on phone 1, `docs/PHONE-AGENT-SETUP.md`)
 opens each recent post's analytics screen in TikTok, Instagram and Facebook,
 scrolls through it and takes the screenshots DA-05 proved readable.
@@ -335,8 +337,14 @@ says they do not. Pilot on one account for two weeks before widening.
 
 **Time:** roughly 10–20 phone-hours a month (research estimate).
 
+**Fridays only (Garreth, 2026-10-20).** The robot runs one day a week, on
+Friday, reading every post from the past week.
+
 **Timing:** TikTok's watch-time numbers may drop out once a post has been
-quiet for 7 days, so each post must be read inside its first week.
+quiet for 7 days, so each post must be read inside its first week. With
+Fridays only, a post that goes up just after a Friday run is 7 days old at
+the next one, right at that edge. DA-05 should show whether TikTok really
+drops them. If it does, read the oldest posts first on each Friday.
 
 ---
 
