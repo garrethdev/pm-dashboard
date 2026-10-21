@@ -55,4 +55,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 }
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+// The AI edit now also waits on the SynthID removal's GPU cold start and
+// face pass (as slow as ~2 min on the first call), so the route needs the
+// same 300 s ceiling the other slow routes already use.
+export const maxDuration = 300;

@@ -2,8 +2,9 @@
  * What happens to a library image on the server (DEV-29): taking in an
  * upload, the black and white copy, and the AI edit. Everything made from
  * an image is a new image beside the original; nothing is overwritten.
- * What an image model makes goes through the degrade pass before it is
- * stored or shown (degrade.ts).
+ * What an image model makes is cleared of its SynthID watermark (synthid.ts)
+ * and then goes through the degrade pass before it is stored or shown
+ * (degrade.ts).
  */
 import decode from "heic-decode";
 import sharp from "sharp";
@@ -11,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import { readObject, removeObject, writeObject } from "@/server/carousel/repo/storage";
 import { addImage, type ImageRow } from "@/server/carousel/repo/libraries";
 import { assertDegraded, assertNoMetadata, degrade } from "@/server/carousel/services/degrade";
+import { removeSynthId } from "@/server/carousel/services/synthid";
 
 const MAX_EDGE = 2400;
 export const IMAGE_MODEL = process.env.CAROUSEL_IMAGE_MODEL || "google/gemini-3.1-flash-image";
@@ -113,10 +115,11 @@ export async function blackAndWhite(row: ImageRow, by: string): Promise<ImageRow
 }
 
 /**
- * An AI edit. The model's picture goes through the degrade pass first, and
- * only the degraded JPEG is stored, as a pending file shown to the person;
- * the raw picture is never stored. It joins the library only on Keep, and
- * Discard removes the file.
+ * An AI edit. The model's picture is cleared of its SynthID watermark first
+ * (the invisible one the degrade pass cannot touch) and then goes through
+ * the degrade pass; only the degraded JPEG is stored, as a pending file
+ * shown to the person. The raw picture and the cleared PNG are never
+ * stored. It joins the library only on Keep, and Discard removes the file.
  */
 export async function aiEdit(row: ImageRow, prompt: string): Promise<{ path: string }> {
   const key = process.env.OPENROUTER_API_KEY;
@@ -151,7 +154,8 @@ export async function aiEdit(row: ImageRow, prompt: string): Promise<{ path: str
   const checked = await sharp(bytes).metadata();
   if (!checked.width || !checked.height) throw new Error("The image model returned something that is not a picture");
   const id = randomUUID();
-  const degraded = await degrade(bytes, id);
+  const cleared = await removeSynthId(bytes);
+  const degraded = await degrade(cleared.bytes, id);
   const path = `${row.library_id}/pending/${id}.jpg`;
   await writeObject(path, degraded.bytes, "image/jpeg");
   return { path };

@@ -20,6 +20,67 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-21 — AI edits go through the SynthID removal before the degrade pass
+
+**Where it came from:** Garreth's SynthID Study API (the watermark remover
+hosted on Modal) reached a usable state, and he asked for it to be wired in
+wherever the Carousel Generator removes an AI watermark. He chose to run it
+*before* the existing phone-camera degrade pass rather than instead of it, so
+an AI edit keeps today's authentic look and also drops the invisible SynthID
+watermark the degrade pass could never touch (the study's own rule is to say
+"not detected by the verifier", never "clean", and that applies here too).
+
+**What changed:**
+
+- A new `src/server/carousel/services/synthid.ts` talks to the hosted API as
+  a batch of one (create, upload, start, poll, take the output), using the
+  study's verified settings (strength 0.50, Google preset). It reads
+  `SYNTHID_API_KEY`, with an optional `SYNTHID_API_URL` that defaults to the
+  Modal address.
+- The AI edit (`aiEdit`) now runs the render through `removeSynthId()` first
+  and then through the degrade pass as before. The raw render and the cleared
+  PNG are never stored; only the degraded JPEG is.
+- The library image route's time limit is raised from 120 to 300 seconds,
+  matching the other slow routes, because the removal waits on the GPU's cold
+  start and its face pass (the first picture with faces can take about two
+  minutes once per GPU session).
+
+**Verified:** the new and degrade tests pass (`npx vitest run`, 14 tests) and
+`tsc --noEmit` is clean. **Not verified:** no real AI edit has been run
+against the live API yet, and `SYNTHID_API_KEY` still needs to be set on
+Vercel — this is a code change awaiting its first real use.
+
+## 2026-10-21 — A second coding agent can work on the Carousel Generator
+
+**Where it came from:** Garreth wants to run DeepSeek (through OpenCode inside
+Orca, paid for with his OpenRouter key) on Carousel Generator work, and asked
+whether it would know the codebase, the image buckets and how pictures are
+made.
+
+**What we found:** OpenCode reads `AGENTS.md` first and ignores `CLAUDE.md`
+when both exist. Our `AGENTS.md` is the nine-line notice Next.js writes about
+its own version, so a DeepSeek session would have started with none of the
+repo's rules and none of the project knowledge that lives only in Claude's
+session notes.
+
+**What changed:**
+
+- `opencode.json` at the repo root tells OpenCode to also read `CLAUDE.md`
+  and the new brief below. Claude Code ignores the file.
+- `docs/CAROUSEL-AGENT-BRIEF.md` is a plain orientation for any agent that
+  starts cold on the Carousel Generator: where the code lives, every image
+  bucket and what sits in it (counted live), how pictures are uploaded,
+  copied and AI-edited, how copy is written, which keys matter, which lanes
+  the generator feeds, what is open, and which document answers which
+  question. Two corrections surfaced while writing it and are recorded there:
+  Approve on `main` does not write a lane row (that is the unported painter's
+  job), and the `carousel_materialise_draft` function the plan describes was
+  never created.
+
+**Verified:** the config file parses; bucket and library counts are from live
+queries on 2026-10-21. **Not verified:** an OpenCode session has not yet been
+started against this checkout to confirm it loads both files.
+
 ## 2026-10-21 — Recorded posting sessions: the dashboard side (PF-26)
 
 **Where it came from:** Garreth, in a planning chat the same day. The plan to
