@@ -353,7 +353,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-22 | Account ids too large for the app to hold exactly | Immediate | **Built 2026-09-23.** Account ids are carried as text on the Physical side (`src/lib/data/account-id.ts`). Proven live with a practice account whose id was as long as the real ones; not yet seen with one of the five real accounts on a phone |
 | PF-24 | Facebook analytics | Intermediate | **Done 2026-10-07 (Garreth; PRs #49 and #50 merged and deployed).** A daily robot on TikTok's rhythm reads every live Facebook account through ScrapeCreators into `fb_post_performance`; health, Analytics, Content types, the account page and the n8n reports read it, at parity with TikTok and Instagram. Two first runs still to see: the robot's first scheduled run (2026-10-08) and the weekly report with Facebook (2026-10-09). AI post scoring moved to PF-25 |
 | PF-25 | AI post scoring is broken for every platform | Intermediate | **Not started (added 2026-10-07).** The outside scoring service's Gemini key is rejected and videos have not been scorable for weeks; Facebook scoring waits on the fix |
-| PF-26 | Screenshot QA of the manual process | Long term | **Not started (added 2026-10-20).** Save invisible WebDriverAgent screenshots of Yurie's manual sessions and read them with Claude against the step list, to check her process. Needs the always-on agent (reopens the 2026-10-02 live-view decision) and depends on the Air being on. Findings and options in `docs/PHONE-SCREEN-QA.md` |
+| PF-26 | Screenshot QA of manual posting | Long term | **Dashboard side built 2026-10-21; the Air's recorder is next.** Record every manual posting session on the Air with invisible WebDriverAgent screenshots, copy them nightly to a private bucket, delete them from the Air once the copy is confirmed, and read a random pick with Claude for anomalies on a reviewer-only Sessions page. Three phases in the entry below. Findings and options in `docs/PHONE-SCREEN-QA.md` |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -1540,7 +1540,7 @@ In order:
 videos included, come back with a score and a verdict, and a run that
 scores nothing raises an alarm.
 
-## PF-26 · Screenshot QA of the manual process — Not started
+## PF-26 · Screenshot QA of manual posting — Dashboard side built
 
 *Added 2026-10-20 (Garreth).* The goal is to check that Yurie does the manual
 warmup and posting steps correctly, in a way that stays truthful. She already
@@ -1600,6 +1600,72 @@ asks the live view for frames.
 *Done when:* an invisible run of screenshots from a real manual session on a
 phone is saved off the Air and Claude returns a step-by-step verdict against
 the written process, with a session that left no screenshots visibly flagged.
+
+*2026-10-21 (Garreth), the plan settled.* Corrections first: all three farm
+phones already have WebDriverAgent, and Auto-Lock is already set to Never on
+all of them, so neither is open work. Decisions:
+
+- **Posting only.** Once every account is on Automated warmups nothing is
+  warmed by hand, so the only manual process left to check is posting. The
+  robot warmups are not touched. The recorder cannot tell what she is doing on
+  a plugged-in phone, so it captures her whole session and the dashboard keeps
+  the frames that fall in a post's time window (matched to `unified_posts`).
+- **Record every session, review at random.** Not picked days and not a fixed
+  interval. Every day looks the same on the Air, so a found folder tells her
+  nothing, and the random part lives at review time. Storage is not a concern:
+  a 20-minute session is roughly 300 changed-screen frames, about 15 MB.
+- **Nightly copy, then delete.** The Air uploads each finished session to a
+  private Supabase Storage bucket through a new dashboard address under the
+  warmup-runner prefix, with the token it already holds, and deletes the frames
+  from the Air only after the upload is confirmed. A failed copy never loses a
+  session; Yurie's storage stays near empty.
+- **Plug-in log every day.** The Air also logs when each phone was plugged in
+  and unplugged. A post with no plug-in note behind it means she did not
+  connect; frames missing with a plug-in note means the recorder failed.
+- **Reviewer-only Sessions page.** A second setting, `REVIEWER_EMAILS` (Garreth
+  and Czedrick, set in the Production row on Vercel), checked next to the
+  allowlist in `src/lib/auth.ts`. The page sits in the Physical fleet, its menu
+  entry renders only for reviewers, and the page and its routes answer
+  not-found to anyone else. Frames open only through short-lived signed links;
+  nothing is reachable with the public key.
+
+**Phase 1 — Yurie.** Standing recording notice in writing (done 2026-10-21);
+the plug-in-every-time rule for posting; a post with no frames behind it
+counts as not done.
+
+**Phase 2 — Air and transfer.** Agent and recorder auto-start when the Air
+powers on; recorder keeps one frame per screen change, one folder per phone
+per session; plug-in log; nightly upload to the private bucket; delete on the
+Air after confirmation; reviewer-only Sessions page listing each session by
+phone, date and matched post. Open for Czedrick: whether the recorder reads the
+agent directly or asks the live view for frames.
+
+**Phase 3 — Analysis.** No written step list (Garreth, 2026-10-21): the check
+is for anomalies, not for a fixed sequence. Claude reads a picked session's
+frames, describes what happened, and calls out anything that looks off (wrong
+account, wrong or missing caption, an app she should not be in, long idle
+gaps, a post that never went through); a verdict per session with the flagged
+frames; the no-frames cross-check against `unified_posts` and the plug-in log;
+first real session end to end.
+
+*2026-10-21, later the same day: everything that needs neither the Air nor
+Yurie is built* (branch `garrethdev/dashboard-phone-session-recording`, see
+the changelog). The `phone_sessions` and `phone_plug_events` tables and the
+private `phone-sessions` bucket are live; operations 8 to 11 of
+`docs/WARMUP-RUNNER-API.md` are what the recorder on the Air calls (announce,
+upload links, confirm, plug-in log); `REVIEWER_EMAILS` gates a Sessions page
+in the Physical fleet with the "Posts with no recording" cross-check, a
+random pick, and a session page with every frame and Claude's read
+(`/api/sessions/[id]/review`, through OpenRouter, up to forty frames spread
+across the session). `?demo=` draws both pages with invented sessions.
+
+**Still waiting on the Air (Czedrick):** the auto-start, the recorder
+itself, the plug-in log, the nightly upload through operations 8 to 11, and
+deleting after `stored: true`. **Waiting on Yurie:** the plug-in rule.
+`REVIEWER_EMAILS` is set in Vercel (Production row, 2026-10-21: Garreth's
+two addresses and Czedrick's two). **Before the page is used for real:** run
+one real session end to end, which is also the first time Claude's read
+meets real frames.
 
 # V1 — open work
 

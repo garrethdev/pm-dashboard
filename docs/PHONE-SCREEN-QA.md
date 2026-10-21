@@ -9,6 +9,20 @@ a given session is being checked, so she cannot perform only for the camera.
 This is a decisions-and-options note, not a build. The build is ticket
 **PF-26** in `BACKLOG.md`. Czedrick owns anything on the Air.
 
+**Updated 2026-10-21 (Garreth).** The scope narrowed to **manual posting**:
+once every account is on Automated warmups nothing is warmed by hand, and the
+robot warmups are not touched. The plan of record is **record every posting
+session, copy nightly to a private bucket on the dashboard, delete from the
+Air once the copy is confirmed, and pick sessions at random to review** on a
+page only Garreth and Czedrick can see. Picked-days and fixed-interval
+recording were both considered and set aside: a picked day leaves a trace on
+her Air that says which day was chosen, and a fixed interval is learnable. All
+three phones already have the agent and Auto-Lock set to Never. There is no
+written step list: Claude reads a session for anomalies and errors rather than
+against a fixed sequence. The phases and the page design are in the PF-26
+entry in `BACKLOG.md`; the sections below are the 2026-10-20 reasoning and
+stand as written.
+
 ## The short version
 
 - **Save screenshots, not video**, and read them with Claude against the
@@ -173,10 +187,11 @@ what keeps the check truthful without hiding the fact of it.
   Czedrick's **warmup-runner** repository on the Air, kept separate from the
   runner exactly as the live view is (`docs/LIVE-VIEW-TRACKER.md`).
 - Each new phone needs the agent installed first (`docs/PHONE-AGENT-SETUP.md`,
-  "Each new phone"). Only phone 1 has it today.
-- The dashboard needs nothing for this to work. There is no reviewer-only view
-  today, so a link from a warmup row to its recording would be visible to Yurie
-  too — keep recordings off the dashboard at the start.
+  "Each new phone"). All three farm phones have it as of 2026-10-21.
+- The dashboard side, decided 2026-10-21: an upload address for the Air, a
+  private storage bucket, and a reviewer-only Sessions page gated by a
+  `REVIEWER_EMAILS` setting, since there is no reviewer-only view today and
+  Yurie uses the dashboard. Details in the PF-26 entry in `BACKLOG.md`.
 - **Open question for Czedrick:** whether the recorder reads the agent's
   picture stream directly, or asks the live view for frames. The first is
   simpler; the second avoids two readers on one phone.
