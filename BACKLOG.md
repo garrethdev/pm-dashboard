@@ -1630,8 +1630,9 @@ all of them, so neither is open work. Decisions:
   nothing is reachable with the public key.
 
 **Phase 1 — Yurie.** Standing recording notice in writing (done 2026-10-21);
-the plug-in-every-time rule for posting; a post with no frames behind it
-counts as not done.
+the plug-in-every-time rule for posting. (A "no frames means not done" rule
+was considered and dropped, Garreth 2026-10-21: the cross-check on the
+Sessions page is enough.)
 
 **Phase 2 — Air and transfer.** Agent and recorder auto-start when the Air
 powers on; recorder keeps one frame per screen change, one folder per phone
@@ -1659,9 +1660,29 @@ random pick, and a session page with every frame and Claude's read
 (`/api/sessions/[id]/review`, through OpenRouter, up to forty frames spread
 across the session). `?demo=` draws both pages with invented sessions.
 
-**Still waiting on the Air (Czedrick):** the auto-start, the recorder
-itself, the plug-in log, the nightly upload through operations 8 to 11, and
-deleting after `stored: true`. **Waiting on Yurie:** the plug-in rule.
+*Two more decisions, Garreth 2026-10-21:* the recorder asks the phone's agent
+for its own pictures and does not go through the live view, which stays a
+viewer only (it runs only while someone has the page open, and a recorder
+must not depend on that). And the recorder reaches the Air the way the
+warmup robot does: Czedrick sends Yurie an update file and a short
+instructions doc, she applies it, nobody needs remote access to the Air.
+The one-time part of that doc is the auto-start, so the recorder comes up
+with the Air from then on.
+
+**Next (decided 2026-10-21, to start the next day): Claude builds the
+recorder,** in the warmup-runner code, reusing the live view's connection to
+the phone's agent. In order: (1) find the warmup-runner source that matches
+what is on the Air today (the Air's copy went over by Taildrop; the
+dashboard docs name `garrethdev/warmup-runner`); (2) the recorder: poll the
+agent for a picture every few seconds while a phone is plugged in, keep the
+frames where the screen changed, one folder per phone per session, and the
+plug-in log; (3) the nightly upload through operations 8 to 11, deleting a
+session only after `stored: true`; (4) the auto-start file so it comes up
+with the Air; (5) a dry run from Czedrick's Mac with no phone that proves
+announce, upload and confirm against the live dashboard; (6) the update file
+and the instructions doc for Yurie, with the one-time auto-start step. The
+first real run is on the Air (Screen Sharing, or Yurie following the doc).
+**Waiting on Yurie:** the plug-in rule, and applying that update.
 `REVIEWER_EMAILS` is set in Vercel (Production row, 2026-10-21: Garreth's
 two addresses and Czedrick's two). **Before the page is used for real:** run
 one real session end to end, which is also the first time Claude's read
