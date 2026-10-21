@@ -3,7 +3,7 @@ import { MobileNavProvider, ShellColumn } from "@/components/shell/mobile-nav";
 import { PageGlow } from "@/components/shell/page-glow";
 import { Sidebar, type SidebarNav } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
-import { authBypassed } from "@/lib/auth";
+import { authBypassed, isReviewer } from "@/lib/auth";
 import { getFleet } from "@/lib/fleet-server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,11 +32,14 @@ export async function AppShell({ nav, children }: { nav: SidebarNav; children: R
   // Which fleet this person is looking at (their own cookie). The generator has
   // no fleet, so its shell shows no switch.
   const fleet = nav === "dashboard" ? await getFleet() : undefined;
+  // The reviewer-only rows (PF-26). The dev bypass counts, so the Sessions
+  // page can be drawn locally; in production it is REVIEWER_EMAILS alone.
+  const reviewer = authBypassed() || isReviewer(email);
 
   return (
     <MobileNavProvider>
       <div className="flex min-h-screen">
-        <Sidebar nav={nav} fleet={fleet} />
+        <Sidebar nav={nav} fleet={fleet} reviewer={reviewer} />
         <ShellColumn>
           <PageGlow />
           <Topbar userEmail={email} fleet={fleet} />

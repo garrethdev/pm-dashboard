@@ -20,6 +20,60 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-21 — Recorded posting sessions: the dashboard side (PF-26)
+
+**Where it came from:** Garreth, in a planning chat the same day. The plan to
+check Yurie's manual posting with invisible phone screenshots
+(`docs/PHONE-SCREEN-QA.md`) was settled: record every session on the Air,
+copy it to the dashboard overnight, delete it from the Air once the copy is
+confirmed, and read a random pick with Claude for anomalies. Garreth asked
+for everything that needs neither the Air nor Yurie to be built now.
+
+**What changed:**
+
+- Two new tables and a private storage bucket, applied live: one row per
+  recorded session on a phone, one row per plug-in and unplug of a phone, and
+  the bucket the frames go in. Nothing can read the bucket without the
+  server's key; a reviewer sees a frame through a link that lives ten minutes.
+- Four new addresses for the recorder on the Air, behind the same token the
+  warmup script uses: announce a session, get upload links for its frames (the
+  frames go straight into the bucket, not through the dashboard), confirm it,
+  and log a plug-in. The dashboard counts the frames in the bucket itself and
+  only says "stored" when every announced frame is there, so the Air never
+  deletes a session the dashboard does not fully hold. A session with a post
+  marked done in its window is tied to that hand-out automatically.
+- A new setting, `REVIEWER_EMAILS`, and a Sessions page in the Physical fleet
+  that only the people on it can see. The menu row does not exist for anyone
+  else, and the page and its addresses answer not-found rather than
+  "forbidden", so there is no locked door to notice.
+- The Sessions page lists every stored session with its phone, length, frame
+  count, the post it covers and whether it has been read; "Pick one at
+  random" opens one. Above the list, "Posts with no recording" shows every
+  post marked done on a phone in the last two weeks that no session covers,
+  and says which of two things happened: the phone was not plugged in, or it
+  was and the recorder missed it. That is the cross-check that makes the
+  plug-in rule hold.
+- A session's page shows every frame with its time and "Review with Claude":
+  up to forty frames spread evenly across the session go to Claude, which
+  describes what happened and lists anything that looks wrong, each tied to
+  a frame. There is no step list by decision (Garreth, 2026-10-21): the check
+  is for anomalies. Goes through OpenRouter with the key the carousel writer
+  already uses.
+- `?demo=` draws both pages with invented sessions, the way the phone-farm
+  screens were judged before their data existed.
+
+**Verified:** typecheck, lint and the unit tests (19 new, on the matching
+and cross-check rules and the reviewer gate) pass; the migration was read
+back live (service role only, bucket private, no storage policies). **Not yet exercised:** nothing
+has recorded a session, so the four Air-facing addresses have not met a real
+caller and Claude's read has not met real frames. `REVIEWER_EMAILS` was set
+in Vercel's Production row the same day (Garreth's two addresses and
+Czedrick's two, from the display-name map in `src/lib/people.ts`); it takes
+effect with the first deployment that carries this branch. The Production
+allowlist is a sensitive setting and cannot be read back from a desk, so
+whether each of the four is also on it was not checked, only assumed from
+who signs in today.
+
 ## 2026-10-20 — Every posted piece gets tagged with what is in it (DA-03)
 
 **Where it came from:** the deep analytics tickets (Czedrick, 2026-10-09),

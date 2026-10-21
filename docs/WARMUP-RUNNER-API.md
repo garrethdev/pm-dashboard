@@ -5,7 +5,10 @@ the dashboard. Built for PF-13, 2026-09-28. It answers the six operations in
 the runner's `docs/DASHBOARD-CONNECTION.md`, and it is the thing that runner
 task B10 (`src/logger.ts`) calls. A seventh, the warmup's report, was added
 2026-10-09 (Garreth, after the first live warmup stopped with `device_lost`
-and nobody could see why without the Air's log file).
+and nobody could see why without the Air's log file). Operations 8 to 11 were
+added 2026-10-21 for the session recorder (PF-26, `docs/PHONE-SCREEN-QA.md`):
+they are for the recorder on the Air, not the warmup script, but they share
+the token and the prefix.
 
 ## Access
 
@@ -17,7 +20,7 @@ Authorization: Bearer <WARMUP_RUNNER_TOKEN>
 
 The token is a setting on the dashboard (`WARMUP_RUNNER_TOKEN`, in Vercel) and
 a secret on the Air (its `.env`, readable only by the Air's user, never in the
-repository). It opens these seven addresses and nothing else in the app. To
+repository). It opens these eleven addresses and nothing else in the app. To
 revoke it, change the setting in Vercel and redeploy.
 
 If the setting is missing, every call answers `503 not_configured`: a missing
@@ -31,7 +34,7 @@ Small numbers are accepted for `deviceId`.
 **Times** are ISO 8601 instants (`2026-09-28T13:14:15.123Z`). Days are New
 York days.
 
-## The seven operations
+## The eleven operations
 
 | # | Call | Body or query | Answer |
 |---|---|---|---|
@@ -42,6 +45,10 @@ York days.
 | 5 | `POST /api/warmup-runner/runs/close` | `{ accountId, sessionNo, startedAt, endedAt, note }` | `{ ok, run, alreadyClosed }` |
 | 6 | `POST /api/warmup-runner/sessions` | `{ accountId, deviceId, sessionNo, startedAt, finishedAt, minutes, note }` | `{ ok, id, alreadyRecorded }` |
 | 7 | `POST /api/warmup-runner/reports` | `{ accountId, deviceId, sessionNo, startedAt, endedAt, outcome, note, minutes, counts, log, screenshot }` | `{ ok, id, alreadyReported }` (`id` is text) |
+| 8 | `POST /api/warmup-runner/recordings` | `{ deviceId, startedAt, endedAt, expectedFrames }` | `{ ok, id, status, alreadyStored }` |
+| 9 | `POST /api/warmup-runner/recordings/{id}/frames` | `{ frames: [{ index, elapsedSec, type }] }` | `{ ok, status, uploads: [{ index, path, url }] }` |
+| 10 | `POST /api/warmup-runner/recordings/{id}/complete` | — | `{ ok, stored, found, expected }` |
+| 11 | `POST /api/warmup-runner/plug-events` | `{ deviceId, pluggedInAt, unpluggedAt }` | `{ ok, id }` |
 
 **What each one does:**
 
@@ -92,12 +99,44 @@ York days.
    - The summary is kept for good. `log` and `screenshot` are cleared after
      30 days; the dashboard clears old ones whenever a new report arrives.
 
+8. **Announce a recorded session** (PF-26, 2026-10-21). The recorder on
+   the Air kept frames of a manual posting session and wants to send them.
+   `deviceId` is the phone; `startedAt` is the first frame's time and names
+   the session with the phone, so sending it twice lands on the same row;
+   `endedAt` is the last frame's time; `expectedFrames` is how many frames
+   will follow, 1 to 3,000. Answer `{ id, status, alreadyStored }`. When
+   `alreadyStored` is true the session was confirmed earlier: skip to
+   deleting the Air's copy.
+9. **Upload links for frames.** Up to 200 frames a call, as many calls as
+   needed. Each frame is `{ index, elapsedSec, type }`: `index` its 0-based
+   position in the session, `elapsedSec` the seconds since the first frame,
+   `type` one of `image/jpeg` (the default), `image/png`, `image/webp`. Each
+   answer carries a one-time link per frame: **PUT the frame's bytes to
+   `url` with `Content-Type` set.** That goes straight into the private
+   bucket, not through the dashboard, so the 4.5 MB request limit does not
+   apply; a frame may be up to 2 MB. A link for a frame already uploaded
+   overwrites it, so a retry is safe. `uploads` is empty when the session is
+   already stored.
+10. **Confirm.** No body. The dashboard counts the frames actually in the
+    bucket. `{ stored: true, found, expected }` means every expected frame
+    is there and **the Air may now delete its copy**. 409 `frames_missing`
+    with the same counts means it must not: ask for links for the missing
+    indexes (operation 9) and confirm again. Never delete before
+    `stored: true`.
+11. **The plug-in log.** Send `{ deviceId, pluggedInAt, unpluggedAt: null }`
+    when a phone appears on the Air, and the same `pluggedInAt` with
+    `unpluggedAt` filled when it goes. **Every day, frames or not**: it is
+    what lets the dashboard tell a post made with the phone unplugged from a
+    recording that failed.
+
 **Safe to retry.** Starting a run twice returns the same run. Closing twice
 keeps the first close. Writing the same session twice answers
 `alreadyRecorded: true` and changes nothing. The database has one scripted row
 per run, so a retry can never count twice. Sending the same report twice
 (same account, session and start) answers `alreadyReported: true` with the
-first report's id, and changes nothing.
+first report's id, and changes nothing. Announcing a session twice returns
+the same `id`; asking for a frame's link twice gives a link that overwrites;
+confirming a stored session answers `stored: true` again.
 
 ## Refusals
 
@@ -117,6 +156,8 @@ what to branch on.
 | 404 | `run_not_found` | No run was started with that account, session and start |
 | 409 | `run_closed` | A check-in arrived for a run already closed |
 | 409 | `not_found` | The account or the phone no longer exists |
+| 404 | `session_not_found` | Operations 9 and 10: no session with that id |
+| 409 | `frames_missing` | Operation 10: fewer frames in the bucket than announced. `found` and `expected` say how many. Keep the Air's copy |
 | 502 | `upstream` | The dashboard could not reach its database. Retry later |
 
 **An account flipped to Manual mid-run** keeps the run's minutes. Operation 6

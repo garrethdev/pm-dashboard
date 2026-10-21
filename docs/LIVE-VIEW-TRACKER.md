@@ -266,3 +266,11 @@ Oldest first.
 - **2026-10-02** — Decided (Czedrick): the live view only during warmups, not
   always on. No phone keeper. The robot opens the phone's connections when it
   starts a warmup.
+- **2026-10-20** — A new use touches the "always on" question: QA of Yurie's
+  manual sessions by saving invisible WebDriverAgent screenshots and reading
+  them with Claude (PF-26 in `BACKLOG.md`; findings in
+  `docs/PHONE-SCREEN-QA.md`). **Decided (Garreth):** not the 24/7 phone keeper
+  turned down on 2026-10-02; instead the agent and recorder start when the Air
+  is powered on and run while it is open, covering her whole manual session,
+  then stop when she closes it. Yurie's Air stays as it is — she opens it to
+  work — so capture only happens while it is open.
