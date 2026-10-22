@@ -21,6 +21,7 @@ applied 2026-09-06) are deliberately not here.
 
 | Date | Migration | Why |
 |---|---|---|
+| 10-22 | `library_images_unique_path` | one row per picture path per library, so a linked folder's picture can carry details and a retired flag |
 | 09-04 | `scheduler_overrides_bypass_and_content_types` | `bypass_guards` + `only_content_types` columns for the per-account posting modal |
 | 09-04 | `scheduler_config_guard_day_cap` | exposes `guard_day_cap` so the UI can say how high a daily cap could go |
 | 09-04 | `scheduler_config_bypass_guards_and_content_types` | makes `bypass_guards` actually lift the age ramp and health throttle |

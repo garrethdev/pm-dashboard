@@ -20,6 +20,132 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-22 — Generate images grows up, linked libraries become writable, Tag with AI is built
+
+**Where it came from:** Czedrick, working under Garreth's login, tried the
+new Generate images form against the real Higgsfield key and asked for five
+things in one go: a way to upload a reference picture in the form, the
+"different directions" way of working he already uses through Claude and
+the Higgsfield connector (one instruction, ten different scenes), generation
+inside the Character 6 library, a note-and-regenerate step on each picture,
+and Tag with AI. All five are in this entry. The Higgsfield key itself was
+proven live the same day: the free estimate call answers, but a real
+generation comes back "not enough credits", because the API has its own
+wallet, separate from the higgsfield.ai subscription.
+
+**What changed:**
+
+- **A reference can be uploaded in the form.** The base-image row has an
+  Upload tile beside the library's own pictures. The file is parked in the
+  library's incoming folder for the run and discarded when the run's last
+  picture has returned; it never becomes a library image itself.
+- **Different directions.** The form has two modes. "One prompt" makes the
+  same prompt N times. "Different directions" takes one instruction ("before
+  pictures of the woman in different places around her home") and has the
+  writer turn it into one prompt per picture, shown as editable lines before
+  anything is generated. The cap per run is now 12, up from the ticket's
+  proposed 8, because ten was the number asked for.
+- **Linked libraries are writable** (Czedrick's decision, 2026-10-22). Only
+  the two seeded banks stay read-only. A linked library's new pictures are
+  written into its folder itself, in the set's subfolder when one is named,
+  so whatever reads the folder sees them. A row is made for a folder picture
+  the first time it is touched, found by its path, and carries what the
+  folder cannot: prompt, who kept it, details, retired, cover. New set makes
+  a real folder (with a hidden `.keep` file so an empty set still shows), and
+  Move is a move between folders. Character 6 now shows Generate images, Tag
+  with AI, New set and Upload.
+- **Try again with a note.** Clicking a generated picture opens it large,
+  with its prompt, Keep, Discard, and a note box. "Again" runs the same prompt
+  plus the note, starting from that picture so what was right about it stays,
+  and the earlier pending file is discarded when the new one arrives. A
+  failed try keeps the picture it started from.
+- **Tag with AI (DEV-41).** On a library: which pictures (not read yet, or
+  all) and whether to file them into sets while reading; then two at a time
+  with a count and a Stop. In an image's window: Read with AI, or Read again.
+  The vision model writes the details the renderer already uses, in the
+  live data's vocabulary (read from `carousel_images` on 2026-10-22): arc
+  roles, image types and pillars are fixed lists, the rest plain words. A
+  linked library's unread count is real now, so Character 6 shows 200 unread.
+- The Studio's "Generate with AI" button now opens the library page instead
+  of sitting disabled.
+- From Czedrick's first look at the form: Cancel and Generate now fill the
+  form's width, and the base-image tiles are half again as wide so a face
+  can be made out. The tiles show the whole picture; the storage resizer
+  cannot find a face to crop to, so a face-focused thumbnail is in
+  `BACKLOG.md`.
+- A migration adds a unique index on a picture's library and path, applied
+  live 2026-10-22, so a folder picture can have exactly one row.
+
+**Verified:** `tsc --noEmit` and ESLint are clean; 53 service tests pass,
+including new ones for the details reader, the directions reader and the
+linked-set folder rules. Against real storage on a scratch folder
+(`rich-life-images/dev30-test`, removed afterwards): a linked library took an
+upload into its folder, made a set and a nested set, moved the picture into
+the set, made it the cover, retired and restored it, and lost only the link
+on delete. In headless Chrome: Character 6 shows the new buttons; the form's
+directions mode and Upload tile render; without an OpenRouter key the
+directions step and Read with AI refuse in plain words.
+Later the same day, with the OpenRouter key added locally, **Read with AI
+was run on one Character 6 picture**: twelve seconds, a faithful description
+(the straw hat, the linen shirt, the tote, the hedge), image type After,
+quality 8, and the library's unread count went from 200 to 199.
+**Not verified:** no picture has been generated (the API wallet is empty),
+Tag with AI over many pictures at once has not been run, and a kept picture
+landing in a linked folder has not been seen, since Keep needs a generated
+picture first.
+
+## 2026-10-22 — Generate images is built, waiting on the Higgsfield key (DEV-30)
+
+**Where it came from:** DEV-30 was the next Carousel Generator ticket. Its
+first step was a check: can the deployed app call Higgsfield with its own key?
+The public docs answered yes on 2026-10-22, and the rest of the ticket was
+built the same day so the only thing left to wait for is the API account.
+
+**What the check found** (recorded in the DEV-30 ticket): Higgsfield has a
+developer API separate from the higgsfield.ai subscription, keyed from
+open.higgsfield.ai and paid from its own dollar balance. Its portrait model,
+Soul 2, keeps a face from a reference photo or a trained Soul ID, and costs
+$0.0057 a picture at 1080p. It offers no 4:5 shape, so a portrait result is
+3:4 and the painter crops it as it does every library picture. Three decisions
+are with Garreth: open and fund the API account, Soul 2 as the model, and one
+Soul ID per character. The Soul ID part is not built until he decides.
+
+**What changed:**
+
+- **Generate images** on a library page is a working button. It opens a form:
+  what the pictures should show, an optional base image from the library (the
+  face or the place is kept), how many (1 to 8) and the shape (portrait, tall
+  or square). It never asks for a set; what is kept lands in the library. In
+  an empty library it is the accent button, with Upload beside it.
+- Each requested picture is its own tile in a review row at the top of the
+  grid: Waiting, Generating, then the picture with **Keep** and **Discard**.
+  A kept picture joins the library untagged, with its prompt, its base image
+  and who kept it recorded; its shape is its width and height. Discard removes
+  the file. One picture failing shows Failed with the reason and Retry; the
+  key missing or the balance empty fails every waiting tile at once with the
+  same reason, so nobody watches eight tiles fail one by one.
+- Every picture takes the same road as an AI edit before anyone sees it: the
+  SynthID removal, then the degrade pass, and only the phone-camera JPEG is
+  stored, under `pending/` until Keep. The raw render is never stored.
+- A new `src/server/carousel/services/higgsfield.ts` submits the job, polls
+  it and downloads the result, reading `HIGGSFIELD_API_KEY` (the complete key
+  copied from open.higgsfield.ai) with an optional `HIGGSFIELD_API_URL`. A new
+  `generate` route under a library asks for one picture per request, so the
+  page can run two at a time and retry one alone, the way uploads work.
+- The images route's Keep now accepts a generated picture as well as an AI
+  edit, through the same pending path.
+- Not changed: the Studio's library pane still has its disabled "Generate
+  with AI" button. The Studio is a separate surface and was not in DEV-30.
+
+**Verified:** 9 new tests for the Higgsfield service pass, with the whole
+suite (`npx vitest run`, 592 tests), `tsc --noEmit` and ESLint are clean, and the page was
+exercised in headless Chrome against the local app: the form opens with the
+library's pictures as base-image choices, and a run of four without a key
+fails all four tiles with "HIGGSFIELD_API_KEY is not set" and a Retry on each.
+**Not verified:** no real picture has been generated, because there is no key
+yet; the Keep of a generated picture and the SynthID removal on a Higgsfield
+render are code paths awaiting their first real use.
+
 ## 2026-10-21 — AI edits go through the SynthID removal before the degrade pass
 
 **Where it came from:** Garreth's SynthID Study API (the watermark remover
