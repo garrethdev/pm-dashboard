@@ -87,7 +87,10 @@ was not given back to empty, so pressing Reconnect wiped the connected
 account's email and date before the new sign-in had begun. The save now
 patches the existing row and inserts only when there is none. Seen live
 (the card went from Connected as garreth@cryptomiami.net to Not connected
-with no email); the fix has not yet met a Reconnect.
+with no email). Then proven: the Reconnect that followed, approved from
+Garreth's own Chrome, landed as garreth@arborvita.io, the Ultra account —
+the card read "ultra plan · 8,553 credits" through the stored tokens, and
+nothing on the row was wiped on the way.
 
 ## 2026-10-09 — "All posts" tab on every account; no Geelark tab on real-phone accounts
 
