@@ -1,20 +1,21 @@
 /**
- * Higgsfield's developer API (DEV-30), the provider chosen for Generate
- * images. Checked against the public docs on 2026-10-22: it is a separate
- * product from the higgsfield.ai subscription, paid from its own balance, and
- * keyed from open.higgsfield.ai. One picture is made by submitting a job,
- * polling its status until it is finished, and downloading the result.
+ * Asking Higgsfield for a picture (DEV-30), through the account connected
+ * on Settings. Until 2026-10-22 this file spoke to Higgsfield's developer
+ * API with its own key and its own dollar wallet, which was empty. Garreth's
+ * instruction the same day: use the main Higgsfield account through the MCP
+ * server instead, so pictures spend that account's plan credits, as the
+ * Claude connector does. The shape of this module is unchanged — the
+ * generate route and the library service ask the same way — only the line
+ * underneath moved (see `higgsfield-mcp.ts` for the connection itself).
  *
- * The model is Soul 2, Higgsfield's own portrait model. With a base image it
- * runs as image-to-image (the picture keeps the face or the place); without
- * one it runs from the prompt alone. The API has no 4:5, so "portrait" is
- * 3:4 and the painter crops to the slide cell as it already does for every
- * library picture.
+ * One picture: submit a job, wait for it in long polls, download the result.
+ * The model is Soul 2, Higgsfield's own portrait model. With a base image
+ * the picture keeps the face or the place; without one it runs from the
+ * prompt alone. Soul 2 has no 4:5, so "portrait" is 3:4 and the painter
+ * crops to the slide cell as it does for every library picture.
  */
-import { randomUUID } from "node:crypto";
-
-/** Resolved per call so a test (or a later env set) can point it elsewhere. */
-const base = () => process.env.HIGGSFIELD_API_URL || "https://api.higgsfield.ai";
+import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { NotConnected, parseToolResult, textOf, withHiggsfield } from "@/server/carousel/services/higgsfield-mcp";
 
 export type Shape = "portrait" | "tall" | "square";
 
@@ -23,73 +24,27 @@ export const SHAPES: Record<Shape, string> = { portrait: "3:4", tall: "9:16", sq
 
 export const isShape = (v: unknown): v is Shape => typeof v === "string" && v in SHAPES;
 
-export const SOUL_TEXT = "higgsfield-ai/soul/v2/standard";
-export const SOUL_IMAGE = "higgsfield-ai/soul/v2/image-to-image";
+/** Soul 2 in Higgsfield's catalogue (`models_explore`, read 2026-10-22). */
+export const MODEL = process.env.HIGGSFIELD_IMAGE_MODEL || "soul_2";
+/** The lower of Soul 2's two tiers; the degrade pass shrinks the picture anyway. */
+const QUALITY = "1.5k";
 
-/** 1080p is $0.0057 a picture (2026-10-22); the degrade pass shrinks it anyway. */
-const RESOLUTION = "1080p";
-
-const POLL_MS = 3_000;
+/** One long poll's budget, the most the tool allows. */
+const POLL_S = 15;
 const WAIT_MS = 150_000; // the route's 300 s ceiling also has to fit the SynthID removal
 const FETCH_MS = 30_000;
 
 /**
- * A failure that stops the whole run, not just one picture: the key is
- * missing or refused, or the balance is empty. The route passes `code` on,
- * and the page fails every waiting tile with the same reason.
+ * A failure that stops the whole run, not just one picture: Higgsfield is
+ * not connected, the sign-in has expired, or the account is out of credits.
+ * The route passes `code` on, and the page fails every waiting tile with
+ * the same reason.
  */
 export class HiggsfieldError extends Error {
   readonly code: "run_blocked" | undefined;
   constructor(message: string, blocksRun = false) {
     super(message);
     this.code = blocksRun ? "run_blocked" : undefined;
-  }
-}
-
-interface Submitted {
-  request_id: string;
-  status_url?: string;
-}
-
-interface Status {
-  status: "queued" | "in_progress" | "completed" | "failed" | "nsfw" | "canceled" | string;
-  images?: { url: string }[];
-  error?: string | null;
-}
-
-/** One request to the API, keyed, with every refusal turned into plain words. */
-async function http(path: string, init: RequestInit = {}): Promise<Response> {
-  const key = process.env.HIGGSFIELD_API_KEY;
-  if (!key) throw new HiggsfieldError("Image generation is not connected: HIGGSFIELD_API_KEY is not set", true);
-  const res = await fetch(`${base()}${path}`, {
-    ...init,
-    headers: { Authorization: `Key ${key}`, ...(init.headers ?? {}) },
-    cache: "no-store",
-    signal: init.signal ?? AbortSignal.timeout(FETCH_MS),
-  });
-  if (res.ok) return res;
-  let detail = "";
-  try {
-    const d = ((await res.json()) as { detail?: unknown }).detail;
-    detail = typeof d === "string" ? d : Array.isArray(d) ? d.map((x) => (typeof x === "object" && x && "msg" in x ? String((x as { msg: unknown }).msg) : String(x))).join("; ") : "";
-  } catch {
-    // A plain body; the status below says the rest.
-  }
-  switch (res.status) {
-    case 401:
-      throw new HiggsfieldError("Higgsfield refused the key (HIGGSFIELD_API_KEY)", true);
-    case 403:
-      throw new HiggsfieldError("The Higgsfield account is out of funds", true);
-    case 400:
-    case 422:
-      throw new HiggsfieldError(detail ? `Higgsfield refused the request: ${detail}` : "Higgsfield refused the request");
-    case 404:
-      throw new HiggsfieldError("Higgsfield does not know that model or request");
-    case 423:
-    case 503:
-      throw new HiggsfieldError("The image model is not available right now. Try again later");
-    default:
-      throw new HiggsfieldError(`Higgsfield could not be reached (HTTP ${res.status})`);
   }
 }
 
@@ -101,52 +56,112 @@ export interface Ask {
   seed?: number | null;
 }
 
+interface Job {
+  index?: number;
+  job_id?: string;
+  status?: string;
+  result_url?: string;
+  result_urls?: string[];
+  error?: string | null;
+}
+
+interface JobsReply {
+  jobs?: Job[];
+  all_terminal?: boolean;
+  poll_after_seconds?: number;
+}
+
+/** What went wrong, as the error the route expects. */
+function wrap(err: unknown): HiggsfieldError {
+  if (err instanceof HiggsfieldError) return err;
+  if (err instanceof NotConnected) return new HiggsfieldError(err.message, true);
+  const m = err instanceof Error ? err.message : String(err);
+  if (/insufficient|not enough credits|out of credits|no credits|balance/i.test(m)) return new HiggsfieldError("The Higgsfield account is out of credits", true);
+  if (/minimum plan|subscription (is )?required|upgrade (your|the) plan/i.test(m)) return new HiggsfieldError(`Higgsfield refused: ${m}`, true);
+  return new HiggsfieldError(m || "Higgsfield could not be reached");
+}
+
+/** One tool call on an open session; a tool error becomes an Error with its words. */
+async function call<T>(client: Client, name: string, args: Record<string, unknown>): Promise<T> {
+  const result = await client.callTool({ name, arguments: args });
+  if (result.isError) throw new Error(textOf(result as { content?: unknown }) || `Higgsfield ${name} failed`);
+  return parseToolResult(result) as T;
+}
+
 /** Ask for one picture. The answer is a job id to wait on, not the picture. */
 export async function submit(ask: Ask): Promise<{ requestId: string }> {
-  const model = ask.baseImageUrl ? SOUL_IMAGE : SOUL_TEXT;
-  const res = await http(`/${model}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Idempotency-Key": randomUUID() },
-    body: JSON.stringify({
-      prompt: ask.prompt,
-      aspect_ratio: SHAPES[ask.shape],
-      resolution: RESOLUTION,
-      batch_size: 1,
-      enhance_prompt: true,
-      ...(ask.baseImageUrl ? { image_url: ask.baseImageUrl } : {}),
-      ...(ask.seed ? { seed: ask.seed } : {}),
-    }),
-  });
-  const json = (await res.json()) as Submitted;
-  if (!json.request_id) throw new HiggsfieldError("Higgsfield accepted the request but gave it no id");
-  return { requestId: json.request_id };
+  try {
+    return await withHiggsfield(async (client) => {
+      const medias: { role: string; value: string }[] = [];
+      if (ask.baseImageUrl) {
+        const imported = await call<{ media_id?: string; id?: string }>(client, "media_import_url", { url: ask.baseImageUrl, type: "image" });
+        const id = imported?.media_id ?? imported?.id;
+        if (!id) throw new HiggsfieldError("Higgsfield did not take the base picture");
+        medias.push({ role: "image", value: id });
+      }
+      const params: Record<string, unknown> = {
+        model: MODEL,
+        prompt: ask.prompt,
+        aspect_ratio: SHAPES[ask.shape],
+        quality: QUALITY,
+        // Credits, never a trial allowance: the dashboard spends what the connected plan holds.
+        use_unlim: false,
+        ...(medias.length ? { medias } : {}),
+        ...(ask.seed ? { seed: ask.seed } : {}),
+      };
+      const reply = await call<JobsReply & { failed_count?: number }>(client, "generate_image_batch", {
+        context: "A picture for an image library in the PM Dashboard",
+        requests: [{ index: 0, params }],
+      });
+      const job = reply?.jobs?.[0];
+      if (!job?.job_id) throw new HiggsfieldError(job?.error ? `Higgsfield refused the request: ${job.error}` : "Higgsfield did not accept the request");
+      return { requestId: job.job_id };
+    });
+  } catch (err) {
+    throw wrap(err);
+  }
+}
+
+function urlsOf(job: Job): string[] {
+  if (Array.isArray(job.result_urls) && job.result_urls.length) return job.result_urls.filter(Boolean);
+  return job.result_url ? [job.result_url] : [];
 }
 
 /** Wait for a job to finish and hand back the picture links. */
 export async function awaitImages(requestId: string): Promise<string[]> {
-  const at = Date.now();
-  for (;;) {
-    const res = await http(`/requests/${encodeURIComponent(requestId)}/status`);
-    const s = (await res.json()) as Status;
-    switch (s.status) {
-      case "completed": {
-        const urls = (s.images ?? []).map((i) => i.url).filter(Boolean);
-        if (!urls.length) throw new HiggsfieldError("Higgsfield finished but returned no picture");
-        return urls;
+  try {
+    return await withHiggsfield(async (client) => {
+      const at = Date.now();
+      for (;;) {
+        const reply = await call<JobsReply>(client, "jobs_wait", { jobs: [{ index: 0, job_id: requestId }], timeout_seconds: POLL_S });
+        const job = reply?.jobs?.[0] ?? {};
+        switch (job.status) {
+          case "completed":
+          case "succeeded": {
+            const urls = urlsOf(job);
+            if (!urls.length) throw new HiggsfieldError("Higgsfield finished but returned no picture");
+            return urls;
+          }
+          case "failed":
+          case "error":
+            throw new HiggsfieldError(job.error ? `Higgsfield could not make the picture: ${job.error}` : "Higgsfield could not make the picture");
+          case "nsfw":
+            throw new HiggsfieldError("Higgsfield declined the picture as unsafe. Change the prompt");
+          case "canceled":
+          case "cancelled":
+            throw new HiggsfieldError("The request was cancelled");
+        }
+        if (Date.now() - at > WAIT_MS) throw new HiggsfieldError("Higgsfield took too long to make the picture");
+        const pause = Math.min(Math.max(reply?.poll_after_seconds ?? 0, 0), 10) * 1000;
+        if (pause) await new Promise((r) => setTimeout(r, pause));
       }
-      case "failed":
-        throw new HiggsfieldError(s.error ? `Higgsfield could not make the picture: ${s.error}` : "Higgsfield could not make the picture");
-      case "nsfw":
-        throw new HiggsfieldError("Higgsfield declined the picture as unsafe. Change the prompt");
-      case "canceled":
-        throw new HiggsfieldError("The request was cancelled");
-    }
-    if (Date.now() - at > WAIT_MS) throw new HiggsfieldError("Higgsfield took too long to make the picture");
-    await new Promise((r) => setTimeout(r, POLL_MS));
+    });
+  } catch (err) {
+    throw wrap(err);
   }
 }
 
-/** Fetch a finished picture. The link is public, so it carries no key. */
+/** Fetch a finished picture. The link is public, so it carries nothing of the account. */
 export async function download(url: string): Promise<Buffer> {
   const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(FETCH_MS) });
   if (!res.ok) throw new HiggsfieldError(`The picture could not be downloaded (HTTP ${res.status})`);

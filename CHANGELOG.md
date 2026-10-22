@@ -20,6 +20,116 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-22 — Generate images now spends the connected Higgsfield account, not an API wallet
+
+**Where it came from:** Garreth, 2026-10-22, after the Generate images form
+landed on `main` against Higgsfield's developer API (PR 67, Czedrick):
+"connect the Higgsfield main account to the app through the MCP server".
+The API has its own dollar wallet, separate from the subscription, and it
+was empty, so the form could not make a picture. The Ultra account
+(garreth@arborvita.io, about 8,550 credits) is the one to spend.
+
+**What changed:**
+
+- **Generate images asks the connected account.** The picture service keeps
+  its shape (prompt, shape, optional base picture in; job id, then bytes
+  out) but now goes through the Settings connection: a base picture is
+  imported into Higgsfield by its public link, the job is submitted to
+  Soul 2 at the 1.5k tier on credits (never a trial allowance), waited on in
+  15-second long polls, and the finished link downloaded. Nothing in the
+  generate route or the library service changed.
+- **The reasons a run stops** are now "Higgsfield is not connected", "the
+  sign-in has expired, reconnect from Settings" and "the account is out of
+  credits"; the API-key reasons are gone with the key.
+- `HIGGSFIELD_API_KEY` and `HIGGSFIELD_API_URL` are no longer read; the
+  example env says so. `HIGGSFIELD_IMAGE_MODEL` can name another model.
+- The connection itself (the Settings card, the OAuth round trip, token
+  storage and refresh) is the entry below, built earlier the same day; its
+  module is now `higgsfield-mcp.ts`, beside the picture service.
+
+**Verified:** types, lint and all 610 unit tests pass, including a rewritten
+set for the picture service that scripts the MCP replies (the real replies
+were read on 2026-10-22 from one two-credit test picture made through the
+Claude connector: a `jobs` list with a `job_id`, then a `result_url` once
+`completed`). **Then the real thing:** the app's own picture service was
+run once on localhost against the stored tokens (a square Soul 2 picture
+from a prompt): submitted, waited and downloaded in 30 seconds, a 2.7 MB
+PNG that looks right, and the connected account's balance moved. Not run
+on this machine: the steps after the picture (the SynthID removal and the
+degrade pass), which need `SYNTHID_API_KEY`; they are on Vercel. The
+production build passes.
+
+## 2026-10-22 — The dashboard can sign in to Higgsfield (DEV-30, step one)
+
+**Where it came from:** Garreth, 2026-10-22: "connect the Higgsfield main
+account to the app through the MCP server". DEV-30 (Higgsfield image
+generation) starts with exactly this check — Higgsfield was connected to
+Claude, not to the app, and nothing in the repo could reach it. Found on the
+way: Higgsfield's MCP server takes no API key at all. An app signs in to it
+once through a browser, the way the Claude connector does, and then holds a
+long-lived sign-in for that one Higgsfield account. There are two Higgsfield
+accounts (garreth.dottin1@gmail.com and garreth@cryptomiami.net, both with
+sign-ins in September and both still billing), so which one the dashboard
+uses is decided at that sign-in screen, and Settings says which it was.
+
+**What changed:**
+
+- **Settings has a Connected services card** with Higgsfield on it. Not
+  connected: a Connect Higgsfield button. Connected: the account's email,
+  its plan and credits read live from Higgsfield, when and by whom it was
+  connected, a Reconnect button (to switch accounts) and a hold-to-confirm
+  Disconnect.
+- **Connect sends the browser to Higgsfield's sign-in and back.** The app
+  registers itself with Higgsfield's authorization server the first time
+  (once per site: localhost and the live site register separately), notes
+  the sign-in it started, and takes the code Higgsfield hands back. A code
+  that does not match the sign-in started, or arrives more than ten minutes
+  later, is refused with a sentence on the card.
+- **The sign-in lives in one database row** (`carousel_connections`, service
+  role only, same rule as `issues` and `accounts`): tokens, the app's client
+  registration, and the account's email read from the ID token. Nothing in
+  it reaches a browser. The access token is refreshed before it runs out; a
+  refresh Higgsfield refuses marks the row and the card says to reconnect.
+- **The server can now call any Higgsfield tool** through that line
+  (`callTool` in `src/server/carousel/services/higgsfield.ts`): balance,
+  image and video generation, imports, polling — the same 80-odd tools the
+  Claude connector has. Today only `balance` is used, for the card.
+- The library page's disabled Generate images button now says the form is
+  what is missing (DEV-30), not the connection.
+- New dependency: `@modelcontextprotocol/sdk` 1.32.1, the official MCP
+  client, for the OAuth dance and the session.
+
+**What is NOT here:** the Generate images form, the generating tiles and the
+Keep / Discard row — the rest of DEV-30. Nothing generates yet.
+
+**Two rules the connection follows, both Higgsfield's:** everything made
+through the MCP line spends the connected account's credits at standard
+rates (Unlimited and free generations apply only on higgsfield.ai), and
+every generation lands in that account's Assets tagged MCP.
+
+**Verification:** types, lint, the unit tests (11 new, over the token and
+result helpers) and the production build pass. **Confirmed live on
+localhost, 2026-10-22:** pressing Connect registered the app with Higgsfield
+(a client id came back) and sent the browser to Higgsfield's sign-in;
+Garreth signed in; the callback accepted the code, the row filled with
+tokens and the account's email, and the card read the plan and credits back
+from Higgsfield through the stored tokens. The first sign-in was made with
+garreth@cryptomiami.net, which Higgsfield reports as the free plan with no
+credits, so Reconnect with the Ultra account is the next press. Not yet
+exercised: a token refresh (the first access token had not run out), and
+the live site, which registers its own client on first press. The table is
+live on Supabase (migration `higgsfield_connection`, 2026-10-22).
+
+**Later the same day, found on the first Reconnect:** the row-save behind
+the connection went through a PostgREST upsert, which sets every column it
+was not given back to empty, so pressing Reconnect wiped the connected
+account's email and date before the new sign-in had begun. The save now
+patches the existing row and inserts only when there is none. Seen live
+(the card went from Connected as garreth@cryptomiami.net to Not connected
+with no email). Then proven: the Reconnect that followed, approved from
+Garreth's own Chrome, landed as garreth@arborvita.io, the Ultra account —
+the card read "ultra plan · 8,553 credits" through the stored tokens, and
+nothing on the row was wiped on the way.
 ## 2026-10-22 — Generate images grows up, linked libraries become writable, Tag with AI is built
 
 **Where it came from:** Czedrick, working under Garreth's login, tried the

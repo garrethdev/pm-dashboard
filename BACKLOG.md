@@ -122,9 +122,10 @@ screenshots ("Issues with Carousel App"). Garreth answered the questions on
   "Api key not set" on every AI feature. Garreth added it on 2026-10-08; it
   takes effect on the next deployment. The key was pasted into a chat on the
   way, so it should be rotated on OpenRouter afterwards.
-- **Generate images and Tag with AI are built but have never run (DEV-30,
-  DEV-41, 2026-10-22).** The Higgsfield key is valid but the API wallet
-  (console.higgsfield.ai, separate from the subscription) is empty; the
+- **Generate images and Tag with AI are built (DEV-30, DEV-41,
+  2026-10-22).** Generate images now runs through the Higgsfield account
+  connected on Settings (the Ultra plan, through Higgsfield's MCP server),
+  not the API key, so the empty API wallet no longer matters; the
   OpenRouter key is on Vercel but not on the dev machine. Open for Garreth:
   one Soul ID per character ($2.50 each, trained from library photos) so a
   run can hold a face across several base images; today one base image is
