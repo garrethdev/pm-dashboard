@@ -51,7 +51,13 @@ was empty, so the form could not make a picture. The Ultra account
 set for the picture service that scripts the MCP replies (the real replies
 were read on 2026-10-22 from one two-credit test picture made through the
 Claude connector: a `jobs` list with a `job_id`, then a `result_url` once
-`completed`). See below for the first real run through the app.
+`completed`). **Then the real thing:** the app's own picture service was
+run once on localhost against the stored tokens (a square Soul 2 picture
+from a prompt): submitted, waited and downloaded in 30 seconds, a 2.7 MB
+PNG that looks right, and the connected account's balance moved. Not run
+on this machine: the steps after the picture (the SynthID removal and the
+degrade pass), which need `SYNTHID_API_KEY`; they are on Vercel. The
+production build passes.
 
 ## 2026-10-22 — The dashboard can sign in to Higgsfield (DEV-30, step one)
 
