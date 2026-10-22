@@ -33,9 +33,18 @@ export async function readConnection(provider: string): Promise<ConnectionRow | 
   return rows[0] ?? null;
 }
 
-/** Write some columns of the provider's row, creating the row when it is new. */
+/**
+ * Write some columns of the provider's row, creating the row when it is new.
+ * A patch first, an insert only when there is no row: an upsert through
+ * PostgREST sets every column it was not given back to its default, which
+ * on 2026-10-22 wiped the connected account's email and date the moment
+ * Reconnect was pressed.
+ */
 export async function writeConnection(provider: string, serverUrl: string, patch: Partial<Omit<ConnectionRow, "provider" | "updated_at">>): Promise<ConnectionRow> {
-  const rows = await dbInsert<ConnectionRow>("carousel_connections", { provider, server_url: serverUrl, ...patch, updated_at: new Date().toISOString() }, { upsert: "provider" });
+  const stamp = new Date().toISOString();
+  const updated = await dbPatch<ConnectionRow>(`carousel_connections?provider=eq.${enc(provider)}&select=${COLS}`, { ...patch, updated_at: stamp });
+  if (updated[0]) return updated[0];
+  const rows = await dbInsert<ConnectionRow>("carousel_connections", { provider, server_url: serverUrl, ...patch, updated_at: stamp });
   return rows[0]!;
 }
 

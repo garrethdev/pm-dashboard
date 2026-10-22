@@ -81,6 +81,14 @@ exercised: a token refresh (the first access token had not run out), and
 the live site, which registers its own client on first press. The table is
 live on Supabase (migration `higgsfield_connection`, 2026-10-22).
 
+**Later the same day, found on the first Reconnect:** the row-save behind
+the connection went through a PostgREST upsert, which sets every column it
+was not given back to empty, so pressing Reconnect wiped the connected
+account's email and date before the new sign-in had begun. The save now
+patches the existing row and inserts only when there is none. Seen live
+(the card went from Connected as garreth@cryptomiami.net to Not connected
+with no email); the fix has not yet met a Reconnect.
+
 ## 2026-10-09 — "All posts" tab on every account; no Geelark tab on real-phone accounts
 
 **Where it came from:** Czedrick, 2026-10-09, while checking DA-02. First:
