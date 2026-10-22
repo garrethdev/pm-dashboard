@@ -212,7 +212,7 @@ export interface LibraryImage {
   details: Record<string, unknown> | null;
   /** The set it sits in, for an image a person added; bank images have none. */
   setId?: string | null;
-  /** How it was made: upload, black_and_white, background_removal, ai_edit. */
+  /** How it was made: upload, black_and_white, background_removal, ai_edit, generated. */
   madeBy?: string | null;
 }
 

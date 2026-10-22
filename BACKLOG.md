@@ -122,10 +122,22 @@ screenshots ("Issues with Carousel App"). Garreth answered the questions on
   "Api key not set" on every AI feature. Garreth added it on 2026-10-08; it
   takes effect on the next deployment. The key was pasted into a chat on the
   way, so it should be rotated on OpenRouter afterwards.
-- **Generate with AI** in the Studio's library pane and on a library's page
-  is still a disabled button (Higgsfield is not connected). When DEV-30
-  builds it, every downloaded render goes through `degrade()` before it is
-  stored or shown, as the AI edit's does (`docs/DEGRADE-PASS.md`).
+- **Generate images and Tag with AI are built but have never run (DEV-30,
+  DEV-41, 2026-10-22).** The Higgsfield key is valid but the API wallet
+  (console.higgsfield.ai, separate from the subscription) is empty; the
+  OpenRouter key is on Vercel but not on the dev machine. Open for Garreth:
+  one Soul ID per character ($2.50 each, trained from library photos) so a
+  run can hold a face across several base images; today one base image is
+  passed by link. Also to measure: what a Tag with AI pass over a full
+  library costs.
+- **Face-focused thumbnails (Czedrick, 2026-10-22).** Small tiles (the
+  base-image picker, the grids) show the whole picture, so a face is small.
+  Supabase's resizer crops to the centre only; a face-aware crop needs a
+  face detector on the server writing a focal point per image, which the
+  tiles would then crop to. Not started.
+- **A generated picture's shape is only its width and height.** The ticket
+  asked for the shape to be recorded; it is derivable from the row, not a
+  column. Fine until something needs to filter by it.
 - **The degrade pass on uploads to AI libraries.** Agreed with Garreth
   2026-10-12: a per-library switch, on for AI character libraries, so a
   picture made outside the app (Higgsfield by hand, the Mac scripts) is

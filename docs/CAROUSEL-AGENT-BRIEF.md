@@ -84,7 +84,7 @@ Libraries in `image_libraries` on 2026-10-21:
 |---|---|---|---|
 | Glow Up bank | table `glowup_image_bank` | yes | 1 |
 | Covered Eye bank | table `covered_eye_image_bank` | yes | 1 |
-| Character 6 | live link to `rich-life-images/character-6/carousel-basis` | yes | 0 |
+| Character 6 | live link to `rich-life-images/character-6/carousel-basis` | no (writable since 2026-10-22; new pictures are written into the folder) | 0 |
 | Viral Theories Library | own uploads (none yet) | no | 0 |
 | test | own uploads (3) | no | 0 |
 
@@ -116,9 +116,27 @@ original; nothing is overwritten.**
    C2PA, EXIF and the rest), and is stored under `pending/` until the person
    keeps it. HTTP 402 from OpenRouter means the account is out of credit.
 
-Not built: **"Generate with AI"** from nothing is a disabled button in the
-Studio and on the library page. Higgsfield is not connected (DEV-30). The app
-does not create pictures from scratch today.
+4. **Generate images (DEV-30, built 2026-10-22).** `generateImage` asks
+   Higgsfield's Soul 2 for one picture (`higgsfield.ts`: submit, poll,
+   download; `HIGGSFIELD_API_KEY`), with one of the library's own pictures
+   as a base when the form names one, and parks the result the same way as
+   an AI edit. The page asks for each picture of a run on its own, two at a
+   time. A `run_blocked` error code (no key, refused key, empty balance)
+   fails every waiting tile at once. **No real picture has been made yet:**
+   the key is not set until the API account exists.
+
+5. **Tag with AI (DEV-41, built 2026-10-22).** `readImage` in `tagging.ts`
+   sends a 1,024 px JPEG to the vision model (`CAROUSEL_VISION_MODEL`,
+   default the writer's model) and writes `details` on the row, in the live
+   `carousel_images` vocabulary. The page reads two at a time with a Stop.
+   **No picture has been read yet** on this machine (no OpenRouter key here).
+6. **Linked libraries are writable (2026-10-22).** Only the two banks are
+   read-only. A linked picture's id is `linked:<bucket>/<path>`; `getImageRow`
+   makes its row on first touch. Sets are folders; New set writes a hidden
+   `.keep`; Move is a storage move. New pictures go into the linked folder.
+
+The Studio's "Generate with AI" button opens the library page, where
+generation lives.
 
 **Picking** (`src/lib/carousel/picking/pick.ts`) chooses which library
 pictures land in which cell of which slide, following the template.

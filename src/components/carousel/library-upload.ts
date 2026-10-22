@@ -19,6 +19,25 @@ export interface Landed {
   url: string;
 }
 
+/**
+ * Put a file in the library's incoming folder and leave it there: a
+ * reference picture for Generate images (2026-10-22), which is never a
+ * library image itself. The page discards it when the run is over.
+ */
+export async function putIncoming(libraryId: string, file: Blob & { name?: string }): Promise<{ path: string; url: string; error: string | null }> {
+  const type = pictureType(file);
+  if (!type) return { path: "", url: "", error: "Only JPEG, PNG, WebP and HEIC pictures can be uploaded" };
+  const link = await post<{ path: string; url: string }>(`/api/carousel-generator/libraries/${libraryId}/uploads`, { type, size: file.size });
+  if (link.error || !link.data) return { path: "", url: "", error: link.error ?? "The upload could not start" };
+  try {
+    const put = await fetch(link.data.url, { method: "PUT", headers: { "Content-Type": type }, body: file });
+    if (!put.ok) return { path: "", url: "", error: `The upload was refused (HTTP ${put.status})` };
+  } catch {
+    return { path: "", url: "", error: "The upload did not get through. Check the connection" };
+  }
+  return { path: link.data.path, url: URL.createObjectURL(file), error: null };
+}
+
 export async function uploadPicture(
   libraryId: string,
   file: Blob & { name?: string },

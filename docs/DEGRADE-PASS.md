@@ -23,8 +23,9 @@ the original script, `character-6/after-review/degrade.py`.
   cleared PNG are never stored. **Keep** stores that JPEG as it is
   (`keepEdit`) and records `degraded = true` and `degrade_seed` (the pending
   file's id) on the `image_library_images` row.
-- **Generate images (DEV-30), when it is built.** Same call, as the last
-  step of downloading each render.
+- **Generate images (DEV-30, built 2026-10-22).** Same road: each render is
+  downloaded, cleared of SynthID, degraded and written as a pending file
+  (`park` in `library-images.ts`, shared with the AI edit).
 - **Every other library save** (uploads, black and white, cut-outs) is not
   degraded, but its file is checked for metadata (`assertNoMetadata`) before
   it is stored.
