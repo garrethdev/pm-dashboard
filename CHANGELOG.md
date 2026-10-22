@@ -20,6 +20,67 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-22 — The dashboard can sign in to Higgsfield (DEV-30, step one)
+
+**Where it came from:** Garreth, 2026-10-22: "connect the Higgsfield main
+account to the app through the MCP server". DEV-30 (Higgsfield image
+generation) starts with exactly this check — Higgsfield was connected to
+Claude, not to the app, and nothing in the repo could reach it. Found on the
+way: Higgsfield's MCP server takes no API key at all. An app signs in to it
+once through a browser, the way the Claude connector does, and then holds a
+long-lived sign-in for that one Higgsfield account. There are two Higgsfield
+accounts (garreth.dottin1@gmail.com and garreth@cryptomiami.net, both with
+sign-ins in September and both still billing), so which one the dashboard
+uses is decided at that sign-in screen, and Settings says which it was.
+
+**What changed:**
+
+- **Settings has a Connected services card** with Higgsfield on it. Not
+  connected: a Connect Higgsfield button. Connected: the account's email,
+  its plan and credits read live from Higgsfield, when and by whom it was
+  connected, a Reconnect button (to switch accounts) and a hold-to-confirm
+  Disconnect.
+- **Connect sends the browser to Higgsfield's sign-in and back.** The app
+  registers itself with Higgsfield's authorization server the first time
+  (once per site: localhost and the live site register separately), notes
+  the sign-in it started, and takes the code Higgsfield hands back. A code
+  that does not match the sign-in started, or arrives more than ten minutes
+  later, is refused with a sentence on the card.
+- **The sign-in lives in one database row** (`carousel_connections`, service
+  role only, same rule as `issues` and `accounts`): tokens, the app's client
+  registration, and the account's email read from the ID token. Nothing in
+  it reaches a browser. The access token is refreshed before it runs out; a
+  refresh Higgsfield refuses marks the row and the card says to reconnect.
+- **The server can now call any Higgsfield tool** through that line
+  (`callTool` in `src/server/carousel/services/higgsfield.ts`): balance,
+  image and video generation, imports, polling — the same 80-odd tools the
+  Claude connector has. Today only `balance` is used, for the card.
+- The library page's disabled Generate images button now says the form is
+  what is missing (DEV-30), not the connection.
+- New dependency: `@modelcontextprotocol/sdk` 1.32.1, the official MCP
+  client, for the OAuth dance and the session.
+
+**What is NOT here:** the Generate images form, the generating tiles and the
+Keep / Discard row — the rest of DEV-30. Nothing generates yet.
+
+**Two rules the connection follows, both Higgsfield's:** everything made
+through the MCP line spends the connected account's credits at standard
+rates (Unlimited and free generations apply only on higgsfield.ai), and
+every generation lands in that account's Assets tagged MCP.
+
+**Verification:** types, lint, the unit tests (11 new, over the token and
+result helpers) and the production build pass. **Confirmed live on
+localhost, 2026-10-22:** pressing Connect registered the app with Higgsfield
+(a client id came back) and sent the browser to Higgsfield's sign-in;
+Garreth signed in; the callback accepted the code, the row filled with
+tokens and the account's email, and the card read the plan and credits back
+from Higgsfield through the stored tokens. The first sign-in was made with
+garreth@cryptomiami.net, which Higgsfield reports as the free plan with no
+credits, so Reconnect with the Ultra account is the next press. Not yet
+exercised: a token refresh (the first access token had not run out), and
+the live site, which registers its own client on first press. The table is
+live on Supabase (migration `higgsfield_connection`, 2026-10-22).
+
 ## 2026-10-09 — "All posts" tab on every account; no Geelark tab on real-phone accounts
 
 **Where it came from:** Czedrick, 2026-10-09, while checking DA-02. First:

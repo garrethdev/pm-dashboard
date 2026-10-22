@@ -73,7 +73,7 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-27 | The lane-creation database function | Open |
 | DEV-28 | Go Live tab | Open |
 | DEV-29 | Libraries: new, upload, retire | Open |
-| DEV-30 | Higgsfield image generation | Open |
+| DEV-30 | Higgsfield image generation | In progress — the connection to Higgsfield (its first step) landed 2026-10-22; the form is open |
 | DEV-41 | Image details: AI vision reads a library | Open |
 | DEV-31 | Keys out of n8n before any rotation | Open |
 | DEV-32 | Capture the study digest | Open |

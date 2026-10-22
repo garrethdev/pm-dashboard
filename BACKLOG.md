@@ -123,7 +123,9 @@ screenshots ("Issues with Carousel App"). Garreth answered the questions on
   takes effect on the next deployment. The key was pasted into a chat on the
   way, so it should be rotated on OpenRouter afterwards.
 - **Generate with AI** in the Studio's library pane and on a library's page
-  is still a disabled button (Higgsfield is not connected).
+  is still a disabled button. The connection to Higgsfield itself landed on
+  2026-10-22 (Settings → Connected services, through Higgsfield's MCP
+  server); what is left is the form and the Keep / Discard row, DEV-30.
 - **Rendered PNGs.** The Studio's preview is SVG drawn in the browser. The
   painter that writes JPEGs for a lane table is still Codex's unported
   branch (see the PR #31 section). The free anchor, per-box fonts, stroke and

@@ -425,7 +425,7 @@ export function LibraryDetailView({ id, initial }: { id: string; initial: Librar
             {!lib.readOnly && (
               <>
                 <span className="hidden gap-2 sm:flex">
-                  <Btn disabled title="Higgsfield is not connected yet"><Sparkles className="size-3.5" />Generate images</Btn>
+                  <Btn disabled title="The generate form is not built yet (DEV-30); Higgsfield itself is connected from Settings"><Sparkles className="size-3.5" />Generate images</Btn>
                   <Btn disabled title="Not connected yet">Tag with AI</Btn>
                 </span>
                 <Btn onClick={() => { setSetErr(null); setNewSet(true); }}><Plus className="size-3" />New set</Btn>
