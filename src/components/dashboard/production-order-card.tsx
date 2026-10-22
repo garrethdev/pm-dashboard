@@ -15,6 +15,7 @@ import {
   type InventoryRangeKey,
   type ProductionOrderRow,
 } from "@/lib/data/inventory";
+import { newTypeLabel, toProduce as toProduceFor } from "@/lib/data/production-order-rules";
 import { cn } from "@/lib/utils";
 
 /** v_scheduler_production_order.status carries its own vocabulary — map it
@@ -23,10 +24,11 @@ import { cn } from "@/lib/utils";
  * The "To Produce" buffer horizon reuses INVENTORY_RANGES so this card offers
  * the same 7 days / 14 days / 1 month choices as Demand vs supply above.
  *
- * The view ships only produce_to_reach_21d, but that is just
- * `ceil(weekly_demand * 21/7 - usable_pool)`, so any horizon is derivable in the
- * browser from weeklyDemand + usablePool with no refetch. Verified against
- * v_scheduler_production_order at 21 d: 0 mismatches over all 17 rows.
+ * The view ships only produce_to_reach_21d, but any horizon is derivable in
+ * the browser from the row with no refetch — see toProduce() in
+ * production-order-rules, which since 2026-10-19 also counts a new content
+ * type's priority week. Verified against v_scheduler_production_order at 21 d
+ * (before the priority week): 0 mismatches over all 17 rows.
  *
  * Only this column is horizon-dependent. `usable_pool` and `quarantined` are
  * current stocks, `weekly_demand` is a rate, and `days_cover` / `status` are
@@ -59,8 +61,7 @@ export function ProductionOrderCard({
   const horizonEntry = INVENTORY_RANGES.find((r) => r.key === horizon) ?? INVENTORY_RANGES[1];
 
   /** Mirrors the view's own arithmetic, generalised off its fixed 21 days. */
-  const toProduce = (r: ProductionOrderRow) =>
-    Math.max(0, Math.ceil(r.weeklyDemand * (horizonEntry.days / 7) - r.usablePool));
+  const toProduce = (r: ProductionOrderRow) => toProduceFor(r, horizonEntry.days);
 
   return (
     <DashCard
@@ -136,6 +137,13 @@ export function ProductionOrderCard({
                 </td>
                 <td className="py-2.5 font-mono text-xs text-text-muted whitespace-nowrap">
                   {o.contentType}
+                  {/* In its priority week the scheduler gives it to every
+                      account first, so its demand jumps; this says why. */}
+                  {o.isNew && (
+                    <StatusPill tone="info" className="ml-2 font-sans">
+                      {newTypeLabel(o.priorityUntil)}
+                    </StatusPill>
+                  )}
                 </td>
                 <td className="py-2.5">
                   <StatusPill tone={ORDER_TONE[o.status] ?? "neutral"}>

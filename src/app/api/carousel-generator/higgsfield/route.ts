@@ -1,5 +1,5 @@
 import { attempt, bad, guard, ok } from "@/server/carousel/http";
-import { connectionStatus, disconnect } from "@/server/carousel/services/higgsfield";
+import { connectionStatus, disconnect } from "@/server/carousel/services/higgsfield-mcp";
 
 /** What Settings shows: whether Higgsfield is connected, as whom, and whether the tokens work right now. */
 export async function GET() {

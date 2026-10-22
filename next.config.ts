@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   // The documentation serves these pinned assets locally, including in Vercel bundles.
   outputFileTracingIncludes: {
     "/api/carousel-generator/docs/assets/*": ["./node_modules/swagger-ui-dist/swagger-ui.css", "./node_modules/swagger-ui-dist/swagger-ui-bundle.js"],
+    // Content tagging (DA-03) pulls a frame out of each video with this binary.
+    "/api/content-tags/run": ["./node_modules/ffmpeg-static/ffmpeg"],
   },
   /**
    * Keep a visited page in the browser for a short while, so going back to one
@@ -26,8 +28,9 @@ const nextConfig: NextConfig = {
 
   // The slide-image converter (HEIC to JPEG for the Trends screens) runs on
   // the server and ships its own WebAssembly, so it is loaded from
-  // node_modules as is instead of being bundled.
-  serverExternalPackages: ["heic-decode", "libheif-js", "sharp"],
+  // node_modules as is instead of being bundled. ffmpeg-static finds its
+  // binary next to itself, which only works unbundled.
+  serverExternalPackages: ["heic-decode", "libheif-js", "sharp", "ffmpeg-static"],
 
   // /cadence was folded into /content-calendar (2026-09-06): the lane mix moved
   // into the "Adjust Cadence" dialog and the per-account limits table moved

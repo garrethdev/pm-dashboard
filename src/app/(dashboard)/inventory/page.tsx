@@ -14,7 +14,7 @@ async function InventoryLive() {
     // Only the fleet being looked at (Cloud or Physical, top right).
     const fleet = await getFleet();
     ({ data, fetchedAt } = await getInventory(fleet));
-    // 14d is the default window and reproduces inventory_check exactly.
+    // 14d is the default window.
     demand = (await getDemandSupply(14, 0, null, fleet)).data;
   } catch (err) {
     return (

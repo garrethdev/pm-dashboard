@@ -7,7 +7,8 @@
  * wrap width, colour and sample text; the selected image cell's set and
  * pinned picture; the slide's layers; and the library with its sets and
  * thumbnails, which drag onto a slide's cell. Upload images adds to the
- * library; Generate with AI is not connected yet.
+ * library; Generate images lives on the library page (DEV-30), so the
+ * button here opens it.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn, Pill } from "@/components/carousel/kit";
@@ -298,7 +299,7 @@ function LibraryPane({ libraries, libraryId, onLibrary, selected, slide, onPin }
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <input ref={picker} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden onChange={(e) => { void addPictures(e.target.files); e.target.value = ""; }} />
             <Btn onClick={() => picker.current?.click()} disabled={library.readOnly || Boolean(adding?.left)} title={library.readOnly ? "This library is read-only" : undefined}><Upload className="size-3.5" />Upload images</Btn>
-            <Btn disabled title="Not connected yet"><Sparkles className="size-3.5" />Generate with AI</Btn>
+            <Btn href={`/carousel-generator/library/${library.id}`} title="Opens the library, where pictures are generated"><Sparkles className="size-3.5" />Generate images</Btn>
             {adding && <span role="status" className="text-xs text-text-muted tnum">{adding.left > 0 ? `Adding, ${adding.left} to go` : `${adding.done} added`}{adding.failed > 0 ? `, ${adding.failed} failed` : ""}</span>}
           </div>
         </>

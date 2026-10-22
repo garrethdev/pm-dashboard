@@ -73,6 +73,9 @@ export async function attempt<T>(
   } catch (err) {
     const message = err instanceof Error ? err.message : "Something went wrong";
     logError(`${action} on ${target}`, err);
-    return bad(message, 500);
+    // An error that carries a code (Higgsfield's run_blocked) hands it to the page.
+    const carried = err instanceof Error ? (err as unknown as { code?: unknown }).code : undefined;
+    const code = typeof carried === "string" ? carried : undefined;
+    return bad(message, 500, code);
   }
 }

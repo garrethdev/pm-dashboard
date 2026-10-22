@@ -1,3 +1,5 @@
+import { workingDaysBetween } from "@/lib/data/work-week-rules";
+
 /**
  * Is the warmup script running a session, or has it stopped? (PF-13)
  *
@@ -80,25 +82,25 @@ function etDate(d: Date): string {
 }
 
 /**
- * How many New York days an Automated account has gone without a finished
- * warmup, once that reaches the limit; otherwise null.
+ * How many New York working days an Automated account has gone without a
+ * finished warmup, once that reaches the limit; otherwise null.
  *
  * Counted from the last FINISHED warmup (a session that reached 15 minutes,
  * by hand, by the script, or by Geelark before the move). An account never
  * warmed at all is counted from the day it moved onto its phone, and one with
  * neither date says nothing: there is no day to count from.
+ *
+ * Days off do not count (2026-10-16): nothing is warmed on them on purpose,
+ * so last warmed on Friday reads as one day on Monday, not three.
  */
 export function warmupOverdueDays(
   lastFinishedAt: string | null,
   movedToDeviceAt: string | null,
   now: Date,
+  daysOff: readonly number[] = [],
 ): number | null {
   const from = lastFinishedAt ?? movedToDeviceAt;
   if (!from) return null;
-  const [a, b] = [etDate(new Date(from)), etDate(now)].map((ymd) => {
-    const [y, m, d] = ymd.split("-").map(Number);
-    return Date.UTC(y!, m! - 1, d!);
-  });
-  const days = Math.round((b! - a!) / 86_400_000);
+  const days = workingDaysBetween(etDate(new Date(from)), etDate(now), daysOff);
   return days >= AUTOMATED_WARMUP_OVERDUE_DAYS ? days : null;
 }

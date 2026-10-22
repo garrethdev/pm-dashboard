@@ -20,6 +20,39 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-22 — Generate images now spends the connected Higgsfield account, not an API wallet
+
+**Where it came from:** Garreth, 2026-10-22, after the Generate images form
+landed on `main` against Higgsfield's developer API (PR 67, Czedrick):
+"connect the Higgsfield main account to the app through the MCP server".
+The API has its own dollar wallet, separate from the subscription, and it
+was empty, so the form could not make a picture. The Ultra account
+(garreth@arborvita.io, about 8,550 credits) is the one to spend.
+
+**What changed:**
+
+- **Generate images asks the connected account.** The picture service keeps
+  its shape (prompt, shape, optional base picture in; job id, then bytes
+  out) but now goes through the Settings connection: a base picture is
+  imported into Higgsfield by its public link, the job is submitted to
+  Soul 2 at the 1.5k tier on credits (never a trial allowance), waited on in
+  15-second long polls, and the finished link downloaded. Nothing in the
+  generate route or the library service changed.
+- **The reasons a run stops** are now "Higgsfield is not connected", "the
+  sign-in has expired, reconnect from Settings" and "the account is out of
+  credits"; the API-key reasons are gone with the key.
+- `HIGGSFIELD_API_KEY` and `HIGGSFIELD_API_URL` are no longer read; the
+  example env says so. `HIGGSFIELD_IMAGE_MODEL` can name another model.
+- The connection itself (the Settings card, the OAuth round trip, token
+  storage and refresh) is the entry below, built earlier the same day; its
+  module is now `higgsfield-mcp.ts`, beside the picture service.
+
+**Verified:** types, lint and all 610 unit tests pass, including a rewritten
+set for the picture service that scripts the MCP replies (the real replies
+were read on 2026-10-22 from one two-credit test picture made through the
+Claude connector: a `jobs` list with a `job_id`, then a `result_url` once
+`completed`). See below for the first real run through the app.
+
 ## 2026-10-22 — The dashboard can sign in to Higgsfield (DEV-30, step one)
 
 **Where it came from:** Garreth, 2026-10-22: "connect the Higgsfield main
@@ -91,6 +124,677 @@ with no email). Then proven: the Reconnect that followed, approved from
 Garreth's own Chrome, landed as garreth@arborvita.io, the Ultra account —
 the card read "ultra plan · 8,553 credits" through the stored tokens, and
 nothing on the row was wiped on the way.
+## 2026-10-22 — Generate images grows up, linked libraries become writable, Tag with AI is built
+
+**Where it came from:** Czedrick, working under Garreth's login, tried the
+new Generate images form against the real Higgsfield key and asked for five
+things in one go: a way to upload a reference picture in the form, the
+"different directions" way of working he already uses through Claude and
+the Higgsfield connector (one instruction, ten different scenes), generation
+inside the Character 6 library, a note-and-regenerate step on each picture,
+and Tag with AI. All five are in this entry. The Higgsfield key itself was
+proven live the same day: the free estimate call answers, but a real
+generation comes back "not enough credits", because the API has its own
+wallet, separate from the higgsfield.ai subscription.
+
+**What changed:**
+
+- **A reference can be uploaded in the form.** The base-image row has an
+  Upload tile beside the library's own pictures. The file is parked in the
+  library's incoming folder for the run and discarded when the run's last
+  picture has returned; it never becomes a library image itself.
+- **Different directions.** The form has two modes. "One prompt" makes the
+  same prompt N times. "Different directions" takes one instruction ("before
+  pictures of the woman in different places around her home") and has the
+  writer turn it into one prompt per picture, shown as editable lines before
+  anything is generated. The cap per run is now 12, up from the ticket's
+  proposed 8, because ten was the number asked for.
+- **Linked libraries are writable** (Czedrick's decision, 2026-10-22). Only
+  the two seeded banks stay read-only. A linked library's new pictures are
+  written into its folder itself, in the set's subfolder when one is named,
+  so whatever reads the folder sees them. A row is made for a folder picture
+  the first time it is touched, found by its path, and carries what the
+  folder cannot: prompt, who kept it, details, retired, cover. New set makes
+  a real folder (with a hidden `.keep` file so an empty set still shows), and
+  Move is a move between folders. Character 6 now shows Generate images, Tag
+  with AI, New set and Upload.
+- **Try again with a note.** Clicking a generated picture opens it large,
+  with its prompt, Keep, Discard, and a note box. "Again" runs the same prompt
+  plus the note, starting from that picture so what was right about it stays,
+  and the earlier pending file is discarded when the new one arrives. A
+  failed try keeps the picture it started from.
+- **Tag with AI (DEV-41).** On a library: which pictures (not read yet, or
+  all) and whether to file them into sets while reading; then two at a time
+  with a count and a Stop. In an image's window: Read with AI, or Read again.
+  The vision model writes the details the renderer already uses, in the
+  live data's vocabulary (read from `carousel_images` on 2026-10-22): arc
+  roles, image types and pillars are fixed lists, the rest plain words. A
+  linked library's unread count is real now, so Character 6 shows 200 unread.
+- The Studio's "Generate with AI" button now opens the library page instead
+  of sitting disabled.
+- From Czedrick's first look at the form: Cancel and Generate now fill the
+  form's width, and the base-image tiles are half again as wide so a face
+  can be made out. The tiles show the whole picture; the storage resizer
+  cannot find a face to crop to, so a face-focused thumbnail is in
+  `BACKLOG.md`.
+- A migration adds a unique index on a picture's library and path, applied
+  live 2026-10-22, so a folder picture can have exactly one row.
+
+**Verified:** `tsc --noEmit` and ESLint are clean; 53 service tests pass,
+including new ones for the details reader, the directions reader and the
+linked-set folder rules. Against real storage on a scratch folder
+(`rich-life-images/dev30-test`, removed afterwards): a linked library took an
+upload into its folder, made a set and a nested set, moved the picture into
+the set, made it the cover, retired and restored it, and lost only the link
+on delete. In headless Chrome: Character 6 shows the new buttons; the form's
+directions mode and Upload tile render; without an OpenRouter key the
+directions step and Read with AI refuse in plain words.
+Later the same day, with the OpenRouter key added locally, **Read with AI
+was run on one Character 6 picture**: twelve seconds, a faithful description
+(the straw hat, the linen shirt, the tote, the hedge), image type After,
+quality 8, and the library's unread count went from 200 to 199.
+**Not verified:** no picture has been generated (the API wallet is empty),
+Tag with AI over many pictures at once has not been run, and a kept picture
+landing in a linked folder has not been seen, since Keep needs a generated
+picture first.
+
+## 2026-10-22 — Generate images is built, waiting on the Higgsfield key (DEV-30)
+
+**Where it came from:** DEV-30 was the next Carousel Generator ticket. Its
+first step was a check: can the deployed app call Higgsfield with its own key?
+The public docs answered yes on 2026-10-22, and the rest of the ticket was
+built the same day so the only thing left to wait for is the API account.
+
+**What the check found** (recorded in the DEV-30 ticket): Higgsfield has a
+developer API separate from the higgsfield.ai subscription, keyed from
+open.higgsfield.ai and paid from its own dollar balance. Its portrait model,
+Soul 2, keeps a face from a reference photo or a trained Soul ID, and costs
+$0.0057 a picture at 1080p. It offers no 4:5 shape, so a portrait result is
+3:4 and the painter crops it as it does every library picture. Three decisions
+are with Garreth: open and fund the API account, Soul 2 as the model, and one
+Soul ID per character. The Soul ID part is not built until he decides.
+
+**What changed:**
+
+- **Generate images** on a library page is a working button. It opens a form:
+  what the pictures should show, an optional base image from the library (the
+  face or the place is kept), how many (1 to 8) and the shape (portrait, tall
+  or square). It never asks for a set; what is kept lands in the library. In
+  an empty library it is the accent button, with Upload beside it.
+- Each requested picture is its own tile in a review row at the top of the
+  grid: Waiting, Generating, then the picture with **Keep** and **Discard**.
+  A kept picture joins the library untagged, with its prompt, its base image
+  and who kept it recorded; its shape is its width and height. Discard removes
+  the file. One picture failing shows Failed with the reason and Retry; the
+  key missing or the balance empty fails every waiting tile at once with the
+  same reason, so nobody watches eight tiles fail one by one.
+- Every picture takes the same road as an AI edit before anyone sees it: the
+  SynthID removal, then the degrade pass, and only the phone-camera JPEG is
+  stored, under `pending/` until Keep. The raw render is never stored.
+- A new `src/server/carousel/services/higgsfield.ts` submits the job, polls
+  it and downloads the result, reading `HIGGSFIELD_API_KEY` (the complete key
+  copied from open.higgsfield.ai) with an optional `HIGGSFIELD_API_URL`. A new
+  `generate` route under a library asks for one picture per request, so the
+  page can run two at a time and retry one alone, the way uploads work.
+- The images route's Keep now accepts a generated picture as well as an AI
+  edit, through the same pending path.
+- Not changed: the Studio's library pane still has its disabled "Generate
+  with AI" button. The Studio is a separate surface and was not in DEV-30.
+
+**Verified:** 9 new tests for the Higgsfield service pass, with the whole
+suite (`npx vitest run`, 592 tests), `tsc --noEmit` and ESLint are clean, and the page was
+exercised in headless Chrome against the local app: the form opens with the
+library's pictures as base-image choices, and a run of four without a key
+fails all four tiles with "HIGGSFIELD_API_KEY is not set" and a Retry on each.
+**Not verified:** no real picture has been generated, because there is no key
+yet; the Keep of a generated picture and the SynthID removal on a Higgsfield
+render are code paths awaiting their first real use.
+
+## 2026-10-21 — AI edits go through the SynthID removal before the degrade pass
+
+**Where it came from:** Garreth's SynthID Study API (the watermark remover
+hosted on Modal) reached a usable state, and he asked for it to be wired in
+wherever the Carousel Generator removes an AI watermark. He chose to run it
+*before* the existing phone-camera degrade pass rather than instead of it, so
+an AI edit keeps today's authentic look and also drops the invisible SynthID
+watermark the degrade pass could never touch (the study's own rule is to say
+"not detected by the verifier", never "clean", and that applies here too).
+
+**What changed:**
+
+- A new `src/server/carousel/services/synthid.ts` talks to the hosted API as
+  a batch of one (create, upload, start, poll, take the output), using the
+  study's verified settings (strength 0.50, Google preset). It reads
+  `SYNTHID_API_KEY`, with an optional `SYNTHID_API_URL` that defaults to the
+  Modal address.
+- The AI edit (`aiEdit`) now runs the render through `removeSynthId()` first
+  and then through the degrade pass as before. The raw render and the cleared
+  PNG are never stored; only the degraded JPEG is.
+- The library image route's time limit is raised from 120 to 300 seconds,
+  matching the other slow routes, because the removal waits on the GPU's cold
+  start and its face pass (the first picture with faces can take about two
+  minutes once per GPU session).
+
+**Verified:** the new and degrade tests pass (`npx vitest run`, 14 tests) and
+`tsc --noEmit` is clean. **Not verified:** no real AI edit has been run
+against the live API yet, and `SYNTHID_API_KEY` still needs to be set on
+Vercel — this is a code change awaiting its first real use.
+
+## 2026-10-21 — A second coding agent can work on the Carousel Generator
+
+**Where it came from:** Garreth wants to run DeepSeek (through OpenCode inside
+Orca, paid for with his OpenRouter key) on Carousel Generator work, and asked
+whether it would know the codebase, the image buckets and how pictures are
+made.
+
+**What we found:** OpenCode reads `AGENTS.md` first and ignores `CLAUDE.md`
+when both exist. Our `AGENTS.md` is the nine-line notice Next.js writes about
+its own version, so a DeepSeek session would have started with none of the
+repo's rules and none of the project knowledge that lives only in Claude's
+session notes.
+
+**What changed:**
+
+- `opencode.json` at the repo root tells OpenCode to also read `CLAUDE.md`
+  and the new brief below. Claude Code ignores the file.
+- `docs/CAROUSEL-AGENT-BRIEF.md` is a plain orientation for any agent that
+  starts cold on the Carousel Generator: where the code lives, every image
+  bucket and what sits in it (counted live), how pictures are uploaded,
+  copied and AI-edited, how copy is written, which keys matter, which lanes
+  the generator feeds, what is open, and which document answers which
+  question. Two corrections surfaced while writing it and are recorded there:
+  Approve on `main` does not write a lane row (that is the unported painter's
+  job), and the `carousel_materialise_draft` function the plan describes was
+  never created.
+
+**Verified:** the config file parses; bucket and library counts are from live
+queries on 2026-10-21. **Not verified:** an OpenCode session has not yet been
+started against this checkout to confirm it loads both files.
+
+## 2026-10-21 — Recorded posting sessions: the dashboard side (PF-26)
+
+**Where it came from:** Garreth, in a planning chat the same day. The plan to
+check Yurie's manual posting with invisible phone screenshots
+(`docs/PHONE-SCREEN-QA.md`) was settled: record every session on the Air,
+copy it to the dashboard overnight, delete it from the Air once the copy is
+confirmed, and read a random pick with Claude for anomalies. Garreth asked
+for everything that needs neither the Air nor Yurie to be built now.
+
+**What changed:**
+
+- Two new tables and a private storage bucket, applied live: one row per
+  recorded session on a phone, one row per plug-in and unplug of a phone, and
+  the bucket the frames go in. Nothing can read the bucket without the
+  server's key; a reviewer sees a frame through a link that lives ten minutes.
+- Four new addresses for the recorder on the Air, behind the same token the
+  warmup script uses: announce a session, get upload links for its frames (the
+  frames go straight into the bucket, not through the dashboard), confirm it,
+  and log a plug-in. The dashboard counts the frames in the bucket itself and
+  only says "stored" when every announced frame is there, so the Air never
+  deletes a session the dashboard does not fully hold. A session with a post
+  marked done in its window is tied to that hand-out automatically.
+- A new setting, `REVIEWER_EMAILS`, and a Sessions page in the Physical fleet
+  that only the people on it can see. The menu row does not exist for anyone
+  else, and the page and its addresses answer not-found rather than
+  "forbidden", so there is no locked door to notice.
+- The Sessions page lists every stored session with its phone, length, frame
+  count, the post it covers and whether it has been read; "Pick one at
+  random" opens one. Above the list, "Posts with no recording" shows every
+  post marked done on a phone in the last two weeks that no session covers,
+  and says which of two things happened: the phone was not plugged in, or it
+  was and the recorder missed it. That is the cross-check that makes the
+  plug-in rule hold.
+- A session's page shows every frame with its time and "Review with Claude":
+  up to forty frames spread evenly across the session go to Claude, which
+  describes what happened and lists anything that looks wrong, each tied to
+  a frame. There is no step list by decision (Garreth, 2026-10-21): the check
+  is for anomalies. Goes through OpenRouter with the key the carousel writer
+  already uses.
+- `?demo=` draws both pages with invented sessions, the way the phone-farm
+  screens were judged before their data existed.
+
+**Verified:** typecheck, lint and the unit tests (19 new, on the matching
+and cross-check rules and the reviewer gate) pass; the migration was read
+back live (service role only, bucket private, no storage policies). **Not yet exercised:** nothing
+has recorded a session, so the four Air-facing addresses have not met a real
+caller and Claude's read has not met real frames. `REVIEWER_EMAILS` was set
+in Vercel's Production row the same day (Garreth's two addresses and
+Czedrick's two, from the display-name map in `src/lib/people.ts`); it takes
+effect with the first deployment that carries this branch. The Production
+allowlist is a sensitive setting and cannot be read back from a desk, so
+whether each of the four is also on it was not checked, only assumed from
+who signs in today.
+
+## 2026-10-20 — Every posted piece gets tagged with what is in it (DA-03)
+
+**Where it came from:** the deep analytics tickets (Czedrick, 2026-10-09),
+DA-03. Picked up on 2026-10-20 as the one ticket that needs neither Yurie nor
+the Air. Two choices were settled that day: each lane keeps the hook types its
+writers recorded, and the face tag covers videos as well as carousels.
+
+**What changed** (nothing on screen yet; the comparison screen is DA-09):
+
+- Each piece of content that has posted now gets a row of tags: the words on
+  its first slide or frame, its hook type, how many slides, how long the video
+  is, and whether a face shows. A carousel posted to TikTok, Instagram and
+  Facebook is tagged once and joins to all three posts.
+- Most tags turned out to exist already, in the tables the content was made
+  from. They are copied, not guessed. The AI looks at one picture per piece:
+  for the face, for the words where a lane keeps none, and for a hook type
+  where the writers recorded none. Each tag the AI filled is marked as such.
+- Journey's 30-odd small hook types are grouped into their two families
+  ("declaration" and "talking to the weight"), so there are enough posts in
+  each group to compare.
+- Runs every day at 10:30 am New York time on whatever has posted since.
+  Model: Claude Haiku 5.5, about $0.0002 a piece. That is well under $1 for
+  the whole back catalogue, not the $15–60 a month first estimated.
+- A tag that cannot be read stays empty with the reason written beside it,
+  never a guess. Known gaps: 173 Rich Life carousels have no stored slides
+  (so no face tag), and 51 old Filler videos have been deleted from storage.
+
+**Verified:** a dry run on 12 live pieces (everything but the AI and the save)
+read the hook words, hook types, slide counts and video lengths correctly, and
+every one of the 2,895 posted pieces finds the row it was made from. **Not
+yet verified:** the AI's answers. The AI key exists only on the live site, so
+the first real run happens after merge. Check ten by eye before the catch-up
+of the back catalogue.
+
+**Fixed the same day:** once merged, the dashboard's login gate turned the
+tagging job away, sending it to the login page like a visitor. The local test
+missed this because login is switched off on the development machine. The job
+now passes the gate the same way the Facebook robot does, and it still has to
+show the schedule's secret.
+
+**First live run, same day (40 pieces):** the copied writer tags were all
+right, and the face tags matched the pictures on the four checked by eye. Two
+fixes followed:
+- 5 of the 40 failed with an unreadable AI reply, all Cleora screens full of
+  text. The AI had been asked to copy out words we already hold, which made
+  its replies long enough to be cut off. It now copies words only for lanes
+  that keep none.
+- Before-and-after hooks such as "When you avoid every photo taken of you"
+  were labelled "talking to". A "relatable" type was added for them.
+
+The 40 were cleared and tagged again with the fixes.
+
+**Back catalogue tagged, same day (confirmed live):** all 2,895 posted pieces.
+1,239 have every tag. 173, mostly Rich Life, have no stored pictures, so no
+face tag. 1,481 Filler pieces have only their hook words: the storage folder
+that held Filler's videos (`viral-filler`) no longer exists. Filler has not
+posted since 13 Sept, so nothing live broke. But the 59 Filler videos still
+waiting to post are gone too, and would fail if Filler were switched back on.
+
+**Fridays only (Garreth, same day):** the tagging runs once a week, Friday at
+10:30 am New York time, instead of every day. Each run now takes up to 200
+pieces, enough for a week of posts.
+
+**Also:** the deep analytics tickets doc still said DA-02 was waiting for
+Czedrick's check. He checked it and it was merged with PR #53; the doc now
+says so.
+
+## 2026-10-19 — Inventory shows a new content type's priority week
+
+**Where it came from:** Garreth, right after the Smart Scheduler change below:
+the Inventory page still gave a new content type its normal share, so in its
+first week it asked for far less than the scheduler would take.
+
+**What changed** (on the "What to make next" list only):
+
+- A new content type's weekly demand is now what the scheduler gives it:
+  one per account each working day. Divorce Recovery went from about 7 a week
+  to 18 across Character 6's three live accounts. The other Character 6 types
+  go down by the same amount while it lasts.
+- "To produce" counts the priority week once and the normal share after it,
+  instead of three priority weeks. Divorce Recovery for 21 days: 32 (it was
+  21; three weeks at the priority rate would have been 54).
+- New types carry a tag: "New · until Oct 22", or "New · starts at first
+  piece" before their first piece is scheduled.
+- A type squeezed to nothing for a few days by a new one keeps its normal
+  status and days of cover, instead of reading "inactive".
+- The rule for "new" is now written once in the database as well, so the
+  page and the scheduler read the same thing. The scheduler still uses its own
+  copy for now.
+
+**Not changed:** the character totals (the posts a character needs in all)
+are the same, since the priority week only changes which type fills a post.
+The one visible difference: Character 6's 14-day total reads 48 where it read
+49, because the old calculation came to 48.000…05 and rounded up. The emails
+(Mon/Fri digest, Monday production order) are untouched.
+
+**Verification:** live in the database and read back. Divorce Recovery 18 a
+week, 32 for 21 days; Character 5 unchanged. The card was checked running
+locally (headless Chrome, dark and light), and the "to produce" sums have
+tests.
+
+**Still open:** the page only counts accounts that can post today. The two
+Kathy accounts (Profiles 84 and 86) start on Oct 23, so they add nothing yet,
+and this week reads 18 rather than the 24 the scheduler will need. Logged in
+`BACKLOG.md`.
+
+---
+
+## 2026-10-19 — New content types go first in the Smart Scheduler
+
+**Where it came from:** Garreth asked for a newly made content type, such as
+Character 6's Divorce Recovery, to be posted as soon as possible on its accounts
+in the week it arrives. He chose when that week starts (below).
+
+**What changed:** for its first 7 days, a new content type is every account's
+first pick each working day. Before, it only got its normal share (Divorce
+Recovery is 4 of Character 6's 14 a week), so about 1 or 2 posts a week per
+account. Still never twice in one day, and still at most 7 a week per account.
+After the 7 days it goes back to its normal share.
+
+- "New" means the content type was set up in the last 30 days. A newly
+  rendered piece of an old type does not count.
+- The 7 days start when the type's first piece is scheduled, not when the type
+  was set up, so a type with nothing made yet does not lose its week waiting.
+- If two types are new at once, the most recently set up goes first. 3-Slide
+  Journey counts as new until 2026-10-22 (its first piece went out 2026-10-16),
+  so Divorce Recovery is ahead of it.
+- Also fixed: the scheduler did not know which column holds Divorce Recovery's
+  image, so it would not have skipped a piece with no image.
+
+**Verification:** the change is in n8n and live (Smart Scheduler 1.3.0, checked
+by reading the workflow back). It ran read-only against live data for
+2026-10-20, with made-up Divorce Recovery pieces since the table is empty:
+Profiles 31, 65 and 9 each got Divorce Recovery first, Profile 9's second post
+was 3-Slide Journey, and every other character was planned exactly as before.
+It has not met a real Divorce Recovery piece yet. The scheduler lives in n8n,
+not in this repo, so there is no code file for it here.
+
+**Inventory:** at first the Inventory page still used the normal share. It
+was changed to match later the same day (the entry above).
+
+---
+
+## 2026-10-16 — Divorce Recovery capped at 7 a week per account
+
+**Where it came from:** Garreth asked for a check that Character 6's new
+Divorce Recovery content type was wired properly, then asked for this fix.
+
+**What changed:** the most Divorce Recovery posts one account can get in a
+week went from 14 to 7, the same as its two sister types (Viral Theories and
+3-Slide Journey). At 14, if the other two ran out, the scheduler could have
+filled an account's whole week with Divorce Recovery. Its normal amount (4 a
+week) is unchanged. This is a setting in the database, changed directly;
+confirmed live by reading it back.
+
+**Also found in the check, not changed:** the Divorce Recovery table can be
+read and written by anyone with the public key, unlike every other content
+table (left as is for now, Garreth). The wiring itself was done on 2026-10-16
+outside this repo, so there is no migration file for it here.
+
+---
+
+## 2026-10-16 — Inventory follows each account's own posts a week
+
+**Where it came from:** Garreth asked for a check of the Inventory page
+against the Physical accounts that are posting, then asked: "shouldn't the
+inventory page compute based on the number of posts per week I set on each
+account if I am using the custom cadence?" It should have, and it did not.
+
+**What was wrong:** Inventory worked out demand from each content type's
+listed weekly amount (7 cleora + 7 cleora_asmr a week) times the number of
+accounts. That ignored three things:
+- **The posts a week set on each account.** Every Physical account is set to
+  1 a day, 6 a week, but each was counted as 14 a week.
+- **Facebook accounts only copy their Instagram twin's posts.** The "Demand
+  vs supply" card counted them as needing content of their own.
+- **The day off.** It counted 7 working days a week, not 6.
+
+So on the morning of the 16th the page said Character 5 needed **168 posts in
+two weeks and to make 62**, and "What to make next" said make 36 cleora and 26
+cleora_asmr. The real need is **48 (make nothing)**: four accounts take
+content (two TikTok, two Instagram) and each can post 12 in two weeks.
+Character 6 read 56 when it is 12.
+
+**What changed:**
+- **Both Inventory cards now read each account's own limits**, the same
+  numbers the Smart Scheduler plans from: posts a week, posts a day, paused
+  accounts, Facebook copies, new accounts still ramping up, and health
+  throttles. An account's posts are shared between its content types (half
+  each when they are 7 and 7).
+- **Windows count working days only.** Two weeks is 12 posting days with Sunday
+  off, 30 days is 26.
+- **The "what if we add accounts" option** now gives a new account its
+  character's limits over working days, growing into them as before.
+- **Database** (`20261016085759_inventory_reads_account_cadence.sql`): one new
+  calculation both cards share, and the two Inventory calculations changed to
+  use it.
+
+**Not changed:** the Mon/Fri digest email and the Monday production-order
+email still use the old arithmetic (they read different database views), so
+they will now show higher numbers than the dashboard. That is on purpose:
+Garreth decided on 2026-09-04 that the dashboard would follow each account's
+own limits once they existed and the emails would be allowed to disagree,
+because the dashboard is replacing them. Milan also gets the digest.
+
+**Checked:** confirmed live by query after applying: Physical, two weeks,
+Character 5 needs 48 with 106 ready, Character 6 needs 12 with 84 ready, make 0;
+a week of cleora or cleora_asmr is 12, of viral_theories or journey_3slide is 3.
+Matches a count by hand. Cloud shows nothing, as before. The split between a
+character's two content types is an assumption (half each), borne out by
+Profile 8's last two weeks (5 and 5), not something the scheduler promises.
+
+## 2026-10-16 — Six days a week: a day off with nothing scheduled (Sunday)
+
+**Where it came from:** Garreth's decision in chat, 2026-10-16: warmups and
+posting six days a week, nothing on Sundays, the day off easy to change, and
+work left over on Saturday done on Monday.
+
+**What changed:**
+- **A "Day off" setting on the Settings page**, Sunday to start with: one line
+  and a dropdown of the seven days, saved as soon as a day is picked
+  (simplified the same day at Garreth's request, from seven day buttons, a
+  paragraph and a Save button). It is one setting, kept in the database, that
+  the dashboard, the Smart Scheduler and the warmup robot all read.
+- **The To-do list asks for nothing on a day off**: no warmups and no open
+  posts. It says "Sunday is a day off" instead of "Nothing due", on the To-do
+  page, the home page card, each phone's page and an Automated account's page.
+  A ban's clean-up still shows: it cannot wait a day.
+- **Saturday's leftovers come back on Monday.** The day off does not count
+  towards a post's three days of carry-over, nor towards "overdue": a post
+  handed out Saturday at 10:00 goes overdue on Monday at 10:00, not on Sunday.
+  The bell says nothing about overdue posts on the day off itself.
+- **The red "No warmup in 3 days" warning skips days off**, so an account last
+  warmed on Friday is not flagged on Monday.
+- **The warmup robot is told there is nothing to warm on a day off**, so it
+  plans an empty day. No change was needed on the robot.
+- **Posting limits count working days:** at 1 post a day an account can post
+  at most 6 times a week, not 7. The account Posting and Edit windows, Adjust
+  cadence, and setting up or editing a character all check against 6, and say
+  "in a 6-day week". So GLP 6 a week at 1 a day is accepted with no "idle
+  slot" warning, and if a weekly number is raised later it is spread over the
+  six days.
+- **Database** (`20261016074025_work_week_days_off.sql`, then `20261016074038_work_week_service_role_only.sql` locking it to the service key): the `work_week`
+  setting (Sunday), and the "set up a character" check now counts working days
+  too.
+- **The Smart Scheduler (n8n)** plans nothing on a day off and spreads each
+  week's posts over the working days left. That change is made in n8n, not in
+  this repository.
+
+**Checked:** 535 tests pass, with new ones for the day-off arithmetic
+(including the 25-hour Sunday when the clocks go back on 1 November), overdue
+posts across a Sunday, the 3-day warning, and the 6-day posting limits; the
+type check and lint are clean. **Live, 2026-10-16:** both database changes
+applied (the setting reads Sunday); this deploy is on production; the Smart
+Scheduler 1.2.0 is published in n8n after a practice run on the Friday that
+read Sunday as the day off, counted 2 working days left and planned 5 posts
+without saving any (its practice record was then removed). **Not yet seen on
+a real day off**: the first is Sunday 18 October.
+
+## 2026-10-15 — The nightly safety check now runs for every lane, and Week 2 content is in the pool
+
+**Where it came from:** checking whether the Week 2 handover content (70 pieces
+across Miss Cleora, Cleora ASMR, Viral Theories and 3 Slide Journey) was ready
+to post, at Garreth's request.
+
+**What was wrong:** the nightly safety check (the n8n "[Content Audit] Daily
+Scheduler", 10 pm ET) goes through the content types one at a time. When a type
+had nothing new to check, the loop got nothing back and quietly stopped there.
+Every night since at least 2026-10-06 it checked only `filler` and quit after
+three seconds, while n8n still reported success. New content in every other
+lane sat unchecked, so it never entered the pool. Separately, the 21 ASMR
+pieces were marked "pending", a value the nightly check never looks at.
+
+**What changed:**
+- The loop now carries on when a type has nothing to check, or when one type
+  fails. Published in n8n and confirmed live (the published version matches
+  the saved one).
+- The 70 Week 2 pieces were sent to the same safety check by hand, with the
+  same approve/reject rule: 68 approved, 2 rejected. J3-072 and J3-073 name a
+  pound number in the hook, which is printed on slide 1, so they need a new
+  hook and a re-render.
+- Confirmed live: the pool went from 27 to 48 (Cleora), 37 to 58 (ASMR), 29 to
+  43 (Viral Theories) and 29 to 41 (Journey). The Inventory page and the
+  digest email's figures both show it: Character 5 has 106 ready and
+  Character 6 has 84.
+
+**Still to see:** tonight's run is the first one with the fix. It will check
+about 380 rows in 11 lanes that were never checked, including Journey hooks
+that have no caption yet. Their caption will not be checked again once it is
+written.
+
+## 2026-10-15 — The ⋯ on the last account row can be pressed again
+
+**Where it came from:** a bug Garreth reported on the Physical Accounts page:
+the ⋯ menu on the very last account in the table did nothing when pressed,
+whichever account happened to be last.
+
+**What was wrong:** the floating Issues button in the bottom-right corner
+(added 2026-10-09) sits in an invisible box big enough to hold its two hidden
+actions, *Report an issue* and *See issues*. While those were hidden, the empty
+box still caught every press in that corner. With the page scrolled to the
+bottom, the last row's ⋯ sat underneath it. The page's extra bottom space
+cleared the round button, but not that taller invisible box.
+
+**What changed:** presses now pass straight through the empty box. Only the
+round button, and the two actions once they are open, take a press. This
+applied to every page, not only Accounts: anything in that corner was
+affected the same way.
+
+**Verified:** in the running app (headless Chrome, not Safari), scrolled to
+the bottom of Physical Accounts. Before the fix, a press on the last row's ⋯
+(Profile 9) landed on the Issues button's box. After it, the press reaches the
+⋯. The Issues button and both its actions still open and take presses.
+
+## 2026-10-12 — AI edits come out as phone-camera JPEGs, with no AI metadata
+
+**Where it came from:** Garreth's *Degrade Pass Wiring Handover*
+(2026-10-12). Every generated picture has to go through the degrade script
+before it is stored or shown, and until now that was a manual step run per
+batch on his Mac. He asked for it to be automatic in the carousel app, and
+on 2026-10-12 narrowed the work to the app's own AI image step first.
+
+**What changed:**
+
+- **An AI edit's picture is degraded before anything sees it.** The picture
+  Gemini sends back is softened, given grain and phone-style sharpening, and
+  saved as a fresh JPEG. Saving it fresh drops everything the model wrote
+  into the file, including any C2PA content credentials. The preview, the
+  pending file and the kept image are all that JPEG. Before, the model's raw
+  file was stored and shown as it came, metadata and all.
+- **Keep stores that JPEG as it is**, instead of saving it a second time,
+  and the image records that it was degraded and with which seed.
+- **The steps are the handover's script, in the app's own language**, with
+  the same numbers in the same order. The result is not byte-identical to
+  the Mac script's, because the random grain and the JPEG saving are done by
+  different code. On five stored images it came out within 1% on file size
+  and grain, and the two differ about as much as the script differs from
+  itself with another seed.
+- **The checks stop the step, they do not just log it.** Every result must
+  be a quality-68 JPEG of the same width and height, with no metadata of any
+  kind and a believable size, or nothing is saved and the person sees why.
+  Every other library save (uploads, black and white, cut-outs) is now also
+  checked for metadata before it is stored.
+- **DEV-30 (Generate images with Higgsfield) now says** its downloads go
+  through the same step. `docs/DEGRADE-PASS.md` describes the pass.
+- **Outside the repo, the same day:** four of the 40 shipped Character 6
+  pictures (rows 425, 428, 430, 431) had never been through the degrade
+  script. They were plain quality-90 copies from `finalize-batch.py`. They
+  were degraded from their PNG masters with the script, re-uploaded to the
+  same storage paths, and checked by downloading them back.
+
+**What it does not do:** it does not remove SynthID, Google's invisible
+watermark (see below). Pictures made outside the app and uploaded, and the
+458 images already in storage that were never degraded, are not touched yet.
+Both are in `BACKLOG.md`.
+
+**Verified:** 11 new tests: no metadata survives from a PNG or JPEG
+carrying planted C2PA, EXIF, ICC and AI-label blocks; the same seed gives
+the same file; a plain re-save is refused. The full suite passes. The pass
+was also run on five real stored images and compared with the Mac script.
+**Confirmed live on 2026-10-12, after deployment:** Garreth made one AI
+edit in the "test" library and kept it. The stored file passed the app's
+checks, and a byte-level read found no C2PA, EXIF, colour profile, XMP or
+AI label. The pending file was removed. **But Google's SynthID Detector
+(synthid.com) still flagged it as made or edited with Google AI**, so the
+invisible watermark survives the pass, as the handover warned it might.
+Gemini also returned the picture at 768 × 1365 from a 1350 × 2400
+original; that is the model's output size, not the pass.
+The two new columns (`degraded`, `degrade_seed`) were **added to the live
+database on 2026-10-12**, before deployment (migration
+`20261012100055_library_images_degraded.sql`; the database's copy matches
+the file). Read back: `degraded` is required and defaults to false,
+`degrade_seed` is optional, and the table still has 0 rows.
+
+## 2026-10-10 — The warmup robot reports every warmup, with its diary, on the account page
+
+**Where it came from:** Garreth, in chat on 2026-10-09. The first live
+scheduled warmup (maya_journey8, 12:41 ET) stopped after a minute with
+`device_lost`, and nobody could see why without fetching a log file off the
+MacBook Air. He asked for a Geelark-style row for each warmup on the
+dashboard, and for the robot's full diary of each warmup to be kept there so
+Claude can read it and see what went wrong. He approved the robot writing
+this one extra thing to the dashboard.
+
+**What changed:**
+
+- **The robot has a seventh address to call**, after every warmup that
+  reached the phone, finished or stopped, including one that stopped before
+  it was ever shown as Running. It sends:
+  - how it ended, the stop reason and the minutes
+  - what it did: videos, photo posts, Claude checks (and how many were on
+    topic), likes, saves, follows
+  - its whole diary for that warmup
+  - a picture of the screen when it stopped
+
+  Sending the same report twice stores it once. A diary over 1,000,000
+  characters or a picture over 3,000,000 is refused, and so is a picture that
+  is not a PNG. The same token as the other six addresses opens it, and
+  nothing else changed for them.
+- **Kept:** the summary for good, like Geelark's history. The diary and the
+  picture for 30 days; the dashboard clears older ones whenever a new report
+  arrives, so no scheduled job is needed.
+- **The account page has a Warmup Robot Log tab** on any account the robot
+  has reported on. One row per warmup, newest first:
+  - when (New York time), Warmup 1 or 2
+  - Finished in green or Stopped in red, with the stop reason
+  - the minutes and the counts
+
+  Clicking a row opens the diary: each line with its New York time, info /
+  WARNING / PROBLEM, and the message, plus the stop picture. **Copy for
+  Claude** copies a short header (account, phone, warmup, times, outcome,
+  counts) followed by the robot's raw lines, ready to paste into a chat.
+  **Download** saves the same text as a `.log` file. A diary older than 30
+  days says it was cleared. The list itself never loads a diary or a picture,
+  so the page stays quick.
+- A new database table, `warmup_reports`, readable and writable only with the
+  master key, like the other phone tables. Described in
+  `docs/WARMUP-RUNNER-API.md`.
+
+**Verified:** built and tested on a laptop only. The new checks cover:
+- what the robot may send and what is refused
+- sending the same report twice
+- the 30-day clear-out
+- how the diary lines and the copied text read
+
+The table was **created in the database on 2026-10-09** (migration
+`20261009171409_warmup_reports.sql`; the database's copy matches the file,
+and only the dashboard's server can read or write it). The code reaches the
+dashboard when this change is merged. No report from the robot has arrived
+yet: the Air needs the robot's update first.
 
 ## 2026-10-09 — "All posts" tab on every account; no Geelark tab on real-phone accounts
 

@@ -11,6 +11,7 @@ import { Stepper } from "@/components/ui/stepper";
 import { CtaButton } from "@/components/ui/cta-button";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { cn } from "@/lib/utils";
+import { useWorkingDays } from "@/components/dashboard/use-work-week";
 
 /**
  * Adjust posting cadence — at the fleet level, or for one character.
@@ -118,7 +119,9 @@ export function AdjustCadenceModal({
       )
     : { maxPostsPerDay, glpWeek: glp, fillerWeek: filler };
 
-  const weekBudget = effective.maxPostsPerDay * 7;
+  // Days a week an account posts on: 6 with Sunday off (2026-10-16).
+  const workingDays = useWorkingDays();
+  const weekBudget = effective.maxPostsPerDay * workingDays;
   const allocated = effective.fillerWeek + effective.glpWeek;
   const overBudget = allocated > weekBudget;
   const unspent = weekBudget - allocated;
@@ -163,7 +166,8 @@ export function AdjustCadenceModal({
   /**
    * Why the GLP + button has stopped, shown only when it actually has.
    *
-   * The weekly steppers are bounded by `maxPostsPerDay * 7`, so raising GLP past
+   * The weekly steppers are bounded by `maxPostsPerDay * working days` (7
+   * until the six-day week, 2026-10-16), so raising GLP past
    * that is impossible until the day cap moves first — and the + simply went
    * dead with nothing on screen saying so. Garreth hit this on 2026-09-12 taking
    * Character 5 from 7 a week to 14: at 1 post a day the ceiling was 7, and the
@@ -389,7 +393,7 @@ export function AdjustCadenceModal({
                        reached until the day cap moved first. */
                     <span className="text-[11px] text-text-muted">
                       An allowance of {unbalanced[0]!.sum} a week needs at least{" "}
-                      {Math.ceil((unbalanced[0]!.sum + effective.fillerWeek) / 7)} posts a day —{" "}
+                      {Math.ceil((unbalanced[0]!.sum + effective.fillerWeek) / workingDays)} posts a day —{" "}
                       {effective.maxPostsPerDay} a day allows only {glpRoom}. Raise{" "}
                       <span className="font-medium">Max posts / day</span> above first.
                     </span>
@@ -543,8 +547,9 @@ export function AdjustCadenceModal({
 
             {overBudget ? (
               <p className="mt-3 text-xs text-danger">
-                {allocated} posts a week is more than {effective.maxPostsPerDay} a day allows (
-                {weekBudget}). Lower one of them, or raise max posts / day.
+                {allocated} posts a week is more than {effective.maxPostsPerDay} a day allows over{" "}
+                {workingDays} working days ({weekBudget}). Lower one of them, or raise max posts /
+                day.
               </p>
             ) : nothingAllocated ? (
               <p className="mt-3 text-xs text-danger">

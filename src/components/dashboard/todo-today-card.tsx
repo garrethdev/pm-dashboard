@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DashCard } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
+  CalendarRange,
   Check,
   ChevronDown,
   ChevronRight,
@@ -57,7 +58,7 @@ export function TodoTodayCard({
   state?: TodoState;
   className?: string;
   /** The server's answer for today. Absent on a `?todo=` design state. */
-  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: number };
+  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: number; dayOff?: string };
 }) {
   const board = useTodoBoard(state, 0, live);
   // On the real list the reason comes from the list itself: no phones at all
@@ -70,7 +71,9 @@ export function TodoTodayCard({
         board.devices.every(
             (d) => d.accounts.every((a) => a.items.length === 0) && !(d.cleanups?.length),
           )
-        ? "nothingDue"
+        ? board.dayOff
+          ? "dayOff"
+          : "nothingDue"
         : null
     : todoEmptyReason(state);
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -83,8 +86,15 @@ export function TodoTodayCard({
     <>
       <DashCard title="To-do" viewAllHref="/todo" className={className}>
         {emptyReason ? (
-          <EmptyState icon={emptyReason === "noPhones" ? Smartphone : ListChecks} compact>
-            {emptyReason === "noPhones" ? "No phones yet" : "Nothing due today"}
+          <EmptyState
+            icon={emptyReason === "noPhones" ? Smartphone : emptyReason === "dayOff" ? CalendarRange : ListChecks}
+            compact
+          >
+            {emptyReason === "noPhones"
+              ? "No phones yet"
+              : emptyReason === "dayOff"
+                ? `${board.dayOff} is a day off`
+                : "Nothing due today"}
           </EmptyState>
         ) : (
           <>

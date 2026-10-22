@@ -148,6 +148,15 @@ describe("warmupOverdueDays (Garreth 2026-09-28: 3 days no warmup = problem)", (
     expect(warmupOverdueDays(null, "2026-09-27T15:00:00Z", at)).toBeNull();
     expect(warmupOverdueDays(null, null, at)).toBeNull();
   });
+  // The six-day week (Garreth, 2026-10-16): the day off is not a missed day.
+  it("does not count the day off", () => {
+    const monday = new Date("2026-10-19T14:00:00Z");
+    // Last warmed Friday the 16th: Saturday and Monday are two working days.
+    expect(warmupOverdueDays("2026-10-16T16:00:00Z", null, monday, [0])).toBeNull();
+    expect(warmupOverdueDays("2026-10-16T16:00:00Z", null, monday)).toBe(3);
+    // Last warmed Thursday the 15th: Friday, Saturday, Monday.
+    expect(warmupOverdueDays("2026-10-15T16:00:00Z", null, monday, [0])).toBe(3);
+  });
 });
 
 describe("warmupItemsFor", () => {

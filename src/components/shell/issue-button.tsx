@@ -29,6 +29,12 @@ import { cn } from "@/lib/utils";
  * blur was also dropped by Chrome while the actions faded, which is how that
  * showed up.) It sits below the dialogs (z-50) and the phone menu's scrim
  * (z-40), so either covers it.
+ *
+ * CLICK-THROUGH: the wrapper is as tall and wide as the two hidden actions, so
+ * it is an invisible box over the bottom-right of every page. It lets presses
+ * through (pointer-events-none) and only the round button and the actions,
+ * once open, take them. Without that, the ⋯ on the last account row sat under
+ * the empty box and could not be pressed (Garreth, 2026-10-15).
  */
 const ACTION_MOTION =
   "transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-opacity";
@@ -65,14 +71,14 @@ export function IssueButton() {
   /** Nearest the button is index 0: first out, last back in. */
   const delay = (index: number) => ({ transitionDelay: `${(open ? index : 1 - index) * 40}ms` });
   const shown = open
-    ? "translate-y-0 scale-100 opacity-100"
+    ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
     : "pointer-events-none translate-y-3 scale-95 opacity-0 motion-reduce:translate-y-0 motion-reduce:scale-100";
 
   return (
     <>
       <div
         ref={rootRef}
-        className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex flex-col items-end gap-2.5 sm:right-6 sm:bottom-6"
+        className="pointer-events-none fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex flex-col items-end gap-2.5 sm:right-6 sm:bottom-6"
       >
         <div id="issue-actions" inert={!open} className="flex flex-col items-end gap-2.5">
           <button
@@ -106,7 +112,7 @@ export function IssueButton() {
           aria-controls="issue-actions"
           aria-label={open ? "Close" : "Issues"}
           className={cn(
-            "relative flex size-12 items-center justify-center rounded-full border border-border bg-card-raised text-text-primary shadow-card outline-none transition-colors hover:border-text-muted/50 focus-visible:border-accent",
+            "pointer-events-auto relative flex size-12 items-center justify-center rounded-full border border-border bg-card-raised text-text-primary shadow-card outline-none transition-colors hover:border-text-muted/50 focus-visible:border-accent",
             open && "border-text-muted/50",
           )}
         >

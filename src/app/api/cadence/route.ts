@@ -17,6 +17,7 @@ import {
   weeklyBudgetError,
 } from "@/lib/data/cadence-rules";
 import { getFleetDefaults } from "@/lib/data/scheduler-config";
+import { getDaysOff, workingDaysPerWeek } from "@/lib/data/work-week";
 import {
   actingUserEmail,
   auditLog,
@@ -48,8 +49,8 @@ import {
  * endpoint is reachable without it and a cap the scheduler can never honour is
  * a number that lies to whoever reads it back:
  *
- *   filler + GLP <= maxPostsPerDay * 7   an account cannot post more times in
- *                                        a week than it has days to post in
+ *   filler + GLP <= maxPostsPerDay *     an account cannot post more times in
+ *     working days (6 with Sunday off)   a week than it has days to post in
  *   each character's lane mix == its own  the mix divides that character's
  *   GLP cap                               weekly allowance. This used to be
  *                                         compared against the single fleet
@@ -188,6 +189,7 @@ async function saveForCharacter(body: Record<string, unknown>, character: string
     effective.maxPostsPerDay,
     effective.glpWeek,
     effective.fillerWeek,
+    workingDaysPerWeek(await getDaysOff()),
   );
   if (budgetError) return bad(budgetError);
 
@@ -264,7 +266,12 @@ async function saveForFleet(body: Record<string, unknown>) {
   if (fillerPerWeek === null || glpPerWeek === null) {
     return bad(`Filler and GLP per week must be whole numbers between 0 and ${MAX_PER_WEEK}`);
   }
-  const budgetError = weeklyBudgetError(maxPostsPerDay, glpPerWeek, fillerPerWeek);
+  const budgetError = weeklyBudgetError(
+    maxPostsPerDay,
+    glpPerWeek,
+    fillerPerWeek,
+    workingDaysPerWeek(await getDaysOff()),
+  );
   if (budgetError) return bad(budgetError);
 
   // GLP lane mix. Lanes carry the character the REGISTRY gives them, so a

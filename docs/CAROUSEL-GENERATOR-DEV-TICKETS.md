@@ -1579,6 +1579,15 @@ builds what is on it.
 
 ### DEV-30. Higgsfield image generation
 
+- **Status:** BUILT 2026-10-22. The access check below passed; the form,
+  the review row with Keep and Discard, the route and the service are in the
+  app. Same day, on Czedrick's asks: a reference can be uploaded in the form,
+  "Different directions" has the writer turn one instruction into one prompt
+  per picture (cap 12, up from the proposed 8), a generated picture opens
+  large with "try again with a note", and linked libraries are writable so
+  Character 6 can generate. The key is valid (estimate answers) but the API
+  wallet is empty, so the real run in "Done when" has not happened. Not
+  built, pending Garreth's decision: a Soul ID per character.
 - **Size:** L. Starts with a check.
 - **Depends on:** DEV-29.
 - **Flows:** F7 steps 5 and 6.
@@ -1587,6 +1596,24 @@ builds what is on it.
   API the deployed app can call with its own key, that it supports the
   likeness reference the flow needs, and what a run costs. If not, stop and
   bring it to Garreth.
+- **Access check, 2026-10-22 (done, from the public docs; no key tried
+  yet).** There is a developer API, separate from the higgsfield.ai
+  subscription: keys come from open.higgsfield.ai, and it is paid from its
+  own dollar balance, so the 8,558 subscription credits do not apply. The
+  app calls `POST https://api.higgsfield.ai/<model>` with
+  `Authorization: Key <key>`, gets a `request_id`, polls
+  `/requests/<id>/status` until `completed`, then downloads `images[].url`
+  (kept at least 7 days; failed and NSFW runs are not charged; 403 means
+  the balance is empty). Likeness: **Soul 2** (`higgsfield-ai/soul/v2/
+  standard` and `/image-to-image`) takes a trained **Soul ID** made from
+  1–100 face photos (`POST /v1/custom-references`, `model_version: "v2"`,
+  $2.50 once per character), or a plain reference photo via
+  `image_url`. Price $0.0032 an image at 720p, $0.0057 at 1080p;
+  `batch_size` 1 or 4. **Shapes:** 9:16, 3:4, 2:3, 1:1 and landscape,
+  **no 4:5**, so a portrait result would be 3:4 or 2:3 and cropped by the
+  renderer. Nano Banana Pro was not seen in the API catalogue. Decisions
+  for Garreth before step 2: open the API account and fund it, Soul 2 as
+  the model, and one Soul ID per character (trained from library photos).
 - **Build:** the **Generate images** form (prompt; base image, optional —
   one or more of the library's own images or one uploaded; how many, up to 8;
   shape: portrait, tall or square). **It never picks a set** (Garreth,
@@ -1595,10 +1622,22 @@ builds what is on it.
   with its prompt, shape, base images and who kept it recorded, and stays
   **untagged** until it is read. One failed image shows Retry; out of credits
   shows the reason on every waiting tile.
+- **Every render is degraded before anything else sees it** (Garreth,
+  2026-10-12). Call `degrade(bytes, <job id>)` from
+  `src/server/carousel/services/degrade.ts` as the last step of downloading
+  each result, and store and show only its JPEG, never the raw render. It is
+  the same step the AI edit uses; see `docs/DEGRADE-PASS.md`.
 - **Done when:** eight images are generated into a new library, some kept and
   some discarded, and only the kept ones are available to a template.
 
 ### DEV-41. Image details: AI vision reads a library
+
+- **Status:** BUILT 2026-10-22. Tag with AI on a library (which pictures,
+  file into sets, two at a time, Stop) and Read with AI in the image window.
+  Details are written to `image_library_images.details` (the libraries
+  table, which did not exist when this ticket named `carousel_images`), in
+  that table's live vocabulary. Not yet run: no OpenRouter key on the dev
+  machine; the cost per picture is still to be measured.
 
 Numbered out of sequence because it was added after D8 was approved
 (2026-09-16), and it belongs here beside the other library work. It carried

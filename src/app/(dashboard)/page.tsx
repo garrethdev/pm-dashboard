@@ -43,7 +43,7 @@ export default async function Home({
     const live = drawn
       ? undefined
       : await getTodoBoard()
-          .then((b) => ({ initial: b.devices, extras: b.extras, initialDay: 0 }))
+          .then((b) => ({ initial: b.devices, extras: b.extras, initialDay: 0, dayOff: b.dayOff }))
           .catch(() => undefined);
     return <PhysicalHome todoState={parseTodoState(params.todo)} live={live} />;
   }
@@ -64,7 +64,7 @@ function PhysicalHome({
   live,
 }: {
   todoState: ReturnType<typeof parseTodoState>;
-  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: number };
+  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: number; dayOff?: string };
 }) {
   return (
     <div className="flex flex-col gap-3">

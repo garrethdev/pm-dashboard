@@ -3,10 +3,14 @@ import { sbRest, sbRpc } from "@/lib/data/supabase";
 import { deliveryModeOfFleet, type Fleet } from "@/lib/fleet";
 
 /**
- * Inventory (plan §5) — rendered from the same views the Mon/Fri digest reads,
- * so the dashboard can never disagree with the email. Verified 2026-08-31:
- * inventory_check is one row per character × bucket over the 14-day window
- * (geelark_profile holds the character rollup label).
+ * Inventory (plan §5) — one row per character × bucket over a window.
+ *
+ * Since 2026-10-16 demand is each account's own cadence (posts a week and a
+ * day, from v_scheduler_account_config, the view the Smart Scheduler plans
+ * from) over the working days only, via inventory_lane_demand_fleet. The
+ * Mon/Fri digest still reads inventory_check, which counts the content types'
+ * listed weekly amounts, so the two now disagree on purpose (Garreth,
+ * 2026-09-04: the dashboard replaces the emails).
  */
 export interface InventoryBucket {
   character: string;
@@ -21,12 +25,16 @@ export interface InventoryBucket {
 }
 
 /**
- * v_scheduler_production_order — the Smart Scheduler 1.0.1 view that tells
- * production *what to make next*, per character x content type. It is the
- * scheduler's own arithmetic (usable pool after quarantine, weekly demand from
- * the registry cadence, days of cover, and the make-up quantity to reach a
- * 21-day buffer), so the Inventory page cannot disagree with what the
- * scheduler will actually be able to place.
+ * scheduler_production_order_fleet — what to make next, per character x
+ * content type: usable pool after quarantine, weekly demand, days of cover,
+ * and the make-up quantity to reach a 21-day buffer. Weekly demand is each
+ * account's own cadence shared between its content types (2026-10-16), not
+ * the registry cadence times the number of accounts that
+ * v_scheduler_production_order (the Monday email's view) still uses.
+ *
+ * Since 2026-10-19 it also follows a new content type's priority week (the
+ * Smart Scheduler gives it to every account first for 7 days): weeklyDemand
+ * is the rate now, normalWeeklyDemand the rate after currentRateDays.
  *
  * Full Inventory page only — deliberately not on the homepage card, which
  * stays at the character x bucket rollup.
@@ -45,6 +53,14 @@ export interface ProductionOrderRow {
   produceToReach21d: number;
   /** EMPTY | CRITICAL | low | ok — the view's own label, not ours. */
   status: string;
+  /** The usual share, which weeklyDemand returns to after currentRateDays. */
+  normalWeeklyDemand: number;
+  /** In its priority week (or waiting for its first piece to start it). */
+  isNew: boolean;
+  /** Last day of the priority week; null until the first piece is scheduled. */
+  priorityUntil: string | null;
+  /** Days weeklyDemand still holds; null when no priority week touches it. */
+  currentRateDays: number | null;
 }
 
 /**
@@ -72,9 +88,9 @@ export interface InventoryData {
 async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
   const mode = deliveryModeOfFleet(fleet);
   const [rollup, orderRaw, accounts, poolsRaw, newAcct] = await Promise.all([
-    // PF-18: inventory_rollup_fleet(14) is inventory_check for one fleet. The
-    // view itself is still what the digest email reads, and it stays
-    // fleet-wide; the dashboard no longer reads it.
+    // PF-18: inventory_rollup_fleet(14) is the 14-day demand for one fleet,
+    // from each account's own cadence since 2026-10-16. inventory_check is
+    // still what the digest email reads; the dashboard no longer reads it.
     sbRpc<RawRollupRow[]>("inventory_rollup_fleet", {
       p_days: 14,
       p_new_accounts: 0,
@@ -95,6 +111,10 @@ async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
         last_missed: string | null;
         produce_to_reach_21d: string | number | null;
         status: string;
+        normal_weekly_demand: string | number | null;
+        is_new: boolean | null;
+        priority_until: string | null;
+        current_rate_days: number | null;
       }[]
     >("scheduler_production_order_fleet", { p_fleet: fleet }),
     sbRest<{ character: string | null; posting_paused: boolean | null }[]>(
@@ -196,6 +216,10 @@ async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
         lastMissed: o.last_missed,
         produceToReach21d: Number(o.produce_to_reach_21d ?? 0),
         status: o.status,
+        normalWeeklyDemand: Number(o.normal_weekly_demand ?? o.weekly_demand ?? 0),
+        isNew: o.is_new === true,
+        priorityUntil: o.priority_until,
+        currentRateDays: o.current_rate_days == null ? null : Number(o.current_rate_days),
       }),
     ),
     totalToProduce: checks.reduce((acc, c) => acc + (c.grand_total ?? 0), 0),
@@ -207,8 +231,9 @@ async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
 // changes shape — a cache entry written by the previous version has no such
 // field, and the page crashed on `characters.length` reading it back.
 // v5: one entry per fleet (Cloud / Physical).
+// v6: production order rows gained the priority-week fields.
 export function getInventory(fleet: Fleet = "cloud") {
-  return cachedFetcher(`inventory-data-v5:${fleet}`, TTL.supabase, () => fetchInventory(fleet), {
+  return cachedFetcher(`inventory-data-v6:${fleet}`, TTL.supabase, () => fetchInventory(fleet), {
     tags: [INVENTORY_TAG],
   })();
 }
@@ -221,9 +246,9 @@ export function getInventory(fleet: Fleet = "cloud") {
  * function added 2026-09-04 alongside the view rather than replacing it, because
  * the Mon/Fri digest email reads `inventory_check` directly.
  *
- * Verified at migration time: inventory_rollup(14) reproduces inventory_check
- * row-for-row (target, scheduled, pool, shortfall — 0 mismatches over 6 rows),
- * so the dashboard still cannot disagree with the email.
+ * Until 2026-10-16 inventory_rollup(14) reproduced inventory_check row for
+ * row. inventory_rollup_fleet, which this reads, now counts each account's own
+ * cadence and only the working days in the window, so it no longer does.
  */
 export type InventoryRangeKey = "7d" | "14d" | "30d";
 

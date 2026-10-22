@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { guard, requestOrigin } from "@/server/carousel/http";
 import { logError } from "@/server/carousel/log";
-import { startConnect } from "@/server/carousel/services/higgsfield";
+import { startConnect } from "@/server/carousel/services/higgsfield-mcp";
 
 /**
  * Pressing Connect in Settings lands here (DEV-30, step one). The app

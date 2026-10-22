@@ -30,8 +30,8 @@ describe("parseNewCharacter", () => {
   });
 
   it("takes both amounts as numbers or as typed text", () => {
-    const r = parseNewCharacter({ character: "Character 6", maxPerDay: "2", perWeek: 14 });
-    expect(r.ok && r.fields).toMatchObject({ maxPerDay: 2, perWeek: 14 });
+    const r = parseNewCharacter({ character: "Character 6", maxPerDay: "2", perWeek: 12 });
+    expect(r.ok && r.fields).toMatchObject({ maxPerDay: 2, perWeek: 12 });
   });
 
   it("refuses a name the planner would not read", () => {
@@ -45,8 +45,22 @@ describe("parseNewCharacter", () => {
   });
 
   it("refuses a week that cannot fit into the days", () => {
-    const r = parseNewCharacter({ character: "Character 6", maxPerDay: 1, perWeek: 8 });
-    expect(r).toEqual({ ok: false, error: "8 a week will not fit into 1 a day. The most is 7." });
+    const r = parseNewCharacter({ character: "Character 6", maxPerDay: 1, perWeek: 8 }, 7);
+    expect(r).toEqual({
+      ok: false,
+      error: "8 a week will not fit into 1 a day over 7 working days. The most is 7.",
+    });
+  });
+
+  // The six-day week (Garreth, 2026-10-16), which is also what is assumed
+  // when the working days are not given.
+  it("fits a week into the working days, six unless told otherwise", () => {
+    expect(parseNewCharacter({ character: "Character 6", maxPerDay: 1, perWeek: 6 }).ok).toBe(true);
+    expect(parseNewCharacter({ character: "Character 6", maxPerDay: 1, perWeek: 7 })).toEqual({
+      ok: false,
+      error: "7 a week will not fit into 1 a day over 6 working days. The most is 6.",
+    });
+    expect(parseNewCharacter({ character: "Character 6", maxPerDay: 1, perWeek: 7 }, 7).ok).toBe(true);
   });
 
   it("refuses amounts out of range or not whole", () => {

@@ -43,15 +43,24 @@ export function OverdueWarmup({ days }: { days: number }) {
 export function AutomatedWarmupToday({
   items,
   overdueDays,
+  dayOff = null,
 }: {
   items: TodoItem[];
   overdueDays: number | null;
+  /** "Sunday" when today is a day off (2026-10-16): no warmups are due. */
+  dayOff?: string | null;
 }) {
   return (
     <div className="flex w-full flex-col gap-2 rounded-card border border-border bg-card px-4 py-3 shadow-card">
       {overdueDays !== null && (
         <span>
           <OverdueWarmup days={overdueDays} />
+        </span>
+      )}
+      {dayOff && (
+        <span className="flex min-w-0 items-center gap-2">
+          <AutomatedMark />
+          <span className="text-sm text-text-muted">{dayOff} is a day off: no warmups today</span>
         </span>
       )}
       <ul className="flex flex-col gap-2">

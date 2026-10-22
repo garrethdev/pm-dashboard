@@ -14,7 +14,7 @@ import { HoldButton } from "@/components/ui/hold-button";
 import { Loader2 } from "@/components/ui/icons";
 import { displayNameOf } from "@/lib/people";
 import { cn } from "@/lib/utils";
-import type { ConnectionStatus } from "@/server/carousel/services/higgsfield";
+import type { ConnectionStatus } from "@/server/carousel/services/higgsfield-mcp";
 
 const STATUS = "/api/carousel-generator/higgsfield";
 const CONNECT = "/api/carousel-generator/higgsfield/connect";

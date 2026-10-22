@@ -100,13 +100,16 @@ function applyOverrides(devices: TodoDevice[], overrides: Record<string, Overrid
 export function useTodoBoard(
   state: TodoState,
   day: TodoDay,
-  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: TodoDay },
+  live?: { initial: TodoDevice[]; extras: TodoExtras; initialDay: TodoDay; dayOff?: string },
 ) {
   const [overrides, setOverrides] = useState<Record<string, Override>>({});
   const [target, setTarget] = useState<SheetTarget | null>(null);
-  const [fetched, setFetched] = useState<{ day: TodoDay; devices: TodoDevice[]; extras: TodoExtras } | null>(
-    null,
-  );
+  const [fetched, setFetched] = useState<{
+    day: TodoDay;
+    devices: TodoDevice[];
+    extras: TodoExtras;
+    dayOff?: string;
+  } | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
 
   const placeholder = todoPlaceholder(state, day);
@@ -127,7 +130,7 @@ export function useTodoBoard(
         ? fetched && fetched.day === day
           ? fetched
           : day === live.initialDay
-            ? { day, devices: live.initial, extras: live.extras }
+            ? { day, devices: live.initial, extras: live.extras, dayOff: live.dayOff }
             : null
         : null,
     [live, fetched, day],
@@ -142,7 +145,7 @@ export function useTodoBoard(
     async (which: TodoDay, signal?: AbortSignal) => {
       const res = await fetch(`/api/todo?day=${which}`, { cache: "no-store", signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as { devices: TodoDevice[]; extras: TodoExtras };
+      return (await res.json()) as { devices: TodoDevice[]; extras: TodoExtras; dayOff?: string };
     },
     [],
   );
@@ -154,7 +157,7 @@ export function useTodoBoard(
     if (!live || liveBoard) return;
     const controller = new AbortController();
     read(day, controller.signal)
-      .then((body) => setFetched({ day, devices: body.devices, extras: body.extras }))
+      .then((body) => setFetched({ day, devices: body.devices, extras: body.extras, dayOff: body.dayOff }))
       .catch((err: unknown) => {
         if ((err as { name?: string })?.name === "AbortError") return;
         setReadError("Couldn't read the list. It may be out of date.");
@@ -172,7 +175,7 @@ export function useTodoBoard(
       setReadError(null);
       try {
         const body = await read(which);
-        setFetched({ day: which, devices: body.devices, extras: body.extras });
+        setFetched({ day: which, devices: body.devices, extras: body.extras, dayOff: body.dayOff });
       } catch {
         setReadError("Couldn't read the list. It may be out of date.");
       }
@@ -245,6 +248,9 @@ export function useTodoBoard(
     devices,
     extras: live ? (liveBoard?.extras ?? {}) : placeholderExtras,
     live: Boolean(live),
+    /** "Sunday" when the day shown is a day off (2026-10-16): nothing is
+     *  asked for, and the empty state says so. */
+    dayOff: live ? liveBoard?.dayOff : undefined,
     loading,
     readError,
     target,

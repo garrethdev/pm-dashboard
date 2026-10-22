@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auditLog } from "@/lib/data/writes";
 import { guard, requestOrigin } from "@/server/carousel/http";
 import { logError } from "@/server/carousel/log";
-import { finishConnect } from "@/server/carousel/services/higgsfield";
+import { finishConnect } from "@/server/carousel/services/higgsfield-mcp";
 
 /**
  * Higgsfield sends the browser back here with a code (DEV-30, step one).

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * Both panels are rendered on the server and passed in, so switching is instant
  * and neither refetches.
  */
-type Tab = "analytics" | "posts" | "logs";
+type Tab = "analytics" | "posts" | "logs" | "robot";
 
 /** Analytics leads: "how is this account doing" is the question people open an
  *  account to answer, and the automation log is the follow-up when it is doing
@@ -21,10 +21,14 @@ const TABS: [Tab, string][] = [
   // (Czedrick, 2026-10-09).
   ["posts", "All posts"],
   ["logs", "Geelark Automation Logs"],
+  // The warmup robot's report on each warmup it ran on the phone (Garreth,
+  // 2026-10-09). Only on an account the robot has reported on.
+  ["robot", "Warmup Robot Log"],
 ];
 
 export function AccountDetailTabs({
   logs,
+  robot = null,
   analytics,
   posts,
   className,
@@ -33,6 +37,9 @@ export function AccountDetailTabs({
   /** Null on a real-phone (Physical) account: Geelark never touches it, so
    *  its automation log would only ever be empty (Czedrick, 2026-10-09). */
   logs: React.ReactNode | null;
+  /** The warmup robot's reports; null when it has never reported on this
+   *  account, which is every Cloud account. */
+  robot?: React.ReactNode | null;
   analytics: React.ReactNode;
   /** Spacing belongs to the page that places this, not to the tabs. */
   className?: string;
@@ -57,7 +64,7 @@ export function AccountDetailTabs({
       {/* Underline tabs over a full-width rule, so the row reads as a section
           heading rather than a control floating above the content. */}
       <div role="tablist" aria-label="Account detail" className="flex gap-6 border-b border-border">
-        {TABS.filter(([key]) => key !== "logs" || logs !== null).map(([key, label]) => (
+        {TABS.filter(([key]) => (key !== "logs" || logs !== null) && (key !== "robot" || robot !== null)).map(([key, label]) => (
           <button
             key={key}
             role="tab"
@@ -83,6 +90,7 @@ export function AccountDetailTabs({
       <div hidden={tab !== "analytics"}>{analytics}</div>
       {seen.has("posts") && <div hidden={tab !== "posts"}>{posts}</div>}
       {logs !== null && seen.has("logs") && <div hidden={tab !== "logs"}>{logs}</div>}
+      {robot !== null && seen.has("robot") && <div hidden={tab !== "robot"}>{robot}</div>}
     </div>
   );
 }
