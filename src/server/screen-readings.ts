@@ -513,3 +513,230 @@ export async function storedNumbersFor(platform: Platform, postUrl: string): Pro
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// The robot's hand-off (DA-06): a list of posts whose screenshots are already
+// in the bucket → one reading each
+// ---------------------------------------------------------------------------
+
+/** One post as the robot (or a person) describes it after uploading its screens. */
+export interface RunPost {
+  platform: Platform;
+  account: string;
+  /** The post's caption as the robot saw it on the post itself; how the post is matched. */
+  caption?: string | null;
+  /** The posted date as the analytics screen shows it, e.g. "Oct 16, 2026, 11:43 AM"; a tiebreaker. */
+  posted_at_text?: string | null;
+  /** Known only when a person is sending; the robot does not have it. */
+  post_url?: string | null;
+  /** Paths in the post-screens bucket, in the order taken. */
+  screenshots: string[];
+  /** Why the robot could not open the analytics, when it could not. */
+  problem?: string | null;
+}
+
+export interface RunRequest {
+  read_by: ReadBy;
+  posts: RunPost[];
+}
+
+const PLATFORMS: Platform[] = ["tiktok", "instagram", "facebook"];
+const isStr = (v: unknown): v is string => typeof v === "string";
+const strOrNull = (v: unknown): string | null => (isStr(v) && v.trim() ? v.trim() : null);
+
+/** The request body, checked field by field; throws with a plain message when it is not one. */
+export function parseRunRequest(body: unknown): RunRequest {
+  if (!isDict(body)) throw new Error("The body must be a JSON object with a posts list");
+  const readBy = body.read_by === undefined ? "robot" : body.read_by;
+  if (readBy !== "manual" && readBy !== "robot") throw new Error("read_by must be 'manual' or 'robot'");
+  if (!Array.isArray(body.posts) || body.posts.length === 0) throw new Error("posts must be a non-empty list");
+  if (body.posts.length > 60) throw new Error("At most 60 posts per call");
+  const posts = body.posts.map((p, i): RunPost => {
+    if (!isDict(p)) throw new Error(`posts[${i}] must be an object`);
+    if (!PLATFORMS.includes(p.platform as Platform)) throw new Error(`posts[${i}].platform must be tiktok, instagram or facebook`);
+    const account = strOrNull(p.account);
+    if (!account) throw new Error(`posts[${i}].account is missing`);
+    const shots = Array.isArray(p.screenshots) ? p.screenshots.filter(isStr).map((s) => s.trim()).filter(Boolean) : [];
+    const problem = strOrNull(p.problem);
+    if (shots.length === 0 && !problem) throw new Error(`posts[${i}] has no screenshots and no problem`);
+    if (shots.length > 40) throw new Error(`posts[${i}] has more than 40 screenshots`);
+    return {
+      platform: p.platform as Platform,
+      account,
+      caption: strOrNull(p.caption),
+      posted_at_text: strOrNull(p.posted_at_text),
+      post_url: strOrNull(p.post_url),
+      screenshots: shots,
+      problem,
+    };
+  });
+  return { read_by: readBy, posts };
+}
+
+/** The first forty letters and digits of a caption, lower-cased: enough to tell posts apart, blind to punctuation and emoji. */
+export function captionKey(caption: string | null | undefined): string {
+  return (caption ?? "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim().replace(/\s+/g, " ").slice(0, 40).trim();
+}
+
+export interface PostCandidate {
+  post_id: string;
+  post_url: string | null;
+  posted_at: string;
+  caption_snippet: string | null;
+  format: string | null;
+}
+
+/**
+ * Which stored post the robot read. Caption first (either side may be cut
+ * short, so a prefix match either way counts); among several, the one posted
+ * nearest the date on the screen, else the newest. Null when nothing matches.
+ */
+export function pickPost(candidates: PostCandidate[], caption: string | null | undefined, postedAtText?: string | null): PostCandidate | null {
+  const key = captionKey(caption);
+  if (!key) return null;
+  // A short caption has to match whole: "The" must not pick the newest post
+  // that starts with "the".
+  const hits = candidates.filter((c) => {
+    const ck = captionKey(c.caption_snippet);
+    if (!ck) return false;
+    if (key.length < 8 || ck.length < 8) return ck === key;
+    return ck.startsWith(key) || key.startsWith(ck);
+  });
+  if (hits.length === 0) return null;
+  const screen = postedAtText ? Date.parse(postedAtText) : NaN;
+  const sorted = [...hits].sort((a, b) => {
+    if (!Number.isNaN(screen)) {
+      const da = Math.abs(Date.parse(a.posted_at) - screen);
+      const db = Math.abs(Date.parse(b.posted_at) - screen);
+      if (da !== db) return da - db;
+    }
+    return Date.parse(b.posted_at) - Date.parse(a.posted_at);
+  });
+  return sorted[0];
+}
+
+/** The account's posts from the last 45 days, newest first: the pool a reading is matched against. */
+export async function recentPosts(platform: Platform, account: string): Promise<PostCandidate[]> {
+  const key = serviceKey();
+  const table = { tiktok: "tt_post_performance", instagram: "post_performance", facebook: "fb_post_performance" }[platform];
+  const since = new Date(Date.now() - 45 * 86_400_000).toISOString();
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/${table}?select=post_id,post_url,posted_at,caption_snippet,format` +
+      `&account=eq.${encodeURIComponent(account)}&posted_at=gte.${encodeURIComponent(since)}&order=posted_at.desc&limit=200`,
+    { headers: { apikey: key, Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(10_000) },
+  );
+  if (!res.ok) throw new Error(`supabase HTTP ${res.status} reading ${table}`);
+  return (await res.json()) as PostCandidate[];
+}
+
+/** One screenshot back out of the bucket. */
+export async function downloadScreen(path: string): Promise<Screenshot> {
+  const key = serviceKey();
+  const res = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) throw new Error(`screenshot ${path} is not in the bucket (HTTP ${res.status})`);
+  const type = res.headers.get("content-type") ?? "";
+  return {
+    name: path,
+    data: Buffer.from(await res.arrayBuffer()),
+    mediaType: type.includes("png") || path.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg",
+  };
+}
+
+export interface RunReport {
+  dry: boolean;
+  read: number;
+  stored: number;
+  /** Posts the robot itself reported a problem on; stored as rows with the problem in `notes`. */
+  problems: number;
+  /** Posts not reached inside the time budget; send them again. */
+  unread: number;
+  aiCalls: number;
+  costUsd: number;
+  posts: {
+    platform: Platform;
+    account: string;
+    caption: string | null;
+    matched: string | null;
+    reading: number | null;
+    screens: number;
+    problem: string | null;
+  }[];
+}
+
+/** Stop starting new posts after this long, inside the route's 300 s. */
+const RUN_TIME_BUDGET_MS = 240_000;
+
+/**
+ * Reads every post in the request and stores a row each. A post the robot
+ * could not open becomes a row with its problem in `notes` and no numbers, so
+ * the failure is on record where the numbers would have been. `dry` matches
+ * and fetches but neither asks the AI nor writes.
+ */
+export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?: string } = {}): Promise<RunReport> {
+  const dry = opts.dry ?? false;
+  const started = Date.now();
+  const report: RunReport = { dry, read: 0, stored: 0, problems: 0, unread: 0, aiCalls: 0, costUsd: 0, posts: [] };
+  const pools = new Map<string, PostCandidate[]>();
+
+  for (const post of req.posts) {
+    if (Date.now() - started > RUN_TIME_BUDGET_MS) {
+      report.unread += 1;
+      report.posts.push({ platform: post.platform, account: post.account, caption: post.caption ?? null, matched: null, reading: null, screens: post.screenshots.length, problem: "not read: out of time, send again" });
+      continue;
+    }
+    const entry: RunReport["posts"][number] = { platform: post.platform, account: post.account, caption: post.caption ?? null, matched: post.post_url ?? null, reading: null, screens: post.screenshots.length, problem: post.problem ?? null };
+    report.posts.push(entry);
+    try {
+      // Which stored post this is.
+      let match: PostCandidate | null = null;
+      if (!post.post_url) {
+        const poolKey = `${post.platform}:${post.account}`;
+        if (!pools.has(poolKey)) pools.set(poolKey, await recentPosts(post.platform, post.account));
+        match = pickPost(pools.get(poolKey) ?? [], post.caption, post.posted_at_text);
+        entry.matched = match?.post_url ?? null;
+      }
+      const group: Omit<ScreenGroup, "screenshots"> = {
+        platform: post.platform,
+        account: post.account,
+        postUrl: post.post_url ?? match?.post_url ?? null,
+        postId: match?.post_id ?? null,
+        format: match?.format ?? null,
+        postedAt: match?.posted_at ?? null,
+        captionSnippet: post.caption ?? match?.caption_snippet ?? null,
+        readBy: req.read_by,
+      };
+
+      let row: ReadingRow;
+      if (post.problem) {
+        // The robot could not open the analytics: record that, with no numbers.
+        report.problems += 1;
+        row = toRow(null, group, post.screenshots);
+        row.notes = post.problem;
+      } else {
+        const screenshots = await Promise.all(post.screenshots.map(downloadScreen));
+        if (dry) {
+          if (!match && !post.post_url) entry.problem = "no matching post in the performance table";
+          continue;
+        }
+        const result = await readScreens({ ...group, screenshots }, { model: opts.model, screenshotPaths: post.screenshots });
+        report.aiCalls += 1;
+        report.costUsd = Math.round((report.costUsd + (result.costUsd ?? 0)) * 1e6) / 1e6;
+        report.read += 1;
+        row = result.row;
+        if (result.problem) entry.problem = result.problem;
+        if (!group.postUrl) row.notes = [row.notes, "no matching post in the performance table"].filter(Boolean).join(" ");
+      }
+      if (!dry) {
+        entry.reading = await insertReading(row);
+        report.stored += 1;
+      }
+    } catch (err) {
+      if (err instanceof AiUnavailable) throw err;
+      entry.problem = err instanceof Error ? err.message : String(err);
+    }
+  }
+  return report;
+}

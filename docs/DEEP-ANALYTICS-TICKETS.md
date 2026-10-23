@@ -53,9 +53,9 @@ subscriptions.
 | DA-03 | Tag every post with what is in it (AI) | All | **Built 2026-10-20, first live run after merge** |
 | DA-04 | Turn on professional mode on the Facebook profiles | Facebook | **Done, already on (Yurie, 2026-10-23)** |
 | DA-05 | Screen-reading pilot: Claude reads analytics screenshots | All | **Reader built 2026-10-23; 3 readings stored, photo posts still to come** |
-| DA-06 | Robot: open each app's analytics screens on phone 1 | All | After DA-05 |
+| DA-06 | Robot: open each app's analytics screens on phone 1 | All | **Dashboard half built 2026-10-23; phone half with the runner agent** |
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
-| DA-08 | Store the robot's numbers | All | **Table built 2026-10-23; the All posts columns wait for the robot** |
+| DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
 | DA-09 | Hook and retention comparisons in the dashboard | All | After DA-02, DA-03, DA-08 |
 
 ---
@@ -464,9 +464,12 @@ robot; nothing built yet):
   new dashboard route with the list of posts. The dashboard reads them with
   the reader built in DA-05 and writes the rows (DA-08). The AI key and the
   table-writing stay on the dashboard; the Air only takes pictures. That
-  route is dashboard-side work that needs no phone and is the next piece to
-  build; it needs `ANTHROPIC_API_KEY` on Vercel and its path in
-  `src/proxy.ts`.
+  route, `POST /api/screen-readings/run`, **was built 2026-10-23** (demands
+  CRON_SECRET, listed in `src/proxy.ts`; `?dry=1` to check without reading).
+  It matches each post by account and caption prefix, with the date on the
+  screen as a tiebreaker, and stores a problem post as a row with the reason
+  in `notes`. Verified on the development machine against the real bucket
+  and table; not yet called from the live site.
 - **The pilot:** phone 1 only, on the three accounts read by hand on
   2026-10-23 (glow.with.becky, hey.imani.vaughn, Imani Vaughn's Facebook),
   so the robot's first readings can be laid beside readings 1 to 3. Two
@@ -507,7 +510,7 @@ drops them. If it does, read the oldest posts first on each Friday.
 
 ---
 
-## DA-08 · Store the robot's numbers — Table built 2026-10-23, columns with DA-06
+## DA-08 · Store the robot's numbers — Done 2026-10-23
 
 **Built 2026-10-23:** `post_screen_readings` (migration
 `20261023071133_post_screen_readings.sql`), one row per reading of one post,
@@ -520,7 +523,14 @@ retention curve as points), who watched (follower %, new-viewer %, sources,
 age, country, gender, Instagram's rate signals against the account's
 typical), TikTok's For You banner, and bookkeeping (the screenshots' storage
 paths, model, tokens, cost, the AI's full reply). Empty is not 0 throughout.
-The All posts columns wait for the robot: three rows would show as dashes.
+
+**The All posts columns, built 2026-10-23:** each post carries its newest
+reading. TikTok: Watch, Full, Follows, For You. Facebook: Reach. The top
+source of views, and an Instagram post's Facebook-copy views, go in small
+text under the caption (twelve columns is the width limit). Where the API
+already gives a number it stays; the reading fills only what the API never
+had. A post nobody has read shows dashes. Checked on glow.with.becky and
+hey.imani.vaughn.
 
 
 **What:**

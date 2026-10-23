@@ -20,6 +20,51 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-23 — The robot's hand-off route, and the screen readings in the All posts tab (DA-06, DA-08)
+
+**Where it came from:** Garreth, 2026-10-23, asking what could be built
+without Yurie or the Air once the reader was in: the two halves of the deep
+analytics that only needed the dashboard.
+
+**What changed:**
+
+- **A route for the robot** (`/api/screen-readings/run`). When the phone robot
+  has uploaded a post's analytics screenshots to the `post-screens` bucket, it
+  sends the list of posts here and the dashboard reads them with the reader
+  and writes the rows. The robot does not know a post's link, so each post is
+  matched to its row in the performance table by account and the first words
+  of its caption, with the date on the screen as a tiebreaker when two posts
+  share a caption. A post the robot could not open (no "View insights"
+  button, say) becomes a row with that reason where the numbers would have
+  been, so the gap is on record. A person can send the same shape by hand.
+  The route demands the schedule's secret and is let through the login gate,
+  like the other jobs; `?dry=1` matches and checks the screenshots exist
+  without asking the AI or writing.
+- **The All posts tab shows the screen readings.** Beside the API's numbers,
+  each post that has been read shows what its own analytics screen said:
+  TikTok gets Watch, Full (% who watched to the end), Follows and For You
+  ("Held back" when TikTok says the video is kept out of the For You feed,
+  "Eligible" when it did not); Facebook gets Reach. Where most views came
+  from, and for an Instagram post how many views its Facebook copy got, sit
+  in small text under the caption, because twelve columns is all that fits at
+  desktop width without sideways scrolling. A post nobody has read shows
+  dashes and no line. Where the API already gives a number (an Instagram
+  Reel's watch time, its reach), that number stays and the reading fills only
+  what the API never had.
+
+**Verified live, 2026-10-23:** the route on the development machine with the
+real bucket and table: a wrong or missing token is turned away, a bad body
+gets a plain reason, a dry run matched the TikTok video to its link, and a
+real run read it again as reading 6 (same numbers as reading 1) and stored a
+problem post as reading 7. On the account pages, glow.with.becky's 16 Oct
+video shows 4.7s, 19.05%, 0 and "Held back", and hey.imani.vaughn's 18 Oct
+Reel shows "Reels tab 71.9% · 101 views on Facebook" under its caption.
+Checked in headless Chrome, not Safari.
+
+**Not verified:** the route on the live site, since no robot calls it yet.
+After the deploy, a request with no token must get 401, not a redirect.
+
+
 ## 2026-10-23 — The screen reader: phone screenshots become numbers (DA-05, DA-08)
 
 **Where it came from:** the deep analytics tickets (Czedrick, 2026-10-09).
