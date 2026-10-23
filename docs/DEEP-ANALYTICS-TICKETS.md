@@ -663,6 +663,14 @@ content type, not by hook alone. A Journey account and a Cleora account post
 different kinds of openings, and comparing them straight across says little;
 within a character, hook family against hook family does.
 
+**Hook types are only partly shared (Garreth asked, 2026-10-23):** the types
+the writers recorded are each lane's own list (DA-03's decision), so a
+family like "declaration" lives in Journey and nowhere else; the types the
+AI filled in come from one shared list (question, surprising fact, personal
+story, relatable, progress, talking to, curiosity gap). So: hooks compared
+within each content type first, and across the fleet only for the shared
+families, where the name means the same thing everywhere.
+
 **Why it waits:** every reading-based card would say "2 posts read" until the
 robot has run a few Fridays across the phones (DA-07). Designing against
 dashes helps nobody. Open it once the first weeks of readings exist.
