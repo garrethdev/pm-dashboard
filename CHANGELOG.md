@@ -20,6 +20,29 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-23 — Overview / Deep switch on the account analytics, and the phone cards side by side (DA-09)
+
+**Where it came from:** Garreth, 2026-10-23. DA-09 is a design ticket and its
+screen was drawn and approved the same evening (the record is the ticket's
+Status line in `docs/DEEP-ANALYTICS-TICKETS.md`); this entry covers only what
+every visitor now sees on a live screen.
+
+**What changed:**
+
+- Each account's Account Analytics tab has a switch at the right end of its
+  first row, opposite the date range pills: **Overview**, the numbers as
+  before, and **Deep**. The Deep side shows "No deep numbers for this account
+  yet" on every account until its real data is built; the approved design
+  is drawn on made-up numbers and reachable only with `?deep=demo` on the
+  address, so nobody mistakes a sample for a reading.
+- On the account page, the phone card and the warmups card sit side by side
+  instead of stacked, each at its own width; on a phone screen they stack
+  again.
+
+**Verified:** in headless Chrome, dark and light, on two account pages; not
+in Safari. Type check and tests pass.
+
+
 ## 2026-10-23 — The robot gets into the screenshot bucket the way the session recorder does (DA-06)
 
 **Where it came from:** the robot worker's open question, and Garreth's

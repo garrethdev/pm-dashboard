@@ -75,10 +75,12 @@ async function AccountDeviceLink({ profile }: { profile: string }) {
       : null;
 
   return (
-    <div className="flex w-full flex-col gap-3 sm:w-fit sm:min-w-72">
+    // Side by side from `sm:` up, each card its own width (Garreth, 2026-10-23);
+    // stacked on a phone.
+    <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
       <Link
         href={`/devices/${device.id}` as never}
-        className="flex w-full items-center justify-between gap-3 rounded-card border border-border bg-card px-5 py-3.5 shadow-card transition-colors hover:border-text-muted/50"
+        className="flex w-full items-center justify-between gap-3 rounded-card sm:w-72 border border-border bg-card px-5 py-3.5 shadow-card transition-colors hover:border-text-muted/50"
       >
         <span className="flex min-w-0 items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pill-bg text-text-muted">
@@ -94,17 +96,21 @@ async function AccountDeviceLink({ profile }: { profile: string }) {
       </Link>
 
       {scripted && (
-        <AutomatedWarmupToday items={scripted.items} overdueDays={scripted.overdueDays} dayOff={dayOff} />
+        <div className="w-full sm:w-72">
+          <AutomatedWarmupToday items={scripted.items} overdueDays={scripted.overdueDays} dayOff={dayOff} />
+        </div>
       )}
 
       {!scripted && accountId !== null && progress && (
-        <AccountWarmupToday
-          accountId={accountId}
-          deviceId={device.id}
-          handle={profile}
-          deviceName={device.name}
-          progress={progress}
-        />
+        <div className="w-full sm:w-72">
+          <AccountWarmupToday
+            accountId={accountId}
+            deviceId={device.id}
+            handle={profile}
+            deviceName={device.name}
+            progress={progress}
+          />
+        </div>
       )}
     </div>
   );

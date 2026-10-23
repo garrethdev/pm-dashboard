@@ -56,7 +56,7 @@ subscriptions.
 | DA-06 | Robot: open each app's analytics screens on phone 1 | All | **Built 2026-10-23 on both sides, on the pretend phone; first real sitting (A5) needs Yurie and an Air update** |
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
 | DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
-| DA-09 | Hook and retention comparisons in the dashboard | All | After DA-02, DA-03, DA-08 |
+| DA-09 | Hook and retention comparisons in the dashboard | All | **Design APPROVED 2026-10-23; the real data behind it is the build step** |
 
 ---
 
@@ -589,3 +589,52 @@ flip between the two. The deep side is where the screen readings (DA-08)
 and the tags (DA-03) meet. Until then the only deep numbers on screen are
 DA-01's on each Instagram account's Analytics and All posts tabs; the screen
 readings are in the table only.
+
+**Status: design APPROVED by Garreth, 2026-10-23**, after three changes the
+same evening: the switch moved to the right end of the first row, opposite
+the range pills; the robot's readings (watching, sources, audience, For You)
+added above the hook comparisons; and the three hook cards grouped into one
+section headed "Hook Analysis". The sample stays in the code, behind
+`?deep=demo`, until the real loader replaces it (Garreth: "keep this dummy
+data until we get the actual one"). Drawn in the
+running app behind made-up numbers (`src/lib/data/account-deep.ts`,
+`SAMPLE_DEEP`), as the phone farm screens were: open any account's page with
+`?deep=demo` and press Deep. What is on it. First the numbers the phone
+robot reads (DA-08), added the same night at Garreth's ask, in the
+Overview's own shapes:
+
+- **Watching:** four tiles with a week-by-week trend line, as the Overview's
+  tiles have (average watch time, watched to the end, held past 3 seconds,
+  the second most people stop at), beside a chart card with the account's
+  average retention curve this period and the drop-off second marked.
+- **Where views come from:** bars for the sources, summed over the period's
+  readings.
+- **Who watches:** followers against non-followers, women against men, new
+  against returning viewers on TikTok, then age bands and top countries.
+- **For You feed:** how many of the period's TikTok videos the app said it
+  held out of the feed, and which ones. TikTok accounts only.
+
+Every reading-based card says how many posts it rests on. Then, in one
+section headed "Hook Analysis", the comparisons the ticket asks for:
+
+- **Hooks this month:** one row per hook family (DA-03's grouping) with
+  posts, median views, hook rate (% still watching past 3 seconds: 100 minus
+  the skip rate on Instagram, the screen reading's number on TikTok),
+  drop-off (the second most viewers stopped at, from the reading) and new
+  followers per 100 people reached. The best and worst hook rate are
+  coloured; a number nobody has yet is a dash.
+- **Best hooks / Worst hooks:** three posts each, by hook rate, with the
+  words on slide 1, the hook family, date, views and how many held.
+- **Carousels:** one row per hook family with posts, median reach, and
+  saves, shares and follows per 100 reached, since no platform gives
+  swipe-through. Hidden on an account that posts no carousels.
+- A status line above: as of when, how many of the period's posts are
+  tagged and how many have a phone reading. The switch sits where the tab's
+  content starts, Overview first.
+
+Decided while drawing, for Garreth to confirm or change: the Deep side keeps
+the Overview's period (a month), rather than its own range pills; "hook
+rate" is the word for "still watching past 3 seconds"; and only the best
+and worst cells are coloured, nothing else. The build step after approval
+is the real loader (tags × performance × readings) and its tests; the
+sample stays in the code only until then.
