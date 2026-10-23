@@ -629,6 +629,75 @@ export async function recentPosts(platform: Platform, account: string): Promise<
   return (await res.json()) as PostCandidate[];
 }
 
+// ---------------------------------------------------------------------------
+// One-time upload links (the robot's way into the bucket)
+// ---------------------------------------------------------------------------
+
+/**
+ * A screenshot's path in the bucket, as the robot names it:
+ * <platform>/<account>/<yyyy-mm-dd>/<nn>-<name>.jpeg. Nothing else is signed,
+ * so a link can never point outside a post's own folder.
+ */
+export const SCREEN_PATH_RE = /^(tiktok|instagram|facebook)\/[A-Za-z0-9._-]{1,80}\/\d{4}-\d{2}-\d{2}\/\d{2,3}-[A-Za-z0-9._-]{1,120}\.(jpeg|jpg|png)$/;
+export const SCREEN_LINK_LIMIT = 200;
+const SCREEN_TYPES: Record<string, true> = { "image/jpeg": true, "image/png": true };
+
+export interface ScreenLinkRequest {
+  path: string;
+  type: "image/jpeg" | "image/png";
+}
+
+/** `{ screens: [{ path, type? }] }`, checked; throws with a plain message when it is not that. */
+export function parseScreenLinks(body: unknown): ScreenLinkRequest[] {
+  if (!isDict(body) || !Array.isArray(body.screens) || body.screens.length === 0) throw new Error("screens must be a list with at least one screenshot");
+  if (body.screens.length > SCREEN_LINK_LIMIT) throw new Error(`Ask for at most ${SCREEN_LINK_LIMIT} links in one call`);
+  const seen = new Set<string>();
+  return body.screens.map((s, i): ScreenLinkRequest => {
+    const o = isDict(s) ? s : {};
+    const path = typeof o.path === "string" ? o.path.trim() : "";
+    if (!SCREEN_PATH_RE.test(path)) throw new Error(`screens[${i}].path must look like tiktok/account/2026-10-24/01-overview.jpeg`);
+    if (seen.has(path)) throw new Error(`screens[${i}].path is listed twice`);
+    seen.add(path);
+    const type = o.type === undefined ? "image/jpeg" : o.type;
+    if (typeof type !== "string" || !SCREEN_TYPES[type]) throw new Error(`screens[${i}].type must be image/jpeg or image/png`);
+    return { path, type: type as ScreenLinkRequest["type"] };
+  });
+}
+
+/**
+ * A one-time link the Air can PUT one screenshot to, straight into the
+ * private bucket. The Air never holds a project key: this is the same door
+ * the session recorder uses for its frames. A path sent twice (a retry)
+ * overwrites itself.
+ */
+export async function signScreenUpload(path: string): Promise<string> {
+  const key = serviceKey();
+  const base = `${process.env.SUPABASE_URL}/storage/v1`;
+  const safe = path.split("/").map(encodeURIComponent).join("/");
+  const res = await fetch(`${base}/object/upload/sign/${BUCKET}/${safe}`, {
+    method: "POST",
+    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", "x-upsert": "true" },
+    body: "{}",
+    signal: AbortSignal.timeout(30_000),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`sign screen upload: HTTP ${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`);
+  const json = (await res.json()) as { url?: string };
+  if (!json.url) throw new Error("sign screen upload: no link returned");
+  return `${base}${json.url}`;
+}
+
+/** Links for a batch, a few at a time so two hundred come back in seconds. */
+export async function signScreenBatch(screens: ScreenLinkRequest[]): Promise<{ path: string; url: string }[]> {
+  const out: { path: string; url: string }[] = [];
+  const group = 25;
+  for (let i = 0; i < screens.length; i += group) {
+    const slice = screens.slice(i, i + group);
+    out.push(...(await Promise.all(slice.map((s) => signScreenUpload(s.path).then((url) => ({ path: s.path, url }))))));
+  }
+  return out;
+}
+
 /** One screenshot back out of the bucket. */
 export async function downloadScreen(path: string): Promise<Screenshot> {
   const key = serviceKey();

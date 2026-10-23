@@ -488,11 +488,11 @@ the robot runs outside the warmup windows); and it can read
 button names either from the phone's screen description (the brief's way)
 or from the words on a screenshot (the warmups' way), switchable without a
 code change, because the description jammed TikTok on phone 1's feed on
-2026-10-03. One question for Garreth: the Air writes to the private bucket
-with a project key; one-time upload links from the dashboard, as the session
-recorder gets, would be the safer door. Its hand-off was written to the run
-folder rather than sent, since the dashboard route did not exist when it
-started; it does now, so the next step there is to send it. A5, the first
+2026-10-03. **Decided the same evening (Garreth): the Air gets into the bucket the
+way the session recorder does**, with one-time upload links from the
+dashboard (operation 12) and the hand-off behind the dashboard token
+(operation 13), so no bucket key sits on the Air. Both are built on both
+sides; the hand-off is now sent on a real run. A5, the first
 real sitting on phone 1, needs Yurie and an Air update carrying this work,
 which is still uncommitted in that worktree. The first real run is a sitting with
 Yurie: the Air is reached over Tailscale, and phone 1 is offline between
