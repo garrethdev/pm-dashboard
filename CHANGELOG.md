@@ -61,8 +61,9 @@ video shows 4.7s, 19.05%, 0 and "Held back", and hey.imani.vaughn's 18 Oct
 Reel shows "Reels tab 71.9% · 101 views on Facebook" under its caption.
 Checked in headless Chrome, not Safari.
 
-**Not verified:** the route on the live site, since no robot calls it yet.
-After the deploy, a request with no token must get 401, not a redirect.
+**Confirmed live after the deploy (PR #74, 2026-10-23):** a request to the
+live route with no token gets 401, not the login redirect. No robot has
+called it yet.
 
 ---
 
