@@ -1,4 +1,4 @@
-import type { MissingRecording, PhoneSession } from "@/lib/data/phone-sessions";
+import type { PhoneSession } from "@/lib/data/phone-sessions";
 import type { FrameInfo } from "@/lib/data/phone-session-rules";
 
 /**
@@ -87,29 +87,6 @@ export const DEMO_SESSIONS: PhoneSession[] = [
       ],
       anomalies: [],
     },
-  },
-];
-
-export const DEMO_MISSING: MissingRecording[] = [
-  {
-    deliveryId: 84,
-    deviceId: 2,
-    deviceName: "Phone 2",
-    username: "elena.afterhours",
-    platform: "tiktok",
-    contentType: "viral_theories",
-    doneAt: day(18, 15, 30),
-    reason: "not_plugged_in",
-  },
-  {
-    deliveryId: 86,
-    deviceId: 1,
-    deviceName: "Phone 1",
-    username: "maya_journey8",
-    platform: "instagram",
-    contentType: "rich_life",
-    doneAt: day(17, 14, 55),
-    reason: "recorder_missed",
   },
 ];
 

@@ -422,7 +422,9 @@ export const MISSING_LOOKBACK_DAYS = 14;
 /**
  * Every post marked done on a phone in the last two weeks that no stored
  * session covers, and why: the phone was not plugged in, or it was and the
- * recorder missed it.
+ * recorder missed it. Not shown anywhere since 2026-10-23 (Czedrick: the
+ * Sessions page lists only what there are frames to read); kept with its
+ * rules and tests in case the cross-check is wanted again.
  */
 export async function getMissingRecordings(now: Date = new Date()): Promise<MissingRecording[]> {
   const since = new Date(now.getTime() - MISSING_LOOKBACK_DAYS * 86_400_000).toISOString();

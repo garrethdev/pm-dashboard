@@ -372,6 +372,23 @@ session notes.
 queries on 2026-10-21. **Not verified:** an OpenCode session has not yet been
 started against this checkout to confirm it loads both files.
 
+## 2026-10-23 — Sessions page: the "Posts with no recording" list is gone (PF-26)
+
+**Where it came from:** Czedrick, in chat on 2026-10-23, after the recorder's
+first day on the Air. The list showed every post of the last two weeks as
+"Not plugged in", because the plug-in log only began on 2026-10-22 at 15:01
+ET and nothing before that moment can be covered. The sessions are read at
+random anyway, so the page does not need every post; it needs the sessions
+there are frames for. Compiled, lint and tests pass; not yet seen live.
+
+**What changed:** the Sessions page shows only recorded sessions. The
+cross-check itself (which posts have no recording, and whether the phone was
+plugged in at the time) stays in the code with its tests, unused, in case it
+is wanted again. The recorder keeps sending the plug-in log as before. Note
+that `docs/PHONE-SCREEN-QA.md` calls this list what makes the plug-in rule
+hold; that reasoning was Garreth's, and the list can come back if he wants
+it.
+
 ## 2026-10-21 — Recorded posting sessions: the dashboard side (PF-26)
 
 **Where it came from:** Garreth, in a planning chat the same day. The plan to
