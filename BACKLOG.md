@@ -1597,6 +1597,12 @@ means she did not plug in; for warmups (which do not post), compare the phone's
 Screen Time minutes and TikTok's activity log against the minutes she logs in
 the dashboard.
 
+*2026-10-23 (Czedrick): the Sessions page no longer shows the "Posts with no
+recording" list; only recorded sessions. The check stays in the code, unused.
+Later the same day: each session now carries a kind (posting, manual warmup,
+other), set by Claude's read and overrulable by a reviewer, after the first
+real recordings turned out to be Yurie's manual warmups, not posting.*
+
 **Reviewing.** Pick sessions at random (not after a bad week, which teaches her
 when to perform), match them to the logged minutes, and let Claude report which
 steps happened, which were skipped, and where she deviated; a human opens the

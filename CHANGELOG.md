@@ -64,6 +64,45 @@ Checked in headless Chrome, not Safari.
 **Not verified:** the route on the live site, since no robot calls it yet.
 After the deploy, a request with no token must get 401, not a redirect.
 
+---
+
+## 2026-10-23 — Sessions page: a recording now says what it was, not just "No post" (PF-26)
+
+**Where it came from:** Czedrick, in chat on 2026-10-23, after the first
+real recordings arrived. Two 50-minute sessions on phone 1 in the night were
+Yurie switching Instagram and TikTok to the Sarah Keller accounts and
+leaving them open, which the page could only call "No post". He asked for
+the page to say "Manual warmup" instead. Compiled, lint and tests pass;
+the new read has not yet been run on a real session.
+
+**What changed:**
+
+- **Claude's read now says what kind of session it saw**, one of three:
+  posting, manual warmup (the feed, profiles, likes, follows, account
+  switches, an account left open; nothing posted), or other (settings,
+  personal use, an app not belonging to the accounts). It gives one
+  sentence on why, shown under its summary. A manual warmup that sits on
+  one screen for most of the session is now something the read is asked to
+  note, since a warmup is meant to look like a person using the account.
+- **A reviewer can overrule it.** On the session page, beside the read, a
+  small choice "What was it?" sets the kind by hand. A reviewer's choice is
+  kept when the session is read again; clearing it lets the next read set
+  it.
+- **The list shows a Kind column** with the label, grey "Not yet known"
+  until a read or a reviewer has said. The Post column stays as it was.
+  (Later the same day: the note on who set the kind was being cut off
+  beside the pill; it now sits in the fact's heading, "Kind (read)" or
+  "Kind (reviewer)".)
+- **Seen live the same evening:** the two phone 1 sessions of 23 October
+  were read and both came back "Manual warmup", with the parked profile
+  page flagged, as expected.
+- **A session with a matched post is called "Posting" from the start**
+  (Czedrick, the same evening: two posting sessions showed a post in one
+  column and "Not yet known" in the other). A read or a reviewer can still
+  say otherwise; the fact's heading says where the label came from.
+- Two columns on `phone_sessions` for this, `kind` and `kind_set_by`,
+  applied live (`supabase/migrations/20261023082104_phone_sessions_kind.sql`).
+---
 
 ## 2026-10-23 — The screen reader: phone screenshots become numbers (DA-05, DA-08)
 
@@ -416,6 +455,23 @@ session notes.
 **Verified:** the config file parses; bucket and library counts are from live
 queries on 2026-10-21. **Not verified:** an OpenCode session has not yet been
 started against this checkout to confirm it loads both files.
+
+## 2026-10-23 — Sessions page: the "Posts with no recording" list is gone (PF-26)
+
+**Where it came from:** Czedrick, in chat on 2026-10-23, after the recorder's
+first day on the Air. The list showed every post of the last two weeks as
+"Not plugged in", because the plug-in log only began on 2026-10-22 at 15:01
+ET and nothing before that moment can be covered. The sessions are read at
+random anyway, so the page does not need every post; it needs the sessions
+there are frames for. Compiled, lint and tests pass; not yet seen live.
+
+**What changed:** the Sessions page shows only recorded sessions. The
+cross-check itself (which posts have no recording, and whether the phone was
+plugged in at the time) stays in the code with its tests, unused, in case it
+is wanted again. The recorder keeps sending the plug-in log as before. Note
+that `docs/PHONE-SCREEN-QA.md` calls this list what makes the plug-in rule
+hold; that reasoning was Garreth's, and the list can come back if he wants
+it.
 
 ## 2026-10-21 — Recorded posting sessions: the dashboard side (PF-26)
 

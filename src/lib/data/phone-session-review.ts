@@ -32,7 +32,13 @@ export interface ReviewContext {
   accounts: { username: string | null; platform: string }[];
 }
 
-const SYSTEM = `You are checking a recorded work session. A worker posts content by hand on a real iPhone for the social media accounts listed. You are shown screenshots taken each time the screen changed, in order, each labelled with its frame number and the time since the session began. Some frames in between were left out to keep the set small.
+const SYSTEM = `You are checking a recorded work session. A worker uses a real iPhone by hand for the social media accounts listed, either to post content or to do a "manual warmup": using an account like a person would (scrolling the feed, watching, liking, following, switching between the phone's accounts) without posting. You are shown screenshots taken each time the screen changed, in order, each labelled with its frame number and the time since the session began. Some frames in between were left out to keep the set small.
+
+First say what kind of session this was:
+- "posting" when a post was made, or clearly being made, even if it did not go out
+- "manual_warmup" when the worker only used the accounts without posting: feed, profiles, likes, follows, account switches, or an account opened and left on screen
+- "other" when neither fits: settings, personal use, an app that is not one of the accounts', or nothing recognisable
+Give one sentence on why.
 
 There is no fixed list of steps. Describe what happened, then call out anything that looks wrong, careless or risky for the accounts:
 - the wrong account or the wrong app being used
@@ -46,8 +52,8 @@ There is no fixed list of steps. Describe what happened, then call out anything 
 Do not flag ordinary scrolling, normal navigation or the usual steps of posting. Be concrete, and refer to frames by their number. If you cannot tell whether a post went out, say so.
 
 Reply with one JSON object and nothing else:
-{"summary": "<a few plain sentences on what happened>", "postSeen": true | false | null, "timeline": [{"frame": <number>, "note": "<what is happening>"}], "anomalies": [{"frame": <number or null>, "severity": "low" | "medium" | "high", "what": "<what looks wrong and why it matters>"}]}
-An empty anomalies list is the right answer for a clean session.`;
+{"kind": "posting" | "manual_warmup" | "other", "kindNote": "<one sentence on why>", "summary": "<a few plain sentences on what happened>", "postSeen": true | false | null, "timeline": [{"frame": <number>, "note": "<what is happening>"}], "anomalies": [{"frame": <number or null>, "severity": "low" | "medium" | "high", "what": "<what looks wrong and why it matters>"}]}
+An empty anomalies list is the right answer for a clean session. A manual warmup that only parks on one screen for most of the session is worth a note in anomalies, since a warmup is meant to look like a person using the account.`;
 
 type Part = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
 

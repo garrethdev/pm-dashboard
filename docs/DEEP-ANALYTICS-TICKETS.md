@@ -53,7 +53,7 @@ subscriptions.
 | DA-03 | Tag every post with what is in it (AI) | All | **Built 2026-10-20, first live run after merge** |
 | DA-04 | Turn on professional mode on the Facebook profiles | Facebook | **Done, already on (Yurie, 2026-10-23)** |
 | DA-05 | Screen-reading pilot: Claude reads analytics screenshots | All | **Reader built 2026-10-23; 3 readings stored, photo posts still to come** |
-| DA-06 | Robot: open each app's analytics screens on phone 1 | All | **Dashboard half built 2026-10-23; phone half with the runner agent** |
+| DA-06 | Robot: open each app's analytics screens on phone 1 | All | **Built 2026-10-23 on both sides, on the pretend phone; first real sitting (A5) needs Yurie and an Air update** |
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
 | DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
 | DA-09 | Hook and retention comparisons in the dashboard | All | After DA-02, DA-03, DA-08 |
@@ -475,10 +475,25 @@ robot; nothing built yet):
   so the robot's first readings can be laid beside readings 1 to 3. Two
   Fridays before any widening (DA-07).
 
-**Handed over 2026-10-23:** the brief for the runner repository is
-`docs/DA-06-ROBOT-HANDOVER.md`, and Garreth asked for a Claude agent to be
-opened in that repository through Orca (worktree `da-06-analytics-robot`)
-to build it on the pretend phone. The first real run is a sitting with
+**Handed over and built 2026-10-23:** the brief for the runner repository
+is `docs/DA-06-ROBOT-HANDOVER.md`; a Claude agent opened through Orca
+(worktree `da-06-analytics-robot`) built the robot half the same day on the
+pretend phone, as tasks A1 to A4 of the runner's `TASKS.md` ("Analytics
+reader (DA-06)"): the walk through each app's tabs, the upload and hand-off,
+a Friday slot in the planner with its own window, and Yurie's sitting tool
+(`air/Read analytics.command`). 44 tests in `src/analytics/`, 894 in all.
+Two choices it made that want a yes: the job gets its own window in
+`config/fleet.json`, kept 35 minutes clear of the warmups; and it can read
+button names either from the phone's screen description (the brief's way)
+or from the words on a screenshot (the warmups' way), switchable without a
+code change, because the description jammed TikTok on phone 1's feed on
+2026-10-03. One question for Garreth: the Air writes to the private bucket
+with a project key; one-time upload links from the dashboard, as the session
+recorder gets, would be the safer door. Its hand-off was written to the run
+folder rather than sent, since the dashboard route did not exist when it
+started; it does now, so the next step there is to send it. A5, the first
+real sitting on phone 1, needs Yurie and an Air update carrying this work,
+which is still uncommitted in that worktree. The first real run is a sitting with
 Yurie: the Air is reached over Tailscale, and phone 1 is offline between
 warmups by design. As with the warmups, the finished robot reaches the Air as
 an update package with instructions for Yurie.

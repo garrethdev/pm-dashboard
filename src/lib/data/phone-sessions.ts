@@ -38,6 +38,42 @@ import { sbFetch } from "@/lib/data/warmup-sessions";
 export type ReviewSeverity = "low" | "medium" | "high";
 export const REVIEW_SEVERITIES: ReviewSeverity[] = ["low", "medium", "high"];
 
+/**
+ * What a session was (Czedrick, 2026-10-23): a post being made, a manual
+ * warmup (the feed scrolled, accounts switched, likes and follows, a profile
+ * left open; nothing posted), or something else. Claude's read sets it; a
+ * reviewer can overrule it, and that choice survives a second read.
+ */
+export type SessionKind = "posting" | "manual_warmup" | "other";
+export const SESSION_KINDS: SessionKind[] = ["posting", "manual_warmup", "other"];
+export type KindSetBy = "claude" | "reviewer";
+
+export const KIND_LABEL: Record<SessionKind, string> = {
+  posting: "Posting",
+  manual_warmup: "Manual warmup",
+  other: "Other",
+};
+
+export function parseKind(raw: unknown): SessionKind | null {
+  return SESSION_KINDS.includes(raw as SessionKind) ? (raw as SessionKind) : null;
+}
+
+/**
+ * What to call the session, and on whose word: a reviewer's or the read's
+ * kind when there is one; otherwise a matched post already says "posting"
+ * (Czedrick, 2026-10-23: the Post column knew and the Kind column said
+ * "not yet known"); otherwise nothing yet.
+ */
+export function effectiveKind(s: {
+  kind: SessionKind | null;
+  kindSetBy: KindSetBy | null;
+  matchedPost: MatchedPost | null;
+}): { kind: SessionKind | null; from: KindSetBy | "post" | null } {
+  if (s.kind) return { kind: s.kind, from: s.kindSetBy };
+  if (s.matchedPost) return { kind: "posting", from: "post" };
+  return { kind: null, from: null };
+}
+
 export interface ReviewAnomaly {
   /** The frame it was seen in, by number; null when it is about the session as a whole. */
   frame: number | null;
@@ -50,6 +86,9 @@ export interface SessionReview {
   summary: string;
   /** Whether a post was seen going out. Null when Claude could not tell. */
   postSeen: boolean | null;
+  /** What kind of session Claude saw, and why in a sentence. Null when it could not tell. */
+  kind: SessionKind | null;
+  kindNote: string;
   timeline: { frame: number; note: string }[];
   anomalies: ReviewAnomaly[];
 }
@@ -75,6 +114,9 @@ export interface PhoneSession {
   frameCount: number;
   storedAt: string | null;
   matchedPost: MatchedPost | null;
+  /** What the session was, and who said so. Null until a read or a reviewer sets it. */
+  kind: SessionKind | null;
+  kindSetBy: KindSetBy | null;
   reviewedAt: string | null;
   reviewModel: string | null;
   reviewSummary: string | null;
@@ -90,6 +132,8 @@ interface RawSession {
   expected_frames: number;
   frame_count: number;
   stored_at: string | null;
+  kind: string | null;
+  kind_set_by: string | null;
   reviewed_at: string | null;
   review_model: string | null;
   review_summary: string | null;
@@ -106,7 +150,7 @@ interface RawSession {
 /** `accounts` carries live credentials: its columns are named, never `*`. */
 const COLS =
   "id,device_id,started_at,ended_at,status,expected_frames,frame_count,stored_at," +
-  "reviewed_at,review_model,review_summary,review," +
+  "kind,kind_set_by,reviewed_at,review_model,review_summary,review," +
   "device:devices(name)," +
   "matched:post_deliveries!phone_sessions_matched_delivery_id_fkey(id,content_type,done_at,account:accounts(username,platform))";
 
@@ -139,6 +183,8 @@ export function parseReview(raw: unknown): SessionReview | null {
   return {
     summary: str(r.summary, 1500),
     postSeen: typeof r.postSeen === "boolean" ? r.postSeen : null,
+    kind: parseKind(r.kind),
+    kindNote: str(r.kindNote, 300),
     timeline,
     anomalies,
   };
@@ -164,6 +210,8 @@ function toSession(r: RawSession): PhoneSession {
           platform: r.matched.account?.platform ?? null,
         }
       : null,
+    kind: parseKind(r.kind),
+    kindSetBy: r.kind_set_by === "claude" || r.kind_set_by === "reviewer" ? r.kind_set_by : null,
     reviewedAt: r.reviewed_at,
     reviewModel: r.review_model,
     reviewSummary: r.review_summary,
@@ -362,10 +410,15 @@ export async function getSessionFrames(id: number): Promise<FrameInfo[]> {
   return paths.map(frameInfo).filter((f): f is FrameInfo => f !== null).sort((a, b) => a.number - b.number);
 }
 
+/**
+ * Save Claude's read. The read's kind goes on the row too, unless a reviewer
+ * has set the kind by hand: a person's choice outranks a second read.
+ */
 export async function saveReview(
   id: number,
-  input: { model: string; review: SessionReview; by: string },
+  input: { model: string; review: SessionReview; by: string; reviewerSetKind: boolean },
 ): Promise<void> {
+  const kind = !input.reviewerSetKind && input.review.kind ? { kind: input.review.kind, kind_set_by: "claude" } : {};
   const res = await sbFetch(`phone_sessions?id=eq.${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
@@ -375,9 +428,20 @@ export async function saveReview(
       review_model: input.model,
       review_summary: input.review.summary,
       review: input.review,
+      ...kind,
     }),
   });
   if (!res.ok) throw new Error(`Couldn't save the review (HTTP ${res.status})`);
+}
+
+/** A reviewer says what the session was; null clears it, so the next read may set it again. */
+export async function setSessionKind(id: number, kind: SessionKind | null): Promise<void> {
+  const res = await sbFetch(`phone_sessions?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ kind, kind_set_by: kind ? "reviewer" : null }),
+  });
+  if (!res.ok) throw new Error(`Couldn't save the kind (HTTP ${res.status})`);
 }
 
 export interface PlugEvent extends PlugSpan {
@@ -422,7 +486,9 @@ export const MISSING_LOOKBACK_DAYS = 14;
 /**
  * Every post marked done on a phone in the last two weeks that no stored
  * session covers, and why: the phone was not plugged in, or it was and the
- * recorder missed it.
+ * recorder missed it. Not shown anywhere since 2026-10-23 (Czedrick: the
+ * Sessions page lists only what there are frames to read); kept with its
+ * rules and tests in case the cross-check is wanted again.
  */
 export async function getMissingRecordings(now: Date = new Date()): Promise<MissingRecording[]> {
   const since = new Date(now.getTime() - MISSING_LOOKBACK_DAYS * 86_400_000).toISOString();

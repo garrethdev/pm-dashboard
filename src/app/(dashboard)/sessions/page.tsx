@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { DashCard } from "@/components/ui/card";
 import { SessionsView } from "@/components/dashboard/sessions-view";
-import { DEMO_MISSING, DEMO_SESSIONS } from "@/lib/data/phone-session-placeholder";
-import { getMissingRecordings, getSessions } from "@/lib/data/phone-sessions";
+import { DEMO_SESSIONS } from "@/lib/data/phone-session-placeholder";
+import { getSessions } from "@/lib/data/phone-sessions";
 import { upstreamMessage } from "@/lib/data/upstream-error";
 import { getFleet } from "@/lib/fleet-server";
 import { viewerIsReviewer } from "@/lib/reviewer-server";
@@ -12,9 +12,8 @@ import SessionsLoading from "./loading";
 /** The `try` guards the read only — see the note in accounts/page.tsx. */
 async function SessionsLive() {
   let sessions;
-  let missing;
   try {
-    [sessions, missing] = await Promise.all([getSessions({ limit: 200 }), getMissingRecordings()]);
+    sessions = await getSessions({ limit: 200 });
   } catch (err) {
     return (
       <div className="flex flex-col gap-6">
@@ -25,7 +24,7 @@ async function SessionsLive() {
       </div>
     );
   }
-  return <SessionsView sessions={sessions} missing={missing} />;
+  return <SessionsView sessions={sessions} />;
 }
 
 /**
@@ -44,7 +43,7 @@ export default async function SessionsPage({
   if (!(await viewerIsReviewer())) notFound();
 
   const params = await searchParams;
-  if (params.demo !== undefined) return <SessionsView sessions={DEMO_SESSIONS} missing={DEMO_MISSING} demo />;
+  if (params.demo !== undefined) return <SessionsView sessions={DEMO_SESSIONS} demo />;
 
   return (
     <Suspense fallback={<SessionsLoading />}>

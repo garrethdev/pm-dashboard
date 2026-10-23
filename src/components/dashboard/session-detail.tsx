@@ -8,10 +8,10 @@ import { CtaButton } from "@/components/ui/cta-button";
 import { ArrowLeft, Loader2 } from "@/components/ui/icons";
 import { StatusPill, type PillTone } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
-import { reviewPill, typeLabel } from "@/components/dashboard/sessions-view";
+import { kindPill, reviewPill, typeLabel } from "@/components/dashboard/sessions-view";
 import { etDateTime } from "@/lib/data/format";
 import { elapsedLabel, spanMinutes, type FrameInfo } from "@/lib/data/phone-session-rules";
-import type { PhoneSession, ReviewSeverity } from "@/lib/data/phone-sessions";
+import { effectiveKind, KIND_LABEL, SESSION_KINDS, type PhoneSession, type ReviewSeverity, type SessionKind } from "@/lib/data/phone-sessions";
 import { cn } from "@/lib/utils";
 
 const SEVERITY: Record<ReviewSeverity, { tone: PillTone; label: string }> = {
@@ -59,9 +59,35 @@ export function SessionDetail({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [savingKind, setSavingKind] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const review = session.review;
   const pill = reviewPill(session);
+  const known = effectiveKind(session);
+  const kind = kindPill(known.kind);
+  const kindHeading = known.from === "reviewer" ? "Kind (reviewer)" : known.from === "claude" ? "Kind (read)" : known.from === "post" ? "Kind (from the post)" : "Kind";
+
+  // A reviewer's word on what the session was. "" clears it, so the next read may set it.
+  const chooseKind = async (value: string) => {
+    if (demo || savingKind) return;
+    setSavingKind(true);
+    setError(null);
+    try {
+      const body = { kind: value === "" ? null : (value as SessionKind) };
+      const res = await fetch(`/api/sessions/${session.id}/kind`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "The kind could not be saved.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The kind could not be saved.");
+    } finally {
+      setSavingKind(false);
+    }
+  };
 
   const ask = async () => {
     // Demo mode draws the page and never writes (the rule for every placeholder screen).
@@ -102,11 +128,14 @@ export function SessionDetail({
       </div>
 
       <Card>
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
           <Fact label="Phone">{session.deviceName ?? `Phone ${session.deviceId}`}</Fact>
           <Fact label="Started (ET)">{etDateTime(session.startedAt)}</Fact>
           <Fact label="Length">{spanMinutes(session.startedAt, session.endedAt)} min</Fact>
           <Fact label="Frames">{session.frameCount}</Fact>
+          <Fact label={kindHeading}>
+            <StatusPill tone={kind.tone}>{kind.label}</StatusPill>
+          </Fact>
           <Fact label="Post" wide>
             {session.matchedPost ? (
               <span className="inline-flex items-center gap-1.5">
@@ -123,7 +152,27 @@ export function SessionDetail({
 
       <DashCard
         title="Claude's read"
-        actions={<StatusPill tone={pill.tone}>{pill.label}</StatusPill>}
+        actions={
+          <span className="inline-flex items-center gap-3">
+            <label className="inline-flex items-center gap-1.5 text-xs text-text-muted">
+              What was it?
+              <select
+                value={session.kindSetBy === "reviewer" && session.kind ? session.kind : ""}
+                onChange={(e) => void chooseKind(e.target.value)}
+                disabled={demo || savingKind}
+                className="rounded-nested border border-border bg-transparent px-2 py-1 text-xs text-text"
+              >
+                <option value="">{session.kind && session.kindSetBy === "claude" ? `As read (${KIND_LABEL[session.kind]})` : "Not set"}</option>
+                {SESSION_KINDS.map((k) => (
+                  <option key={k} value={k}>
+                    {KIND_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <StatusPill tone={pill.tone}>{pill.label}</StatusPill>
+          </span>
+        }
       >
         {error && <p className="mb-4 text-sm text-pill-red">{error}</p>}
         {!review ? (
@@ -131,6 +180,11 @@ export function SessionDetail({
         ) : (
           <div className="flex flex-col gap-6">
             <p className="text-sm leading-6">{review.summary}</p>
+            {review.kind && (
+              <p className="text-xs text-text-muted">
+                {KIND_LABEL[review.kind]}: {review.kindNote || "no reason given."}
+              </p>
+            )}
             {review.postSeen !== null && (
               <p className="text-xs text-text-muted">
                 {review.postSeen ? "A post was seen going out." : "No post was seen going out."}

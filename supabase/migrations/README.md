@@ -21,6 +21,7 @@ applied 2026-09-06) are deliberately not here.
 
 | Date | Migration | Why |
 |---|---|---|
+| 10-23 | `phone_sessions_kind` | PF-26: `kind` (posting / manual_warmup / other) and `kind_set_by` (claude / reviewer) on `phone_sessions`, so the Sessions page can say what a recording was instead of "No post". Applied live 2026-10-23; two columns added, nothing else touched |
 | 10-22 | `library_images_unique_path` | one row per picture path per library, so a linked folder's picture can carry details and a retired flag |
 | 09-04 | `scheduler_overrides_bypass_and_content_types` | `bypass_guards` + `only_content_types` columns for the per-account posting modal |
 | 09-04 | `scheduler_config_guard_day_cap` | exposes `guard_day_cap` so the UI can say how high a daily cap could go |

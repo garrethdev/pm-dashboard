@@ -142,6 +142,11 @@ result checks in option 3 are the honest fallback.
 
 ## The plug-in rule, and why it needs a cross-check
 
+*2026-10-23 (Czedrick): the "Posts with no recording" list that did this
+cross-check on the Sessions page is no longer shown. The page lists only
+recorded sessions; the check stays in the code, unused. The reasoning below
+is kept as written.*
+
 Garreth's plan: tell Yurie that from now on, whenever she posts, the phone must
 be connected to the Air. As a standing rule this is good, because she is told
 to plug in **every** time, so she never learns which sessions are read.
