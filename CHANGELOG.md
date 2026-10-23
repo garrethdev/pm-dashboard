@@ -45,9 +45,9 @@ to that; a link works once, for that one file.
 turned away a missing token (401) and a path outside the bucket's folders
 (400), signed two links, a real screenshot went up through each (200), and
 operation 13 read those two screens into reading 8, matched to the right
-post. The runner side on its pretend dashboard: its tests. **Not yet
-verified:** the two operations on the live site, and the Air itself, which
-has not run this.
+post. The runner side on its pretend dashboard: its tests. **Confirmed
+live after the deploy (PR #75):** both operations answer 401 with no token.
+**Not yet verified:** the Air itself, which has not run this.
 
 
 ## 2026-10-23 — The robot's hand-off route, and the screen readings in the All posts tab (DA-06, DA-08)
