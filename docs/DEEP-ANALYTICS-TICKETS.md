@@ -5,7 +5,7 @@ DA-01 and DA-02 are built and live (2026-10-09). DA-03 is live (2026-10-21).
 DA-04 is done: pro mode was already on (Yurie, 2026-10-23). DA-05's reader
 is built and 8 readings are stored; its photo posts are still with Yurie.
 DA-06 is built on both sides and waits for Yurie's first sitting. DA-08 and
-DA-09 are built. DA-07 is not started.** DA-01 and DA-02 are written in full; the rest are outlines, to
+DA-09 are done (Garreth, 2026-10-23). DA-07 is not started.** DA-01 and DA-02 are written in full; the rest are outlines, to
 be filled in when the ticket before them is done.
 
 **What this is for.** Today every platform gives us the surface numbers:
@@ -56,7 +56,7 @@ subscriptions.
 | DA-06 | Robot: open each app's analytics screens on phone 1 | All | **Built 2026-10-23 on both sides, on the pretend phone; first real sitting (A5) needs Yurie and an Air update** |
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
 | DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
-| DA-09 | Hook and retention comparisons in the dashboard | All | **Built 2026-10-23: live on real data; fills as the robot's Fridays add up** |
+| DA-09 | Hook and retention comparisons in the dashboard | All | **Done 2026-10-23 (Garreth). Live on real data; the reading cards fill as the robot's Fridays add up** |
 
 ---
 
@@ -571,7 +571,7 @@ robot has not read, or a number its screen did not show, gets a dash.
 
 ---
 
-## DA-09 · Hook and retention comparisons in the dashboard — After DA-02, DA-03, DA-08
+## DA-09 · Hook and retention comparisons in the dashboard — Done 2026-10-23
 
 **What:** where the numbers start to answer questions:
 - hook rate and the drop-off point, by hook type (DA-03), within each account
