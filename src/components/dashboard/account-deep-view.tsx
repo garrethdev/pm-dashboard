@@ -249,6 +249,7 @@ function HooksTable({ rows }: { rows: HookTypeRow[] }) {
 }
 
 function HookList({ posts }: { posts: HookPost[] }) {
+  if (posts.length === 0) return <p className="text-sm text-text-muted">Not enough posts yet</p>;
   return (
     <ul className="flex flex-col">
       {posts.map((p) => (

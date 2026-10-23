@@ -3,9 +3,9 @@
 **Status:** opened 2026-10-09 (Czedrick). **Nine tickets, DA-01 to DA-09.
 DA-01 and DA-02 are built and live (2026-10-09). DA-03 is live (2026-10-21).
 DA-04 is done: pro mode was already on (Yurie, 2026-10-23). DA-05's reader
-is built and 3 posts are stored as readings (2026-10-23); its photo posts are
-still with Yurie. DA-08's table is built. DA-06, DA-07 and DA-09 are not
-started.** DA-01 and DA-02 are written in full; the rest are outlines, to
+is built and 8 readings are stored; its photo posts are still with Yurie.
+DA-06 is built on both sides and waits for Yurie's first sitting. DA-08 and
+DA-09 are built. DA-07 is not started.** DA-01 and DA-02 are written in full; the rest are outlines, to
 be filled in when the ticket before them is done.
 
 **What this is for.** Today every platform gives us the surface numbers:
@@ -56,7 +56,7 @@ subscriptions.
 | DA-06 | Robot: open each app's analytics screens on phone 1 | All | **Built 2026-10-23 on both sides, on the pretend phone; first real sitting (A5) needs Yurie and an Air update** |
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
 | DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
-| DA-09 | Hook and retention comparisons in the dashboard | All | **Design APPROVED 2026-10-23; the real data behind it is the build step** |
+| DA-09 | Hook and retention comparisons in the dashboard | All | **Built 2026-10-23: live on real data; fills as the robot's Fridays add up** |
 
 ---
 
@@ -590,7 +590,13 @@ and the tags (DA-03) meet. Until then the only deep numbers on screen are
 DA-01's on each Instagram account's Analytics and All posts tabs; the screen
 readings are in the table only.
 
-**Status: design APPROVED by Garreth, 2026-10-23**, after three changes the
+**Status: BUILT 2026-10-23, the same night the design was approved.** The
+real loader is `src/lib/data/account-deep-build.ts` (`buildDeep`, pure and
+tested; `getAccountDeep`, cached with the Analytics tab's tags), joining the
+performance table, `content_tags` and `post_screen_readings` for the last 30
+days. "Held past 3s" is the reading's curve at 3 s where a post has been
+read, else on Instagram 100 minus the API's skip rate. The sample stays
+behind `?deep=demo`. Design APPROVED by Garreth, 2026-10-23, after three changes the
 same evening: the switch moved to the right end of the first row, opposite
 the range pills; the robot's readings (watching, sources, audience, For You)
 added above the hook comparisons; and the three hook cards grouped into one
