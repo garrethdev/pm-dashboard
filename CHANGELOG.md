@@ -20,6 +20,45 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-23 — The Deep side shows real numbers (DA-09 built)
+
+**Where it came from:** DA-09's design was approved earlier the same evening
+(docs/DEEP-ANALYTICS-TICKETS.md); Garreth asked for the data behind it.
+
+**What changed:** the Deep side of every account's Account Analytics tab now
+rests on three tables for the last 30 days: the platform's own performance
+rows (every post, its views; on Instagram its skip rate, reach and follows),
+the AI tags (each post's hook words and hook family), and the phone
+readings (what the app's analytics screen said, newest reading per post).
+
+- **Watching, where views come from, who watches, For You feed** come from
+  the readings only, and each card says how many posts it rests on. The
+  retention curve is the average of the read posts' curves, drawn only as
+  far as half of them reach, so one long video cannot drag the tail out. The
+  tiles' trend lines are week by week, by the week the post went up.
+- **Hook Analysis** groups the tagged posts by hook family. "Held past 3s"
+  is the reading's curve at three seconds where a post has been read, else
+  on Instagram 100 minus its skip rate from the API; follows and saves are
+  per 100 people reached. Best and worst hooks never share a post: with few
+  posts the top half is best and the bottom half worst.
+- Empty is not 0 throughout: an account with no tags and no readings shows
+  the empty state; a card with nothing says "Not read yet" or "Not enough
+  posts yet".
+- `?deep=demo` still shows the approved design's sample, kept on purpose
+  until the robot's Fridays have filled the real one (Garreth).
+
+**Verified live, 2026-10-23, on the development machine against the real
+tables:** hey.imani.vaughn shows 12 of 15 posts tagged, one read, three
+hook families with their held rates from the API's skip rates, and the one
+read Reel's curve, sources and audience; glow.with.becky shows its one read
+video, held out of the For You feed. The build is covered by unit tests on
+the sums (means, medians, curve reading, averaging) and the grouping.
+
+**Known thin spots:** with one reading per account the reading cards rest on
+one post, and the week-by-week trend lines have no shape until a few
+Fridays have passed.
+
+
 ## 2026-10-23 — Overview / Deep switch on the account analytics, and the phone cards side by side (DA-09)
 
 **Where it came from:** Garreth, 2026-10-23. DA-09 is a design ticket and its

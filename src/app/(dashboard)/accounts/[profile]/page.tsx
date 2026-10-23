@@ -14,7 +14,8 @@ import { AccountPostsView } from "@/components/dashboard/account-posts-view";
 import { AccountTaskLog } from "@/components/dashboard/account-task-log";
 import { WarmupReportLog } from "@/components/dashboard/warmup-report-log";
 import { getAccountAnalytics } from "@/lib/data/account-analytics";
-import { SAMPLE_DEEP } from "@/lib/data/account-deep";
+import { SAMPLE_DEEP, type AccountDeep } from "@/lib/data/account-deep";
+import { getAccountDeep } from "@/lib/data/account-deep-build";
 import { getAccountDetail } from "@/lib/data/account-detail";
 import { getAccountPosts } from "@/lib/data/account-posts";
 import { getWarmupReportsForProfile } from "@/lib/data/warmup-reports";
@@ -104,9 +105,18 @@ async function AnalyticsPanel({
     const message = err instanceof Error ? err.message : "unknown error";
     return <p className="text-sm text-text-muted">Analytics unavailable: {message}</p>;
   }
-  return (
-    <AccountAnalyticsMode analytics={analytics} account={username} platform={platform} deep={demoDeep ? SAMPLE_DEEP : null} />
-  );
+  // The Deep side (DA-09): the real numbers, or the approved design's sample
+  // with ?deep=demo. A failed read leaves the side empty rather than erroring
+  // the whole tab.
+  let deep: AccountDeep | null = demoDeep ? SAMPLE_DEEP : null;
+  if (!demoDeep && username) {
+    try {
+      ({ data: deep } = await getAccountDeep(username, platform));
+    } catch (err) {
+      console.error("[account] deep analytics unavailable", err);
+    }
+  }
+  return <AccountAnalyticsMode analytics={analytics} account={username} platform={platform} deep={deep} />;
 }
 
 /** The All posts tab: every post, streamed like the analytics panel. */
