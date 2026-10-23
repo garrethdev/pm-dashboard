@@ -131,11 +131,8 @@ export function SessionDetail({
           <Fact label="Started (ET)">{etDateTime(session.startedAt)}</Fact>
           <Fact label="Length">{spanMinutes(session.startedAt, session.endedAt)} min</Fact>
           <Fact label="Frames">{session.frameCount}</Fact>
-          <Fact label="Kind">
-            <span className="inline-flex items-center gap-2">
-              <StatusPill tone={kind.tone}>{kind.label}</StatusPill>
-              {session.kindSetBy && <span className="text-xs text-text-muted">{session.kindSetBy === "reviewer" ? "set by a reviewer" : "from the read"}</span>}
-            </span>
+          <Fact label={session.kindSetBy === "reviewer" ? "Kind (reviewer)" : session.kindSetBy === "claude" ? "Kind (read)" : "Kind"}>
+            <StatusPill tone={kind.tone}>{kind.label}</StatusPill>
           </Fact>
           <Fact label="Post" wide>
             {session.matchedPost ? (
