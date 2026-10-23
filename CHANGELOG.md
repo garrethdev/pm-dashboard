@@ -20,6 +20,36 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-23 — The robot gets into the screenshot bucket the way the session recorder does (DA-06)
+
+**Where it came from:** the robot worker's open question, and Garreth's
+answer on 2026-10-23: copy the session recorder, which never holds a storage
+key. The Air asks the dashboard for a one-time link per picture and uploads
+to that; a link works once, for that one file.
+
+**What changed:**
+
+- Two operations added to the warmup runner's API (`docs/WARMUP-RUNNER-API.md`):
+  **12**, one-time upload links for analytics screenshots, up to 200 a call,
+  and only for paths inside a post's own folder in the `post-screens` bucket;
+  and **13**, the hand-off itself, the same reading job as the route built
+  earlier today, behind the dashboard token the robot already holds instead
+  of the schedule's secret. Both sit under the runner's prefix, so the login
+  gate already lets them through.
+- On the Air side (the runner repository, branch `da-06-analytics-robot`):
+  the robot's bucket now goes through those links, its hand-off is sent for
+  real on a real run and kept in the run folder first, and the two bucket
+  settings it had asked Garreth for are gone from `.env`.
+
+**Verified live, 2026-10-23, on the development machine:** operation 12
+turned away a missing token (401) and a path outside the bucket's folders
+(400), signed two links, a real screenshot went up through each (200), and
+operation 13 read those two screens into reading 8, matched to the right
+post. The runner side on its pretend dashboard: its tests. **Not yet
+verified:** the two operations on the live site, and the Air itself, which
+has not run this.
+
+
 ## 2026-10-23 — The robot's hand-off route, and the screen readings in the All posts tab (DA-06, DA-08)
 
 **Where it came from:** Garreth, 2026-10-23, asking what could be built

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, pickPost, promptFor, rateSignalsOrNull, storagePath, toRow } from "./screen-readings";
+import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, pickPost, promptFor, rateSignalsOrNull, storagePath, toRow } from "./screen-readings";
 
 const group = { platform: "instagram" as const, account: "trina_triumphs", postUrl: "https://www.instagram.com/p/x/", format: "carousel" };
 
@@ -159,5 +159,27 @@ describe("captionKey / pickPost", () => {
     expect(pickPost(posts, "")).toBeNull();
     expect(pickPost(posts, "Something else entirely")).toBeNull();
     expect(pickPost(posts, "The")).toBeNull();
+  });
+});
+
+describe("parseScreenLinks", () => {
+  it("accepts the robot's paths and defaults the type", () => {
+    const r = parseScreenLinks({ screens: [{ path: "tiktok/glow.with.becky/2026-10-24/01-overview.jpeg" }, { path: "facebook/Imani_Vaughn/2026-10-24/12-page.png", type: "image/png" }] });
+    expect(r).toEqual([
+      { path: "tiktok/glow.with.becky/2026-10-24/01-overview.jpeg", type: "image/jpeg" },
+      { path: "facebook/Imani_Vaughn/2026-10-24/12-page.png", type: "image/png" },
+    ]);
+  });
+  it("signs nothing outside a post's own folder", () => {
+    expect(() => parseScreenLinks({ screens: [{ path: "../phone-sessions/x.jpeg" }] })).toThrow(/must look like/);
+    expect(() => parseScreenLinks({ screens: [{ path: "youtube/a/2026-10-24/01-x.jpeg" }] })).toThrow(/must look like/);
+    expect(() => parseScreenLinks({ screens: [{ path: "tiktok/a/2026-10-24/01-x.gif" }] })).toThrow(/must look like/);
+    expect(() => parseScreenLinks({ screens: [{ path: "tiktok/a/2026-10-24/01-x.jpeg", type: "image/gif" }] })).toThrow(/type/);
+  });
+  it("refuses an empty list, a repeated path, and too many at once", () => {
+    expect(() => parseScreenLinks({ screens: [] })).toThrow(/at least one/);
+    const p = { path: "tiktok/a/2026-10-24/01-x.jpeg" };
+    expect(() => parseScreenLinks({ screens: [p, p] })).toThrow(/twice/);
+    expect(() => parseScreenLinks({ screens: Array.from({ length: 201 }, (_, i) => ({ path: `tiktok/a/2026-10-24/${String(i).padStart(3, "0")}-x.jpeg` })) })).toThrow(/at most 200/);
   });
 });

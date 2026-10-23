@@ -77,10 +77,16 @@ assume the same shape until they are.
   quiet for a week. It was still there at six and a half days on the one
   video checked. Read the oldest posts first each Friday until that is known.
 
-## The hand-off to the dashboard (to build on the dashboard side)
+## The hand-off to the dashboard (built 2026-10-23)
 
-A route, `POST /api/screen-readings/run`, guarded by `CRON_SECRET` and listed
-in `src/proxy.ts` (or production sends it to the login page), taking:
+Two operations under the runner's own prefix, with the dashboard token the
+robot already holds (`docs/WARMUP-RUNNER-API.md`, 12 and 13): **12**,
+`POST /api/warmup-runner/screens`, hands out one-time upload links for the
+screenshots, the way the session recorder's frames go up, so no bucket key
+ever sits on the Air (Garreth's choice); **13**,
+`POST /api/warmup-runner/screen-readings`, is the hand-off below. A person
+with the schedule's secret can send the same body to
+`POST /api/screen-readings/run`.
 
 ```json
 { "read_by": "robot",
@@ -92,10 +98,9 @@ in `src/proxy.ts` (or production sends it to the login page), taking:
 ```
 
 The dashboard reads each post's screenshots from the bucket with the reader,
-matches the post to its performance row, and writes the reading. Not built
-yet; the runner work can start before it exists, uploading to the bucket and
-logging what it would have sent. The runner already holds the dashboard token
-(`WARMUP_RUNNER_TOKEN`) for its warmup reports; reuse that door.
+matches the post to its performance row by account and caption, and writes
+the reading. The answer counts what was read, stored, a problem, or not
+reached in time (send those again).
 
 ## What is not decided
 

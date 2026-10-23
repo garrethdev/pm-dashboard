@@ -49,6 +49,8 @@ York days.
 | 9 | `POST /api/warmup-runner/recordings/{id}/frames` | `{ frames: [{ index, elapsedSec, type }] }` | `{ ok, status, uploads: [{ index, path, url }] }` |
 | 10 | `POST /api/warmup-runner/recordings/{id}/complete` | — | `{ ok, stored, found, expected }` |
 | 11 | `POST /api/warmup-runner/plug-events` | `{ deviceId, pluggedInAt, unpluggedAt }` | `{ ok, id }` |
+| 12 | `POST /api/warmup-runner/screens` | `{ screens: [{ path, type }] }` | `{ ok, uploads: [{ path, url }] }` |
+| 13 | `POST /api/warmup-runner/screen-readings` | `{ read_by, posts: [{ platform, account, caption, posted_at_text, screenshots, problem }] }` | `{ ok, read, stored, problems, unread, posts: [...] }` |
 
 **What each one does:**
 
@@ -128,6 +130,26 @@ York days.
     `unpluggedAt` filled when it goes. **Every day, frames or not**: it is
     what lets the dashboard tell a post made with the phone unplugged from a
     recording that failed.
+12. **Upload links for analytics screenshots (DA-06).** Up to 200 a call.
+    Each screenshot is `{ path, type }`: `path` its place in the
+    `post-screens` bucket, `<platform>/<account>/<yyyy-mm-dd>/<nn>-<name>.jpeg`
+    (platform `tiktok`, `instagram` or `facebook`; nothing else is signed),
+    `type` `image/jpeg` (the default) or `image/png`. Each answer carries a
+    one-time link per screenshot: **PUT the picture's bytes to `url` with
+    `Content-Type` set.** Straight into the bucket, not through the dashboard.
+    A path sent twice overwrites itself, so a retry is safe.
+13. **The hand-off (DA-06).** Once an account's screenshots are up, send the
+    posts: for each, `platform`, `account` (the handle), `caption` (the first
+    words, as read on the post), `posted_at_text` (the date as the analytics
+    screen prints it, or null), `screenshots` (the paths uploaded, in the
+    order taken) and `problem` (why the post could not be read, or null; a
+    post with a problem may have no screenshots). The dashboard reads each
+    post's screenshots with the DA-05 reader, matches the post to its
+    performance row by account and caption, and stores a reading. The answer
+    counts what was `read`, `stored`, `problems` (stored with the reason and
+    no numbers) and `unread` (not reached in time: send those again), with
+    one line per post. 503 `ai_unavailable` means the AI could not be
+    reached: send the whole call again later.
 
 **Safe to retry.** Starting a run twice returns the same run. Closing twice
 keeps the first close. Writing the same session twice answers
