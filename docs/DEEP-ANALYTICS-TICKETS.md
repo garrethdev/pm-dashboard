@@ -56,7 +56,7 @@ subscriptions.
 | DA-06 | Robot: open each app's analytics screens on phone 1 | All | **Built 2026-10-23 on both sides, on the pretend phone; first real sitting (A5) needs Yurie and an Air update** |
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
 | DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
-| DA-09 | Hook and retention comparisons in the dashboard | All | **Done 2026-10-23 (Garreth). Live on real data; the reading cards fill as the robot's Fridays add up** |
+| DA-09 | The Deep side of each account: watching, sources, audience, For You, and the hooks compared | All | **Done 2026-10-23 (Garreth). Live on real data; the reading cards fill as the robot's Fridays add up** |
 
 ---
 
@@ -571,7 +571,9 @@ robot has not read, or a number its screen did not show, gets a dash.
 
 ---
 
-## DA-09 · Hook and retention comparisons in the dashboard — Done 2026-10-23
+## DA-09 · The Deep side of each account: watching, sources, audience, For You, and the hooks compared — Done 2026-10-23
+
+(Renamed 2026-10-23 at Garreth's ask: the old title, "Hook and retention comparisons in the dashboard", read as if hooks were all of it.)
 
 **What:** where the numbers start to answer questions:
 - hook rate and the drop-off point, by hook type (DA-03), within each account
