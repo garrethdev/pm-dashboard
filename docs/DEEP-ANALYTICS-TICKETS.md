@@ -57,7 +57,7 @@ subscriptions.
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
 | DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
 | DA-09 | The Deep side of each account: watching, sources, audience, For You, and the hooks compared | All | **Done 2026-10-23 (Garreth). Live on real data; the reading cards fill as the robot's Fridays add up** |
-| DA-10 | The Deep side of the fleet: the same numbers across characters and content types, on the main Analytics page | All | After DA-07's first weeks; design first |
+| DA-10 | The Deep side of the fleet: the same numbers across characters and content types, on the main Analytics page | All | **Design APPROVED 2026-10-23 (Garreth); the data waits for DA-07's first weeks** |
 
 ---
 
@@ -678,3 +678,36 @@ dashes helps nobody. Open it once the first weeks of readings exist.
 **This is a design ticket first**, like DA-09: drawn in the running app on
 made-up numbers, approved, then built on the DA-09 loader widened to the
 fleet.
+
+**Status: design APPROVED by Garreth, 2026-10-23.** The switch is live on the
+main Analytics page; its Deep side shows the empty state until the loader
+is built after DA-07's first weeks, and the sample behind `?deep=demo`
+stays until then. Open the main
+Analytics page with `?deep=demo` and press Deep, at the right end of the
+first row after the range pills (the same place as on the account page).
+Drawn on made-up numbers (`src/lib/data/fleet-deep.ts`, `SAMPLE_FLEET_DEEP`)
+for a fleet a few Fridays in: 164 posts read across 11 accounts. What is on
+it, top to bottom:
+
+- **Watching, whole fleet:** the four tiles with their week-by-week trend
+  lines and the fleet's average retention curve, as on the account page.
+- **Watching by content type:** one row per content type with its character,
+  posts read, average watch, held past 3 seconds, watched to the end and the
+  drop-off second; best and worst held rate coloured.
+- **Where views come from** and **Who watches**, summed over the fleet's
+  readings.
+- **For You feed:** how many of the fleet's TikTok videos were held out, then
+  a row per account with its videos read and held.
+- **Hook Analysis:** first "Within each content type", one block per content
+  type (its character and tagged count on the block's line) with the hook
+  families inside it; then "Shared hook families across the fleet", only the
+  families from the AI's shared list, with how many content types each
+  spans; then the five best and five worst hooks fleet-wide, each naming its
+  account and content type.
+
+Decided while drawing, for Garreth to confirm or change: the platform pills
+above apply to the Deep side too (a TikTok-only Deep view is the For You
+card's natural home); the range pills do not, the Deep side keeps a month;
+and the Overview stays mounted behind the Deep side so switching back is
+instant. The account page's Deep side and this one share their pieces
+(`src/components/dashboard/deep-bits.tsx`).
