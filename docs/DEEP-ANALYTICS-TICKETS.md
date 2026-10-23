@@ -482,8 +482,9 @@ pretend phone, as tasks A1 to A4 of the runner's `TASKS.md` ("Analytics
 reader (DA-06)"): the walk through each app's tabs, the upload and hand-off,
 a Friday slot in the planner with its own window, and Yurie's sitting tool
 (`air/Read analytics.command`). 44 tests in `src/analytics/`, 894 in all.
-Two choices it made that want a yes: the job gets its own window in
-`config/fleet.json`, kept 35 minutes clear of the warmups; and it can read
+Two choices it made: the job gets its own window in `config/fleet.json`,
+kept 35 minutes clear of the warmups (**confirmed by Garreth, 2026-10-23**:
+the robot runs outside the warmup windows); and it can read
 button names either from the phone's screen description (the brief's way)
 or from the words on a screenshot (the warmups' way), switchable without a
 code change, because the description jammed TikTok on phone 1's feed on
