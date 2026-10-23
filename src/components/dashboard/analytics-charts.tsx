@@ -34,6 +34,8 @@ import { Card, DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { TopPostsCard } from "@/components/dashboard/top-posts-card";
+import { FleetDeepView } from "@/components/dashboard/fleet-deep-view";
+import type { FleetDeep } from "@/lib/data/fleet-deep";
 import { AnalyticsSkeleton } from "@/components/dashboard/analytics-skeleton";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { platformProfileUrl, toPlatform } from "@/lib/platform";
@@ -668,8 +670,11 @@ function AccountPerformance({ rows }: { rows: AccountPerfRow[] }) {
 /** The slice the server rendered into `initial`. */
 const SERVER_KEY = "7d|all";
 
-export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; fleet?: Fleet }) {
+export function AnalyticsView({ initial, fleet, deep = null }: { initial: AnalyticsData; fleet?: Fleet; deep?: FleetDeep | null }) {
   const [picked, setPlatform] = useState<PlatformKey>("all");
+  // DA-10: the same Overview / Deep switch as the account page, at the right
+  // end of the first row, after the range pills.
+  const [mode, setMode] = useState<"overview" | "deep">("overview");
   // Facebook is a tab in Physical only, where Facebook accounts live; its
   // numbers come from the daily Facebook robot (PF-24, 2026-10-07). Switching
   // to Cloud with it picked falls back to All rather than an empty page.
@@ -833,9 +838,23 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
             onChange={(v) => setRange(v as RangeKey)}
             options={RANGES.map((r) => ({ value: r.key, label: r.label }))}
           />
+          <FilterPills
+            inline
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "overview", label: "Overview" },
+              { value: "deep", label: "Deep" },
+            ]}
+          />
         </div>
       </div>
 
+      {mode === "deep" && <FleetDeepView deep={deep} />}
+
+      {/* The Overview stays mounted while Deep shows, so switching back is
+          instant and the charts keep their measurements. */}
+      <div className={cn("flex flex-col gap-6", mode === "deep" && "hidden")}>
       {showingOtherSlice && (
         <div
           role="status"
@@ -960,6 +979,7 @@ export function AnalyticsView({ initial, fleet }: { initial: AnalyticsData; flee
         {/* Inside the view, not beside it on the page, so it can read the
             platform pills above rather than needing a second set. */}
         <TopPostsCard platform={platform} />
+      </div>
       </div>
     </div>
   );

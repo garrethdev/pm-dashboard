@@ -2,6 +2,7 @@ import { getFleet } from "@/lib/fleet-server";
 import { DashCard } from "@/components/ui/card";
 import { AnalyticsView } from "@/components/dashboard/analytics-charts";
 import { getAnalytics } from "@/lib/data/analytics";
+import { SAMPLE_FLEET_DEEP } from "@/lib/data/fleet-deep";
 
 /*
  * Analytics — the web version of the weekly combined IG + TikTok report.
@@ -16,7 +17,8 @@ import { getAnalytics } from "@/lib/data/analytics";
  * finished hydrating (the platform pills rendered but did nothing).
  */
 
-async function AnalyticsLive() {
+/** DA-10 design step: `?deep=demo` draws the fleet's Deep side on made-up numbers. */
+async function AnalyticsLive({ demoDeep }: { demoDeep: boolean }) {
   let data;
   let fleet;
   try {
@@ -31,13 +33,14 @@ async function AnalyticsLive() {
       </DashCard>
     );
   }
-  return <AnalyticsView initial={data} fleet={fleet} />;
+  return <AnalyticsView initial={data} fleet={fleet} deep={demoDeep ? SAMPLE_FLEET_DEEP : null} />;
 }
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ deep?: string }> }) {
+  const demoDeep = (await searchParams).deep === "demo";
   return (
     <div className="flex flex-col gap-3">
-      <AnalyticsLive />
+      <AnalyticsLive demoDeep={demoDeep} />
     </div>
   );
 }

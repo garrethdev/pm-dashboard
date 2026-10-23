@@ -20,6 +20,27 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-23 — Overview / Deep switch on the main Analytics page (DA-10)
+
+**Where it came from:** Garreth, 2026-10-23: the deep numbers belong on the
+fleet's Analytics page too, grouped by character and content type. DA-10 is
+a design ticket and its screen was drawn and approved the same evening (the
+record is the ticket's Status line); this entry covers only what every
+visitor now sees.
+
+**What changed:** the main Analytics page has the same **Overview / Deep**
+switch as the account page, at the right end of its first row after the
+range pills. The Deep side shows "No deep numbers across the fleet yet" until
+its data is built, which waits for the robot's first weeks across the phones
+(DA-07); the approved design is drawn on made-up numbers and reachable only
+with `?deep=demo` on the address. The account page's Deep side and this one
+now share their pieces, and a table colours its best and worst only when it
+has three or more rows.
+
+**Verified:** in headless Chrome, both pages, dark; not in Safari. Type
+check, lint and the 650 tests pass.
+
+
 ## 2026-10-23 — The Deep side shows real numbers (DA-09 built)
 
 **Where it came from:** DA-09's design was approved earlier the same evening
