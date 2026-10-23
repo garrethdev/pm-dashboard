@@ -11,7 +11,7 @@ import { PlatformIcon } from "@/components/ui/platform-icon";
 import { kindPill, reviewPill, typeLabel } from "@/components/dashboard/sessions-view";
 import { etDateTime } from "@/lib/data/format";
 import { elapsedLabel, spanMinutes, type FrameInfo } from "@/lib/data/phone-session-rules";
-import { KIND_LABEL, SESSION_KINDS, type PhoneSession, type ReviewSeverity, type SessionKind } from "@/lib/data/phone-sessions";
+import { effectiveKind, KIND_LABEL, SESSION_KINDS, type PhoneSession, type ReviewSeverity, type SessionKind } from "@/lib/data/phone-sessions";
 import { cn } from "@/lib/utils";
 
 const SEVERITY: Record<ReviewSeverity, { tone: PillTone; label: string }> = {
@@ -63,7 +63,9 @@ export function SessionDetail({
   const [error, setError] = useState<string | null>(null);
   const review = session.review;
   const pill = reviewPill(session);
-  const kind = kindPill(session.kind);
+  const known = effectiveKind(session);
+  const kind = kindPill(known.kind);
+  const kindHeading = known.from === "reviewer" ? "Kind (reviewer)" : known.from === "claude" ? "Kind (read)" : known.from === "post" ? "Kind (from the post)" : "Kind";
 
   // A reviewer's word on what the session was. "" clears it, so the next read may set it.
   const chooseKind = async (value: string) => {
@@ -131,7 +133,7 @@ export function SessionDetail({
           <Fact label="Started (ET)">{etDateTime(session.startedAt)}</Fact>
           <Fact label="Length">{spanMinutes(session.startedAt, session.endedAt)} min</Fact>
           <Fact label="Frames">{session.frameCount}</Fact>
-          <Fact label={session.kindSetBy === "reviewer" ? "Kind (reviewer)" : session.kindSetBy === "claude" ? "Kind (read)" : "Kind"}>
+          <Fact label={kindHeading}>
             <StatusPill tone={kind.tone}>{kind.label}</StatusPill>
           </Fact>
           <Fact label="Post" wide>

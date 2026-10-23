@@ -10,7 +10,7 @@ import { StatusPill, type PillTone } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { etDateTime } from "@/lib/data/format";
 import { spanMinutes } from "@/lib/data/phone-session-rules";
-import { KIND_LABEL, type PhoneSession, type SessionKind } from "@/lib/data/phone-sessions";
+import { effectiveKind, KIND_LABEL, type PhoneSession, type SessionKind } from "@/lib/data/phone-sessions";
 
 /** "rich_life" → "Rich life": the hand-out's content type as a label. */
 export function typeLabel(contentType: string): string {
@@ -112,7 +112,7 @@ export function SessionsView({
                       <td className={`${TD} tabular-nums`}>{spanMinutes(s.startedAt, s.endedAt)} min</td>
                       <td className={`${TD} tabular-nums`}>{s.frameCount}</td>
                       <td className={TD}>
-                        <StatusPill tone={kindPill(s.kind).tone}>{kindPill(s.kind).label}</StatusPill>
+                        <StatusPill tone={kindPill(effectiveKind(s).kind).tone}>{kindPill(effectiveKind(s).kind).label}</StatusPill>
                       </td>
                       <td className={TD}>
                         {s.matchedPost ? (

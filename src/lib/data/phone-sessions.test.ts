@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KIND_LABEL, parseKind, parseReview } from "./phone-sessions";
+import { effectiveKind, KIND_LABEL, parseKind, parseReview } from "./phone-sessions";
 
 describe("what kind of session a read says it was", () => {
   it("accepts the three kinds and nothing else", () => {
@@ -28,6 +28,14 @@ describe("what kind of session a read says it was", () => {
     const odd = parseReview({ summary: "x", kind: "nap", kindNote: 7 });
     expect(odd?.kind).toBeNull();
     expect(odd?.kindNote).toBe("");
+  });
+
+  it("calls a session with a matched post 'posting' until a read or a reviewer says otherwise", () => {
+    const post = { id: 1, contentType: "cleora", doneAt: null, username: "nikki", platform: "instagram" };
+    expect(effectiveKind({ kind: null, kindSetBy: null, matchedPost: post })).toEqual({ kind: "posting", from: "post" });
+    expect(effectiveKind({ kind: null, kindSetBy: null, matchedPost: null })).toEqual({ kind: null, from: null });
+    expect(effectiveKind({ kind: "other", kindSetBy: "reviewer", matchedPost: post })).toEqual({ kind: "other", from: "reviewer" });
+    expect(effectiveKind({ kind: "manual_warmup", kindSetBy: "claude", matchedPost: null })).toEqual({ kind: "manual_warmup", from: "claude" });
   });
 
   it("has a plain label for each kind", () => {
