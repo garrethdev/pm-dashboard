@@ -57,7 +57,7 @@ subscriptions.
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
 | DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
 | DA-09 | The Deep side of each account: watching, sources, audience, For You, and the hooks compared | All | **Done 2026-10-23 (Garreth). Live on real data; the reading cards fill as the robot's Fridays add up** |
-| DA-10 | The Deep side of the fleet: the same numbers across characters and content types, on the main Analytics page | All | **Design APPROVED 2026-10-23 (Garreth); the data waits for DA-07's first weeks** |
+| DA-10 | The Deep side of the fleet: the same numbers across characters and content types, on the main Analytics page | All | **Designed, waiting for data** |
 
 ---
 
