@@ -20,6 +20,61 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-23 — The screen reader: phone screenshots become numbers (DA-05, DA-08)
+
+**Where it came from:** the deep analytics tickets (Czedrick, 2026-10-09).
+Garreth asked on 2026-10-23 for whatever could be built while Yurie's last
+screenshots are awaited; the reading half of DA-05 and the table of DA-08
+needed neither her nor the phones.
+
+**What changed** (nothing on screen yet; the robot is DA-06 and the
+comparison screen is DA-09):
+
+- A new table, `post_screen_readings`, holds what each app's own analytics
+  screen said about a post: watch time, the retention curve, skip rate,
+  where the views came from, who watched (age, country, gender), and
+  TikTok's "not eligible for the For You feed" banner as a yes or no. One
+  row per reading, so a post can be read again next week. Empty is not 0:
+  a number the screen hid stays empty.
+- A reader that takes one post's screenshots (every tab, scrolled to the
+  bottom) and fills that row. The AI is Claude Haiku 5.5 through OpenRouter,
+  the same door and key as DA-03, so the live site needs no new secret. Each
+  reading keeps its screenshots in a private storage bucket, `post-screens`,
+  so a wrong read can be checked against the picture.
+- A command-line tool, `scripts/read-screenshots.ts`, that reads a folder of
+  screenshots from a short list of which post is which, shows the reading
+  beside what the platform's API already stored for that post, and stores
+  it on request. This is how DA-05's "does Claude read the screens right"
+  question is answered from now on.
+
+**Verified live, 2026-10-23:** all five of Yurie's posts (37 screenshots)
+were read and stored as readings 1 to 5. Every number the API also gives
+matched: TikTok views 10; the Instagram Reel's 121 views, 3 likes, 57% skip
+rate and 5 second watch time (stored 5.7, the app rounds); the two carousels'
+views, viewers, comments, follows and profile visits; the Facebook Reel's
+zeros. The same screens were read by Haiku 5.5, Sonnet 5.5 and Opus 5.5 and
+all three read every number the same; only their retention-curve points
+differ by a few percent, since a curve is read by eye. Cost per post of ten
+screens: Opus about 7 cents, Sonnet 3 cents, Haiku a fifth of a cent. Garreth
+chose Haiku the same day. Those five readings were made through Anthropic's
+own door with a key on the development machine; the code was then moved to
+OpenRouter so the live site can use the key it already has, and **confirmed
+live the same evening**: the two carousels read again through OpenRouter came
+back with the same numbers, about a tenth of a cent each.
+
+**Still with Yurie:** the TikTok photo post, the Facebook photo post and an
+older Facebook Reel with views.
+
+**The robot (DA-06)** was designed, not built: its brief for the warmup
+robot's repository is `docs/DA-06-ROBOT-HANDOVER.md`, and a Claude agent was
+opened in that repository through Orca to build it on the pretend phone.
+
+**Not in the dashboard yet:** DA-08 also asks for each number as a column
+in the All posts tab. That waits until the robot gives every post a reading;
+with three rows it would be a column of dashes.
+
+---
+
 ## 2026-10-22 — Generate images now spends the connected Higgsfield account, not an API wallet
 
 **Where it came from:** Garreth, 2026-10-22, after the Generate images form
@@ -370,6 +425,8 @@ effect with the first deployment that carries this branch. The Production
 allowlist is a sensitive setting and cannot be read back from a desk, so
 whether each of the four is also on it was not checked, only assumed from
 who signs in today.
+
+---
 
 ## 2026-10-20 — Every posted piece gets tagged with what is in it (DA-03)
 
