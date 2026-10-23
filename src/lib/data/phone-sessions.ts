@@ -58,6 +58,22 @@ export function parseKind(raw: unknown): SessionKind | null {
   return SESSION_KINDS.includes(raw as SessionKind) ? (raw as SessionKind) : null;
 }
 
+/**
+ * What to call the session, and on whose word: a reviewer's or the read's
+ * kind when there is one; otherwise a matched post already says "posting"
+ * (Czedrick, 2026-10-23: the Post column knew and the Kind column said
+ * "not yet known"); otherwise nothing yet.
+ */
+export function effectiveKind(s: {
+  kind: SessionKind | null;
+  kindSetBy: KindSetBy | null;
+  matchedPost: MatchedPost | null;
+}): { kind: SessionKind | null; from: KindSetBy | "post" | null } {
+  if (s.kind) return { kind: s.kind, from: s.kindSetBy };
+  if (s.matchedPost) return { kind: "posting", from: "post" };
+  return { kind: null, from: null };
+}
+
 export interface ReviewAnomaly {
   /** The frame it was seen in, by number; null when it is about the session as a whole. */
   frame: number | null;

@@ -50,6 +50,10 @@ the new read has not yet been run on a real session.
 - **Seen live the same evening:** the two phone 1 sessions of 23 October
   were read and both came back "Manual warmup", with the parked profile
   page flagged, as expected.
+- **A session with a matched post is called "Posting" from the start**
+  (Czedrick, the same evening: two posting sessions showed a post in one
+  column and "Not yet known" in the other). A read or a reviewer can still
+  say otherwise; the fact's heading says where the label came from.
 - Two columns on `phone_sessions` for this, `kind` and `kind_set_by`,
   applied live (`supabase/migrations/20261023082104_phone_sessions_kind.sql`).
 
