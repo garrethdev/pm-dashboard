@@ -39,13 +39,20 @@ const FACEBOOK_INGEST_PATH = "/api/facebook-analytics/ingest";
 const CONTENT_TAGS_PATH = "/api/content-tags/run";
 
 /**
+ * The analytics-screen reader (DA-06/DA-08), called by the phone robot after
+ * it uploads a post's screenshots. It demands CRON_SECRET
+ * (src/app/api/screen-readings/run/route.ts).
+ */
+const SCREEN_READINGS_PATH = "/api/screen-readings/run";
+
+/**
  * Auth gate (Next 16 "proxy", formerly middleware): refreshes the Supabase
  * session cookie and redirects unauthenticated / non-allowlisted visitors to
  * /login. API routes re-check the session themselves — this is the outer door.
  */
 export async function proxy(request: NextRequest) {
   const p = request.nextUrl.pathname;
-  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH) {
+  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH || p === SCREEN_READINGS_PATH) {
     return NextResponse.next({ request });
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toPostRow } from "./account-posts";
+import { latestByPost, type RawReading, toPostRow, withReading } from "./account-posts";
 
 const base = {
   post_id: "p",
@@ -28,5 +28,49 @@ describe("toPostRow", () => {
   it("leaves Facebook's shares and saves empty, and a photo post's views empty", () => {
     const r = toPostRow({ ...base, format: "carousel", views: null }, "facebook");
     expect(r).toMatchObject({ views: null, shares: null, saves: null });
+  });
+});
+
+describe("withReading", () => {
+  const row = toPostRow({ ...base, format: "video" }, "tiktok");
+  const reading = {
+    post_url: "https://example.com/p",
+    read_at: "2026-10-23T07:20:53Z",
+    avg_watch_s: "4.7",
+    watched_full_pct: "19.05",
+    total_watch_s: 97,
+    new_followers: 0,
+    viewers: 8,
+    views_facebook: null,
+    traffic_sources: { "Reels tab": 71.9, Explore: 18.2 },
+    fyp_restricted: true,
+  };
+  it("lays the screen reading's numbers on the post", () => {
+    const r = withReading(row, reading);
+    expect(r).toMatchObject({ avgWatchSec: 4.7, fullPct: 19.05, totalWatchSec: 97, newFollowers: 0, reach: 8, fypRestricted: true, readAt: reading.read_at });
+    expect(r.topSourceName).toBe("Reels tab");
+    expect(r.topSourcePct).toBe(71.9);
+  });
+  it("keeps the API's number when it has one, and fills only what the API never had", () => {
+    const ig = toPostRow({ ...base, format: "video", reach: 113, avg_watch_ms: 5709 }, "instagram");
+    const r = withReading(ig, { ...reading, avg_watch_s: 5, viewers: 114 });
+    expect(r.avgWatchSec).toBe(5.7);
+    expect(r.reach).toBe(113);
+  });
+  it("leaves a post without a reading untouched, and a hidden list empty", () => {
+    expect(withReading(row, undefined)).toBe(row);
+    const r = withReading(row, { ...reading, traffic_sources: null, fyp_restricted: null });
+    expect(r.topSourceName).toBeNull();
+    expect(r.fypRestricted).toBeNull();
+  });
+});
+
+describe("latestByPost", () => {
+  it("keeps the first row per post from a newest-first list", () => {
+    const a = { post_url: "u", read_at: "2026-10-24T00:00:00Z" } as RawReading;
+    const b = { post_url: "u", read_at: "2026-10-17T00:00:00Z" } as RawReading;
+    const c = { post_url: null, read_at: "2026-10-24T00:00:00Z" } as RawReading;
+    expect(latestByPost([a, b, c]).get("u")).toBe(a);
+    expect(latestByPost([a, b, c]).size).toBe(1);
   });
 });

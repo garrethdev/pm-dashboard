@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, promptFor, rateSignalsOrNull, storagePath, toRow } from "./screen-readings";
+import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, pickPost, promptFor, rateSignalsOrNull, storagePath, toRow } from "./screen-readings";
 
 const group = { platform: "instagram" as const, account: "trina_triumphs", postUrl: "https://www.instagram.com/p/x/", format: "carousel" };
 
@@ -116,5 +116,48 @@ describe("promptFor / storagePath", () => {
   it("files screenshots under platform, account and day, numbered in order", () => {
     expect(storagePath({ platform: "tiktok", account: "glow.with.becky" }, new Date("2026-10-23T12:00:00Z"), 0, "WhatsApp Image 2026-10-23 at 3.32.04 AM.jpeg"))
       .toBe("tiktok/glow.with.becky/2026-10-23/01-WhatsApp_Image_2026-10-23_at_3.32.04_AM.jpeg");
+  });
+});
+
+describe("parseRunRequest", () => {
+  it("accepts the robot's shape and fills the defaults", () => {
+    const r = parseRunRequest({ posts: [{ platform: "tiktok", account: "a", caption: " hi ", screenshots: ["x.png", " y.png "] }] });
+    expect(r.read_by).toBe("robot");
+    expect(r.posts[0]).toEqual({ platform: "tiktok", account: "a", caption: "hi", posted_at_text: null, post_url: null, screenshots: ["x.png", "y.png"], problem: null });
+  });
+  it("takes a post with a problem and no screenshots, but not one with neither", () => {
+    expect(parseRunRequest({ posts: [{ platform: "facebook", account: "a", problem: "no View insights button" }] }).posts[0].problem).toBe("no View insights button");
+    expect(() => parseRunRequest({ posts: [{ platform: "facebook", account: "a" }] })).toThrow(/no screenshots and no problem/);
+  });
+  it("refuses what it cannot read, with a plain reason", () => {
+    expect(() => parseRunRequest(null)).toThrow(/JSON object/);
+    expect(() => parseRunRequest({ posts: [] })).toThrow(/non-empty/);
+    expect(() => parseRunRequest({ posts: [{ platform: "youtube", account: "a", screenshots: ["x"] }] })).toThrow(/platform/);
+    expect(() => parseRunRequest({ read_by: "cron", posts: [{ platform: "tiktok", account: "a", screenshots: ["x"] }] })).toThrow(/read_by/);
+  });
+});
+
+describe("captionKey / pickPost", () => {
+  const posts = [
+    { post_id: "1", post_url: "u1", posted_at: "2026-10-16T18:43:40Z", caption_snippet: "The experiment was designed around going without. There was", format: "video" },
+    { post_id: "2", post_url: "u2", posted_at: "2026-10-14T18:05:31Z", caption_snippet: "", format: "video" },
+    { post_id: "3", post_url: "u3", posted_at: "2026-10-18T19:05:41Z", caption_snippet: "The girl in slide one had no idea what was coming.", format: "carousel" },
+    { post_id: "4", post_url: "u4", posted_at: "2026-10-11T19:05:41Z", caption_snippet: "The girl in slide one had no idea what was coming.", format: "carousel" },
+  ];
+  it("is blind to case, punctuation and emoji", () => {
+    expect(captionKey("The 10pm SNACK-raid… 🍪 is not weak")).toBe("the 10pm snack raid is not weak");
+  });
+  it("matches on the caption's start, either side cut short", () => {
+    expect(pickPost(posts, "The experiment was designed around going without.")?.post_id).toBe("1");
+    expect(pickPost(posts, "The experiment was designed around going without. There was a cauldron and more words")?.post_id).toBe("1");
+  });
+  it("uses the date on the screen to tell twins apart, else takes the newest", () => {
+    expect(pickPost(posts, "The girl in slide one", "Oct 11, 2026, 3:05 PM")?.post_id).toBe("4");
+    expect(pickPost(posts, "The girl in slide one")?.post_id).toBe("3");
+  });
+  it("gives nothing for no caption, an empty stored caption, or no match", () => {
+    expect(pickPost(posts, "")).toBeNull();
+    expect(pickPost(posts, "Something else entirely")).toBeNull();
+    expect(pickPost(posts, "The")).toBeNull();
   });
 });
