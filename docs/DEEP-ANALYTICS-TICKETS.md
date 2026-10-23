@@ -1,6 +1,6 @@
 # Deep content analytics — tickets
 
-**Status:** opened 2026-10-09 (Czedrick). **Nine tickets, DA-01 to DA-09.
+**Status:** opened 2026-10-09 (Czedrick). **Ten tickets, DA-01 to DA-10.
 DA-01 and DA-02 are built and live (2026-10-09). DA-03 is live (2026-10-21).
 DA-04 is done: pro mode was already on (Yurie, 2026-10-23). DA-05's reader
 is built and 8 readings are stored; its photo posts are still with Yurie.
@@ -57,6 +57,7 @@ subscriptions.
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
 | DA-08 | Store the robot's numbers | All | **Done 2026-10-23: table, reader route and All posts columns** |
 | DA-09 | The Deep side of each account: watching, sources, audience, For You, and the hooks compared | All | **Done 2026-10-23 (Garreth). Live on real data; the reading cards fill as the robot's Fridays add up** |
+| DA-10 | The Deep side of the fleet: the same numbers across characters and content types, on the main Analytics page | All | After DA-07's first weeks; design first |
 
 ---
 
@@ -646,3 +647,26 @@ rate" is the word for "still watching past 3 seconds"; and only the best
 and worst cells are coloured, nothing else. The build step after approval
 is the real loader (tags × performance × readings) and its tests; the
 sample stays in the code only until then.
+
+---
+
+## DA-10 · The Deep side of the fleet, on the main Analytics page — After DA-07's first weeks
+
+**What (Garreth, 2026-10-23):** the same Overview / Deep switch on the main
+Analytics page, in the same place, with the deep numbers across the whole
+fleet: which hook families hold people, which content types get watched to
+the end, where the fleet's views come from, who watches, and how many TikTok
+videos are being held out of the For You feed this week.
+
+**The twist:** on the fleet page the useful grouping is by character and
+content type, not by hook alone. A Journey account and a Cleora account post
+different kinds of openings, and comparing them straight across says little;
+within a character, hook family against hook family does.
+
+**Why it waits:** every reading-based card would say "2 posts read" until the
+robot has run a few Fridays across the phones (DA-07). Designing against
+dashes helps nobody. Open it once the first weeks of readings exist.
+
+**This is a design ticket first**, like DA-09: drawn in the running app on
+made-up numbers, approved, then built on the DA-09 loader widened to the
+fleet.
