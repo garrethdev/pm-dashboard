@@ -1,8 +1,11 @@
 # Deep content analytics — tickets
 
 **Status:** opened 2026-10-09 (Czedrick). **Nine tickets, DA-01 to DA-09.
-DA-01 and DA-02 are built and live (2026-10-09). DA-03 is built (2026-10-20);
-its first live run comes after it is merged. The rest are not started.** DA-01 and DA-02 are written in full; the rest are outlines, to
+DA-01 and DA-02 are built and live (2026-10-09). DA-03 is live (2026-10-21).
+DA-04 is done: pro mode was already on (Yurie, 2026-10-23). DA-05's reader
+is built and 3 posts are stored as readings (2026-10-23); its photo posts are
+still with Yurie. DA-08's table is built. DA-06, DA-07 and DA-09 are not
+started.** DA-01 and DA-02 are written in full; the rest are outlines, to
 be filled in when the ticket before them is done.
 
 **What this is for.** Today every platform gives us the surface numbers:
@@ -48,11 +51,11 @@ subscriptions.
 | DA-01 | Pull Instagram's free deeper numbers | Instagram | **Built 2026-10-09** |
 | DA-02 | Show the new Instagram numbers in the dashboard | Instagram | **Built 2026-10-09, merged (PR #53)** |
 | DA-03 | Tag every post with what is in it (AI) | All | **Built 2026-10-20, first live run after merge** |
-| DA-04 | Turn on professional mode on the Facebook profiles | Facebook | Ready now, by hand |
-| DA-05 | Screen-reading pilot: Claude reads analytics screenshots | All | Ready now |
+| DA-04 | Turn on professional mode on the Facebook profiles | Facebook | **Done, already on (Yurie, 2026-10-23)** |
+| DA-05 | Screen-reading pilot: Claude reads analytics screenshots | All | **Reader built 2026-10-23; 3 readings stored, photo posts still to come** |
 | DA-06 | Robot: open each app's analytics screens on phone 1 | All | After DA-05 |
 | DA-07 | Robot: every account on every phone, on a schedule | All | After DA-06 |
-| DA-08 | Store the robot's numbers | All | With DA-06 |
+| DA-08 | Store the robot's numbers | All | **Table built 2026-10-23; the All posts columns wait for the robot** |
 | DA-09 | Hook and retention comparisons in the dashboard | All | After DA-02, DA-03, DA-08 |
 
 ---
@@ -74,10 +77,18 @@ subscriptions.
 - **Carousel half confirmed live 2026-10-20.** The four carousels posted on
   16 and 18 Oct by trina_triumphs and charlotte459336 came back with reach,
   follows and profile visits, and skip rate empty, as expected.
-- **Still open:** the three-post "match the Instagram app" check below. The
-  per-post requests make a mismatch impossible by construction, but nobody
-  has compared by eye. Yurie's screenshots for DA-05 cover it: one Reel and
-  two of those carousels.
+- **Carousel by-eye check done 2026-10-23.** Yurie's screenshots of the two
+  trina_triumphs carousels (16 and 18 Oct) match what the fetch stored:
+  views, reach (the app calls it "Viewers"), comments, follows and profile
+  visits. One wrinkle, resolved: the 16 Oct post shows profile visits as
+  "--" in the app while we stored 0. The stored payload shows Instagram's
+  API itself answered 0, so the app hides a small number that the API
+  states. Our storage is faithful; nothing to fix.
+- **Reel by-eye check done 2026-10-23.** Yurie's screenshots of the
+  hey.imani.vaughn Reel (18 Oct) match the fetch: 121 views, 3 likes, skip
+  rate 57% (app and table both), average watch 5.7 s stored against "5s" on
+  screen, reach 113 against 114 "Viewers" a day later. DA-01 is fully
+  confirmed by eye.
 
 
 **What we get, per post:**
@@ -265,7 +276,14 @@ Separate from the broken "route-and-judge" scoring (PF-25).
 
 ---
 
-## DA-04 · Turn on professional mode on the Facebook profiles — Ready now, by hand
+## DA-04 · Turn on professional mode on the Facebook profiles — Done, already on
+
+**Done 2026-10-23, with nothing to switch.** Yurie said every Facebook
+profile has been in professional mode since well before this ticket; she
+turned it on herself to check views by hand on her rounds. So the "check
+first, on one profile" step below never happened and nothing records what
+the switch changes on a profile. DA-05's Facebook screenshots need no wait.
+
 
 **What:** switch each Facebook profile to professional mode (free, in the
 app). Without it, Facebook keeps no retention or view-rate numbers for a
@@ -284,14 +302,14 @@ exist in the app. Only the robot can read them.
 
 ---
 
-## DA-05 · Screen-reading pilot: Claude reads analytics screenshots — Ready now
+## DA-05 · Screen-reading pilot: Claude reads analytics screenshots — Reader built, photo posts to come
 
 **What:** before any robot exists, settle the reading half. Someone takes
 the analytics screenshots by hand on phone 1 (Yurie during her rounds, or
 Czedrick on the live view):
 - TikTok: More insights on a photo post and on a video
 - Instagram: insights on a carousel and on a Reel
-- Facebook: insights on a reel and on a photo post, if DA-04 is done
+- Facebook: insights on a reel and on a photo post (DA-04 is done, no wait)
 
 Claude reads each screenshot into the numbers DA-08 will store.
 
@@ -305,6 +323,94 @@ Claude reads each screenshot into the numbers DA-08 will store.
 **Done when:** for each of the three apps, a table records what was on
 screen, what Claude read and whether they match.
 
+**The reader (built 2026-10-23):** `src/server/screen-readings.ts` turns one
+post's screenshots into a `post_screen_readings` row (DA-08), and
+`scripts/read-screenshots.ts` runs it over a folder from a short manifest of
+which post is which, printing the reading beside what the API stored. The
+three posts of the second batch are stored as readings 1 to 3, with their
+screenshots in the `post-screens` bucket. Answers to the three questions:
+
+- *Which numbers each app shows for photo posts:* still open; the TikTok and
+  Facebook photo posts are with Yurie.
+- *Does Claude read the screens accurately:* yes for every number the API
+  also gives (all matched, see below). The retention curve is read by eye:
+  three models read the same curve within a few percent of each other, so
+  treat curve points as approximate and the other numbers as exact.
+- *What each screen costs to read:* a post of ten screens is about 12,500
+  tokens in. Opus 5.5 about 7 cents, Sonnet 5.5 3 cents, Haiku 5.5 a fifth
+  of a cent, and all three read every number the same on these posts.
+  **Haiku 5.5 is the model (Garreth, 2026-10-23)**, through OpenRouter like
+  DA-03; twenty posts a week is a few cents.
+
+**Received 2026-10-23, first batch (10 screenshots):** the two Instagram
+carousels (trina_triumphs, 16 and 18 Oct), five screens each: Overview,
+Overview scrolled, Engagement, Engagement scrolled, Audience. They match the
+fetch (see DA-01). What the carousel screens show, beyond what the fetch
+already gives: views split Instagram/Facebook for crossposted posts, viewers,
+a views-over-time line, top sources of views (Feed, Stories, ...), which slide
+people liked on, and a follower/non-follower split. No watch time or
+retention curve on a carousel. The 18 Oct post had 619 views, 566 of them on
+its Facebook mirror.
+
+**Received 2026-10-23, second batch (27 screenshots, unlabelled, sorted by
+Claude; read and stored as readings 1 to 3 the same day):**
+
+- *TikTok video, glow.with.becky, 16 Oct (10 screens).* Overview: views 10,
+  total play time 1 min 37 s, average watch time 4.7 s, watched the full video
+  19.05%, new followers 0, a views-per-day line, and a **retention rate**
+  block: "on average viewers watched 58%", "most viewers stopped at 0:01",
+  with the curve. Viewers: 8 total, 64% new / 36% returning, 100%
+  non-followers. Traffic sources, search queries, gender, age and location all
+  say "shown when this video reaches 100 views". Engagement tab is empty
+  (top comment words "not ready", likes chart blank). Two screens are the
+  Inspiration tab, which is TikTok's own trending list and not about our
+  post. Views match `tt_post_performance` (10). The screens were taken 6.5
+  days after posting and the retention data was still there, so the
+  "TikTok drops watch time after 7 days" worry is neither confirmed nor
+  cleared yet.
+- **Finding on that video:** TikTok shows a banner, "Your video is not
+  eligible for recommendation in the For You feed. If you disagree with the
+  content restriction, you can appeal." That is TikTok saying the post is
+  held out of For You, in writing. The robot should read this banner on every
+  post; it is a direct suppression signal we have never had.
+- *Instagram Reel, hey.imani.vaughn, 18 Oct (10 screens).* Overview: views
+  222 (Instagram 121, Facebook 101), viewers 114, average watch time 5 s,
+  follows 0, views over time against "your typical reel", then **what impacts
+  your views**: skip rate 57.0% (marked Lower), share rate 0.0%, like rate
+  2.6% (Higher), save rate 0.0%, repost rate 0.0%, comment rate 0.0%, each
+  marked against the account's typical. Then **how long people watched** (a
+  retention curve over the 56 s, falling to about 15% by 0:08) and top
+  sources: Reels tab 71.9%, Explore 18.2%, Stories 6.6%, Profile 2.5%, Feed
+  0.8%. Engagement: likes 3, the rest 0, and a "when people liked" curve.
+  Audience: followers 8.3% / non-followers 91.7%; age 25-34 43%, 18-24
+  28.1%, 35-44 16.5%; country India 31.4%, United States 14%, Pakistan 8.3%,
+  Germany 4.1%, United Kingdom 3.3%; men 55.7%, women 44.3%. Everything the
+  fetch stores matches (see DA-01). The demographics are new: the API never
+  gave them per post.
+- *Facebook Reel, Imani Vaughn, posted 23 Oct 02:04 (7 screens).* Taken two
+  hours after posting, so every number is 0 or "not enough data yet". The
+  screen layout is the answer here: views, approximate earnings, engagement,
+  net follows; Facebook views with viewers and the Instagram original's views
+  (122); retention; views breakdown (views, 3-second views); where views came
+  from (traffic, source); Facebook engagement (reactions, comments, shares,
+  saves, clicks) beside Instagram interactions; reaction by type; followers
+  vs non-followers; demographics (age and gender, countries). An older Reel
+  with views is needed to see what those blocks hold when filled.
+
+**Still to come:** the TikTok photo post, the Facebook photo post, and one
+older Facebook Reel that has views (asked 2026-10-23). One
+correction: the doc's link for the TikTok video pointed at the 14 Oct video;
+Yurie screenshotted the 16 Oct one (10 views), and the reading carries that
+post's link. The first batch's two carousels were re-saved by Garreth the same evening
+and read as readings 4 and 5 (Haiku; every API-backed number matched, and
+the 16 Oct post's "--" profile visits is stored as empty, as it should be).
+The TikTok photo post was to be maya_journey8's newest, but that account was
+banned on 2026-10-19
+(Garreth remembered, the accounts table confirms). No live TikTok account on
+the phones has posted a photo since, so it is now alicia_glow3's photo post
+of 11 Sept (112 views, so past TikTok's 100-view threshold for sources and
+demographics), with glow.with.becky's 11 Sept photo post as the fallback.
+
 ---
 
 ## DA-06 · Robot: open each app's analytics screens on phone 1 — After DA-05
@@ -315,11 +421,64 @@ screen, what Claude read and whether they match.
 opens each recent post's analytics screen in TikTok, Instagram and Facebook,
 scrolls through it and takes the screenshots DA-05 proved readable.
 
-**To design:**
-- how it finds the post
-- what it does when a screen has changed
-- how it avoids looking unlike a person: no rapid-fire screens, and done in
-  the quiet hours
+**Designed 2026-10-23** (from DA-05's screens and the shape of the warmup
+robot; nothing built yet):
+
+- **Where it lives:** in the warmup robot's own repository
+  (`garrethdev/warmup-runner`, on the Air), as a new job beside the warmups.
+  The robot already has everything the phone side needs: the phone driver
+  (tap, swipe, screenshot, and `readScreen`, the list of what is on screen
+  with each button's spoken label), opening and closing an app, switching
+  the account on a phone, the daily planner with the robot's hours, the
+  session recorder and the dashboard token. Its rules are that repository's
+  `AGENTS.md` and `HANDOVER.md`; its code is tested on the pretend phone
+  before any real one.
+- **How it finds the post:** open the app, go to the profile, and open each
+  post from the past seven days in grid order, newest first, plus any older
+  post that has no reading yet. It does not need the post's link: the
+  insights screen itself shows the caption's first words and the posted
+  date, and the reader matches those to the performance table by account,
+  caption prefix and date, the same match the ingest uses.
+- **The screens, per app** (what DA-05 found): TikTok, tap the view count or
+  "More insights" to reach Video analysis, then the Overview, Viewers and
+  Engagement tabs (never Inspiration). Instagram, "View insights" under the
+  post, then Overview, Engagement and Audience, with the Age, Country and
+  Gender chips. Facebook, "View insights" or "See insights", one long page,
+  swiping each pair of side-by-side cards (Traffic and Source, Age and
+  gender and Countries, Facebook and Instagram engagement). On every tab:
+  screenshot, scroll about four fifths of a screen, screenshot again, until
+  the bottom.
+- **Buttons by their label, not their position:** `readScreen` names each
+  button ("View insights", "Audience"); the robot taps by name and uses
+  coordinates only to scroll. **When a screen has changed** and a name is
+  not there, it screenshots what it sees, writes the reason as the post's
+  problem and moves to the next post. The reader keeps the screenshots, so
+  the change can be seen and the robot taught the new name.
+- **Looking like a person:** one post at a time with pauses of a few seconds
+  between taps, the same unhurried swipe the warmups use, at most a dozen
+  posts per account per sitting, in the account's quiet hours, and never
+  during a warmup (the planner holds both). About one to two minutes a post:
+  twenty posts a week is under an hour of phone time per phone.
+- **The hand-off:** the robot uploads the screenshots to the `post-screens`
+  bucket (one folder per post: platform, account, day) and then calls a
+  new dashboard route with the list of posts. The dashboard reads them with
+  the reader built in DA-05 and writes the rows (DA-08). The AI key and the
+  table-writing stay on the dashboard; the Air only takes pictures. That
+  route is dashboard-side work that needs no phone and is the next piece to
+  build; it needs `ANTHROPIC_API_KEY` on Vercel and its path in
+  `src/proxy.ts`.
+- **The pilot:** phone 1 only, on the three accounts read by hand on
+  2026-10-23 (glow.with.becky, hey.imani.vaughn, Imani Vaughn's Facebook),
+  so the robot's first readings can be laid beside readings 1 to 3. Two
+  Fridays before any widening (DA-07).
+
+**Handed over 2026-10-23:** the brief for the runner repository is
+`docs/DA-06-ROBOT-HANDOVER.md`, and Garreth asked for a Claude agent to be
+opened in that repository through Orca (worktree `da-06-analytics-robot`)
+to build it on the pretend phone. The first real run is a sitting with
+Yurie: the Air is reached over Tailscale, and phone 1 is offline between
+warmups by design. As with the warmups, the finished robot reaches the Air as
+an update package with instructions for Yurie.
 
 **Risk:** reading analytics on a schedule breaks the apps' terms, as the
 warmup robot already does. Nothing found says the apps detect it, and nothing
@@ -348,7 +507,21 @@ drops them. If it does, read the oldest posts first on each Friday.
 
 ---
 
-## DA-08 · Store the robot's numbers — With DA-06
+## DA-08 · Store the robot's numbers — Table built 2026-10-23, columns with DA-06
+
+**Built 2026-10-23:** `post_screen_readings` (migration
+`20261023071133_post_screen_readings.sql`), one row per reading of one post,
+written by the reader in DA-05 with the service key. Columns follow what the
+screens showed: counts (views, with Instagram's Instagram/Facebook split,
+viewers, likes, comments, shares, saves, reposts, new followers, profile
+visits), watching (average and total watch time, % watched to the end,
+TikTok's average retention and drop-off second, Instagram's skip rate, the
+retention curve as points), who watched (follower %, new-viewer %, sources,
+age, country, gender, Instagram's rate signals against the account's
+typical), TikTok's For You banner, and bookkeeping (the screenshots' storage
+paths, model, tokens, cost, the AI's full reply). Empty is not 0 throughout.
+The All posts columns wait for the robot: three rows would show as dashes.
+
 
 **What:**
 - per post, per reading: retention curve points, % still watching at 3
@@ -382,3 +555,11 @@ robot has not read, or a number its screen did not show, gets a dash.
 
 This is a design ticket first: a new screen, so it goes through the design
 step before it is built.
+
+**Direction (Garreth, 2026-10-23):** not a new page. A switch on the
+analytics views, the usual numbers on one side ("Overview") and the deep
+ones on the other ("Deep"), so the same account page and the same post list
+flip between the two. The deep side is where the screen readings (DA-08)
+and the tags (DA-03) meet. Until then the only deep numbers on screen are
+DA-01's on each Instagram account's Analytics and All posts tabs; the screen
+readings are in the table only.
