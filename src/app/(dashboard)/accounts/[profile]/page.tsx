@@ -7,13 +7,14 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusPill } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
-import { AccountAnalyticsView } from "@/components/dashboard/account-analytics-view";
+import { AccountAnalyticsMode } from "@/components/dashboard/account-analytics-mode";
 import { AccountDetailTabs } from "@/components/dashboard/account-detail-tabs";
 import { AccountDeviceCard } from "@/components/dashboard/account-device-card";
 import { AccountPostsView } from "@/components/dashboard/account-posts-view";
 import { AccountTaskLog } from "@/components/dashboard/account-task-log";
 import { WarmupReportLog } from "@/components/dashboard/warmup-report-log";
 import { getAccountAnalytics } from "@/lib/data/account-analytics";
+import { SAMPLE_DEEP } from "@/lib/data/account-deep";
 import { getAccountDetail } from "@/lib/data/account-detail";
 import { getAccountPosts } from "@/lib/data/account-posts";
 import { getWarmupReportsForProfile } from "@/lib/data/warmup-reports";
@@ -78,9 +79,12 @@ function AnalyticsSkeleton() {
 async function AnalyticsPanel({
   username,
   platform,
+  demoDeep,
 }: {
   username: string | null;
   platform: Platform;
+  /** DA-09 design step: `?deep=demo` draws the Deep side on made-up numbers. */
+  demoDeep: boolean;
 }) {
   // A platform with no views feed says so, rather than look the handle up in
   // the TikTok table and report an account nobody is watching. Every platform
@@ -100,7 +104,9 @@ async function AnalyticsPanel({
     const message = err instanceof Error ? err.message : "unknown error";
     return <p className="text-sm text-text-muted">Analytics unavailable: {message}</p>;
   }
-  return <AccountAnalyticsView initial={analytics} account={username} platform={platform} />;
+  return (
+    <AccountAnalyticsMode analytics={analytics} account={username} platform={platform} deep={demoDeep ? SAMPLE_DEEP : null} />
+  );
 }
 
 /** The All posts tab: every post, streamed like the analytics panel. */
@@ -125,10 +131,13 @@ async function PostsPanel({ username, platform }: { username: string | null; pla
 
 export default async function AccountDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ profile: string }>;
+  searchParams: Promise<{ deep?: string }>;
 }) {
   const { profile } = await params;
+  const demoDeep = (await searchParams).deep === "demo";
   // The warmup robot's reports (Garreth, 2026-10-09), read alongside the
   // account and fresh, not through its cache, so a warmup that just stopped
   // shows on the next load. A failed read hides the tab rather than erroring a
@@ -263,7 +272,7 @@ export default async function AccountDetailPage({
         }
         analytics={
           <Suspense fallback={<AnalyticsSkeleton />}>
-            <AnalyticsPanel username={data.username} platform={data.platform} />
+            <AnalyticsPanel username={data.username} platform={data.platform} demoDeep={demoDeep} />
           </Suspense>
         }
       />

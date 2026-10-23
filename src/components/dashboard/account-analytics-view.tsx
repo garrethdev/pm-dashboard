@@ -47,10 +47,13 @@ export function AccountAnalyticsView({
   initial,
   account,
   platform,
+  aside,
 }: {
   initial: AccountAnalytics;
   account: string | null;
   platform: AnalyticsPlatform;
+  /** The Overview / Deep switch (DA-09), at the right end of the first row. */
+  aside?: React.ReactNode;
 }) {
   const [data, setData] = useState(initial);
   const [range, setRange] = useState<AccountRangeKey>("7d");
@@ -114,6 +117,7 @@ export function AccountAnalyticsView({
           }}
           options={ACCOUNT_RANGES.map((r) => ({ value: r.key, label: r.label }))}
         />
+        {aside && <div className="ml-auto">{aside}</div>}
       </div>
 
       {/* 2:3 split — the trend needs more width than the tiles beside it. */}
@@ -320,7 +324,7 @@ export function AccountAnalyticsView({
  * that also pulls in the fleet payload type; lifting it into ui/ is the right
  * move the next time a third page needs it.
  */
-function MetricTile({
+export function MetricTile({
   label,
   value,
   spark,
