@@ -25,6 +25,8 @@ export const DEMO_SESSIONS: PhoneSession[] = [
     frameCount: 212,
     storedAt: day(22, 7, 0),
     matchedPost: { id: 91, contentType: "rich_life", doneAt: day(21, 15, 19), username: "maya_journey8", platform: "instagram" },
+    kind: null,
+    kindSetBy: null,
     reviewedAt: null,
     reviewModel: null,
     reviewSummary: null,
@@ -41,6 +43,8 @@ export const DEMO_SESSIONS: PhoneSession[] = [
     frameCount: 287,
     storedAt: day(21, 7, 0),
     matchedPost: { id: 88, contentType: "divorce_recovery", doneAt: day(20, 15, 1), username: "elena.afterhours", platform: "tiktok" },
+    kind: "posting",
+    kindSetBy: "claude",
     reviewedAt: day(21, 9, 12),
     reviewModel: "anthropic/claude-sonnet-4.6",
     reviewSummary:
@@ -49,6 +53,8 @@ export const DEMO_SESSIONS: PhoneSession[] = [
       summary:
         "The worker opened TikTok on the expected account, picked the carousel from the camera roll, pasted the caption and posted. Between frames 140 and 180 the screen sat on the Instagram home feed of an account not on this phone for about four minutes.",
       postSeen: true,
+      kind: "posting",
+      kindNote: "A carousel was picked, captioned and sent on the expected account.",
       timeline: [
         { frame: 3, note: "TikTok opened on elena.afterhours." },
         { frame: 42, note: "Camera roll open, carousel slides selected." },
@@ -74,12 +80,16 @@ export const DEMO_SESSIONS: PhoneSession[] = [
     frameCount: 164,
     storedAt: day(20, 7, 0),
     matchedPost: null,
+    kind: "manual_warmup",
+    kindSetBy: "reviewer",
     reviewedAt: day(20, 10, 3),
     reviewModel: "anthropic/claude-sonnet-4.6",
     reviewSummary: "A clean session: the worker checked notifications on both accounts, replied to two comments and closed the apps. No post was made and none was expected.",
     review: {
       summary: "A clean session: the worker checked notifications on both accounts, replied to two comments and closed the apps. No post was made and none was expected.",
       postSeen: false,
+      kind: "other",
+      kindNote: "Notifications were checked and comments answered; nothing was posted and the feed was not used.",
       timeline: [
         { frame: 2, note: "Instagram notifications on maya_journey8." },
         { frame: 60, note: "Two comment replies typed and sent." },

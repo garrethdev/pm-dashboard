@@ -20,6 +20,33 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-23 — Sessions page: a recording now says what it was, not just "No post" (PF-26)
+
+**Where it came from:** Czedrick, in chat on 2026-10-23, after the first
+real recordings arrived. Two 50-minute sessions on phone 1 in the night were
+Yurie switching Instagram and TikTok to the Sarah Keller accounts and
+leaving them open, which the page could only call "No post". He asked for
+the page to say "Manual warmup" instead. Compiled, lint and tests pass;
+the new read has not yet been run on a real session.
+
+**What changed:**
+
+- **Claude's read now says what kind of session it saw**, one of three:
+  posting, manual warmup (the feed, profiles, likes, follows, account
+  switches, an account left open; nothing posted), or other (settings,
+  personal use, an app not belonging to the accounts). It gives one
+  sentence on why, shown under its summary. A manual warmup that sits on
+  one screen for most of the session is now something the read is asked to
+  note, since a warmup is meant to look like a person using the account.
+- **A reviewer can overrule it.** On the session page, beside the read, a
+  small choice "What was it?" sets the kind by hand. A reviewer's choice is
+  kept when the session is read again; clearing it lets the next read set
+  it.
+- **The list shows a Kind column** with the label, grey "Not yet known"
+  until a read or a reviewer has said. The Post column stays as it was.
+- Two columns on `phone_sessions` for this, `kind` and `kind_set_by`,
+  applied live (`supabase/migrations/20261023082104_phone_sessions_kind.sql`).
+
 ## 2026-10-23 — The screen reader: phone screenshots become numbers (DA-05, DA-08)
 
 **Where it came from:** the deep analytics tickets (Czedrick, 2026-10-09).

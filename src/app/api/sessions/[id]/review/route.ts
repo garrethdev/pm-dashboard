@@ -34,7 +34,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       deviceName: device?.name ?? session.deviceName,
       accounts: device?.accounts.map((a) => ({ username: a.username, platform: a.platform })) ?? [],
     });
-    await saveReview(id, { model: result.model, review: result.review, by });
+    await saveReview(id, { model: result.model, review: result.review, by, reviewerSetKind: session.kindSetBy === "reviewer" });
     return NextResponse.json({ ok: true, review: result.review, framesShown: result.framesShown, model: result.model });
   } catch (err) {
     return NextResponse.json(
