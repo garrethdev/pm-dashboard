@@ -12,18 +12,20 @@ the original script, `character-6/after-review/degrade.py`.
 | C2PA / Content Credentials manifest | Yes. The picture is decoded to pixels and saved fresh. |
 | EXIF, XMP, ICC, IPTC, text labels (such as the AI-content label some models write into a PNG) | Yes, for the same reason. |
 | A visible watermark in the pixels | No. Nothing in the pass looks for one. |
-| SynthID or another invisible pixel watermark | **No. SynthID survives the pass** (checked 2026-10-12: the first live AI edit, after the pass, was flagged by Google's SynthID Detector at synthid.com as "made or edited with Google AI"). Every Gemini / Nano Banana picture carries it. The pass only removes what is written in the file. |
+| SynthID or another invisible pixel watermark | **No. SynthID survives the pass** (checked 2026-10-12: the first live AI edit, after the pass, was flagged by Google's SynthID Detector at synthid.com as "made or edited with Google AI"). Every Gemini / Nano Banana picture carries it. The pass only removes what is written in the file. The SynthID watermark is handled by a separate step that now runs *before* the pass: the hosted SynthID Study API (`synthid.ts`), added 2026-10-21. |
 
 ## Where it runs
 
 - **AI edit** (`aiEdit` in `src/server/carousel/services/library-images.ts`).
-  The model's picture is degraded before it is written as the pending file,
-  so the preview is the degraded JPEG and the raw picture is never stored.
-  **Keep** stores that JPEG as it is (`keepEdit`) and records
-  `degraded = true` and `degrade_seed` (the pending file's id) on the
-  `image_library_images` row.
-- **Generate images (DEV-30), when it is built.** Same call, as the last
-  step of downloading each render.
+  The model's picture is cleared of its SynthID watermark first (the study
+  API in `synthid.ts`, added 2026-10-21), then degraded, and only the
+  degraded JPEG is written as the pending file; the raw render and the
+  cleared PNG are never stored. **Keep** stores that JPEG as it is
+  (`keepEdit`) and records `degraded = true` and `degrade_seed` (the pending
+  file's id) on the `image_library_images` row.
+- **Generate images (DEV-30, built 2026-10-22).** Same road: each render is
+  downloaded, cleared of SynthID, degraded and written as a pending file
+  (`park` in `library-images.ts`, shared with the AI edit).
 - **Every other library save** (uploads, black and white, cut-outs) is not
   degraded, but its file is checked for metadata (`assertNoMetadata`) before
   it is stored.

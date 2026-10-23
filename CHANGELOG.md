@@ -73,6 +73,360 @@ opened in that repository through Orca to build it on the pretend phone.
 in the All posts tab. That waits until the robot gives every post a reading;
 with three rows it would be a column of dashes.
 
+---
+
+## 2026-10-22 — Generate images now spends the connected Higgsfield account, not an API wallet
+
+**Where it came from:** Garreth, 2026-10-22, after the Generate images form
+landed on `main` against Higgsfield's developer API (PR 67, Czedrick):
+"connect the Higgsfield main account to the app through the MCP server".
+The API has its own dollar wallet, separate from the subscription, and it
+was empty, so the form could not make a picture. The Ultra account
+(garreth@arborvita.io, about 8,550 credits) is the one to spend.
+
+**What changed:**
+
+- **Generate images asks the connected account.** The picture service keeps
+  its shape (prompt, shape, optional base picture in; job id, then bytes
+  out) but now goes through the Settings connection: a base picture is
+  imported into Higgsfield by its public link, the job is submitted to
+  Soul 2 at the 1.5k tier on credits (never a trial allowance), waited on in
+  15-second long polls, and the finished link downloaded. Nothing in the
+  generate route or the library service changed.
+- **The reasons a run stops** are now "Higgsfield is not connected", "the
+  sign-in has expired, reconnect from Settings" and "the account is out of
+  credits"; the API-key reasons are gone with the key.
+- `HIGGSFIELD_API_KEY` and `HIGGSFIELD_API_URL` are no longer read; the
+  example env says so. `HIGGSFIELD_IMAGE_MODEL` can name another model.
+- The connection itself (the Settings card, the OAuth round trip, token
+  storage and refresh) is the entry below, built earlier the same day; its
+  module is now `higgsfield-mcp.ts`, beside the picture service.
+
+**Verified:** types, lint and all 610 unit tests pass, including a rewritten
+set for the picture service that scripts the MCP replies (the real replies
+were read on 2026-10-22 from one two-credit test picture made through the
+Claude connector: a `jobs` list with a `job_id`, then a `result_url` once
+`completed`). **Then the real thing:** the app's own picture service was
+run once on localhost against the stored tokens (a square Soul 2 picture
+from a prompt): submitted, waited and downloaded in 30 seconds, a 2.7 MB
+PNG that looks right, and the connected account's balance moved. Not run
+on this machine: the steps after the picture (the SynthID removal and the
+degrade pass), which need `SYNTHID_API_KEY`; they are on Vercel. The
+production build passes.
+
+## 2026-10-22 — The dashboard can sign in to Higgsfield (DEV-30, step one)
+
+**Where it came from:** Garreth, 2026-10-22: "connect the Higgsfield main
+account to the app through the MCP server". DEV-30 (Higgsfield image
+generation) starts with exactly this check — Higgsfield was connected to
+Claude, not to the app, and nothing in the repo could reach it. Found on the
+way: Higgsfield's MCP server takes no API key at all. An app signs in to it
+once through a browser, the way the Claude connector does, and then holds a
+long-lived sign-in for that one Higgsfield account. There are two Higgsfield
+accounts (garreth.dottin1@gmail.com and garreth@cryptomiami.net, both with
+sign-ins in September and both still billing), so which one the dashboard
+uses is decided at that sign-in screen, and Settings says which it was.
+
+**What changed:**
+
+- **Settings has a Connected services card** with Higgsfield on it. Not
+  connected: a Connect Higgsfield button. Connected: the account's email,
+  its plan and credits read live from Higgsfield, when and by whom it was
+  connected, a Reconnect button (to switch accounts) and a hold-to-confirm
+  Disconnect.
+- **Connect sends the browser to Higgsfield's sign-in and back.** The app
+  registers itself with Higgsfield's authorization server the first time
+  (once per site: localhost and the live site register separately), notes
+  the sign-in it started, and takes the code Higgsfield hands back. A code
+  that does not match the sign-in started, or arrives more than ten minutes
+  later, is refused with a sentence on the card.
+- **The sign-in lives in one database row** (`carousel_connections`, service
+  role only, same rule as `issues` and `accounts`): tokens, the app's client
+  registration, and the account's email read from the ID token. Nothing in
+  it reaches a browser. The access token is refreshed before it runs out; a
+  refresh Higgsfield refuses marks the row and the card says to reconnect.
+- **The server can now call any Higgsfield tool** through that line
+  (`callTool` in `src/server/carousel/services/higgsfield.ts`): balance,
+  image and video generation, imports, polling — the same 80-odd tools the
+  Claude connector has. Today only `balance` is used, for the card.
+- The library page's disabled Generate images button now says the form is
+  what is missing (DEV-30), not the connection.
+- New dependency: `@modelcontextprotocol/sdk` 1.32.1, the official MCP
+  client, for the OAuth dance and the session.
+
+**What is NOT here:** the Generate images form, the generating tiles and the
+Keep / Discard row — the rest of DEV-30. Nothing generates yet.
+
+**Two rules the connection follows, both Higgsfield's:** everything made
+through the MCP line spends the connected account's credits at standard
+rates (Unlimited and free generations apply only on higgsfield.ai), and
+every generation lands in that account's Assets tagged MCP.
+
+**Verification:** types, lint, the unit tests (11 new, over the token and
+result helpers) and the production build pass. **Confirmed live on
+localhost, 2026-10-22:** pressing Connect registered the app with Higgsfield
+(a client id came back) and sent the browser to Higgsfield's sign-in;
+Garreth signed in; the callback accepted the code, the row filled with
+tokens and the account's email, and the card read the plan and credits back
+from Higgsfield through the stored tokens. The first sign-in was made with
+garreth@cryptomiami.net, which Higgsfield reports as the free plan with no
+credits, so Reconnect with the Ultra account is the next press. Not yet
+exercised: a token refresh (the first access token had not run out), and
+the live site, which registers its own client on first press. The table is
+live on Supabase (migration `higgsfield_connection`, 2026-10-22).
+
+**Later the same day, found on the first Reconnect:** the row-save behind
+the connection went through a PostgREST upsert, which sets every column it
+was not given back to empty, so pressing Reconnect wiped the connected
+account's email and date before the new sign-in had begun. The save now
+patches the existing row and inserts only when there is none. Seen live
+(the card went from Connected as garreth@cryptomiami.net to Not connected
+with no email). Then proven: the Reconnect that followed, approved from
+Garreth's own Chrome, landed as garreth@arborvita.io, the Ultra account —
+the card read "ultra plan · 8,553 credits" through the stored tokens, and
+nothing on the row was wiped on the way.
+## 2026-10-22 — Generate images grows up, linked libraries become writable, Tag with AI is built
+
+**Where it came from:** Czedrick, working under Garreth's login, tried the
+new Generate images form against the real Higgsfield key and asked for five
+things in one go: a way to upload a reference picture in the form, the
+"different directions" way of working he already uses through Claude and
+the Higgsfield connector (one instruction, ten different scenes), generation
+inside the Character 6 library, a note-and-regenerate step on each picture,
+and Tag with AI. All five are in this entry. The Higgsfield key itself was
+proven live the same day: the free estimate call answers, but a real
+generation comes back "not enough credits", because the API has its own
+wallet, separate from the higgsfield.ai subscription.
+
+**What changed:**
+
+- **A reference can be uploaded in the form.** The base-image row has an
+  Upload tile beside the library's own pictures. The file is parked in the
+  library's incoming folder for the run and discarded when the run's last
+  picture has returned; it never becomes a library image itself.
+- **Different directions.** The form has two modes. "One prompt" makes the
+  same prompt N times. "Different directions" takes one instruction ("before
+  pictures of the woman in different places around her home") and has the
+  writer turn it into one prompt per picture, shown as editable lines before
+  anything is generated. The cap per run is now 12, up from the ticket's
+  proposed 8, because ten was the number asked for.
+- **Linked libraries are writable** (Czedrick's decision, 2026-10-22). Only
+  the two seeded banks stay read-only. A linked library's new pictures are
+  written into its folder itself, in the set's subfolder when one is named,
+  so whatever reads the folder sees them. A row is made for a folder picture
+  the first time it is touched, found by its path, and carries what the
+  folder cannot: prompt, who kept it, details, retired, cover. New set makes
+  a real folder (with a hidden `.keep` file so an empty set still shows), and
+  Move is a move between folders. Character 6 now shows Generate images, Tag
+  with AI, New set and Upload.
+- **Try again with a note.** Clicking a generated picture opens it large,
+  with its prompt, Keep, Discard, and a note box. "Again" runs the same prompt
+  plus the note, starting from that picture so what was right about it stays,
+  and the earlier pending file is discarded when the new one arrives. A
+  failed try keeps the picture it started from.
+- **Tag with AI (DEV-41).** On a library: which pictures (not read yet, or
+  all) and whether to file them into sets while reading; then two at a time
+  with a count and a Stop. In an image's window: Read with AI, or Read again.
+  The vision model writes the details the renderer already uses, in the
+  live data's vocabulary (read from `carousel_images` on 2026-10-22): arc
+  roles, image types and pillars are fixed lists, the rest plain words. A
+  linked library's unread count is real now, so Character 6 shows 200 unread.
+- The Studio's "Generate with AI" button now opens the library page instead
+  of sitting disabled.
+- From Czedrick's first look at the form: Cancel and Generate now fill the
+  form's width, and the base-image tiles are half again as wide so a face
+  can be made out. The tiles show the whole picture; the storage resizer
+  cannot find a face to crop to, so a face-focused thumbnail is in
+  `BACKLOG.md`.
+- A migration adds a unique index on a picture's library and path, applied
+  live 2026-10-22, so a folder picture can have exactly one row.
+
+**Verified:** `tsc --noEmit` and ESLint are clean; 53 service tests pass,
+including new ones for the details reader, the directions reader and the
+linked-set folder rules. Against real storage on a scratch folder
+(`rich-life-images/dev30-test`, removed afterwards): a linked library took an
+upload into its folder, made a set and a nested set, moved the picture into
+the set, made it the cover, retired and restored it, and lost only the link
+on delete. In headless Chrome: Character 6 shows the new buttons; the form's
+directions mode and Upload tile render; without an OpenRouter key the
+directions step and Read with AI refuse in plain words.
+Later the same day, with the OpenRouter key added locally, **Read with AI
+was run on one Character 6 picture**: twelve seconds, a faithful description
+(the straw hat, the linen shirt, the tote, the hedge), image type After,
+quality 8, and the library's unread count went from 200 to 199.
+**Not verified:** no picture has been generated (the API wallet is empty),
+Tag with AI over many pictures at once has not been run, and a kept picture
+landing in a linked folder has not been seen, since Keep needs a generated
+picture first.
+
+## 2026-10-22 — Generate images is built, waiting on the Higgsfield key (DEV-30)
+
+**Where it came from:** DEV-30 was the next Carousel Generator ticket. Its
+first step was a check: can the deployed app call Higgsfield with its own key?
+The public docs answered yes on 2026-10-22, and the rest of the ticket was
+built the same day so the only thing left to wait for is the API account.
+
+**What the check found** (recorded in the DEV-30 ticket): Higgsfield has a
+developer API separate from the higgsfield.ai subscription, keyed from
+open.higgsfield.ai and paid from its own dollar balance. Its portrait model,
+Soul 2, keeps a face from a reference photo or a trained Soul ID, and costs
+$0.0057 a picture at 1080p. It offers no 4:5 shape, so a portrait result is
+3:4 and the painter crops it as it does every library picture. Three decisions
+are with Garreth: open and fund the API account, Soul 2 as the model, and one
+Soul ID per character. The Soul ID part is not built until he decides.
+
+**What changed:**
+
+- **Generate images** on a library page is a working button. It opens a form:
+  what the pictures should show, an optional base image from the library (the
+  face or the place is kept), how many (1 to 8) and the shape (portrait, tall
+  or square). It never asks for a set; what is kept lands in the library. In
+  an empty library it is the accent button, with Upload beside it.
+- Each requested picture is its own tile in a review row at the top of the
+  grid: Waiting, Generating, then the picture with **Keep** and **Discard**.
+  A kept picture joins the library untagged, with its prompt, its base image
+  and who kept it recorded; its shape is its width and height. Discard removes
+  the file. One picture failing shows Failed with the reason and Retry; the
+  key missing or the balance empty fails every waiting tile at once with the
+  same reason, so nobody watches eight tiles fail one by one.
+- Every picture takes the same road as an AI edit before anyone sees it: the
+  SynthID removal, then the degrade pass, and only the phone-camera JPEG is
+  stored, under `pending/` until Keep. The raw render is never stored.
+- A new `src/server/carousel/services/higgsfield.ts` submits the job, polls
+  it and downloads the result, reading `HIGGSFIELD_API_KEY` (the complete key
+  copied from open.higgsfield.ai) with an optional `HIGGSFIELD_API_URL`. A new
+  `generate` route under a library asks for one picture per request, so the
+  page can run two at a time and retry one alone, the way uploads work.
+- The images route's Keep now accepts a generated picture as well as an AI
+  edit, through the same pending path.
+- Not changed: the Studio's library pane still has its disabled "Generate
+  with AI" button. The Studio is a separate surface and was not in DEV-30.
+
+**Verified:** 9 new tests for the Higgsfield service pass, with the whole
+suite (`npx vitest run`, 592 tests), `tsc --noEmit` and ESLint are clean, and the page was
+exercised in headless Chrome against the local app: the form opens with the
+library's pictures as base-image choices, and a run of four without a key
+fails all four tiles with "HIGGSFIELD_API_KEY is not set" and a Retry on each.
+**Not verified:** no real picture has been generated, because there is no key
+yet; the Keep of a generated picture and the SynthID removal on a Higgsfield
+render are code paths awaiting their first real use.
+
+## 2026-10-21 — AI edits go through the SynthID removal before the degrade pass
+
+**Where it came from:** Garreth's SynthID Study API (the watermark remover
+hosted on Modal) reached a usable state, and he asked for it to be wired in
+wherever the Carousel Generator removes an AI watermark. He chose to run it
+*before* the existing phone-camera degrade pass rather than instead of it, so
+an AI edit keeps today's authentic look and also drops the invisible SynthID
+watermark the degrade pass could never touch (the study's own rule is to say
+"not detected by the verifier", never "clean", and that applies here too).
+
+**What changed:**
+
+- A new `src/server/carousel/services/synthid.ts` talks to the hosted API as
+  a batch of one (create, upload, start, poll, take the output), using the
+  study's verified settings (strength 0.50, Google preset). It reads
+  `SYNTHID_API_KEY`, with an optional `SYNTHID_API_URL` that defaults to the
+  Modal address.
+- The AI edit (`aiEdit`) now runs the render through `removeSynthId()` first
+  and then through the degrade pass as before. The raw render and the cleared
+  PNG are never stored; only the degraded JPEG is.
+- The library image route's time limit is raised from 120 to 300 seconds,
+  matching the other slow routes, because the removal waits on the GPU's cold
+  start and its face pass (the first picture with faces can take about two
+  minutes once per GPU session).
+
+**Verified:** the new and degrade tests pass (`npx vitest run`, 14 tests) and
+`tsc --noEmit` is clean. **Not verified:** no real AI edit has been run
+against the live API yet, and `SYNTHID_API_KEY` still needs to be set on
+Vercel — this is a code change awaiting its first real use.
+
+## 2026-10-21 — A second coding agent can work on the Carousel Generator
+
+**Where it came from:** Garreth wants to run DeepSeek (through OpenCode inside
+Orca, paid for with his OpenRouter key) on Carousel Generator work, and asked
+whether it would know the codebase, the image buckets and how pictures are
+made.
+
+**What we found:** OpenCode reads `AGENTS.md` first and ignores `CLAUDE.md`
+when both exist. Our `AGENTS.md` is the nine-line notice Next.js writes about
+its own version, so a DeepSeek session would have started with none of the
+repo's rules and none of the project knowledge that lives only in Claude's
+session notes.
+
+**What changed:**
+
+- `opencode.json` at the repo root tells OpenCode to also read `CLAUDE.md`
+  and the new brief below. Claude Code ignores the file.
+- `docs/CAROUSEL-AGENT-BRIEF.md` is a plain orientation for any agent that
+  starts cold on the Carousel Generator: where the code lives, every image
+  bucket and what sits in it (counted live), how pictures are uploaded,
+  copied and AI-edited, how copy is written, which keys matter, which lanes
+  the generator feeds, what is open, and which document answers which
+  question. Two corrections surfaced while writing it and are recorded there:
+  Approve on `main` does not write a lane row (that is the unported painter's
+  job), and the `carousel_materialise_draft` function the plan describes was
+  never created.
+
+**Verified:** the config file parses; bucket and library counts are from live
+queries on 2026-10-21. **Not verified:** an OpenCode session has not yet been
+started against this checkout to confirm it loads both files.
+
+## 2026-10-21 — Recorded posting sessions: the dashboard side (PF-26)
+
+**Where it came from:** Garreth, in a planning chat the same day. The plan to
+check Yurie's manual posting with invisible phone screenshots
+(`docs/PHONE-SCREEN-QA.md`) was settled: record every session on the Air,
+copy it to the dashboard overnight, delete it from the Air once the copy is
+confirmed, and read a random pick with Claude for anomalies. Garreth asked
+for everything that needs neither the Air nor Yurie to be built now.
+
+**What changed:**
+
+- Two new tables and a private storage bucket, applied live: one row per
+  recorded session on a phone, one row per plug-in and unplug of a phone, and
+  the bucket the frames go in. Nothing can read the bucket without the
+  server's key; a reviewer sees a frame through a link that lives ten minutes.
+- Four new addresses for the recorder on the Air, behind the same token the
+  warmup script uses: announce a session, get upload links for its frames (the
+  frames go straight into the bucket, not through the dashboard), confirm it,
+  and log a plug-in. The dashboard counts the frames in the bucket itself and
+  only says "stored" when every announced frame is there, so the Air never
+  deletes a session the dashboard does not fully hold. A session with a post
+  marked done in its window is tied to that hand-out automatically.
+- A new setting, `REVIEWER_EMAILS`, and a Sessions page in the Physical fleet
+  that only the people on it can see. The menu row does not exist for anyone
+  else, and the page and its addresses answer not-found rather than
+  "forbidden", so there is no locked door to notice.
+- The Sessions page lists every stored session with its phone, length, frame
+  count, the post it covers and whether it has been read; "Pick one at
+  random" opens one. Above the list, "Posts with no recording" shows every
+  post marked done on a phone in the last two weeks that no session covers,
+  and says which of two things happened: the phone was not plugged in, or it
+  was and the recorder missed it. That is the cross-check that makes the
+  plug-in rule hold.
+- A session's page shows every frame with its time and "Review with Claude":
+  up to forty frames spread evenly across the session go to Claude, which
+  describes what happened and lists anything that looks wrong, each tied to
+  a frame. There is no step list by decision (Garreth, 2026-10-21): the check
+  is for anomalies. Goes through OpenRouter with the key the carousel writer
+  already uses.
+- `?demo=` draws both pages with invented sessions, the way the phone-farm
+  screens were judged before their data existed.
+
+**Verified:** typecheck, lint and the unit tests (19 new, on the matching
+and cross-check rules and the reviewer gate) pass; the migration was read
+back live (service role only, bucket private, no storage policies). **Not yet exercised:** nothing
+has recorded a session, so the four Air-facing addresses have not met a real
+caller and Claude's read has not met real frames. `REVIEWER_EMAILS` was set
+in Vercel's Production row the same day (Garreth's two addresses and
+Czedrick's two, from the display-name map in `src/lib/people.ts`); it takes
+effect with the first deployment that carries this branch. The Production
+allowlist is a sensitive setting and cannot be read back from a desk, so
+whether each of the four is also on it was not checked, only assumed from
+who signs in today.
+
+---
 
 ## 2026-10-20 — Every posted piece gets tagged with what is in it (DA-03)
 

@@ -23,6 +23,17 @@ export async function guard(): Promise<{ denied: NextResponse } | { denied: null
   }
 }
 
+/**
+ * The site the browser is on, for a route that sends it somewhere and wants
+ * it back: localhost in development, the Vercel address live. Read from the
+ * proxy's headers, so it is right behind Vercel.
+ */
+export function requestOrigin(req: Request): string {
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? new URL(req.url).host;
+  const proto = req.headers.get("x-forwarded-proto") ?? (/^(localhost|127\.0\.0\.1)(:|$)/.test(host) ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
 export function ok(data: unknown, init: ResponseInit = {}) {
   return NextResponse.json(data, { ...init, headers: { "Cache-Control": "private, no-store", ...(init.headers ?? {}) } });
 }
@@ -62,6 +73,9 @@ export async function attempt<T>(
   } catch (err) {
     const message = err instanceof Error ? err.message : "Something went wrong";
     logError(`${action} on ${target}`, err);
-    return bad(message, 500);
+    // An error that carries a code (Higgsfield's run_blocked) hands it to the page.
+    const carried = err instanceof Error ? (err as unknown as { code?: unknown }).code : undefined;
+    const code = typeof carried === "string" ? carried : undefined;
+    return bad(message, 500, code);
   }
 }

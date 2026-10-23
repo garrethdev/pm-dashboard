@@ -122,10 +122,23 @@ screenshots ("Issues with Carousel App"). Garreth answered the questions on
   "Api key not set" on every AI feature. Garreth added it on 2026-10-08; it
   takes effect on the next deployment. The key was pasted into a chat on the
   way, so it should be rotated on OpenRouter afterwards.
-- **Generate with AI** in the Studio's library pane and on a library's page
-  is still a disabled button (Higgsfield is not connected). When DEV-30
-  builds it, every downloaded render goes through `degrade()` before it is
-  stored or shown, as the AI edit's does (`docs/DEGRADE-PASS.md`).
+- **Generate images and Tag with AI are built (DEV-30, DEV-41,
+  2026-10-22).** Generate images now runs through the Higgsfield account
+  connected on Settings (the Ultra plan, through Higgsfield's MCP server),
+  not the API key, so the empty API wallet no longer matters; the
+  OpenRouter key is on Vercel but not on the dev machine. Open for Garreth:
+  one Soul ID per character ($2.50 each, trained from library photos) so a
+  run can hold a face across several base images; today one base image is
+  passed by link. Also to measure: what a Tag with AI pass over a full
+  library costs.
+- **Face-focused thumbnails (Czedrick, 2026-10-22).** Small tiles (the
+  base-image picker, the grids) show the whole picture, so a face is small.
+  Supabase's resizer crops to the centre only; a face-aware crop needs a
+  face detector on the server writing a focal point per image, which the
+  tiles would then crop to. Not started.
+- **A generated picture's shape is only its width and height.** The ticket
+  asked for the shape to be recorded; it is derivable from the row, not a
+  column. Fine until something needs to filter by it.
 - **The degrade pass on uploads to AI libraries.** Agreed with Garreth
   2026-10-12: a per-library switch, on for AI character libraries, so a
   picture made outside the app (Higgsfield by hand, the Mac scripts) is
@@ -353,6 +366,7 @@ together** — a wrong "blocked by" costs somebody a morning.
 | PF-22 | Account ids too large for the app to hold exactly | Immediate | **Built 2026-09-23.** Account ids are carried as text on the Physical side (`src/lib/data/account-id.ts`). Proven live with a practice account whose id was as long as the real ones; not yet seen with one of the five real accounts on a phone |
 | PF-24 | Facebook analytics | Intermediate | **Done 2026-10-07 (Garreth; PRs #49 and #50 merged and deployed).** A daily robot on TikTok's rhythm reads every live Facebook account through ScrapeCreators into `fb_post_performance`; health, Analytics, Content types, the account page and the n8n reports read it, at parity with TikTok and Instagram. Two first runs still to see: the robot's first scheduled run (2026-10-08) and the weekly report with Facebook (2026-10-09). AI post scoring moved to PF-25 |
 | PF-25 | AI post scoring is broken for every platform | Intermediate | **Not started (added 2026-10-07).** The outside scoring service's Gemini key is rejected and videos have not been scorable for weeks; Facebook scoring waits on the fix |
+| PF-26 | Screenshot QA of manual posting | Long term | **Dashboard side built 2026-10-21; the Air's recorder is next.** Record every manual posting session on the Air with invisible WebDriverAgent screenshots, copy them nightly to a private bucket, delete them from the Air once the copy is confirmed, and read a random pick with Claude for anomalies on a reviewer-only Sessions page. Three phases in the entry below. Findings and options in `docs/PHONE-SCREEN-QA.md` |
 
 ## PF-01 · `accounts.delivery_mode` — Ready now
 
@@ -1538,6 +1552,154 @@ In order:
 *Done when:* that week's best and worst posts on all three platforms,
 videos included, come back with a score and a verdict, and a run that
 scores nothing raises an alarm.
+
+## PF-26 · Screenshot QA of manual posting — Dashboard side built
+
+*Added 2026-10-20 (Garreth).* The goal is to check that Yurie does the manual
+warmup and posting steps correctly, in a way that stays truthful. She already
+knows sessions may be recorded for QA; what she must not know is **when** a
+given session is checked, so she cannot perform only for the camera. Full
+reasoning and the options below are written up in `docs/PHONE-SCREEN-QA.md`.
+
+**The approach.** Save **screenshots, not video**, and read them with Claude
+against the written step list. WebDriverAgent (already on the phones) takes
+screenshots from inside Apple's UI-testing tools, so they show nothing on the
+screen, do not change the status bar, and do not raise the "screen is being
+captured" flag TikTok and Instagram can read. QuickTime (showroom-clock status
+bar) and the phone's built-in recorder (red pill) were both ruled out as
+visible. A small program on the Air asks the agent for one picture every few
+seconds while she works and keeps the frames where the screen changed.
+
+**The agent model (decided 2026-10-20, Garreth).** This is **not** the 24/7
+"phone keeper" turned down on 2026-10-02 (`docs/LIVE-VIEW-TRACKER.md`). The
+agent and the screenshot recorder **start on their own when the Air is powered
+on and run while it is open**, then stop when Yurie closes it — so they cover
+her whole manual session, not only robot warmups, and the phones are never live
+when no one is at them. Before this is switched on: set Auto-Lock to Never on
+every farm phone (a running agent keeps the phone awake; a phone that stops
+locking is a tell).
+
+**The dependency (decided 2026-10-20, Garreth).** Keep Yurie's Air as it is
+now: she opens it whenever she does a warmup or posting session. The recorder
+runs on the Air and the phones plug into it by cable, so the capture only
+happens while the Air is open; Tailscale is only for remote viewing and the
+nightly copy. Because she opens the Air, she controls whether a session is
+captured, so this is covert but not tamper-proof. The dedicated-hub option (a
+machine that is not hers, phones in a fixed spot — the only truly tamper-proof
+option) was considered and set aside; the cross-check below is what makes the
+chosen setup hold.
+
+**The plug-in rule needs a cross-check.** Telling Yurie to always connect the
+phone to the Air is good as a standing rule, but plugging in is her hand, not a
+lock. Close the gap by treating a session with no screenshots behind it as a
+red flag: a post in `unified_posts` / on the platform with no matching frames
+means she did not plug in; for warmups (which do not post), compare the phone's
+Screen Time minutes and TikTok's activity log against the minutes she logs in
+the dashboard.
+
+**Reviewing.** Pick sessions at random (not after a bad week, which teaches her
+when to perform), match them to the logged minutes, and let Claude report which
+steps happened, which were skipped, and where she deviated; a human opens the
+frames only at the flagged moments.
+
+**Where it lives.** The always-on agent, the recorder and the nightly copy go
+in Czedrick's warmup-runner repository, kept separate from the runner as the
+live view is. Each new phone needs the agent installed first
+(`docs/PHONE-AGENT-SETUP.md`). The dashboard needs nothing; there is no
+reviewer-only view today, so keep recordings off it at the start. **Open for
+Czedrick:** whether the recorder reads the agent's picture stream directly or
+asks the live view for frames.
+
+*Done when:* an invisible run of screenshots from a real manual session on a
+phone is saved off the Air and Claude returns a step-by-step verdict against
+the written process, with a session that left no screenshots visibly flagged.
+
+*2026-10-21 (Garreth), the plan settled.* Corrections first: all three farm
+phones already have WebDriverAgent, and Auto-Lock is already set to Never on
+all of them, so neither is open work. Decisions:
+
+- **Posting only.** Once every account is on Automated warmups nothing is
+  warmed by hand, so the only manual process left to check is posting. The
+  robot warmups are not touched. The recorder cannot tell what she is doing on
+  a plugged-in phone, so it captures her whole session and the dashboard keeps
+  the frames that fall in a post's time window (matched to `unified_posts`).
+- **Record every session, review at random.** Not picked days and not a fixed
+  interval. Every day looks the same on the Air, so a found folder tells her
+  nothing, and the random part lives at review time. Storage is not a concern:
+  a 20-minute session is roughly 300 changed-screen frames, about 15 MB.
+- **Nightly copy, then delete.** The Air uploads each finished session to a
+  private Supabase Storage bucket through a new dashboard address under the
+  warmup-runner prefix, with the token it already holds, and deletes the frames
+  from the Air only after the upload is confirmed. A failed copy never loses a
+  session; Yurie's storage stays near empty.
+- **Plug-in log every day.** The Air also logs when each phone was plugged in
+  and unplugged. A post with no plug-in note behind it means she did not
+  connect; frames missing with a plug-in note means the recorder failed.
+- **Reviewer-only Sessions page.** A second setting, `REVIEWER_EMAILS` (Garreth
+  and Czedrick, set in the Production row on Vercel), checked next to the
+  allowlist in `src/lib/auth.ts`. The page sits in the Physical fleet, its menu
+  entry renders only for reviewers, and the page and its routes answer
+  not-found to anyone else. Frames open only through short-lived signed links;
+  nothing is reachable with the public key.
+
+**Phase 1 — Yurie.** Standing recording notice in writing (done 2026-10-21);
+the plug-in-every-time rule for posting. (A "no frames means not done" rule
+was considered and dropped, Garreth 2026-10-21: the cross-check on the
+Sessions page is enough.)
+
+**Phase 2 — Air and transfer.** Agent and recorder auto-start when the Air
+powers on; recorder keeps one frame per screen change, one folder per phone
+per session; plug-in log; nightly upload to the private bucket; delete on the
+Air after confirmation; reviewer-only Sessions page listing each session by
+phone, date and matched post. Open for Czedrick: whether the recorder reads the
+agent directly or asks the live view for frames.
+
+**Phase 3 — Analysis.** No written step list (Garreth, 2026-10-21): the check
+is for anomalies, not for a fixed sequence. Claude reads a picked session's
+frames, describes what happened, and calls out anything that looks off (wrong
+account, wrong or missing caption, an app she should not be in, long idle
+gaps, a post that never went through); a verdict per session with the flagged
+frames; the no-frames cross-check against `unified_posts` and the plug-in log;
+first real session end to end.
+
+*2026-10-21, later the same day: everything that needs neither the Air nor
+Yurie is built* (branch `garrethdev/dashboard-phone-session-recording`, see
+the changelog). The `phone_sessions` and `phone_plug_events` tables and the
+private `phone-sessions` bucket are live; operations 8 to 11 of
+`docs/WARMUP-RUNNER-API.md` are what the recorder on the Air calls (announce,
+upload links, confirm, plug-in log); `REVIEWER_EMAILS` gates a Sessions page
+in the Physical fleet with the "Posts with no recording" cross-check, a
+random pick, and a session page with every frame and Claude's read
+(`/api/sessions/[id]/review`, through OpenRouter, up to forty frames spread
+across the session). `?demo=` draws both pages with invented sessions.
+
+*Two more decisions, Garreth 2026-10-21:* the recorder asks the phone's agent
+for its own pictures and does not go through the live view, which stays a
+viewer only (it runs only while someone has the page open, and a recorder
+must not depend on that). And the recorder reaches the Air the way the
+warmup robot does: Czedrick sends Yurie an update file and a short
+instructions doc, she applies it, nobody needs remote access to the Air.
+The one-time part of that doc is the auto-start, so the recorder comes up
+with the Air from then on.
+
+**Next (decided 2026-10-21, to start the next day): Claude builds the
+recorder,** in the warmup-runner code, reusing the live view's connection to
+the phone's agent. In order: (1) find the warmup-runner source that matches
+what is on the Air today (the Air's copy went over by Taildrop; the
+dashboard docs name `garrethdev/warmup-runner`); (2) the recorder: poll the
+agent for a picture every few seconds while a phone is plugged in, keep the
+frames where the screen changed, one folder per phone per session, and the
+plug-in log; (3) the nightly upload through operations 8 to 11, deleting a
+session only after `stored: true`; (4) the auto-start file so it comes up
+with the Air; (5) a dry run from Czedrick's Mac with no phone that proves
+announce, upload and confirm against the live dashboard; (6) the update file
+and the instructions doc for Yurie, with the one-time auto-start step. The
+first real run is on the Air (Screen Sharing, or Yurie following the doc).
+**Waiting on Yurie:** the plug-in rule, and applying that update.
+`REVIEWER_EMAILS` is set in Vercel (Production row, 2026-10-21: Garreth's
+two addresses and Czedrick's two). **Before the page is used for real:** run
+one real session end to end, which is also the first time Claude's read
+meets real frames.
 
 # V1 — open work
 

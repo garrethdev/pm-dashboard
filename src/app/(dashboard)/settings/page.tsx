@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AccountManagement } from "@/components/dashboard/account-management";
+import { HiggsfieldConnection } from "@/components/dashboard/higgsfield-connection";
 import { WorkWeekCard } from "@/components/dashboard/work-week-card";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
@@ -67,7 +68,9 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const demo = wantsDemo((await searchParams).demo);
+  const params = await searchParams;
+  const demo = wantsDemo(params.demo);
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Settings</h1>
@@ -77,6 +80,7 @@ export default async function SettingsPage({
       <Suspense fallback={<CardSkeleton title="Account management" lines={10} />}>
         <AccountManagementLive demo={demo} />
       </Suspense>
+      <HiggsfieldConnection note={one(params.higgsfield)} reason={one(params.reason)} />
     </div>
   );
 }

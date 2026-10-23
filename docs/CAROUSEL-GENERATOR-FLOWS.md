@@ -481,6 +481,11 @@ one press on this screen is **Render (n) decks**. D4 is the approved design.*
   AI vision writes them from the picture. **Nothing is read automatically:**
   a generated image arrives untagged and stays that way until a person keeps
   it and decides to use it.
+- **Linked libraries are writable (Czedrick, 2026-10-22).** A library that
+  is a live link to a bucket folder takes Upload, Generate images, New set,
+  Tag with AI and the image presses like any other; only the two banks are
+  read-only. New pictures are written into the folder itself, a set is a
+  folder, and Move is a move between folders.
 - **Screens:** Library, then one library, then a set inside it.
 - **Steps:**
   1. A grid of libraries as boards: a mosaic of three of the library's own

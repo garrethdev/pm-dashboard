@@ -73,8 +73,8 @@ Initial planning estimate: **40–70 active engineering hours**, excluding waiti
 | DEV-27 | The lane-creation database function | Open |
 | DEV-28 | Go Live tab | Open |
 | DEV-29 | Libraries: new, upload, retire | Open |
-| DEV-30 | Higgsfield image generation | Open |
-| DEV-41 | Image details: AI vision reads a library | Open |
+| DEV-30 | Higgsfield image generation | Built 2026-10-22 (plus reference upload, directions, try again with a note); later that day switched from the API key to the Ultra account through Higgsfield's MCP server (Settings → Connected services) |
+| DEV-41 | Image details: AI vision reads a library | Built 2026-10-22, not yet run (no OpenRouter key on the dev machine) |
 | DEV-31 | Keys out of n8n before any rotation | Open |
 | DEV-32 | Capture the study digest | Open |
 | DEV-33 | Analyse a digest | Open |

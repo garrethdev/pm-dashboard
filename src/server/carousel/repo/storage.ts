@@ -3,6 +3,9 @@
  * key. A person's browser never gets that key: to upload, it is handed a
  * one-time signed link for one path, which is how a 20 MB photograph gets
  * past the few megabytes a server route may receive.
+ *
+ * Since 2026-10-22 a linked library is writable too, so the object calls
+ * take a bucket; the library bucket stays the default.
  */
 export const LIBRARY_BUCKET = "image-libraries";
 const TIMEOUT_MS = 30_000;
@@ -46,21 +49,27 @@ export async function signUpload(path: string): Promise<string> {
   return `${base()}${json.url}`;
 }
 
-export async function readObject(path: string): Promise<{ bytes: Buffer; type: string } | null> {
-  const res = await fetch(`${base()}/object/${LIBRARY_BUCKET}/${safe(path)}`, { headers: auth(), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
+export async function readObject(path: string, bucket = LIBRARY_BUCKET): Promise<{ bytes: Buffer; type: string } | null> {
+  const res = await fetch(`${base()}/object/${encodeURIComponent(bucket)}/${safe(path)}`, { headers: auth(), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
   if (res.status === 404 || res.status === 400) return null;
   if (!res.ok) await fail(res, "read image");
   return { bytes: Buffer.from(await res.arrayBuffer()), type: res.headers.get("content-type") ?? "application/octet-stream" };
 }
 
-export async function writeObject(path: string, bytes: Buffer, type: string): Promise<void> {
-  const res = await fetch(`${base()}/object/${LIBRARY_BUCKET}/${safe(path)}`, { method: "POST", headers: auth({ "Content-Type": type, "x-upsert": "true" }), body: new Uint8Array(bytes), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
+export async function writeObject(path: string, bytes: Buffer, type: string, bucket = LIBRARY_BUCKET): Promise<void> {
+  const res = await fetch(`${base()}/object/${encodeURIComponent(bucket)}/${safe(path)}`, { method: "POST", headers: auth({ "Content-Type": type, "x-upsert": "true" }), body: new Uint8Array(bytes), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
   if (!res.ok) await fail(res, "store image");
 }
 
-export async function removeObject(path: string): Promise<void> {
-  const res = await fetch(`${base()}/object/${LIBRARY_BUCKET}/${safe(path)}`, { method: "DELETE", headers: auth(), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
+export async function removeObject(path: string, bucket = LIBRARY_BUCKET): Promise<void> {
+  const res = await fetch(`${base()}/object/${encodeURIComponent(bucket)}/${safe(path)}`, { method: "DELETE", headers: auth(), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
   if (!res.ok && res.status !== 404 && res.status !== 400) await fail(res, "remove image");
+}
+
+/** Move one object inside a bucket: how a linked library's picture changes set (2026-10-22). */
+export async function moveObject(bucket: string, from: string, to: string): Promise<void> {
+  const res = await fetch(`${base()}/object/move`, { method: "POST", headers: auth({ "Content-Type": "application/json" }), body: JSON.stringify({ bucketId: bucket, sourceKey: from, destinationKey: to }), signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
+  if (!res.ok) await fail(res, "move image");
 }
 
 // ── Linked folders (Garreth, 2026-10-08) ────────────────────────────────
@@ -118,17 +127,22 @@ const IMAGE = /^image\/(jpeg|png|webp|gif|avif)$/;
  * is kept for a minute, since the library pages ask for it several times.
  */
 const walked = new Map<string, { at: number; files: Promise<{ path: string; set: string | null; subset: string | null }[]> }>();
+/** The set folders the last walk saw ("name" or "name/sub"), so an empty set still shows (2026-10-22). */
+const folders = new Map<string, string[]>();
 export async function listPictures(bucket: string, prefix: string): Promise<{ path: string; set: string | null; subset: string | null }[]> {
   const key = `${bucket}/${prefix}`;
   const hit = walked.get(key);
   if (hit && Date.now() - hit.at < 60_000) return hit.files;
   const files = (async () => {
     const out: { path: string; set: string | null; subset: string | null }[] = [];
+    const seen: string[] = [];
     const walk = async (p: string, depth: number, set: string | null, subset: string | null) => {
       const rows = await listFolder(bucket, p);
       for (const r of rows) {
         if (r.folder) {
           if (depth >= 3) continue;
+          if (depth === 0) seen.push(r.name);
+          else if (depth === 1 && set) seen.push(`${set}/${r.name}`);
           await walk(r.path, depth + 1, set ?? r.name, set ? (subset ?? r.name) : null);
         } else if (!r.mimetype || IMAGE.test(r.mimetype)) {
           if (!r.mimetype && !/\.(jpe?g|png|webp|gif|avif)$/i.test(r.name)) continue;
@@ -137,6 +151,7 @@ export async function listPictures(bucket: string, prefix: string): Promise<{ pa
       }
     };
     await walk(prefix.replace(/^\/+|\/+$/g, ""), 0, null, null);
+    folders.set(key, seen);
     return out;
   })();
   walked.set(key, { at: Date.now(), files });
@@ -144,8 +159,14 @@ export async function listPictures(bucket: string, prefix: string): Promise<{ pa
   return files;
 }
 
+/** The set folders under a linked library's prefix, as the last listing saw them. */
+export function setFolders(bucket: string, prefix: string): string[] {
+  return folders.get(`${bucket}/${prefix}`) ?? [];
+}
+
 export function forgetPictures(bucket: string, prefix: string): void {
   walked.delete(`${bucket}/${prefix}`);
+  folders.delete(`${bucket}/${prefix}`);
 }
 
 /** Every object under a prefix in the library bucket, removed; used when a library is deleted. */
