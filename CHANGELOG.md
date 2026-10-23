@@ -44,6 +44,12 @@ the new read has not yet been run on a real session.
   it.
 - **The list shows a Kind column** with the label, grey "Not yet known"
   until a read or a reviewer has said. The Post column stays as it was.
+  (Later the same day: the note on who set the kind was being cut off
+  beside the pill; it now sits in the fact's heading, "Kind (read)" or
+  "Kind (reviewer)".)
+- **Seen live the same evening:** the two phone 1 sessions of 23 October
+  were read and both came back "Manual warmup", with the parked profile
+  page flagged, as expected.
 - Two columns on `phone_sessions` for this, `kind` and `kind_set_by`,
   applied live (`supabase/migrations/20261023082104_phone_sessions_kind.sql`).
 
