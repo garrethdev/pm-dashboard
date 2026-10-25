@@ -20,6 +20,27 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-25 — A TikTok reading is matched to its post by the time it was posted (DA-06)
+
+**Where it came from:** Yurie's first robot sitting on phone 1 (2026-10-23;
+zips reviewed 2026-10-25). TikTok's stats page prints no caption, only
+"Posted on Oct 16, 2026, 11:43 AM". The dashboard matched the robot's
+readings to posts by caption only, so every TikTok reading would have been
+stored with no post attached. The same sitting showed the phone shows Phoenix
+time: 11:43 AM for a post stored at 18:43 UTC.
+
+**What changed:** when the robot sends no caption, or one that matches
+nothing, the dashboard now looks for the post by the time on the screen. The
+phone's time zone isn't known, so it takes the post made in that same minute
+in any whole-hour time zone, and **only if exactly one post fits**. Two posts
+that fit give no match rather than a guess. A "Posted on" in front of the
+date no longer upsets the tie-break between posts with the same caption.
+
+**Verified:** by tests only, with the real post from that sitting (stored
+18:43:40 UTC, shown 11:43 AM). No TikTok reading has reached the dashboard
+yet; the robot fixes it depends on are in the warmup runner and wait for
+Yurie's next sitting.
+
 ## 2026-10-23 — Overview / Deep switch on the main Analytics page (DA-10)
 
 **Where it came from:** Garreth, 2026-10-23: the deep numbers belong on the
