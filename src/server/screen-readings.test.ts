@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, pickPost, promptFor, rateSignalsOrNull, storagePath, toRow } from "./screen-readings";
+import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, pickPost, pickPostByTime, promptFor, screenClock, rateSignalsOrNull, storagePath, toRow } from "./screen-readings";
 
 const group = { platform: "instagram" as const, account: "trina_triumphs", postUrl: "https://www.instagram.com/p/x/", format: "carousel" };
 
@@ -159,6 +159,28 @@ describe("captionKey / pickPost", () => {
     expect(pickPost(posts, "")).toBeNull();
     expect(pickPost(posts, "Something else entirely")).toBeNull();
     expect(pickPost(posts, "The")).toBeNull();
+  });
+  it("with no caption, matches TikTok's \"Posted on\" by the minute, whatever the phone's time zone (phone 1: Phoenix)", () => {
+    expect(screenClock("Posted on Oct 16, 2026, 11:43 AM")).toBe(Date.UTC(2026, 9, 16, 11, 43));
+    expect(screenClock("Oct 16, 2026, 12:05 AM")).toBe(Date.UTC(2026, 9, 16, 0, 5));
+    expect(screenClock("Oct 16, 11:43 AM")).toBeNull();
+    // Stored 18:43:40 UTC, shown 11:43 AM in Phoenix.
+    expect(pickPost(posts, null, "Posted on Oct 16, 2026, 11:43 AM")?.post_id).toBe("1");
+    // The same post on a phone set to Manila (UTC+8): 2:43 AM the next day.
+    expect(pickPost(posts, null, "Posted on Oct 17, 2026, 2:43 AM")?.post_id).toBe("1");
+    // A caption that matches nothing falls back to the time too.
+    expect(pickPost(posts, "Thr experlment", "Posted on Oct 16, 2026, 11:43 AM")?.post_id).toBe("1");
+    // A minute nobody posted in, or no time at all: nothing.
+    expect(pickPost(posts, null, "Posted on Oct 16, 2026, 11:44 AM")).toBeNull();
+    expect(pickPost(posts, null, null)).toBeNull();
+  });
+  it("gives nothing when two posts fit the time on the screen", () => {
+    const twins = [
+      { post_id: "a", post_url: null, posted_at: "2026-10-16T18:43:10Z", caption_snippet: "One", format: "video" },
+      { post_id: "b", post_url: null, posted_at: "2026-10-16T19:43:20Z", caption_snippet: "Two", format: "video" },
+    ];
+    expect(pickPostByTime(twins, "Posted on Oct 16, 2026, 11:43 AM")).toBeNull();
+    expect(pickPostByTime(twins.slice(0, 1), "Posted on Oct 16, 2026, 11:43 AM")?.post_id).toBe("a");
   });
 });
 

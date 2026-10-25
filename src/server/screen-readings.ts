@@ -589,11 +589,14 @@ export interface PostCandidate {
 /**
  * Which stored post the robot read. Caption first (either side may be cut
  * short, so a prefix match either way counts); among several, the one posted
- * nearest the date on the screen, else the newest. Null when nothing matches.
+ * nearest the date on the screen, else the newest. With no caption, or none
+ * that matches, the time on the screen alone (pickPostByTime): TikTok's
+ * "Video analysis" prints no caption (first sitting, 2026-10-23). Null when
+ * nothing matches.
  */
 export function pickPost(candidates: PostCandidate[], caption: string | null | undefined, postedAtText?: string | null): PostCandidate | null {
   const key = captionKey(caption);
-  if (!key) return null;
+  if (!key) return pickPostByTime(candidates, postedAtText);
   // A short caption has to match whole: "The" must not pick the newest post
   // that starts with "the".
   const hits = candidates.filter((c) => {
@@ -602,8 +605,8 @@ export function pickPost(candidates: PostCandidate[], caption: string | null | u
     if (key.length < 8 || ck.length < 8) return ck === key;
     return ck.startsWith(key) || key.startsWith(ck);
   });
-  if (hits.length === 0) return null;
-  const screen = postedAtText ? Date.parse(postedAtText) : NaN;
+  if (hits.length === 0) return pickPostByTime(candidates, postedAtText);
+  const screen = postedAtText ? Date.parse(postedAtText.replace(/^(posted|published)(\s+on)?\s+/i, "")) : NaN;
   const sorted = [...hits].sort((a, b) => {
     if (!Number.isNaN(screen)) {
       const da = Math.abs(Date.parse(a.posted_at) - screen);
@@ -613,6 +616,53 @@ export function pickPost(candidates: PostCandidate[], caption: string | null | u
     return Date.parse(b.posted_at) - Date.parse(a.posted_at);
   });
   return sorted[0];
+}
+
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+/**
+ * The date and time an analytics screen prints ("Posted on Oct 16, 2026,
+ * 11:43 AM"), as that clock reading written as if it were UTC. The phone's
+ * own time zone is not known here. Null without a year and a minute.
+ */
+export function screenClock(text: string | null | undefined): number | null {
+  const m = /([a-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4}),?\s+(?:at\s+)?(\d{1,2}):(\d{2})\s*([ap]\.?m\.?)?/i.exec(text ?? "");
+  if (!m) return null;
+  const month = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase());
+  let hour = Number(m[4]);
+  const minute = Number(m[5]);
+  const half = m[6]?.replace(/\./g, "").toLowerCase();
+  if (month < 0 || minute > 59) return null;
+  if (half) {
+    if (hour < 1 || hour > 12) return null;
+    hour = (hour % 12) + (half === "pm" ? 12 : 0);
+  } else if (hour > 23) return null;
+  return Date.UTC(Number(m[3]), month, Number(m[2]), hour, minute);
+}
+
+/** How far a phone's clock can be from UTC: the time zones run from 12 hours behind to 14 ahead. */
+const MAX_ZONE_MS = 14 * 3_600_000;
+
+/**
+ * A post by the time on the screen alone, for a screen that prints no
+ * caption. The phone shows the posting time in its own time zone, to the
+ * minute: a post matches when it was posted in that minute in a whole-hour
+ * time zone (phone 1 shows Phoenix time: 11:43 AM for a post stored at
+ * 18:43:40 UTC). Only a single such post counts; two is a guess, and gives
+ * nothing.
+ */
+export function pickPostByTime(candidates: PostCandidate[], postedAtText: string | null | undefined): PostCandidate | null {
+  const shown = screenClock(postedAtText);
+  if (shown === null) return null;
+  const HOUR = 3_600_000;
+  const hits = candidates.filter((c) => {
+    const at = Date.parse(c.posted_at);
+    if (Number.isNaN(at)) return false;
+    const offset = at - shown; // the zone's hours, plus the seconds the screen leaves off
+    if (Math.abs(offset) > MAX_ZONE_MS + 60_000) return false;
+    return ((offset % HOUR) + HOUR) % HOUR < 60_000;
+  });
+  return hits.length === 1 ? hits[0] : null;
 }
 
 /** The account's posts from the last 45 days, newest first: the pool a reading is matched against. */
