@@ -3,30 +3,44 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Loader2, NotePencil, Upload, X } from "@/components/ui/icons";
+import { CheckCircle2, Loader2, NotePencil, Search, Upload, X } from "@/components/ui/icons";
 import { CtaButton } from "@/components/ui/cta-button";
+import { FilterPills } from "@/components/ui/filter-pills";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { DEVICE_INPUT } from "@/components/dashboard/device-fields";
 import {
   DESCRIPTION_MAX,
   ISSUE_CATEGORIES,
   PAGE_PATH_MAX,
+  REPORT_ACCOUNTS_MAX,
+  REPORT_KINDS,
   SCREENSHOT_MAX_BYTES,
   SCREENSHOT_TYPES,
+  kindLabel,
   reportRefusal,
-} from "@/lib/data/issue-rules";
+  type ReportAccountInput,
+  type ReportKind,
+} from "@/lib/data/report-rules";
+import type { ReportAccountOption, ReportPostOption } from "@/lib/data/reports";
+import { formatEtDate } from "@/lib/data/format";
 import { cn } from "@/lib/utils";
 
 /**
- * Report an issue, opened from the floating button (Garreth, 2026-10-09).
+ * Send a report, opened from the floating button (Garreth, 2026-10-09;
+ * observations and accounts 2026-10-27).
  *
- * Category, what happened, and an optional screenshot — chosen, dropped onto
- * the box, or pasted anywhere in the dialog with Cmd/Ctrl+V, which is how most
- * screenshots arrive. There is no date field: the report is dated the moment
- * it is sent, and the server records who sent it and the page they were on.
+ * Issue or Observation, a category, what happened or what was noticed, the
+ * accounts it is about (each with one of its posts, if the report is about a
+ * post), and an optional screenshot — chosen, dropped onto the box, or pasted
+ * anywhere in the dialog with Cmd/Ctrl+V, which is how most screenshots
+ * arrive. There is no date field: the report is dated the moment it is sent,
+ * and the server records who sent it and the page they were on.
  */
-export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
+export function ReportDialog({ onClose }: { onClose: () => void }) {
+  const [kind, setKind] = useState<ReportKind>("issue");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
+  const [accounts, setAccounts] = useState<ReportAccountInput[]>([]);
   /** The chosen picture and a local link to show it before it is sent. */
   const [shot, setShot] = useState<{ file: File; preview: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,7 +49,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const ready = reportRefusal({ category, description, pagePath: null }) === null;
+  const ready = reportRefusal({ kind, category, description, pagePath: null, accounts }) === null;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -61,7 +75,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
   }
 
   async function send() {
-    const refusal = reportRefusal({ category, description, pagePath: null });
+    const refusal = reportRefusal({ kind, category, description, pagePath: null, accounts });
     if (refusal) {
       setMessage(refusal);
       return;
@@ -70,17 +84,19 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
     setMessage("");
     try {
       const form = new FormData();
+      form.set("kind", kind);
       form.set("category", category);
       form.set("description", description.trim());
+      form.set("accounts", JSON.stringify(accounts));
       const page = window.location.pathname + window.location.search;
       if (page.length <= PAGE_PATH_MAX) form.set("page", page);
       if (shot) form.set("screenshot", await shrinkScreenshot(shot.file));
 
-      const res = await fetch("/api/issues", { method: "POST", body: form });
+      const res = await fetch("/api/reports", { method: "POST", body: form });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "The issue did not save.");
+      if (!res.ok) throw new Error(data.error ?? "The report did not save.");
       setSent(true);
-      // So an open Issues page shows the new report without a reload.
+      // So an open Reports page shows the new report without a reload.
       router.refresh();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Network error");
@@ -97,7 +113,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Report an issue"
+        aria-label="Send a report"
         className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-y-auto rounded-card border border-border glass-overlay"
         onClick={(e) => e.stopPropagation()}
         onPaste={(e) => {
@@ -113,7 +129,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
             <span className="flex size-9 items-center justify-center rounded-full bg-pill-bg text-text-muted">
               <NotePencil className="size-5" />
             </span>
-            <h2 className="text-base font-semibold">Report an issue</h2>
+            <h2 className="text-base font-semibold">Send a report</h2>
           </div>
           <button
             type="button"
@@ -132,15 +148,15 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
               <span className="flex size-12 items-center justify-center rounded-full bg-pill-bg text-ok">
                 <CheckCircle2 className="size-6" />
               </span>
-              <p className="text-sm font-medium">Issue reported</p>
+              <p className="text-sm font-medium">{kindLabel(kind)} sent</p>
             </div>
             <div className="flex justify-end gap-2 border-t border-border p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
               <Link
-                href="/issues"
+                href="/reports"
                 onClick={onClose}
                 className="rounded-full px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary"
               >
-                See issues
+                See reports
               </Link>
               <CtaButton onClick={onClose}>Done</CtaButton>
             </div>
@@ -148,6 +164,16 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
         ) : (
           <>
             <div className="flex flex-col gap-4 p-6">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-text-muted">Type</span>
+                <FilterPills
+                  value={kind}
+                  onChange={setKind}
+                  options={REPORT_KINDS.map((k) => ({ value: k.value, label: k.label }))}
+                  pillClassName="px-4 py-1.5"
+                />
+              </div>
+
               <Field label="Category">
                 <select
                   autoFocus
@@ -167,17 +193,23 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
                 </select>
               </Field>
 
-              <Field label="What happened">
+              <Field label={kind === "observation" ? "What you noticed" : "What happened"}>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={busy}
                   rows={4}
                   maxLength={DESCRIPTION_MAX}
-                  placeholder="Which account or phone, what you saw, what you expected"
+                  placeholder={
+                    kind === "observation"
+                      ? "What you noticed, since when, and what you think is behind it"
+                      : "Which account or phone, what you saw, what you expected"
+                  }
                   className={cn(DEVICE_INPUT, "resize-y")}
                 />
               </Field>
+
+              <AccountsField value={accounts} onChange={setAccounts} disabled={busy} />
 
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs text-text-muted">
@@ -260,6 +292,194 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </label>
   );
+}
+
+/** Matches shown under the search at once. Typing more narrows them. */
+const MATCHES_SHOWN = 6;
+
+/**
+ * The accounts a report is about (Garreth, Czedrick and Yurie,
+ * 2026-10-27): search to add one,
+ * then, for each, the whole account or one of its posts.
+ *
+ * The list of accounts is asked for when the form opens, and an account's
+ * posts when it is added, so a report about nothing in particular costs no
+ * reads. The matches sit in the form rather than floating over it: the dialog
+ * scrolls, and a list hung off the field would be cut off at its bottom edge.
+ */
+function AccountsField({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: ReportAccountInput[];
+  onChange: (next: ReportAccountInput[]) => void;
+  disabled: boolean;
+}) {
+  const [options, setOptions] = useState<ReportAccountOption[] | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [query, setQuery] = useState("");
+  /** Each added account's posts, by Profile; "error" when they did not load. */
+  const [posts, setPosts] = useState<Record<string, ReportPostOption[] | "error">>({});
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/reports/accounts")
+      .then(async (res) => {
+        const data = (await res.json().catch(() => ({}))) as { accounts?: ReportAccountOption[]; error?: string };
+        if (!res.ok || !data.accounts) throw new Error(data.error ?? "The accounts did not load.");
+        if (live) setOptions(data.accounts);
+      })
+      .catch((err) => live && setLoadError(err instanceof Error ? err.message : "The accounts did not load."));
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const byProfile = new Map((options ?? []).map((o) => [o.profile, o]));
+  const chosen = new Set(value.map((a) => a.profile));
+  const q = query.trim().toLowerCase();
+  const matches =
+    q === "" || !options
+      ? []
+      : options
+          .filter(
+            (o) =>
+              !chosen.has(o.profile) &&
+              [o.label, o.profile, o.character ?? ""].some((s) => s.toLowerCase().includes(q)),
+          )
+          .slice(0, MATCHES_SHOWN);
+
+  function add(o: ReportAccountOption) {
+    onChange([...value, { profile: o.profile, postId: null }]);
+    setQuery("");
+    if (!o.hasPosts || posts[o.profile]) return;
+    fetch(`/api/reports/posts?profile=${encodeURIComponent(o.profile)}`)
+      .then(async (res) => {
+        const data = (await res.json().catch(() => ({}))) as { posts?: ReportPostOption[] };
+        if (!res.ok || !data.posts) throw new Error();
+        setPosts((p) => ({ ...p, [o.profile]: data.posts! }));
+      })
+      .catch(() => setPosts((p) => ({ ...p, [o.profile]: "error" })));
+  }
+
+  function setPost(profile: string, postId: string | null) {
+    onChange(value.map((a) => (a.profile === profile ? { ...a, postId } : a)));
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs text-text-muted">
+        Accounts <span className="text-text-placeholder">· optional</span>
+      </span>
+
+      {value.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {value.map((a) => {
+            const o = byProfile.get(a.profile);
+            const list = posts[a.profile];
+            return (
+              <li
+                key={a.profile}
+                className="flex flex-col gap-2 rounded-nested border border-border bg-card-raised/40 p-3"
+              >
+                <div className="flex items-center gap-2">
+                  <PlatformIcon platform={o?.platform} />
+                  <span className="min-w-0 truncate text-sm font-medium">{o?.label ?? a.profile}</span>
+                  <span className="shrink-0 text-xs text-text-muted">{a.profile}</span>
+                  <button
+                    type="button"
+                    onClick={() => onChange(value.filter((v) => v.profile !== a.profile))}
+                    disabled={disabled}
+                    aria-label={`Remove ${o?.label ?? a.profile}`}
+                    className="ml-auto shrink-0 text-text-muted hover:text-text-primary disabled:opacity-50"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+                {o?.hasPosts &&
+                  (list === "error" ? (
+                    <p className="text-xs text-danger">Its posts did not load.</p>
+                  ) : (
+                    <select
+                      value={a.postId ?? ""}
+                      onChange={(e) => setPost(a.profile, e.target.value === "" ? null : e.target.value)}
+                      disabled={disabled || !list}
+                      aria-label={`Post on ${o.label}`}
+                      className={cn(DEVICE_INPUT, "appearance-none")}
+                    >
+                      <option value="">{list ? "Whole account" : "Loading posts…"}</option>
+                      {list?.map((p) => (
+                        <option key={p.postId} value={p.postId}>
+                          {postLabel(p)}
+                        </option>
+                      ))}
+                    </select>
+                  ))}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {loadError ? (
+        <p className="text-xs text-danger">{loadError}</p>
+      ) : (
+        value.length < REPORT_ACCOUNTS_MAX && (
+          <div className="flex flex-col gap-1">
+            <div className={cn(DEVICE_INPUT, "flex items-center gap-2")}>
+              <Search className="size-3.5 shrink-0 text-text-muted" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (matches[0]) add(matches[0]);
+                  }
+                }}
+                disabled={disabled || !options}
+                placeholder={options ? "Handle, Profile or character" : "Loading accounts…"}
+                aria-label="Add an account"
+                className="w-full bg-transparent outline-none placeholder:text-text-placeholder"
+              />
+            </div>
+            {q !== "" && options && (
+              <ul className="flex flex-col rounded-nested border border-border bg-card-raised p-1">
+                {matches.length === 0 ? (
+                  <li className="px-2.5 py-1.5 text-sm text-text-muted">No account matches</li>
+                ) : (
+                  matches.map((o) => (
+                    <li key={o.profile}>
+                      <button
+                        type="button"
+                        onClick={() => add(o)}
+                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-card"
+                      >
+                        <PlatformIcon platform={o.platform} />
+                        <span className={cn("min-w-0 truncate", !o.isActive && "text-text-muted")}>{o.label}</span>
+                        <span className="ml-auto shrink-0 text-xs text-text-muted">
+                          {o.profile}
+                          {o.character && ` · ${o.character}`}
+                        </span>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            )}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+/** "Oct 21 · Your skin after 30 days of…", or the format when there is no caption. */
+function postLabel(p: ReportPostOption): string {
+  const what = p.caption?.trim() || (p.format && p.format !== "unknown" ? p.format : "Post");
+  const short = what.length > 48 ? `${what.slice(0, 47)}…` : what;
+  return `${formatEtDate(p.postedAt)} · ${short}`;
 }
 
 /** Longest side, in pixels, a screenshot is sent at. Text stays readable. */

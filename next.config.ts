@@ -36,8 +36,16 @@ const nextConfig: NextConfig = {
   // into the "Adjust Cadence" dialog and the per-account limits table moved
   // under the calendar. Permanent, because the old URL is in people's history
   // and there is nothing left at it.
+  //
+  // /issues became /reports (Garreth, Czedrick and Yurie, 2026-10-27)
+  // when observations joined issues. Temporary rather than permanent,
+  // because a browser remembers a permanent redirect for good and the old
+  // name could yet be wanted back.
   async redirects() {
-    return [{ source: "/cadence", destination: "/content-calendar", permanent: true }];
+    return [
+      { source: "/cadence", destination: "/content-calendar", permanent: true },
+      { source: "/issues", destination: "/reports", permanent: false },
+    ];
   },
 };
 

@@ -20,6 +20,61 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-27 — Issues become Reports: observations, and the accounts and posts a report is about
+
+**Where it came from:** Garreth, Czedrick and Yurie, on a call, 2026-10-27.
+The team notices things that are not broken, like Yurie seeing that an
+account she warms up by hand is doing better than the rest, and there was
+nowhere to write those down. They wanted the form to take observations as
+well as issues, with the accounts or posts they are about, so that a later
+look at the system (a person's or an AI's) can read what the team saw next
+to the numbers. Their decisions: an observation has no status, a report can
+name several accounts each with an optional post, and the feature is called
+Reports. Reviewing the built page the same day, they found it had no way to
+start a report from it, and asked for a button opposite Filters.
+
+**What changed:**
+
+- **The form has a Type switch, Issue or Observation.** The floating button's
+  actions are now *Send a report* and *See reports*. The text box asks *What
+  you noticed* for an observation and *What happened* for an issue. Both
+  kinds use the same categories.
+- **A report can name up to 10 accounts.** Type a handle, a Profile or a
+  character to find one. For each account added, a second box offers that
+  account's 60 newest posts by date and caption, or *Whole account*.
+  Accounts with no handle yet are offered without posts. Inactive accounts
+  are offered too, because an observation is as likely to be about a banned
+  account.
+- **The Issues page is now the Reports page**, at `/reports`; the old
+  `/issues` address forwards there. It has a Type column (with the category
+  under it) and an Accounts column, where each account links to its account
+  page and each named post links to the post itself. The Filters button has a
+  Type filter beside Status. An observation's status shows a dash and cannot
+  be changed. A **Send a report** button at the right end of the title row,
+  opposite Filters, opens the same form as the floating button.
+- **In Supabase,** the table keeps the name `issues`, so the live site kept
+  working while this was built. It has a new `kind` column (every earlier
+  report is an issue), and an observation is stored with no status: the
+  database refuses one with a status, and refuses an issue without one. The
+  accounts sit in a new `issue_accounts` table, one row per account, with
+  its Profile, handle, platform, Facebook name and the named post copied in
+  at the moment of the report, so the report still reads correctly after an
+  account is renamed or deleted. **`v_reports` is the one place to read
+  everything together**, and it is the place to start any later analysis.
+  The server checks that each account exists and that each post really
+  belongs to the account it is named under before anything is saved. Like
+  the rest of the dashboard's tables, the new table and view are closed to
+  the public key.
+
+**Verified:** live against the real database through the app on this branch
+(not yet on `main`). An observation naming two accounts and a TikTok post
+saved correctly and read back through `v_reports`. A post named under the
+wrong account, an account that does not exist, and a status change on an
+observation were each refused with a plain message. The database rules were
+proven in a test that undid itself. The form and page were checked in
+headless Chrome at desktop and phone width, dark mode only; not in Safari.
+Type check, lint and all 663 tests pass.
+
 ## 2026-10-25 — A TikTok reading is matched to its post by the time it was posted (DA-06)
 
 **Where it came from:** Yurie's first robot sitting on phone 1 (2026-10-23;
