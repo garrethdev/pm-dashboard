@@ -66,14 +66,84 @@ start a report from it, and asked for a button opposite Filters.
   the rest of the dashboard's tables, the new table and view are closed to
   the public key.
 
-**Verified:** live against the real database through the app on this branch
-(not yet on `main`). An observation naming two accounts and a TikTok post
+**Verified:** live against the real database through the app on its branch,
+before it was merged. An observation naming two accounts and a TikTok post
 saved correctly and read back through `v_reports`. A post named under the
 wrong account, an account that does not exist, and a status change on an
 observation were each refused with a plain message. The database rules were
 proven in a test that undid itself. The form and page were checked in
 headless Chrome at desktop and phone width, dark mode only; not in Safari.
 Type check, lint and all 663 tests pass.
+
+## 2026-10-27 — The Smart Scheduler plans three days at a time, and Facebook keeps posting when its Instagram is banned or paused
+
+**Where it came from:** Garreth and Czedrick, 2026-10-27. Three requests:
+plan three days ahead so Yurie can set posts up in the apps in advance, run
+at 1:00 AM New York time, and stop a banned Instagram account from silencing
+its Facebook twin (or the other way round). Asked the same day, they added
+that a *paused* Instagram must not stop its Facebook either: the two are tied
+only for handing out posts, and are otherwise separate accounts.
+
+**What changed:**
+
+- **Three days per run.** The scheduler (now 1.4.0, in n8n) runs at 1:00 AM
+  New York time instead of 6:30, and on every third night it plans that day
+  and the two after it. On the two nights in between it does nothing. Each
+  day is planned within its own week's limits, and days off are skipped.
+  Pressing the run button in n8n always plans, and is safe at any time: it
+  only fills slots that are still empty.
+- **Facebook.** A Facebook account copies its Instagram twin's posts. When
+  the Instagram account was banned, nothing was planned for it any more, so
+  the Facebook account stopped too: Profile 81 had posted nothing since
+  Profile 65's ban on 2026-10-19. Now a Facebook account whose Instagram is
+  banned, retired or paused is planned for on its own, from its character's
+  content, and the Posting Agent hands its posts to Yurie. When the Instagram
+  account comes back, the Facebook account goes back to copying it, but not
+  on a day it already has posts of its own, so it never gets both. A banned
+  Facebook account no longer gets copies, so it cannot hold up its Instagram
+  twin.
+- **The To-do list files a post under the day it is due**, not the day it
+  was handed out, and a post only counts as late from its planned time. This
+  is what lets the list show posts for Tomorrow and In 2 days.
+- **The scheduler pill** on the Content Calendar shows the latest run in the
+  last three days, not just today's, because on two days out of three there
+  is no run of today. The Automation card expects the 1:00 AM time.
+- **The Missed-Run Alarm works again.** Its built-in database key had been
+  refused on every check since at least 2026-10-23, so it could not have
+  warned anyone. It has a working key now and checks for a run in the last
+  three days rather than today.
+
+- **Yurie is handed all three days at once.** The 10:00 Posting Agent now
+  hands out the next two days' posts too, for accounts posted by hand, so
+  they show on the To-do list under Tomorrow and In 2 days. Robot accounts
+  still get only today's. This was switched on after the dashboard change
+  above was live (PR #80), because the version before it would have put all
+  three days on today's list.
+
+**Verified:**
+- Run once by hand at 2:53 AM on 10-27, because the move to 1:00 AM meant
+  that morning's run would not happen. It scheduled 48 of 48 posts, 16 a day
+  for Oct 27, 28 and 29, including Profile 81's first Facebook posts (2 a
+  day). It wrote one run record.
+- Today's plan matches what the old version would have made, slot for slot,
+  in a dry run before the change.
+- Rest nights, the Sunday day off and a three days that run into the next
+  week were checked in dry runs with the clock set forward.
+- The Posting Agent's changed step, run against that day's posts, hands out
+  all 16, Profile 81's included. The Missed-Run Alarm's new check reads the
+  run log without being refused.
+- Tests cover a post handed out ahead of its day.
+- The "never both" rule was proven in a test inside the database that was
+  rolled back afterwards: no copy on a day the Facebook account had its own
+  post, one copy on the next day. No account had a paused Instagram and an
+  unpaused Facebook that day, so the paused case has not met a real account
+  yet.
+- After the switch, the 10:00 hand-out list held all 48 posts, and the
+  Posting Agent's step, run against it, gave each one its own day (16 each
+  for Oct 27, 28 and 29, none without a due time).
+- **Not yet seen:** the first 1:00 AM run on its own (10-30), and the 10:00
+  Posting Agent run on 10-27 handing out the three days, Facebook included,
+  on its own.
 
 ## 2026-10-25 — A TikTok reading is matched to its post by the time it was posted (DA-06)
 

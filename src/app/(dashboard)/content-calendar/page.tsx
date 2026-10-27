@@ -6,7 +6,7 @@ import { SchedulerRunPill } from "@/components/dashboard/scheduler-run-pill";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { getCadence } from "@/lib/data/cadence";
-import { etToday, getCalendarMonth } from "@/lib/data/calendar";
+import { etToday, getCalendarMonth, getRecentSchedulerRun } from "@/lib/data/calendar";
 import { getAccounts } from "@/lib/data/accounts";
 import {
   getFleetDefaults,
@@ -34,9 +34,7 @@ async function CalendarLive() {
   // catch anyway and the guard would be a lie.
   let data, fetchedAt, stale, fleet;
   try {
-    // The fleet the person is looking at (PF-19). Read here rather than passed
-    // in, so the run pill below can read the same cookie and share the request
-    // dedupe on getCalendarMonth.
+    // The fleet the person is looking at (PF-19).
     fleet = await getFleet();
     ({ data, fetchedAt, stale } = await getCalendarMonth(year, month1, fleet));
   } catch (err) {
@@ -61,22 +59,17 @@ async function CalendarLive() {
   );
 }
 
-/** Today's run, beside the page title. Shares the grid's month payload through
- *  the request-scoped dedupe on getCalendarMonth, so it costs no extra reads —
- *  the TTL cache alone would not do it, since the current month is read live. */
+/** The run that planned today, beside the page title. Since 2026-10-27 the
+ *  scheduler plans three days at a time, so this is its latest run in the last
+ *  three days rather than a run dated today. */
 async function RunPill() {
-  const today = etToday();
-  let data;
+  let run;
   try {
-    ({ data } = await getCalendarMonth(
-      Number(today.slice(0, 4)),
-      Number(today.slice(5, 7)),
-      await getFleet(),
-    ));
+    run = await getRecentSchedulerRun();
   } catch {
     return null;
   }
-  return <SchedulerRunPill run={data.days.find((d) => d.date === today)?.run ?? null} />;
+  return <SchedulerRunPill run={run} />;
 }
 
 /** The fleet-wide editor. Rendered in the header, so a Supabase hiccup hides
