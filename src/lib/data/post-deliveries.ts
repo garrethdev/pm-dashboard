@@ -59,6 +59,10 @@ export interface PostDelivery {
   doneBy: string | null;
   doneAt: string | null;
   createdAt: string;
+  /** When it should go out: the planned date and time. The day the To-do list
+   *  files it under, and where its overdue clock starts. Equal to `createdAt`
+   *  for every post handed out before 2026-10-27, and for one queued by hand. */
+  dueAt: string;
   /** Set on a Facebook account's copy of its Instagram account's post: the
    *  delivery it copies (Garreth, 2026-10-01). A copy never touches the
    *  content row, which belongs to the Instagram post. */
@@ -78,11 +82,12 @@ interface RawDelivery {
   done_by: string | null;
   done_at: string | null;
   created_at: string;
+  due_at: string;
   mirror_of: number | null;
 }
 
 const COLS =
-  `id,content_type,source_table,source_id,${ACCOUNT_FK_COL},device_id,status,post_url,note,done_by,done_at,created_at,mirror_of`;
+  `id,content_type,source_table,source_id,${ACCOUNT_FK_COL},device_id,status,post_url,note,done_by,done_at,created_at,due_at,mirror_of`;
 
 function toDelivery(row: RawDelivery): PostDelivery {
   return {
@@ -101,6 +106,7 @@ function toDelivery(row: RawDelivery): PostDelivery {
     doneBy: row.done_by,
     doneAt: row.done_at,
     createdAt: row.created_at,
+    dueAt: row.due_at,
     mirrorOf: row.mirror_of ?? null,
   };
 }
