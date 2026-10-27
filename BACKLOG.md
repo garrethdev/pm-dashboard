@@ -1717,36 +1717,20 @@ scope, the blockers and the done-whens. Plan of record:
 `docs/REAL-PHONE-MASTERPLAN.md`; tooling decisions: `docs/PHONE-FARM-TOOLING.md`;
 task sheet for Yurie and Czedrick: `~/Documents/Geelark Exit Plan.xlsx`.
 
-## Hand Yurie all three planned days at once (added 2026-10-27)
+## Posts handed out days ahead (added 2026-10-27)
 
-The Smart Scheduler plans three days at a time since 2026-10-27, and the
-dashboard can file a post under the day it is due (`post_deliveries.due_at`).
-One switch is still off: the Posting Agent hands out only **today's** posts,
-because `unified_posts_due` reads today only. Until it is on, the next two
-days show on the Content Calendar but reach the To-do list on their own day.
+Since 2026-10-27 the Smart Scheduler plans three days at a time and the
+Posting Agent hands Yurie all three at once. Two gaps that come with it:
 
-**It must not go on before the dashboard change is deployed.** The live To-do
-list before that change files a post under the day it was handed out, so
-switching this on early piles all three days onto today's list.
-
-**To switch on**, once `main` with the 2026-10-27 changelog entry is live on
-Vercel: rewrite `unified_posts_due` from its live definition, replacing
-`AND up.posting_date::date = (now() AT TIME ZONE 'America/New_York'::text)::date`
-with
-`AND (up.posting_date::date = (now() AT TIME ZONE 'America/New_York'::text)::date OR (a.delivery_mode = 'manual'::text AND up.posting_date::date > (now() AT TIME ZONE 'America/New_York'::text)::date AND up.posting_date::date <= ((now() AT TIME ZONE 'America/New_York'::text)::date + 2)))`.
-Robot (Geelark) accounts keep today only, because the robot posts the moment
-it is handed a post. **Done when:** after the next 10:00 Posting Agent run,
-the To-do list's Tomorrow and In 2 days show posts, and Today shows only
-today's.
-
-Also open from the same change: a post handed out days ahead stays queued if
-its account is moved to Cloud or retired before its day. Before, that could
-only happen to a post handed out the same morning. And the reverse of the
-"never both" rule is not covered: when an Instagram account is paused after
-its copies for the next days were already handed to its Facebook twin, the
-next planning run gives the Facebook account its own posts on those days as
-well, so it can get both for up to two days. The planner does not see copies,
-because they are hand-outs, not content rows planned for that account.
+- A post handed out days ahead stays queued if its account is moved to Cloud
+  or retired before its day. Before, that could only happen to a post handed
+  out the same morning.
+- The reverse of the "never both" rule is not covered: when an Instagram
+  account is paused after its copies for the next days were already handed
+  to its Facebook twin, the next planning run gives the Facebook account its
+  own posts on those days as well, so it can get both for up to two days. The
+  planner does not see copies, because they are hand-outs, not content rows
+  planned for that account.
 
 ## Inventory does not count accounts that start posting soon (added 2026-10-19)
 

@@ -58,11 +58,12 @@ only for handing out posts, and are otherwise separate accounts.
   warned anyone. It has a working key now and checks for a run in the last
   three days rather than today.
 
-**Not switched on yet:** handing all three days to Yurie at once. That waits
-until this version of the dashboard is live, because the version live today
-would put all three days on today's list. Until then the next two days show
-on the Content Calendar and reach the To-do list on their own day. The step
-is written down in `BACKLOG.md`.
+- **Yurie is handed all three days at once.** The 10:00 Posting Agent now
+  hands out the next two days' posts too, for accounts posted by hand, so
+  they show on the To-do list under Tomorrow and In 2 days. Robot accounts
+  still get only today's. This was switched on after the dashboard change
+  above was live (PR #80), because the version before it would have put all
+  three days on today's list.
 
 **Verified:**
 - Run once by hand at 2:53 AM on 10-27, because the move to 1:00 AM meant
@@ -82,8 +83,12 @@ is written down in `BACKLOG.md`.
   post, one copy on the next day. No account had a paused Instagram and an
   unpaused Facebook that day, so the paused case has not met a real account
   yet.
+- After the switch, the 10:00 hand-out list held all 48 posts, and the
+  Posting Agent's step, run against it, gave each one its own day (16 each
+  for Oct 27, 28 and 29, none without a due time).
 - **Not yet seen:** the first 1:00 AM run on its own (10-30), and the 10:00
-  Posting Agent run handing out a Facebook post on its own (10-27).
+  Posting Agent run on 10-27 handing out the three days, Facebook included,
+  on its own.
 
 ## 2026-10-25 — A TikTok reading is matched to its post by the time it was posted (DA-06)
 
