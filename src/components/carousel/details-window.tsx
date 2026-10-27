@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Btn, compact, post, shortDate, useJson } from "@/components/carousel/kit";
 import { Bookmark, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Loader2, ThumbsDown, ThumbsUp, X } from "@/components/ui/icons";
+import { thumbUrl } from "@/lib/carousel/thumb";
 import { cn } from "@/lib/utils";
 import type { Reference, ReferenceAnalysis } from "@/server/carousel/repo/types";
 
@@ -88,7 +89,8 @@ export function DetailsWindow({ id, onClose, onChanged, startSlide = 0 }: { id: 
           <>
             <div className="relative flex shrink-0 items-center justify-center bg-bg md:w-[420px]">
               <div className="relative aspect-[4/5] w-full max-w-[360px] overflow-hidden bg-card-sunken md:my-4 md:rounded-xl">
-                {cur?.media ? <span className="block h-full w-full bg-cover bg-center" style={{ backgroundImage: `url("${cur.media}")` }} role="img" aria-label={`Slide ${slide + 1}`} /> : <div className="flex h-full items-center justify-center text-xs text-text-muted">Image gone</div>}
+                {/* A large resized copy rather than the original (2026-10-27); one slide at a time, as before. */}
+                {cur?.media ? <span className="block h-full w-full bg-cover bg-center" style={{ backgroundImage: `url("${thumbUrl(cur.media, 1080)}")` }} role="img" aria-label={`Slide ${slide + 1}`} /> : <div className="flex h-full items-center justify-center text-xs text-text-muted">Image gone</div>}
                 {slides.length > 1 && (
                   <>
                     <button type="button" aria-label="Previous slide" onClick={() => setSlide((s) => Math.max(0, s - 1))} className="absolute top-1/2 left-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white"><ChevronLeft className="size-4" /></button>
