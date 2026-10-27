@@ -1,32 +1,9 @@
--- Reports: issues AND observations, tied to accounts and posts (Garreth,
--- Czedrick and Yurie, on a call, 2026-10-27).
---
--- The floating button used to send issues only. It now sends a report of one
--- of two kinds:
---
---   issue        something is broken and someone has to fix it. Has a status
---                (open / in_progress / fixed), as before.
---   observation  something someone noticed, e.g. "this manual-warmup account
---                is doing better than the others". Not a job, so no status.
---
--- A report can name the accounts it is about, and for each account one of its
--- posts. Those live in issue_accounts, one row per account. The point is that
--- a later analysis (a person or an AI) can read what the team saw next to the
--- numbers: v_reports below is the one place to read it from.
---
--- The table keeps the name `issues` so the live site, which reads it by that
--- name, kept working while this was built. Every row before this migration is
--- an issue, which is what the default gives it.
-
 alter table public.issues
   add column if not exists kind text not null default 'issue';
 
 alter table public.issues
   add constraint issues_kind_check check (kind in ('issue', 'observation'));
 
--- An observation has no status. The default stays 'open', so an insert that
--- names no kind is an open issue, exactly as before; an observation must send
--- status null, and this check refuses one that does not.
 alter table public.issues alter column status drop not null;
 alter table public.issues
   add constraint issues_status_by_kind check ((kind = 'issue') = (status is not null));
@@ -38,11 +15,6 @@ comment on column public.issues.status is 'open / in_progress / fixed for an iss
 comment on column public.issues.reported_by is 'Signed-in email of the person who sent it.';
 comment on column public.issues.page_path is 'The dashboard page the reporter was on when they pressed the button.';
 
--- One row per account a report names. The account's Profile, handle and
--- platform are copied in at the moment of the report, so the row still reads
--- correctly if the account is later renamed or deleted (account_id then goes
--- null; the copy stays). The post is copied the same way: posts live in three
--- per-platform tables, so there is no single table to point at.
 create table if not exists public.issue_accounts (
   id bigint generated always as identity primary key,
   issue_id bigint not null references public.issues (id) on delete cascade,
@@ -68,9 +40,6 @@ alter table public.issue_accounts enable row level security;
 revoke all on public.issue_accounts from public, anon, authenticated;
 grant all on public.issue_accounts to service_role;
 
--- Every report with its accounts, newest first: what the Reports page reads,
--- and the place to start for any later analysis. security_invoker, so the
--- view is no wider than the tables under it.
 create or replace view public.v_reports with (security_invoker = true) as
 select
   i.id,

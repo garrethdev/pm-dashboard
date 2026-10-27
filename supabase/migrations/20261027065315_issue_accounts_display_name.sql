@@ -1,9 +1,3 @@
--- A Facebook account's name on the accounts a report names
--- (2026-10-27, added while building the account links). A Facebook
--- username is often a page number, and the dashboard shows those accounts by
--- accounts.display_name, so the report keeps a copy of it the same way it
--- keeps the handle.
-
 alter table public.issue_accounts add column if not exists display_name text;
 
 comment on column public.issue_accounts.display_name is
