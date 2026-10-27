@@ -93,8 +93,8 @@ export const OVERDUE_HOURS = 24;
  * The space is a non-breaking one so a phone never splits the number from its
  * unit.
  */
-export function overdueFor(createdAt: string, now: Date, daysOff: readonly number[] = []): string | null {
-  const hours = Math.floor(workingMsBetween(new Date(createdAt), now, daysOff) / 3_600_000);
+export function overdueFor(dueAt: string, now: Date, daysOff: readonly number[] = []): string | null {
+  const hours = Math.floor(workingMsBetween(new Date(dueAt), now, daysOff) / 3_600_000);
   if (hours < OVERDUE_HOURS) return null;
   return hours >= 48 ? `${Math.floor(hours / 24)}\u00a0days` : `${hours}\u00a0h`;
 }
@@ -234,6 +234,7 @@ interface RawDelivery {
   note: string | null;
   done_at: string | null;
   created_at: string;
+  due_at: string;
 }
 
 interface RawUnified {
@@ -382,14 +383,18 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
     if (!account) continue;
 
     const content = unified.get(`${row.content_type}\u0000${row.source_id}`);
-    // THE DAY A POST BELONGS TO IS THE DAY IT WAS HANDED OUT, which is what
-    // the delivery row's own `created_at` records. Not the content row's
-    // `posting_date`: that is the scheduler's plan, and a content row written
-    // months ago still carries the date it was planned for — so reading the
-    // day from there hid a post from the very list it had just been handed to.
-    // The TIME still comes from the plan, because that is the hour it should
-    // go out at.
-    const postDay = etDay(row.created_at);
+    // THE DAY A POST BELONGS TO IS THE DAY IT IS DUE, which the delivery
+    // row's own `due_at` records. Not the content row's `posting_date`: that
+    // is the scheduler's plan, and a content row written months ago still
+    // carries the date it was planned for — so reading the day from there hid
+    // a post from the very list it had just been handed to. The TIME still
+    // comes from the plan, because that is the hour it should go out at.
+    //
+    // Until 2026-10-27 this was `created_at`, the moment it was handed out,
+    // which was always the morning of its day. The scheduler now plans three
+    // days at a time and the Posting Agent hands all three out at once, so
+    // Thursday's post exists on Tuesday and has to wait for Thursday's list.
+    const postDay = etDay(row.due_at);
     const status = statusOf(row);
     const finished = status !== "todo";
 
@@ -419,7 +424,7 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
 
     // Overdue is about NOW, so only today's list says it (P12). A day stepped
     // back to is a record of that day, and a day ahead has nothing late yet.
-    const waited = !finished && dayOffset === 0 ? overdueFor(row.created_at, now, daysOff) : null;
+    const waited = !finished && dayOffset === 0 ? overdueFor(row.due_at, now, daysOff) : null;
     const lastDay =
       !finished &&
       dayOffset === 0 &&
@@ -431,7 +436,7 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
       id,
       kind: "post",
       label: content ? labelFor(row.content_type) : row.content_type,
-      due: content?.posting_time?.slice(0, 5) ?? etTime(row.created_at),
+      due: content?.posting_time?.slice(0, 5) ?? etTime(row.due_at),
       status,
       // In words, as the approved design reads ("Due yesterday", "Due 3 days
       // ago"), not the raw date the row stores.
@@ -513,7 +518,7 @@ function daysBetween(from: string, to: string): number {
  */
 async function readDeliveries(accountIds: AccountId[], from: Date): Promise<RawDelivery[]> {
   if (accountIds.length === 0) return [];
-  const cols = `id,content_type,source_id,${ACCOUNT_FK_COL},status,post_url,note,done_at,created_at`;
+  const cols = `id,content_type,source_id,${ACCOUNT_FK_COL},status,post_url,note,done_at,created_at,due_at`;
   const inList = `(${accountIds.join(",")})`;
   const [open, done] = await Promise.all([
     sbRest<RawDelivery[]>(

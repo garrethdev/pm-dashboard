@@ -155,6 +155,27 @@ export function addDays(iso: string, delta: number): string {
 }
 
 /**
+ * The Smart Scheduler's latest run in its current stretch (Garreth, 2026-10-27).
+ *
+ * It plans three days at a time, on every third night, so on the two nights in
+ * between there is no run dated today: the one that planned today can be two
+ * days old. Null when nothing ran in that time, which is also when the
+ * Missed-Run Alarm emails.
+ */
+export async function getRecentSchedulerRun(): Promise<SchedulerRun | null> {
+  const etDayOf = (ts: string) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(ts));
+  const since = addDays(etToday(), -2);
+  const runs = await sbRest<RawRun[]>(
+    "scheduler_runs?select=run_at,status,dry_run,accounts_considered,slots_planned," +
+      `rows_scheduled,shortfall_count,error_step,error_message,duration_ms` +
+      `&run_at=gte.${since}&order=run_at.desc&limit=5`,
+  );
+  const latest = runs.find((r) => etDayOf(r.run_at) >= since);
+  return latest ? toRun(latest) : null;
+}
+
+/**
  * The earliest day whose calendar can still change.
  *
  * Today is obvious — the poster runs 11:00–22:15 ET, so today's row grows all
@@ -231,9 +252,10 @@ export const getCalendarMonth = cache(async function getCalendarMonth(
           }[]
         >("calendar_month_days_fleet", { p_start: start, p_end: end, p_fleet: fleet }),
         // One row per scheduler run in the window. Runs are keyed by run_at,
-        // not by the day they scheduled FOR — the 06:30 ET cron plans that
-        // same day, so the run's own date is the right key. Not filtered by
-        // fleet: one run plans everything, so both fleets show the same run.
+        // not by the day they scheduled FOR. Since 2026-10-27 a run plans
+        // its own day and the two after it, so a day's panel shows the run
+        // made that night, and the two days after it show none. Not filtered
+        // by fleet: one run plans everything, so both fleets show the same run.
         sbRest<RawRun[]>(
           "scheduler_runs?select=run_at,status,dry_run,accounts_considered,slots_planned," +
             `rows_scheduled,shortfall_count,error_step,error_message,duration_ms` +

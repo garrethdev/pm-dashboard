@@ -37,6 +37,7 @@ vi.mock("@/lib/data/supabase", () => ({
           note: null,
           done_at: null,
           created_at: "2026-09-23T14:00:00Z",
+          due_at: "2026-09-23T14:00:00Z",
         },
       ];
     }
