@@ -73,6 +73,75 @@ Overdue, Link needed after two days, and staying on the list past three
 days. Type check, lint and all 671 tests pass. **Not yet used for real:**
 nobody has marked a real post Scheduled through the live app yet.
 
+## 2026-10-27 — The dashboard reads precomputed reports instead of recomputing them on every visit
+
+**Where it came from:** Garreth, 2026-10-27: pictures in the Carousel
+Generator were "taking a very long time to load and not loading at all".
+Measured on production that afternoon, signed in: the home page's Accounts
+and Inventory cards showed "Supabase took too long to answer", the Studio's
+library list timed out and showed no libraries, and the Postgres log showed
+statements of 11 to 30 seconds being cancelled. The database's own statistics
+named the cost: the bell's warm-up health view had been read 24,078 times
+(two hours of CPU in all), and the scheduler pool, account health and
+analytics freshness reports each took one to five seconds, on every visit,
+on a small database. The pictures themselves were never the problem; the
+lists that name them were.
+
+**What changed:** one migration,
+`supabase/migrations/20261027212402_precompute_dashboard_reads.sql`. Nine
+report views are now kept as ready-made copies that the database refreshes
+itself every five minutes, and the public views of the same names read the
+copy. The two slow report functions (analytics freshness, content type
+stats) keep their names and hand back their last refreshed result. Nothing
+in the app's code changed, because every name, column and parameter is the
+same. The scheduler's own config view and the account health review view
+stay live on purpose, so a cap or a review saved on the dashboard reads
+back at once; both are cheap once the health view beneath them is cached.
+Anything else that reads these views sees the world as of the last refresh,
+up to five minutes old. `select public.refresh_dashboard_caches()` refreshes
+everything at once if a page ever needs it sooner.
+
+**Verified:** proven first in a rolled-back block, then applied live on
+2026-10-27 at 21:24 UTC on Garreth's go-ahead. Read back through the same
+REST calls the app makes: the account health view answers in 6 ms inside
+the database (166 ms before when the database was quiet, up to 29 s when
+it was busy), the content-type stats in 16 ms (0.35 s before, up to 24 s),
+and the freshness check in 0.14 s end to end (5.4 s before). The five-minute
+refresh job is scheduled and its first run completed. Types, lint, 666 unit
+tests and the production build pass (nothing under `src/` changed). Not yet
+seen: a full day of the refresh job running, and whether the "took too
+long" cards stay away under real use.
+## 2026-10-27 — Trends cards draw small copies, one slide at a time
+
+**Where it came from:** Garreth, 2026-10-27, after the production
+measurement of what each page asks for on its first call. One page of the
+Trends feed, twenty cards, pulled 94 full-size originals from the
+reference-slides bucket before anyone had swiped: every slide of every
+carousel, as a background picture from the raw link. The Studio and the
+library grids had already been moved to resized copies on 2026-10-09; this
+grid had not.
+
+**What changed:**
+
+- **A card shows its slides as resized copies.** The swipe strip, the Saved
+  grid tiles and the Recent saves minis all go through the thumbnail helper,
+  sized for how big they are on screen (540, 400 and 80 pixels wide).
+  Supabase makes the copy once and the CDN keeps it. A link that is not one
+  of our bucket links (a TikTok picture, say) is left as it was.
+- **Only the slide that is showing is fetched.** The other slides of a
+  carousel stay empty until the person swipes to them, with the previous
+  and next buttons and the dots working as before. A slide once reached
+  keeps its picture when swiping back.
+- **The opened card** (View Details) shows a large resized copy, 1080 wide,
+  instead of the original. It already showed one slide at a time.
+- Nothing changed in the feed API or in what is stored.
+
+**Verified:** the slide-picture rule has a unit test (which slides get a
+picture, the resized link, a gone picture); types, lint, the test suite and
+the production build pass. Not yet seen live: the request count on a real
+Trends page after this change, which should be about twenty small copies
+for twenty cards instead of 94 originals.
+
 ## 2026-10-27 — Issues become Reports: observations, and the accounts and posts a report is about
 
 **Where it came from:** Garreth, Czedrick and Yurie, on a call, 2026-10-27.
