@@ -6,6 +6,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
+  ChevronDown,
   House,
   Users,
   Package,
@@ -15,6 +16,7 @@ import {
   Film,
   FlowArrow,
   ListChecks,
+  Robot,
   ChartBar,
   Sparkle,
   Gear,
@@ -77,6 +79,8 @@ const DASHBOARD_NAV: NavConfig = {
         { label: "Devices", href: "/devices", icon: Smartphone, isActive: under("/devices"), fleet: "physical" },
         // Recorded posting sessions (PF-26). Real phones, reviewers only.
         { label: "Sessions", href: "/sessions", icon: Film, isActive: under("/sessions"), fleet: "physical", reviewerOnly: true },
+        // The warmup robot at a glance (Garreth, 2026-10-28). Real phones, everyone.
+        { label: "Warmups", href: "/warmups", icon: Robot, isActive: under("/warmups"), fleet: "physical" },
         { label: "Automation", href: "/automation", icon: FlowArrow, isActive: under("/automation") },
         { label: "Analytics", href: "/analytics", icon: ChartBar, isActive: under("/analytics") },
       ],
@@ -148,6 +152,44 @@ function GroupLabel({ children, collapsed }: { children: React.ReactNode; collap
     </div>
   );
 }
+
+/**
+ * A group name that folds its rows away (Garreth, 2026-10-28: the menu had
+ * grown long enough to need it). Same type as the plain label, so an open menu
+ * looks exactly as it did; the caret is the only addition.
+ */
+function FoldLabel({
+  children,
+  open,
+  controls,
+  onToggle,
+}: {
+  children: React.ReactNode;
+  open: boolean;
+  controls: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-controls={controls}
+      className="group/fold flex w-full items-center justify-between px-3 pt-6 pb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted transition-colors hover:text-text-primary"
+    >
+      {children}
+      <ChevronDown
+        className={cn(
+          "size-3 opacity-60 transition-transform duration-200 group-hover/fold:opacity-100 motion-reduce:transition-none",
+          !open && "-rotate-90",
+        )}
+      />
+    </button>
+  );
+}
+
+/** The folded groups, by label. Stored per browser, like the rail's collapse. */
+const FOLDED_KEY = "pm-nav-folded";
 
 /**
  * A nav row. The active state is deliberately NOT branded: it is a raised glass
@@ -222,6 +264,23 @@ export function Sidebar({
   const pathname = usePathname();
   const { open, setOpen } = useMobileNav();
   const [collapsedPref, setCollapsedPref] = useState(false);
+  const [folded, setFolded] = useState<string[]>([]);
+  // Folding only means something when there is another group to keep. The
+  // Carousel Generator's menu is one group, so its label stays a label.
+  const foldable = groups.length > 1;
+  const activeGroup = groups.find((g) => g.items.some((i) => i.isActive(pathname)))?.label;
+
+  // The page you are on is never folded away. Arriving at a page inside a
+  // folded group (a link on another page, the back button) opens the group.
+  // Adjusted during render rather than in an effect, so the folded frame is
+  // never drawn.
+  const [seenPath, setSeenPath] = useState(pathname);
+  if (seenPath !== pathname) {
+    setSeenPath(pathname);
+    if (activeGroup && folded.includes(activeGroup)) {
+      setFolded(folded.filter((l) => l !== activeGroup));
+    }
+  }
   // Assumed true for the server render. Below `md:` the drawer is translated
   // off-screen whatever this says, so a phone never sees the guess; above it,
   // the guess is simply right.
@@ -248,21 +307,31 @@ export function Sidebar({
     const list = listRef.current;
     const pill = pillRef.current;
     if (!list || !pill) return;
-    const row = list.querySelector<HTMLElement>("[data-active]");
-    if (!row) {
-      pill.style.opacity = "0";
-      return;
-    }
-    // No transition on the very first placement, or it slides in from the top.
-    if (pill.style.opacity !== "1") pill.style.transition = "none";
-    pill.style.opacity = "1";
-    pill.style.height = `${row.offsetHeight}px`;
-    pill.style.transform = `translateY(${row.offsetTop}px)`;
-    if (pill.style.transition === "none") {
-      void pill.offsetHeight;
-      pill.style.transition = "";
-    }
-  }, [pathname, collapsed]);
+    const place = () => {
+      const row = list.querySelector<HTMLElement>("[data-active]");
+      // A row inside a folded group is still in the DOM, just clipped to
+      // nothing; a pill drawn at its offset would sit over the next label.
+      if (!row || row.closest("[data-folded]")) {
+        pill.style.opacity = "0";
+        return;
+      }
+      // No transition on the very first placement, or it slides in from the top.
+      if (pill.style.opacity !== "1") pill.style.transition = "none";
+      pill.style.opacity = "1";
+      pill.style.height = `${row.offsetHeight}px`;
+      pill.style.transform = `translateY(${row.offsetTop}px)`;
+      if (pill.style.transition === "none") {
+        void pill.offsetHeight;
+        pill.style.transition = "";
+      }
+    };
+    place();
+    // A group folding above the active row moves it while the fold animates,
+    // so the pill follows the list's size rather than only the pathname.
+    const observer = new ResizeObserver(place);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [pathname, collapsed, folded]);
 
   useEffect(() => {
     try {
@@ -271,8 +340,26 @@ export function Sidebar({
       // Rendering expanded and correcting is the only order available.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCollapsedPref(localStorage.getItem("pm-sidebar") === "collapsed");
+      const stored: unknown = JSON.parse(localStorage.getItem(FOLDED_KEY) ?? "[]");
+      if (Array.isArray(stored)) {
+        setFolded(stored.filter((l): l is string => typeof l === "string" && l !== activeGroup));
+      }
     } catch {}
+    // Read once, on arrival; later navigation is handled during render above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Saved here, on the click, and nowhere else: an effect that saved on
+   *  every change would also save the empty list the first render starts
+   *  with, over the top of the one it is about to read. Opening a group by
+   *  arriving at one of its pages is not saved — it is not a choice. */
+  const toggleGroup = (label: string) => {
+    const next = folded.includes(label) ? folded.filter((l) => l !== label) : [...folded, label];
+    setFolded(next);
+    try {
+      localStorage.setItem(FOLDED_KEY, JSON.stringify(next));
+    } catch {}
+  };
 
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 768px)");
@@ -430,24 +517,49 @@ export function Sidebar({
             aria-hidden
             className="glass pointer-events-none absolute inset-x-0 top-0 rounded-nested opacity-0 transition-[transform,height,opacity] duration-300 ease-out"
           />
-          {groups.map((group) => (
-            <Fragment key={group.label}>
-              <GroupLabel collapsed={collapsed}>{group.label}</GroupLabel>
-              <div className="flex flex-col gap-0.5">
-                {group.items.map((item) => (
-                  <NavItem
-                    key={item.href}
-                    href={item.href}
-                    label={item.label}
-                    icon={item.icon}
-                    collapsed={collapsed}
-                    onNavigate={() => setOpen(false)}
-                    active={item.isActive(pathname)}
-                  />
-                ))}
-              </div>
-            </Fragment>
-          ))}
+          {groups.map((group) => {
+            // The icon-only rail never folds: it is already as short as the
+            // menu gets, and an icon you cannot see is a page you cannot find.
+            const isOpen = collapsed || !foldable || !folded.includes(group.label);
+            const id = `nav-group-${group.label.toLowerCase().replace(/\W+/g, "-")}`;
+            return (
+              <Fragment key={group.label}>
+                {foldable && !collapsed ? (
+                  <FoldLabel open={isOpen} controls={id} onToggle={() => toggleGroup(group.label)}>
+                    {group.label}
+                  </FoldLabel>
+                ) : (
+                  <GroupLabel collapsed={collapsed}>{group.label}</GroupLabel>
+                )}
+                {/* Folds by animating the grid row from its content height to
+                    zero, the one way to animate to and from `auto`. `inert`
+                    takes the hidden rows out of the tab order. */}
+                <div
+                  id={id}
+                  data-folded={isOpen ? undefined : true}
+                  inert={!isOpen}
+                  className={cn(
+                    "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+                    isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                  )}
+                >
+                  <div className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
+                    {group.items.map((item) => (
+                      <NavItem
+                        key={item.href}
+                        href={item.href}
+                        label={item.label}
+                        icon={item.icon}
+                        collapsed={collapsed}
+                        onNavigate={() => setOpen(false)}
+                        active={item.isActive(pathname)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </Fragment>
+            );
+          })}
         </div>
 
         <div className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">

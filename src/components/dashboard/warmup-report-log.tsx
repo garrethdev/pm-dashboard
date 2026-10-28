@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { CtaButton } from "@/components/ui/cta-button";
-import { Copy, Download, Loader2, Robot, X } from "@/components/ui/icons";
+import { Copy, Download, Loader2, Robot, ShieldAlert, Sparkle, X } from "@/components/ui/icons";
 import { StatusPill } from "@/components/ui/pill";
 import { formatEtDate, formatEtShort } from "@/lib/data/format";
 import {
@@ -15,6 +15,7 @@ import {
   type DiaryLevel,
 } from "@/lib/data/warmup-report-format";
 import type { WarmupReport, WarmupReportDiary } from "@/lib/data/warmup-reports";
+import { CAUSE_LABEL, type WarmupReview } from "@/lib/data/warmup-review-shape";
 import { cn } from "@/lib/utils";
 
 /**
@@ -115,10 +116,70 @@ type Loaded =
   | { state: "error"; message: string }
   | { state: "ready"; diary: WarmupReportDiary };
 
-/** One warmup's diary: its lines, the stop screenshot, and the two buttons. */
-function WarmupDiarySheet({ report, onClose }: { report: WarmupReport; onClose: () => void }) {
+type Analysis =
+  | { state: "idle" }
+  | { state: "working" }
+  | { state: "error"; message: string };
+
+/**
+ * One warmup's diary: Claude's read when there is one, the stop screenshot,
+ * the lines, and the buttons. Shared by the account page and the Warmups page;
+ * `analyzeOnOpen` is the Warmups page's one-click Analyze, which opens the
+ * diary and asks for the read in the same press.
+ */
+export function WarmupDiarySheet({
+  report,
+  onClose,
+  analyzeOnOpen = false,
+  onReviewed,
+}: {
+  report: WarmupReport;
+  onClose: () => void;
+  analyzeOnOpen?: boolean;
+  /** Told when a fresh read has been saved, so a list can show it. */
+  onReviewed?: (reportId: string, review: WarmupReview) => void;
+}) {
   const [loaded, setLoaded] = useState<Loaded>({ state: "loading" });
   const [copied, setCopied] = useState<"idle" | "copied" | "failed">("idle");
+  const [analysis, setAnalysis] = useState<Analysis>(analyzeOnOpen ? { state: "working" } : { state: "idle" });
+  const [fresh, setFresh] = useState<{ review: WarmupReview; at: string } | null>(null);
+
+  const asked = useRef(false);
+
+  /** The call itself. `analyze` is the button: it shows the work first. */
+  async function request() {
+    try {
+      const res = await fetch(`/api/warmup-reports/${report.id}/review`, { method: "POST" });
+      const body = (await res.json().catch(() => null)) as
+        | { review?: WarmupReview; reviewedAt?: string; error?: string }
+        | null;
+      if (!res.ok || !body?.review) {
+        setAnalysis({ state: "error", message: body?.error ?? `The analysis failed (HTTP ${res.status}).` });
+        return;
+      }
+      setFresh({ review: body.review, at: body.reviewedAt ?? new Date().toISOString() });
+      setAnalysis({ state: "idle" });
+      onReviewed?.(report.id, body.review);
+    } catch {
+      setAnalysis({ state: "error", message: "Couldn't reach the server." });
+    }
+  }
+
+  function analyze() {
+    setAnalysis({ state: "working" });
+    void request();
+  }
+
+  // The one-click Analyze. Started here rather than by the caller so the
+  // window is already open, showing the work, while the read is made. The
+  // ref stops a second paid read when React runs this twice in development.
+  useEffect(() => {
+    if (!analyzeOnOpen || asked.current) return;
+    asked.current = true;
+    void request();
+    // Once, on opening.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -152,6 +213,7 @@ function WarmupDiarySheet({ report, onClose }: { report: WarmupReport; onClose: 
   }, [onClose]);
 
   const diary = loaded.state === "ready" ? loaded.diary : null;
+  const shownReview = fresh ?? (diary?.review && diary.reviewedAt ? { review: diary.review, at: diary.reviewedAt } : null);
   const lines = useMemo(() => (diary?.log ? diaryLines(diary.log) : []), [diary]);
 
   async function copy() {
@@ -220,6 +282,18 @@ function WarmupDiarySheet({ report, onClose }: { report: WarmupReport; onClose: 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5 sm:p-6">
           <p className="text-xs text-text-muted">{countsLine(report.counts)}</p>
 
+          {analysis.state === "working" && (
+            <p className="flex items-center gap-2 rounded-nested border border-border bg-card-raised px-4 py-3 text-sm text-text-muted">
+              <Loader2 className="size-4 animate-spin" /> Claude is reading this warmup…
+            </p>
+          )}
+          {analysis.state === "error" && (
+            <p role="alert" className="rounded-nested bg-danger/10 px-3 py-2 text-sm text-danger">
+              {analysis.message}
+            </p>
+          )}
+          {shownReview && analysis.state !== "working" && <ReviewPanel review={shownReview.review} at={shownReview.at} />}
+
           {loaded.state === "loading" && (
             <p className="flex items-center gap-2 text-sm text-text-muted">
               <Loader2 className="size-4 animate-spin" /> Reading the diary…
@@ -284,13 +358,57 @@ function WarmupDiarySheet({ report, onClose }: { report: WarmupReport; onClose: 
           >
             <Download className="size-4" /> Download
           </button>
-          <CtaButton onClick={() => void copy()} disabled={!diary}>
+          <button
+            onClick={() => void copy()}
+            disabled={!diary}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-sm font-medium text-text-muted hover:text-text-primary disabled:opacity-50"
+          >
+            <Copy className="size-4" /> Copy for Claude
+          </button>
+          <CtaButton onClick={analyze} disabled={!diary || analysis.state === "working"}>
             <span className="inline-flex items-center gap-1.5">
-              <Copy className="size-4" /> Copy for Claude
+              <Sparkle className="size-4" /> {shownReview ? "Analyze again" : "Analyze"}
             </span>
           </CtaButton>
         </div>
       </div>
     </div>
+  );
+}
+
+/** Claude's read, above the diary it was made from. */
+function ReviewPanel({ review, at }: { review: WarmupReview; at: string }) {
+  return (
+    <section className="flex flex-col gap-3 rounded-nested border border-border bg-card-raised p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Sparkle className="size-4 text-accent" />
+        <span className="text-sm font-semibold">{CAUSE_LABEL[review.cause]}</span>
+        {review.accountRisk && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-danger/15 px-2 py-0.5 text-xs font-medium text-danger">
+            <ShieldAlert className="size-3.5" /> Account at risk
+          </span>
+        )}
+        <span className="tnum ml-auto text-xs text-text-muted">
+          {formatEtDate(at)} {formatEtShort(at)}
+        </span>
+      </div>
+      <p className="text-sm leading-6">{review.summary}</p>
+      {review.nextStep && (
+        <p className="rounded-nested border border-border bg-card px-3 py-2 text-sm">
+          <span className="font-medium">Next: </span>
+          {review.nextStep}
+        </p>
+      )}
+      {review.moments.length > 0 && (
+        <ol className="flex flex-col gap-1.5 text-xs">
+          {review.moments.map((m, i) => (
+            <li key={i} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2">
+              <span className="tnum text-text-muted">{m.time ?? ""}</span>
+              <span>{m.note}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }

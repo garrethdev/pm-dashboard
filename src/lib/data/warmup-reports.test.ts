@@ -212,6 +212,8 @@ describe("how a report reads", () => {
     username: "maya_journey8",
     profile: "Profile 8",
     deviceName: "iPhone 25",
+    reviewedAt: null,
+    review: null,
   };
 
   it("writes the counts the way the Geelark log reads", () => {

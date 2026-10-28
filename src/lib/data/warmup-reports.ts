@@ -19,6 +19,7 @@
 import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, type AccountId } from "@/lib/data/account-id";
 import { sbFetch } from "@/lib/data/warmup-sessions";
 import { RunnerError, type RunKey } from "@/lib/data/warmup-runs";
+import { parseWarmupReview, type WarmupReview } from "@/lib/data/warmup-review-shape";
 
 /** The diary's limit, in characters (the warmup-runner contract). */
 export const REPORT_LOG_MAX_CHARS = 1_000_000;
@@ -78,9 +79,12 @@ export interface WarmupReportDiary extends WarmupReport {
   profile: string | null;
   deviceName: string | null;
   log: string | null;
+  /** Claude's read, when someone has asked for one (the Warmups page). */
+  reviewedAt: string | null;
+  review: WarmupReview | null;
 }
 
-interface RawReport {
+export interface RawReport {
   id: string;
   account_id: AccountId;
   device_id: string;
@@ -103,12 +107,12 @@ interface RawReport {
 }
 
 /** Never `log` or `screenshot`: those are read one report at a time. */
-const LIST_COLS =
+export const LIST_COLS =
   `id:id::text,${ACCOUNT_FK_COL},device_id:device_id::text,session_no,started_at,ended_at,` +
   "outcome,note,minutes,videos,posts,claude_checks,on_topic,likes,saves,follows," +
   "has_log,has_screenshot,cleared_at";
 
-function toReport(r: RawReport): WarmupReport {
+export function toReport(r: RawReport): WarmupReport {
   return {
     id: r.id,
     accountId: r.account_id,
@@ -278,11 +282,13 @@ export async function getWarmupReportDiary(id: string): Promise<WarmupReportDiar
   const rows = await readJson<
     (RawReport & {
       log: string | null;
+      reviewed_at: string | null;
+      review: unknown;
       account: { username: string | null; geelark_profile: string | null } | null;
       device: { name: string | null } | null;
     })[]
   >(
-    `warmup_reports?select=${LIST_COLS},log,` +
+    `warmup_reports?select=${LIST_COLS},log,reviewed_at,review,` +
       "account:accounts(username,geelark_profile),device:devices(name)" +
       `&id=eq.${id}`,
     "the warmup report",
@@ -295,7 +301,30 @@ export async function getWarmupReportDiary(id: string): Promise<WarmupReportDiar
     profile: r.account?.geelark_profile ?? null,
     deviceName: r.device?.name ?? null,
     log: r.log,
+    reviewedAt: r.reviewed_at,
+    review: parseWarmupReview(r.review),
   };
+}
+
+/** Keep Claude's read on the report. Asking again replaces the last one. */
+export async function saveWarmupReview(
+  id: string,
+  input: { model: string; review: WarmupReview; by: string },
+): Promise<string> {
+  const reviewedAt = new Date().toISOString();
+  const res = await sbFetch(`warmup_reports?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({
+      reviewed_at: reviewedAt,
+      reviewed_by: input.by,
+      review_model: input.model,
+      review_summary: input.review.summary,
+      review: input.review,
+    }),
+  });
+  if (!res.ok) throw new Error(`Saving the analysis failed (HTTP ${res.status})`);
+  return reviewedAt;
 }
 
 /** One report's stop screenshot as PNG bytes, or null when there is none. */

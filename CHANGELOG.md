@@ -20,6 +20,102 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-28 — Analyze a warmup with Claude in one press
+
+**Where it came from:** Garreth, 2026-10-28, with the Warmups page below: "one
+click analyze with AI what happened on the warmup or paste it in Claude
+Orca". He asked for it to work like the review on recorded Sessions, and for
+Copy for Claude to stay.
+
+**What changed:** every warmup's diary window now has an **Analyze** button.
+Claude is sent the warmup's summary, its whole diary and the picture of the
+screen when it stopped. It answers in plain words: what happened, where the
+problem is (the phone, the app, the robot or the account), whether the app
+showed anything that puts the account at risk, and what to do next. The
+answer shows at the top of the window. On the Warmups page each account that
+needs a look has its own Analyze button, which opens the window and starts
+the read in the same press. Once an account has been analyzed, its card shows
+the first line of the answer.
+
+The answer is saved with the warmup, so it is not paid for twice and it
+outlives the diary, which is still cleared after 30 days. Pressing **Analyze
+again** replaces it. **Copy for Claude** and **Download** are unchanged, and
+because the account page uses the same window, Analyze is there too. It uses
+the same OpenRouter key and Claude model as the Sessions review. Expect a few
+cents per press.
+
+A small database change came with it: five new empty columns on the warmup
+reports to hold the answer (`warmup_report_review`, applied 2026-10-28 on
+Garreth's go-ahead).
+
+**Verified:** pressed once on a real stopped warmup (Iphone 1, `device_lost`,
+2026-10-28). The answer came back in 10 seconds and was right: the robot
+could not start the phone's control software, and it was the phone's third
+failure in a row. The migration was read back: its recorded checksum matches
+the file.
+
+## 2026-10-28 — A Warmups page for the warmup robot
+
+**Where it came from:** Garreth, 2026-10-28: a dashboard-like page for the
+automated warmups, so an account whose warmups keep failing is easy to spot.
+Designed after the Carousel Generator's Overview page at his request:
+pictures over words.
+
+**What changed:** **Warmups** is a new page in the Pipeline menu, on the
+Physical side only (the robot works real phones). Everyone signed in can see
+it. From top to bottom:
+
+- **Four numbers:** warmups finished today, stopped today, running right now,
+  and the share that finished over the last 7 days (with a green/red ring).
+- **Needs a look:** every account whose most recent warmup stopped, most
+  stops first. Each card shows why, as a short plain label ("Phone
+  disconnected", "Wrong account", "Lost its place" and so on), which phone,
+  how long ago, and how many times it stopped this week. The first six show;
+  "Show all" opens the rest. Clicking a card opens that warmup's diary. Pills
+  beside the section's title filter the cards by phone (All, Iphone 1,
+  Iphone 3…), added the same day at Garreth's request. They carry no counts,
+  also at his request. On a phone screen they sit on their own row under the
+  title. Only phones with an account to look at get a pill, and the pills
+  are hidden when there is only one phone.
+- **Running now:** warmups in progress, from the robot's once-a-minute
+  check-in.
+- **Last 14 days:** a bar per day, finished in green under stopped in red.
+- **Why they stop:** the last 7 days' stops counted by reason.
+- **Accounts:** every account the robot works, as a strip of squares, two a
+  day (warmup 1 and 2) for 14 days: green finished, red stopped, cyan
+  running, grey nothing. Any square opens that warmup's diary. The account's
+  name opens its account page.
+
+Facebook accounts are shown by the name on the profile rather than the page
+number Facebook uses as a username. The page reads itself again every minute
+while it is open.
+
+**Verified:** in headless Chrome against the live data, in dark and light.
+On 2026-10-28 it showed 13 accounts needing a look and a 43% finish rate over
+the week; "Lost its place" (31) and "Phone disconnected" (15) were the top
+reasons. Not yet looked at in Safari or on a phone.
+
+## 2026-10-28 — The Pipeline and Content menus fold away
+
+**Where it came from:** Garreth, 2026-10-28. The left-hand menu had grown long
+enough to need it, and a Warmups page is about to make it longer.
+
+**What changed:** click **Pipeline** or **Content** in the left-hand menu and
+the group folds up to just its name; click again to open it. A small arrow
+beside each name shows which way it is. The choice is remembered on that
+computer, the same way the sidebar's own collapse button is.
+
+The page you are on is never hidden. Arriving at a page inside a folded group
+(from a link on another page, say) opens that group. This is not saved as a
+choice, so the group folds again the next time the app is opened elsewhere.
+The narrow, icons-only sidebar does not fold: it is already as short as the
+menu gets. The Carousel Generator's menu has only one group, so nothing in it
+folds.
+
+**Verified:** in headless Chrome against the running app, in dark and light.
+Checked folded, open, clicking to fold, folding the group of the page you are
+on, and the narrow sidebar. Not yet looked at in Safari.
+
 ## 2026-10-28 — A post can be marked Scheduled, so posts scheduled on time stop showing as Overdue
 
 **Where it came from:** Garreth, 2026-10-28. Yurie often schedules posts
