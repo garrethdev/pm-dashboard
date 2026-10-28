@@ -24,6 +24,8 @@
  * overrides it.
  */
 
+import { createHash } from "node:crypto";
+
 export const DEFAULT_MODEL = "anthropic/claude-haiku-5.5";
 export type Platform = "tiktok" | "instagram" | "facebook";
 export type ReadBy = "manual" | "robot";
@@ -469,15 +471,48 @@ export async function uploadScreens(group: ScreenGroup, readAt = new Date()): Pr
   return paths;
 }
 
-/** Inserts the reading and returns its id. */
-export async function insertReading(row: ReadingRow): Promise<number> {
+/**
+ * One post's screenshots as a fingerprint, so the same hand-off sent twice
+ * stores one row (fourth sitting, 2026-10-27: the robot gave up waiting after
+ * 10 s and sent its 12 Instagram posts four times, 48 rows). The paths carry
+ * the account, the day and the order, so two different readings never share
+ * one. Null when there are no screenshots: nothing to tell sends apart by.
+ */
+export function screensKey(platform: Platform, account: string, screenshots: string[]): string | null {
+  if (screenshots.length === 0) return null;
+  return createHash("sha256").update([platform, account, ...screenshots].join("\n")).digest("hex");
+}
+
+/** The id of the reading already stored for these screenshots, or null. */
+export async function readingByScreens(screens: string): Promise<number | null> {
+  const key = serviceKey();
+  const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/post_screen_readings?select=id&screens_key=eq.${screens}&limit=1`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`supabase HTTP ${res.status} looking up the reading`);
+  const [found] = (await res.json()) as { id: number }[];
+  return found?.id ?? null;
+}
+
+/**
+ * Inserts the reading and returns its id. With `screens`, a reading already
+ * stored under the same fingerprint wins and its id comes back instead: two
+ * sends of one hand-off can be read side by side, and the table's unique
+ * index lets only one in.
+ */
+export async function insertReading(row: ReadingRow, screens: string | null = null): Promise<number> {
   const key = serviceKey();
   const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/post_screen_readings?select=id`, {
     method: "POST",
     headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "return=representation" },
-    body: JSON.stringify(row),
+    body: JSON.stringify(screens ? { ...row, screens_key: screens } : row),
     signal: AbortSignal.timeout(20_000),
   });
+  if (res.status === 409 && screens) {
+    const existing = await readingByScreens(screens);
+    if (existing !== null) return existing;
+  }
   if (!res.ok) throw new Error(`supabase HTTP ${res.status} inserting the reading: ${(await res.text().catch(() => "")).slice(0, 200)}`);
   const [inserted] = (await res.json()) as { id: number }[];
   return inserted.id;
@@ -772,6 +807,8 @@ export interface RunReport {
   problems: number;
   /** Posts not reached inside the time budget; send them again. */
   unread: number;
+  /** Posts an earlier send of the same hand-off had already stored; not read or stored again. */
+  already: number;
   aiCalls: number;
   costUsd: number;
   posts: {
@@ -797,7 +834,7 @@ const RUN_TIME_BUDGET_MS = 240_000;
 export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?: string } = {}): Promise<RunReport> {
   const dry = opts.dry ?? false;
   const started = Date.now();
-  const report: RunReport = { dry, read: 0, stored: 0, problems: 0, unread: 0, aiCalls: 0, costUsd: 0, posts: [] };
+  const report: RunReport = { dry, read: 0, stored: 0, problems: 0, unread: 0, already: 0, aiCalls: 0, costUsd: 0, posts: [] };
   const pools = new Map<string, PostCandidate[]>();
 
   for (const post of req.posts) {
@@ -809,6 +846,16 @@ export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?
     const entry: RunReport["posts"][number] = { platform: post.platform, account: post.account, caption: post.caption ?? null, matched: post.post_url ?? null, reading: null, screens: post.screenshots.length, problem: post.problem ?? null };
     report.posts.push(entry);
     try {
+      // Sent before (the robot tries again when an answer is slow): point at
+      // that row and spend no AI call on it.
+      const screens = screensKey(post.platform, post.account, post.screenshots);
+      const earlier = !dry && screens ? await readingByScreens(screens) : null;
+      if (earlier !== null) {
+        entry.reading = earlier;
+        report.already += 1;
+        continue;
+      }
+
       // Which stored post this is.
       let match: PostCandidate | null = null;
       if (!post.post_url) {
@@ -849,7 +896,7 @@ export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?
         if (!group.postUrl) row.notes = [row.notes, "no matching post in the performance table"].filter(Boolean).join(" ");
       }
       if (!dry) {
-        entry.reading = await insertReading(row);
+        entry.reading = await insertReading(row, screens);
         report.stored += 1;
       }
     } catch (err) {
