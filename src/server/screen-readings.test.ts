@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, pickPost, pickPostByTime, promptFor, screenClock, rateSignalsOrNull, storagePath, toRow } from "./screen-readings";
+import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, pickPost, pickPostByTime, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
 
 const group = { platform: "instagram" as const, account: "trina_triumphs", postUrl: "https://www.instagram.com/p/x/", format: "carousel" };
 
@@ -116,6 +116,22 @@ describe("promptFor / storagePath", () => {
   it("files screenshots under platform, account and day, numbered in order", () => {
     expect(storagePath({ platform: "tiktok", account: "glow.with.becky" }, new Date("2026-10-23T12:00:00Z"), 0, "WhatsApp Image 2026-10-23 at 3.32.04 AM.jpeg"))
       .toBe("tiktok/glow.with.becky/2026-10-23/01-WhatsApp_Image_2026-10-23_at_3.32.04_AM.jpeg");
+  });
+});
+
+describe("screensKey", () => {
+  const shots = ["instagram/hey.imani.vaughn/2026-10-27/01-overview.png", "instagram/hey.imani.vaughn/2026-10-27/02-engagement.png"];
+  it("gives the same send the same key, so a resend stores no second row", () => {
+    expect(screensKey("instagram", "hey.imani.vaughn", shots)).toBe(screensKey("instagram", "hey.imani.vaughn", [...shots]));
+  });
+  it("tells different screenshots, order and accounts apart", () => {
+    const key = screensKey("instagram", "hey.imani.vaughn", shots);
+    expect(screensKey("instagram", "hey.imani.vaughn", [shots[0]])).not.toBe(key);
+    expect(screensKey("instagram", "hey.imani.vaughn", [shots[1], shots[0]])).not.toBe(key);
+    expect(screensKey("facebook", "Imani Vaughn", shots)).not.toBe(key);
+  });
+  it("is null with no screenshots", () => {
+    expect(screensKey("tiktok", "glow.with.becky", [])).toBeNull();
   });
 });
 
