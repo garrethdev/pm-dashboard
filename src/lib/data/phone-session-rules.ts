@@ -70,7 +70,9 @@ export function matchDelivery<T extends DoneDelivery>(session: SessionSpan, deli
   let best: T | null = null;
   let bestGap = Number.POSITIVE_INFINITY;
   for (const d of deliveries) {
-    if (d.status !== "posted" || !sessionCovers(session, d)) continue;
+    // Scheduling a post inside the platform is the same work on the phone as
+    // posting it, so a session that did it is matched to it (2026-10-28).
+    if ((d.status !== "posted" && d.status !== "scheduled") || !sessionCovers(session, d)) continue;
     const gap = Math.abs(ms(d.doneAt!) - end);
     if (gap < bestGap) {
       best = d;

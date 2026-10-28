@@ -342,7 +342,7 @@ export async function completeSession(sessionId: number): Promise<CompleteResult
   const since = new Date(Date.parse(session.startedAt) - MATCH_BEFORE_MS).toISOString();
   let matched: PostDelivery | null = null;
   try {
-    const candidates = (await getPostedDeliveries({ since, limit: 100 })).filter((d) => d.deviceId === session.deviceId);
+    const candidates = (await getPostedDeliveries({ since, limit: 100, withScheduled: true })).filter((d) => d.deviceId === session.deviceId);
     matched = matchDelivery(session, candidates);
   } catch (err) {
     // The frames are safe either way; a match can be made on the next read.

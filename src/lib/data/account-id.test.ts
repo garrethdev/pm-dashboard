@@ -25,7 +25,7 @@ vi.mock("@/lib/data/supabase", () => ({
         },
       ];
     }
-    if (path.startsWith("post_deliveries?") && path.includes("status=eq.queued")) {
+    if (path.startsWith("post_deliveries?") && path.includes("status=in.(queued,scheduled)")) {
       return [
         {
           id: 1,
