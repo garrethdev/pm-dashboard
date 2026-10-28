@@ -97,6 +97,11 @@ import {
   Trash as PhTrash,
   Upload as PhUpload,
   NotePencil as PhNotePencil,
+  Compass as PhCompass,
+  Hourglass as PhHourglass,
+  Power as PhPower,
+  UserSwitch as PhUserSwitch,
+  ChatCircleDots as PhChatCircleDots,
 } from "@phosphor-icons/react/ssr";
 import type { Icon as PhIcon, IconWeight } from "@phosphor-icons/react/lib";
 
@@ -276,3 +281,11 @@ export const MagnifyingGlass = icon(PhMagnifyingGlass, "MagnifyingGlass", "bold"
  * in the bottom-right corner (Garreth, 2026-10-09). The button itself is the
  * Flag above. */
 export const NotePencil = icon(PhNotePencil, "NotePencil");
+
+/* Warmups page (Garreth, 2026-10-28): what each kind of stopped warmup is
+ * drawn with. */
+export const Compass = icon(PhCompass, "Compass");
+export const Hourglass = icon(PhHourglass, "Hourglass");
+export const Power = icon(PhPower, "Power");
+export const UserSwitch = icon(PhUserSwitch, "UserSwitch");
+export const ChatCircleDots = icon(PhChatCircleDots, "ChatCircleDots");

@@ -39,7 +39,7 @@ export class RunnerError extends Error {
  * just moved onto a phone stays paused while it is being warmed. Pausing stops
  * posts, not warmups.
  */
-const ELIGIBLE =
+export const ELIGIBLE =
   "is_active=eq.true&delivery_mode=eq.manual&warmup_mode=eq.script" +
   "&device_id=not.is.null&banned_at=is.null";
 
