@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
  */
 const HAND_STATUS: Record<HandDelivery, { label: string; tone: PillTone; title?: string }> = {
   queued: { label: "To post", tone: "info", title: "On the To-do list, not posted yet" },
+  scheduled: { label: "Scheduled", tone: "info", title: "Scheduled on the platform, link not added yet" },
   postedNoLink: { label: "Link needed", tone: "warn", title: "Posted, but its link has not been added" },
   posted: { label: "Posted", tone: "ok" },
   failed: { label: "Failed", tone: "danger", title: "Marked failed on the To-do list" },

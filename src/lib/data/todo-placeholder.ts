@@ -28,8 +28,12 @@ export type TodoItemKind = "post" | "warmup";
  * glance: a post can be marked done before its link is pasted, and the link is
  * the thing that closes the long-open attribution gap, so an item still owing
  * one is not finished.
+ *
+ * `scheduled` is a post set to go out later inside the platform itself
+ * (Garreth, 2026-10-28): done on time, so never Overdue, and not finished
+ * either, because its link is still to come.
  */
-export type TodoItemStatus = "todo" | "posted" | "postedNoLink" | "logged" | "failed" | "skipped";
+export type TodoItemStatus = "todo" | "scheduled" | "posted" | "postedNoLink" | "logged" | "failed" | "skipped";
 
 export type TodoItem = {
   id: string;

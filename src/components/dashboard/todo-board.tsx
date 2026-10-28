@@ -308,6 +308,9 @@ export function TodoCheck({
 }) {
   const done = isItemFinished(item);
   const partial = item.status === "postedNoLink";
+  // Done on Yurie's side, live later: half a tick, in the Scheduled pill's
+  // own blue rather than the yellow that means a link is owed.
+  const scheduled = item.status === "scheduled";
 
   // The script's own work. It is shown, but nobody ticks it off by hand.
   if (item.automated) {
@@ -336,7 +339,7 @@ export function TodoCheck({
     <button
       onClick={onOpen}
       role="checkbox"
-      aria-checked={done ? "true" : partial ? "mixed" : "false"}
+      aria-checked={done ? "true" : partial || scheduled ? "mixed" : "false"}
       aria-label={`${item.label}, ${item.due}`}
       className={cn(
         // 44px hit area around a 22px box: a thumb target that does not look
@@ -355,11 +358,19 @@ export function TodoCheck({
             ? "border-accent bg-accent/15 text-accent"
             : partial
               ? "border-pill-yellow bg-pill-yellow/15 text-pill-yellow"
-              : "border-border text-transparent group-hover:border-text-muted",
+              : scheduled
+                ? "border-info bg-info/15 text-info"
+                : "border-border text-transparent group-hover:border-text-muted",
         )}
       >
-        {partial ? (
-          <span className={cn("block rounded-[3px] bg-pill-yellow", compact ? "size-2" : "size-2.5")} />
+        {partial || scheduled ? (
+          <span
+            className={cn(
+              "block rounded-[3px]",
+              partial ? "bg-pill-yellow" : "bg-info",
+              compact ? "size-2" : "size-2.5",
+            )}
+          />
         ) : (
           <Check className={compact ? "size-3" : "size-3.5"} />
         )}
@@ -400,9 +411,12 @@ export function TodoLogSheet({
 }) {
   const { item, handle } = target;
   const isPost = item.kind === "post";
-  const alreadyDone = isItemFinished(item) || item.status === "failed";
+  const alreadyDone = isItemFinished(item) || item.status === "failed" || item.status === "scheduled";
 
-  const [outcome, setOutcome] = useState<"done" | "failed">(
+  // Scheduled is offered only on a post still to do. Once it is scheduled the
+  // sheet is for what comes next: Posted with its link, or It failed.
+  const canSchedule = item.status === "todo";
+  const [outcome, setOutcome] = useState<"done" | "scheduled" | "failed">(
     item.status === "failed" ? "failed" : "done",
   );
   const [link, setLink] = useState("");
@@ -484,9 +498,13 @@ export function TodoLogSheet({
           expect: item.status,
         });
     }
+    if (outcome === "scheduled") {
+      return () => send(`/api/deliveries/${deliveryId}`, { action: "scheduled", expect: item.status });
+    }
     // Pasting the link onto a post already marked done is its own action, so
-    // it cannot reset who finished it or when.
-    if (item.status === "postedNoLink") {
+    // it cannot reset who finished it or when. The same goes for a scheduled
+    // post, which the link turns into a posted one.
+    if (item.status === "postedNoLink" || (item.status === "scheduled" && trimmedLink)) {
       return () =>
         send(`/api/deliveries/${deliveryId}`, {
           action: "link",
@@ -515,6 +533,7 @@ export function TodoLogSheet({
     if (outcome === "failed") {
       return { status: "failed", doneAt: nowHHMM(), reason: note.trim() || reason };
     }
+    if (outcome === "scheduled") return { status: "scheduled", doneAt: nowHHMM() };
     // The link is optional: saving without it leaves the item owing one.
     return { status: trimmedLink ? "posted" : "postedNoLink", doneAt: nowHHMM() };
   }
@@ -604,13 +623,14 @@ export function TodoLogSheet({
               <FilterPills
                 options={[
                   { value: "done", label: "Posted" },
+                  ...(canSchedule ? [{ value: "scheduled", label: "Scheduled" }] : []),
                   { value: "failed", label: "It failed" },
                 ]}
                 value={outcome}
-                onChange={(v) => setOutcome(v as "done" | "failed")}
+                onChange={(v) => setOutcome(v as "done" | "scheduled" | "failed")}
               />
 
-              {outcome === "done" ? (
+              {outcome === "scheduled" ? null : outcome === "done" ? (
                 <label className="flex flex-col gap-1.5">
                   <span className="text-xs text-text-muted">Link</span>
                   <div className="flex gap-2">
@@ -694,7 +714,8 @@ export function TodoLogSheet({
           {alreadyDone && (
             <div className="flex flex-col gap-2 border-t border-border pt-4">
               <p className="text-xs text-text-muted">
-                {item.status === "failed" ? "Failed" : "Done"} {item.doneAt}
+                {item.status === "failed" ? "Failed" : item.status === "scheduled" ? "Scheduled" : "Done"}{" "}
+                {item.doneAt}
               </p>
               <HoldButton tone="warn" onConfirm={() => void undo()}>
                 Undo

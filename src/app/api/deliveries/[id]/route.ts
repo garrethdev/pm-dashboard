@@ -13,12 +13,16 @@ import {
 
 /**
  * POST /api/deliveries/:id — what happened to a post handed out by hand
- * (PF-07). The four things the sheet can do to an item:
+ * (PF-07). The five things the sheet can do to an item:
  *
  *  - `posted` — it went up. The link is OPTIONAL (decision 7, Garreth
  *    2026-09-19): saving without one leaves the item showing as posted and
  *    still owing its link, which is what attribution actually needs.
- *  - `link` — pasting that link afterwards.
+ *  - `scheduled` — set to go out later inside the platform itself (Garreth,
+ *    2026-10-28). Done on time, so it never goes Overdue, but there is no
+ *    link until it is live.
+ *  - `link` — pasting that link afterwards. On a scheduled post that is also
+ *    the moment it counts as posted.
  *  - `failed` — it could not be posted. That is the END of the post
  *    (Garreth, 2026-09-22): marked failed and never handed out again.
  *  - `undo` — a wrong tap, put back on the list. Not available for `failed`,
@@ -38,15 +42,18 @@ import {
  *    in the reply, not the write.
  */
 
-type Action = "posted" | "failed" | "link" | "undo";
+type Action = "posted" | "scheduled" | "failed" | "link" | "undo";
 
-/** The item statuses the screen knows, mapped to what the row actually holds.
- *  `postedNoLink` is not a fifth status: it is `posted` with no link yet. */
-function expectedRowStatus(seen: string): DeliveryStatus | null {
-  if (seen === "todo") return "queued";
-  if (seen === "posted" || seen === "postedNoLink") return "posted";
-  if (seen === "failed") return "failed";
-  if (seen === "skipped") return "skipped";
+/** The item statuses the screen knows, mapped to what the row may actually
+ *  hold. `postedNoLink` is not a status of its own: it is `posted` with no
+ *  link yet, or a `scheduled` post two days past due that still has none. */
+function expectedRowStatuses(seen: string): DeliveryStatus[] | null {
+  if (seen === "todo") return ["queued"];
+  if (seen === "posted") return ["posted"];
+  if (seen === "postedNoLink") return ["posted", "scheduled"];
+  if (seen === "scheduled") return ["scheduled"];
+  if (seen === "failed") return ["failed"];
+  if (seen === "skipped") return ["skipped"];
   return null;
 }
 
@@ -57,6 +64,7 @@ function movedOn(status: DeliveryStatus, hasUrl: boolean): string {
       ? "Somebody else already marked this posted, with its link."
       : "Somebody else already marked this posted.";
   }
+  if (status === "scheduled") return "Somebody else already marked this scheduled.";
   if (status === "failed") return "Somebody else already marked this failed.";
   if (status === "skipped") return "Somebody else already skipped this.";
   return "Somebody else has put this back on the list.";
@@ -78,7 +86,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const action = body.action as Action;
-  if (!["posted", "failed", "link", "undo"].includes(action)) {
+  if (!["posted", "scheduled", "failed", "link", "undo"].includes(action)) {
     return NextResponse.json({ error: "unknown action" }, { status: 400 });
   }
   const postUrl = typeof body.postUrl === "string" ? body.postUrl.trim() : null;
@@ -94,6 +102,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // Try again from writing a second time over a save that actually worked.
     const alreadyThere =
       (action === "posted" && row.status === "posted" && (postUrl ?? "") === (row.postUrl ?? "")) ||
+      (action === "scheduled" && row.status === "scheduled") ||
       (action === "failed" && row.status === "failed") ||
       (action === "link" && row.postUrl === postUrl) ||
       (action === "undo" && row.status === "queued");
@@ -102,8 +111,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     // Somebody else got there first (state 5).
-    const expected = typeof body.expect === "string" ? expectedRowStatus(body.expect) : null;
-    if (expected && row.status !== expected) {
+    const expected = typeof body.expect === "string" ? expectedRowStatuses(body.expect) : null;
+    if (expected && !expected.includes(row.status)) {
       return NextResponse.json(
         { error: movedOn(row.status, Boolean(row.postUrl)), conflict: true, delivery: row },
         { status: 409 },
@@ -115,7 +124,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (action === "link") {
       if (!postUrl) return NextResponse.json({ error: "no link given" }, { status: 400 });
-      delivery = await setDeliveryUrl(id, postUrl);
+      // A scheduled post's link is the proof it went live, so it becomes
+      // posted now. done_at moves to this moment too, which is the day the
+      // list shows it finished on.
+      delivery =
+        row.status === "scheduled"
+          ? await markDelivery(id, { status: "posted", postUrl, doneBy: userEmail })
+          : await setDeliveryUrl(id, postUrl);
+    } else if (action === "scheduled") {
+      delivery = await markDelivery(id, { status: "scheduled", postUrl: null, note: null, doneBy: userEmail });
     } else if (action === "undo") {
       // A dumped post stays dumped (Garreth, 2026-09-22).
       if (row.status === "failed") {
@@ -139,8 +156,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // yet — so finishing with it here is what finally settles it. Without this
     // it sits at Ready for ever and Inventory keeps counting it as content
     // nobody has used. Failed burns the content with the post (Garreth,
-    // 2026-09-22); Undo puts it back on the shelf.
-    if (action === "posted") await closeContentRow(delivery, "Posted");
+    // 2026-09-22); Undo puts it back on the shelf. A scheduled post has used
+    // its content as surely as a posted one, so Inventory stops counting it.
+    if (action === "posted" || action === "scheduled") await closeContentRow(delivery, "Posted");
     else if (action === "failed") await closeContentRow(delivery, "Failed");
     else if (action === "undo") await closeContentRow(delivery, "Ready");
 

@@ -20,6 +20,59 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-28 — A post can be marked Scheduled, so posts scheduled on time stop showing as Overdue
+
+**Where it came from:** Garreth, 2026-10-28. Yurie often schedules posts
+ahead of time inside TikTok or Instagram instead of posting them live. A
+scheduled post has no link until it goes live, so she left it open on the
+To-do list and came back later to add the link. In the meantime it turned
+red **Overdue**, even though she had done it on time. Marking it Posted
+without a link would have cleared the red, but it would have told the app
+the post was live when it was not. His decisions: a new **Scheduled**
+status, and a scheduled post that still has no link two days after it was
+due turns amber **Link needed**, never red Overdue.
+
+**What changed:**
+
+- **The sheet a post's tick opens offers Posted, Scheduled or It failed.**
+  Scheduled takes one tap and asks for no link. It is offered only on a post
+  still to do.
+- **A scheduled post shows a blue Scheduled pill** on the To-do page, on the
+  Overview card and in the Calendar's day view. Its tick shows half done, in
+  blue. The download and caption buttons go away, because the post has
+  already been set up.
+- **It never goes Overdue.** It stays on the list for the day it is due, even
+  when it was scheduled days earlier. After that day it moves to today's
+  list and stays there until its link is added, with no three-day limit, so
+  it cannot drop off the list while still owing a link.
+- **Two days after it was due** (days off not counted), a scheduled post with
+  no link reads **Link needed** in amber on the To-do page and the Overview
+  card, and counts towards the phone's "links to add". The Calendar keeps
+  showing Scheduled, because its day view does not know when a post was due.
+- **Adding the link** (open the post, paste it, Save) turns it into a normal
+  posted post with its link. **Undo** puts a scheduled post back to To do,
+  and **It failed** works on it as on any post.
+- **Inventory stops counting it** the moment it is marked Scheduled: its
+  content is used, the same as a posted one.
+- **Phone recordings:** a post scheduled during a recorded phone session is
+  matched to that session, the same as one posted live.
+- **In Supabase,** `post_deliveries.status` now allows `scheduled`. Nothing
+  else in the database needed changing: the calendar functions count only
+  `posted` as done and `failed` as failed, the Facebook copy trigger runs only
+  when a post is first handed out, and retiring an account or moving it to
+  Cloud only touches posts still to do. That is right for a post already
+  scheduled on the platform.
+
+**Verified:** the database change is live. A test that undid itself moved a
+real post row from To do to Scheduled to Posted with a link, and the
+database accepted each step. The sheet, the Scheduled pill, the blue tick
+and reopening a scheduled post were checked on the demo list (`/todo?todo=work`,
+which saves nothing) in headless Chrome at phone width, dark mode only; not in
+Safari. New tests cover the day a scheduled post shows on, never going
+Overdue, Link needed after two days, and staying on the list past three
+days. Type check, lint and all 671 tests pass. **Not yet used for real:**
+nobody has marked a real post Scheduled through the live app yet.
+
 ## 2026-10-27 — Issues become Reports: observations, and the accounts and posts a report is about
 
 **Where it came from:** Garreth, Czedrick and Yurie, on a call, 2026-10-27.

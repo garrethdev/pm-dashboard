@@ -346,12 +346,12 @@ export type Delivery = "posted" | "failed" | "pending" | "none";
 
 /**
  * Where a post handed to a person stands (P11), in the To-do list's own words.
- * `Delivery` folds these into three; the Physical day view needs all five,
+ * `Delivery` folds these into three; the Physical day view needs all six,
  * because "posted but the link is still owed" and "skipped" are not the same
  * thing as done or waiting. Null for a Cloud post, and for a Physical post not
  * handed out yet (before the 10:00 ET run).
  */
-export type HandDelivery = "queued" | "posted" | "postedNoLink" | "failed" | "skipped";
+export type HandDelivery = "queued" | "scheduled" | "posted" | "postedNoLink" | "failed" | "skipped";
 
 export interface CalendarPost {
   contentType: string;
@@ -423,6 +423,7 @@ interface RawDetail {
 
 const HAND_DELIVERIES: readonly string[] = [
   "queued",
+  "scheduled",
   "posted",
   "postedNoLink",
   "failed",
