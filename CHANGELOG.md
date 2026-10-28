@@ -20,6 +20,30 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-28 — A robot hand-off sent twice is stored once (DA-06)
+
+**Where it came from:** Yurie's fourth sitting on phone 1 (2026-10-27; zips
+reviewed 2026-10-28). It is the first sitting where the robot read posts:
+7 Instagram, 1 TikTok. But the dashboard reads every post before it answers,
+about 10 seconds a post, and the robot gave up waiting after 10 seconds and
+sent the same posts again. Every send was stored: 12 Instagram posts became
+48 rows (readings 19 to 66) and 4 TikTok posts became 8 (67 to 74).
+
+**What changed:** each post's screenshots now get a fingerprint, saved in a
+new `screens_key` column of `post_screen_readings`, and the table takes only
+one row per fingerprint. A post sent again finds its row already there: no
+second row, and no second AI read. The robot's answer now also says how many
+posts were "already" stored. The robot's own fix, waiting up to 290 seconds
+for the answer, is in the warmup-runner repo. Rows from before this have no
+fingerprint and are left as they were.
+
+**Verified:** the table change is live (migration `20261028033629`); the
+code by tests only, until the next sitting. The 40 duplicate rows were
+deleted on 2026-10-28 (Garreth), keeping the first row of each post: 12
+Instagram (19 to 43) and 4 TikTok (67 to 70) remain. One gap: the robot
+sends a TikTok post it could not open with no screenshots, so such a post
+has no fingerprint and a resend would still store it twice.
+
 ## 2026-10-25 — A TikTok reading is matched to its post by the time it was posted (DA-06)
 
 **Where it came from:** Yurie's first robot sitting on phone 1 (2026-10-23;
