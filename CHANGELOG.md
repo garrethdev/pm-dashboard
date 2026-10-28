@@ -58,6 +58,36 @@ refresh job is scheduled and its first run completed. Types, lint, 666 unit
 tests and the production build pass (nothing under `src/` changed). Not yet
 seen: a full day of the refresh job running, and whether the "took too
 long" cards stay away under real use.
+## 2026-10-27 — Trends cards draw small copies, one slide at a time
+
+**Where it came from:** Garreth, 2026-10-27, after the production
+measurement of what each page asks for on its first call. One page of the
+Trends feed, twenty cards, pulled 94 full-size originals from the
+reference-slides bucket before anyone had swiped: every slide of every
+carousel, as a background picture from the raw link. The Studio and the
+library grids had already been moved to resized copies on 2026-10-09; this
+grid had not.
+
+**What changed:**
+
+- **A card shows its slides as resized copies.** The swipe strip, the Saved
+  grid tiles and the Recent saves minis all go through the thumbnail helper,
+  sized for how big they are on screen (540, 400 and 80 pixels wide).
+  Supabase makes the copy once and the CDN keeps it. A link that is not one
+  of our bucket links (a TikTok picture, say) is left as it was.
+- **Only the slide that is showing is fetched.** The other slides of a
+  carousel stay empty until the person swipes to them, with the previous
+  and next buttons and the dots working as before. A slide once reached
+  keeps its picture when swiping back.
+- **The opened card** (View Details) shows a large resized copy, 1080 wide,
+  instead of the original. It already showed one slide at a time.
+- Nothing changed in the feed API or in what is stored.
+
+**Verified:** the slide-picture rule has a unit test (which slides get a
+picture, the resized link, a gone picture); types, lint, the test suite and
+the production build pass. Not yet seen live: the request count on a real
+Trends page after this change, which should be about twenty small copies
+for twenty cards instead of 94 originals.
 
 ## 2026-10-27 — Issues become Reports: observations, and the accounts and posts a report is about
 
