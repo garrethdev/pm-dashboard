@@ -44,6 +44,253 @@ Instagram (19 to 43) and 4 TikTok (67 to 70) remain. One gap: the robot
 sends a TikTok post it could not open with no screenshots, so such a post
 has no fingerprint and a resend would still store it twice.
 
+## 2026-10-28 — A post can be marked Scheduled, so posts scheduled on time stop showing as Overdue
+
+**Where it came from:** Garreth, 2026-10-28. Yurie often schedules posts
+ahead of time inside TikTok or Instagram instead of posting them live. A
+scheduled post has no link until it goes live, so she left it open on the
+To-do list and came back later to add the link. In the meantime it turned
+red **Overdue**, even though she had done it on time. Marking it Posted
+without a link would have cleared the red, but it would have told the app
+the post was live when it was not. His decisions: a new **Scheduled**
+status, and a scheduled post that still has no link two days after it was
+due turns amber **Link needed**, never red Overdue.
+
+**What changed:**
+
+- **The sheet a post's tick opens offers Posted, Scheduled or It failed.**
+  Scheduled takes one tap and asks for no link. It is offered only on a post
+  still to do.
+- **A scheduled post shows a blue Scheduled pill** on the To-do page, on the
+  Overview card and in the Calendar's day view. Its tick shows half done, in
+  blue. The download and caption buttons go away, because the post has
+  already been set up.
+- **It never goes Overdue.** It stays on the list for the day it is due, even
+  when it was scheduled days earlier. After that day it moves to today's
+  list and stays there until its link is added, with no three-day limit, so
+  it cannot drop off the list while still owing a link.
+- **Two days after it was due** (days off not counted), a scheduled post with
+  no link reads **Link needed** in amber on the To-do page and the Overview
+  card, and counts towards the phone's "links to add". The Calendar keeps
+  showing Scheduled, because its day view does not know when a post was due.
+- **Adding the link** (open the post, paste it, Save) turns it into a normal
+  posted post with its link. **Undo** puts a scheduled post back to To do,
+  and **It failed** works on it as on any post.
+- **Inventory stops counting it** the moment it is marked Scheduled: its
+  content is used, the same as a posted one.
+- **Phone recordings:** a post scheduled during a recorded phone session is
+  matched to that session, the same as one posted live.
+- **In Supabase,** `post_deliveries.status` now allows `scheduled`. Nothing
+  else in the database needed changing: the calendar functions count only
+  `posted` as done and `failed` as failed, the Facebook copy trigger runs only
+  when a post is first handed out, and retiring an account or moving it to
+  Cloud only touches posts still to do. That is right for a post already
+  scheduled on the platform.
+
+**Verified:** the database change is live. A test that undid itself moved a
+real post row from To do to Scheduled to Posted with a link, and the
+database accepted each step. The sheet, the Scheduled pill, the blue tick
+and reopening a scheduled post were checked on the demo list (`/todo?todo=work`,
+which saves nothing) in headless Chrome at phone width, dark mode only; not in
+Safari. New tests cover the day a scheduled post shows on, never going
+Overdue, Link needed after two days, and staying on the list past three
+days. Type check, lint and all 671 tests pass. **Not yet used for real:**
+nobody has marked a real post Scheduled through the live app yet.
+
+## 2026-10-27 — The dashboard reads precomputed reports instead of recomputing them on every visit
+
+**Where it came from:** Garreth, 2026-10-27: pictures in the Carousel
+Generator were "taking a very long time to load and not loading at all".
+Measured on production that afternoon, signed in: the home page's Accounts
+and Inventory cards showed "Supabase took too long to answer", the Studio's
+library list timed out and showed no libraries, and the Postgres log showed
+statements of 11 to 30 seconds being cancelled. The database's own statistics
+named the cost: the bell's warm-up health view had been read 24,078 times
+(two hours of CPU in all), and the scheduler pool, account health and
+analytics freshness reports each took one to five seconds, on every visit,
+on a small database. The pictures themselves were never the problem; the
+lists that name them were.
+
+**What changed:** one migration,
+`supabase/migrations/20261027212402_precompute_dashboard_reads.sql`. Nine
+report views are now kept as ready-made copies that the database refreshes
+itself every five minutes, and the public views of the same names read the
+copy. The two slow report functions (analytics freshness, content type
+stats) keep their names and hand back their last refreshed result. Nothing
+in the app's code changed, because every name, column and parameter is the
+same. The scheduler's own config view and the account health review view
+stay live on purpose, so a cap or a review saved on the dashboard reads
+back at once; both are cheap once the health view beneath them is cached.
+Anything else that reads these views sees the world as of the last refresh,
+up to five minutes old. `select public.refresh_dashboard_caches()` refreshes
+everything at once if a page ever needs it sooner.
+
+**Verified:** proven first in a rolled-back block, then applied live on
+2026-10-27 at 21:24 UTC on Garreth's go-ahead. Read back through the same
+REST calls the app makes: the account health view answers in 6 ms inside
+the database (166 ms before when the database was quiet, up to 29 s when
+it was busy), the content-type stats in 16 ms (0.35 s before, up to 24 s),
+and the freshness check in 0.14 s end to end (5.4 s before). The five-minute
+refresh job is scheduled and its first run completed. Types, lint, 666 unit
+tests and the production build pass (nothing under `src/` changed). Not yet
+seen: a full day of the refresh job running, and whether the "took too
+long" cards stay away under real use.
+## 2026-10-27 — Trends cards draw small copies, one slide at a time
+
+**Where it came from:** Garreth, 2026-10-27, after the production
+measurement of what each page asks for on its first call. One page of the
+Trends feed, twenty cards, pulled 94 full-size originals from the
+reference-slides bucket before anyone had swiped: every slide of every
+carousel, as a background picture from the raw link. The Studio and the
+library grids had already been moved to resized copies on 2026-10-09; this
+grid had not.
+
+**What changed:**
+
+- **A card shows its slides as resized copies.** The swipe strip, the Saved
+  grid tiles and the Recent saves minis all go through the thumbnail helper,
+  sized for how big they are on screen (540, 400 and 80 pixels wide).
+  Supabase makes the copy once and the CDN keeps it. A link that is not one
+  of our bucket links (a TikTok picture, say) is left as it was.
+- **Only the slide that is showing is fetched.** The other slides of a
+  carousel stay empty until the person swipes to them, with the previous
+  and next buttons and the dots working as before. A slide once reached
+  keeps its picture when swiping back.
+- **The opened card** (View Details) shows a large resized copy, 1080 wide,
+  instead of the original. It already showed one slide at a time.
+- Nothing changed in the feed API or in what is stored.
+
+**Verified:** the slide-picture rule has a unit test (which slides get a
+picture, the resized link, a gone picture); types, lint, the test suite and
+the production build pass. Not yet seen live: the request count on a real
+Trends page after this change, which should be about twenty small copies
+for twenty cards instead of 94 originals.
+
+## 2026-10-27 — Issues become Reports: observations, and the accounts and posts a report is about
+
+**Where it came from:** Garreth, Czedrick and Yurie, on a call, 2026-10-27.
+The team notices things that are not broken, like Yurie seeing that an
+account she warms up by hand is doing better than the rest, and there was
+nowhere to write those down. They wanted the form to take observations as
+well as issues, with the accounts or posts they are about, so that a later
+look at the system (a person's or an AI's) can read what the team saw next
+to the numbers. Their decisions: an observation has no status, a report can
+name several accounts each with an optional post, and the feature is called
+Reports. Reviewing the built page the same day, they found it had no way to
+start a report from it, and asked for a button opposite Filters.
+
+**What changed:**
+
+- **The form has a Type switch, Issue or Observation.** The floating button's
+  actions are now *Send a report* and *See reports*. The text box asks *What
+  you noticed* for an observation and *What happened* for an issue. Both
+  kinds use the same categories.
+- **A report can name up to 10 accounts.** Type a handle, a Profile or a
+  character to find one. For each account added, a second box offers that
+  account's 60 newest posts by date and caption, or *Whole account*.
+  Accounts with no handle yet are offered without posts. Inactive accounts
+  are offered too, because an observation is as likely to be about a banned
+  account.
+- **The Issues page is now the Reports page**, at `/reports`; the old
+  `/issues` address forwards there. It has a Type column (with the category
+  under it) and an Accounts column, where each account links to its account
+  page and each named post links to the post itself. The Filters button has a
+  Type filter beside Status. An observation's status shows a dash and cannot
+  be changed. A **Send a report** button at the right end of the title row,
+  opposite Filters, opens the same form as the floating button.
+- **In Supabase,** the table keeps the name `issues`, so the live site kept
+  working while this was built. It has a new `kind` column (every earlier
+  report is an issue), and an observation is stored with no status: the
+  database refuses one with a status, and refuses an issue without one. The
+  accounts sit in a new `issue_accounts` table, one row per account, with
+  its Profile, handle, platform, Facebook name and the named post copied in
+  at the moment of the report, so the report still reads correctly after an
+  account is renamed or deleted. **`v_reports` is the one place to read
+  everything together**, and it is the place to start any later analysis.
+  The server checks that each account exists and that each post really
+  belongs to the account it is named under before anything is saved. Like
+  the rest of the dashboard's tables, the new table and view are closed to
+  the public key.
+
+**Verified:** live against the real database through the app on its branch,
+before it was merged. An observation naming two accounts and a TikTok post
+saved correctly and read back through `v_reports`. A post named under the
+wrong account, an account that does not exist, and a status change on an
+observation were each refused with a plain message. The database rules were
+proven in a test that undid itself. The form and page were checked in
+headless Chrome at desktop and phone width, dark mode only; not in Safari.
+Type check, lint and all 663 tests pass.
+
+## 2026-10-27 — The Smart Scheduler plans three days at a time, and Facebook keeps posting when its Instagram is banned or paused
+
+**Where it came from:** Garreth and Czedrick, 2026-10-27. Three requests:
+plan three days ahead so Yurie can set posts up in the apps in advance, run
+at 1:00 AM New York time, and stop a banned Instagram account from silencing
+its Facebook twin (or the other way round). Asked the same day, they added
+that a *paused* Instagram must not stop its Facebook either: the two are tied
+only for handing out posts, and are otherwise separate accounts.
+
+**What changed:**
+
+- **Three days per run.** The scheduler (now 1.4.0, in n8n) runs at 1:00 AM
+  New York time instead of 6:30, and on every third night it plans that day
+  and the two after it. On the two nights in between it does nothing. Each
+  day is planned within its own week's limits, and days off are skipped.
+  Pressing the run button in n8n always plans, and is safe at any time: it
+  only fills slots that are still empty.
+- **Facebook.** A Facebook account copies its Instagram twin's posts. When
+  the Instagram account was banned, nothing was planned for it any more, so
+  the Facebook account stopped too: Profile 81 had posted nothing since
+  Profile 65's ban on 2026-10-19. Now a Facebook account whose Instagram is
+  banned, retired or paused is planned for on its own, from its character's
+  content, and the Posting Agent hands its posts to Yurie. When the Instagram
+  account comes back, the Facebook account goes back to copying it, but not
+  on a day it already has posts of its own, so it never gets both. A banned
+  Facebook account no longer gets copies, so it cannot hold up its Instagram
+  twin.
+- **The To-do list files a post under the day it is due**, not the day it
+  was handed out, and a post only counts as late from its planned time. This
+  is what lets the list show posts for Tomorrow and In 2 days.
+- **The scheduler pill** on the Content Calendar shows the latest run in the
+  last three days, not just today's, because on two days out of three there
+  is no run of today. The Automation card expects the 1:00 AM time.
+- **The Missed-Run Alarm works again.** Its built-in database key had been
+  refused on every check since at least 2026-10-23, so it could not have
+  warned anyone. It has a working key now and checks for a run in the last
+  three days rather than today.
+
+- **Yurie is handed all three days at once.** The 10:00 Posting Agent now
+  hands out the next two days' posts too, for accounts posted by hand, so
+  they show on the To-do list under Tomorrow and In 2 days. Robot accounts
+  still get only today's. This was switched on after the dashboard change
+  above was live (PR #80), because the version before it would have put all
+  three days on today's list.
+
+**Verified:**
+- Run once by hand at 2:53 AM on 10-27, because the move to 1:00 AM meant
+  that morning's run would not happen. It scheduled 48 of 48 posts, 16 a day
+  for Oct 27, 28 and 29, including Profile 81's first Facebook posts (2 a
+  day). It wrote one run record.
+- Today's plan matches what the old version would have made, slot for slot,
+  in a dry run before the change.
+- Rest nights, the Sunday day off and a three days that run into the next
+  week were checked in dry runs with the clock set forward.
+- The Posting Agent's changed step, run against that day's posts, hands out
+  all 16, Profile 81's included. The Missed-Run Alarm's new check reads the
+  run log without being refused.
+- Tests cover a post handed out ahead of its day.
+- The "never both" rule was proven in a test inside the database that was
+  rolled back afterwards: no copy on a day the Facebook account had its own
+  post, one copy on the next day. No account had a paused Instagram and an
+  unpaused Facebook that day, so the paused case has not met a real account
+  yet.
+- After the switch, the 10:00 hand-out list held all 48 posts, and the
+  Posting Agent's step, run against it, gave each one its own day (16 each
+  for Oct 27, 28 and 29, none without a due time).
+- **Not yet seen:** the first 1:00 AM run on its own (10-30), and the 10:00
+  Posting Agent run on 10-27 handing out the three days, Facebook included,
+  on its own.
+
 ## 2026-10-25 — A TikTok reading is matched to its post by the time it was posted (DA-06)
 
 **Where it came from:** Yurie's first robot sitting on phone 1 (2026-10-23;

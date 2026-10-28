@@ -280,6 +280,7 @@ function AccountGroup({
             </span>
             {item.automated && <AutomatedMark side="left" />}
             {item.status === "postedNoLink" && <StatusPill tone="warn">Link</StatusPill>}
+            {item.status === "scheduled" && <StatusPill tone="info">Scheduled</StatusPill>}
             {item.status === "failed" && <StatusPill tone="danger">Failed</StatusPill>}
             {item.run?.state === "running" && <StatusPill tone="info">Running</StatusPill>}
             {item.run?.state === "stopped" && <StatusPill tone="danger">Stopped</StatusPill>}

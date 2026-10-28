@@ -93,10 +93,23 @@ export const OVERDUE_HOURS = 24;
  * The space is a non-breaking one so a phone never splits the number from its
  * unit.
  */
-export function overdueFor(createdAt: string, now: Date, daysOff: readonly number[] = []): string | null {
-  const hours = Math.floor(workingMsBetween(new Date(createdAt), now, daysOff) / 3_600_000);
+export function overdueFor(dueAt: string, now: Date, daysOff: readonly number[] = []): string | null {
+  const hours = Math.floor(workingMsBetween(new Date(dueAt), now, daysOff) / 3_600_000);
   if (hours < OVERDUE_HOURS) return null;
   return hours >= 48 ? `${Math.floor(hours / 24)}\u00a0days` : `${hours}\u00a0h`;
+}
+
+/**
+ * How long a scheduled post may go without its link before it reads Link
+ * needed: two days from when it was due (Garreth, 2026-10-28). Scheduled is
+ * Yurie's part done on time, so it never goes red Overdue; this is only the
+ * nudge that a post which should be live by now still owes its link. Counted
+ * in working hours, like overdue.
+ */
+export const LINK_LATE_HOURS = 48;
+
+export function linkLate(dueAt: string, now: Date, daysOff: readonly number[] = []): boolean {
+  return workingMsBetween(new Date(dueAt), now, daysOff) >= LINK_LATE_HOURS * 3_600_000;
 }
 
 /** When each of the day's two warmups is expected. Times rather than a rule:
@@ -234,6 +247,7 @@ interface RawDelivery {
   note: string | null;
   done_at: string | null;
   created_at: string;
+  due_at: string;
 }
 
 interface RawUnified {
@@ -264,9 +278,11 @@ function etTime(iso: string): string {
 
 /** How a delivery row reads on the list. `postedNoLink` is not a status in the
  *  database: it is `posted` with no link yet, which is what decision 7 asks
- *  for — done, but still owing the thing attribution needs. */
-function statusOf(row: RawDelivery): TodoItemStatus {
+ *  for — done, but still owing the thing attribution needs. A scheduled post
+ *  still without its link two days after it was due reads the same way. */
+function statusOf(row: RawDelivery, now: Date, daysOff: readonly number[]): TodoItemStatus {
   if (row.status === "posted") return row.post_url ? "posted" : "postedNoLink";
+  if (row.status === "scheduled") return linkLate(row.due_at, now, daysOff) ? "postedNoLink" : "scheduled";
   if (row.status === "failed") return "failed";
   if (row.status === "skipped") return "skipped";
   return "todo";
@@ -382,16 +398,21 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
     if (!account) continue;
 
     const content = unified.get(`${row.content_type}\u0000${row.source_id}`);
-    // THE DAY A POST BELONGS TO IS THE DAY IT WAS HANDED OUT, which is what
-    // the delivery row's own `created_at` records. Not the content row's
-    // `posting_date`: that is the scheduler's plan, and a content row written
-    // months ago still carries the date it was planned for — so reading the
-    // day from there hid a post from the very list it had just been handed to.
-    // The TIME still comes from the plan, because that is the hour it should
-    // go out at.
-    const postDay = etDay(row.created_at);
-    const status = statusOf(row);
-    const finished = status !== "todo";
+    // THE DAY A POST BELONGS TO IS THE DAY IT IS DUE, which the delivery
+    // row's own `due_at` records. Not the content row's `posting_date`: that
+    // is the scheduler's plan, and a content row written months ago still
+    // carries the date it was planned for — so reading the day from there hid
+    // a post from the very list it had just been handed to. The TIME still
+    // comes from the plan, because that is the hour it should go out at.
+    //
+    // Until 2026-10-27 this was `created_at`, the moment it was handed out,
+    // which was always the morning of its day. The scheduler now plans three
+    // days at a time and the Posting Agent hands all three out at once, so
+    // Thursday's post exists on Tuesday and has to wait for Thursday's list.
+    const postDay = etDay(row.due_at);
+    const status = statusOf(row, now, daysOff);
+    const scheduled = row.status === "scheduled";
+    const finished = !scheduled && status !== "todo";
 
     // WHICH DAY THIS POST BELONGS TO.
     //
@@ -409,6 +430,14 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
     // it is dumped (Garreth, 2026-09-22).
     if (finished) {
       if (!row.done_at || etDay(row.done_at) !== day) continue;
+    } else if (scheduled) {
+      // A SCHEDULED post stays on the day it is due, however early it was
+      // scheduled — Thursday's post scheduled on Tuesday is Thursday's work.
+      // After that it moves to today's list and stays there until its link
+      // is added, with no three-day limit: the link is the one thing still
+      // owed, and a post that dropped off the list would never get it.
+      if (postDay > day) continue;
+      if (postDay !== day && (dayOffset !== 0 || off)) continue;
     } else {
       // On a day off it waits for the next working day (2026-10-16).
       if (off) continue;
@@ -419,9 +448,11 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
 
     // Overdue is about NOW, so only today's list says it (P12). A day stepped
     // back to is a record of that day, and a day ahead has nothing late yet.
-    const waited = !finished && dayOffset === 0 ? overdueFor(row.created_at, now, daysOff) : null;
+    // A scheduled post is never overdue: it went out on time.
+    const open = row.status === "queued";
+    const waited = open && dayOffset === 0 ? overdueFor(row.due_at, now, daysOff) : null;
     const lastDay =
-      !finished &&
+      open &&
       dayOffset === 0 &&
       postDay !== day &&
       workingDaysBetween(postDay, day, daysOff) === CARRY_OVER_DAYS;
@@ -431,7 +462,7 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
       id,
       kind: "post",
       label: content ? labelFor(row.content_type) : row.content_type,
-      due: content?.posting_time?.slice(0, 5) ?? etTime(row.created_at),
+      due: content?.posting_time?.slice(0, 5) ?? etTime(row.due_at),
       status,
       // In words, as the approved design reads ("Due yesterday", "Due 3 days
       // ago"), not the raw date the row stores.
@@ -506,22 +537,23 @@ function daysBetween(from: string, to: string): number {
 
 /**
  * The deliveries that could possibly belong to this day: everything still
- * open, plus everything finished since the start of it. Open rows are read
- * without a date bound because a carried-over post was handed out days ago;
- * the carry-over window is applied per row above, where the content's own day
- * is known.
+ * open or scheduled, plus everything finished since the start of it. Open and
+ * scheduled rows are read without a date bound because a carried-over post was
+ * handed out days ago; the carry-over window is applied per row above, where
+ * the content's own day is known. The second read leaves scheduled rows out,
+ * so none is read twice.
  */
 async function readDeliveries(accountIds: AccountId[], from: Date): Promise<RawDelivery[]> {
   if (accountIds.length === 0) return [];
-  const cols = `id,content_type,source_id,${ACCOUNT_FK_COL},status,post_url,note,done_at,created_at`;
+  const cols = `id,content_type,source_id,${ACCOUNT_FK_COL},status,post_url,note,done_at,created_at,due_at`;
   const inList = `(${accountIds.join(",")})`;
   const [open, done] = await Promise.all([
     sbRest<RawDelivery[]>(
-      `post_deliveries?select=${cols}&account_id=in.${inList}&status=eq.queued&order=created_at.asc`,
+      `post_deliveries?select=${cols}&account_id=in.${inList}&status=in.(queued,scheduled)&order=created_at.asc`,
     ),
     sbRest<RawDelivery[]>(
       `post_deliveries?select=${cols}&account_id=in.${inList}` +
-        `&done_at=gte.${from.toISOString()}&order=created_at.asc`,
+        `&done_at=gte.${from.toISOString()}&status=neq.scheduled&order=created_at.asc`,
     ),
   ]);
   return [...open, ...done];

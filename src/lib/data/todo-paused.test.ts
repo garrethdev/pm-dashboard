@@ -14,7 +14,7 @@ vi.mock("@/lib/data/supabase", () => ({
       // A queued post for every account asked about, so a paused account's
       // post would show if the filter let it through.
       const ids = /account_id=in\.\(([^)]*)\)/.exec(path)?.[1]?.split(",") ?? [];
-      return path.includes("status=eq.queued")
+      return path.includes("status=in.(queued,scheduled)")
         ? ids.map((id) => ({
             id: Number(id) * 100,
             content_type: "demo",
@@ -26,6 +26,7 @@ vi.mock("@/lib/data/supabase", () => ({
             note: null,
             done_at: null,
             created_at: "2026-09-23T14:00:00Z",
+            due_at: "2026-09-23T14:00:00Z",
           }))
         : [];
     }

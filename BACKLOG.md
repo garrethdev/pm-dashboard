@@ -1717,6 +1717,21 @@ scope, the blockers and the done-whens. Plan of record:
 `docs/REAL-PHONE-MASTERPLAN.md`; tooling decisions: `docs/PHONE-FARM-TOOLING.md`;
 task sheet for Yurie and Czedrick: `~/Documents/Geelark Exit Plan.xlsx`.
 
+## Posts handed out days ahead (added 2026-10-27)
+
+Since 2026-10-27 the Smart Scheduler plans three days at a time and the
+Posting Agent hands Yurie all three at once. Two gaps that come with it:
+
+- A post handed out days ahead stays queued if its account is moved to Cloud
+  or retired before its day. Before, that could only happen to a post handed
+  out the same morning.
+- The reverse of the "never both" rule is not covered: when an Instagram
+  account is paused after its copies for the next days were already handed
+  to its Facebook twin, the next planning run gives the Facebook account its
+  own posts on those days as well, so it can get both for up to two days. The
+  planner does not see copies, because they are hand-outs, not content rows
+  planned for that account.
+
 ## Inventory does not count accounts that start posting soon (added 2026-10-19)
 
 Found while sizing Divorce Recovery's first two weeks. Inventory takes demand

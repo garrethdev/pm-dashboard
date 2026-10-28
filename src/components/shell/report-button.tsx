@@ -3,21 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Flag, ListChecks, NotePencil, X } from "@/components/ui/icons";
-import { ReportIssueDialog } from "@/components/shell/report-issue-dialog";
+import { ReportDialog } from "@/components/shell/report-dialog";
 import { cn } from "@/lib/utils";
 
 /**
- * The floating issue button in the bottom-right corner of every signed-in page
- * (Garreth, 2026-10-09).
+ * The floating report button in the bottom-right corner of every signed-in
+ * page (Garreth, 2026-10-09; Issues became Reports 2026-10-27, when
+ * observations joined issues).
  *
- * Pressed, two actions rise out of it — Report an issue on top, See issues
+ * Pressed, two actions rise out of it — Send a report on top, See reports
  * beneath it (Garreth, 2026-10-09) — and its flag, the usual sign for
  * "report", turns into an X that folds them back in. Escape or a press anywhere else
- * does the same. The Issues page is reached from here only; it has no item in
+ * does the same. The Reports page is reached from here only; it has no item in
  * the menu, by decision.
  *
  * MOTION: a 200ms rise-and-fade on transform and opacity with a strong
- * ease-out, the nearer action (See issues) first and Report an issue 40ms
+ * ease-out, the nearer action (See reports) first and Send a report 40ms
  * after, so the pair
  * reads as coming out of the button rather than appearing beside it. Closing
  * runs the other way round. Transitions rather than keyframes, so a second
@@ -43,7 +44,7 @@ const ICON_MOTION =
 const ACTION_CLASS =
   "inline-flex h-10 items-center gap-2 rounded-full border border-border bg-card-raised px-4 text-sm font-medium text-text-primary shadow-card outline-none hover:border-text-muted/50 focus-visible:border-accent";
 
-export function IssueButton() {
+export function ReportButton() {
   const [open, setOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -80,7 +81,7 @@ export function IssueButton() {
         ref={rootRef}
         className="pointer-events-none fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex flex-col items-end gap-2.5 sm:right-6 sm:bottom-6"
       >
-        <div id="issue-actions" inert={!open} className="flex flex-col items-end gap-2.5">
+        <div id="report-actions" inert={!open} className="flex flex-col items-end gap-2.5">
           <button
             type="button"
             onClick={() => {
@@ -91,16 +92,16 @@ export function IssueButton() {
             className={cn(ACTION_CLASS, ACTION_MOTION, "origin-bottom-right", shown)}
           >
             <NotePencil className="size-4 text-text-muted" />
-            Report an issue
+            Send a report
           </button>
           <Link
-            href="/issues"
+            href="/reports"
             onClick={() => setOpen(false)}
             style={delay(0)}
             className={cn(ACTION_CLASS, ACTION_MOTION, "origin-bottom-right", shown)}
           >
             <ListChecks className="size-4 text-text-muted" />
-            See issues
+            See reports
           </Link>
         </div>
 
@@ -109,8 +110,8 @@ export function IssueButton() {
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          aria-controls="issue-actions"
-          aria-label={open ? "Close" : "Issues"}
+          aria-controls="report-actions"
+          aria-label={open ? "Close" : "Reports"}
           className={cn(
             "pointer-events-auto relative flex size-12 items-center justify-center rounded-full border border-border bg-card-raised text-text-primary shadow-card outline-none transition-colors hover:border-text-muted/50 focus-visible:border-accent",
             open && "border-text-muted/50",
@@ -125,7 +126,7 @@ export function IssueButton() {
         </button>
       </div>
 
-      {reporting && <ReportIssueDialog onClose={() => setReporting(false)} />}
+      {reporting && <ReportDialog onClose={() => setReporting(false)} />}
     </>
   );
 }

@@ -18,6 +18,8 @@ import { Btn, Pill, compact, post, shortDate, useJson } from "@/components/carou
 import { TrendsSearch } from "@/components/carousel/trends-search";
 import { BookOpen, Bookmark, Check, ChevronLeft, ChevronRight, EnvelopeSimple, LayoutList, Loader2, PaintBrush, Rows, ThumbsDown, ThumbsUp, TrendUp } from "@/components/ui/icons";
 import { PlatformIcon } from "@/components/ui/platform-icon";
+import { slidePicture } from "@/lib/carousel/slide-pictures";
+import { thumbUrl } from "@/lib/carousel/thumb";
 import { cn } from "@/lib/utils";
 import type { Digest, KnowledgeRule, Reference } from "@/server/carousel/repo/types";
 
@@ -42,6 +44,8 @@ function numbersLine(r: Reference): string {
 
 function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () => void; onVote: (v: "up" | "down") => void; onSeen: (id: number) => void }) {
   const [i, setI] = useState(0);
+  // The furthest slide swiped to: only slides up to here have asked for their picture (2026-10-27).
+  const [reached, setReached] = useState(0);
   const ref = useRef<HTMLElement>(null);
   const seen = useRef(false);
   useEffect(() => {
@@ -71,12 +75,16 @@ function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () =>
         {r.sourceUrl && <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-auto rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted hover:text-text-primary">View Post</a>}
       </div>
       <div className="group relative -mx-4 sm:mx-0">
-        <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto sm:rounded-xl" onScroll={(e) => setI(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
-          {slides.map((s) => (
-            <span key={s.position} className="aspect-[4/5] w-full shrink-0 snap-start bg-card-sunken bg-cover bg-center" style={s.media ? { backgroundImage: `url("${s.media}")` } : undefined} role="img" aria-label={`Slide ${s.position}`}>
-              {!s.media && <span className="flex h-full items-center justify-center text-xs text-text-muted">Image gone</span>}
-            </span>
-          ))}
+        <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto sm:rounded-xl" onScroll={(e) => { const at = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth); setI(at); setReached((r) => Math.max(r, at)); }}>
+          {/* A slide is a resized copy, and only once reached: a page of twenty cards used to pull every slide as an original (2026-10-27). */}
+          {slides.map((s, k) => {
+            const pic = slidePicture(s.media, k, reached, 540);
+            return (
+              <span key={s.position} className="aspect-[4/5] w-full shrink-0 snap-start bg-card-sunken bg-cover bg-center" style={pic ? { backgroundImage: `url("${pic}")` } : undefined} role="img" aria-label={`Slide ${s.position}`}>
+                {!s.media && <span className="flex h-full items-center justify-center text-xs text-text-muted">Image gone</span>}
+              </span>
+            );
+          })}
         </div>
         {slides.length > 1 && (
           <>
@@ -101,7 +109,7 @@ function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () =>
 }
 
 function Tile({ r, onOpen }: { r: Reference; onOpen: () => void }) {
-  const img = r.slides[0]?.media ?? r.thumbnail;
+  const img = thumbUrl(r.slides[0]?.media ?? r.thumbnail, 400);
   return (
     <button type="button" onClick={onOpen} aria-label={`${r.handle ?? "Carousel"}, ${r.slides.length} slides`} className="relative aspect-[4/5] overflow-hidden rounded-xl border border-border bg-card-sunken bg-cover bg-center transition-[opacity,transform] hover:opacity-90 active:scale-[0.98]" style={img ? { backgroundImage: `url("${img}")` } : undefined}>
       <span className="absolute top-2 right-2 text-white drop-shadow"><LayoutList className="size-3.5" /></span>
@@ -339,7 +347,7 @@ export function TrendsView({ section, query }: { section?: string; query?: strin
             <h2 className="text-sm font-medium text-text-muted">Recent saves</h2>
             {(recent?.items ?? []).slice(0, 5).map((r) => (
               <button key={r.id} type="button" onClick={() => setOpen(r.id)} className="flex items-center gap-3 rounded-nested px-1 py-1 text-left hover:bg-card-raised">
-                <span className="aspect-[4/5] w-10 shrink-0 rounded-[6px] border border-border bg-card-sunken bg-cover bg-center" style={(r.slides[0]?.media ?? r.thumbnail) ? { backgroundImage: `url("${r.slides[0]?.media ?? r.thumbnail}")` } : undefined} aria-hidden />
+                <span className="aspect-[4/5] w-10 shrink-0 rounded-[6px] border border-border bg-card-sunken bg-cover bg-center" style={thumbUrl(r.slides[0]?.media ?? r.thumbnail, 80) ? { backgroundImage: `url("${thumbUrl(r.slides[0]?.media ?? r.thumbnail, 80)}")` } : undefined} aria-hidden />
                 <span className="flex min-w-0 flex-col"><b className="truncate text-sm">{r.handle ? `@${r.handle}` : "Unknown"}</b><span className="text-xs text-text-muted tnum">{numbersLine(r) || "Numbers unknown"}</span></span>
               </button>
             ))}

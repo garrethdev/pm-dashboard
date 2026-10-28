@@ -592,6 +592,9 @@ function ItemRow({
 }) {
   const finished = isItemFinished(item);
   const isPost = item.kind === "post";
+  // Scheduled inside the platform: the media and caption have already been
+  // used, so the row stops offering them.
+  const scheduled = item.status === "scheduled";
   const media = usePostMedia(post);
   const firstMedia = post?.media[0];
   // Says what is downloaded: a video, a carousel's slides or one picture. The
@@ -648,10 +651,10 @@ function ItemRow({
         </span>
         <ItemDetail item={item} />
         {isPost && post?.song && <SongLine song={post.song} />}
-        {!finished && isPost && firstMedia && <PostMediaCard media={media} url={firstMedia} />}
+        {!finished && !scheduled && isPost && firstMedia && <PostMediaCard media={media} url={firstMedia} />}
       </div>
 
-      {!finished && isPost && item.status !== "postedNoLink" && (
+      {!finished && !scheduled && isPost && item.status !== "postedNoLink" && (
         // `w-full` is what breaks the line: a child that wide cannot sit
         // beside anything, so the pair takes the row's whole width. At `@lg:`
         // it hugs its buttons again and centres against the row.
@@ -685,6 +688,7 @@ function ItemStatus({ item }: { item: TodoItem }) {
 
 function statusPill(item: TodoItem): { tone: "warn" | "danger" | "gray" | "info"; label: string } | null {
   if (item.status === "postedNoLink") return { tone: "warn", label: "Link needed" };
+  if (item.status === "scheduled") return { tone: "info", label: "Scheduled" };
   if (item.status === "failed") return { tone: "danger", label: "Failed" };
   if (item.status === "skipped") return { tone: "gray", label: "Skipped" };
   // The script's own state (PF-13). Stopped is red: it is the silent failure

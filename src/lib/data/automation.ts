@@ -23,7 +23,11 @@ export interface TrackedWorkflow {
 }
 
 export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
-  { id: "Jaf78Yt9XAuj9PNJ", name: "Smart Scheduler", expected: "daily 06:30 ET", schedule: { type: "daily", hour: 6, minute: 30 }, key: true },
+  // Plans three days at a time on every third night (Garreth, 2026-10-27). The
+  // trigger still fires every night at 01:00; on the two rest nights the run
+  // stops at once without planning, so n8n shows a quick success every night
+  // and "daily" is what the overdue check should expect.
+  { id: "Jaf78Yt9XAuj9PNJ", name: "Smart Scheduler", expected: "01:00 ET, plans 3 days every 3rd night", schedule: { type: "daily", hour: 1, minute: 0 }, key: true },
   { id: "lioNzkWRocyDvZS5", name: "Posting Agent", expected: "daily 10:00 ET", schedule: { type: "daily", hour: 10, minute: 0 }, key: true },
   { id: "QDUtABHSG4FMTrQX", name: "Warmup Scheduler", expected: "daily", schedule: { type: "none" }, key: true },
   { id: "ARmIDPrV77c0k4zA", name: "Task Detail Poller", expected: "hourly + 07:00 digest", schedule: { type: "interval", minutes: 60 }, key: true },

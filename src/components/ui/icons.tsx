@@ -272,7 +272,7 @@ export const EnvelopeSimple = icon(PhEnvelopeSimple, "EnvelopeSimple");
 export const BookOpen = icon(PhBookOpen, "BookOpen");
 export const MagnifyingGlass = icon(PhMagnifyingGlass, "MagnifyingGlass", "bold");
 
-/* "Report an issue", one of the two actions under the floating issue button
+/* "Send a report", one of the two actions under the floating report button
  * in the bottom-right corner (Garreth, 2026-10-09). The button itself is the
  * Flag above. */
 export const NotePencil = icon(PhNotePencil, "NotePencil");

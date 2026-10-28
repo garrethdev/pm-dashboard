@@ -294,12 +294,14 @@ async function todoNotifications(): Promise<NotificationItem[]> {
   // day off itself, when the list shows no open posts on purpose and every
   // one would wrongly read as dropped off it; they come back the next day.
   const daysOff = await getDaysOff();
-  const waitedMs = (d: { createdAt: string }) => workingMsBetween(new Date(d.createdAt), now, daysOff);
+  // From when the post was due, not when it was handed out: since 2026-10-27
+  // a post can be handed out days ahead of its day.
+  const waitedMs = (d: { dueAt: string }) => workingMsBetween(new Date(d.dueAt), now, daysOff);
   const overdue = board.dayOff
     ? []
     : open
         .filter((d) => waitedMs(d) >= OVERDUE_HOURS * 3_600_000)
-        .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+        .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
 
   if (overdue.length > 0) {
     const oldest = overdue[0]!;

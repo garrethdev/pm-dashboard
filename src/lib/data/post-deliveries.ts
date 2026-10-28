@@ -23,8 +23,10 @@
 
 import { ACCOUNT_FK_COL, type AccountId } from "@/lib/data/account-id";
 
-/** Every state a handed-out post can be in. Mirrors the check constraint. */
-export const DELIVERY_STATUSES = ["queued", "posted", "failed", "skipped"] as const;
+/** Every state a handed-out post can be in. Mirrors the check constraint.
+ *  `scheduled` is a post set to go out later inside the platform itself:
+ *  done on time, but no link yet (Garreth, 2026-10-28). */
+export const DELIVERY_STATUSES = ["queued", "scheduled", "posted", "failed", "skipped"] as const;
 export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
 
 export function isDeliveryStatus(value: unknown): value is DeliveryStatus {
@@ -59,6 +61,10 @@ export interface PostDelivery {
   doneBy: string | null;
   doneAt: string | null;
   createdAt: string;
+  /** When it should go out: the planned date and time. The day the To-do list
+   *  files it under, and where its overdue clock starts. Equal to `createdAt`
+   *  for every post handed out before 2026-10-27, and for one queued by hand. */
+  dueAt: string;
   /** Set on a Facebook account's copy of its Instagram account's post: the
    *  delivery it copies (Garreth, 2026-10-01). A copy never touches the
    *  content row, which belongs to the Instagram post. */
@@ -78,11 +84,12 @@ interface RawDelivery {
   done_by: string | null;
   done_at: string | null;
   created_at: string;
+  due_at: string;
   mirror_of: number | null;
 }
 
 const COLS =
-  `id,content_type,source_table,source_id,${ACCOUNT_FK_COL},device_id,status,post_url,note,done_by,done_at,created_at,mirror_of`;
+  `id,content_type,source_table,source_id,${ACCOUNT_FK_COL},device_id,status,post_url,note,done_by,done_at,created_at,due_at,mirror_of`;
 
 function toDelivery(row: RawDelivery): PostDelivery {
   return {
@@ -92,7 +99,7 @@ function toDelivery(row: RawDelivery): PostDelivery {
     sourceId: row.source_id,
     accountId: row.account_id,
     deviceId: row.device_id,
-    // The column is constrained to these four, so an unknown value means the
+    // The column is constrained to these five, so an unknown value means the
     // constraint was changed without this file; say so rather than silently
     // rendering a status nothing knows how to draw.
     status: isDeliveryStatus(row.status) ? row.status : "queued",
@@ -101,6 +108,7 @@ function toDelivery(row: RawDelivery): PostDelivery {
     doneBy: row.done_by,
     doneAt: row.done_at,
     createdAt: row.created_at,
+    dueAt: row.due_at,
     mirrorOf: row.mirror_of ?? null,
   };
 }
@@ -170,11 +178,16 @@ export function getOpenDeliveries(
 /**
  * Posts that actually went out, newest first. This is the Physical fleet's
  * answer to the question `geelark_tasks.status = 3` answers for Cloud.
+ *
+ * `withScheduled` adds the posts scheduled inside the platform. They are not
+ * live yet, but they were done on the phone at `done_at`, which is what
+ * matching a screen recording to its post needs.
  */
 export function getPostedDeliveries(
-  filter: { accountId?: AccountId; since?: string; limit?: number } = {},
+  filter: { accountId?: AccountId; since?: string; limit?: number; withScheduled?: boolean } = {},
 ): Promise<PostDelivery[]> {
-  const parts = [`select=${COLS}`, "status=eq.posted", "order=done_at.desc"];
+  const status = filter.withScheduled ? "status=in.(posted,scheduled)" : "status=eq.posted";
+  const parts = [`select=${COLS}`, status, "order=done_at.desc"];
   if (filter.accountId !== undefined) parts.push(`account_id=eq.${filter.accountId}`);
   if (filter.since !== undefined) parts.push(`done_at=gte.${filter.since}`);
   parts.push(`limit=${filter.limit ?? 200}`);
@@ -374,7 +387,7 @@ export async function markDelivery(
   return toDelivery(rows[0]);
 }
 
-/** Paste the link for a post already marked done, which is the second half of
+/** Paste the link for a post already marked posted, which is the second half of
  *  ticking one off and the part attribution actually needs. */
 export async function setDeliveryUrl(id: number, postUrl: string): Promise<PostDelivery> {
   const res = await sbFetch(`post_deliveries?id=eq.${id}&select=${COLS}`, {

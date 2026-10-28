@@ -14,8 +14,8 @@ import {
  * migration, the app is the copy that is wrong.
  */
 describe("delivery statuses", () => {
-  it("accepts exactly the four the table allows", () => {
-    expect([...DELIVERY_STATUSES]).toEqual(["queued", "posted", "failed", "skipped"]);
+  it("accepts exactly the five the table allows", () => {
+    expect([...DELIVERY_STATUSES]).toEqual(["queued", "scheduled", "posted", "failed", "skipped"]);
     for (const s of DELIVERY_STATUSES) expect(isDeliveryStatus(s)).toBe(true);
   });
 
@@ -31,6 +31,8 @@ describe("delivery statuses", () => {
 describe("finished means it carries a done_at", () => {
   it("is false only for queued", () => {
     expect(isFinished("queued")).toBe(false);
+    // Scheduled carries the moment it was marked, as the table requires.
+    expect(isFinished("scheduled")).toBe(true);
     expect(isFinished("posted")).toBe(true);
     expect(isFinished("failed")).toBe(true);
     expect(isFinished("skipped")).toBe(true);
