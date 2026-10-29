@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, pickPost, pickPostByTime, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
+import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, phoneZoneHours, pickPost, pickPostByTime, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
 
 const group = { platform: "instagram" as const, account: "trina_triumphs", postUrl: "https://www.instagram.com/p/x/", format: "carousel" };
 
@@ -197,6 +197,36 @@ describe("captionKey / pickPost", () => {
     ];
     expect(pickPostByTime(twins, "Posted on Oct 16, 2026, 11:43 AM")).toBeNull();
     expect(pickPostByTime(twins.slice(0, 1), "Posted on Oct 16, 2026, 11:43 AM")?.post_id).toBe("a");
+  });
+  it("Facebook's \"Post details\" prints no year (second short test, 2026-10-29): the year from when it was read", () => {
+    const now = Date.UTC(2026, 9, 29, 15, 31);
+    expect(screenClock("Oct 29, 10:00 AM", now)).toBe(Date.UTC(2026, 9, 29, 10, 0));
+    // In early January, a December date is last year's.
+    expect(screenClock("Dec 30, 9:00 PM", Date.UTC(2027, 0, 2, 12, 0))).toBe(Date.UTC(2026, 11, 30, 21, 0));
+    // Stored 17:00:09 UTC, shown 10:00 AM in Phoenix; the "See post" read as its caption matches nothing.
+    const fb = [
+      { post_id: "fb1", post_url: null, posted_at: "2026-10-29T17:00:09Z", caption_snippet: "720 million, then nothing", format: "video" },
+      { post_id: "fb2", post_url: null, posted_at: "2026-10-29T13:00:11Z", caption_snippet: "Another one", format: "video" },
+    ];
+    // Posts on the hour: 10:00 AM alone fits fb1 in Phoenix and fb2 in another zone.
+    expect(pickPostByTime(fb, "Oct 29, 10:00 AM", now)).toBeNull();
+    // The account's times together give one zone (Phoenix, 7 hours behind), and then each its post.
+    const zone = phoneZoneHours(fb, ["Oct 29, 10:00 AM", "Oct 29, 6:00 AM"], now);
+    expect(zone).toBe(7);
+    expect(pickPostByTime(fb, "Oct 29, 10:00 AM", now, zone)?.post_id).toBe("fb1");
+    expect(pickPost(fb, "See post", "Oct 29, 6:00 AM", zone)?.post_id).toBe("fb2");
+  });
+  it("phoneZoneHours: nothing when a single time is all there is, or two zones fit as well", () => {
+    const now = Date.UTC(2026, 9, 29, 15, 31);
+    const fb = [
+      { post_id: "a", post_url: null, posted_at: "2026-10-29T17:00:09Z", caption_snippet: null, format: "video" },
+      { post_id: "b", post_url: null, posted_at: "2026-10-29T13:00:11Z", caption_snippet: null, format: "video" },
+    ];
+    expect(phoneZoneHours(fb, ["Oct 29, 10:00 AM"], now)).toBeNull();
+    // 1:00 PM and 5:00 PM shown: UTC+0 gives 2 matches (13:00, 17:00), so does nothing else.
+    expect(phoneZoneHours(fb, ["Oct 29, 1:00 PM", "Oct 29, 5:00 PM"], now)).toBe(0);
+    // 10:00 AM and 11:00 AM, four hours apart in no zone: each zone fits one at most.
+    expect(phoneZoneHours(fb, ["Oct 29, 10:00 AM", "Oct 29, 11:00 AM"], now)).toBeNull();
   });
 });
 

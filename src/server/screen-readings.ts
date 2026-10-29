@@ -629,9 +629,9 @@ export interface PostCandidate {
  * "Video analysis" prints no caption (first sitting, 2026-10-23). Null when
  * nothing matches.
  */
-export function pickPost(candidates: PostCandidate[], caption: string | null | undefined, postedAtText?: string | null): PostCandidate | null {
+export function pickPost(candidates: PostCandidate[], caption: string | null | undefined, postedAtText?: string | null, zoneHours?: number | null): PostCandidate | null {
   const key = captionKey(caption);
-  if (!key) return pickPostByTime(candidates, postedAtText);
+  if (!key) return pickPostByTime(candidates, postedAtText, Date.now(), zoneHours);
   // A short caption has to match whole: "The" must not pick the newest post
   // that starts with "the".
   const hits = candidates.filter((c) => {
@@ -640,7 +640,7 @@ export function pickPost(candidates: PostCandidate[], caption: string | null | u
     if (key.length < 8 || ck.length < 8) return ck === key;
     return ck.startsWith(key) || key.startsWith(ck);
   });
-  if (hits.length === 0) return pickPostByTime(candidates, postedAtText);
+  if (hits.length === 0) return pickPostByTime(candidates, postedAtText, Date.now(), zoneHours);
   const screen = postedAtText ? Date.parse(postedAtText.replace(/^(posted|published)(\s+on)?\s+/i, "")) : NaN;
   const sorted = [...hits].sort((a, b) => {
     if (!Number.isNaN(screen)) {
@@ -658,11 +658,15 @@ const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "
 /**
  * The date and time an analytics screen prints ("Posted on Oct 16, 2026,
  * 11:43 AM"), as that clock reading written as if it were UTC. The phone's
- * own time zone is not known here. Null without a year and a minute.
+ * own time zone is not known here. Null without a minute. Facebook's "Post
+ * details" prints no year ("Oct 29, 10:00 AM", second short test,
+ * 2026-10-29): given `now`, that is this year, or last year if this year's
+ * would be more than two days ahead; without `now`, null.
  */
-export function screenClock(text: string | null | undefined): number | null {
-  const m = /([a-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4}),?\s+(?:at\s+)?(\d{1,2}):(\d{2})\s*([ap]\.?m\.?)?/i.exec(text ?? "");
+export function screenClock(text: string | null | undefined, now?: number): number | null {
+  const m = /([a-z]{3,9})\.?\s+(\d{1,2}),?\s+(?:(\d{4}),?\s+)?(?:at\s+)?(\d{1,2}):(\d{2})\s*([ap]\.?m\.?)?/i.exec(text ?? "");
   if (!m) return null;
+  if (!m[3] && now === undefined) return null;
   const month = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase());
   let hour = Number(m[4]);
   const minute = Number(m[5]);
@@ -672,7 +676,10 @@ export function screenClock(text: string | null | undefined): number | null {
     if (hour < 1 || hour > 12) return null;
     hour = (hour % 12) + (half === "pm" ? 12 : 0);
   } else if (hour > 23) return null;
-  return Date.UTC(Number(m[3]), month, Number(m[2]), hour, minute);
+  if (m[3]) return Date.UTC(Number(m[3]), month, Number(m[2]), hour, minute);
+  const year = new Date(now!).getUTCFullYear();
+  const shown = Date.UTC(year, month, Number(m[2]), hour, minute);
+  return shown > now! + 2 * 86_400_000 ? Date.UTC(year - 1, month, Number(m[2]), hour, minute) : shown;
 }
 
 /** How far a phone's clock can be from UTC: the time zones run from 12 hours behind to 14 ahead. */
@@ -686,24 +693,66 @@ const MAX_ZONE_MS = 14 * 3_600_000;
  * 18:43:40 UTC). Only a single such post counts; two is a guess, and gives
  * nothing.
  */
-export function pickPostByTime(candidates: PostCandidate[], postedAtText: string | null | undefined): PostCandidate | null {
-  const shown = screenClock(postedAtText);
+export function pickPostByTime(candidates: PostCandidate[], postedAtText: string | null | undefined, now = Date.now(), zoneHours?: number | null): PostCandidate | null {
+  const shown = screenClock(postedAtText, now);
   if (shown === null) return null;
-  const HOUR = 3_600_000;
   const hits = candidates.filter((c) => {
     const at = Date.parse(c.posted_at);
     if (Number.isNaN(at)) return false;
     const offset = at - shown; // the zone's hours, plus the seconds the screen leaves off
+    if (zoneHours !== undefined && zoneHours !== null) return offset - zoneHours * HOUR_MS >= 0 && offset - zoneHours * HOUR_MS < 60_000;
     if (Math.abs(offset) > MAX_ZONE_MS + 60_000) return false;
-    return ((offset % HOUR) + HOUR) % HOUR < 60_000;
+    return ((offset % HOUR_MS) + HOUR_MS) % HOUR_MS < 60_000;
   });
   return hits.length === 1 ? hits[0] : null;
 }
 
+const HOUR_MS = 3_600_000;
+
+/**
+ * The phone's time zone, as the hours to add to the time it shows to get
+ * UTC (phone 1, Phoenix: 7), worked out from all the times one account's
+ * posts showed in one hand-off: the zone under which the most of them match
+ * exactly one stored post. Facebook schedules posts on the hour (10:00 AM,
+ * 6:00 AM), so one time alone fits a post in every zone (second short test,
+ * 2026-10-29). Null when no zone matches more than one post, or two zones
+ * tie: then each time is matched alone, as before.
+ */
+export function phoneZoneHours(candidates: PostCandidate[], postedAtTexts: (string | null | undefined)[], now = Date.now()): number | null {
+  const texts = postedAtTexts.filter((t) => screenClock(t, now) !== null);
+  let best: number | null = null;
+  let bestCount = 1;
+  let tie = false;
+  for (let zone = -14; zone <= 12; zone++) {
+    const count = texts.filter((t) => pickPostByTime(candidates, t, now, zone) !== null).length;
+    if (count > bestCount) [best, bestCount, tie] = [zone, count, false];
+    else if (count === bestCount && best !== null) tie = true;
+  }
+  return tie ? null : best;
+}
+
+/**
+ * The key `fb_post_performance` files a Facebook account under: its number
+ * (accounts.username, "61588896089516"), while the robot knows it by the
+ * name on its profile ("Imani Vaughn", accounts.display_name). The name
+ * itself when no single account has it (the robot may already send the number).
+ */
+async function facebookAccountKey(account: string): Promise<string> {
+  const key = serviceKey();
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/accounts?select=username&platform=eq.facebook&display_name=eq.${encodeURIComponent(account)}`,
+    { headers: { apikey: key, Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(10_000) },
+  );
+  if (!res.ok) throw new Error(`supabase HTTP ${res.status} reading accounts`);
+  const rows = (await res.json()) as { username: string | null }[];
+  return rows.length === 1 && rows[0].username ? rows[0].username : account;
+}
+
 /** The account's posts from the last 45 days, newest first: the pool a reading is matched against. */
-export async function recentPosts(platform: Platform, account: string): Promise<PostCandidate[]> {
+export async function recentPosts(platform: Platform, name: string): Promise<PostCandidate[]> {
   const key = serviceKey();
   const table = { tiktok: "tt_post_performance", instagram: "post_performance", facebook: "fb_post_performance" }[platform];
+  const account = platform === "facebook" ? await facebookAccountKey(name) : name;
   const since = new Date(Date.now() - 45 * 86_400_000).toISOString();
   const res = await fetch(
     `${process.env.SUPABASE_URL}/rest/v1/${table}?select=post_id,post_url,posted_at,caption_snippet,format` +
@@ -836,6 +885,7 @@ export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?
   const started = Date.now();
   const report: RunReport = { dry, read: 0, stored: 0, problems: 0, unread: 0, already: 0, aiCalls: 0, costUsd: 0, posts: [] };
   const pools = new Map<string, PostCandidate[]>();
+  const zones = new Map<string, number | null>();
 
   for (const post of req.posts) {
     if (Date.now() - started > RUN_TIME_BUDGET_MS) {
@@ -860,8 +910,13 @@ export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?
       let match: PostCandidate | null = null;
       if (!post.post_url) {
         const poolKey = `${post.platform}:${post.account}`;
-        if (!pools.has(poolKey)) pools.set(poolKey, await recentPosts(post.platform, post.account));
-        match = pickPost(pools.get(poolKey) ?? [], post.caption, post.posted_at_text);
+        if (!pools.has(poolKey)) {
+          const pool = await recentPosts(post.platform, post.account);
+          pools.set(poolKey, pool);
+          const shown = req.posts.filter((p) => p.platform === post.platform && p.account === post.account).map((p) => p.posted_at_text);
+          zones.set(poolKey, phoneZoneHours(pool, shown));
+        }
+        match = pickPost(pools.get(poolKey) ?? [], post.caption, post.posted_at_text, zones.get(poolKey));
         entry.matched = match?.post_url ?? null;
       }
       const group: Omit<ScreenGroup, "screenshots"> = {

@@ -20,6 +20,35 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-29 — Facebook readings from the phone robot find their post
+
+**Where it came from:** Yurie's second short test of the phone robot (DA-06,
+2026-10-29). For the first time the robot read three Facebook posts in full
+(Imani Vaughn), but none of the three readings was linked to its post, so
+they showed nowhere on the account's page. Fix on Garreth's go, same day.
+
+**Why they were not linked, and what changed:**
+
+- **The robot knows a Facebook account by its name, our Facebook table by its
+  number.** The robot sends "Imani Vaughn"; the table of Facebook posts files
+  her as 61588896089516. The dashboard now looks the name up in the accounts
+  list and uses the number.
+- **Facebook's page prints the time without a year** ("Oct 29, 10:00 AM"),
+  and the matching needed one. The year is now taken from when the post was
+  read (a late-December date read in early January is last year's).
+- **Facebook posts go out on the hour.** The phone shows times in its own
+  time zone, which the dashboard does not know, so "10:00 AM" could be any
+  post put out on an hour. The dashboard now works out the phone's zone from
+  all the posts the robot sent for that account together: the one zone in
+  which the most of them line up with a post. Then each is matched in that
+  zone. When no zone fits more than one post, it matches each time on its own,
+  as before.
+
+**How far it was checked:** 687 tests pass, 3 new. **Not confirmed live.**
+Readings 84 to 86 from this test stay unlinked: their posts went out the same
+morning and had not reached our Facebook table yet when they were read (it is
+filled once a day). The first proof is a Facebook reading of an older post.
+
 ## 2026-10-28 — Analyze a warmup with Claude in one press
 
 **Where it came from:** Garreth, 2026-10-28, with the Warmups page below: "one
