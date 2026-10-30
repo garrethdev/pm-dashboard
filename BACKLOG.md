@@ -3314,3 +3314,14 @@ Worth doing before either entry above, since it makes both reviewable.
 **Related, already tracked:** the six hardcoded service-role JWTs in
 `84bcYyXfCgtLB7y4` are in V1 under "Also open". Worth doing regardless of which
 direction any of this goes.
+
+## The calendar still says Link needed the moment a hand post is ticked
+
+Since 2026-10-30 the robots attach the link to Yurie's posts
+(`autolink_hand_posts`), and the To-do list waits two working days before it
+asks for one. The calendar's day panel still reads `calendar_day_detail_fleet`,
+which calls any posted hand-out without a link "Link needed" straight away, so
+for about a day after a tick the calendar and the To-do list disagree.
+Deferred on purpose: the calendar functions are precomputed reads proven by
+parity checks, and the gap is cosmetic. When it is done, use the same rule as
+`statusOf()` in `src/lib/data/todo.ts`: two working days from `done_at`.
