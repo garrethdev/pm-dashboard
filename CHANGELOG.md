@@ -20,6 +20,34 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-30 — New Instagram accounts could not be connected to analytics
+
+**Where it came from:** seen live. Connecting kathy_spd to Instagram analytics
+ended on "Error in workflow" after Allow was tapped (n8n "IG OAuth Handler" run
+207829). Garreth approved the fix.
+
+**What happened:** Instagram approved the account and handed over its access,
+but our save failed. On connecting, the workflow also replaced the account's
+own number in our database with Instagram's long one. Since the phones
+started, an account's posts and warmups are filed under its own number, and
+the database refuses to change a number other records point to. Because the
+save is all-or-nothing, the access was thrown away too. Accounts connected in
+September had no phone records yet, which is why it worked then. Every phone
+account would have failed the same way, sar.ahkellerxo included.
+
+**What changed:** the workflow now saves only the access and leaves the
+account's number alone. Nothing used the long number: the stats run reads
+posts with the access alone and files them by username. Changed in n8n, not in
+this repo; published. `docs/INSTAGRAM-ANALYTICS-ONBOARDING.md` no longer says
+to look for the long number, warns that a tapped link on an iPhone opens the
+app (paste it into Safari instead), and now says the stats run reads 28 days
+back, not 7.
+
+**Verification:** the published version is the edited one. The exact save was
+run against kathy_spd inside the database and undone: it went through, kept
+its number and made no duplicate. Not yet met a real connection; that comes
+when kathy_spd opens the link again (each approval works only once).
+
 ## 2026-10-30 — Instagram numbers stopped coming in; fixed the same morning
 
 **Where it came from:** found while checking the auto-linking below. The

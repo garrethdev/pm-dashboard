@@ -57,19 +57,26 @@ Open this in a **browser logged in as that account**:
 https://www.instagram.com/oauth/authorize?client_id=1669907580821322&redirect_uri=https://czed.app.n8n.cloud/webhook/ig-oauth-callback&response_type=code&scope=instagram_business_basic,instagram_business_manage_insights
 ```
 
+- **On an iPhone, don't tap the link.** A tapped Instagram link jumps into the
+  Instagram app, which can't do this step and shows "Something went wrong".
+  Copy it, open Safari, paste it into the address bar and press Go.
 - The browser has its own Instagram login, separate from the phone app. If it
   shows a login page, you'll need the account's password.
+- Doing a second account? Log the browser out of the first one before you
+  open the link again.
 - When it works, the page says **"Token saved for <handle>"**. Check that the
   handle is the account you meant.
 
 ## Step 5 — Confirm, then wait for the stats run
 
-- In Supabase, the account's `access_token` should now be filled in, and its
-  `id` should have changed to a long Instagram number (a short number like 133
-  means it never connected).
+- In Supabase, the account's `access_token` should now be filled in. That is
+  the only sign. The account keeps its own `id`: accounts connected before
+  2026-10-30 had it swapped for a long Instagram number, but that swap is gone
+  (it broke the save for any account with phone posts or warmups), so a short
+  `id` no longer means anything.
 - Stats appear after the next **Analysis Engine** run in n8n (Sun, Mon, Wed and
-  Fri at 8 AM New York time). It only looks back **7 days**, so connect an
-  account within a week of the posts you want counted.
+  Fri at 8 AM New York time). It looks back **28 days**, so connect an account
+  within four weeks of the posts you want counted.
 - Nothing else needs doing later. The same workflow renews each account's
   access automatically before it runs out (every 60 days).
 
@@ -81,5 +88,7 @@ https://www.instagram.com/oauth/authorize?client_id=1669907580821322&redirect_ur
 |---|---|
 | "Insufficient developer role" | Step 1 wasn't done, or the invite wasn't accepted yet. |
 | A login page you can't get past | The browser isn't logged in as the account; you need its password. |
+| The link opens the Instagram app, then "Something went wrong" | The link was tapped. Paste it into Safari's address bar instead (step 4). |
+| "Error in workflow" after tapping Allow | Instagram accepted it but our save failed. Tell whoever looks after the data; the n8n "IG OAuth Handler" run says why. Each approval works once, so the link has to be opened again after the fix. |
 | "Token saved" but for the wrong handle | A different account was logged into the browser. Tell whoever looks after the data so the wrong row can be checked. |
-| Connected, but no posts in analytics | The stats run hasn't happened yet, or the posts are older than 7 days. |
+| Connected, but no posts in analytics | The stats run hasn't happened yet, or the posts are older than 28 days. |
