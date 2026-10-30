@@ -20,6 +20,66 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-30 — The robots attach the link to Yurie's posts
+
+**Where it came from:** asked for in the session of 2026-10-30, with Yurie
+about to manage many more accounts: "make the process of manual posting and
+attaching of links easier … fetch the links using whatever we are using for
+the analytics … and match it with the captions". Build approved the same
+day, together with ticking the Facebook copy along with Instagram, because
+Yurie cross-posts from Instagram to Facebook.
+
+**Why:** every post Yurie made by hand asked her to copy its link on the
+phone and paste it into the To-do sheet, and the links were often wrong.
+Of 82 Facebook posts marked posted by 2026-10-29, about 67 carried an
+Instagram link, so only 10 of them could be traced back to the content they
+came from. Two TikTok items had the caption pasted in place of a link, and
+two TikTok links pointed at the wrong video.
+
+**What changed:**
+
+- **The link fills itself in.** The analytics robots already read every
+  account's posts about once a day, captions included. When one reads a post
+  whose caption matches something handed to that same account, the database
+  writes the link onto Yurie's item. It also works the other way round: when
+  she ticks a post that a robot has already read, the link is found at once.
+  It is not a timer or an n8n workflow; it runs whenever either thing happens,
+  for all three platforms.
+- **A scheduled post finishes itself.** When the robot sees it live, it is
+  marked posted with its link, and Yurie does not need to come back to it.
+- **Ticking an Instagram post ticks its Facebook copy.** Posted, scheduled,
+  failed and Undo all carry across. A Facebook item she already finished on
+  its own is left alone.
+- **The To-do list stops asking straight away.** A post ticked without a
+  link reads as done. Only if the robots have not found it two working days
+  later does it say Link needed, and then it stays on today's list until
+  the link is added, as scheduled posts already did. In the posting sheet
+  the link box is folded behind **Add link**.
+- **The analytics pages count more of her posts.** Matching against what was
+  handed to each account tied 75 earlier posts to their content type that
+  the pages could not place before: 62 on Facebook, 10 on Instagram, 3 on
+  TikTok. The 10 Instagram ones were missed because the iPhone turns ' into
+  ’ when a caption is pasted, or because the caption was under 30 characters.
+
+**How safe a match is:** a link is written only when exactly one post fits
+exactly one item, and a link Yurie pasted is never replaced. Before it was
+switched on, every link she had pasted was blanked in a test that was then
+thrown away, and the matching was run again. Instagram found 61 of 78, all
+61 the same post she had linked. TikTok found 55 of 68 with no conflicts; of
+the short tiktok.com/t/ links, followed to their video, 32 of 34 agreed and
+in the other 2 her link was the wrong one. Facebook found 72 of 82. What was
+not found is mostly a post no robot had read yet: an account not connected
+to analytics, such as kathy_spd on Instagram, or a post too recent.
+
+**Verification:** the database change is live (confirmed by query) and the
+October back-fill was run, with the counts above. Every automatic link is
+recorded in the audit log as `delivery_autolink`, and every Facebook
+follow as `delivery_mirror_follow`. No new post has been linked by a real
+robot run yet. The first one to watch is the next Instagram, TikTok or
+Facebook read after this lands. The To-do changes pass the tests, and the
+sheet was checked on the demo list at phone size in headless Chrome (not
+Safari): Posted shows Add link, which opens the link box with Paste.
+
 ## 2026-10-29 — Facebook readings from the phone robot find their post
 
 **Where it came from:** Yurie's second short test of the phone robot (DA-06,
