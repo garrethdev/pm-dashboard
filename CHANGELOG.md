@@ -20,6 +20,29 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-30 — Instagram numbers stopped coming in; fixed the same morning
+
+**Where it came from:** found while checking the auto-linking below. The
+Instagram analytics robot (n8n "Analysis Engine") had saved nothing since
+Wednesday.
+
+**What happened:** the robot asks Instagram for each post's numbers. It did
+this one post at a time, inside a single n8n step that n8n stops after 60
+seconds. Since 9 October it reads 28 days of posts, and as accounts posted
+more it crept up to 57 seconds on Wednesday 28 October. On Friday 30 October
+it went over, so the 8:00 AM run was stopped before anything was saved. Every
+later run would have stopped the same way. Nobody had changed the workflow;
+it simply outgrew the limit.
+
+**What changed:** that step now asks about 8 posts at once, and each answer
+still stays with its own post. Changed in n8n, not in this repo: version
+"Get Insights: 8 posts at a time (60s timeout fix)", published.
+
+**Verification (confirmed live):** a run started by hand at 10:02 AM ET on
+30 October took 10 seconds for that step instead of 57, and saved 15 new
+Instagram rows. In the same run the auto-linking below linked 3 of Yurie's
+scheduled Instagram posts by itself.
+
 ## 2026-10-30 — The robots attach the link to Yurie's posts
 
 **Where it came from:** asked for in the session of 2026-10-30, with Yurie
