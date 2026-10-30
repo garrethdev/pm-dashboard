@@ -45,8 +45,10 @@ back, not 7.
 
 **Verification:** the published version is the edited one. The exact save was
 run against kathy_spd inside the database and undone: it went through, kept
-its number and made no duplicate. Not yet met a real connection; that comes
-when kathy_spd opens the link again (each approval works only once).
+its number and made no duplicate. **Confirmed live** the same day: kathy_spd
+(run 207830) and sar.ahkellerxo (run 207831) both connected, both kept their
+own numbers, no duplicate rows, and Instagram answered both tokens with the
+right handle. All 6 active Instagram accounts are now connected.
 
 ## 2026-10-30 — Instagram numbers stopped coming in; fixed the same morning
 
