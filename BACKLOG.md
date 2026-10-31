@@ -3325,3 +3325,22 @@ for about a day after a tick the calendar and the To-do list disagree.
 Deferred on purpose: the calendar functions are precomputed reads proven by
 parity checks, and the gap is cosmetic. When it is done, use the same rule as
 `statusOf()` in `src/lib/data/todo.ts`: two working days from `done_at`.
+
+## Testing follow-ups (2026-10-31)
+
+- **Put the missing tables in `migrations/`.** `content_pipeline_jobs`,
+  `outlier_watch`, `outlier_config`, `v_outlier_scores` and the other `outlier_*`
+  functions exist only in the live database. Until they are written down, the
+  database tests cannot run anywhere but live, and not in CI.
+- **Run `supabase/tests/` in CI** against a Postgres service once the above is done.
+- **Tests for the Higgsfield callback and `recordings/[id]/complete`.**
+- **A fake PostgREST for route tests** (step 1 of the test plan), so routes that
+  read and write can be tested end to end, not only their door.
+- **Scheduled live check** of the deployed app (`/api/health`, feed returns
+  cards, newest analysis under 24 hours). The in-app bell alert covers the
+  pipeline only while somebody has the dashboard open.
+- **Video analysis jobs still fail** on expired TikTok video links
+  (`video_analyze`, gemini-2.5-pro). Left out of the new failure alert for that
+  reason; remove the exclusion when fixed.
+- **Reader counts caption-derived pseudo-slides as slides** (post 7567 has 1 image,
+  shows 9 slides).

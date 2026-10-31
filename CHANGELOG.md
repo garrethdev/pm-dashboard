@@ -20,6 +20,48 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-31 — Alert when carousel analysis stops, and tests for the parts nobody was checking
+
+**Where it came from:** Garreth asked what is most urgent to test. The three-week
+analysis stall (2026-10-09, the reader's model was retired) was never noticed
+because nothing looked for it, and the reader and the dashboard had no shared
+check that they agree on what a row looks like.
+
+- **A red bell alert when analysis stops.** Fires when work is waiting but nothing
+  has been analysed for 6 hours, when a job has been stuck running over an hour,
+  or when more than half of a day's finished image jobs failed. Video jobs are
+  left out of the failure count because they fail on expired TikTok links today
+  (BACKLOG) and would keep it red. Not yet seen firing for real: the live
+  pipeline was healthy when this was written (newest analysis under an hour old).
+- **A bug found by the new tests, fixed.** 147 older carousels store the audience
+  questions as objects, and the Analysis tab would have tried to draw an object
+  as text, which crashes that tab. Questions are now turned into plain text.
+- **Reader to dashboard check.** Real rows from the live database (the newest
+  read, the older fuller read, the October 8 read with no coverage block) are
+  kept as samples, and tests check the Analysis tab and the cards come out right
+  from each. If the n8n reader changes what it writes, these say what the
+  dashboard no longer understands.
+- **Every route is checked for a lock.** One test goes through all 113 API routes
+  and fails if a handler has no sign-in or token check, does anything before it,
+  or sits behind the open doors in `proxy.ts` without its own token. All pass
+  today. Proven by taking a lock off one route and watching it fail.
+- **The unattended routes have tests.** The daily picture copy, Facebook read,
+  content tagging, the screen reader, and the warmup script's check-in and close:
+  wrong or missing token, unset secret, bad body, parameter limits, failure
+  answers. Not covered yet: the Higgsfield callback and the recording-complete
+  route.
+- **Database rules are now written down and tested** (`supabase/tests/`, read the
+  README there): the promotion of a radar find to Trends, the 7-day decay, and
+  the job queue's claim and finish rules. Run against the live database on
+  2026-10-31 in rolled-back blocks, every check passed and no test rows were
+  left. A copy of the live functions is in `supabase/snapshots/`. These are not
+  in CI (no database there).
+
+**Checked:** new unit tests pass, typecheck shows only the old `LayoutProps`
+error, lint clean. The CI run on GitHub has not been seen yet.
+
+---
+
 ## 2026-10-31 — Trends shows breakout slideshows first, with a "why it's working" read
 
 **Where it came from:** Garreth's goal for Trends: find trending carousels we

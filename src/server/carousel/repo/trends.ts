@@ -370,7 +370,7 @@ export async function getAnalysis(id: number): Promise<ReferenceAnalysis> {
   const inf = a.inferred ?? {};
   const payoff = inf.payoff as { position?: number | null; description?: string } | undefined;
   const pattern = inf.reusable_pattern as { invariants?: string[]; limitations?: string[] } | undefined;
-  const response = inf.audience_response as { themes?: { theme: string }[]; questions?: string[] } | undefined;
+  const response = inf.audience_response as { themes?: { theme: string }[]; questions?: (string | { question?: string })[] } | undefined;
   const coverage = (a.observed?.coverage as { inspected_images?: number; supplied_images?: number } | undefined) ?? {};
   const first = inf.first_product_slide as number | null | undefined;
   const summary: Record<string, string> = {};
@@ -401,7 +401,8 @@ export async function getAnalysis(id: number): Promise<ReferenceAnalysis> {
     keep: pattern?.invariants ?? [],
     limits: pattern?.limitations ?? [],
     themes: (response?.themes ?? []).map((t) => t.theme).filter(Boolean),
-    questions: response?.questions ?? [],
+    // The reader writes each question as { question, evidence_comment_ids }; a bare object here crashes the Analysis tab.
+    questions: (response?.questions ?? []).map((q) => (typeof q === "string" ? q : q?.question ?? "")).filter(Boolean),
     slidesRead: coverage.supplied_images ? { read: coverage.inspected_images ?? 0, of: coverage.supplied_images } : null,
   };
 }
