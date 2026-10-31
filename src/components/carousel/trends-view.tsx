@@ -70,6 +70,7 @@ function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () =>
         <span className="flex size-8 items-center justify-center rounded-full bg-card-raised" aria-hidden><PlatformIcon platform={r.platform} className="size-4 text-text-primary" /></span>
         <span className="flex min-w-0 flex-col">
           <span className="flex items-baseline gap-1.5 text-sm"><b className="truncate">{r.handle ? `@${r.handle}` : "Unknown"}</b>{r.publishedAt && <span className="text-xs text-text-muted tnum">· {shortDate(r.publishedAt)}</span>}</span>
+          {r.trendingAt && <span className="text-xs font-medium text-accent">Trending{r.reach ? ` · ${r.reach >= 10 ? Math.round(r.reach) : r.reach.toFixed(1)}× views per follower` : ""}{r.publishedAt ? ` · ${ageText(r.publishedAt)}` : ""}</span>}
           {r.topics.length > 0 && <span className="truncate text-xs text-text-muted">{r.topics.map((t) => t.replace(/_/g, " ")).join(" · ")}</span>}
         </span>
         {r.sourceUrl && <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-auto rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted hover:text-text-primary">View Post</a>}
@@ -118,7 +119,30 @@ function Tile({ r, onOpen }: { r: Reference; onOpen: () => void }) {
   );
 }
 
+/** How old a post was, in plain words, for the trending line. */
+function ageText(iso: string): string {
+  const h = Math.max(0, (Date.now() - new Date(iso).getTime()) / 36e5);
+  if (h < 48) return `${Math.max(1, Math.round(h))}h old`;
+  return `${Math.round(h / 24)} days old`;
+}
+
 function Feed({ onOpen }: { onOpen: (id: number) => void }) {
+  const [niche, setNiche] = useState<"main" | "other">("main");
+  return (
+    <div className="flex flex-col">
+      <div className="flex gap-1.5 pt-3" role="tablist" aria-label="Which carousels">
+        {(["main", "other"] as const).map((n) => (
+          <button key={n} type="button" role="tab" aria-selected={niche === n} onClick={() => setNiche(n)} className={cn("rounded-full border px-3 py-1 text-xs font-medium", niche === n ? "border-accent text-accent" : "border-border text-text-muted hover:text-text-primary")}>
+            {n === "main" ? "Main feed" : "Other niches"}
+          </button>
+        ))}
+      </div>
+      <FeedList key={niche} niche={niche} onOpen={onOpen} />
+    </div>
+  );
+}
+
+function FeedList({ onOpen, niche }: { onOpen: (id: number) => void; niche: "main" | "other" }) {
   const [items, setItems] = useState<Reference[]>([]);
   const [older, setOlder] = useState<Reference[] | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "end" | "error">("loading");
@@ -149,7 +173,7 @@ function Feed({ onOpen }: { onOpen: (id: number) => void }) {
     try {
       if (older === null) {
         const last = items[items.length - 1];
-        const q = last ? `?afterId=${last.id}` : "";
+        const q = `?niche=${niche}${last ? `&afterId=${last.id}` : ""}`;
         const res = await fetch(`/api/carousel-generator/trends/feed${q}`, { cache: "no-store" });
         if (!res.ok) throw new Error();
         const j = (await res.json()) as { items: Reference[]; more: boolean };
@@ -171,7 +195,7 @@ function Feed({ onOpen }: { onOpen: (id: number) => void }) {
     } finally {
       busy.current = false;
     }
-  }, [items, older]);
+  }, [items, older, niche]);
 
   // The sentinel sits under the list and is on screen from the start, so the
   // same observer fetches the first page and every page after it.

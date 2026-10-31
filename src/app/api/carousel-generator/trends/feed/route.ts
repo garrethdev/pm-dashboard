@@ -5,7 +5,8 @@ import { seenFeed, unseenCount, unseenFeed } from "@/server/carousel/repo/trends
 /**
  * The feed (DEV-34, DEV-45): what this person has not seen, best first,
  * keyset-paged; `?seen=1` carries on into what they have seen, most
- * recently seen first; `?count=1` is the poll for new carousels.
+ * recently seen first; `?count=1` is the poll for new carousels;
+ * `?niche=other` shows only radar finds from outside the peptide niche.
  */
 export async function GET(req: Request) {
   const g = await guard();
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     if (url.searchParams.get("seen")) return ok(await seenFeed(g.email, url.searchParams.get("before")));
     // The last carousel already shown; the server reads its place in the order itself.
     const id = Number(url.searchParams.get("afterId"));
-    return ok(await unseenFeed(g.email, Number.isInteger(id) && id > 0 ? id : null));
+    return ok(await unseenFeed(g.email, Number.isInteger(id) && id > 0 ? id : null, url.searchParams.get("niche") === "other" ? "other" : "main"));
   } catch (err) {
     logError("trends feed", err);
     return bad("The feed could not be loaded", 502);

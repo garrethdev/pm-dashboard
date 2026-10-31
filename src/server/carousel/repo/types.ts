@@ -257,6 +257,12 @@ export interface Reference {
   vote: "up" | "down" | null;
   /** When this viewer saw it, on the seen part of the feed. */
   seenAt?: string;
+  /** When the outlier radar put it in Trends, if it did. */
+  trendingAt?: string | null;
+  /** Views per follower when it was found, for radar finds. */
+  reach?: number | null;
+  /** A radar find from outside the peptide niche. */
+  otherNiche?: boolean;
 }
 
 export interface ReferenceAnalysis {

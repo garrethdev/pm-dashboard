@@ -74,7 +74,7 @@ async function outstanding(): Promise<{ todo: Wanted[]; record: { reference_id: 
   ]);
   const held = new Set(have.map((h) => `${h.reference_id}:${h.position}`));
   const freshBy = new Map(fresh.map((f) => [f.reference_id, f.images ?? []]));
-  const rank = (v: string) => (v === "perez-slides-v1" ? 2 : v === "phase0-multiformat-v1" ? 1 : 0);
+  const rank = (v: string) => (v === "perez-slides-v1" ? 2 : v === "phase0-multiformat-v1" || v === "phase0-multiformat-v2" ? 1 : 0);
   const lists = new Map<number, { rank: number; slides: { position: number; url: string; was: string | null }[] }>();
   for (const a of analyses) {
     if (!Array.isArray(a.inventory) || !a.inventory.length) continue;

@@ -20,6 +20,33 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-10-31 — Trends shows breakout slideshows first, with a "why it's working" read
+
+**Where it came from:** Garreth's goal for Trends: find trending carousels we
+can replicate, with a short breakdown of why each one works. He approved the
+plan on 2026-10-31, including an "Other niches" filter.
+
+**What happened:** the feed ranked the library's all-time hits first (posts
+from January with 30 million views), so nothing breaking out this week could
+reach the top. And most carousels' Analysis tab was nearly empty: the reader
+that writes it had saved its findings where the app does not look, then
+stopped altogether on October 9 when OpenRouter retired the model it used.
+
+**What changed:**
+- **A trending line on cards.** Carousels the outlier radar found carry a
+  "Trending" line with how many views per follower the post got and how old
+  it is. The radar itself, and its ranking of finds above the all-time hits
+  for their first week, live in Supabase and n8n, not in this repo.
+- **"Why it's working" leads the Analysis tab,** with "Remake for peptides"
+  under it, when the reader wrote them.
+- **Main feed and Other niches.** Radar finds from outside the peptide niche
+  sit on their own tab, so they do not bury the niche ones.
+- **The Overview's Trending Carousels** show the last week's radar finds when
+  there are any, and fall back to the newest scrape otherwise.
+
+**Verified:** typecheck and tests pass (new tests for the niche filter). Not
+yet seen live: no radar find had reached Trends when this was written.
+
 ## 2026-10-30 — New Instagram accounts could not be connected to analytics
 
 **Where it came from:** seen live. Connecting kathy_spd to Instagram analytics

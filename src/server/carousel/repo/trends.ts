@@ -24,6 +24,7 @@ interface RefRow {
   created_at: string | null;
   niche_tags: string[] | null;
   hook_type: string | null;
+  trending_at: string | null;
 }
 
 interface BeatRow {
@@ -51,7 +52,7 @@ interface AnalysisRow {
   updated_at: string;
 }
 
-const REF_COLS = "id,platform,creator_handle,hook_text,source_url,thumbnail_url,views,likes,saves,total_score,views_normalized,published_at,created_at,niche_tags,hook_type";
+const REF_COLS = "id,platform,creator_handle,hook_text,source_url,thumbnail_url,views,likes,saves,total_score,views_normalized,published_at,created_at,niche_tags,hook_type,trending_at";
 const PAGE = 20;
 
 async function beatsFor(ids: number[]): Promise<Map<number, BeatRow[]>> {
@@ -103,7 +104,7 @@ async function analysesFor(ids: number[]): Promise<Map<number, AnalysisRow>> {
   if (!ids.length) return map;
   const rows = await dbGetAll<AnalysisRow>(`reference_analysis?select=source_reference_id,analysis_version,inspection_status,topic,angle,hook_family,emotional_tone,visual_style,opener_treatment,proof_placement,cta_structure,observed,inferred,updated_at&source_reference_id=in.(${ids.join(",")})`);
   // Prefer the fuller run when a carousel was read twice.
-  const rank = (v: string) => (v === "perez-slides-v1" ? 2 : v === "phase0-multiformat-v1" ? 1 : 0);
+  const rank = (v: string) => (v === "perez-slides-v1" ? 2 : v === "phase0-multiformat-v1" || v === "phase0-multiformat-v2" ? 1 : 0);
   for (const r of rows) {
     const cur = map.get(r.source_reference_id);
     if (!cur || rank(r.analysis_version) > rank(cur.analysis_version)) map.set(r.source_reference_id, r);
@@ -186,6 +187,9 @@ async function hydrate(rows: RefRow[], viewer: string): Promise<Reference[]> {
       createdAt: r.created_at,
       saved: me.saved.has(r.id),
       vote: me.votes.get(r.id) ?? null,
+      trendingAt: r.trending_at,
+      reach: r.trending_at ? numOrNull(r.views_normalized) : null,
+      otherNiche: (r.niche_tags ?? []).includes("other_niches"),
     };
   });
 }
@@ -217,6 +221,22 @@ export function afterFilter(c: FeedCursor): string {
     : `&or=(total_score.lt.${c.score},total_score.is.null,and(total_score.eq.${c.score},${tie}))`;
 }
 
+/** Which part of the feed: the main library, or carousels the outlier radar found outside the peptide niche (tagged `other_niches`). */
+export type FeedNiche = "main" | "other";
+
+/** The cursor and the niche as one PostgREST `and=` filter, so the two never clash as repeated `or=` keys. */
+export function feedFilter(c: FeedCursor | null, niche: FeedNiche): string {
+  const parts: string[] = [niche === "other" ? "niche_tags.cs.{other_niches}" : "or(niche_tags.is.null,niche_tags.not.cs.{other_niches})"];
+  if (c) {
+    const tie =
+      c.views === null
+        ? `and(views_normalized.is.null,id.gt.${c.id})`
+        : `or(views_normalized.lt.${c.views},views_normalized.is.null,and(views_normalized.eq.${c.views},id.gt.${c.id}))`;
+    parts.push(c.score === null ? `and(total_score.is.null,${tie})` : `or(total_score.lt.${c.score},total_score.is.null,and(total_score.eq.${c.score},${tie}))`);
+  }
+  return `&and=(${parts.join(",")})`;
+}
+
 const numOrNull = (v: number | string | null | undefined): number | null => {
   if (v === null || v === undefined || v === "") return null;
   const x = Number(v);
@@ -224,7 +244,7 @@ const numOrNull = (v: number | string | null | undefined): number | null => {
 };
 
 /** The carousels this person has not seen, keyset-paged (DEV-45). `afterId` is the last carousel already shown. */
-export async function unseenFeed(viewer: string, afterId: number | null): Promise<{ items: Reference[]; more: boolean }> {
+export async function unseenFeed(viewer: string, afterId: number | null, niche: FeedNiche = "main"): Promise<{ items: Reference[]; more: boolean }> {
   const seen = await dbGetAll<{ reference_id: number }>(`reference_seen?select=reference_id&seen_by=eq.${enc(viewer)}`);
   const seenIds = new Set(seen.map((s) => s.reference_id));
   const out: RefRow[] = [];
@@ -235,7 +255,7 @@ export async function unseenFeed(viewer: string, afterId: number | null): Promis
   }
   let more = true;
   while (out.length < PAGE && more) {
-    const page: RefRow[] = await dbGet<RefRow[]>(`references_unified?select=${REF_COLS}&format=eq.carousel${cursor ? afterFilter(cursor) : ""}&${ORDER}&limit=${PAGE * 2}`);
+    const page: RefRow[] = await dbGet<RefRow[]>(`references_unified?select=${REF_COLS}&format=eq.carousel${feedFilter(cursor, niche)}&${ORDER}&limit=${PAGE * 2}`);
     more = page.length === PAGE * 2;
     let lastTaken: RefRow | null = null;
     for (const r of page) {
@@ -311,8 +331,14 @@ export async function getReference(viewer: string, id: number): Promise<Referenc
   return (await hydrate(rows, viewer))[0] ?? null;
 }
 
-/** Trending: the top of what the library scraped today, or the newest scrape. */
+/** Trending: outlier finds from the last week, newest first; failing that, the top of the newest scrape. */
 export async function trending(viewer: string, n = 4): Promise<{ asOf: string | null; isToday: boolean; items: Reference[] }> {
+  const week = new Date(Date.now() - 7 * 864e5).toISOString();
+  const hot = await dbGet<RefRow[]>(`references_unified?select=${REF_COLS}&format=eq.carousel&trending_at=gte.${week}&order=trending_at.desc&limit=${n}`);
+  if (hot.length) {
+    const asOf = hot[0].trending_at;
+    return { asOf, isToday: (asOf ?? "").slice(0, 10) === new Date().toISOString().slice(0, 10), items: await hydrate(hot, viewer) };
+  }
   const newest = await dbGet<{ created_at: string }[]>(`references_unified?select=created_at&format=eq.carousel&order=created_at.desc&limit=1`);
   const at = newest[0]?.created_at ?? null;
   if (!at) return { asOf: null, isToday: false, items: [] };
@@ -357,11 +383,15 @@ export async function getAnalysis(id: number): Promise<ReferenceAnalysis> {
   put("Visual style", a.visual_style);
   if (first) summary["First shown"] = `Slide ${first}`;
   const how: Record<string, string> = {};
+  // The short "why it's working" read leads (outlier radar, 2026-10-31).
+  if (typeof inf.why_it_works === "string" && inf.why_it_works) how["Why it's working"] = inf.why_it_works;
   if (typeof inf.hook_mechanism === "string") how["Why it hooks"] = inf.hook_mechanism;
   if (a.opener_treatment) how["Opener"] = a.opener_treatment;
   if (payoff?.description) how["Payoff"] = `${payoff.position ? `Slide ${payoff.position}. ` : ""}${payoff.description}`;
   if (a.proof_placement) how["Proof"] = a.proof_placement;
   if (a.cta_structure) how["Call to action"] = `${plainWord(a.cta_structure)}${inf.first_explicit_cta_slide ? ` (slide ${inf.first_explicit_cta_slide})` : ""}`;
+  const remake = (inf.replication as { peptide_adaptation?: string | null } | null | undefined)?.peptide_adaptation;
+  if (remake) how["Remake for peptides"] = remake;
   const st = a.inspection_status === "complete" ? "complete" : a.inspection_status === "blocked" ? "blocked" : "partial";
   return {
     status: st,
