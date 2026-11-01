@@ -20,6 +20,29 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-01 — Trends covers were zoomed in and cropped
+
+**Where it came from:** Garreth, looking at the live Trends feed: the picture on
+each card was too big and cut off at the sides ("our friends wh / be in a
+fantas"), while the same slide in the details window was fine.
+
+- **Cause:** the resized copies of pictures in our storage were asked for at a
+  width only, with `resize=cover`. Measured on a real slide: the original is
+  1080 by 1920, and the copy came back 540 by 1920, the middle half of it,
+  which the card then stretched to fill its box. The same call is used by the
+  Studio, the image libraries and the content-type cards, so any picture that
+  was not already the right shape was affected there too.
+- **Fix:** ask for `resize=contain`, which keeps the shape. The same slide comes
+  back 540 by 960 (measured). The page still crops to its own box.
+- Also corrects the pictures the content tagger sends to the AI, which went
+  through the same call and so saw a cropped slide.
+
+**Checked:** the two tests that pinned the old address updated, all tests pass.
+Measured against real storage with both settings. Not yet looked at on the live
+feed after deploy.
+
+---
+
 ## 2026-11-01 — Trends is its own page in the main menu
 
 **Where it came from:** Garreth: Trends should not sit under the Carousel

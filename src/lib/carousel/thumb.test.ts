@@ -3,7 +3,7 @@ import { thumbUrl } from "./thumb";
 
 describe("thumbUrl", () => {
   it("turns a public object link into a sized render link", () => {
-    expect(thumbUrl("https://x.supabase.co/storage/v1/object/public/rich-life-images/character-6/a b.jpg", 320)).toBe("https://x.supabase.co/storage/v1/render/image/public/rich-life-images/character-6/a b.jpg?width=320&quality=70&resize=cover");
+    expect(thumbUrl("https://x.supabase.co/storage/v1/object/public/rich-life-images/character-6/a b.jpg", 320)).toBe("https://x.supabase.co/storage/v1/render/image/public/rich-life-images/character-6/a b.jpg?width=320&quality=70&resize=contain");
   });
   it("clamps the width and rounds it", () => {
     expect(thumbUrl("https://x.supabase.co/storage/v1/object/public/b/p.png", 10)).toContain("width=64");
