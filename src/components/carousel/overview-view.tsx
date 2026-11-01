@@ -205,7 +205,7 @@ export function OverviewView({ initial }: { initial: OverviewData | null }) {
 
       <div className="grid items-stretch gap-5 md:grid-cols-[minmax(0,1fr)_380px]">
         <section className="flex min-w-0 flex-col gap-2.5">
-          <SectionHead title="Trending Carousels" note={trendNote} link={{ href: "/carousel-generator/trends", label: "All trends" }} />
+          <SectionHead title="Trending Carousels" note={trendNote} link={{ href: "/trends", label: "All trends" }} />
           {d.trending.items.length ? (
             <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
               {d.trending.items.map((r) => (
@@ -223,7 +223,7 @@ export function OverviewView({ initial }: { initial: OverviewData | null }) {
           )}
         </section>
         <section className="flex min-w-0 flex-col gap-2.5">
-          <SectionHead title="Saved" link={{ href: "/carousel-generator/trends?section=saved", label: "All saved" }} />
+          <SectionHead title="Saved" link={{ href: "/trends?section=saved", label: "All saved" }} />
           {d.saved.length ? (
             <div className="grid grid-cols-3 gap-1.5">
               {d.saved.slice(0, 6).map((r) => (

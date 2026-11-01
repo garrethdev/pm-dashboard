@@ -1,4 +1,4 @@
-import { TrendsView } from "@/components/carousel/trends-view";
+import { TrendsView } from "@/components/trends/trends-view";
 
 /* Trends (D10 round three): Feed, Digests, Knowledge and Saved on a rail, one search box over them. */
 export const dynamic = "force-dynamic";

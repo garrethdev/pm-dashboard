@@ -22,6 +22,7 @@ const SECTION_NAMES: Record<string, string> = {
   accounts: "Accounts",
   inventory: "Inventory",
   generate: "Generate",
+  trends: "Trends",
   "carousel-generator": "Carousel Generator",
   "content-calendar": "Content calendar",
   "content-types": "Content types",

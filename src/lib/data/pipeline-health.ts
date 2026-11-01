@@ -42,7 +42,7 @@ export function pipelineItems(f: PipelineFacts, now: Date = new Date()): Notific
   const out: NotificationItem[] = [];
   const base = {
     target: null,
-    href: "/carousel-generator/trends",
+    href: "/trends",
     read: false,
     severity: "critical" as const,
   };

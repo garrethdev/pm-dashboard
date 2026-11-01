@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getAnalysis, getReference } from "./trends";
+import { getAnalysis, getReference } from "./repo";
 import { legacy, perez, v2 } from "./__fixtures__/analysis-rows";
 
 // The n8n reader writes reference_analysis; the dashboard reads it. Nothing

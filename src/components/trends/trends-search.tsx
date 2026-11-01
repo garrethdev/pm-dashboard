@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CatalogImage } from "./catalog-image";
-import { DetailsWindow } from "./details-window";
-import { SEARCH_CHANNELS, mediaUrl, plainText, safeWebUrl, searchSummary, type SearchChannel, type SearchResponse } from "@/lib/carousel/trends/presentation";
+import { CatalogImage } from "@/components/carousel/catalog-image";
+import { DetailsWindow } from "@/components/carousel/details-window";
+import { SEARCH_CHANNELS, mediaUrl, plainText, safeWebUrl, searchSummary, type SearchChannel, type SearchResponse } from "@/lib/trends/presentation";
 import { ChevronDown, Funnel, MagnifyingGlass, X } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 

@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DetailsWindow } from "@/components/carousel/details-window";
 import { Btn, Pill, compact, post, shortDate, useJson } from "@/components/carousel/kit";
-import { TrendsSearch } from "@/components/carousel/trends-search";
+import { TrendsSearch } from "@/components/trends/trends-search";
 import { BookOpen, Bookmark, Check, ChevronLeft, ChevronRight, EnvelopeSimple, LayoutList, Loader2, PaintBrush, Rows, ThumbsDown, ThumbsUp, TrendUp } from "@/components/ui/icons";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { slidePicture } from "@/lib/carousel/slide-pictures";
@@ -334,7 +334,7 @@ export function TrendsView({ section, query }: { section?: string; query?: strin
   const [savedKey, setSavedKey] = useState(0);
   const [searching, setSearching] = useState(Boolean(query));
   const { data: recent, reload: reloadRecent } = useJson<{ items: Reference[] }>(`/api/carousel-generator/trends/saved?k=${savedKey}`);
-  const go = useCallback((s: Section) => router.replace(`/carousel-generator/trends${s === "feed" ? "" : `?section=${s}`}` as never), [router]);
+  const go = useCallback((s: Section) => router.replace(`/trends${s === "feed" ? "" : `?section=${s}`}` as never), [router]);
   // Searching from any other section switches to Feed (D10).
   const onSearching = useCallback((on: boolean) => { setSearching(on); if (on && cur !== "feed") go("feed"); }, [cur, go]);
   const changed = () => { setSavedKey((k) => k + 1); reloadRecent(); };

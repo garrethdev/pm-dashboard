@@ -20,6 +20,40 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-01 — Trends is its own page in the main menu
+
+**Where it came from:** Garreth: Trends should not sit under the Carousel
+Generator's menu; it belongs in the main menu next to Generate, and its code
+should be separate.
+
+- **Trends is now at `/trends`**, in the main menu under Content, right below
+  Generate. It is gone from the Carousel Generator's menu. The old address
+  `/carousel-generator/trends` sends people to the new one and keeps what was
+  after it (`?section=saved`, `?q=`). It is a temporary redirect, like `/issues`,
+  so it can be changed later.
+- **Links that pointed at the old address now point at the new one:** "All
+  trends" and "All saved" on the generator's Overview, and the pipeline alert in
+  the bell.
+- **The code moved into its own folders**, with no change to what it does:
+  the page, `src/components/trends/`, `src/server/trends/` (the feed, votes,
+  saves, digests, knowledge and the analysis read, with their tests and sample
+  rows) and `src/lib/trends/` (search). The generator now reads Trends from there,
+  not the other way round. The shared pieces Trends borrows (the details window,
+  the buttons and picture loader in `components/carousel`) stayed where they are.
+- **Left alone on purpose:** the data addresses `/api/carousel-generator/trends/...`
+  and `/api/carousel-generator/search`, `facets`, `sources`, `carousels`. The docs
+  list them and the n8n workflows are outside this repo, so I could not be sure
+  nothing else calls them. Renaming them is a separate change.
+
+**Checked:** all 855 tests pass (same as before the move), typecheck and lint as
+before, production build passes with `/trends` listed and the old page gone. Run
+locally: the old address answers with a redirect that keeps the query, `/trends`
+loads with its menu row lit, the Carousel Generator pages still load and no
+longer list Trends. Not checked: the page against real data, which needs the live
+database; the first look at the live site after deploy is the real check.
+
+---
+
 ## 2026-10-31 — Alert when carousel analysis stops, and tests for the parts nobody was checking
 
 **Where it came from:** Garreth asked what is most urgent to test. The three-week

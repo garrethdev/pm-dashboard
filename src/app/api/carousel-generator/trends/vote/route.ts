@@ -1,5 +1,5 @@
 import { attempt, bad, body, guard, str } from "@/server/carousel/http";
-import { castVote } from "@/server/carousel/repo/trends";
+import { castVote } from "@/server/trends/repo";
 
 /** A vote approves nothing (DEV-44). Pressing the same thumb again takes it back. */
 export async function POST(req: Request) {

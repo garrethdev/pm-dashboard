@@ -1,6 +1,6 @@
 import { requireSession } from "@/lib/api-auth";
-import { callCatalog } from "@/lib/carousel/trends/client";
-import { catalogFailure } from "@/lib/carousel/trends/http";
+import { callCatalog } from "@/lib/trends/client";
+import { catalogFailure } from "@/lib/trends/http";
 
 /** Ordered slides and saved construction/layout evidence for the detail drawer. */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {

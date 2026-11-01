@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { afterFilter, feedFilter } from "./trends";
+import { afterFilter, feedFilter } from "./repo";
 
 describe("the feed's page boundary follows the feed's order (PR #31 review item 5)", () => {
   it("uses score, then views, then id", () => {

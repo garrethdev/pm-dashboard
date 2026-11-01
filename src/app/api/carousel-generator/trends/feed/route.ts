@@ -1,6 +1,6 @@
 import { bad, guard, ok } from "@/server/carousel/http";
 import { logError } from "@/server/carousel/log";
-import { seenFeed, unseenCount, unseenFeed } from "@/server/carousel/repo/trends";
+import { seenFeed, unseenCount, unseenFeed } from "@/server/trends/repo";
 
 /**
  * The feed (DEV-34, DEV-45): what this person has not seen, best first,

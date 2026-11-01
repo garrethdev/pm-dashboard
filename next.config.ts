@@ -45,6 +45,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/cadence", destination: "/content-calendar", permanent: true },
       { source: "/issues", destination: "/reports", permanent: false },
+      // Trends left the Carousel Generator and has its own place in the main
+      // menu (Garreth, 2026-11-01). Temporary, for the same reason as /issues.
+      // The query (?section=saved, ?q=) is carried across.
+      { source: "/carousel-generator/trends", destination: "/trends", permanent: false },
     ];
   },
 };
