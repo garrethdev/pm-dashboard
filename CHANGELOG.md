@@ -20,6 +20,22 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-03 — Two warmup-robot tests stopped failing with the calendar
+
+**Where it came from:** seen while merging the phone-robot fix above (PR
+#89); Garreth asked for the cause and a fix. The two tests came in with the
+route-gate tests of 2026-10-31.
+
+**What was wrong:** nothing in the dashboard itself. The tests send the
+robot's "still running" and "finished" messages for a warmup that started at
+a fixed moment, 31 October 10:00 UTC. The dashboard rightly refuses a start
+more than 36 hours old (it means the Air's clock is wrong), so from 1 November
+the tests were turned away like a robot with a wrong clock would be.
+
+**What changed:** those tests now hold the clock at 30 minutes after that
+start, so they give the same answer on any day. Only the tests changed. All
+857 tests pass.
+
 ## 2026-11-02 — The phone robot is told when the dashboard could not save a post
 
 **Where it came from:** Yurie's fourth short test of the phone robot (DA-06,

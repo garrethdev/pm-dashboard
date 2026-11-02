@@ -156,6 +156,16 @@ describe("screen readings", () => {
 
 describe("warmup runner check-in and close", () => {
   const key = { accountId: 12, sessionNo: 1, startedAt: "2026-10-31T10:00:00Z" };
+  // The routes refuse a startedAt more than 36 hours old (parseRunKey), so the
+  // clock is held at 30 minutes after it; on the real clock these tests began
+  // failing on 2026-11-01, 36 hours after they were written.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-31T10:30:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it.each([
     ["check-in", runCheckIn, "/api/warmup-runner/runs/check-in", key],
