@@ -105,6 +105,11 @@ export function overdueFor(dueAt: string, now: Date, daysOff: readonly number[] 
  * Yurie's part done on time, so it never goes red Overdue; this is only the
  * nudge that a post which should be live by now still owes its link. Counted
  * in working hours, like overdue.
+ *
+ * A post ticked Posted with no link gets the same two days, counted from the
+ * tick: the analytics robots read each account about once a day and attach
+ * the link themselves (autolink_hand_posts, Garreth 2026-10-30), so only a
+ * post they never found is asked for.
  */
 export const LINK_LATE_HOURS = 48;
 
@@ -277,11 +282,15 @@ function etTime(iso: string): string {
 }
 
 /** How a delivery row reads on the list. `postedNoLink` is not a status in the
- *  database: it is `posted` with no link yet, which is what decision 7 asks
- *  for — done, but still owing the thing attribution needs. A scheduled post
- *  still without its link two days after it was due reads the same way. */
+ *  database: it is `posted` with no link two days after it was ticked, which
+ *  means the robots did not find it — done, but still owing the thing
+ *  attribution needs. A scheduled post still without its link two days after
+ *  it was due reads the same way. */
 function statusOf(row: RawDelivery, now: Date, daysOff: readonly number[]): TodoItemStatus {
-  if (row.status === "posted") return row.post_url ? "posted" : "postedNoLink";
+  if (row.status === "posted") {
+    if (row.post_url) return "posted";
+    return linkLate(row.done_at ?? row.due_at, now, daysOff) ? "postedNoLink" : "posted";
+  }
   if (row.status === "scheduled") return linkLate(row.due_at, now, daysOff) ? "postedNoLink" : "scheduled";
   if (row.status === "failed") return "failed";
   if (row.status === "skipped") return "skipped";
@@ -412,7 +421,8 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
     const postDay = etDay(row.due_at);
     const status = statusOf(row, now, daysOff);
     const scheduled = row.status === "scheduled";
-    const finished = !scheduled && status !== "todo";
+    const owesLink = row.status === "posted" && status === "postedNoLink";
+    const finished = !scheduled && !owesLink && status !== "todo";
 
     // WHICH DAY THIS POST BELONGS TO.
     //
@@ -438,6 +448,13 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
       // owed, and a post that dropped off the list would never get it.
       if (postDay > day) continue;
       if (postDay !== day && (dayOffset !== 0 || off)) continue;
+    } else if (owesLink) {
+      // A posted one the robots never found a link for. It is two days past
+      // the day it was ticked, so it moves to today's list the way a
+      // scheduled post does, and stays until the link is added.
+      const doneDay = etDay(row.done_at ?? row.due_at);
+      if (doneDay > day) continue;
+      if (doneDay !== day && (dayOffset !== 0 || off)) continue;
     } else {
       // On a day off it waits for the next working day (2026-10-16).
       if (off) continue;
@@ -540,23 +557,32 @@ function daysBetween(from: string, to: string): number {
  * open or scheduled, plus everything finished since the start of it. Open and
  * scheduled rows are read without a date bound because a carried-over post was
  * handed out days ago; the carry-over window is applied per row above, where
- * the content's own day is known. The second read leaves scheduled rows out,
+ * the content's own day is known. The last read leaves scheduled rows out,
  * so none is read twice.
+ *
+ * Posted rows still without a link are read without a date bound too: one the
+ * robots never found has to stay in sight until its link is added. Ticked
+ * today, the same row also comes back from the finished read, so it is kept
+ * once.
  */
 async function readDeliveries(accountIds: AccountId[], from: Date): Promise<RawDelivery[]> {
   if (accountIds.length === 0) return [];
   const cols = `id,content_type,source_id,${ACCOUNT_FK_COL},status,post_url,note,done_at,created_at,due_at`;
   const inList = `(${accountIds.join(",")})`;
-  const [open, done] = await Promise.all([
+  const [open, owing, done] = await Promise.all([
     sbRest<RawDelivery[]>(
       `post_deliveries?select=${cols}&account_id=in.${inList}&status=in.(queued,scheduled)&order=created_at.asc`,
+    ),
+    sbRest<RawDelivery[]>(
+      `post_deliveries?select=${cols}&account_id=in.${inList}&status=eq.posted&post_url=is.null&order=created_at.asc`,
     ),
     sbRest<RawDelivery[]>(
       `post_deliveries?select=${cols}&account_id=in.${inList}` +
         `&done_at=gte.${from.toISOString()}&status=neq.scheduled&order=created_at.asc`,
     ),
   ]);
-  return [...open, ...done];
+  const seen = new Set(owing.map((r) => r.id));
+  return [...open, ...owing, ...done.filter((r) => !seen.has(r.id))];
 }
 
 /** The content rows behind those deliveries, in one request per content type. */

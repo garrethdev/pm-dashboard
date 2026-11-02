@@ -48,6 +48,264 @@ linked to their posts; views match TikTok's own numbers (145 and 145, 24 and
 **Verification:** tested in code and checked by type; it has not yet met a
 real failure from the robot.
 
+## 2026-11-02 — The weekly analytics email lists only live accounts
+
+**Where it came from:** Garreth saw a dozen orange rows of zeros in the
+Instagram table of the weekly combined email and asked whether it was broken.
+It was not: the email listed every account that had ever posted, so banned and
+retired accounts (some from May and July) showed up every time with nothing.
+Garreth chose to keep the email and clean it up.
+
+**What changed:** each section now lists only live accounts (active, not
+banned, not paused) plus any account that posted that week. A "No posts this
+week" row now means a live account that really is quiet. The "Top 5 all time"
+tables still include old accounts, on purpose. If the account lookup ever
+fails, the email falls back to the old full list rather than not sending.
+Changed in n8n ("[Combined] Weekly Analytics Report"), not in this repo.
+
+**Verified:** run on 2026-11-02 against that day's real data with sending
+switched off: Instagram 5 rows (was 16), TikTok 5 (was 43), Facebook
+unchanged. The first real send is Monday's.
+
+## 2026-11-01 — Trends covers were zoomed in and cropped
+
+**Where it came from:** Garreth, looking at the live Trends feed: the picture on
+each card was too big and cut off at the sides ("our friends wh / be in a
+fantas"), while the same slide in the details window was fine.
+
+- **Cause:** the resized copies of pictures in our storage were asked for at a
+  width only, with `resize=cover`. Measured on a real slide: the original is
+  1080 by 1920, and the copy came back 540 by 1920, the middle half of it,
+  which the card then stretched to fill its box. The same call is used by the
+  Studio, the image libraries and the content-type cards, so any picture that
+  was not already the right shape was affected there too.
+- **Fix:** ask for `resize=contain`, which keeps the shape. The same slide comes
+  back 540 by 960 (measured). The page still crops to its own box.
+- Also corrects the pictures the content tagger sends to the AI, which went
+  through the same call and so saw a cropped slide.
+
+**Checked:** the two tests that pinned the old address updated, all tests pass.
+Measured against real storage with both settings. Not yet looked at on the live
+feed after deploy.
+
+---
+
+## 2026-11-01 — Trends is its own page in the main menu
+
+**Where it came from:** Garreth: Trends should not sit under the Carousel
+Generator's menu; it belongs in the main menu next to Generate, and its code
+should be separate.
+
+- **Trends is now at `/trends`**, in the main menu under Content, right below
+  Generate. It is gone from the Carousel Generator's menu. The old address
+  `/carousel-generator/trends` sends people to the new one and keeps what was
+  after it (`?section=saved`, `?q=`). It is a temporary redirect, like `/issues`,
+  so it can be changed later.
+- **Links that pointed at the old address now point at the new one:** "All
+  trends" and "All saved" on the generator's Overview, and the pipeline alert in
+  the bell.
+- **The code moved into its own folders**, with no change to what it does:
+  the page, `src/components/trends/`, `src/server/trends/` (the feed, votes,
+  saves, digests, knowledge and the analysis read, with their tests and sample
+  rows) and `src/lib/trends/` (search). The generator now reads Trends from there,
+  not the other way round. The shared pieces Trends borrows (the details window,
+  the buttons and picture loader in `components/carousel`) stayed where they are.
+- **Left alone on purpose:** the data addresses `/api/carousel-generator/trends/...`
+  and `/api/carousel-generator/search`, `facets`, `sources`, `carousels`. The docs
+  list them and the n8n workflows are outside this repo, so I could not be sure
+  nothing else calls them. Renaming them is a separate change.
+
+**Checked:** all 855 tests pass (same as before the move), typecheck and lint as
+before, production build passes with `/trends` listed and the old page gone. Run
+locally: the old address answers with a redirect that keeps the query, `/trends`
+loads with its menu row lit, the Carousel Generator pages still load and no
+longer list Trends. Not checked: the page against real data, which needs the live
+database; the first look at the live site after deploy is the real check.
+
+---
+
+## 2026-10-31 — Alert when carousel analysis stops, and tests for the parts nobody was checking
+
+**Where it came from:** Garreth asked what is most urgent to test. The three-week
+analysis stall (2026-10-09, the reader's model was retired) was never noticed
+because nothing looked for it, and the reader and the dashboard had no shared
+check that they agree on what a row looks like.
+
+- **A red bell alert when analysis stops.** Fires when work is waiting but nothing
+  has been analysed for 6 hours, when a job has been stuck running over an hour,
+  or when more than half of a day's finished image jobs failed. Video jobs are
+  left out of the failure count because they fail on expired TikTok links today
+  (BACKLOG) and would keep it red. Not yet seen firing for real: the live
+  pipeline was healthy when this was written (newest analysis under an hour old).
+- **A bug found by the new tests, fixed.** 147 older carousels store the audience
+  questions as objects, and the Analysis tab would have tried to draw an object
+  as text, which crashes that tab. Questions are now turned into plain text.
+- **Reader to dashboard check.** Real rows from the live database (the newest
+  read, the older fuller read, the October 8 read with no coverage block) are
+  kept as samples, and tests check the Analysis tab and the cards come out right
+  from each. If the n8n reader changes what it writes, these say what the
+  dashboard no longer understands.
+- **Every route is checked for a lock.** One test goes through all 113 API routes
+  and fails if a handler has no sign-in or token check, does anything before it,
+  or sits behind the open doors in `proxy.ts` without its own token. All pass
+  today. Proven by taking a lock off one route and watching it fail.
+- **The unattended routes have tests.** The daily picture copy, Facebook read,
+  content tagging, the screen reader, and the warmup script's check-in and close:
+  wrong or missing token, unset secret, bad body, parameter limits, failure
+  answers. Not covered yet: the Higgsfield callback and the recording-complete
+  route.
+- **Database rules are now written down and tested** (`supabase/tests/`, read the
+  README there): the promotion of a radar find to Trends, the 7-day decay, and
+  the job queue's claim and finish rules. Run against the live database on
+  2026-10-31 in rolled-back blocks, every check passed and no test rows were
+  left. A copy of the live functions is in `supabase/snapshots/`. These are not
+  in CI (no database there).
+
+**Checked:** new unit tests pass, typecheck shows only the old `LayoutProps`
+error, lint clean. The CI run on GitHub has not been seen yet.
+
+---
+
+## 2026-10-31 — Trends shows breakout slideshows first, with a "why it's working" read
+
+**Where it came from:** Garreth's goal for Trends: find trending carousels we
+can replicate, with a short breakdown of why each one works. He approved the
+plan on 2026-10-31, including an "Other niches" filter.
+
+**What happened:** the feed ranked the library's all-time hits first (posts
+from January with 30 million views), so nothing breaking out this week could
+reach the top. And most carousels' Analysis tab was nearly empty: the reader
+that writes it had saved its findings where the app does not look, then
+stopped altogether on October 9 when OpenRouter retired the model it used.
+
+**What changed:**
+- **A trending line on cards.** Carousels the outlier radar found carry a
+  "Trending" line with how many views per follower the post got and how old
+  it is. The radar itself, and its ranking of finds above the all-time hits
+  for their first week, live in Supabase and n8n, not in this repo.
+- **"Why it's working" leads the Analysis tab,** with "Remake for peptides"
+  under it, when the reader wrote them.
+- **Main feed and Other niches.** Radar finds from outside the peptide niche
+  sit on their own tab, so they do not bury the niche ones.
+- **The Overview's Trending Carousels** show the last week's radar finds when
+  there are any, and fall back to the newest scrape otherwise.
+
+**Verified:** typecheck and tests pass (new tests for the niche filter). Not
+yet seen live: no radar find had reached Trends when this was written.
+
+## 2026-10-30 — New Instagram accounts could not be connected to analytics
+
+**Where it came from:** seen live. Connecting kathy_spd to Instagram analytics
+ended on "Error in workflow" after Allow was tapped (n8n "IG OAuth Handler" run
+207829). Garreth approved the fix.
+
+**What happened:** Instagram approved the account and handed over its access,
+but our save failed. On connecting, the workflow also replaced the account's
+own number in our database with Instagram's long one. Since the phones
+started, an account's posts and warmups are filed under its own number, and
+the database refuses to change a number other records point to. Because the
+save is all-or-nothing, the access was thrown away too. Accounts connected in
+September had no phone records yet, which is why it worked then. Every phone
+account would have failed the same way, sar.ahkellerxo included.
+
+**What changed:** the workflow now saves only the access and leaves the
+account's number alone. Nothing used the long number: the stats run reads
+posts with the access alone and files them by username. Changed in n8n, not in
+this repo; published. `docs/INSTAGRAM-ANALYTICS-ONBOARDING.md` no longer says
+to look for the long number, warns that a tapped link on an iPhone opens the
+app (paste it into Safari instead), and now says the stats run reads 28 days
+back, not 7.
+
+**Verification:** the published version is the edited one. The exact save was
+run against kathy_spd inside the database and undone: it went through, kept
+its number and made no duplicate. **Confirmed live** the same day: kathy_spd
+(run 207830) and sar.ahkellerxo (run 207831) both connected, both kept their
+own numbers, no duplicate rows, and Instagram answered both tokens with the
+right handle. All 6 active Instagram accounts are now connected.
+
+## 2026-10-30 — Instagram numbers stopped coming in; fixed the same morning
+
+**Where it came from:** found while checking the auto-linking below. The
+Instagram analytics robot (n8n "Analysis Engine") had saved nothing since
+Wednesday.
+
+**What happened:** the robot asks Instagram for each post's numbers. It did
+this one post at a time, inside a single n8n step that n8n stops after 60
+seconds. Since 9 October it reads 28 days of posts, and as accounts posted
+more it crept up to 57 seconds on Wednesday 28 October. On Friday 30 October
+it went over, so the 8:00 AM run was stopped before anything was saved. Every
+later run would have stopped the same way. Nobody had changed the workflow;
+it simply outgrew the limit.
+
+**What changed:** that step now asks about 8 posts at once, and each answer
+still stays with its own post. Changed in n8n, not in this repo: version
+"Get Insights: 8 posts at a time (60s timeout fix)", published.
+
+**Verification (confirmed live):** a run started by hand at 10:02 AM ET on
+30 October took 10 seconds for that step instead of 57, and saved 15 new
+Instagram rows. In the same run the auto-linking below linked 3 of Yurie's
+scheduled Instagram posts by itself.
+
+## 2026-10-30 — The robots attach the link to Yurie's posts
+
+**Where it came from:** asked for in the session of 2026-10-30, with Yurie
+about to manage many more accounts: "make the process of manual posting and
+attaching of links easier … fetch the links using whatever we are using for
+the analytics … and match it with the captions". Build approved the same
+day, together with ticking the Facebook copy along with Instagram, because
+Yurie cross-posts from Instagram to Facebook.
+
+**Why:** every post Yurie made by hand asked her to copy its link on the
+phone and paste it into the To-do sheet, and the links were often wrong.
+Of 82 Facebook posts marked posted by 2026-10-29, about 67 carried an
+Instagram link, so only 10 of them could be traced back to the content they
+came from. Two TikTok items had the caption pasted in place of a link, and
+two TikTok links pointed at the wrong video.
+
+**What changed:**
+
+- **The link fills itself in.** The analytics robots already read every
+  account's posts about once a day, captions included. When one reads a post
+  whose caption matches something handed to that same account, the database
+  writes the link onto Yurie's item. It also works the other way round: when
+  she ticks a post that a robot has already read, the link is found at once.
+  It is not a timer or an n8n workflow; it runs whenever either thing happens,
+  for all three platforms.
+- **A scheduled post finishes itself.** When the robot sees it live, it is
+  marked posted with its link, and Yurie does not need to come back to it.
+- **Ticking an Instagram post ticks its Facebook copy.** Posted, scheduled,
+  failed and Undo all carry across. A Facebook item she already finished on
+  its own is left alone.
+- **The To-do list stops asking straight away.** A post ticked without a
+  link reads as done. Only if the robots have not found it two working days
+  later does it say Link needed, and then it stays on today's list until
+  the link is added, as scheduled posts already did. In the posting sheet
+  the link box is folded behind **Add link**.
+- **The analytics pages count more of her posts.** Matching against what was
+  handed to each account tied 75 earlier posts to their content type that
+  the pages could not place before: 62 on Facebook, 10 on Instagram, 3 on
+  TikTok. The 10 Instagram ones were missed because the iPhone turns ' into
+  ’ when a caption is pasted, or because the caption was under 30 characters.
+
+**How safe a match is:** a link is written only when exactly one post fits
+exactly one item, and a link Yurie pasted is never replaced. Before it was
+switched on, every link she had pasted was blanked in a test that was then
+thrown away, and the matching was run again. Instagram found 61 of 78, all
+61 the same post she had linked. TikTok found 55 of 68 with no conflicts; of
+the short tiktok.com/t/ links, followed to their video, 32 of 34 agreed and
+in the other 2 her link was the wrong one. Facebook found 72 of 82. What was
+not found is mostly a post no robot had read yet: an account not connected
+to analytics, such as kathy_spd on Instagram, or a post too recent.
+
+**Verification:** the database change is live (confirmed by query) and the
+October back-fill was run, with the counts above. Every automatic link is
+recorded in the audit log as `delivery_autolink`, and every Facebook
+follow as `delivery_mirror_follow`. No new post has been linked by a real
+robot run yet. The first one to watch is the next Instagram, TikTok or
+Facebook read after this lands. The To-do changes pass the tests, and the
+sheet was checked on the demo list at phone size in headless Chrome (not
+Safari): Posted shows Add link, which opens the link box with Paste.
+
 ## 2026-10-29 — Facebook readings from the phone robot find their post
 
 **Where it came from:** Yurie's second short test of the phone robot (DA-06,

@@ -1,5 +1,5 @@
 import { bad, guard, ok } from "@/server/carousel/http";
-import { getAnalysis, getReference } from "@/server/carousel/repo/trends";
+import { getAnalysis, getReference } from "@/server/trends/repo";
 
 /** The details window (DEV-42): the post, its analysis and its transcription. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {

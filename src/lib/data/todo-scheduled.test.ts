@@ -40,7 +40,7 @@ vi.mock("@/lib/data/supabase", () => ({
     }
     // The finished-today read must leave scheduled rows out, or one is read
     // twice. Answering it with the same row would show up as a duplicate.
-    if (path.startsWith("post_deliveries?") && !path.includes("status=neq.scheduled")) {
+    if (path.startsWith("post_deliveries?") && path.includes("done_at=gte") && !path.includes("status=neq.scheduled")) {
       throw new Error("the finished read did not leave scheduled rows out");
     }
     return [];

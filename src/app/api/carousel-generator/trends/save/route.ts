@@ -1,5 +1,5 @@
 import { attempt, bad, body, guard } from "@/server/carousel/http";
-import { toggleSave } from "@/server/carousel/repo/trends";
+import { toggleSave } from "@/server/trends/repo";
 
 /** Save is personal (DEV-37): who saved it comes from the session, never the body. */
 export async function POST(req: Request) {

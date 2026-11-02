@@ -4,7 +4,7 @@
  */
 import { listBatches } from "@/server/carousel/repo/batches";
 import { listTypeShells } from "@/server/carousel/repo/types-catalog";
-import { savedFeed, trending } from "@/server/carousel/repo/trends";
+import { savedFeed, trending } from "@/server/trends/repo";
 import type { BatchSummary, CarouselType, OverviewData } from "@/server/carousel/repo/types";
 import { batchWords } from "@/server/carousel/status-words";
 import { fallback } from "@/server/carousel/log";

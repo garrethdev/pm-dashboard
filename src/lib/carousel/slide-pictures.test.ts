@@ -5,7 +5,7 @@ const media = "https://x.supabase.co/storage/v1/object/public/reference-slides/4
 
 describe("slidePicture", () => {
   it("draws the slides the person has reached, as resized copies", () => {
-    expect(slidePicture(media, 0, 0, 540)).toBe("https://x.supabase.co/storage/v1/render/image/public/reference-slides/4313/2.webp?width=540&quality=70&resize=cover");
+    expect(slidePicture(media, 0, 0, 540)).toBe("https://x.supabase.co/storage/v1/render/image/public/reference-slides/4313/2.webp?width=540&quality=70&resize=contain");
     expect(slidePicture(media, 2, 2, 540)).toContain("width=540");
     expect(slidePicture(media, 1, 3, 540)).toContain("render/image");
   });

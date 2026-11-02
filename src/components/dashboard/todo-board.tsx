@@ -420,6 +420,10 @@ export function TodoLogSheet({
     item.status === "failed" ? "failed" : "done",
   );
   const [link, setLink] = useState("");
+  // The robots attach the link themselves (autolink, Garreth 2026-10-30), so
+  // the box is folded away unless this post is the one they could not find,
+  // or a scheduled post being finished off by hand.
+  const [linkOpen, setLinkOpen] = useState(item.status === "postedNoLink" || item.status === "scheduled");
   const [reason, setReason] = useState(item.reason ?? FAIL_REASONS[0]);
   const [note, setNote] = useState("");
   const [minutes, setMinutes] = useState(item.loggedMinutes || item.targetMinutes || 15);
@@ -534,8 +538,9 @@ export function TodoLogSheet({
       return { status: "failed", doneAt: nowHHMM(), reason: note.trim() || reason };
     }
     if (outcome === "scheduled") return { status: "scheduled", doneAt: nowHHMM() };
-    // The link is optional: saving without it leaves the item owing one.
-    return { status: trimmedLink ? "posted" : "postedNoLink", doneAt: nowHHMM() };
+    // Done with or without the link: the robots look for it, and the list only
+    // asks again if they have not found it two days later.
+    return { status: "posted", doneAt: nowHHMM() };
   }
 
   async function submit() {
@@ -630,7 +635,14 @@ export function TodoLogSheet({
                 onChange={(v) => setOutcome(v as "done" | "scheduled" | "failed")}
               />
 
-              {outcome === "scheduled" ? null : outcome === "done" ? (
+              {outcome === "scheduled" ? null : outcome === "done" && !linkOpen ? (
+                <button
+                  onClick={() => setLinkOpen(true)}
+                  className="self-start text-sm font-medium text-text-muted hover:text-text-primary"
+                >
+                  Add link
+                </button>
+              ) : outcome === "done" ? (
                 <label className="flex flex-col gap-1.5">
                   <span className="text-xs text-text-muted">Link</span>
                   <div className="flex gap-2">

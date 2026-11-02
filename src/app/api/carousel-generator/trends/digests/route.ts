@@ -1,5 +1,5 @@
 import { bad, guard, ok } from "@/server/carousel/http";
-import { listDigests } from "@/server/carousel/repo/trends";
+import { listDigests } from "@/server/trends/repo";
 
 export async function GET() {
   const g = await guard();

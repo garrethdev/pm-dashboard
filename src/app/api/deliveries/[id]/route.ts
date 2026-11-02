@@ -16,8 +16,11 @@ import {
  * (PF-07). The five things the sheet can do to an item:
  *
  *  - `posted` — it went up. The link is OPTIONAL (decision 7, Garreth
- *    2026-09-19): saving without one leaves the item showing as posted and
- *    still owing its link, which is what attribution actually needs.
+ *    2026-09-19), and since 2026-10-30 it is normally left out: the database
+ *    attaches the link when an analytics robot reads the post
+ *    (autolink_hand_posts), and the list asks for it only if that has not
+ *    happened two days later. Ticking an Instagram post also ticks its
+ *    Facebook copy, because Yurie cross-posts (mirror_follows_twin).
  *  - `scheduled` — set to go out later inside the platform itself (Garreth,
  *    2026-10-28). Done on time, so it never goes Overdue, but there is no
  *    link until it is live.
