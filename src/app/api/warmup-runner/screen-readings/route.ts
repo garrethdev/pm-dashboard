@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readBody, requireRunnerToken } from "@/lib/warmup-runner-api";
-import { AiUnavailable, parseRunRequest, runReadings } from "@/server/screen-readings";
+import { AiUnavailable, failedSummary, parseRunRequest, runReadings } from "@/server/screen-readings";
 
 /**
  * POST /api/warmup-runner/screen-readings — operation 13 (DA-06, DA-08):
@@ -12,6 +12,10 @@ import { AiUnavailable, parseRunRequest, runReadings } from "@/server/screen-rea
  *
  * Body: { read_by: "robot", posts: [{ platform, account, caption,
  * posted_at_text, screenshots, problem }] }. Answer: the reading report.
+ * If any post failed inside the dashboard (`failed`), the answer is a 503
+ * with the report and the first reason, so the robot sends it again (its
+ * retries) and logs the reason if it still fails; the posts already stored
+ * are recognised by their screenshots and not read twice.
  */
 export async function POST(request: Request) {
   const denied = requireRunnerToken(request);
@@ -26,6 +30,11 @@ export async function POST(request: Request) {
   }
   try {
     const report = await runReadings(parsed);
+    const failed = failedSummary(report);
+    if (failed) {
+      console.error("[screen-readings] robot hand-off: posts failed", failed);
+      return NextResponse.json({ error: failed, code: "posts_failed", ...report }, { status: 503, headers: { "Cache-Control": "no-store" } });
+    }
     return NextResponse.json({ ok: true, ...report }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
     console.error("[screen-readings] robot hand-off failed", err);

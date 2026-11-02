@@ -20,6 +20,34 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-02 — The phone robot is told when the dashboard could not save a post
+
+**Where it came from:** Yurie's fourth short test of the phone robot (DA-06,
+2026-11-02 at 06:43 UTC). TikTok worked for the first time: the robot opened
+glow.with.becky's three newest posts and photographed every stats page. But
+the test ran during that morning's Supabase outage, the dashboard could not
+save any of the three, and the robot's log still said "0 read, 0 stored, 0
+with a problem", the same as if nothing had been sent. Fix on Garreth's go,
+same day.
+
+**What changed:** when the dashboard cannot read or save a post the robot
+sent (the database or the AI does not answer, a screenshot is missing), it
+now answers the robot with an error that says how many posts failed and why.
+The robot already tries an error answer again three times, and the posts that
+were saved on an earlier try are recognised and not read (or paid for) twice;
+if it still fails, the robot's log shows the reason in words. The answer also
+carries a new count of failed posts. The robot itself is unchanged, so Yurie
+needs no new update for this.
+
+**The three TikTok readings were saved by hand the same day** (readings
+97–99): the three screenshots that never reached storage came from Yurie's
+zip, and the robot's hand-off was sent again from this Mac. All three are
+linked to their posts; views match TikTok's own numbers (145 and 145, 24 and
+24, 90 and 91 fetched a little later).
+
+**Verification:** tested in code and checked by type; it has not yet met a
+real failure from the robot.
+
 ## 2026-11-02 — The weekly analytics email lists only live accounts
 
 **Where it came from:** Garreth saw a dozen orange rows of zeros in the

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionKey, costOf, curveOrNull, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, phoneZoneHours, pickPost, pickPostByTime, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
+import { captionKey, costOf, curveOrNull, failedSummary, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, phoneZoneHours, pickPost, pickPostByTime, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
 
 const group = { platform: "instagram" as const, account: "trina_triumphs", postUrl: "https://www.instagram.com/p/x/", format: "carousel" };
 
@@ -116,6 +116,18 @@ describe("promptFor / storagePath", () => {
   it("files screenshots under platform, account and day, numbered in order", () => {
     expect(storagePath({ platform: "tiktok", account: "glow.with.becky" }, new Date("2026-10-23T12:00:00Z"), 0, "WhatsApp Image 2026-10-23 at 3.32.04 AM.jpeg"))
       .toBe("tiktok/glow.with.becky/2026-10-23/01-WhatsApp_Image_2026-10-23_at_3.32.04_AM.jpeg");
+  });
+});
+
+describe("failedSummary", () => {
+  const post = (reading: number | null, problem: string | null) => ({ platform: "tiktok" as const, account: "glow.with.becky", caption: null, matched: null, reading, screens: 6, problem });
+  it("is null when nothing failed, even with a robot-reported problem row", () => {
+    expect(failedSummary({ failed: 0, posts: [post(97, null), post(98, "post not opened")] })).toBeNull();
+  });
+  it("names how many failed and the first reason (2026-11-02: the database timed out)", () => {
+    const text = failedSummary({ failed: 2, posts: [post(97, null), post(null, "connection timed out"), post(null, "screenshot missing")] });
+    expect(text).toContain("2 of 3 post(s)");
+    expect(text).toContain("First problem: connection timed out");
   });
 });
 
