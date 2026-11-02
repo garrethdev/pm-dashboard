@@ -20,6 +20,25 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-02 — The weekly analytics email lists only live accounts
+
+**Where it came from:** Garreth saw a dozen orange rows of zeros in the
+Instagram table of the weekly combined email and asked whether it was broken.
+It was not: the email listed every account that had ever posted, so banned and
+retired accounts (some from May and July) showed up every time with nothing.
+Garreth chose to keep the email and clean it up.
+
+**What changed:** each section now lists only live accounts (active, not
+banned, not paused) plus any account that posted that week. A "No posts this
+week" row now means a live account that really is quiet. The "Top 5 all time"
+tables still include old accounts, on purpose. If the account lookup ever
+fails, the email falls back to the old full list rather than not sending.
+Changed in n8n ("[Combined] Weekly Analytics Report"), not in this repo.
+
+**Verified:** run on 2026-11-02 against that day's real data with sending
+switched off: Instagram 5 rows (was 16), TikTok 5 (was 43), Facebook
+unchanged. The first real send is Monday's.
+
 ## 2026-11-01 — Trends covers were zoomed in and cropped
 
 **Where it came from:** Garreth, looking at the live Trends feed: the picture on
