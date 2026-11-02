@@ -858,6 +858,10 @@ export interface RunReport {
   unread: number;
   /** Posts an earlier send of the same hand-off had already stored; not read or stored again. */
   already: number;
+  /** Posts that went wrong inside the dashboard (the database or the AI did
+   *  not answer, a screenshot is missing): nothing stored, the reason in the
+   *  post's `problem`. Sending the hand-off again is safe and reads only these. */
+  failed: number;
   aiCalls: number;
   costUsd: number;
   posts: {
@@ -883,7 +887,7 @@ const RUN_TIME_BUDGET_MS = 240_000;
 export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?: string } = {}): Promise<RunReport> {
   const dry = opts.dry ?? false;
   const started = Date.now();
-  const report: RunReport = { dry, read: 0, stored: 0, problems: 0, unread: 0, already: 0, aiCalls: 0, costUsd: 0, posts: [] };
+  const report: RunReport = { dry, read: 0, stored: 0, problems: 0, unread: 0, already: 0, failed: 0, aiCalls: 0, costUsd: 0, posts: [] };
   const pools = new Map<string, PostCandidate[]>();
   const zones = new Map<string, number | null>();
 
@@ -956,8 +960,23 @@ export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?
       }
     } catch (err) {
       if (err instanceof AiUnavailable) throw err;
+      report.failed += 1;
       entry.problem = err instanceof Error ? err.message : String(err);
     }
   }
   return report;
+}
+
+/**
+ * Why a hand-off has to be sent again, or null when every post was dealt with.
+ * The robot only logs the report's counts, so a post that failed here (the
+ * database timed out on 2026-11-02) looked like "0 read, 0 stored, 0 with a
+ * problem". Its route answers with an error instead, which the robot retries
+ * and, failing that, logs word for word.
+ */
+export function failedSummary(report: Pick<RunReport, "failed" | "posts">): string | null {
+  if (report.failed === 0) return null;
+  const sent = report.posts.length;
+  const first = report.posts.find((post) => post.reading === null && post.problem)?.problem ?? "no reason given";
+  return `${report.failed} of ${sent} post(s) could not be read or stored; send the hand-off again (posts already stored are not read twice). First problem: ${first}`;
 }
