@@ -20,6 +20,22 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-03 — Resources tab: links to the Character 6 Voice Bible and the Carousel Render Blueprint
+
+**Where it came from:** Garreth asked for the two reference documents behind
+the jealousy carousels to live on the dashboard, as links to the live docs so
+they can keep being edited in one place.
+
+**What changed:** a new Resources item under Content in the sidebar opens a
+page with two cards: the Character 6 Voice Bible (who she is and how she
+sounds) and the Carousel Render Blueprint (font, sizes, placement, date and
+weight labels). Each card opens the live Claude Doc in a new tab; the
+dashboard holds no copy, so edits to the docs show up without a code change.
+Checked locally: the page and sidebar item render. Not yet seen on the live
+site.
+
+---
+
 ## 2026-11-03 — Phone-robot readings: a post the robot could not open is stored once
 
 **Where it came from:** Yurie's fifth short test (3 November). TikTok's
