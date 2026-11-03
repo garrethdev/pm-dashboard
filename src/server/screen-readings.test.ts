@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionKey, costOf, curveOrNull, failedSummary, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, phoneZoneHours, pickPost, pickPostByTime, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
+import { captionKey, captionOrNull, costOf, curveOrNull, failedSummary, splitCrosspost, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, phoneZoneHours, pickPost, pickPostByTime, problemKey, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
 
 const group = { platform: "instagram" as const, account: "trina_triumphs", postUrl: "https://www.instagram.com/p/x/", format: "carousel" };
 
@@ -119,6 +119,59 @@ describe("promptFor / storagePath", () => {
   });
 });
 
+describe("splitCrosspost", () => {
+  // "Your breath can come back", fourth short test (2026-11-02): the screen
+  // said 583 views and 6 likes; Instagram's API 215 and 3, the Facebook twin 368 and 3.
+  const ig = { platform: "instagram" as const, account: "hey.imani.vaughn", postUrl: "https://www.instagram.com/reel/x/", format: "video" };
+  const screen = (crossposted: boolean | null) => toRow({ views: 583, viewers: 197, likes: 6, comments: 0, shares: 0, saves: 0, crossposted_to_facebook: crossposted }, ig, []);
+  const twin = { views: 368, likes: 3, comments: 0, shares: 0, saves: 0 };
+
+  it("keeps Instagram's part and moves Facebook's views to views_facebook", () => {
+    const row = splitCrosspost(screen(true), twin);
+    expect(row.views).toBe(215);
+    expect(row.views_instagram).toBe(215);
+    expect(row.views_facebook).toBe(368);
+    expect(row.likes).toBe(3);
+    expect(row.viewers).toBe(197); // Instagram's alone already
+    expect(row.notes).toContain("583 views and 6 likes");
+  });
+  it("keeps a 0 as 0 even when Facebook does not give that count", () => {
+    const row = splitCrosspost(screen(true), { ...twin, shares: null, saves: null });
+    expect(row.shares).toBe(0);
+    expect(row.saves).toBe(0);
+  });
+  it("clears the combined counts when the Facebook post is not found", () => {
+    const row = splitCrosspost(screen(true), null);
+    expect(row.views).toBeNull();
+    expect(row.likes).toBeNull();
+    expect(row.viewers).toBe(197);
+  });
+  it("leaves a post that was not crossposted, and other platforms, as read", () => {
+    expect(splitCrosspost(screen(false), twin).views).toBe(583);
+    expect(splitCrosspost(screen(null), twin).views).toBe(583);
+    const fb = toRow({ views: 506, likes: 4, crossposted_to_facebook: true }, { ...ig, platform: "facebook" }, []);
+    expect(splitCrosspost(fb, twin).views).toBe(506);
+  });
+  it("is empty, not 0 or below, when the twin's newer count passed the screen's total", () => {
+    const row = splitCrosspost(toRow({ views: 150, likes: 1, crossposted_to_facebook: true }, ig, []), { ...twin, views: 160, likes: 2 });
+    expect(row.views).toBeNull();
+    expect(row.likes).toBeNull();
+    expect(row.views_facebook).toBe(160);
+  });
+});
+
+describe("captionOrNull", () => {
+  it("drops the buttons Facebook's page puts where a caption would be", () => {
+    expect(captionOrNull("Open get more bottomsheet menu")).toBeNull();
+    expect(captionOrNull("See post")).toBeNull();
+    expect(captionOrNull("  ")).toBeNull();
+    expect(captionOrNull(null)).toBeNull();
+  });
+  it("keeps a real caption", () => {
+    expect(captionOrNull(" No ink, just needles 🪡 ")).toBe("No ink, just needles 🪡");
+  });
+});
+
 describe("failedSummary", () => {
   const post = (reading: number | null, problem: string | null) => ({ platform: "tiktok" as const, account: "glow.with.becky", caption: null, matched: null, reading, screens: 6, problem });
   it("is null when nothing failed, even with a robot-reported problem row", () => {
@@ -144,6 +197,24 @@ describe("screensKey", () => {
   });
   it("is null with no screenshots", () => {
     expect(screensKey("tiktok", "glow.with.becky", [])).toBeNull();
+  });
+});
+
+describe("problemKey", () => {
+  const post = { platform: "tiktok" as const, account: "glow.with.becky", problem: 'the way into the analytics ("•••", then "Analytics") is not on screen', caption: null, posted_at_text: null };
+  const sent = new Date("2026-11-03T05:44:04Z");
+  it("gives the same hand-off sent again the same key (fifth short test: one problem stored four times)", () => {
+    expect(problemKey(post, 0, sent)).toBe(problemKey({ ...post }, 0, new Date("2026-11-03T05:44:51Z")));
+  });
+  it("keeps two problem posts of one hand-off apart, and another day's sitting", () => {
+    const key = problemKey(post, 0, sent);
+    expect(problemKey(post, 1, sent)).not.toBe(key);
+    expect(problemKey(post, 0, new Date("2026-11-04T05:44:04Z"))).not.toBe(key);
+    expect(problemKey({ ...post, account: "alicia_glow3" }, 0, sent)).not.toBe(key);
+    expect(problemKey({ ...post, problem: "the newest post did not open" }, 0, sent)).not.toBe(key);
+  });
+  it("is null for a post with no problem", () => {
+    expect(problemKey({ ...post, problem: null }, 0, sent)).toBeNull();
   });
 });
 

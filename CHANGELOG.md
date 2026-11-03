@@ -20,6 +20,74 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-03 — Phone-robot readings: a post the robot could not open is stored once
+
+**Where it came from:** Yurie's fifth short test (3 November). TikTok's
+first post could not be opened, so the robot sent it as a problem post with
+no screenshots, and the dashboard stored that. The next post then failed
+because the AI account was out of credit, the robot was told to try again,
+and each of its three retries stored the problem post again: readings 110 to
+113 were one problem four times. Posts with screenshots were already stored
+only once (each send is recognised by its screenshots); a problem post had
+nothing to be recognised by. Garreth asked for it to be fixed, and for the
+three extra copies (111 to 113) to be deleted, which they were.
+
+**What changed:** a problem post is now recognised by its place in the
+hand-off, what the robot said went wrong, and the day, so the same hand-off
+sent again points at the row already stored. Two problem posts in one
+hand-off are still both kept. The same problem at the same place in a second
+sitting on the same day counts as already stored, which loses nothing: a
+problem row has no numbers.
+
+**How far it is checked:** by tests (the reader's tests and the robot
+route's tests pass), not yet on a real hand-off.
+
+## 2026-11-03 — Phone-robot readings: Instagram's own views, and real Facebook captions
+
+**Where it came from:** Yurie's fourth short test, run again on 2 November
+after phone 1 was switched back to Imani Vaughn: the first sitting where all
+three apps read posts. Decisions by Garreth, 2026-11-03.
+
+**What was wrong:**
+
+- **Instagram's insights add Facebook in.** For a reel crossposted to
+  Facebook, Instagram's "Summary" shows both apps together: "Your breath"
+  showed 583 views and 6 likes, which is exactly Instagram's 215 + Facebook's
+  368, and 3 + 3 likes. The readings stored those totals as Instagram's.
+  Nothing on screen showed them yet (the account pages use each app's own
+  counts), but anything built on the readings would have counted Facebook
+  twice.
+- **Facebook readings stored a button as the caption.** "Open get more
+  bottomsheet menu" (and earlier "See post") went in as the caption.
+
+**What changed:**
+
+- **Instagram readings keep Instagram's part (Garreth).** The reader now
+  also notes whether the screen says "Crossposted to Facebook". If it does,
+  the dashboard finds the Facebook twin (the same piece on the Facebook
+  account that mirrors the Instagram one), takes its views and likes off the
+  totals, and stores what is left as Instagram's. The Facebook views are kept
+  beside it and show on the post's row in the All posts tab as "N views on
+  Facebook", where that line was always meant to go; the Facebook post keeps
+  its own numbers on the Facebook page. Where the Facebook post cannot be
+  found, the combined numbers are left empty rather than stored as
+  Instagram's. Viewers is Instagram's alone on that screen and is unchanged.
+- **Facebook readings take the caption of the post they match**, which is
+  the Instagram twin's (Garreth asked; the two are the same text).
+- **The readings already stored were corrected the same day:** 12 Instagram
+  readings now hold Instagram's part (each lands within 2 of Instagram's own
+  count: 215, 128, 122, 149 against 147, 213 against 215), and 6 Facebook
+  readings lost their button caption (3 took their post's caption; 3 not
+  linked to a post are now empty).
+
+**Verification:** the 12 corrected readings were checked by query against
+Instagram's and Facebook's own counts. The new code is tested (44 tests in the
+reader, with the entry above) and checked by type. It has not yet met a
+reading the robot handed over itself; it did store the fifth short test's
+readings (114 to 120), which were read by hand because the AI account was out
+of credit: "Your breath" went in as 215 Instagram views and 368 Facebook views
+with 3 likes, the same as Instagram's own count.
+
 ## 2026-11-03 — Two warmup-robot tests stopped failing with the calendar
 
 **Where it came from:** seen while merging the phone-robot fix above (PR
