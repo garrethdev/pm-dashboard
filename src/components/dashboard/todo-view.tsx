@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  ExternalLink,
   Film,
   LinkSimple,
   ListChecks,
@@ -648,6 +649,7 @@ function ItemRow({
           </span>
           {item.automated && <AutomatedMark />}
           <ItemStatus item={item} />
+          {item.postUrl && <LinkedPill url={item.postUrl} />}
         </span>
         <ItemDetail item={item} />
         {isPost && post?.song && <SongLine song={post.song} />}
@@ -678,6 +680,31 @@ function ItemRow({
         </div>
       )}
     </li>
+  );
+}
+
+/**
+ * A posted item that has its link, pasted or found by the robots (autolink).
+ * The pill IS the link: tapping it opens the live post in a new tab (asked for
+ * 2026-11-04). The row itself stays as it was, because its tick opens the
+ * posting sheet. The padding pulled back by the negative margin widens what a
+ * thumb can hit without making the row taller.
+ */
+function LinkedPill({ url }: { url: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Linked: open the post"
+      title="Open the post"
+      className="group -my-2 inline-flex rounded-full py-2 focus-visible:outline-none [&:focus-visible>span]:ring-2 [&:focus-visible>span]:ring-accent"
+    >
+      <StatusPill tone="ok" className="gap-1 transition-colors group-hover:bg-card-raised">
+        Linked
+        <ExternalLink className="size-3" />
+      </StatusPill>
+    </a>
   );
 }
 

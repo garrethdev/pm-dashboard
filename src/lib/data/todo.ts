@@ -286,6 +286,14 @@ function etTime(iso: string): string {
  *  means the robots did not find it — done, but still owing the thing
  *  attribution needs. A scheduled post still without its link two days after
  *  it was due reads the same way. */
+/** A posted row's link, for the Linked pill. Only a web address: a caption
+ *  has been pasted into the link box before (changelog 2026-10-30), and that
+ *  must not become something to click. */
+function linkOf(row: RawDelivery): string | null {
+  const url = row.post_url?.trim();
+  return row.status === "posted" && url && /^https?:\/\//i.test(url) ? url : null;
+}
+
 function statusOf(row: RawDelivery, now: Date, daysOff: readonly number[]): TodoItemStatus {
   if (row.status === "posted") {
     if (row.post_url) return "posted";
@@ -488,6 +496,7 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
       ...(lastDay ? { lastDay: true } : {}),
       ...(row.done_at ? { doneAt: etTime(row.done_at) } : {}),
       ...(row.note ? { reason: row.note } : {}),
+      ...(linkOf(row) ? { postUrl: linkOf(row)! } : {}),
       // Nothing to download means the render has not landed, and the button
       // cannot work — which the row says rather than offering a dead press.
       videoReady: (content?.media_urls?.length ?? 0) > 0 || Boolean(content?.media_url),
