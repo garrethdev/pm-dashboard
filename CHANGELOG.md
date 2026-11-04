@@ -20,6 +20,23 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-04 — Phone-robot readings: a Facebook code name is no caption
+
+**Where it came from:** Yurie's seventh short test (4 November). All three
+Facebook readings (133 to 135) were stored with the caption
+"FBBloksScreenQueryView", which is the name of a screen inside Facebook's own
+code, not words from the post. Garreth asked for it fixed.
+
+**What changed:** that name, and any like it, is now treated like the buttons
+the robot has mistaken for captions before ("See post", "Compare post
+insights"): nothing is stored as the caption. The robot no longer reads it
+either (its own fix, same day). The three stored readings had the name
+cleared in the database (exactly rows 133, 134 and 135). Their numbers were
+right and they were already linked to their posts.
+
+**How far it is checked:** the rule is tested on the exact word; the three
+rows were cleared by a query on 4 November and checked.
+
 ## 2026-11-04 — The To-do list shows a post's link: a "Linked" pill that opens it
 
 **Where it came from:** asked for in the session of 2026-11-04, while preparing
