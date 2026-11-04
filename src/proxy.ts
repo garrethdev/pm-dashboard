@@ -46,13 +46,19 @@ const CONTENT_TAGS_PATH = "/api/content-tags/run";
 const SCREEN_READINGS_PATH = "/api/screen-readings/run";
 
 /**
+ * Re-links the robot's readings to posts fetched after they were read
+ * (DA-06), daily. It demands CRON_SECRET (src/app/api/screen-readings/relink/route.ts).
+ */
+const SCREEN_READINGS_RELINK_PATH = "/api/screen-readings/relink";
+
+/**
  * Auth gate (Next 16 "proxy", formerly middleware): refreshes the Supabase
  * session cookie and redirects unauthenticated / non-allowlisted visitors to
  * /login. API routes re-check the session themselves — this is the outer door.
  */
 export async function proxy(request: NextRequest) {
   const p = request.nextUrl.pathname;
-  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH || p === SCREEN_READINGS_PATH) {
+  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH || p === SCREEN_READINGS_PATH || p === SCREEN_READINGS_RELINK_PATH) {
     return NextResponse.next({ request });
   }
 
