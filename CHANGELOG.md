@@ -20,6 +20,28 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-04 — The To-do list shows a post's link: a "Linked" pill that opens it
+
+**Where it came from:** asked for in the session of 2026-11-04, while preparing
+a demo of the auto-linking (2026-10-30). The robots were attaching links to
+Yurie's posts, but the To-do list never showed them: only the Content
+Calendar's day panel had a link to click, so on her own list there was no way
+to see that a post had its link, or to open it.
+
+**What changed:** a posted item that has its link now shows a green
+**Linked** pill beside its name. Tapping the pill opens the live post in a
+new tab. It shows whether the link was pasted by Yurie or found by the
+robots; the list cannot tell the two apart. A link pasted while ticking a
+post shows its pill straight away. The tick still opens the posting sheet as
+before. Something in the link box that is not a web address (a caption has
+been pasted there by mistake before) gets no pill.
+
+**Verification:** tests cover which posts get the pill, and all To-do tests
+pass. Checked in headless Chrome (not Safari) on this Mac: on the demo list at
+phone size in dark and light mode, and on the real list for 3 November, which
+showed 26 Linked pills, one for each of the 26 posts marked posted that day.
+Not yet on the live site: it goes live when this is committed and deployed.
+
 ## 2026-10-30 — New Instagram accounts could not be connected to analytics
 
 **Where it came from:** seen live. Connecting kathy_spd to Instagram analytics

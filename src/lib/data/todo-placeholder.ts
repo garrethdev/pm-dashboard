@@ -58,6 +58,10 @@ export type TodoItem = {
   doneAt?: string;
   /** Why a failed item failed. */
   reason?: string;
+  /** Posts only: the live post's link, once it has one, whether pasted or
+   *  attached by the robots (autolink). Shown as the Linked pill, which opens
+   *  it (asked for 2026-11-04). Only ever a web address. */
+  postUrl?: string;
   /** Warmups only: the minutes that make the session done, and what is logged
    *  so far. A session logged short stays open and shows how far it got
    *  (Garreth, 2026-09-19: a session is 15 to 20 minutes, done from 15). */
@@ -206,6 +210,7 @@ const WORK: TodoDevice[] = [
             due: "09:00",
             status: "posted",
             doneAt: "09:12",
+            postUrl: "https://www.tiktok.com/",
             videoReady: true,
           },
           {
