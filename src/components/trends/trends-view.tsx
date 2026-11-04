@@ -231,13 +231,9 @@ function FeedList({ onOpen, onSaved, niche }: { onOpen: (id: number) => void; on
     setItems(upd(!r.saved));
     setOlder((o) => (o ? upd(!r.saved)(o) : o));
     const res = await post<{ saved: boolean }>("/api/carousel-generator/trends/save", { id: r.id });
-    if (res.data) {
-      setItems(upd(res.data.saved));
-      setOlder((o) => (o ? upd(res.data.saved)(o) : o));
-    } else {
-      setItems(upd(r.saved));
-      setOlder((o) => (o ? upd(r.saved)(o) : o));
-    }
+    const final = res.data ? res.data.saved : r.saved;
+    setItems(upd(final));
+    setOlder((o) => (o ? upd(final)(o) : o));
     onSaved();
   };
 
