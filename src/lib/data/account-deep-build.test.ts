@@ -92,11 +92,17 @@ describe("buildDeep", () => {
   it("ranks the best and worst hooks and judges carousels per 100 reached", () => {
     const deep = buildDeep(posts, tags, readings, "instagram");
     expect(deep.best[0]!.hookText).toBe("words of A");
-    expect(deep.worst[0]!.hookText).toBe("words of C");
+    // C has 30 views, under the floor: only A and B are ranked.
+    expect(deep.worst[0]!.hookText).toBe("words of B");
     expect(deep.carousels).toEqual([{ type: "declaration", posts: 1, medianReach: 20, savesPer100: 10, sharesPer100: 5, followsPer100: null }]);
     expect(deep.sources).toEqual({ readPosts: 2, items: [{ name: "Reels tab", pct: 60 }, { name: "Explore", pct: 15 }, { name: "Feed", pct: 25 }].sort((a, b) => b.pct - a.pct) });
     expect(deep.audience?.gender).toEqual([{ name: "Women", pct: 60 }, { name: "Men", pct: 40 }]);
     expect(deep.forYou).toBeNull();
+  });
+  it("never ranks a post with too few views to judge its hook, however well it held", () => {
+    const tiny = P("e", { contentId: "E", views: 1, skipRate: 0, postedAt: "2026-10-19T10:00:00Z" });
+    const deep = buildDeep([...posts, tiny], [...tags, T("E", "question")], readings, "instagram");
+    expect([...deep.best, ...deep.worst].some((h) => h.hookText === "words of E")).toBe(false);
   });
   it("gives nulls and empty lists, never zeros, for an account with nothing", () => {
     const deep = buildDeep([P("z")], [], [], "tiktok");

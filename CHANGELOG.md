@@ -20,6 +20,66 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-04 — Deep side: best and worst hooks need at least 50 views
+
+**Where it came from:** Garreth looking at hey.imani.vaughn's Deep side once
+real readings showed on it. The top "best hook" was a post with 1 view (its
+one viewer watched past 3 seconds, so it "held" 100%), and the three "worst"
+had 2 to 10 views each. Facebook's had the same problem (its best had 4
+views). Garreth asked for it to be fixed.
+
+**What changed:** a post needs at least 50 views to be ranked among the best
+or worst hooks. The hook-type table above it is unchanged.
+
+**How far it is checked:** by tests, and by working out the lists from the
+live data for Imani's Instagram and Facebook before the change. Not yet
+seen on the deployed page.
+
+## 2026-11-04 — Phone-robot readings: linked to their posts later, and Facebook's show on its page
+
+**Where it came from:** Yurie's sixth short test (3 November), and Garreth
+asking whether he can now see the deep numbers for each app. Three things
+stood in the way:
+
+- **Readings of new posts were never linked.** The robot reads posts within
+  hours of posting, before the platforms' own fetches have them (Instagram's
+  arrive Sunday, Monday, Wednesday and Friday mornings). A reading that found
+  no post then stayed unlinked for good, and the account pages only show
+  linked readings. In the sixth test, 4 of the 6 readings matched nothing.
+  For an Instagram reel also posted to Facebook, the Instagram-only views
+  stayed empty too, because working them out needs the link.
+- **Facebook's readings were filed under the wrong name.** The robot sends
+  the page's name ("Imani Vaughn"), but the Facebook account page looks
+  readings up by the page's number, so it showed none of them.
+- **Another Facebook button taken for a caption:** "Compare post insights",
+  on all three Facebook readings of the sixth test. Garreth said yes to
+  fixing it.
+
+**What changed:**
+
+- A new daily job (15:30 UTC, after the Instagram and Facebook fetches)
+  looks at every reading of the last 45 days again. It links any reading
+  whose post has since arrived, the same way the robot's hand-off matches
+  posts (by caption, else by the time on the screen). It splits a crossposted
+  reel's views into Instagram's and Facebook's once the Facebook post is
+  known. It files Facebook readings under the page's number, and clears
+  button captions (using the post's own caption once linked).
+- New Facebook readings are filed under the page's number from the start.
+- "Compare post insights" is no longer stored as a caption.
+
+**How far it is checked:** the job was run by hand against the live data
+on 4 November (a trial run first, then for real). It linked 14 readings that
+had matched nothing, including all the time-only ones from earlier tests
+(Facebook 84 to 86, TikTok 107, 119 and 120, Instagram 80, 92 and 93, and
+the pilot readings 1 to 5). It moved the 9 Facebook readings with numbers onto
+the page's number (the 6 empty problem rows were moved by hand, so every
+Facebook reading now uses it) and cleared the junk captions on 124 to 126. Each new link was
+checked against the post's time. A second run found nothing left to change.
+Readings 121 to 124 stay unlinked until their posts are fetched; the
+Instagram ones come in with today's 13:00 UTC fetch. The daily schedule
+itself starts once this is deployed. The new-readings change is covered by
+tests, not yet by a real hand-off.
+
 ## 2026-11-03 — Phone-robot readings: a post the robot could not open is stored once
 
 **Where it came from:** Yurie's fifth short test (3 November). TikTok's

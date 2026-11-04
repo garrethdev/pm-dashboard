@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionKey, captionOrNull, costOf, curveOrNull, failedSummary, splitCrosspost, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, phoneZoneHours, pickPost, pickPostByTime, problemKey, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
+import { captionKey, captionOrNull, costOf, relinkPatch, curveOrNull, failedSummary, splitCrosspost, intOrNull, namedPctOrNull, numOrNull, parseRunRequest, parseScreenLinks, phoneZoneHours, pickPost, pickPostByTime, problemKey, promptFor, screenClock, rateSignalsOrNull, screensKey, storagePath, toRow } from "./screen-readings";
 
 const group = { platform: "instagram" as const, account: "trina_triumphs", postUrl: "https://www.instagram.com/p/x/", format: "carousel" };
 
@@ -332,5 +332,50 @@ describe("parseScreenLinks", () => {
     const p = { path: "tiktok/a/2026-10-24/01-x.jpeg" };
     expect(() => parseScreenLinks({ screens: [p, p] })).toThrow(/twice/);
     expect(() => parseScreenLinks({ screens: Array.from({ length: 201 }, (_, i) => ({ path: `tiktok/a/2026-10-24/${String(i).padStart(3, "0")}-x.jpeg` })) })).toThrow(/at most 200/);
+  });
+});
+
+describe("relinkPatch", () => {
+  const post = { post_id: "p1", post_url: "https://www.instagram.com/reel/p1/", posted_at: "2026-11-03T14:55:00Z", caption_snippet: "Sold in Italy since the 1950s", format: "video", carousel_id: "CAS-081" };
+  const reading = {
+    id: 121, platform: "instagram" as const, account: "hey.imani.vaughn", post_id: null, post_url: null, posted_at: null, format: "video",
+    caption_snippet: "Sold in Italy since the 1950s. Then Korea rebranded it.", views: null,
+    notes: "Viewers shows '--'. no matching post in the performance table",
+    raw: { views: 178, likes: 0, comments: 0, shares: 0, saves: 0, notes: "Viewers shows '--'.", crossposted_to_facebook: true },
+  };
+  const twin = { views: 4, likes: 0, comments: 0, shares: 0, saves: 0 };
+
+  it("links a reading whose post has arrived, and drops the no-match remark", () => {
+    const patch = relinkPatch({ ...reading, raw: { ...reading.raw, crossposted_to_facebook: false } }, reading.account, post, null);
+    expect(patch).toEqual({ post_id: "p1", post_url: post.post_url, posted_at: post.posted_at, notes: "Viewers shows '--'." });
+  });
+  it("splits a crossposted reel's numbers once the Facebook twin is known", () => {
+    const patch = relinkPatch(reading, reading.account, post, twin);
+    expect(patch).toMatchObject({ post_id: "p1", views: 174, views_instagram: 174, views_facebook: 4, likes: 0 });
+    expect(patch?.notes).toContain("stored is Instagram's part");
+    expect(patch?.notes).not.toContain("no matching post");
+  });
+  it("leaves the numbers empty while the twin is still unknown", () => {
+    const patch = relinkPatch(reading, reading.account, post, null);
+    expect(patch?.views).toBeUndefined();
+    expect(patch?.post_id).toBe("p1");
+  });
+  it("files a Facebook reading under the page's number and clears a button caption", () => {
+    const fb = { ...reading, id: 125, platform: "facebook" as const, account: "Imani Vaughn", post_id: "f1", post_url: "u", caption_snippet: "Compare post insights", notes: null, raw: { views: 187 } };
+    expect(relinkPatch(fb, "61588896089516", null, null)).toEqual({ account: "61588896089516", caption_snippet: null });
+  });
+  it("gives an unlinked Facebook reading its post's caption when it links", () => {
+    const fb = { ...reading, id: 124, platform: "facebook" as const, account: "61588896089516", caption_snippet: "Compare post insights", notes: null, raw: { views: 6 } };
+    expect(relinkPatch(fb, fb.account, post, null)).toMatchObject({ post_id: "p1", caption_snippet: post.caption_snippet });
+  });
+  it("changes nothing when there is nothing new", () => {
+    const done = { ...reading, post_id: "p1", post_url: "u", views: 174, notes: "x", raw: { views: 178 } };
+    expect(relinkPatch(done, done.account, null, twin)).toBeNull();
+  });
+});
+
+describe("captionOrNull: Facebook's buttons", () => {
+  it("drops 'Compare post insights' (sixth short test)", () => {
+    expect(captionOrNull("Compare post insights")).toBeNull();
   });
 });

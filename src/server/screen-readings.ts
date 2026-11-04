@@ -860,10 +860,11 @@ export async function facebookTwin(igHandle: string, contentId: string | null | 
  * Buttons the robot has taken for a caption: Facebook's "Post details" has
  * no caption of its own, and the first line of text under the post is a
  * button (fourth short test, 2026-11-02: "Open get more bottomsheet menu";
- * second, 2026-10-29: "See post"). A Facebook post's caption is its
- * Instagram twin's, which the matched post carries.
+ * second, 2026-10-29: "See post"; sixth, 2026-11-03: "Compare post
+ * insights"). A Facebook post's caption is its Instagram twin's, which the
+ * matched post carries.
  */
-const NOT_A_CAPTION = /^(open get more bottomsheet menu|see post|see more|more)$/i;
+const NOT_A_CAPTION = /^(open get more bottomsheet menu|see post|see more|more|compare post insights)$/i;
 export function captionOrNull(caption: string | null | undefined): string | null {
   const c = caption?.trim();
   return c && !NOT_A_CAPTION.test(c) ? c : null;
@@ -983,6 +984,7 @@ export interface RunReport {
 
 /** Stop starting new posts after this long, inside the route's 300 s. */
 const RUN_TIME_BUDGET_MS = 240_000;
+const NO_MATCH_NOTE = "no matching post in the performance table";
 
 /**
  * Reads every post in the request and stores a row each. A post the robot
@@ -996,6 +998,7 @@ export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?
   const report: RunReport = { dry, read: 0, stored: 0, problems: 0, unread: 0, already: 0, failed: 0, aiCalls: 0, costUsd: 0, posts: [] };
   const pools = new Map<string, PostCandidate[]>();
   const zones = new Map<string, number | null>();
+  const keys = new Map<string, string>();
 
   const sentAt = new Date();
   for (const [place, post] of req.posts.entries()) {
@@ -1031,9 +1034,13 @@ export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?
         match = pickPost(pools.get(poolKey) ?? [], caption, post.posted_at_text, zones.get(poolKey));
         entry.matched = match?.post_url ?? null;
       }
+      // A Facebook reading is filed under the page's number, as its posts
+      // are, not the name the robot sees on the profile (sixth short test:
+      // the account page looks readings up by the number and found none).
+      if (post.platform === "facebook" && !keys.has(post.account)) keys.set(post.account, await facebookAccountKey(post.account));
       const group: Omit<ScreenGroup, "screenshots"> = {
         platform: post.platform,
-        account: post.account,
+        account: keys.get(post.account) ?? post.account,
         postUrl: post.post_url ?? match?.post_url ?? null,
         postId: match?.post_id ?? null,
         format: match?.format ?? null,
@@ -1061,7 +1068,7 @@ export async function runReadings(req: RunRequest, opts: { dry?: boolean; model?
         row = result.row;
         if (post.platform === "instagram") row = splitCrosspost(row, await facebookTwin(post.account, match?.carousel_id));
         if (result.problem) entry.problem = result.problem;
-        if (!group.postUrl) row.notes = [row.notes, "no matching post in the performance table"].filter(Boolean).join(" ");
+        if (!group.postUrl) row.notes = [row.notes, NO_MATCH_NOTE].filter(Boolean).join(" ");
       }
       if (!dry) {
         entry.reading = await insertReading(row, screens);
@@ -1088,4 +1095,142 @@ export function failedSummary(report: Pick<RunReport, "failed" | "posts">): stri
   const sent = report.posts.length;
   const first = report.posts.find((post) => post.reading === null && post.problem)?.problem ?? "no reason given";
   return `${report.failed} of ${sent} post(s) could not be read or stored; send the hand-off again (posts already stored are not read twice). First problem: ${first}`;
+}
+
+// ---------------------------------------------------------------------------
+// Re-linking: readings taken before their post was fetched
+// ---------------------------------------------------------------------------
+
+/** A stored reading, as much of it as re-linking needs. */
+export interface StoredReading {
+  id: number;
+  platform: Platform;
+  account: string;
+  post_id: string | null;
+  post_url: string | null;
+  posted_at: string | null;
+  format: string | null;
+  caption_snippet: string | null;
+  views: number | null;
+  notes: string | null;
+  raw: unknown;
+}
+
+export type RelinkPatch = Partial<Pick<ReadingRow,
+  "account" | "post_id" | "post_url" | "posted_at" | "format" | "caption_snippet" |
+  "views" | "views_instagram" | "views_facebook" | "likes" | "comments" | "shares" | "saves" | "notes">>;
+
+/** The robot's "no matching post" remark, taken out of a reading's notes. */
+function withoutNoMatch(notes: string | null): string | null {
+  const left = (notes ?? "").replace(NO_MATCH_NOTE, "").replace(/\s{2,}/g, " ").trim();
+  return left || null;
+}
+
+/**
+ * What changes on one stored reading now that more is known (pure). The
+ * robot reads posts within hours of posting, before the platforms' own
+ * fetches have them (sixth short test, 2026-11-03: 4 of 6 readings matched
+ * nothing), and a reading that matched nothing stayed that way. Here:
+ * - `match`, when the reading had no post, links it;
+ * - an Instagram reel crossposted to Facebook whose numbers were left empty
+ *   (no Facebook twin then) is split again from what the screen said (`raw`)
+ *   once `twin` is known, as splitCrosspost does on the day;
+ * - a Facebook reading takes the page's number for its account (`accountKey`);
+ * - a button taken for a caption is cleared, or replaced by the post's.
+ * Null when nothing changes.
+ */
+export function relinkPatch(r: StoredReading, accountKey: string, match: PostCandidate | null, twin: TwinNumbers | null): RelinkPatch | null {
+  const patch: RelinkPatch = {};
+  if (accountKey !== r.account) patch.account = accountKey;
+  let caption = captionOrNull(r.caption_snippet);
+  if (!r.post_id && match) {
+    patch.post_id = match.post_id;
+    patch.post_url = match.post_url;
+    patch.posted_at = match.posted_at;
+    if (!r.format && match.format) patch.format = match.format;
+    caption = caption ?? captionOrNull(match.caption_snippet);
+    patch.notes = withoutNoMatch(r.notes);
+  }
+  if (caption !== r.caption_snippet) patch.caption_snippet = caption;
+  const raw = isDict(r.raw) ? r.raw : null;
+  if (r.platform === "instagram" && raw?.crossposted_to_facebook === true && r.views === null && twin) {
+    const said = toRow(raw, { platform: r.platform, account: r.account }, []);
+    const split = splitCrosspost(said, twin);
+    if (split.views !== null) {
+      Object.assign(patch, {
+        views: split.views, views_instagram: split.views_instagram, views_facebook: split.views_facebook,
+        likes: split.likes, comments: split.comments, shares: split.shares, saves: split.saves,
+        notes: split.notes,
+      });
+    }
+  }
+  if (patch.notes === r.notes) delete patch.notes;
+  return Object.keys(patch).length ? patch : null;
+}
+
+export interface RelinkReport {
+  dry: boolean;
+  checked: number;
+  changed: number;
+  linked: number;
+  split: number;
+  rows: { id: number; platform: Platform; account: string; matched: string | null; patch: RelinkPatch }[];
+}
+
+/** Readings this far back are looked at again; the pool of posts goes back 45 days too. */
+const RELINK_DAYS = 45;
+
+/**
+ * Looks at every reading of the last 45 days again (relinkPatch) and writes
+ * what changed. Run daily after the platforms' fetches (vercel.json); `dry`
+ * only reports. Problem rows (nothing read) are left alone.
+ */
+export async function relinkReadings(opts: { dry?: boolean } = {}): Promise<RelinkReport> {
+  const dry = opts.dry ?? false;
+  const key = serviceKey();
+  const headers = { apikey: key, Authorization: `Bearer ${key}` };
+  const since = new Date(Date.now() - RELINK_DAYS * 86_400_000).toISOString();
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/post_screen_readings?select=id,platform,account,post_id,post_url,posted_at,format,caption_snippet,views,notes,raw` +
+      `&raw=not.is.null&read_at=gte.${encodeURIComponent(since)}&order=id`,
+    { headers, signal: AbortSignal.timeout(20_000) },
+  );
+  if (!res.ok) throw new Error(`supabase HTTP ${res.status} reading post_screen_readings`);
+  const readings = (await res.json()) as StoredReading[];
+  const report: RelinkReport = { dry, checked: readings.length, changed: 0, linked: 0, split: 0, rows: [] };
+
+  const groups = new Map<string, StoredReading[]>();
+  for (const r of readings) {
+    const k = `${r.platform}\u0000${r.account}`;
+    groups.set(k, [...(groups.get(k) ?? []), r]);
+  }
+  for (const rows of groups.values()) {
+    const { platform, account } = rows[0];
+    const accountKey = platform === "facebook" ? await facebookAccountKey(account) : account;
+    const pool = await recentPosts(platform, accountKey);
+    const texts = rows.map((r) => (isDict(r.raw) && typeof r.raw.posted_at_text === "string" ? r.raw.posted_at_text : null));
+    const zone = phoneZoneHours(pool, texts);
+    for (const [i, r] of rows.entries()) {
+      const match = r.post_id
+        ? (pool.find((p) => p.post_id === r.post_id) ?? null)
+        : pickPost(pool, captionOrNull(r.caption_snippet), texts[i], zone);
+      const needsTwin = platform === "instagram" && r.views === null && isDict(r.raw) && r.raw.crossposted_to_facebook === true;
+      const twin = needsTwin ? await facebookTwin(account, match?.carousel_id) : null;
+      const patch = relinkPatch(r, accountKey, r.post_id ? null : match, twin);
+      if (!patch) continue;
+      report.changed += 1;
+      if (patch.post_id) report.linked += 1;
+      if (patch.views !== undefined) report.split += 1;
+      report.rows.push({ id: r.id, platform, account: accountKey, matched: patch.post_url ?? null, patch });
+      if (dry) continue;
+      const put = await fetch(`${process.env.SUPABASE_URL}/rest/v1/post_screen_readings?id=eq.${r.id}`, {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify(patch),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!put.ok) throw new Error(`supabase HTTP ${put.status} updating reading ${r.id}: ${(await put.text().catch(() => "")).slice(0, 200)}`);
+    }
+  }
+  return report;
 }
