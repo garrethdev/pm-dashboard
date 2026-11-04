@@ -28,6 +28,7 @@ import {
   Images,
   PaintBrush,
   TrendUp,
+  BookOpen,
 } from "@/components/ui/icons";
 import { SidebarToggleIcon } from "@/components/ui/sidebar-toggle-icon";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
@@ -95,6 +96,8 @@ const DASHBOARD_NAV: NavConfig = {
         { label: "Trends", href: "/trends", icon: TrendUp, isActive: under("/trends") },
         { label: "Content calendar", href: "/content-calendar", icon: CalendarDots, isActive: under("/content-calendar") },
         { label: "Content types", href: "/content-types", icon: Cards, isActive: under("/content-types") },
+        // Reference documents: the Character 6 Voice Bible and the Carousel Render Blueprint (Garreth, 2026-11-03).
+        { label: "Resources", href: "/resources", icon: BookOpen, isActive: under("/resources") },
       ],
     },
   ],
