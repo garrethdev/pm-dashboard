@@ -861,10 +861,11 @@ export async function facebookTwin(igHandle: string, contentId: string | null | 
  * no caption of its own, and the first line of text under the post is a
  * button (fourth short test, 2026-11-02: "Open get more bottomsheet menu";
  * second, 2026-10-29: "See post"; sixth, 2026-11-03: "Compare post
- * insights"). A Facebook post's caption is its Instagram twin's, which the
- * matched post carries.
+ * insights"; seventh, 2026-11-04: "FBBloksScreenQueryView", the name of a
+ * screen inside Facebook's own code). A Facebook post's caption is its
+ * Instagram twin's, which the matched post carries.
  */
-const NOT_A_CAPTION = /^(open get more bottomsheet menu|see post|see more|more|compare post insights)$/i;
+const NOT_A_CAPTION = /^(open get more bottomsheet menu|see post|see more|more|compare post insights|fb[a-z]*view)$/i;
 export function captionOrNull(caption: string | null | undefined): string | null {
   const c = caption?.trim();
   return c && !NOT_A_CAPTION.test(c) ? c : null;
