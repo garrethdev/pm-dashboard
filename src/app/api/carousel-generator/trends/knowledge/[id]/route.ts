@@ -1,5 +1,5 @@
 import { attempt, bad, body, guard } from "@/server/carousel/http";
-import { setRuleStatus } from "@/server/carousel/repo/trends";
+import { setRuleStatus } from "@/server/trends/repo";
 
 /** Accept or Reject a proposed rule. */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

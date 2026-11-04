@@ -219,9 +219,18 @@ function hooksByFamily(rows: Joined[]): HookTypeRow[] {
     .sort((a, b) => (b.medianViews ?? -1) - (a.medianViews ?? -1) || b.posts - a.posts);
 }
 
+/**
+ * Fewest views a post needs to be ranked among the best or worst hooks. The
+ * hold is a share of the viewers, so on a handful of views it says nothing:
+ * hey.imani.vaughn's "best" hook (2026-11-04) was a post with 1 view that its
+ * one viewer watched past 3 seconds, and the three "worst" had 2 to 10 views
+ * (Garreth asked for a floor).
+ */
+export const MIN_VIEWS_TO_RANK = 50;
+
 function bestAndWorst(rows: Joined[]): { best: HookPost[]; worst: HookPost[] } {
   const scored = rows
-    .filter((r) => r.held !== null && (r.tag?.hookText || r.post.caption))
+    .filter((r) => r.held !== null && (r.post.views ?? 0) >= MIN_VIEWS_TO_RANK && (r.tag?.hookText || r.post.caption))
     .sort((a, b) => (b.held as number) - (a.held as number));
   if (scored.length < 2) return { best: [], worst: [] };
   const toPost = (r: Joined): HookPost => ({

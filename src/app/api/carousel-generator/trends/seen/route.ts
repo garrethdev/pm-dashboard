@@ -1,5 +1,5 @@
 import { bad, body, guard, ok } from "@/server/carousel/http";
-import { markSeen } from "@/server/carousel/repo/trends";
+import { markSeen } from "@/server/trends/repo";
 
 /** Seen means on screen for about a second (DEV-45). Batched by the page; also sent on leaving. */
 export async function POST(req: Request) {

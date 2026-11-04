@@ -7,6 +7,7 @@ import { getDaysOff, workingMsBetween } from "@/lib/data/work-week";
 import { dayRangeET } from "@/lib/data/warmup-sessions";
 import { getAllAutomatedOverdue, type OverdueAccount } from "@/lib/data/warmup-runs";
 import { AUTOMATED_WARMUP_OVERDUE_DAYS } from "@/lib/data/warmup-run-state";
+import { pipelineNotifications } from "@/lib/data/pipeline-health";
 import { getN8nHealth, type N8nHealth } from "@/lib/data/n8n-health";
 import { fleetOfEntity, getPhysicalProfiles } from "@/lib/data/fleet-accounts";
 import type { Fleet } from "@/lib/fleet";
@@ -570,14 +571,15 @@ async function buildFeed(): Promise<NotificationItem[]> {
       .then((r) => r.data)
       .catch(() => [] as string[]),
   );
-  const [stored, warmup, todo, overdue, n8n] = await Promise.all([
+  const [stored, warmup, todo, overdue, n8n, pipeline] = await Promise.all([
     storedNotifications(physical).catch(() => [] as NotificationItem[]),
     warmupFailNotifications(physical).catch(() => [] as NotificationItem[]),
     todoNotifications().catch(() => [] as NotificationItem[]),
     warmupOverdueNotifications().catch(() => [] as NotificationItem[]),
     n8nNotifications().catch(() => [] as NotificationItem[]),
+    pipelineNotifications().catch(() => [] as NotificationItem[]),
   ]);
-  return [...stored, ...warmup, ...todo, ...overdue, ...n8n];
+  return [...stored, ...warmup, ...todo, ...overdue, ...n8n, ...pipeline];
 }
 
 /**

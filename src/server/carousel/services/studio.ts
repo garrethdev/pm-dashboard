@@ -8,7 +8,7 @@
 import type { CarouselTemplate } from "@/lib/carousel/template/validate";
 import { validateTemplate } from "@/lib/carousel/template/validate";
 import { listAssets } from "@/server/carousel/repo/libraries";
-import { getReference } from "@/server/carousel/repo/trends";
+import { getReference } from "@/server/trends/repo";
 import { paintDeck, type PaintTemplate } from "@/server/carousel/services/painter";
 import { settledRoles, writeDeck, writerAvailable, type CopyRole } from "@/server/carousel/services/writer";
 import { SLIDE_FONTS, fontEntry } from "@/lib/carousel/fonts";

@@ -42,6 +42,349 @@ phone size in dark and light mode, and on the real list for 3 November, which
 showed 26 Linked pills, one for each of the 26 posts marked posted that day.
 Not yet on the live site: it goes live when this is committed and deployed.
 
+## 2026-11-04 — Deep side: best and worst hooks need at least 50 views
+
+**Where it came from:** Garreth looking at hey.imani.vaughn's Deep side once
+real readings showed on it. The top "best hook" was a post with 1 view (its
+one viewer watched past 3 seconds, so it "held" 100%), and the three "worst"
+had 2 to 10 views each. Facebook's had the same problem (its best had 4
+views). Garreth asked for it to be fixed.
+
+**What changed:** a post needs at least 50 views to be ranked among the best
+or worst hooks. The hook-type table above it is unchanged.
+
+**How far it is checked:** by tests, and by working out the lists from the
+live data for Imani's Instagram and Facebook before the change. Not yet
+seen on the deployed page.
+
+## 2026-11-04 — Phone-robot readings: linked to their posts later, and Facebook's show on its page
+
+**Where it came from:** Yurie's sixth short test (3 November), and Garreth
+asking whether he can now see the deep numbers for each app. Three things
+stood in the way:
+
+- **Readings of new posts were never linked.** The robot reads posts within
+  hours of posting, before the platforms' own fetches have them (Instagram's
+  arrive Sunday, Monday, Wednesday and Friday mornings). A reading that found
+  no post then stayed unlinked for good, and the account pages only show
+  linked readings. In the sixth test, 4 of the 6 readings matched nothing.
+  For an Instagram reel also posted to Facebook, the Instagram-only views
+  stayed empty too, because working them out needs the link.
+- **Facebook's readings were filed under the wrong name.** The robot sends
+  the page's name ("Imani Vaughn"), but the Facebook account page looks
+  readings up by the page's number, so it showed none of them.
+- **Another Facebook button taken for a caption:** "Compare post insights",
+  on all three Facebook readings of the sixth test. Garreth said yes to
+  fixing it.
+
+**What changed:**
+
+- A new daily job (15:30 UTC, after the Instagram and Facebook fetches)
+  looks at every reading of the last 45 days again. It links any reading
+  whose post has since arrived, the same way the robot's hand-off matches
+  posts (by caption, else by the time on the screen). It splits a crossposted
+  reel's views into Instagram's and Facebook's once the Facebook post is
+  known. It files Facebook readings under the page's number, and clears
+  button captions (using the post's own caption once linked).
+- New Facebook readings are filed under the page's number from the start.
+- "Compare post insights" is no longer stored as a caption.
+
+**How far it is checked:** the job was run by hand against the live data
+on 4 November (a trial run first, then for real). It linked 14 readings that
+had matched nothing, including all the time-only ones from earlier tests
+(Facebook 84 to 86, TikTok 107, 119 and 120, Instagram 80, 92 and 93, and
+the pilot readings 1 to 5). It moved the 9 Facebook readings with numbers onto
+the page's number (the 6 empty problem rows were moved by hand, so every
+Facebook reading now uses it) and cleared the junk captions on 124 to 126. Each new link was
+checked against the post's time. A second run found nothing left to change.
+Readings 121 to 124 stay unlinked until their posts are fetched; the
+Instagram ones come in with today's 13:00 UTC fetch. The daily schedule
+itself starts once this is deployed. The new-readings change is covered by
+tests, not yet by a real hand-off.
+
+## 2026-11-03
+
+- **Trending cards can now be saved straight from the feed.** Each card in the
+  Trends feed has a bookmark button next to the thumbs, and the Recent saves
+  panel updates when you tap it. Before this, a carousel could only be saved
+  by opening View Details. Came from Garreth: the Saved section existed but
+  nothing on the feed let you add to it. The save itself reuses the existing
+  save route, so nothing changed on the server. Checked with a simulated feed
+  in a test; not yet tried against the live dashboard.
+
+## 2026-11-03 — Resources tab: links to the Character 6 Voice Bible and the Carousel Render Blueprint
+
+**Where it came from:** Garreth asked for the two reference documents behind
+the jealousy carousels to live on the dashboard, as links to the live docs so
+they can keep being edited in one place.
+
+**What changed:** a new Resources item under Content in the sidebar opens a
+page with two cards: the Character 6 Voice Bible (who she is and how she
+sounds) and the Carousel Render Blueprint (font, sizes, placement, date and
+weight labels). Each card opens the live Claude Doc in a new tab; the
+dashboard holds no copy, so edits to the docs show up without a code change.
+Checked locally: the page and sidebar item render. Not yet seen on the live
+site.
+
+---
+
+## 2026-11-03 — Phone-robot readings: a post the robot could not open is stored once
+
+**Where it came from:** Yurie's fifth short test (3 November). TikTok's
+first post could not be opened, so the robot sent it as a problem post with
+no screenshots, and the dashboard stored that. The next post then failed
+because the AI account was out of credit, the robot was told to try again,
+and each of its three retries stored the problem post again: readings 110 to
+113 were one problem four times. Posts with screenshots were already stored
+only once (each send is recognised by its screenshots); a problem post had
+nothing to be recognised by. Garreth asked for it to be fixed, and for the
+three extra copies (111 to 113) to be deleted, which they were.
+
+**What changed:** a problem post is now recognised by its place in the
+hand-off, what the robot said went wrong, and the day, so the same hand-off
+sent again points at the row already stored. Two problem posts in one
+hand-off are still both kept. The same problem at the same place in a second
+sitting on the same day counts as already stored, which loses nothing: a
+problem row has no numbers.
+
+**How far it is checked:** by tests (the reader's tests and the robot
+route's tests pass), not yet on a real hand-off.
+
+## 2026-11-03 — Phone-robot readings: Instagram's own views, and real Facebook captions
+
+**Where it came from:** Yurie's fourth short test, run again on 2 November
+after phone 1 was switched back to Imani Vaughn: the first sitting where all
+three apps read posts. Decisions by Garreth, 2026-11-03.
+
+**What was wrong:**
+
+- **Instagram's insights add Facebook in.** For a reel crossposted to
+  Facebook, Instagram's "Summary" shows both apps together: "Your breath"
+  showed 583 views and 6 likes, which is exactly Instagram's 215 + Facebook's
+  368, and 3 + 3 likes. The readings stored those totals as Instagram's.
+  Nothing on screen showed them yet (the account pages use each app's own
+  counts), but anything built on the readings would have counted Facebook
+  twice.
+- **Facebook readings stored a button as the caption.** "Open get more
+  bottomsheet menu" (and earlier "See post") went in as the caption.
+
+**What changed:**
+
+- **Instagram readings keep Instagram's part (Garreth).** The reader now
+  also notes whether the screen says "Crossposted to Facebook". If it does,
+  the dashboard finds the Facebook twin (the same piece on the Facebook
+  account that mirrors the Instagram one), takes its views and likes off the
+  totals, and stores what is left as Instagram's. The Facebook views are kept
+  beside it and show on the post's row in the All posts tab as "N views on
+  Facebook", where that line was always meant to go; the Facebook post keeps
+  its own numbers on the Facebook page. Where the Facebook post cannot be
+  found, the combined numbers are left empty rather than stored as
+  Instagram's. Viewers is Instagram's alone on that screen and is unchanged.
+- **Facebook readings take the caption of the post they match**, which is
+  the Instagram twin's (Garreth asked; the two are the same text).
+- **The readings already stored were corrected the same day:** 12 Instagram
+  readings now hold Instagram's part (each lands within 2 of Instagram's own
+  count: 215, 128, 122, 149 against 147, 213 against 215), and 6 Facebook
+  readings lost their button caption (3 took their post's caption; 3 not
+  linked to a post are now empty).
+
+**Verification:** the 12 corrected readings were checked by query against
+Instagram's and Facebook's own counts. The new code is tested (44 tests in the
+reader, with the entry above) and checked by type. It has not yet met a
+reading the robot handed over itself; it did store the fifth short test's
+readings (114 to 120), which were read by hand because the AI account was out
+of credit: "Your breath" went in as 215 Instagram views and 368 Facebook views
+with 3 likes, the same as Instagram's own count.
+
+## 2026-11-03 — Two warmup-robot tests stopped failing with the calendar
+
+**Where it came from:** seen while merging the phone-robot fix above (PR
+#89); Garreth asked for the cause and a fix. The two tests came in with the
+route-gate tests of 2026-10-31.
+
+**What was wrong:** nothing in the dashboard itself. The tests send the
+robot's "still running" and "finished" messages for a warmup that started at
+a fixed moment, 31 October 10:00 UTC. The dashboard rightly refuses a start
+more than 36 hours old (it means the Air's clock is wrong), so from 1 November
+the tests were turned away like a robot with a wrong clock would be.
+
+**What changed:** those tests now hold the clock at 30 minutes after that
+start, so they give the same answer on any day. Only the tests changed. All
+857 tests pass.
+
+## 2026-11-02 — The phone robot is told when the dashboard could not save a post
+
+**Where it came from:** Yurie's fourth short test of the phone robot (DA-06,
+2026-11-02 at 06:43 UTC). TikTok worked for the first time: the robot opened
+glow.with.becky's three newest posts and photographed every stats page. But
+the test ran during that morning's Supabase outage, the dashboard could not
+save any of the three, and the robot's log still said "0 read, 0 stored, 0
+with a problem", the same as if nothing had been sent. Fix on Garreth's go,
+same day.
+
+**What changed:** when the dashboard cannot read or save a post the robot
+sent (the database or the AI does not answer, a screenshot is missing), it
+now answers the robot with an error that says how many posts failed and why.
+The robot already tries an error answer again three times, and the posts that
+were saved on an earlier try are recognised and not read (or paid for) twice;
+if it still fails, the robot's log shows the reason in words. The answer also
+carries a new count of failed posts. The robot itself is unchanged, so Yurie
+needs no new update for this.
+
+**The three TikTok readings were saved by hand the same day** (readings
+97–99): the three screenshots that never reached storage came from Yurie's
+zip, and the robot's hand-off was sent again from this Mac. All three are
+linked to their posts; views match TikTok's own numbers (145 and 145, 24 and
+24, 90 and 91 fetched a little later).
+
+**Verification:** tested in code and checked by type; it has not yet met a
+real failure from the robot.
+
+## 2026-11-02 — The weekly analytics email lists only live accounts
+
+**Where it came from:** Garreth saw a dozen orange rows of zeros in the
+Instagram table of the weekly combined email and asked whether it was broken.
+It was not: the email listed every account that had ever posted, so banned and
+retired accounts (some from May and July) showed up every time with nothing.
+Garreth chose to keep the email and clean it up.
+
+**What changed:** each section now lists only live accounts (active, not
+banned, not paused) plus any account that posted that week. A "No posts this
+week" row now means a live account that really is quiet. The "Top 5 all time"
+tables still include old accounts, on purpose. If the account lookup ever
+fails, the email falls back to the old full list rather than not sending.
+Changed in n8n ("[Combined] Weekly Analytics Report"), not in this repo.
+
+**Verified:** run on 2026-11-02 against that day's real data with sending
+switched off: Instagram 5 rows (was 16), TikTok 5 (was 43), Facebook
+unchanged. The first real send is Monday's.
+
+## 2026-11-01 — Trends covers were zoomed in and cropped
+
+**Where it came from:** Garreth, looking at the live Trends feed: the picture on
+each card was too big and cut off at the sides ("our friends wh / be in a
+fantas"), while the same slide in the details window was fine.
+
+- **Cause:** the resized copies of pictures in our storage were asked for at a
+  width only, with `resize=cover`. Measured on a real slide: the original is
+  1080 by 1920, and the copy came back 540 by 1920, the middle half of it,
+  which the card then stretched to fill its box. The same call is used by the
+  Studio, the image libraries and the content-type cards, so any picture that
+  was not already the right shape was affected there too.
+- **Fix:** ask for `resize=contain`, which keeps the shape. The same slide comes
+  back 540 by 960 (measured). The page still crops to its own box.
+- Also corrects the pictures the content tagger sends to the AI, which went
+  through the same call and so saw a cropped slide.
+
+**Checked:** the two tests that pinned the old address updated, all tests pass.
+Measured against real storage with both settings. Not yet looked at on the live
+feed after deploy.
+
+---
+
+## 2026-11-01 — Trends is its own page in the main menu
+
+**Where it came from:** Garreth: Trends should not sit under the Carousel
+Generator's menu; it belongs in the main menu next to Generate, and its code
+should be separate.
+
+- **Trends is now at `/trends`**, in the main menu under Content, right below
+  Generate. It is gone from the Carousel Generator's menu. The old address
+  `/carousel-generator/trends` sends people to the new one and keeps what was
+  after it (`?section=saved`, `?q=`). It is a temporary redirect, like `/issues`,
+  so it can be changed later.
+- **Links that pointed at the old address now point at the new one:** "All
+  trends" and "All saved" on the generator's Overview, and the pipeline alert in
+  the bell.
+- **The code moved into its own folders**, with no change to what it does:
+  the page, `src/components/trends/`, `src/server/trends/` (the feed, votes,
+  saves, digests, knowledge and the analysis read, with their tests and sample
+  rows) and `src/lib/trends/` (search). The generator now reads Trends from there,
+  not the other way round. The shared pieces Trends borrows (the details window,
+  the buttons and picture loader in `components/carousel`) stayed where they are.
+- **Left alone on purpose:** the data addresses `/api/carousel-generator/trends/...`
+  and `/api/carousel-generator/search`, `facets`, `sources`, `carousels`. The docs
+  list them and the n8n workflows are outside this repo, so I could not be sure
+  nothing else calls them. Renaming them is a separate change.
+
+**Checked:** all 855 tests pass (same as before the move), typecheck and lint as
+before, production build passes with `/trends` listed and the old page gone. Run
+locally: the old address answers with a redirect that keeps the query, `/trends`
+loads with its menu row lit, the Carousel Generator pages still load and no
+longer list Trends. Not checked: the page against real data, which needs the live
+database; the first look at the live site after deploy is the real check.
+
+---
+
+## 2026-10-31 — Alert when carousel analysis stops, and tests for the parts nobody was checking
+
+**Where it came from:** Garreth asked what is most urgent to test. The three-week
+analysis stall (2026-10-09, the reader's model was retired) was never noticed
+because nothing looked for it, and the reader and the dashboard had no shared
+check that they agree on what a row looks like.
+
+- **A red bell alert when analysis stops.** Fires when work is waiting but nothing
+  has been analysed for 6 hours, when a job has been stuck running over an hour,
+  or when more than half of a day's finished image jobs failed. Video jobs are
+  left out of the failure count because they fail on expired TikTok links today
+  (BACKLOG) and would keep it red. Not yet seen firing for real: the live
+  pipeline was healthy when this was written (newest analysis under an hour old).
+- **A bug found by the new tests, fixed.** 147 older carousels store the audience
+  questions as objects, and the Analysis tab would have tried to draw an object
+  as text, which crashes that tab. Questions are now turned into plain text.
+- **Reader to dashboard check.** Real rows from the live database (the newest
+  read, the older fuller read, the October 8 read with no coverage block) are
+  kept as samples, and tests check the Analysis tab and the cards come out right
+  from each. If the n8n reader changes what it writes, these say what the
+  dashboard no longer understands.
+- **Every route is checked for a lock.** One test goes through all 113 API routes
+  and fails if a handler has no sign-in or token check, does anything before it,
+  or sits behind the open doors in `proxy.ts` without its own token. All pass
+  today. Proven by taking a lock off one route and watching it fail.
+- **The unattended routes have tests.** The daily picture copy, Facebook read,
+  content tagging, the screen reader, and the warmup script's check-in and close:
+  wrong or missing token, unset secret, bad body, parameter limits, failure
+  answers. Not covered yet: the Higgsfield callback and the recording-complete
+  route.
+- **Database rules are now written down and tested** (`supabase/tests/`, read the
+  README there): the promotion of a radar find to Trends, the 7-day decay, and
+  the job queue's claim and finish rules. Run against the live database on
+  2026-10-31 in rolled-back blocks, every check passed and no test rows were
+  left. A copy of the live functions is in `supabase/snapshots/`. These are not
+  in CI (no database there).
+
+**Checked:** new unit tests pass, typecheck shows only the old `LayoutProps`
+error, lint clean. The CI run on GitHub has not been seen yet.
+
+---
+
+## 2026-10-31 — Trends shows breakout slideshows first, with a "why it's working" read
+
+**Where it came from:** Garreth's goal for Trends: find trending carousels we
+can replicate, with a short breakdown of why each one works. He approved the
+plan on 2026-10-31, including an "Other niches" filter.
+
+**What happened:** the feed ranked the library's all-time hits first (posts
+from January with 30 million views), so nothing breaking out this week could
+reach the top. And most carousels' Analysis tab was nearly empty: the reader
+that writes it had saved its findings where the app does not look, then
+stopped altogether on October 9 when OpenRouter retired the model it used.
+
+**What changed:**
+- **A trending line on cards.** Carousels the outlier radar found carry a
+  "Trending" line with how many views per follower the post got and how old
+  it is. The radar itself, and its ranking of finds above the all-time hits
+  for their first week, live in Supabase and n8n, not in this repo.
+- **"Why it's working" leads the Analysis tab,** with "Remake for peptides"
+  under it, when the reader wrote them.
+- **Main feed and Other niches.** Radar finds from outside the peptide niche
+  sit on their own tab, so they do not bury the niche ones.
+- **The Overview's Trending Carousels** show the last week's radar finds when
+  there are any, and fall back to the newest scrape otherwise.
+
+**Verified:** typecheck and tests pass (new tests for the niche filter). Not
+yet seen live: no radar find had reached Trends when this was written.
+
 ## 2026-10-30 — New Instagram accounts could not be connected to analytics
 
 **Where it came from:** seen live. Connecting kathy_spd to Instagram analytics

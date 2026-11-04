@@ -1,6 +1,6 @@
 import { requireSession } from "@/lib/api-auth";
-import { callCatalog } from "@/lib/carousel/trends/client";
-import { catalogFailure } from "@/lib/carousel/trends/http";
+import { callCatalog } from "@/lib/trends/client";
+import { catalogFailure } from "@/lib/trends/http";
 
 /** Format-neutral saved detail; video conversion proposals are not generated here. */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {

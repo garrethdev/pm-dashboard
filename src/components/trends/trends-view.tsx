@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DetailsWindow } from "@/components/carousel/details-window";
 import { Btn, Pill, compact, post, shortDate, useJson } from "@/components/carousel/kit";
-import { TrendsSearch } from "@/components/carousel/trends-search";
+import { TrendsSearch } from "@/components/trends/trends-search";
 import { BookOpen, Bookmark, Check, ChevronLeft, ChevronRight, EnvelopeSimple, LayoutList, Loader2, PaintBrush, Rows, ThumbsDown, ThumbsUp, TrendUp } from "@/components/ui/icons";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { slidePicture } from "@/lib/carousel/slide-pictures";
@@ -42,7 +42,7 @@ function numbersLine(r: Reference): string {
   return parts.join(" · ");
 }
 
-function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () => void; onVote: (v: "up" | "down") => void; onSeen: (id: number) => void }) {
+function Post({ r, onDetails, onVote, onSave, onSeen }: { r: Reference; onDetails: () => void; onVote: (v: "up" | "down") => void; onSave: () => void; onSeen: (id: number) => void }) {
   const [i, setI] = useState(0);
   // The furthest slide swiped to: only slides up to here have asked for their picture (2026-10-27).
   const [reached, setReached] = useState(0);
@@ -70,6 +70,7 @@ function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () =>
         <span className="flex size-8 items-center justify-center rounded-full bg-card-raised" aria-hidden><PlatformIcon platform={r.platform} className="size-4 text-text-primary" /></span>
         <span className="flex min-w-0 flex-col">
           <span className="flex items-baseline gap-1.5 text-sm"><b className="truncate">{r.handle ? `@${r.handle}` : "Unknown"}</b>{r.publishedAt && <span className="text-xs text-text-muted tnum">· {shortDate(r.publishedAt)}</span>}</span>
+          {r.trendingAt && <span className="text-xs font-medium text-accent">Trending{r.reach ? ` · ${r.reach >= 10 ? Math.round(r.reach) : r.reach.toFixed(1)}× views per follower` : ""}{r.publishedAt ? ` · ${ageText(r.publishedAt)}` : ""}</span>}
           {r.topics.length > 0 && <span className="truncate text-xs text-text-muted">{r.topics.map((t) => t.replace(/_/g, " ")).join(" · ")}</span>}
         </span>
         {r.sourceUrl && <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-auto rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted hover:text-text-primary">View Post</a>}
@@ -98,6 +99,7 @@ function Post({ r, onDetails, onVote, onSeen }: { r: Reference; onDetails: () =>
       <div className="flex items-center gap-1.5">
         <button type="button" aria-pressed={r.vote === "up"} aria-label="Useful" onClick={() => onVote("up")} className={cn("flex size-8 items-center justify-center rounded-full border border-border", r.vote === "up" ? "bg-text-primary text-bg" : "text-text-muted hover:text-text-primary")}><ThumbsUp className="size-4" /></button>
         <button type="button" aria-pressed={r.vote === "down"} aria-label="Not useful" onClick={() => onVote("down")} className={cn("flex size-8 items-center justify-center rounded-full border border-border", r.vote === "down" ? "bg-text-primary text-bg" : "text-text-muted hover:text-text-primary")}><ThumbsDown className="size-4" /></button>
+        <button type="button" aria-pressed={r.saved} aria-label={r.saved ? "Remove from saved" : "Save"} onClick={onSave} className={cn("flex size-8 items-center justify-center rounded-full border border-border", r.saved ? "bg-text-primary text-bg" : "text-text-muted hover:text-text-primary")}><Bookmark className="size-4" /></button>
         <span className="flex-1" />
         <Link href={`/carousel-generator/studio?reference=${r.id}` as never} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card-raised px-3.5 py-1.5 text-xs font-medium text-text-primary hover:border-text-muted/40"><PaintBrush className="size-3.5" />Copy to Studio</Link>
         <button type="button" onClick={onDetails} className="rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary">View Details</button>
@@ -118,7 +120,30 @@ function Tile({ r, onOpen }: { r: Reference; onOpen: () => void }) {
   );
 }
 
-function Feed({ onOpen }: { onOpen: (id: number) => void }) {
+/** How old a post was, in plain words, for the trending line. */
+function ageText(iso: string): string {
+  const h = Math.max(0, (Date.now() - new Date(iso).getTime()) / 36e5);
+  if (h < 48) return `${Math.max(1, Math.round(h))}h old`;
+  return `${Math.round(h / 24)} days old`;
+}
+
+function Feed({ onOpen, onSaved }: { onOpen: (id: number) => void; onSaved: () => void }) {
+  const [niche, setNiche] = useState<"main" | "other">("main");
+  return (
+    <div className="flex flex-col">
+      <div className="flex gap-1.5 pt-3" role="tablist" aria-label="Which carousels">
+        {(["main", "other"] as const).map((n) => (
+          <button key={n} type="button" role="tab" aria-selected={niche === n} onClick={() => setNiche(n)} className={cn("rounded-full border px-3 py-1 text-xs font-medium", niche === n ? "border-accent text-accent" : "border-border text-text-muted hover:text-text-primary")}>
+            {n === "main" ? "Main feed" : "Other niches"}
+          </button>
+        ))}
+      </div>
+      <FeedList key={niche} niche={niche} onOpen={onOpen} onSaved={onSaved} />
+    </div>
+  );
+}
+
+function FeedList({ onOpen, onSaved, niche }: { onOpen: (id: number) => void; onSaved: () => void; niche: "main" | "other" }) {
   const [items, setItems] = useState<Reference[]>([]);
   const [older, setOlder] = useState<Reference[] | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "end" | "error">("loading");
@@ -149,7 +174,7 @@ function Feed({ onOpen }: { onOpen: (id: number) => void }) {
     try {
       if (older === null) {
         const last = items[items.length - 1];
-        const q = last ? `?afterId=${last.id}` : "";
+        const q = `?niche=${niche}${last ? `&afterId=${last.id}` : ""}`;
         const res = await fetch(`/api/carousel-generator/trends/feed${q}`, { cache: "no-store" });
         if (!res.ok) throw new Error();
         const j = (await res.json()) as { items: Reference[]; more: boolean };
@@ -171,7 +196,7 @@ function Feed({ onOpen }: { onOpen: (id: number) => void }) {
     } finally {
       busy.current = false;
     }
-  }, [items, older]);
+  }, [items, older, niche]);
 
   // The sentinel sits under the list and is on screen from the start, so the
   // same observer fetches the first page and every page after it.
@@ -201,6 +226,16 @@ function Feed({ onOpen }: { onOpen: (id: number) => void }) {
     setOlder((o) => (o ? upd(o) : o));
     await post("/api/carousel-generator/trends/vote", { id: r.id, vote: next });
   };
+  const save = async (r: Reference) => {
+    const upd = (saved: boolean) => (list: Reference[]) => list.map((x) => (x.id === r.id ? { ...x, saved } : x));
+    setItems(upd(!r.saved));
+    setOlder((o) => (o ? upd(!r.saved)(o) : o));
+    const res = await post<{ saved: boolean }>("/api/carousel-generator/trends/save", { id: r.id });
+    const final = res.data ? res.data.saved : r.saved;
+    setItems(upd(final));
+    setOlder((o) => (o ? upd(final)(o) : o));
+    onSaved();
+  };
 
   if (state === "error" && items.length === 0) return <div className="flex flex-col items-start gap-2 py-8 text-sm text-text-muted"><span>The feed could not be loaded</span><Btn onClick={() => { setState("loading"); void loadMore(); }}>Retry</Btn></div>;
   return (
@@ -210,14 +245,14 @@ function Feed({ onOpen }: { onOpen: (id: number) => void }) {
       {state !== "loading" && items.length === 0 && older === null && (
         <div className="flex flex-col items-center gap-1 py-3 text-xs text-text-muted"><span className="inline-flex items-center gap-1.5"><Check className="size-3.5" />No new carousels</span></div>
       )}
-      {items.map((r) => <Post key={r.id} r={r} onDetails={() => onOpen(r.id)} onVote={(v) => vote(r, v)} onSeen={onSeen} />)}
+      {items.map((r) => <Post key={r.id} r={r} onDetails={() => onOpen(r.id)} onVote={(v) => vote(r, v)} onSave={() => save(r)} onSeen={onSeen} />)}
       {older === null && !moreNew && state !== "loading" && (
         <div className="flex flex-col items-center gap-2 py-6 text-xs text-text-muted">
           {items.length > 0 && <span className="inline-flex items-center gap-1.5"><Check className="size-3.5" />No more new carousels</span>}
           <Btn onClick={() => { setOlder([]); void loadMore(); }}>See older carousels</Btn>
         </div>
       )}
-      {older?.map((r) => <Post key={`o${r.id}`} r={r} onDetails={() => onOpen(r.id)} onVote={(v) => vote(r, v)} onSeen={onSeen} />)}
+      {older?.map((r) => <Post key={`o${r.id}`} r={r} onDetails={() => onOpen(r.id)} onVote={(v) => vote(r, v)} onSave={() => save(r)} onSeen={onSeen} />)}
       {state === "end" && <p className="py-6 text-center text-xs text-text-muted">That’s every carousel</p>}
       <div ref={sentinel} className="h-px" />
       {state === "ready" && ((older === null && moreNew) || (older !== null && moreOld)) && <div className="flex justify-center py-4 text-text-muted"><Loader2 className="size-4 animate-spin" /></div>}
@@ -310,7 +345,7 @@ export function TrendsView({ section, query }: { section?: string; query?: strin
   const [savedKey, setSavedKey] = useState(0);
   const [searching, setSearching] = useState(Boolean(query));
   const { data: recent, reload: reloadRecent } = useJson<{ items: Reference[] }>(`/api/carousel-generator/trends/saved?k=${savedKey}`);
-  const go = useCallback((s: Section) => router.replace(`/carousel-generator/trends${s === "feed" ? "" : `?section=${s}`}` as never), [router]);
+  const go = useCallback((s: Section) => router.replace(`/trends${s === "feed" ? "" : `?section=${s}`}` as never), [router]);
   // Searching from any other section switches to Feed (D10).
   const onSearching = useCallback((on: boolean) => { setSearching(on); if (on && cur !== "feed") go("feed"); }, [cur, go]);
   const changed = () => { setSavedKey((k) => k + 1); reloadRecent(); };
@@ -336,7 +371,7 @@ export function TrendsView({ section, query }: { section?: string; query?: strin
         <div className="no-scrollbar min-h-0 overflow-y-auto pb-16 md:pb-0">
           <div className="mx-auto flex w-full max-w-[500px] flex-col gap-2">
             <TrendsSearch compact onSearching={onSearching} initialQuery={query} />
-            {cur === "feed" && !searching && <Feed onOpen={setOpen} />}
+            {cur === "feed" && !searching && <Feed onOpen={setOpen} onSaved={changed} />}
             {cur === "saved" && <Saved onOpen={setOpen} refreshKey={savedKey} />}
             {cur === "digests" && <Digests onOpen={setOpen} />}
             {cur === "knowledge" && <Knowledge />}

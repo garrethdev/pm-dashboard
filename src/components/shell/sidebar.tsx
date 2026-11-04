@@ -28,6 +28,7 @@ import {
   Images,
   PaintBrush,
   TrendUp,
+  BookOpen,
 } from "@/components/ui/icons";
 import { SidebarToggleIcon } from "@/components/ui/sidebar-toggle-icon";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
@@ -91,8 +92,12 @@ const DASHBOARD_NAV: NavConfig = {
       label: "Content",
       items: [
         { label: "Generate", href: "/generate", icon: Sparkle, isActive: under("/generate") },
+        // Breakout slideshows to copy, and why they work. Its own page, not a part of the Carousel Generator (Garreth, 2026-11-01).
+        { label: "Trends", href: "/trends", icon: TrendUp, isActive: under("/trends") },
         { label: "Content calendar", href: "/content-calendar", icon: CalendarDots, isActive: under("/content-calendar") },
         { label: "Content types", href: "/content-types", icon: Cards, isActive: under("/content-types") },
+        // Reference documents: the Character 6 Voice Bible and the Carousel Render Blueprint (Garreth, 2026-11-03).
+        { label: "Resources", href: "/resources", icon: BookOpen, isActive: under("/resources") },
       ],
     },
   ],
@@ -132,7 +137,6 @@ const CAROUSEL_NAV: NavConfig = {
         { label: "History", href: "/carousel-generator/history", icon: History, isActive: under("/carousel-generator/history") },
         { label: "Image libraries", href: "/carousel-generator/library", icon: Images, isActive: under("/carousel-generator/library") },
         { label: "Studio", href: "/carousel-generator/studio", icon: PaintBrush, isActive: under("/carousel-generator/studio") },
-        { label: "Trends", href: "/carousel-generator/trends", icon: TrendUp, isActive: under("/carousel-generator/trends") },
       ],
     },
   ],
