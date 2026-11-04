@@ -20,6 +20,17 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+
+## 2026-11-03
+
+- **Trending cards can now be saved straight from the feed.** Each card in the
+  Trends feed has a bookmark button next to the thumbs, and the Recent saves
+  panel updates when you tap it. Before this, a carousel could only be saved
+  by opening View Details. Came from Garreth: the Saved section existed but
+  nothing on the feed let you add to it. The save itself reuses the existing
+  save route, so nothing changed on the server. Checked with a simulated feed
+  in a test; not yet tried against the live dashboard.
+
 ## 2026-11-03 — Resources tab: links to the Character 6 Voice Bible and the Carousel Render Blueprint
 
 **Where it came from:** Garreth asked for the two reference documents behind
