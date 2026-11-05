@@ -20,6 +20,32 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-05 - Trends: the next slide of a carousel is ready before you swipe to it
+
+Garreth reported that on Trends the first slide of a carousel showed, but the
+following ones were blank. Since 2026-10-27 a card only asked for a slide once
+someone had swiped to it, which stopped a page of twenty cards pulling every
+slide at once, but it meant each swipe landed on an empty slide while the picture
+loaded. Those pictures were also being resized on the spot, about two seconds
+each, until the catch-up in the entry below finished.
+
+Now a card also asks for the one slide after the furthest reached, so it is
+already there when you swipe. Slides further on still wait. A page of twenty
+cards now asks for about 34 pictures rather than 20. That is why this waited for
+the catch-up: while pictures had no copy, each extra request would have been a
+database lookup, which is what caused the 10-09 outage. Now they come from
+Cloudflare.
+
+Checked locally in headless Chrome with the Trends page: the 20 cards asked for
+34 pictures, all from Cloudflare, and each carousel asked for its first two
+slides and no more. All 34 came back fine, averaging about 1.2 seconds from
+Garreth's Mac with the slowest near 5 seconds. Fetching them a second time was
+no quicker, so a very fast swipe past two slides can still show a blank briefly.
+**Not yet seen:** swiping in Safari, and the change on the
+live site.
+
+---
+
 ## 2026-11-04 — Library and Trends pictures get small copies on Cloudflare, so browsing cannot overload the database
 
 **Where it came from:** Garreth, after the Supabase bill showed picture resizing
@@ -62,12 +88,29 @@ address, so no domain was moved. A real picture came back from it at both sizes,
 byte for byte the size made, and a picture with no copy was passed on to
 Supabase. Ten pictures were copied to R2 through the job and one was read back
 and looked at. The catch-up of the existing pictures was started from Garreth's
-Mac and was still running when this was written: about 500 done, none failed.
+Mac and finished on 2026-11-05 after about six hours: 17,983 pictures have copies
+and nothing is left to do. The copies take 1.71 GB, about half the estimate
+above.
 
-**Not yet seen:** the daily job has not run on Vercel, only on the Mac, and the
-screens have not been watched showing copies on the live site. The R2 keys are
-on Vercel for Production only, so a Preview deployment cannot make copies; it
-can still show them.
+Two pictures have no copy, both in rich-life-images:
+`jun06_renders/SI-2TYT5C-2/slide_04.jpg` and
+`jun06_renders/BWG-2TZ02O-3/slide_03.jpg`. Their originals are empty files
+(0 bytes), so this cannot be fixed by trying again. 150 library pictures were
+copied twice because their originals were replaced during the catch-up, which
+is the job working as designed.
+
+On the live site, library pictures came from Cloudflare (22 requests, all fine).
+In Garreth's Safari comparison of 12 pictures, none failed either way, averaging
+1.8 seconds the old way and 1.5 seconds the new way. That comparison was made
+during the catch-up, so not every picture had a copy yet.
+
+The daily job's first scheduled run on Vercel was 2026-11-05 at 11:30 UTC (7:30
+PM Mac time) and it reported success. Vercel's log does not say how much it did,
+and it was sharing the list with the catch-up, so what it makes on an ordinary
+day has not been seen yet.
+
+**Not yet seen:** the R2 keys are on Vercel for Production only, so a Preview
+deployment cannot make copies; it can still show them.
 
 **Worth knowing:** Cloudflare's free plan allows 100,000 picture requests a day
 through the Worker. An internal dashboard should stay far below that, but past

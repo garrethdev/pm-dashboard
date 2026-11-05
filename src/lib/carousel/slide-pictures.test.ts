@@ -9,9 +9,13 @@ describe("slidePicture", () => {
     expect(slidePicture(media, 2, 2, 540)).toContain("width=540");
     expect(slidePicture(media, 1, 3, 540)).toContain("render/image");
   });
-  it("leaves a slide not yet swiped to empty", () => {
-    expect(slidePicture(media, 1, 0, 540)).toBeNull();
-    expect(slidePicture(media, 5, 4, 540)).toBeNull();
+  it("loads the next slide ahead, so a swipe never lands on a blank", () => {
+    expect(slidePicture(media, 1, 0, 540)).toContain("width=540");
+    expect(slidePicture(media, 5, 4, 540)).toContain("width=540");
+  });
+  it("leaves slides further on empty", () => {
+    expect(slidePicture(media, 2, 0, 540)).toBeNull();
+    expect(slidePicture(media, 6, 4, 540)).toBeNull();
   });
   it("has nothing to draw when the picture is gone", () => {
     expect(slidePicture(null, 0, 0, 540)).toBeNull();
