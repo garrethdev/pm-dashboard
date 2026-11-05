@@ -41,8 +41,9 @@ Checked locally in headless Chrome with the Trends page: the 20 cards asked for
 slides and no more. All 34 came back fine, averaging about 1.2 seconds from
 Garreth's Mac with the slowest near 5 seconds. Fetching them a second time was
 no quicker, so a very fast swipe past two slides can still show a blank briefly.
-**Not yet seen:** swiping in Safari, and the change on the
-live site.
+Garreth then swiped through carousels in Safari on the local app
+and the following slides were there. **Not yet seen:** the change on the live
+site.
 
 ---
 
