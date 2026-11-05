@@ -20,6 +20,62 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-04 — Library and Trends pictures get small copies on Cloudflare, so browsing cannot overload the database
+
+**Where it came from:** Garreth, after the Supabase bill showed picture resizing
+at 285 of the 100 included, and a prompt proposing ready-made copies on
+Cloudflare R2. Looking into it showed the bill was small ($5), but the same
+mechanism is what took the dashboard down on 2026-10-09: every picture shown
+for the first time made Supabase look it up in the database, and a library
+page showing hundreds at once filled the connection pool. Garreth chose to fix
+that, for both the character libraries and the Trends pictures. The other two
+outages (09-23, 11-02) had nothing to do with pictures and are not touched here.
+
+**What changed:**
+- **Every library and Trends picture gets two small copies, 540 and 1080 wide,
+  made once** by a new daily job (11:30 UTC, after the Trends copy job) and
+  kept on Cloudflare R2. It finds its own work, library pictures first, then
+  newest, so it does not matter which tool added a picture. When an original
+  is replaced, it is copied again. A picture too big for Supabase's own
+  resizer (over 25 MB or 50 megapixels) is marked failed with the reason and
+  not tried again.
+- **The screens show the copy instead of asking Supabase.** Every grid, card,
+  preview and the slide viewer go through one function, which now points at
+  Cloudflare. A picture whose copy is not made yet is passed on to Supabase's
+  resizer, as before, so nothing shows blank while the copies catch up.
+- **The final carousels are unchanged.** They are made from the full
+  originals, which are only read, never touched.
+- **One switch turns it off:** with `NEXT_PUBLIC_PICTURE_COPIES_URL` empty the
+  screens use Supabase exactly as before.
+
+**How it was checked:** type check, lint, and the full test suite (890 pass),
+including Amazon's own published example for the R2 upload signature and the
+Cloudflare piece against a stand-in for R2. Seven real pictures from both
+buckets were copied with the same settings and looked at: text sharp, shape
+kept, 23 to 121 KB per copy (a 12 MB library original came out at 41 and 108
+KB). For all 17,977 pictures that is about 3.5 GB, inside R2's free 10 GB.
+The new table and its to-do list were applied live and read back as
+service-role only.
+
+**Confirmed live:** the Cloudflare piece is deployed on its free workers.dev
+address, so no domain was moved. A real picture came back from it at both sizes,
+byte for byte the size made, and a picture with no copy was passed on to
+Supabase. Ten pictures were copied to R2 through the job and one was read back
+and looked at. The catch-up of the existing pictures was started from Garreth's
+Mac and was still running when this was written: about 500 done, none failed.
+
+**Not yet seen:** the daily job has not run on Vercel, only on the Mac, and the
+screens have not been watched showing copies on the live site. The R2 keys are
+on Vercel for Production only, so a Preview deployment cannot make copies; it
+can still show them.
+
+**Worth knowing:** Cloudflare's free plan allows 100,000 picture requests a day
+through the Worker. An internal dashboard should stay far below that, but past
+it pictures would fail until the next day. Clearing the switch above puts the
+screens back on Supabase.
+
+---
+
 ## 2026-11-04 — Phone-robot readings: a Facebook code name is no caption
 
 **Where it came from:** Yurie's seventh short test (4 November). All three
@@ -58,6 +114,8 @@ pass. Checked in headless Chrome (not Safari) on this Mac: on the demo list at
 phone size in dark and light mode, and on the real list for 3 November, which
 showed 26 Linked pills, one for each of the 26 posts marked posted that day.
 Not yet on the live site: it goes live when this is committed and deployed.
+
+---
 
 ## 2026-11-04 — Deep side: best and worst hooks need at least 50 views
 

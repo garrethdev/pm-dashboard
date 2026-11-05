@@ -1,0 +1,17 @@
+# The Cloudflare Worker that serves the small picture copies (see src/index.js).
+# Deploy from this folder:  npx wrangler@4 login   then   npx wrangler@4 deploy
+#
+# It answers on Cloudflare's free address for it,
+# https://pm-picture-copies.<your-account>.workers.dev, so no domain of our own
+# is needed. That address is what NEXT_PUBLIC_PICTURE_COPIES_URL is set to.
+name = "pm-picture-copies"
+main = "src/index.js"
+compatibility_date = "2025-10-01"
+workers_dev = true
+
+[vars]
+SUPABASE_URL = "https://qlcmgxgwpzmiebzxflai.supabase.co"
+
+[[r2_buckets]]
+binding = "COPIES"
+bucket_name = "pm-thumbnails"
