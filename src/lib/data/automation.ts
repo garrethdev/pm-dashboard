@@ -28,7 +28,7 @@ export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
   // stops at once without planning, so n8n shows a quick success every night
   // and "daily" is what the overdue check should expect.
   { id: "Jaf78Yt9XAuj9PNJ", name: "Smart Scheduler", expected: "01:00 ET, plans 3 days every 3rd night", schedule: { type: "daily", hour: 1, minute: 0 }, key: true },
-  { id: "lioNzkWRocyDvZS5", name: "Posting Agent", expected: "daily 10:00 ET", schedule: { type: "daily", hour: 10, minute: 0 }, key: true },
+  { id: "lioNzkWRocyDvZS5", name: "Posting Agent", expected: "daily 10:00 ET, To-do hand-out 01:15 ET", schedule: { type: "daily", hour: 10, minute: 0 }, key: true },
   { id: "QDUtABHSG4FMTrQX", name: "Warmup Scheduler", expected: "daily", schedule: { type: "none" }, key: true },
   { id: "ARmIDPrV77c0k4zA", name: "Task Detail Poller", expected: "hourly + 07:00 digest", schedule: { type: "interval", minutes: 60 }, key: true },
   // Ran at 14:00 ET, not 02:00, for seven weeks: the workflow had no
