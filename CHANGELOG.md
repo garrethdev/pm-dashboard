@@ -47,6 +47,36 @@ site.
 
 ---
 
+## 2026-11-05 — Posts reach the To-do list right after planning, around 1:15 am ET
+
+**Where it came from:** Garreth saw no assigned posts for today or the next two
+days and asked why, then decided posts should be handed out straight after
+planning so Yurie can see them around 1 am ET.
+
+**What we found:** the posts were not missing. The scheduler booked them at
+1:00 am ET, but the To-do list only fills when the Posting Agent hands posts
+out, and that ran once a day at 10:00 am ET. Each three-day batch runs out the
+day before the next one is planned, so every third day the list sat empty until
+10:00 am ET, which is 11 pm in Manila.
+
+**What changed (in n8n, outside the repo, apart from one label):**
+
+- The Posting Agent now also runs every night at 1:15 am ET, 15 minutes after
+  the scheduler. This early run only hands posts to people. Robot phones still
+  post from the 10:00 am ET run.
+- The 10:00 am ET run stays as a safety net. If the early run misses anything,
+  that run picks it up, and a post already handed out is not handed out twice.
+- The Automation page now lists both times for the Posting Agent.
+
+**Verified:** live runs on 2026-11-05 of both the new early path and the
+10:00 am path. The early run put 18 posts on the To-do list for 5 and 6
+November (14 booked plus 4 Facebook copies). The second run added no
+duplicates. **Not yet seen:** a real unattended 1:15 am run, and a run with a
+robot account live. No robot accounts are live today, so the part that keeps
+robot posts out of the early run has not met a real robot post.
+
+---
+
 ## 2026-11-04 — Library and Trends pictures get small copies on Cloudflare, so browsing cannot overload the database
 
 **Where it came from:** Garreth, after the Supabase bill showed picture resizing
