@@ -44,7 +44,7 @@ function numbersLine(r: Reference): string {
 
 function Post({ r, onDetails, onVote, onSave, onSeen }: { r: Reference; onDetails: () => void; onVote: (v: "up" | "down") => void; onSave: () => void; onSeen: (id: number) => void }) {
   const [i, setI] = useState(0);
-  // The furthest slide swiped to: only slides up to here have asked for their picture (2026-10-27).
+  // The furthest slide swiped to: only slides up to here, plus the next one, have asked for their picture.
   const [reached, setReached] = useState(0);
   const ref = useRef<HTMLElement>(null);
   const seen = useRef(false);
@@ -77,7 +77,7 @@ function Post({ r, onDetails, onVote, onSave, onSeen }: { r: Reference; onDetail
       </div>
       <div className="group relative -mx-4 sm:mx-0">
         <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto sm:rounded-xl" onScroll={(e) => { const at = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth); setI(at); setReached((r) => Math.max(r, at)); }}>
-          {/* A slide is a resized copy, and only once reached: a page of twenty cards used to pull every slide as an original (2026-10-27). */}
+          {/* A slide is a resized copy, and only once reached or next up: a page of twenty cards used to pull every slide as an original (2026-10-27). */}
           {slides.map((s, k) => {
             const pic = slidePicture(s.media, k, reached, 540);
             return (
