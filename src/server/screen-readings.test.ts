@@ -377,5 +377,6 @@ describe("relinkPatch", () => {
 describe("captionOrNull: Facebook's buttons", () => {
   it("drops 'Compare post insights' (sixth short test)", () => {
     expect(captionOrNull("Compare post insights")).toBeNull();
+    expect(captionOrNull("FBBloksScreenQueryView")).toBeNull();
   });
 });

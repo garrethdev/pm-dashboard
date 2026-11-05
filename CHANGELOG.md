@@ -76,6 +76,47 @@ screens back on Supabase.
 
 ---
 
+## 2026-11-04 — Phone-robot readings: a Facebook code name is no caption
+
+**Where it came from:** Yurie's seventh short test (4 November). All three
+Facebook readings (133 to 135) were stored with the caption
+"FBBloksScreenQueryView", which is the name of a screen inside Facebook's own
+code, not words from the post. Garreth asked for it fixed.
+
+**What changed:** that name, and any like it, is now treated like the buttons
+the robot has mistaken for captions before ("See post", "Compare post
+insights"): nothing is stored as the caption. The robot no longer reads it
+either (its own fix, same day). The three stored readings had the name
+cleared in the database (exactly rows 133, 134 and 135). Their numbers were
+right and they were already linked to their posts.
+
+**How far it is checked:** the rule is tested on the exact word; the three
+rows were cleared by a query on 4 November and checked.
+
+## 2026-11-04 — The To-do list shows a post's link: a "Linked" pill that opens it
+
+**Where it came from:** asked for in the session of 2026-11-04, while preparing
+a demo of the auto-linking (2026-10-30). The robots were attaching links to
+Yurie's posts, but the To-do list never showed them: only the Content
+Calendar's day panel had a link to click, so on her own list there was no way
+to see that a post had its link, or to open it.
+
+**What changed:** a posted item that has its link now shows a green
+**Linked** pill beside its name. Tapping the pill opens the live post in a
+new tab. It shows whether the link was pasted by Yurie or found by the
+robots; the list cannot tell the two apart. A link pasted while ticking a
+post shows its pill straight away. The tick still opens the posting sheet as
+before. Something in the link box that is not a web address (a caption has
+been pasted there by mistake before) gets no pill.
+
+**Verification:** tests cover which posts get the pill, and all To-do tests
+pass. Checked in headless Chrome (not Safari) on this Mac: on the demo list at
+phone size in dark and light mode, and on the real list for 3 November, which
+showed 26 Linked pills, one for each of the 26 posts marked posted that day.
+Not yet on the live site: it goes live when this is committed and deployed.
+
+---
+
 ## 2026-11-04 — Deep side: best and worst hooks need at least 50 views
 
 **Where it came from:** Garreth looking at hey.imani.vaughn's Deep side once

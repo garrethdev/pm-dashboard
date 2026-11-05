@@ -51,6 +51,8 @@ type Override = {
   doneAt?: string;
   loggedMinutes?: number;
   reason?: string;
+  /** A link pasted as it was ticked, so its Linked pill shows at once. */
+  postUrl?: string;
 };
 
 /** Where a sheet was opened from, so its title can name the account — and,
@@ -83,6 +85,9 @@ function applyOverrides(devices: TodoDevice[], overrides: Record<string, Overrid
           doneAt: o.doneAt,
           reason: o.reason,
           loggedMinutes: o.loggedMinutes ?? item.loggedMinutes,
+          // A posted item keeps the link it had unless one was just pasted;
+          // anything else (Undo, failed, scheduled) has none to show.
+          postUrl: o.postUrl ?? (o.status === "posted" ? item.postUrl : undefined),
         };
       }),
     })),
@@ -540,7 +545,11 @@ export function TodoLogSheet({
     if (outcome === "scheduled") return { status: "scheduled", doneAt: nowHHMM() };
     // Done with or without the link: the robots look for it, and the list only
     // asks again if they have not found it two days later.
-    return { status: "posted", doneAt: nowHHMM() };
+    return {
+      status: "posted",
+      doneAt: nowHHMM(),
+      ...(/^https?:\/\//i.test(trimmedLink) ? { postUrl: trimmedLink } : {}),
+    };
   }
 
   async function submit() {
