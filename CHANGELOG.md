@@ -48,6 +48,50 @@ duplicates. **Not yet seen:** a real unattended 1:15 am run, and a run with a
 robot account live. No robot accounts are live today, so the part that keeps
 robot posts out of the early run has not met a real robot post.
 
+## 2026-11-05 — Jealousy Carousel is a live Character 6 content type
+
+**Where it came from:** Garreth was told Character 6 had a new Jealousy Carousel
+lane with 25 ready decks and asked whether it was wired and would be prioritized.
+It was not: the 25 decks were finished, but the lane was missing from the system,
+so it would never have been scheduled. Garreth then decided the new mix and the
+caption fix below.
+
+**What changed:**
+- Jealousy Carousel is now a content type (`jealousy_carousel`), on Character 6's
+  allowed list, and shows in the calendar, posting and stock counts.
+- Character 6's weekly mix went from 6+6+6 to 5+5+4+4 (Garreth): Divorce Recovery
+  5, Jealousy 5, Viral Theories 4, 3-Slide Journey 4. Still 18 a week.
+- All 25 captions were rewritten by hand (Garreth). They had no hashtags, and
+  most repeated "Maybe you..."; "I thought she'd be happy for me" appeared three
+  times. They now follow the Character 6 style: one flat lowercase line, up to
+  16 words, 12 of the 25 ending in a question, 4 hashtags each.
+- The 25 went back through the content check with the new captions: all medium
+  risk, none rejected. Garreth accepted the five decks the check warned about
+  for TikTok's eating-disorder rules (18, 20, 21, 22, 24) and the weight labels
+  on the slides, which that check cannot see because it only reads text.
+- The ready switch now checks all six slides, not just the first and last, and
+  two decks can no longer share an id.
+
+**Verified live:** 25 in stock and 25 in the posting view, every character's mix
+still adds up, and Jealousy is the only type with new-type priority. Inventory now
+asks for 6 Jealousy decks per account for its priority week. The stock view's
+rebuild method, written down but never run before, was proved in a practice run
+that undid itself, then applied. `inventory_check` still reads.
+
+**Not yet seen working:** no Jealousy deck has been scheduled or posted. The next
+planning run is Sunday 8 November, 1am New York time; its first deck starts the
+7-day priority week. 25 decks cover about 4 of those working days, so they should
+run out around 12 November unless more arrive.
+
+**Still to do, by hand in n8n:** two one-line edits, not made here. The scheduler
+holds a plain database key so it is only edited by hand, and changing the Gate
+through the API would mean resending the whole workflow.
+- Add Jealousy to the Smart Scheduler's `MEDIA` list (a second safety net; the
+  ready switch already covers this).
+- Add it to the Pre-Publish Gate's `EXTRA_FILTERS`, so the nightly check skips the
+  399 unfinished rows. Until then those rows are sent to the check every night and
+  cost money, though nothing is saved, because they have no id yet.
+
 ## 2026-11-04 — Library and Trends pictures get small copies on Cloudflare, so browsing cannot overload the database
 
 **Where it came from:** Garreth, after the Supabase bill showed picture resizing
@@ -315,6 +359,51 @@ the tests were turned away like a robot with a wrong clock would be.
 start, so they give the same answer on any day. Only the tests changed. All
 857 tests pass.
 
+## 2026-11-03 — Divorce Recovery writer fully on the new caption style; 25 decks released
+
+**Where it came from:** Garreth asked whether the 25 waiting Divorce Recovery
+decks used the updated caption style, then whether the writer itself does.
+
+**What we found:** the 25 decks (DRC-0026 to 0050, written 31 October) predated
+the 2 November rules: no questions, and most ended in a "like…" put-down of
+him. The writer's request for each deck had the new style, but two older parts
+of the same writer still taught the old one: its standing instructions (with
+old-style example captions) and the step that repairs a failed deck. Its checks
+allowed 30 words and did not test the new style at all.
+
+**What changed (in n8n and the database, outside the repo):**
+- The 25 captions were rewritten by hand to the new style; 11 end in a question,
+  picked by coin flip like the writer does. Then, at Garreth's word, the 25 were
+  approved and taken off Hold (he had put them on Hold).
+- The writer's standing instructions and repair step now carry the new caption
+  rules; the old examples are kept only as "bad" ones.
+- The writer's checks now flag a caption over 16 words, not lowercase, with a
+  "like…" comparison, a comment/follow/tag ask, a question that is not last, or
+  hashtags off its list.
+
+**Verified:** a 3-deck test run of the live writer: all three captions in the
+new style, no problems flagged. The 25 decks show as ready in the scheduler's
+stock rules; they have not been booked or posted yet.
+
+**Same day, the other caption writers (Garreth: "do 1-3, skip 4"):**
+- **3-Slide Journey stock recaptioned.** 20 of the 22 ready pieces broke the
+  new rules (about 22 words against 12, the banned "10 months, some help, and
+  a quiz" pattern). Their captions were emptied and the Caption Writer rewrote
+  all 22; the Pre-Publish Gate then re-checked them.
+- **Viral Theories now has a caption writer.** It had none, so its captions
+  never followed the rules. It was added to the Caption Writer (now "ASMR +
+  Journey + Viral"), and its 21 ready pieces were recaptioned and re-gated. It
+  first used "save this" endings, which read as tacked on, so it was switched
+  the same day to a question on about half and a plain ending on the rest.
+- **Cleora's writer now checks its own captions** and stops an episode whose
+  caption breaks the rules. Not yet met a real episode: no Cleora episode has
+  been waiting for a script since 29 October.
+- Not done, on purpose: posts already booked onto accounts keep their old
+  captions, and Characters 2 to 4 are outside the caption rules (Garreth: skip
+  for now).
+
+---
+
 ## 2026-11-02 — The phone robot is told when the dashboard could not save a post
 
 **Where it came from:** Yurie's fourth short test of the phone robot (DA-06,
@@ -361,6 +450,136 @@ Changed in n8n ("[Combined] Weekly Analytics Report"), not in this repo.
 **Verified:** run on 2026-11-02 against that day's real data with sending
 switched off: Instagram 5 rows (was 16), TikTok 5 (was 43), Facebook
 unchanged. The first real send is Monday's.
+
+## 2026-11-02 — One set of caption rules; captions for Cleora ASMR and 3-Slide Journey
+
+**Where it came from:** Garreth asked for the captions of the best carousels in
+the Trends library to be studied for a pattern, and for every live caption
+writer to follow it ("Do all").
+
+**What we found:** captions barely affect views. Among 768 Trends carousels the
+strongest link between any caption habit and views was weak, and on our own
+2,480 TikTok posts the one clear signal pointed the other way from Trends:
+very short and hashtag-only captions did worse than fuller ones. Both agreed on
+4 to 6 topic hashtags and no "comment / save / follow" asks. The numbers and
+the rules are in `docs/CAPTION-RULES.md`.
+
+Along the way: **157 Cleora ASMR pieces and 31 3-Slide Journey pieces had no
+caption and nothing was writing one.** Neither lane's writer produced captions.
+
+**What changed (in n8n, outside the repo):**
+
+- New workflow **[Captions] ASMR + Journey Caption Writer**, in the team
+  project. Every hour it writes captions for up to 10 pieces in each of those
+  two lanes, checks them against the rules (length, 4 to 6 topic hashtags, no
+  questions or asks, no drug or regulator names in hashtags, Journey keeps its
+  "months, had help, started with a quiz" line) and saves only the ones that
+  pass. It never overwrites an existing caption.
+- Journey pieces that had been approved **before** they had a caption get
+  their approval mark cleared when the caption is added, so the Pre-Publish
+  Gate checks the caption too. 31 Journey pieces are affected. 29 have no
+  slides yet; the other 2 are finished but could never have posted without a
+  caption, and now wait for the gate instead. ASMR pieces were all still
+  awaiting approval, so the usual approval sees their caption.
+- **[Cleora] Writing Agent:** the post caption goes from 3 to 6 words with a
+  required emoji to one or two sentences that add something the script does not
+  say, emoji optional; the hashtags go from the same five on every episode to 4
+  to 6 about that episode. The script rules are unchanged (checked against the
+  previous version before publishing).
+- Divorce Recovery's writer already follows the rules and was left alone.
+  Viral Theories has no live writer; its stock's captions already fit.
+
+**Verified:** three hand runs. The first wrote 20 captions but 9 of 10 Journey
+ones opened the same way and some ASMR hashtags named compounds (#BPC157); those
+20 were cleared and the writer tightened. The third run's captions were read
+and are varied and within the rules. 29 written so far (19 ASMR, 10 Journey);
+the hourly runs finish the rest in about 14 hours. **Not yet seen:** a new
+Cleora episode written under the new caption rules, and whether any of this
+changes views.
+
+**Later the same day — rules version 2, aimed at engagement.** Garreth: the goal
+is engagement, not views. Measured again on likes, saves and comments: on our
+own posts, captions with a question drew about 40% more comments (only 58 such
+posts), and in the Trends library short captions and "save this" captions got
+more likes and saves per view. Garreth agreed the changes:
+
+- About half the captions now end with one easy question, picked at random so
+  that in 2–3 weeks comments can be compared with and without one.
+- Cleora and Cleora ASMR captions without a question end with "Save this
+  for…" instead. Journey and Divorce Recovery do not.
+- Captions may be as short as 5 words (was 10).
+- Still no "comment YES", follow, share, tag, DM or link-in-bio asks:
+  Instagram and Facebook demote that kind of bait.
+
+Applied to all three live writers: the ASMR + Journey writer, the Cleora
+Writing Agent, and this time **Divorce Recovery's writer too** (only its
+last-slide instructions changed). The 50 ASMR and Journey captions written
+under the first rules were cleared and rewritten. The ASMR + Journey writer also
+now insists Journey captions stay in the first person; two had slipped into
+"she". **Verified:** a published run wrote 20 captions with the right endings,
+read by hand. **Not yet seen:** a Cleora episode or Divorce Recovery deck
+written under version 2, and whether questions raise comments.
+
+**Later still — rules version 3, sounding like a real person.** Garreth asked
+whether the captions sounded human next to the Trends ones. Measured: they did
+not. Trends captions use emoji (49%), "!" (32%), lowercase, "&" and "..."; ours
+used none of them, every Journey caption said "I did not do it alone" word for
+word (my prompt told it to), and "quiet/quietly" turned up in a quarter of ASMR
+captions. Changed in the ASMR + Journey writer: shorter (about 20 / 25 words),
+contractions, lowercase or one "!" or one feeling emoji some of the time, "&"
+and "..." allowed, AI-sounding words and three-part lists rejected, and for
+Journey a random month count and random wording for the "had help" and "quiz"
+parts so no sentence repeats. The Cleora Writing Agent got the same tone rules
+in its per-episode message (its main instructions are untouched). Every
+unapproved caption the writer had saved was cleared and is being rewritten.
+
+Getting there took four tries, all on unapproved pieces: the first "sound
+human" run wrote 30 to 84 words and failed every check (now the word limit
+is in every request), the check wrongly demanded a contraction in short
+fragments, one caption slipped into "she", and Journey then repeated
+"9 months, real backup" everywhere. **Verified:** the last published run's
+captions were read and vary. 31 written so far (25 ASMR, 6 Journey); 130 ASMR
+and 25 Journey left, done by the hourly runs in about 13 hours. **Not yet
+seen:** a Cleora episode under version 3.
+
+**Then — Journey shorter, quiz optional.** Garreth found the Journey captions
+a little long (typical 16 words; a third of the top Trends weight-loss posts
+are under 10) and said not every Journey caption has to mention the quiz.
+Journey's limit is now about 10 words, and the quiz, the months and the help
+are each mentioned only on some pieces, at random. The first run ended 4 of 9
+captions with "You in?", copied from an example in the instructions, so each
+piece now gets a different example question; captions using "she" are
+rejected. Journey captions written before this were cleared and rewritten.
+**Verified:** the last run's 8 captions are 6 to 10 words and read differently
+from each other.
+
+**Then — Character 6 in the "anyone else's ex do this?" style.** Garreth
+shared the caption he wants Character 6 to feel like: "he asked to borrow the
+dog for the weekend. anyone else's ex do this?" Both Character 6 writers now
+ask for one flat, lowercase sentence about one specific thing that happened,
+with no build-up and no explaining, and on about half the posts a short
+"anyone else?" style question to other women.
+- **Divorce Recovery** (`Divorce Recovery: carousel copy writer`): the
+  sentence is about one slightly absurd thing *he* did or said; up to 16 words
+  with the question; no emoji. The example sentence and question change on
+  every deck so the writer does not copy one.
+- **3-Slide Journey** (`[Captions] ASMR + Journey Caption Writer`): mostly
+  lowercase (8 in 10), fewer emoji (3 in 10), at most one mention of the quiz,
+  the months or the help, worked into the sentence; the limit went from 10 to
+  12 words so a sentence and a question fit. "didn't recognize me" is banned
+  (3 of 10 test captions used it).
+
+**Verified:** test runs only, nothing saved. 6 Divorce decks and 20 Journey
+pieces from the database were run through the new instructions. Divorce reads
+like the example ("he named his new girlfriend in the insurance email. still
+single?"); one dropped its question mark. Journey is closer but not every
+caption follows the lowercase request. Over-long ones would fail the existing
+check and be retried. The live writers have not produced a caption this way
+yet: every Journey piece already has a caption and no Divorce batch has been
+made since the change. Viral Theories (also Character 6) has no live writer,
+so it is unchanged.
+
+---
 
 ## 2026-11-01 — Trends covers were zoomed in and cropped
 
