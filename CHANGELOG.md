@@ -42,11 +42,11 @@ slide sits a little higher, clear of the apps' buttons. On LEA-B3-02 slide 6 the
 friend's face is now cut down the middle. The remade decks also pick up the
 refreshed Character 6 photos from 2026-10-20, which they did not have before.
 
-**The renderer:** the size change is ready but **not yet merged**. It is
-[PR #6 in `content-render-scripts`](https://github.com/garrethdev/content-render-scripts/pull/6).
-Until it merges, a new batch made from that repo's `main` would still come out
-4:5. The same PR points the renderer at the live table instead of the retired one,
-and stops it printing new text over a finished slide.
+**The renderer:** merged on 2026-11-06 as
+[PR #6 in `content-render-scripts`](https://github.com/garrethdev/content-render-scripts/pull/6),
+so new batches from that repo's `main` come out 9:16. The same PR points the
+renderer at the live table instead of the retired one, and stops it printing new
+text over a finished slide.
 
 **Verified:** confirmed live. All 126 published slides measured 1080×1920 and the
 33 decks left alone still measure 4:5. Approval and ready status did not change,
