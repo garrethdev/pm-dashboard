@@ -20,6 +20,75 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-06 — Regular emails cleaned up for the phone farm
+
+**Where it came from:** Garreth asked for a list of the regular emails, which
+ones still matter now that the fleet is on phones, and whether the rest work.
+Wednesday's weekly analytics report had not gone out, and three emails were
+false alarms every day. He chose what to retire and what to fix.
+
+**Retired (switched off in n8n, can be switched back on):** the Geelark warmup
+scheduler, which booked nothing and sent a [PROBLEM] email every morning; the
+Proxy & Account Health Audit, which could only test proxies through Geelark; the
+daily Geelark wallet check, a false alarm every day; and the Geelark task
+workflow, which ran every hour with nothing to do and sent the failed-tasks email;
+and GPS Drift, which failed every morning. All five also came off the dashboard's
+automation list.
+
+**One truth for inventory (Garreth).** The Inventory digest and the Monday
+production order are kept, but both now read the same numbers as the dashboard:
+phone accounts and each account's own posting cap. On 11-06 the digest said 385 and
+Monday's production order said 553, while the dashboard said far less. Both emails
+now say 156, the dashboard's figure, and the production order uses the dashboard's
+default 14-day buffer and ranking. It used to count 21 days and only the urgent
+lanes. Confirmed by real runs against the database. Czedrick and Milan will see the
+digest's total drop on Monday; nothing was produced, the old figure was too high.
+
+**All AI in n8n now runs on one OpenRouter account (Garreth).** Both Anthropic
+accounts had run out, and he wants one balance to top up. All 59 active workflows
+that used Anthropic moved, plus the three email workflows moved first, 62 in all.
+That includes 12 that had an Anthropic key pasted into their code; those keys are
+out of the live workflows, and the code now reads one shared setting. The same
+models are used, so the writing should not change. Web search, thinking mode and
+each type of connection were tested before the move. Workflows that were switched
+off were not touched. Nothing changes what a post costs per word, but all of it
+now draws on the one balance, which was $9.53 at the time of the move.
+
+**Fixed:**
+- **Weekly analytics report.** Wednesday's failed because the Anthropic account
+  ran out of credit. Its AI writing now runs through OpenRouter, and if that step
+  fails the report still goes out without the AI summary.
+- **Analytics feed stopped.** The Geelark feed is gone from the check, so the
+  daily false alarm stops here and on the Incidents page. The other feeds are
+  still watched.
+- **Account Health.** It now lists only live phone farm accounts: 16 instead of
+  74. Banned and paused Cloud accounts no longer appear, so bans are seen on the
+  dashboard instead.
+- **Content Audit.** Five cut `mito_hooks` rows were "approved" every night
+  because the save was failing without saying so: that table has no notes or
+  review-date columns. Cut rows are now left out, and each lane only saves the
+  columns it has. The email now goes out only when something is rejected.
+- **Proxy & number expiry.** It now reads the real phones instead of Geelark. This
+  mattered more than the stale note: with Geelark empty, a proxy in use on a phone
+  with auto-renew off would have been labelled "Burned, do not extend".
+- **Pipeline Audit.** It now covers live phone accounts and three checks only:
+  half-scheduled content, content too early for an account's age, and accounts
+  over their own daily cap. The count fell from 556 issues to 4. All 4 are real:
+  both Sarah Keller accounts got main-lane content on days 14 and 15, before the
+  day-16 rule.
+
+**Verified:** real test runs of the Pipeline Audit, Account Health and expiry
+emails, sent only to Garreth. All four phones matched their real proxies. A live
+Content Audit run on `mito_hooks` picked up 0 rows, and test runs confirmed the
+email sends on a rejection and stays quiet otherwise. The freshness check shows
+all four feeds healthy with no alarm. The OpenRouter connection was proven on a
+throwaway workflow, and a sweep found no Anthropic key or address left in any
+active workflow. **Not yet met in a real scheduled run:** the weekly report through
+OpenRouter, most of the 62 moved workflows (each proves itself on its next run),
+the Winner playbook (next on the 15th), and a real rejection.
+
+---
+
 ## 2026-11-06 — Viral Theories moved to 9:16, including every unposted deck
 
 **Where it came from:** Garreth asked what size each active Character 6 carousel
