@@ -36,7 +36,7 @@ Supabase project: `qlcmgxgwpzmiebzxflai`.
 | `caption` | **The caption with the hashtags at the end, in one field.** This is exactly what gets posted | `the fat that matters after 40 is not the kind you can pinch #womenover40 #visceralfat` |
 | `music` | The song, as `Artist - Title` | `Massive Attack - Angel` |
 | `source_images` | The base photos used, as JSON | |
-| `slide_1_url` … `slide_6_url` | The public link to each finished slide image. **All six are required** | `…/leanne-carousel-images/renders/LEA-B3-01/slide_01.jpg` |
+| `slide_1_url` … `slide_6_url` | The public link to each finished slide image, 1080×1920 (9:16). **All six are required** | `…/leanne-carousel-images/renders/LEA-B3-01/slide_01.jpg` |
 | `status` | `rendered` once the six images are uploaded | `rendered` |
 | `rendered_at` | When the images were made | |
 

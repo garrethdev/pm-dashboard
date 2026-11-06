@@ -20,6 +20,42 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-06 — Viral Theories moved to 9:16, including every unposted deck
+
+**Where it came from:** Garreth asked what size each active Character 6 carousel
+type is. Measuring all 1,380 finished slides showed Divorce Recovery, Jealousy
+and 3-Slide Journey at 9:16, and Viral Theories alone at 4:5. He decided all four
+should match, going forward and for decks not yet posted.
+
+**What changed (live, in Supabase):** 21 unposted decks (126 slides) were remade
+at 1080×1920 with the same writing and the same photos. That covers LEA-B2-14
+(its last post failed), LEA-B2-25 to 30, and all 14 of LEA-B3, including the two
+decks booked for today. The new pictures are in a new `renders-9x16/` folder. The
+4:5 originals were kept, so this can be undone by pointing the links back.
+
+**Left alone on purpose:** the 32 decks already posted and LEA-B2-24, which the
+approval check rejected. They stay 4:5.
+
+**What looks different:** the text stays the same size on screen. The photos fill
+a taller slide, so most lose some of their sides, and the wording on the last
+slide sits a little higher, clear of the apps' buttons. On LEA-B3-02 slide 6 the
+friend's face is now cut down the middle. The remade decks also pick up the
+refreshed Character 6 photos from 2026-10-20, which they did not have before.
+
+**The renderer:** the size change is ready but **not yet merged**. It is
+[PR #6 in `content-render-scripts`](https://github.com/garrethdev/content-render-scripts/pull/6).
+Until it merges, a new batch made from that repo's `main` would still come out
+4:5. The same PR points the renderer at the live table instead of the retired one,
+and stops it printing new text over a finished slide.
+
+**Verified:** confirmed live. All 126 published slides measured 1080×1920 and the
+33 decks left alone still measure 4:5. Approval and ready status did not change,
+and the posting list now hands out the 9:16 slides for both of today's decks. All
+126 slides were looked over before the swap. **Not yet seen:** a 9:16 Viral
+Theories deck actually posting; the first are due today.
+
+---
+
 ## 2026-11-05 - Trends: the next slide of a carousel is ready before you swipe to it
 
 Garreth reported that on Trends the first slide of a carousel showed, but the
