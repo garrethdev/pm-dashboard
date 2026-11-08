@@ -21,4 +21,9 @@ export const RESOURCES: Resource[] = [
     summary: "Font, sizes, placement and date and weight labels every jealousy carousel renders to.",
     url: "https://claude.ai/artifact/9CN9pvUkGhyQaiPBzNy5bb",
   },
+  {
+    title: "Hook Rules",
+    summary: "The three rules of a hook, what makes one read as real, approved and rejected examples with reasons, and how the Comparison Carousel writer enforces them.",
+    url: "https://claude.ai/artifact/21BD6CPdzo6H7eCoaQ7S21",
+  },
 ];

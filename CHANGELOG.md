@@ -356,6 +356,15 @@ Instagram ones come in with today's 13:00 UTC fetch. The daily schedule
 itself starts once this is deployed. The new-readings change is covered by
 tests, not yet by a real hand-off.
 
+## 2026-11-07
+
+- **Hook Rules doc added to the Resources page.** A third card links to the
+  Hook Rules Claude Doc: the three rules of a hook, what makes one read as
+  real, approved and rejected examples with reasons, and how the Comparison
+  Carousel writer enforces them. Came from Garreth after the Comparison
+  Carousel hook work on 2026-11-07. Link only, like the other two cards, so
+  edits in the doc show up without a deploy. Checked on the local dev server.
+
 ## 2026-11-03
 
 - **Trending cards can now be saved straight from the feed.** Each card in the
