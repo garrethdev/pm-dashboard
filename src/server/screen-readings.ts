@@ -865,7 +865,7 @@ export async function facebookTwin(igHandle: string, contentId: string | null | 
  * screen inside Facebook's own code). A Facebook post's caption is its
  * Instagram twin's, which the matched post carries.
  */
-const NOT_A_CAPTION = /^(open get more bottomsheet menu|see post|see more|more|compare post insights|fb[a-z]*view)$/i;
+const NOT_A_CAPTION = /^(open get more bottomsheet menu|see post|see more|more|compare post insights|fb[a-z]*view|facebook)$/i;
 export function captionOrNull(caption: string | null | undefined): string | null {
   const c = caption?.trim();
   return c && !NOT_A_CAPTION.test(c) ? c : null;
