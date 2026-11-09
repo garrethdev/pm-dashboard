@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // looks like to the caller.
 
 const copyOutstanding = vi.fn();
+const makeOutstandingCopies = vi.fn();
 const runFacebookIngest = vi.fn();
 const runContentTags = vi.fn();
 const runReadings = vi.fn();
@@ -15,6 +16,7 @@ const checkIn = vi.fn();
 const closeRun = vi.fn();
 
 vi.mock("@/server/carousel/services/slide-copies", () => ({ copyOutstanding: (...a: unknown[]) => copyOutstanding(...a) }));
+vi.mock("@/server/carousel/services/picture-copies", () => ({ makeOutstandingCopies: (...a: unknown[]) => makeOutstandingCopies(...a) }));
 vi.mock("@/server/facebook-analytics", () => ({ runFacebookIngest: (...a: unknown[]) => runFacebookIngest(...a) }));
 vi.mock("@/server/content-tags", () => ({ DEFAULT_LIMIT: 50, runContentTags: (...a: unknown[]) => runContentTags(...a) }));
 vi.mock("@/server/screen-readings", () => ({
@@ -32,6 +34,7 @@ vi.mock("@/lib/data/warmup-runs", async (orig) => ({
 }));
 
 import { GET as copySlides } from "./carousel-generator/maintenance/copy-slides/route";
+import { GET as pictureCopies } from "./carousel-generator/maintenance/picture-copies/route";
 import { GET as facebookIngest } from "./facebook-analytics/ingest/route";
 import { GET as contentTags } from "./content-tags/run/route";
 import { POST as screenReadings } from "./screen-readings/run/route";
@@ -53,7 +56,7 @@ beforeEach(() => {
   vi.stubEnv("CRON_SECRET", SECRET);
   vi.stubEnv("WARMUP_RUNNER_TOKEN", RUNNER);
   vi.spyOn(console, "error").mockImplementation(() => {});
-  for (const m of [copyOutstanding, runFacebookIngest, runContentTags, runReadings, checkIn, closeRun]) m.mockReset().mockResolvedValue({ done: true });
+  for (const m of [copyOutstanding, makeOutstandingCopies, runFacebookIngest, runContentTags, runReadings, checkIn, closeRun]) m.mockReset().mockResolvedValue({ done: true });
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -62,6 +65,7 @@ afterEach(() => {
 
 const SCHEDULED: [string, (r: Request) => Promise<Response>, string, () => Request, ReturnType<typeof vi.fn>][] = [
   ["copy-slides", copySlides, "GET", () => get("/api/carousel-generator/maintenance/copy-slides"), copyOutstanding],
+  ["picture-copies", pictureCopies, "GET", () => get("/api/carousel-generator/maintenance/picture-copies"), makeOutstandingCopies],
   ["facebook ingest", facebookIngest, "GET", () => get("/api/facebook-analytics/ingest"), runFacebookIngest],
   ["content tags", contentTags, "GET", () => get("/api/content-tags/run"), runContentTags],
   ["screen readings", screenReadings, "POST", () => post("/api/screen-readings/run", { posts: [] }), runReadings],

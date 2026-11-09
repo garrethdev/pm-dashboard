@@ -74,9 +74,10 @@ export const CARRY_OVER_DAYS = 3;
 /**
  * How long a post may sit `queued` before it is overdue.
  *
- * A day, measured from the hand-out (Garreth, 2026-09-22). The Posting Agent
- * hands the day's posts out at 10:00 ET, so anything still untouched at the
- * same hour tomorrow has had a full working day pass it by.
+ * A day, measured from the time the post is due (Garreth, 2026-09-22; the
+ * clock is `due_at`, not when it was handed out). Anything still untouched at
+ * the same hour tomorrow has had a full working day pass it by. Hand-out itself
+ * happens at 01:15 ET, right after planning (2026-11-05).
  *
  * One number for both places that say so — the bell's overdue item and the
  * red Overdue pill on the list (P12, Garreth 2026-09-23) — so the two can

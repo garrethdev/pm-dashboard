@@ -28,9 +28,7 @@ export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
   // stops at once without planning, so n8n shows a quick success every night
   // and "daily" is what the overdue check should expect.
   { id: "Jaf78Yt9XAuj9PNJ", name: "Smart Scheduler", expected: "01:00 ET, plans 3 days every 3rd night", schedule: { type: "daily", hour: 1, minute: 0 }, key: true },
-  { id: "lioNzkWRocyDvZS5", name: "Posting Agent", expected: "daily 10:00 ET", schedule: { type: "daily", hour: 10, minute: 0 }, key: true },
-  { id: "QDUtABHSG4FMTrQX", name: "Warmup Scheduler", expected: "daily", schedule: { type: "none" }, key: true },
-  { id: "ARmIDPrV77c0k4zA", name: "Task Detail Poller", expected: "hourly + 07:00 digest", schedule: { type: "interval", minutes: 60 }, key: true },
+  { id: "lioNzkWRocyDvZS5", name: "Posting Agent", expected: "daily 10:00 ET, To-do hand-out 01:15 ET", schedule: { type: "daily", hour: 10, minute: 0 }, key: true },
   // Ran at 14:00 ET, not 02:00, for seven weeks: the workflow had no
   // settings.timezone so its "0 2 * * *" cron resolved against the n8n instance
   // default (Asia/Manila). The dashboard showed it Overdue every morning as a
@@ -40,7 +38,6 @@ export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
   { id: "gHoiFBpQkrkGvTto", name: "Failed-Post Reconcile", expected: "daily 14:00 ET", schedule: { type: "daily", hour: 14, minute: 0 }, key: true },
   // Not `key`: the GeeLark Wallet card now shows the live balance directly, so
   // the guard's run status doesn't need homepage space (Garreth 2026-09-02).
-  { id: "hKuVooWj5NRkcUex", name: "Wallet Guard", expected: "daily 08:00 ET", schedule: { type: "daily", hour: 8, minute: 0 } },
   { id: "xbyXTQG8XJ59qo1V", name: "Missed-Run Alarm", expected: "daily 08:30 ET", schedule: { type: "daily", hour: 8, minute: 30 } },
   { id: "KGBE446F9K51ugtd", name: "Analytics Freshness Alarm", expected: "daily 10:00 ET", schedule: { type: "daily", hour: 10, minute: 0 } },
   // Tracked so its failures reach the incident feed: incidents.ts only surfaces
@@ -73,8 +70,6 @@ export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
   // same trap as Failed-Post Reconcile above — it resolves against the n8n
   // instance default (Asia/Manila) and really fires at 20:20 UTC = 16:20 ET.
   // Tracked at the time it ACTUALLY runs, not the time the trigger reads.
-  { id: "YJckzOo6hRchFnS1", name: "GPS Drift", expected: "daily 16:20 ET", schedule: { type: "daily", hour: 16, minute: 20 }, note: "n8n trigger unpinned (Asia/Manila) — shifts to 15:20 ET after Nov 1" },
-  { id: "FknqQM7GNJJmViRP", name: "Proxy & Account Audit", expected: "biweekly Mon", schedule: { type: "none" } },
 ];
 
 export type RunState =

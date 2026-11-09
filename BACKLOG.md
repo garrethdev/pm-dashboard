@@ -110,6 +110,24 @@ screenshots ("Issues with Carousel App"). Garreth answered the questions on
 
 ## Open
 
+- **Nothing checks whether phone proxies are healthy (found 2026-11-06).** The
+  Proxy & Account Health Audit was retired because it could only test proxies
+  through Geelark. The expiry email says when a proxy runs out, but nothing
+  says whether a working proxy has gone bad or leaks its location. If this
+  matters it needs a new build for the phones, using the `devices` table.
+- **OpenRouter is now the only AI account in n8n (2026-11-06).** It held $9.53
+  after the move, far too little for the content pipeline, so top it up first.
+  Nothing alerts anyone when it runs out; when it does, all 62 AI workflows fail
+  together. Worth a bell item or a low-balance alarm.
+- **Content Risk Gate ran short of credit on 2026-11-06.** It uses a different
+  n8n login ("OpenRouter Carousel"), so check that key's limit. If it runs out,
+  new content stops being audited.
+- **Pasted keys need moving and replacing (2026-11-06).** The Proxy & Number
+  Expiry Alert holds proxy and phone-number keys in its code, and the Content
+  Analysis Heartbeat holds an n8n key. Parts of those and of the old Anthropic
+  keys printed in a Claude session log. The Anthropic keys are out of the live
+  workflows but stay in n8n's version history, so cancel them at Anthropic.
+
 - **`FIGMA_TOKEN`.** The Figma import is built (see the changelog) but has
   only run against a fixture, because the app has no Figma token. Garreth
   makes a personal access token in Figma (Settings → Security → Personal

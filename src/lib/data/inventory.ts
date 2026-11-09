@@ -8,9 +8,8 @@ import { deliveryModeOfFleet, type Fleet } from "@/lib/fleet";
  * Since 2026-10-16 demand is each account's own cadence (posts a week and a
  * day, from v_scheduler_account_config, the view the Smart Scheduler plans
  * from) over the working days only, via inventory_lane_demand_fleet. The
- * Mon/Fri digest still reads inventory_check, which counts the content types'
- * listed weekly amounts, so the two now disagree on purpose (Garreth,
- * 2026-09-04: the dashboard replaces the emails).
+ * Mon/Fri digest and the Monday production order read the same functions since
+ * 2026-11-06, so the emails and this page show one set of numbers (Garreth).
  */
 export interface InventoryBucket {
   character: string;
@@ -89,8 +88,8 @@ async function fetchInventory(fleet: Fleet): Promise<InventoryData> {
   const mode = deliveryModeOfFleet(fleet);
   const [rollup, orderRaw, accounts, poolsRaw, newAcct] = await Promise.all([
     // PF-18: inventory_rollup_fleet(14) is the 14-day demand for one fleet,
-    // from each account's own cadence since 2026-10-16. inventory_check is
-    // still what the digest email reads; the dashboard no longer reads it.
+    // from each account's own cadence since 2026-10-16. The digest email reads
+    // this too since 2026-11-06, so the two agree; nothing reads inventory_check.
     sbRpc<RawRollupRow[]>("inventory_rollup_fleet", {
       p_days: 14,
       p_new_accounts: 0,
@@ -244,7 +243,7 @@ export function getInventory(fleet: Fleet = "cloud") {
  * The card's window switcher. `inventory_check` is a fixed 14-day view, so the
  * toggle is backed by inventory_rollup(p_days, …) instead — a set-returning
  * function added 2026-09-04 alongside the view rather than replacing it, because
- * the Mon/Fri digest email reads `inventory_check` directly.
+ * the Mon/Fri digest email reads inventory_rollup_fleet too, since 2026-11-06.
  *
  * Until 2026-10-16 inventory_rollup(14) reproduced inventory_check row for
  * row. inventory_rollup_fleet, which this reads, now counts each account's own

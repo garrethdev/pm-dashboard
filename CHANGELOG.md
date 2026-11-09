@@ -38,6 +38,241 @@ views of the later API figures) and they stay linked to their posts.
 were cleared by a query on 9 November and checked: no reading has "Facebook"
 as its caption, and all eleven are still linked.
 
+## 2026-11-06 — Regular emails cleaned up for the phone farm
+
+**Where it came from:** Garreth asked for a list of the regular emails, which
+ones still matter now that the fleet is on phones, and whether the rest work.
+Wednesday's weekly analytics report had not gone out, and three emails were
+false alarms every day. He chose what to retire and what to fix.
+
+**Retired (switched off in n8n, can be switched back on):** the Geelark warmup
+scheduler, which booked nothing and sent a [PROBLEM] email every morning; the
+Proxy & Account Health Audit, which could only test proxies through Geelark; the
+daily Geelark wallet check, a false alarm every day; and the Geelark task
+workflow, which ran every hour with nothing to do and sent the failed-tasks email;
+and GPS Drift, which failed every morning. All five also came off the dashboard's
+automation list.
+
+**One truth for inventory (Garreth).** The Inventory digest and the Monday
+production order are kept, but both now read the same numbers as the dashboard:
+phone accounts and each account's own posting cap. On 11-06 the digest said 385 and
+Monday's production order said 553, while the dashboard said far less. Both emails
+now say 156, the dashboard's figure, and the production order uses the dashboard's
+default 14-day buffer and ranking. It used to count 21 days and only the urgent
+lanes. Confirmed by real runs against the database. Czedrick and Milan will see the
+digest's total drop on Monday; nothing was produced, the old figure was too high.
+
+**All AI in n8n now runs on one OpenRouter account (Garreth).** Both Anthropic
+accounts had run out, and he wants one balance to top up. All 59 active workflows
+that used Anthropic moved, plus the three email workflows moved first, 62 in all.
+That includes 12 that had an Anthropic key pasted into their code; those keys are
+out of the live workflows, and the code now reads one shared setting. The same
+models are used, so the writing should not change. Web search, thinking mode and
+each type of connection were tested before the move. Workflows that were switched
+off were not touched. Nothing changes what a post costs per word, but all of it
+now draws on the one balance, which was $9.53 at the time of the move.
+
+**Fixed:**
+- **Weekly analytics report.** Wednesday's failed because the Anthropic account
+  ran out of credit. Its AI writing now runs through OpenRouter, and if that step
+  fails the report still goes out without the AI summary.
+- **Analytics feed stopped.** The Geelark feed is gone from the check, so the
+  daily false alarm stops here and on the Incidents page. The other feeds are
+  still watched.
+- **Account Health.** It now lists only live phone farm accounts: 16 instead of
+  74. Banned and paused Cloud accounts no longer appear, so bans are seen on the
+  dashboard instead.
+- **Content Audit.** Five cut `mito_hooks` rows were "approved" every night
+  because the save was failing without saying so: that table has no notes or
+  review-date columns. Cut rows are now left out, and each lane only saves the
+  columns it has. The email now goes out only when something is rejected.
+- **Proxy & number expiry.** It now reads the real phones instead of Geelark. This
+  mattered more than the stale note: with Geelark empty, a proxy in use on a phone
+  with auto-renew off would have been labelled "Burned, do not extend".
+- **Pipeline Audit.** It now covers live phone accounts and three checks only:
+  half-scheduled content, content too early for an account's age, and accounts
+  over their own daily cap. The count fell from 556 issues to 4. All 4 are real:
+  both Sarah Keller accounts got main-lane content on days 14 and 15, before the
+  day-16 rule.
+
+**Verified:** real test runs of the Pipeline Audit, Account Health and expiry
+emails, sent only to Garreth. All four phones matched their real proxies. A live
+Content Audit run on `mito_hooks` picked up 0 rows, and test runs confirmed the
+email sends on a rejection and stays quiet otherwise. The freshness check shows
+all four feeds healthy with no alarm. The OpenRouter connection was proven on a
+throwaway workflow, and a sweep found no Anthropic key or address left in any
+active workflow. **Not yet met in a real scheduled run:** the weekly report through
+OpenRouter, most of the 62 moved workflows (each proves itself on its next run),
+the Winner playbook (next on the 15th), and a real rejection.
+
+---
+
+## 2026-11-06 — Viral Theories moved to 9:16, including every unposted deck
+
+**Where it came from:** Garreth asked what size each active Character 6 carousel
+type is. Measuring all 1,380 finished slides showed Divorce Recovery, Jealousy
+and 3-Slide Journey at 9:16, and Viral Theories alone at 4:5. He decided all four
+should match, going forward and for decks not yet posted.
+
+**What changed (live, in Supabase):** 21 unposted decks (126 slides) were remade
+at 1080×1920 with the same writing and the same photos. That covers LEA-B2-14
+(its last post failed), LEA-B2-25 to 30, and all 14 of LEA-B3, including the two
+decks booked for today. The new pictures are in a new `renders-9x16/` folder. The
+4:5 originals were kept, so this can be undone by pointing the links back.
+
+**Left alone on purpose:** the 32 decks already posted and LEA-B2-24, which the
+approval check rejected. They stay 4:5.
+
+**What looks different:** the text stays the same size on screen. The photos fill
+a taller slide, so most lose some of their sides, and the wording on the last
+slide sits a little higher, clear of the apps' buttons. On LEA-B3-02 slide 6 the
+friend's face is now cut down the middle. The remade decks also pick up the
+refreshed Character 6 photos from 2026-10-20, which they did not have before.
+
+**The renderer:** merged on 2026-11-06 as
+[PR #6 in `content-render-scripts`](https://github.com/garrethdev/content-render-scripts/pull/6),
+so new batches from that repo's `main` come out 9:16. The same PR points the
+renderer at the live table instead of the retired one, and stops it printing new
+text over a finished slide.
+
+**Verified:** confirmed live. All 126 published slides measured 1080×1920 and the
+33 decks left alone still measure 4:5. Approval and ready status did not change,
+and the posting list now hands out the 9:16 slides for both of today's decks. All
+126 slides were looked over before the swap. **Not yet seen:** a 9:16 Viral
+Theories deck actually posting; the first are due today.
+
+---
+
+## 2026-11-05 - Trends: the next slide of a carousel is ready before you swipe to it
+
+Garreth reported that on Trends the first slide of a carousel showed, but the
+following ones were blank. Since 2026-10-27 a card only asked for a slide once
+someone had swiped to it, which stopped a page of twenty cards pulling every
+slide at once, but it meant each swipe landed on an empty slide while the picture
+loaded. Those pictures were also being resized on the spot, about two seconds
+each, until the catch-up in the entry below finished.
+
+Now a card also asks for the one slide after the furthest reached, so it is
+already there when you swipe. Slides further on still wait. A page of twenty
+cards now asks for about 34 pictures rather than 20. That is why this waited for
+the catch-up: while pictures had no copy, each extra request would have been a
+database lookup, which is what caused the 10-09 outage. Now they come from
+Cloudflare.
+
+Checked locally in headless Chrome with the Trends page: the 20 cards asked for
+34 pictures, all from Cloudflare, and each carousel asked for its first two
+slides and no more. All 34 came back fine, averaging about 1.2 seconds from
+Garreth's Mac with the slowest near 5 seconds. Fetching them a second time was
+no quicker, so a very fast swipe past two slides can still show a blank briefly.
+Garreth then swiped through carousels in Safari on the local app
+and the following slides were there. **Not yet seen:** the change on the live
+site.
+
+---
+
+## 2026-11-05 — Posts reach the To-do list right after planning, around 1:15 am ET
+
+**Where it came from:** Garreth saw no assigned posts for today or the next two
+days and asked why, then decided posts should be handed out straight after
+planning so Yurie can see them around 1 am ET.
+
+**What we found:** the posts were not missing. The scheduler booked them at
+1:00 am ET, but the To-do list only fills when the Posting Agent hands posts
+out, and that ran once a day at 10:00 am ET. Each three-day batch runs out the
+day before the next one is planned, so every third day the list sat empty until
+10:00 am ET, which is 11 pm in Manila.
+
+**What changed (in n8n, outside the repo, apart from one label):**
+
+- The Posting Agent now also runs every night at 1:15 am ET, 15 minutes after
+  the scheduler. This early run only hands posts to people. Robot phones still
+  post from the 10:00 am ET run.
+- The 10:00 am ET run stays as a safety net. If the early run misses anything,
+  that run picks it up, and a post already handed out is not handed out twice.
+- The Automation page now lists both times for the Posting Agent.
+
+**Verified:** live runs on 2026-11-05 of both the new early path and the
+10:00 am path. The early run put 18 posts on the To-do list for 5 and 6
+November (14 booked plus 4 Facebook copies). The second run added no
+duplicates. **Not yet seen:** a real unattended 1:15 am run, and a run with a
+robot account live. No robot accounts are live today, so the part that keeps
+robot posts out of the early run has not met a real robot post.
+
+---
+
+## 2026-11-04 — Library and Trends pictures get small copies on Cloudflare, so browsing cannot overload the database
+
+**Where it came from:** Garreth, after the Supabase bill showed picture resizing
+at 285 of the 100 included, and a prompt proposing ready-made copies on
+Cloudflare R2. Looking into it showed the bill was small ($5), but the same
+mechanism is what took the dashboard down on 2026-10-09: every picture shown
+for the first time made Supabase look it up in the database, and a library
+page showing hundreds at once filled the connection pool. Garreth chose to fix
+that, for both the character libraries and the Trends pictures. The other two
+outages (09-23, 11-02) had nothing to do with pictures and are not touched here.
+
+**What changed:**
+- **Every library and Trends picture gets two small copies, 540 and 1080 wide,
+  made once** by a new daily job (11:30 UTC, after the Trends copy job) and
+  kept on Cloudflare R2. It finds its own work, library pictures first, then
+  newest, so it does not matter which tool added a picture. When an original
+  is replaced, it is copied again. A picture too big for Supabase's own
+  resizer (over 25 MB or 50 megapixels) is marked failed with the reason and
+  not tried again.
+- **The screens show the copy instead of asking Supabase.** Every grid, card,
+  preview and the slide viewer go through one function, which now points at
+  Cloudflare. A picture whose copy is not made yet is passed on to Supabase's
+  resizer, as before, so nothing shows blank while the copies catch up.
+- **The final carousels are unchanged.** They are made from the full
+  originals, which are only read, never touched.
+- **One switch turns it off:** with `NEXT_PUBLIC_PICTURE_COPIES_URL` empty the
+  screens use Supabase exactly as before.
+
+**How it was checked:** type check, lint, and the full test suite (890 pass),
+including Amazon's own published example for the R2 upload signature and the
+Cloudflare piece against a stand-in for R2. Seven real pictures from both
+buckets were copied with the same settings and looked at: text sharp, shape
+kept, 23 to 121 KB per copy (a 12 MB library original came out at 41 and 108
+KB). For all 17,977 pictures that is about 3.5 GB, inside R2's free 10 GB.
+The new table and its to-do list were applied live and read back as
+service-role only.
+
+**Confirmed live:** the Cloudflare piece is deployed on its free workers.dev
+address, so no domain was moved. A real picture came back from it at both sizes,
+byte for byte the size made, and a picture with no copy was passed on to
+Supabase. Ten pictures were copied to R2 through the job and one was read back
+and looked at. The catch-up of the existing pictures was started from Garreth's
+Mac and finished on 2026-11-05 after about six hours: 17,983 pictures have copies
+and nothing is left to do. The copies take 1.71 GB, about half the estimate
+above.
+
+Two pictures have no copy, both in rich-life-images:
+`jun06_renders/SI-2TYT5C-2/slide_04.jpg` and
+`jun06_renders/BWG-2TZ02O-3/slide_03.jpg`. Their originals are empty files
+(0 bytes), so this cannot be fixed by trying again. 150 library pictures were
+copied twice because their originals were replaced during the catch-up, which
+is the job working as designed.
+
+On the live site, library pictures came from Cloudflare (22 requests, all fine).
+In Garreth's Safari comparison of 12 pictures, none failed either way, averaging
+1.8 seconds the old way and 1.5 seconds the new way. That comparison was made
+during the catch-up, so not every picture had a copy yet.
+
+The daily job's first scheduled run on Vercel was 2026-11-05 at 11:30 UTC (7:30
+PM Mac time) and it reported success. Vercel's log does not say how much it did,
+and it was sharing the list with the catch-up, so what it makes on an ordinary
+day has not been seen yet.
+
+**Not yet seen:** the R2 keys are on Vercel for Production only, so a Preview
+deployment cannot make copies; it can still show them.
+
+**Worth knowing:** Cloudflare's free plan allows 100,000 picture requests a day
+through the Worker. An internal dashboard should stay far below that, but past
+it pictures would fail until the next day. Clearing the switch above puts the
+screens back on Supabase.
+
+---
+
 ## 2026-11-04 — Phone-robot readings: a Facebook code name is no caption
 
 **Where it came from:** Yurie's seventh short test (4 November). All three
@@ -76,6 +311,8 @@ pass. Checked in headless Chrome (not Safari) on this Mac: on the demo list at
 phone size in dark and light mode, and on the real list for 3 November, which
 showed 26 Linked pills, one for each of the 26 posts marked posted that day.
 Not yet on the live site: it goes live when this is committed and deployed.
+
+---
 
 ## 2026-11-04 — Deep side: best and worst hooks need at least 50 views
 
@@ -136,6 +373,15 @@ Readings 121 to 124 stay unlinked until their posts are fetched; the
 Instagram ones come in with today's 13:00 UTC fetch. The daily schedule
 itself starts once this is deployed. The new-readings change is covered by
 tests, not yet by a real hand-off.
+
+## 2026-11-07
+
+- **Hook Rules doc added to the Resources page.** A third card links to the
+  Hook Rules Claude Doc: the three rules of a hook, what makes one read as
+  real, approved and rejected examples with reasons, and how the Comparison
+  Carousel writer enforces them. Came from Garreth after the Comparison
+  Carousel hook work on 2026-11-07. Link only, like the other two cards, so
+  edits in the doc show up without a deploy. Checked on the local dev server.
 
 ## 2026-11-03
 
