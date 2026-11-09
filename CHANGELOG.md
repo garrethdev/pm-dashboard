@@ -20,6 +20,24 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-09 — Phone-robot readings: "Facebook" is no caption
+
+**Where it came from:** Yurie's first full run (5 November), reviewed 9
+November. Eleven of the twelve Facebook readings (137 to 147) were stored with
+the caption "Facebook", the app's own name, not words from the post. Garreth
+asked for it fixed, with the stored rows cleaned.
+
+**What changed:** the word "Facebook" on its own is now treated like the
+buttons and code names the robot has mistaken for captions before: nothing is
+stored as the caption. A real caption that mentions Facebook is kept. The robot
+no longer reads it either (its own fix, same day). The eleven stored readings
+had the word cleared in the database. Their numbers were right (within a few
+views of the later API figures) and they stay linked to their posts.
+
+**How far it is checked:** the rule is tested; the eleven rows (137 to 147)
+were cleared by a query on 9 November and checked: no reading has "Facebook"
+as its caption, and all eleven are still linked.
+
 ## 2026-11-04 — Phone-robot readings: a Facebook code name is no caption
 
 **Where it came from:** Yurie's seventh short test (4 November). All three

@@ -379,4 +379,10 @@ describe("captionOrNull: Facebook's buttons", () => {
     expect(captionOrNull("Compare post insights")).toBeNull();
     expect(captionOrNull("FBBloksScreenQueryView")).toBeNull();
   });
+
+  it("drops the app's own name, 'Facebook' (first full run, 2026-11-05), but keeps a caption that mentions it", () => {
+    expect(captionOrNull("Facebook")).toBeNull();
+    expect(captionOrNull(" facebook ")).toBeNull();
+    expect(captionOrNull("Why I left Facebook")).toBe("Why I left Facebook");
+  });
 });
