@@ -20,6 +20,17 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-09 — Wiring guide added to the Resources page
+
+A fourth card on the Resources page links to the "Wiring a new carousel
+content type" Claude Doc: the columns a new carousel table needs, the eight
+wiring steps across Supabase and n8n, and the query that proves a lane is live.
+Came from Garreth, the same day the doc was brought up to date against the
+live database (Character 6's 5 + 5 + 4 + 4 mix, the stock-view method proven
+on Jealousy, `inventory_check` no longer used by the emails). It is a link only,
+like the other cards, so edits in the doc show up without a deploy. Type-checked;
+not yet looked at on the running page.
+
 ## 2026-11-09 — Phone-robot readings: "Facebook" is no caption
 
 **Where it came from:** Yurie's first full run (5 November), reviewed 9
@@ -101,9 +112,11 @@ Content Audit run on `mito_hooks` picked up 0 rows, and test runs confirmed the
 email sends on a rejection and stays quiet otherwise. The freshness check shows
 all four feeds healthy with no alarm. The OpenRouter connection was proven on a
 throwaway workflow, and a sweep found no Anthropic key or address left in any
-active workflow. **Not yet met in a real scheduled run:** the weekly report through
-OpenRouter, most of the 62 moved workflows (each proves itself on its next run),
-the Winner playbook (next on the 15th), and a real rejection.
+active workflow. Confirmed live: the 10am ET weekly report on 11-06 went out through
+OpenRouter with its AI summaries, and no workflow had failed 50 minutes after the
+move. **Not yet met in a real scheduled run:** many of the 62 moved workflows (each
+proves itself on its next run), the Winner playbook (next on the 15th), and a real
+rejection.
 
 ---
 

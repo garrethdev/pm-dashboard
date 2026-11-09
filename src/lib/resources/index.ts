@@ -26,4 +26,9 @@ export const RESOURCES: Resource[] = [
     summary: "The three rules of a hook, what makes one read as real, approved and rejected examples with reasons, and how the Comparison Carousel writer enforces them.",
     url: "https://claude.ai/artifact/21BD6CPdzo6H7eCoaQ7S21",
   },
+  {
+    title: "Wiring a New Content Type",
+    summary: "The columns a new carousel table needs, the eight wiring steps across Supabase and n8n, and the query that proves a lane is live.",
+    url: "https://claude.ai/artifact/XUj99rfkXJfy4HMzCYtLp2",
+  },
 ];
