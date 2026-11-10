@@ -31,4 +31,9 @@ export const RESOURCES: Resource[] = [
     summary: "The columns a new carousel table needs, the eight wiring steps across Supabase and n8n, and the query that proves a lane is live.",
     url: "https://claude.ai/artifact/XUj99rfkXJfy4HMzCYtLp2",
   },
+  {
+    title: "Warmup Upgrade Plan",
+    summary: "What the Amine warm-up gap analysis means for us: seven warmup robot updates and six manual steps for Yurie, with a checklist to tick off.",
+    url: "https://claude.ai/artifact/1WUDBxNyUJRmhr4KktS1fS",
+  },
 ];

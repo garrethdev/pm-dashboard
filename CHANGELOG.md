@@ -20,6 +20,15 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-10 — Warmup Upgrade Plan on the Resources page
+
+The Resources page now links to the Warmup Upgrade Plan: the warmup robot
+updates and Yurie's manual steps that came out of the Amine warm-up gap
+analysis, with a checklist. Asked for by Czedrick. The page is a Claude
+artifact, so it can be edited without touching the dashboard. Anyone who
+opens it from here needs it shared with them first. File:
+`src/lib/resources/index.ts`.
+
 ## 2026-11-09 — Wiring guide added to the Resources page
 
 A fourth card on the Resources page links to the "Wiring a new carousel
