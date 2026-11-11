@@ -50,6 +50,66 @@ Not yet checked on the live site.
 
 ---
 
+## 2026-11-10 — Comparison Carousel goes live; Character 6 favours its newest lanes
+
+Comparison Carousel (Character 6, 8-picture decks) is switched on. It had been
+set up on Nov 7 but left paused, with all 22 finished decks on Hold and never
+safety-checked, so nothing could post. Today the 22 were put through the content
+check (all "medium", which means approved), taken off Hold, and the lane was
+turned on at 5 posts a week per account.
+
+Character 6's weekly mix changes with it. Garreth asked to favour the newest
+carousel types, and among the older ones the types that perform. Instagram
+median views over the last three weeks put Divorce Recovery first (928), then
+3-Slide Journey (342), with Viral Theories far behind (12). The new split per
+account: Comparison 5, Jealousy 4, Divorce Recovery 4, Journey 3, Viral
+Theories 2 (was Divorce Recovery 5, Jealousy 5, Journey 4, Viral Theories 4).
+Still 18 a week, so the cadence page keeps saving. The view numbers are a small
+sample (only about a third of Character 6's posts have numbers attached), so
+the ranking is worth checking again in a few weeks.
+
+**Expect Comparison to run out fast.** It counts as a new type until Dec 7, so
+for its first week the scheduler gives it to every Character 6 account every
+working day. With 6 accounts and three days planned at a time, tonight's run
+alone can use about 18 of the 22. More renders are needed this week (3 more
+decks are written and waiting).
+
+**Confirmed live:** the switch, the split (18 of 18, no character off its total),
+22 decks the scheduler can now pick, and Inventory's stock count showing 22
+(whoever set the lane up on Nov 7 had already added it to the stock count, in a
+place the usual check doesn't look, so no change was needed there).
+
+The Smart Scheduler in n8n (now version 1.4.1) also gained both Comparison and
+Jealousy in its list of "the pictures must be there" checks. Both had been
+missing. It is a backup: the database already refuses to mark an unfinished deck
+ready. Edited in the n8n editor (the code holds a secret key, so it can't be sent
+through the API) and published. The live version was read back with both lanes in
+it. First Comparison posts not yet seen. File:
+`supabase/migrations/20261110113000_wire_comparison_carousel.sql`.
+
+## 2026-11-10 — Third Jealousy batch finished: 24 more decks ready
+
+The third batch of Jealousy Carousels (`jealousy_v4_2026_11_09`, written and
+picture-picked overnight) had stopped before the pictures were made, so none of
+it could post. Garreth asked for it to be finished. Today, for 24 of the 25:
+
+- the slides were drawn with the existing Jealousy renderer (the handover
+  `stitch.py`) and uploaded;
+- each got a song from the music library, using the music workflow's own rules
+  (fits a hurt-then-steadier story, no song more than twice in the batch, least
+  used first);
+- the captions were rewritten by hand to the caption rules. The writer still
+  doesn't apply them, so they had come out with no hashtags. Now each is one
+  lowercase line about something the friend, mom or sister did that the slides
+  don't show, up to 16 words, half end in a short question, then 4 relationship
+  hashtags;
+- all 24 passed the content check ("medium", approved).
+
+They went to ready on their own, so Jealousy now has 50 decks in stock. The
+25th deck was flagged by its own picture check (its last picture is a close-up,
+so the change can't be seen) and is left as it was. One deck has a misspelling
+burned into its first slide ("Don't loose too much weight"); it was kept. **Confirmed live** by query; none posted yet.
+
 ## 2026-11-10 — Warmup Upgrade Plan on the Resources page
 
 The Resources page now links to the Warmup Upgrade Plan: the warmup robot
@@ -58,6 +118,86 @@ analysis, with a checklist. Asked for by Czedrick. The page is a Claude
 artifact, so it can be edited without touching the dashboard. Anyone who
 opens it from here needs it shared with them first. File:
 `src/lib/resources/index.ts`.
+
+## 2026-11-10 — Cleora and Cleora ASMR retired
+
+Character 5's two content types, Cleora and Cleora ASMR, are switched off for
+good. The scheduler will not plan them, the Posting Agent will not send them,
+and Inventory no longer asks for more of them. They move to the "retired" list
+on the Content Types page. Their past posts (347) stay in Analytics. Each was
+set to 9 a week; that number is kept in case either is ever brought back.
+
+Garreth's decision: the Character 5 accounts are being converted to Character 6.
+Nothing was booked or due on either lane when it was switched off, so no post
+was cancelled. The unposted pieces were left as they are, including the 101
+rendered Cleora videos on Hold.
+
+Not changed here: which character the accounts belong to, and the n8n robots
+that write and research Cleora content, which still run. Confirmed live by
+query: both lanes read retired, Character 5's allowed list is empty, and every
+other character's weekly mix still adds up (Character 6: 18 of 18), so the
+cadence editor still saves. File: `supabase/migrations/20261110104312_retire_cleora_lanes.sql`.
+
+## 2026-11-09 — Pre-Publish Gate skips rows that have no ID
+
+The nightly `[Content Audit] Pre-Publish Gate` (uCCwmE2Hs4Cutrke in n8n) now
+leaves out any row whose ID column is empty. A row like that can never take
+a verdict: the save goes "to the row with ID (nothing)", matches no row, and n8n
+still reports success. So the gate sent the same rows to the AI every night.
+The case that showed it: 435 Jealousy Carousel writer drafts from the GPT-6.1
+Sol tests (Nov 1–5). They have no carousel ID, pictures, music or render.
+They cost about $1.15 a night and never got a gate mark. The drafts themselves
+were left in place.
+
+Found during the AI cost review; option A (skip rather than delete) was
+Garreth's choice. Checked by building tonight's query for all 22 lanes:
+Jealousy drops from 435 rows to 0 and every other lane is unchanged. **Not
+yet confirmed on the nightly run** (03:00 UTC).
+
+## 2026-11-09 — Content Risk Gate judged by Qwen 3.8 Flash instead of Claude Sonnet
+
+The AI half of the pre-publish ban-risk check (`Content Risk Gate`,
+w3YwEhm5CZtHts0P in n8n) now asks `qwen/qwen3.8-flash` instead of Claude Sonnet
+4.6, with its thinking switched off. The fixed word rules (brand names,
+molecule names, sourcing words and the rest) are untouched and still run first.
+The AI can only add risk on top of them. Garreth's decision, part of the AI
+cost review.
+
+Tested first on 138 real posts from 20 lanes, each already judged by the
+gate. Qwen made the same approve-or-reject call as Sonnet on 131 of them. Where
+it differed it was usually stricter, and it was the closest of the models
+tried to the verdicts already saved. It costs about 97% less. DeepSeek V4.1
+Flash was as cheap but let through a post naming a real drug brand, so it was
+not chosen. **Confirmed live** with three test posts sent to the real gate: the
+clean one passed, and the brand-name and sourcing ones were rejected for the
+right reasons. The gate's nightly run has not used it yet.
+
+## 2026-11-09 — Cleora story research no longer reads the taste list 226 times
+
+The daily `[Cleora] Story Research → Findings Queue` robot in n8n
+(GrTdGsVVKMHjQvQ0) was most of the AI bill: about $8–9 a run, roughly three
+quarters of a typical day's OpenRouter spend. The cause was a wiring slip, not
+the model. The step that fetches Garreth's 26 MAKE IT / NEVER MAKE IT votes ran
+once per existing Cleora story (226 of them), so the research brief listed
+every vote 226 times. That made a 720,000-character brief, which was sent
+again on every web search. That step is now set to run once, like the
+story fetch before it. The model, prompt and taste list are unchanged; it just
+sees the list once.
+
+Found during Garreth's AI cost review (goal: at least 40% cheaper without
+losing quality). Tested before going live: the same call with the fixed brief
+cost $1.65 instead of $8.22 and returned 15 normal-looking candidates, scored
+5–6. **Not yet confirmed on a scheduled run.** The first one is 2026-11-10 at
+08:00 Manila.
+
+Tried and undone the same day: the four writers (Caption Writer, Cleora
+Writing Agent, Cleora Director, Cleora ASMR Scriptwriter) were moved to Claude
+Sonnet 5.5 for about an hour, then put back on Sonnet 4.6 before any of them
+had work. Sonnet 5.5 always "thinks" before answering, and that cannot be
+switched off. On short jobs the thinking can use up the whole answer allowance,
+and it costs extra. In a test on 24 real captions it was only 15% cheaper and
+broke the word limits on 11 of them (Sonnet 4.6 broke 3), so it did not keep
+the writing the same.
 
 ## 2026-11-09 — Wiring guide added to the Resources page
 
