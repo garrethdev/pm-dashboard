@@ -68,6 +68,17 @@ describe("a post handed out before its day", () => {
     expect(due[0]!.due).toBe("13:00");
   });
 
+  it("is not copied onto a later day's list while that day is still ahead", async () => {
+    // Thursday noon, looking at Friday: Thursday's post is Thursday's work.
+    expect(posts(await getTodoBoard(1, new Date("2026-10-29T16:00:00Z")))).toHaveLength(0);
+  });
+
+  it("still carries over once the later day arrives, if it is still open", async () => {
+    const friday = posts(await getTodoBoard(0, new Date("2026-10-30T16:00:00Z")));
+    expect(friday).toHaveLength(1);
+    expect(friday[0]!.carriedOverFrom).toBe("yesterday");
+  });
+
   it("is not overdue on its own day, though it was handed out two days before", async () => {
     // Thursday evening. Counted from the hand-out it would be 54 hours late.
     const due = posts(await getTodoBoard(0, new Date("2026-10-29T20:00:00Z")));

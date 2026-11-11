@@ -468,6 +468,12 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
       // On a day off it waits for the next working day (2026-10-16).
       if (off) continue;
       if (postDay > day) continue; // not yet its day
+      // A day AHEAD shows only its own posts (2026-11-11). Carry-over is
+      // about what is still owed, which is only known once that day comes.
+      // Showing today's open posts on tomorrow's list made them look like a
+      // second batch, which then "vanished" from tomorrow when they were
+      // ticked off today. If one is still open tomorrow, it carries over then.
+      if (postDay !== day && dayOffset > 0) continue;
       // Working days: Saturday's post on Monday has used one, not two.
       if (postDay !== day && workingDaysBetween(postDay, day, daysOff) > CARRY_OVER_DAYS) continue;
     }

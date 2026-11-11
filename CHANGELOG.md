@@ -20,6 +20,36 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-11 — To-do: tomorrow's tab no longer shows today's unfinished posts
+
+**Where it came from:** seen in production on the To-do list. Looking ahead to
+tomorrow, today's posts showed up there a second time, and when Yurie finished
+them today they "disappeared from tomorrow too", which looked like tomorrow's
+work being wiped.
+
+**What was actually happening:** nothing was lost. A post Yurie has not
+finished carries over to the next day's list, and the list was already showing
+that carry-over when you looked at a day still ahead. So tomorrow's tab held
+today's posts, labelled "Due yesterday", as well as tomorrow's own posts. They
+were the same posts, not copies, so ticking one off today removed it from
+both. Checked against the live data: every post due Nov 11 (20) was still
+waiting, and the only ones that left tomorrow's tab were Nov 10 posts she had
+finished on Nov 10.
+
+**The change:** a day that has not come yet now lists only the posts due on
+that day. Carry-over still works exactly as before once the day arrives: a post
+left open today still shows on tomorrow's list tomorrow, for up to three working
+days. Today's list and past days are unchanged.
+
+**Not changed, by design:** a post marked Scheduled stays on today's list,
+day after day, until its link is added (by hand, or by the robots finding it).
+That is the 2026-10-28 rule. The link is the one thing still owed.
+
+**Verified:** a new automated test fails on the old code and passes on the new.
+Not yet checked on the live site.
+
+---
+
 ## 2026-11-10 — Warmup Upgrade Plan on the Resources page
 
 The Resources page now links to the Warmup Upgrade Plan: the warmup robot
