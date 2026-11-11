@@ -20,6 +20,36 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-11 — Warmup robot: a warned account rests for the day; each account's start date sent to the robot
+
+**Where it came from:** the Warmup Upgrade Plan (Amine gap analysis, on the
+Resources page), items R3 and R4, approved by Garreth on 10 November. The
+robot's own half is in warmup-runner (2026-11-11 entry there).
+
+**What changed:**
+- **R3, rest after a warning.** When a robot warmup stops because the app
+  showed the account a warning, that account is off the robot's list for the
+  rest of the New York day. On its page the warmup card says **"Robot
+  warmups paused today: warning"** and the two warmups can be logged by
+  hand, as for an account switched to Manual mid-day. On the To-do list and
+  the phone's page its warmups are a person's to do for the day. The
+  account's Automated setting is not changed: tomorrow it is the robot's
+  again by itself. Read from the warmup report (a warmup stopped in its
+  first minute writes no session, but always sends its report).
+- **R4, start date for the robot.** The list of accounts the robot reads
+  now carries each account's creation date (`account_created_on`). The robot
+  counts its warmup ramp from it once it has the update; the robot on the
+  Air today simply ignores it.
+
+**Order with the robot:** safe to deploy before the robot's update. The
+robot on the Air today reads a warned account's absence as "not Automated
+any more" and skips it.
+
+**How it was checked:** unit tests for the rest rule and the to-do mode (all
+898 dashboard tests pass); eslint clean on the changed files. Not yet seen
+on the live dashboard, and no warmup has stopped for a warning since
+4 November, so the marker has not shown on a real account yet.
+
 ## 2026-11-11 — To-do: tomorrow's tab no longer shows today's unfinished posts
 
 **Where it came from:** seen in production on the To-do list. Looking ahead to

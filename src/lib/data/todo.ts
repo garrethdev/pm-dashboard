@@ -4,6 +4,7 @@ import { TODO_TAG, TTL, cachedFetcher } from "@/lib/data/cache";
 import { sbRest } from "@/lib/data/supabase";
 import { runStateFor, type RunRow } from "@/lib/data/warmup-run-state";
 import { getRunsOnDay } from "@/lib/data/warmup-runs";
+import { getRestedOnDay, warmupModeForDay } from "@/lib/data/warmup-rest";
 import { handleLabel, toPlatform } from "@/lib/platform";
 import {
   DAY_NAMES,
@@ -386,6 +387,17 @@ async function readTodoBoard(dayOffset: number, now: Date, only: { deviceId?: nu
   if (devices.length === 0) {
     return { devices: [], extras: {}, noPhones: true };
   }
+
+  // An Automated account the app warned on this day rests from the robot
+  // for the rest of it (Amine plan R3, warmup-rest.ts): Manual for the day,
+  // so its warmups are a person's to do and can be ticked, as for an
+  // account switched to Manual mid-day (Garreth, 2026-09-28).
+  const resting = await getRestedOnDay(
+    dayOffset,
+    now,
+    accounts.filter((a) => a.warmup_mode === "script").map((a) => a.id),
+  );
+  for (const a of accounts) a.warmup_mode = warmupModeForDay(a.warmup_mode, resting.has(a.id));
 
   // Decision 6 as it now stands (Garreth, 2026-09-23): a paused account is
   // given no posts, but one warmed by hand keeps its warmups. An account with
