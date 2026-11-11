@@ -21,6 +21,7 @@ import { ACCOUNT_FK_COL, ACCOUNT_ID_COL, type AccountId } from "@/lib/data/accou
 import { sbFetch, startOfDayET, dayRangeET } from "@/lib/data/warmup-sessions";
 import { warmupOverdueDays, type RunRow } from "@/lib/data/warmup-run-state";
 import { getDaysOff } from "@/lib/data/work-week";
+import { getRestedOnDay } from "@/lib/data/warmup-rest";
 
 export class RunnerError extends Error {
   constructor(
@@ -53,6 +54,10 @@ export interface RunnerAccount {
   deviceId: string;
   /** When it moved onto its phone: the nearest thing to "started warming". */
   movedToDeviceAt: string | null;
+  /** The day the account was created ("2026-10-30"), from
+   *  `accounts.account_created_on`, or null if unknown. The robot counts day
+   *  0 of its warmup ramp from it (Amine plan R4; Garreth, 2026-11-10). */
+  accountCreatedOn: string | null;
 }
 
 interface RawAccount {
@@ -62,6 +67,7 @@ interface RawAccount {
   character: string | null;
   device_id: string;
   moved_to_device_at: string | null;
+  account_created_on: string | null;
 }
 
 async function readJson<T>(path: string, what: string): Promise<T> {
@@ -73,17 +79,23 @@ async function readJson<T>(path: string, what: string): Promise<T> {
 async function readAccounts(extra = ""): Promise<RunnerAccount[]> {
   const rows = await readJson<RawAccount[]>(
     `accounts?select=${ACCOUNT_ID_COL},username,platform,character,` +
-      `device_id:device_id::text,moved_to_device_at&${ELIGIBLE}${extra}&order=id.asc`,
+      `device_id:device_id::text,moved_to_device_at,account_created_on&${ELIGIBLE}${extra}&order=id.asc`,
     "the accounts",
   );
-  return rows.map((r) => ({
-    id: r.id,
-    username: r.username,
-    platform: r.platform,
-    character: r.character,
-    deviceId: r.device_id,
-    movedToDeviceAt: r.moved_to_device_at,
-  }));
+  // An account the app warned today rests for the rest of the New York day
+  // (Amine plan R3, warmup-rest.ts): not the robot's to warm until tomorrow.
+  const resting = await getRestedOnDay(0, new Date(), rows.map((r) => r.id));
+  return rows
+    .filter((r) => !resting.has(r.id))
+    .map((r) => ({
+      id: r.id,
+      username: r.username,
+      platform: r.platform,
+      character: r.character,
+      deviceId: r.device_id,
+      movedToDeviceAt: r.moved_to_device_at,
+      accountCreatedOn: r.account_created_on,
+    }));
 }
 
 /** Operation 1: every account the script may warm today. */

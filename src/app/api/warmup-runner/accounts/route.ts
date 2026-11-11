@@ -9,7 +9,9 @@ import { requireRunnerToken, runnerFailure } from "@/lib/warmup-runner-api";
  * Every account the script may warm: in use, on a phone on the Physical fleet,
  * set to Automated, and not banned. The script reads it to plan the day and
  * again just before each session, in case an account was flipped back to
- * Manual. Ids are text.
+ * Manual. Ids are text. An account the app warned today is left out until
+ * tomorrow (Amine plan R3, warmup-rest.ts). Each account carries
+ * `accountCreatedOn`, the day it was made, for the robot's day 0 (R4).
  *
  * On a day off (Sunday unless changed on Settings; Garreth, 2026-10-16) the
  * list is empty, so the robot plans nothing that day and starts nothing it

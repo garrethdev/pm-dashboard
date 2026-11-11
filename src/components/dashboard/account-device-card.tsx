@@ -11,6 +11,7 @@ import { warmupItemsFor } from "@/lib/data/todo";
 import { getSessionsToday, progressToday } from "@/lib/data/warmup-sessions";
 import { getAutomatedOverdue, getRunsOnDay } from "@/lib/data/warmup-runs";
 import { DAY_NAMES, getDaysOff, isDayOff, weekdayOf } from "@/lib/data/work-week";
+import { getRestedOnDay, RESTING_LABEL } from "@/lib/data/warmup-rest";
 
 /**
  * Which physical phone an account lives on, linking to that phone (PF-02), and
@@ -47,6 +48,10 @@ async function AccountDeviceLink({ profile }: { profile: string }) {
   }
 
   const now = new Date();
+  // Warned by the app today: the robot rests it until tomorrow and its
+  // warmups are a person's to log (Amine plan R3, warmup-rest.ts).
+  const resting = accountId !== null && automated && (await getRestedOnDay(0, now, [accountId])).has(accountId);
+  if (resting) automated = false;
   const sessions = accountId ? await getSessionsToday({ accountId }, now).catch(() => []) : [];
   const progress = accountId ? progressToday(sessions) : null;
 
@@ -102,7 +107,12 @@ async function AccountDeviceLink({ profile }: { profile: string }) {
       )}
 
       {!scripted && accountId !== null && progress && (
-        <div className="w-full sm:w-72">
+        <div className="flex w-full flex-col gap-2 sm:w-72">
+          {resting && (
+            <span className="self-start">
+              <StatusPill tone="warn">{RESTING_LABEL}</StatusPill>
+            </span>
+          )}
           <AccountWarmupToday
             accountId={accountId}
             deviceId={device.id}
