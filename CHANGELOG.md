@@ -20,6 +20,29 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-13 — Warmups page: a disconnected phone no longer lowers the finish rate
+
+**Where it came from:** Czedrick, in chat on 13 November. The robot's
+"Finish rate · 7 days" counted every warmup stopped because a phone was
+disconnected as a failure, and those were a third of the week's warmups
+(34 of 111), so the rate showed the cables rather than the robot.
+
+**What changed:**
+- The finish rate leaves out warmups stopped because the phone was
+  disconnected (`device_lost`, and the robot's new `phone_not_connected`):
+  they count as neither finished nor failed. On the last seven days that
+  takes the rate from 26% to 38%. Hovering over the tile says so.
+- `phone_not_connected` (the robot found the phone was not on its cable when
+  the warmup was due, warmup-runner 2026-11-13) is shown as "Phone
+  disconnected", like `device_lost`.
+- Nothing else moves: those warmups still show as stops in "Stopped today",
+  the stop reasons, the account strips and Needs a look, so a phone that
+  keeps dropping is still seen.
+
+**How far it was checked:** the page's arithmetic in tests (899 pass), and
+the 26% / 38% worked out by a query on the live data. Not yet seen on the
+deployed page.
+
 ## 2026-11-11 — Warmup robot: a warned account rests for the day; each account's start date sent to the robot
 
 **Where it came from:** the Warmup Upgrade Plan (Amine gap analysis, on the
