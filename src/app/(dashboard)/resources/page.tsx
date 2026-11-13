@@ -1,4 +1,5 @@
-import { BookOpen } from "@/components/ui/icons";
+import Link from "next/link";
+import { BookOpen, UserPlus } from "@/components/ui/icons";
 import { RESOURCES } from "@/lib/resources";
 
 /*
@@ -13,22 +14,30 @@ export default function ResourcesPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-lg font-semibold">Resources</h1>
       <div className="grid gap-3 sm:grid-cols-2">
-        {RESOURCES.map((r) => (
-          <a
-            key={r.url}
-            href={r.url}
-            target="_blank"
-            rel="noreferrer"
-            className="flex gap-3 rounded-card border border-border bg-card p-4 shadow-card transition-colors hover:border-accent/60"
-          >
-            <BookOpen className="mt-0.5 size-5 shrink-0 text-text-muted" />
-            <div>
-              <div className="font-medium">{r.title}</div>
-              <div className="mt-1 text-sm text-text-muted">{r.summary}</div>
-              <div className="mt-2 text-xs text-accent">Open doc ↗</div>
-            </div>
-          </a>
-        ))}
+        {RESOURCES.map((r) => {
+          const Icon = r.internal ? UserPlus : BookOpen;
+          const body = (
+            <>
+              <Icon className="mt-0.5 size-5 shrink-0 text-text-muted" />
+              <div>
+                <div className="font-medium">{r.title}</div>
+                <div className="mt-1 text-sm text-text-muted">{r.summary}</div>
+                <div className="mt-2 text-xs text-accent">{r.internal ? "Open page →" : "Open doc ↗"}</div>
+              </div>
+            </>
+          );
+          const cls =
+            "flex gap-3 rounded-card border border-border bg-card p-4 shadow-card transition-colors hover:border-accent/60";
+          return r.internal ? (
+            <Link key={r.url} href={r.url} className={cls}>
+              {body}
+            </Link>
+          ) : (
+            <a key={r.url} href={r.url} target="_blank" rel="noreferrer" className={cls}>
+              {body}
+            </a>
+          );
+        })}
       </div>
     </div>
   );

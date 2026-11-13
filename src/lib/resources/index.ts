@@ -8,6 +8,9 @@ export interface Resource {
   title: string;
   summary: string;
   url: string;
+  /** A page inside the dashboard rather than a Claude Doc: opens in the same
+   *  tab (Creators to follow, 2026-11-13). */
+  internal?: boolean;
 }
 
 export const RESOURCES: Resource[] = [
@@ -35,5 +38,11 @@ export const RESOURCES: Resource[] = [
     title: "Warmup Upgrade Plan",
     summary: "What the Amine warm-up gap analysis means for us: seven warmup robot updates and six manual steps for Yurie, with a checklist to tick off.",
     url: "https://claude.ai/artifact/1WUDBxNyUJRmhr4KktS1fS",
+  },
+  {
+    title: "Creators to follow",
+    summary: "Small weight-loss and midlife creators who reply to comments, for following by hand on the phones, with who has followed whom.",
+    url: "/resources/follow-creators",
+    internal: true,
   },
 ];
