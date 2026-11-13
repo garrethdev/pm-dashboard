@@ -39,7 +39,9 @@ export const STOP_LABEL: Record<StopKind, string> = {
  */
 export function stopKind(note: string | null): StopKind {
   const n = (note ?? "").trim().toLowerCase();
-  if (n === "device_lost") return "phone";
+  // phone_not_connected: the Air did not see the phone on its cable when the
+  // warmup was due, so the robot never started (warmup-runner, 2026-11-13).
+  if (n === "device_lost" || n === "phone_not_connected") return "phone";
   if (n === "wrong_account") return "wrong_account";
   if (n === "warning_on_screen") return "warning";
   if (n === "feed_not_loading") return "feed";
@@ -154,6 +156,11 @@ export function buildOverview(input: {
   const todays = reports.filter((r) => etDay(r.startedAt) === today);
   const weekReports = reports.filter((r) => week.has(etDay(r.startedAt)));
   const weekFinished = weekReports.filter((r) => r.outcome === "finished").length;
+  // The finish rate measures the robot, not the cables (Czedrick, 2026-11-13):
+  // a warmup stopped because the phone was disconnected is left out of it
+  // altogether, neither finished nor failed. It still shows as a stop, under
+  // "Phone disconnected", in the reasons, the strips and Needs a look.
+  const weekRated = weekReports.filter((r) => !(r.outcome === "stopped" && stopKind(r.note) === "phone")).length;
 
   // Needs a look: the account's newest warmup stopped, within the week. One
   // that stopped and then finished has recovered and is left off.
@@ -215,7 +222,7 @@ export function buildOverview(input: {
       finished: todays.filter((r) => r.outcome === "finished").length,
       stopped: todays.filter((r) => r.outcome === "stopped").length,
       running: input.runs.length,
-      finishRate: weekReports.length ? weekFinished / weekReports.length : null,
+      finishRate: weekRated ? weekFinished / weekRated : null,
     },
     needsLook,
     running: input.runs.map((r) => ({ ...r, account: accountOf(r.accountId) })),

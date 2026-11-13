@@ -84,9 +84,24 @@ function phoneOptions(looks: NeedsLook[]): { value: string; label: string }[] {
   return [{ value: ALL_PHONES, label: "All" }, ...phones.map((p) => ({ value: p, label: p }))];
 }
 
-function Tile({ label, value, tone, ring }: { label: string; value: string; tone?: "danger" | "accent"; ring?: number | null }) {
+function Tile({
+  label,
+  value,
+  tone,
+  ring,
+  hint,
+}: {
+  label: string;
+  value: string;
+  tone?: "danger" | "accent";
+  ring?: number | null;
+  /** Shown on hover: what the number leaves out. */
+  hint?: string;
+}) {
   return (
-    <div className="dot-fade flex flex-col justify-between gap-2.5 overflow-hidden rounded-nested border border-border bg-card-raised px-5 py-4 text-text-muted">
+    <div
+      title={hint}
+      className="dot-fade flex flex-col justify-between gap-2.5 overflow-hidden rounded-nested border border-border bg-card-raised px-5 py-4 text-text-muted">
       <span className="relative z-10 text-xs">{label}</span>
       <span className="relative z-10 flex items-end justify-between gap-3">
         <span
@@ -405,7 +420,12 @@ export function WarmupsView({ data }: { data: WarmupOverview }) {
         <Tile label="Finished today" value={String(today.finished)} />
         <Tile label="Stopped today" value={String(today.stopped)} tone={today.stopped > 0 ? "danger" : undefined} />
         <Tile label="Running now" value={String(today.running)} tone={today.running > 0 ? "accent" : undefined} />
-        <Tile label="Finish rate · 7 days" value={rate == null ? "–" : `${Math.round(rate * 100)}%`} ring={rate} />
+        <Tile
+          label="Finish rate · 7 days"
+          value={rate == null ? "–" : `${Math.round(rate * 100)}%`}
+          ring={rate}
+          hint="Warmups stopped because a phone was disconnected are left out."
+        />
       </div>
 
       <div className="grid items-stretch gap-5 md:grid-cols-[minmax(0,1fr)_380px]">

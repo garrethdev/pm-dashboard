@@ -67,11 +67,38 @@ describe("buildOverview", () => {
         report({ id: "4", startedAt: "2026-10-26T18:00:00Z", sessionNo: 2 }),
       ],
     });
-    expect(o.today).toEqual({ finished: 1, stopped: 0, running: 1, finishRate: 0.75 });
+    // The phone disconnection (report 2) is left out of the finish rate: 3 of 3.
+    expect(o.today).toEqual({ finished: 1, stopped: 0, running: 1, finishRate: 1 });
     expect(o.days.at(-1)).toEqual({ day: "2026-10-28", finished: 1, stopped: 0 });
     expect(o.reasons).toEqual([{ kind: "phone", count: 1 }]);
     const cell = o.strips[0].cells.find((c) => c.day === "2026-10-28" && c.sessionNo === 2);
     expect(cell?.running).toBe(true);
+  });
+
+  it("leaves phone disconnections out of the finish rate, but still counts the robot's own stops (2026-11-13)", () => {
+    const o = buildOverview({
+      now,
+      accounts: [account("10", "a")],
+      runs: [],
+      reports: [
+        report({ id: "1" }),
+        report({ id: "2", outcome: "stopped", note: "error: after the profile tab: saw unknown", startedAt: "2026-10-27T14:00:00Z" }),
+        report({ id: "3", outcome: "stopped", note: "device_lost", startedAt: "2026-10-26T14:00:00Z" }),
+        report({ id: "4", outcome: "stopped", note: "phone_not_connected", startedAt: "2026-10-26T18:00:00Z", sessionNo: 2 }),
+      ],
+    });
+    expect(o.today.finishRate).toBe(0.5);
+    expect(o.reasons).toEqual(expect.arrayContaining([{ kind: "phone", count: 2 }, { kind: "lost", count: 1 }]));
+    expect(stopKind("phone_not_connected")).toBe("phone");
+
+    const onlyPhone = buildOverview({
+      now,
+      accounts: [account("10", "a")],
+      runs: [],
+      reports: [report({ id: "5", outcome: "stopped", note: "phone_not_connected" })],
+    });
+    expect(onlyPhone.today.finishRate).toBeNull();
+    expect(onlyPhone.today.stopped).toBe(1);
   });
 
   it("asks for a look only when an account's newest warmup stopped", () => {
