@@ -55,15 +55,15 @@ export const TRACKED_WORKFLOWS: TrackedWorkflow[] = [
   // stop would leave the card quietly stale while everything else looked fine.
   { id: "61cCaXSQ4bk1q4xv", name: "Recent Posts Refresh", expected: "Tue/Thu/Sat 08:30 ET", schedule: { type: "dow", days: [2, 4, 6], hour: 8, minute: 30 } },
   // The workflow that actually judges whether accounts are being SEEN. Its
-  // verdict is what the Health column renders (via v_account_health_v3), so if
-  // it stops running the email goes quiet while the dashboard keeps working —
-  // exactly the kind of silent stop this card exists to catch.
+  // verdict is what the Health column renders (via v_account_health_v3), and its
+  // run_account_health_check RPC records health changes in account_events. Its
+  // email was switched off 2026-11-13 (Garreth), so this card is now the only
+  // place a silent stop would show.
   { id: "2Goujvw8qSvVzIfo", name: "View-Collapse Detector", expected: "Tue/Fri 08:00 ET", schedule: { type: "dow", days: [2, 5], hour: 8, minute: 0 }, key: true },
   // Named "Account Health Check" upstream, but it is a LIVENESS check — it logs
   // in and scrolls. A soft-banned account passes it while its reach is throttled
   // to nothing, so it is not evidence of health (see The False Green).
   { id: "CXVxRMOUkLluRdBc", name: "Account Login Check", expected: "Tue/Fri 07:00 ET", schedule: { type: "dow", days: [2, 5], hour: 7, minute: 0 } },
-  { id: "Q5VXmY5RFMXX2uBZ", name: "Inventory Monitor", expected: "Mon+Fri 09:00 ET", schedule: { type: "dow", days: [1, 5], hour: 9, minute: 0 } },
   // v2 (2026-09-09) replaced the old random ~2×/day drift with ONE daily pass
   // that batches the whole fleet into a single gps/set call and never boots a
   // phone. Its trigger reads 04:20 but carries no settings.timezone, so — the
