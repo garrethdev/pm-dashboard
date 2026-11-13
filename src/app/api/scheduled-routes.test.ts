@@ -14,6 +14,8 @@ const runContentTags = vi.fn();
 const runReadings = vi.fn();
 const checkIn = vi.fn();
 const closeRun = vi.fn();
+const recheckCreators = vi.fn();
+const topUpCreators = vi.fn();
 
 vi.mock("@/server/carousel/services/slide-copies", () => ({ copyOutstanding: (...a: unknown[]) => copyOutstanding(...a) }));
 vi.mock("@/server/carousel/services/picture-copies", () => ({ makeOutstandingCopies: (...a: unknown[]) => makeOutstandingCopies(...a) }));
@@ -27,6 +29,10 @@ vi.mock("@/server/screen-readings", () => ({
   },
   runReadings: (...a: unknown[]) => runReadings(...a),
 }));
+vi.mock("@/server/follow-creators-refresh", () => ({
+  recheckCreators: (...a: unknown[]) => recheckCreators(...a),
+  topUpCreators: (...a: unknown[]) => topUpCreators(...a),
+}));
 vi.mock("@/lib/data/warmup-runs", async (orig) => ({
   ...(await orig<typeof import("@/lib/data/warmup-runs")>()),
   checkIn: (...a: unknown[]) => checkIn(...a),
@@ -38,6 +44,7 @@ import { GET as pictureCopies } from "./carousel-generator/maintenance/picture-c
 import { GET as facebookIngest } from "./facebook-analytics/ingest/route";
 import { GET as contentTags } from "./content-tags/run/route";
 import { POST as screenReadings } from "./screen-readings/run/route";
+import { GET as followRefresh } from "./follow-creators/refresh/route";
 import { POST as runCheckIn } from "./warmup-runner/runs/check-in/route";
 import { POST as runClose } from "./warmup-runner/runs/close/route";
 
@@ -56,7 +63,7 @@ beforeEach(() => {
   vi.stubEnv("CRON_SECRET", SECRET);
   vi.stubEnv("WARMUP_RUNNER_TOKEN", RUNNER);
   vi.spyOn(console, "error").mockImplementation(() => {});
-  for (const m of [copyOutstanding, makeOutstandingCopies, runFacebookIngest, runContentTags, runReadings, checkIn, closeRun]) m.mockReset().mockResolvedValue({ done: true });
+  for (const m of [copyOutstanding, makeOutstandingCopies, runFacebookIngest, runContentTags, runReadings, checkIn, closeRun, recheckCreators, topUpCreators]) m.mockReset().mockResolvedValue({ done: true });
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -69,6 +76,8 @@ const SCHEDULED: [string, (r: Request) => Promise<Response>, string, () => Reque
   ["facebook ingest", facebookIngest, "GET", () => get("/api/facebook-analytics/ingest"), runFacebookIngest],
   ["content tags", contentTags, "GET", () => get("/api/content-tags/run"), runContentTags],
   ["screen readings", screenReadings, "POST", () => post("/api/screen-readings/run", { posts: [] }), runReadings],
+  ["follow-creators recheck", followRefresh, "GET", () => get("/api/follow-creators/refresh?part=recheck"), recheckCreators],
+  ["follow-creators top-up", followRefresh, "GET", () => get("/api/follow-creators/refresh?part=topup"), topUpCreators],
 ];
 
 describe.each(SCHEDULED)("%s: the door", (_name, handler, _m, make, work) => {
@@ -133,6 +142,25 @@ describe("content tags", () => {
     expect(runContentTags).toHaveBeenLastCalledWith(50, true);
     await contentTags(get("/api/content-tags/run?limit=12", SECRET));
     expect(runContentTags).toHaveBeenLastCalledWith(12, false);
+  });
+});
+
+describe("follow-creators refresh", () => {
+  it("runs the part asked for, passing dry through", async () => {
+    await followRefresh(get("/api/follow-creators/refresh?part=recheck", SECRET));
+    expect(recheckCreators).toHaveBeenLastCalledWith(false);
+    await followRefresh(get("/api/follow-creators/refresh?part=topup&dry=1", SECRET));
+    expect(topUpCreators).toHaveBeenLastCalledWith(true);
+  });
+  it("refuses a missing or unknown part with a 400 and does no work", async () => {
+    expect((await followRefresh(get("/api/follow-creators/refresh", SECRET))).status).toBe(400);
+    expect((await followRefresh(get("/api/follow-creators/refresh?part=all", SECRET))).status).toBe(400);
+    expect(recheckCreators).not.toHaveBeenCalled();
+    expect(topUpCreators).not.toHaveBeenCalled();
+  });
+  it("answers 500 when the run throws", async () => {
+    recheckCreators.mockRejectedValueOnce(new Error("boom"));
+    expect((await followRefresh(get("/api/follow-creators/refresh?part=recheck", SECRET))).status).toBe(500);
   });
 });
 

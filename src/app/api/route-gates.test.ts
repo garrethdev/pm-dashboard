@@ -24,6 +24,7 @@ const OPEN: { prefix: string; token: RegExp }[] = [
   { prefix: "facebook-analytics/ingest", token: /requireSchedulerToken\(|requireBearerToken\(/ },
   { prefix: "content-tags/run", token: /requireSchedulerToken\(|requireBearerToken\(/ },
   { prefix: "screen-readings/run", token: /requireSchedulerToken\(|requireBearerToken\(/ },
+  { prefix: "follow-creators/refresh", token: /requireSchedulerToken\(/ },
 ];
 
 function routes(dir: string): string[] {

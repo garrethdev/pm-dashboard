@@ -20,6 +20,121 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-13 — Creators to follow refreshes itself every month
+
+**Where it came from:** Garreth asked whether the list would be kept up to date
+(it was a snapshot), then: "set up the monthly refresh".
+
+**What changed:** on the 1st of every month the dashboard updates the list on
+its own, in two steps half an hour apart (13:00 and 13:30 UTC, 8:00 and 8:30 in
+New York in winter):
+
+- **Recheck.** Every creator is looked up again. Her follower count, name and
+  photo are updated. She comes off the list if she grew past 6,000 followers,
+  went private, stopped posting on Instagram for 60 days, or could not be found
+  two months running. One empty lookup alone is not enough, because the lookup
+  service sometimes answers empty. Who followed her is kept. About 110
+  ScrapeCreators credits.
+- **Top-up**, only when a list is short (targets: 100 TikTok, 40 Instagram).
+  It searches TikTok with ten of the 44 search phrases, a different ten each
+  month. It keeps creators with 300 to 6,000 followers who replied to a comment
+  on their busiest video, and drops anyone whose bio link sells GLP-1s,
+  peptides or supplements. Then the AI judges each one by the same rules the
+  first list was picked by: a woman sharing her own journey, in English, not a
+  coach, clinic, seller or repost page. Instagram creators come from the
+  Instagram accounts of approved TikTok creators. They must look like the same
+  woman, and the AI judges her Instagram too. About 60 to 250 credits.
+- Each run is logged in a new table, `follow_creator_runs`, with what it checked, took
+  off, added and spent. A creator who comes off is never added back.
+
+**Verified, run for real from Garreth's Mac against the live list on
+2026-11-13:**
+
+- **The recheck worked.** It checked all 109 creators in 84 seconds for 109
+  credits and took nobody off. The 4 TikTok profiles that came back empty
+  earlier have one strike each, so they come off on 1 December if they are
+  still missing.
+- **The top-up hit a real problem: the OpenRouter AI account is out of credit**
+  ($235 bought, $235.87 used). If production uses the same key, which our notes
+  say n8n shares too, other AI features (content tagging, the screen reader,
+  warmup report reviews) will be failing until it is topped up. That was not
+  checked. The top-up was changed so that it still runs when the AI is down.
+  It adds no new TikTok creators then. It does add Instagram twins, but only
+  when her Instagram bio names the topic.
+- **Instagram twins.** The run added 3 Instagram twins. Two were then taken off
+  by hand: one whose Instagram is her law page, and one whose bio says nothing
+  of the topic. That is why twins now go past the AI as well. sunchitajohri
+  ("All things gym, makeup and nutrition") stays.
+- **Totals.** About 300 credits across the three test runs. The list now has 91
+  TikTok and 19 Instagram creators.
+- **Not yet seen:** the schedule itself firing on Vercel, and the AI judging a
+  live candidate. That needs OpenRouter credit. The same model and the same
+  way of asking had already answered 1,434 content tags (last 2026-11-06) and
+  81 screen readings (last 2026-11-11) in production, and reading its answer
+  is covered by tests.
+
+Files: `src/server/follow-creators-refresh.ts` (with a test of how the AI's
+answer is read), `src/server/follow-creators-refresh-rules.ts` (with tests),
+`src/app/api/follow-creators/refresh/route.ts`, `vercel.json`, `src/proxy.ts`;
+`supabase/migrations/20261113114450_follow_creator_refresh.sql`.
+
+---
+
+## 2026-11-13 — Creators to follow, a list for following by hand on the phones
+
+**Where it came from:** Garreth, building on step Y6 of the Warmup Upgrade
+Plan: when Yurie follows by hand, she should pick small creators in our niche
+who reply to comments, not big accounts or brands. The robot cannot pick them,
+so Yurie needed a list she can work through on the farm phone.
+
+**What changed:**
+
+- **A new page, Creators to follow**, opened from the Resources page. Each
+  creator is a profile card: her photo, name, handle and follower count. Yurie
+  picks the account she is on, taps a card to go to that creator's profile,
+  follows her in the app, then taps **Mark followed** on the card. On the farm
+  phone the card opens the TikTok or Instagram app; on a Mac it opens the
+  profile in the browser. The phone remembers the account last picked.
+  (Garreth reviewed it the same day: cards rather than rows, no bio, the card
+  itself as the link, and real photos and names instead of initials.)
+- **Profile photos are copies.** The platforms' photo links stop working after
+  a day or two, so each photo was copied into a private storage bucket,
+  `creator-photos`, and the page shows it through a link that lasts an hour.
+  105 of the 109 have one. The other 4 are TikTok profiles that came back empty
+  when looked up again on 2026-11-13 (renamed, private or deleted); their card
+  shows an initial.
+- **The list: 91 TikTok and 18 Instagram creators**, found with ScrapeCreators
+  on 2026-11-13 (about 775 credits, photo refreshes included). Each has 300 to 6,000 followers and posted in the
+  last month. All are women sharing their own weight-loss, GLP-1 or midlife
+  journey, the Character 6 audience. Each was seen replying to comments on her
+  own videos. Coaches, clinics, product sellers, GLP-1 and peptide sellers and
+  affiliates, men, repost pages and non-English accounts were left out. None of
+  them are our own accounts. Instagram's own search turned up almost no small
+  creators, so the 18 Instagram ones are the Instagram accounts of TikTok
+  creators on the list.
+- **The page records which of our accounts followed which creator.** So the
+  follows spread out: creators that fewest of our accounts follow come first.
+  A count beside the account shows its follows today against the plan's limit
+  of 4 a day, including the robot's. It turns amber at 4 and red above.
+- Facebook accounts are not on the page: there is no Facebook list yet.
+
+**Verified:** saving a follow, a double tap counting once, a TikTok creator
+refused for an Instagram account, a 17-digit Instagram account id saved exactly,
+and taking a follow back, all on a local run against the live database. The
+test rows were removed. The page was checked at iPhone width in headless Chrome,
+not yet in Safari or on a farm phone. Opening the app from the Open button has
+not been tried on a real phone yet.
+
+Files: `src/app/(dashboard)/resources/follow-creators/page.tsx`,
+`src/components/dashboard/follow-creators-view.tsx`,
+`src/lib/data/follow-creators.ts`, `src/lib/data/follow-creators-rules.ts`,
+`src/app/api/follow-creators/follows/route.ts`, `src/lib/resources/index.ts`,
+`src/app/(dashboard)/resources/page.tsx`; tables in
+`supabase/migrations/20261113110119_follow_creators.sql` and
+`20261113112440_follow_creator_photos.sql`.
+
+---
+
 ## 2026-11-13 — Experiment results now feed the knowledge base
 
 **Where it came from:** Garreth asked that what we learn from the Account
