@@ -20,6 +20,55 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-13 — Second email clean-up: fewer emails, the dashboard carries the rest
+
+**Where it came from:** Garreth asked for every email still going out, to retire
+the ones whose information is already on the dashboard. The list came from the
+Gmail Sent folder (30 Oct – 13 Nov) and the live n8n workflows. He decided each one.
+
+**Retired (switched off in n8n, can be switched back on):**
+- **Inventory digest** (Mon + Fri) and **production order** (Mon). Both
+  repeated the Inventory page, and on 9 Nov they disagreed with each other
+  (240 against 254). Both only read numbers and wrote nothing, so the Inventory
+  page is untouched. The Inventory Monitor also came off the dashboard's
+  automation list, so it does not show as overdue.
+- **Content Analysis heartbeat.** It kept reporting the post-scoring robot as
+  dead (61 days), which is already known. It also asked an AI model every hour
+  and tried to restart that robot every hour, which never worked; both stop.
+- **Virlo heartbeat.** It watched the old Virlo hook robot, which was switched
+  off when the Story Research Agent replaced it.
+- **Content Analysis error alert.** No workflow uses it, so it could never send.
+- **Record Account form.** Last used 30 July. It was the Geelark-era way to
+  record a new account; the dashboard's Add Account does this now.
+
+**Kept running, email switched off:**
+- **Account Health.** The robot still runs Tue + Fri, because it also records
+  each account's health changes in its history. Only the email step is off.
+  The dashboard's Health column reads its own live verdict and does not
+  depend on the email.
+- **Smart Scheduler.** It no longer emails when some slots could not be filled
+  (the Incidents page already lists those). It still emails if a run crashes
+  or rows fail to save. Tested with sample data both ways; no real run.
+
+**Changed:**
+- **Weekly analytics report** now goes out on Fridays only, at 10 AM ET,
+  instead of Sun/Mon/Wed/Fri.
+- **Proxy & number expiry** now emails only when someone has to act: a proxy
+  a phone is using is about to lapse with auto-renew off, the balance cannot
+  cover the renewals, or the check could not read a provider. Proxies that
+  renew on their own, burned proxies and auto-renewing numbers no longer
+  trigger an email. A real run today found nothing to act on and sent nothing;
+  the "action needed" email was tested with sample data.
+- **Pipeline Audit** still runs every Monday and still saves its results, but
+  now emails only when a post is booked too early for an account's age (for
+  example a GLP post before day 16). Half-scheduled posts and posts over the
+  daily cap no longer cause an email on their own; when an email does go out it
+  still lists them. Before this it emailed every Monday, even with nothing
+  wrong. Tested with sample data both ways; its first real run is Monday 16 Nov.
+
+**Kept as is:** the Winner-Pattern Playbook, the scheduler crash and missed-run
+alarms, the analytics freshness alarm, and Content Audit (rejections only).
+
 ## 2026-11-13 — Warmups page: a disconnected phone no longer lowers the finish rate
 
 **Where it came from:** Czedrick, in chat on 13 November. The robot's
