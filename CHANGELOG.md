@@ -20,6 +20,31 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-13 — Experiment results now feed the knowledge base
+
+**Where it came from:** Garreth asked that what we learn from the Account
+Experiments tab (GLP Metadata sheet) be saved where the system can use it. Until
+today none of it was: both knowledge tables in Supabase had nothing from the
+experiments.
+
+**What changed:**
+- `CLAUDE.md` has a new section telling every Claude session (and OpenCode,
+  which reads `CLAUDE.md`) that when an experiment check-in reaches a clear
+  answer, the lesson also goes into the knowledge base: ban and account lessons
+  into `ban_knowledge_base`, views and posting lessons into
+  `content_knowledge_base`. Each rule names the sheet row it came from, and
+  nothing is written until Garreth approves it.
+- First import, approved by Garreth and written today (data, not code): 4 ban
+  rules and 6 content rules from the Nov 11 check-in and the older Geelark
+  experiments, plus extra confirmations on two existing rules. All content
+  rules are filed under account management, so none of them change what the
+  carousel writer is told.
+
+**Verified:** the rows were read back from both tables after writing. The
+instruction only reaches other sessions once this is merged to `main`.
+
+---
+
 ## 2026-11-13 — Second email clean-up: fewer emails, the dashboard carries the rest
 
 **Where it came from:** Garreth asked for every email still going out, to retire
