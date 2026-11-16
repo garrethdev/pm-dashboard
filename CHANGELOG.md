@@ -20,6 +20,43 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-16 — Story Research Agent reads how people reacted to each story
+
+**Where it came from:** Garreth asked for the agent to collect the comments
+and replies under the stories it finds, "so we know how people react to a
+certain post", then: "build it with that defaults".
+
+**What changed:** after judging, the agent now reads the comments under every
+kept story post (TikTok, Reddit, Instagram):
+
+- **What it fetches.** Two pages of TikTok comments (about 40) plus the
+  replies under the 3 most-liked ones; one page of Reddit comments, which comes
+  with its replies; two pages of Instagram comments (Instagram replies cost 15
+  credits a page, so they are skipped). Pages already downloaded earlier in the
+  run are reused, not paid for twice.
+- **Limits.** At most 40 stories and 150 ScrapeCreators credits a run. A
+  TikTok story costs about 5 credits, so in practice about 30 TikTok stories
+  fit. Stories kept that run go first; spare room reads older kept stories,
+  so the backlog (118 stories) fills in over a few runs.
+- **What it keeps.** The comments go in a new table, `story_reactions` (text,
+  likes, which comment a reply answers; no usernames). The same cheap model
+  that judges stories then writes on each story: the mood (supportive, me too,
+  split, hostile, joking, mixed), a short summary, the moments people reacted
+  to most, their questions, their pushback and their own similar stories, all
+  in its own words. Every story also gets a "talk ratio": comments per view.
+- **Hooks.** When the hook writer drafts hooks for a story whose comments were
+  read, it sees the reactions and aims at the moment people reacted to most.
+  It never quotes a commenter.
+
+Comments under a kept *comment* (a story found inside a comment section) are
+not read yet; only posts.
+
+**Verified:** a copy of the new steps ran on 8 older kept TikTok stories
+(n8n run 215429): 362 comments saved (61 of them replies), all 8 summarised,
+38 credits. The full agent with these steps has not run yet; its first run
+is the scheduled one on Monday 16 November at 7am ET. The hook writer using
+reactions has not been seen in a real run yet.
+
 ## 2026-11-13 — Creators to follow refreshes itself every month
 
 **Where it came from:** Garreth asked whether the list would be kept up to date

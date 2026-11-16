@@ -1735,6 +1735,50 @@ scope, the blockers and the done-whens. Plan of record:
 `docs/REAL-PHONE-MASTERPLAN.md`; tooling decisions: `docs/PHONE-FARM-TOOLING.md`;
 task sheet for Yurie and Czedrick: `~/Documents/Geelark Exit Plan.xlsx`.
 
+## Carousel writers: hook first, then the story, then peptides, using the comments (added 2026-11-16)
+
+**Asked for by Garreth on 2026-11-16:** "the writer should get the hook
+first, then write the entire story out of it, then integrate the peptide",
+and the writers should use the comments under the real story they are based
+on ([Story Research Agent reactions](CHANGELOG.md), `story_bank.reaction_*`
+and `story_reactions`).
+
+**What the writers do now** (checked 2026-11-16 in n8n). None of them works
+in that order, and none of them reads comments or takes a `story_bank` story
+as input:
+
+- **Comparison Carousel** (`rUSLiVHflfg0hJLg`): plans the whole deck first
+  (including how she got peptides), then writes the hook from the plan, then
+  slides 2 to 8 with peptides on slide 5. Its source is pasted Reddit lines
+  per topic, not a story.
+- **Divorce Recovery** (`MLp2no3qGDAcDuLD`): writes the story brief and the
+  story first, then the hook, then cuts it into slides.
+- **Jealousy** (`LNryf7UU2kxhfNvC`, switched off): writes the whole deck,
+  hook included, in one call, then reviews it and retries the hook.
+
+**Tried once by hand** (story 1855, Comparison writer's own steps and
+models, copies in the session; nothing saved). Order: hook from the story and
+its comments → plan and slides from that hook with slide 5 left empty → a
+separate peptide step writes slide 5 → the writer's own editor and checks. It
+passed every check after one repair: the peptide step wrote "weeks" and
+"months", which the number rule forbids. One run only: it shows the order
+works, not that it is better.
+
+**To do, per writer:** accept a `story_bank` id (story, best line and
+reactions) instead of pasted lines; hook step first with the reactions; the
+story planned from the fixed hook; peptides as their own last step under the
+same rules; then the existing checks.
+
+## Comparison writer: the hook judge can run out of room and is skipped (found 2026-11-16)
+
+In the by-hand test above, the Comparison writer's hook judge
+(`deepseek/deepseek-v4-pro`, 6,000-token limit) stopped mid-answer
+(`finish_reason: length`) and returned nothing. The writer then takes the
+first hook on the list without any score, and the deck does not say the hook
+was never judged. Seen once in three judge calls. Not yet checked against
+the live runs' history. Likely fix: raise the limit or switch reasoning off
+for the judge, and mark the deck for review when the judge returns nothing.
+
 ## Posts handed out days ahead (added 2026-10-27)
 
 Since 2026-10-27 the Smart Scheduler plans three days at a time and the
