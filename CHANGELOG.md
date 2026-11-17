@@ -20,6 +20,71 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-17 — Trending song picker built, in test mode (no post changes yet)
+
+**Where it came from:** Garreth asked to use TokChart to choose the songs on
+our posts. A song should be picked only if it is both viral (used a lot and
+growing on TikTok) and fits the carousel's story. The result is the song name
+on Yurie's To-do list, as today; Geelark is left out. His decisions: all
+Character 6 lanes at once, the song is picked just before the hand-out and
+replaces the batch song, the old music selectors stay, and it is built now,
+before the TokChart subscription.
+
+**What changed:** a new n8n workflow, **[Music] Trending Song Picker**:
+
+- **00:30 ET, chart pull.** Fetches the day's US trending list and saves it.
+  "Original sounds" (someone's own audio) are kept for the record but never
+  picked: Yurie can't find them by name and they don't exist on Instagram.
+  Each new song is described once by the AI (mood, themes, what kind of story
+  it suits, explicit lyrics flagged).
+- **01:05 and 09:50 ET, song picker.** For each Character 6 post dated today
+  to three days out that is not on the To-do list yet, the AI reads the slides
+  and caption and ranks up to three fitting songs from those still growing.
+  The database then applies the first that passes the rules: on today's chart,
+  not used by that account within 7 days, on no more than 3 posts for the same
+  day. If nothing fits, or the AI fails, the post keeps the song it has. A post
+  already on the To-do list is never touched.
+- **Every decision is logged** with its reason (`music_picks`), so later we can
+  check whether trending songs earned more views.
+- Facebook posts copying an Instagram twin pick up the twin's song on their
+  own, because they read the same post.
+
+**It is in test mode.** Until the subscription it reads a stand-in chart of
+real, well-known songs with made-up numbers, and the picker only writes down
+what it *would* pick. No post's song changes until `dry_run` is switched off.
+The workflow is not switched on yet. The steps for the subscription day are in
+`docs/MUSIC-PICKER-PLAN.md`.
+
+**Verified (2026-11-17, live database and n8n, sample chart):**
+
+- The chart pull saved 31 sounds. 26 passed the virality test; the three
+  original sounds, the song set as slowing down and a tiny song were left out,
+  as they should be. The AI described every song and flagged SZA "Kill Bill"
+  and Summer Walker "Karma" for explicit lyrics; neither was ever picked.
+- The picker ran on the last 3 days of real Character 6 posts (48 posts, all
+  five lanes; a test setting lets it look back at posts already handed out,
+  and it only works in dry run). It took under 3 minutes, so a heavy night of
+  about 55 posts fits before the 01:15 hand-out. 45 got a song, 3 kept theirs:
+  one already had the chosen song, two had every chosen song ruled out by the
+  7-day rule. The picks read sensibly (for example "Fight Song" on Journey
+  weight-loss declarations, "Flowers" and "Dreams" on Jealousy and Divorce
+  stories).
+- Checked afterwards: no song over 3 posts a day, no account given the same
+  song twice within 7 days, no post changed. A post already on the To-do list
+  was refused outside test mode ("already on the To-do list").
+- Fixed after the test: test picks no longer count against real picks, and the
+  log now says "every song the AI chose was ruled out" instead of "no song fit"
+  when that is what happened.
+
+**Not yet proven:** the real TokChart reply. Its shape comes from their API
+docs and has not been seen; the first live pull will confirm it. Files:
+`supabase/migrations/20261117120000_music_picker.sql`,
+`supabase/migrations/20261117123000_music_picker_test_days.sql`,
+`supabase/migrations/20261117130000_music_picker_test_isolation.sql`,
+`docs/MUSIC-PICKER-PLAN.md`, `docs/n8n/music-trending-song-picker.workflow-sdk.txt`.
+
+---
+
 ## 2026-11-13 — Creators to follow refreshes itself every month
 
 **Where it came from:** Garreth asked whether the list would be kept up to date

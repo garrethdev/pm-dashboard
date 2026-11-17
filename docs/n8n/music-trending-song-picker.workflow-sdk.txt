@@ -1,0 +1,580 @@
+// Copy of the n8n workflow "[Music] Trending Song Picker" (w0O0tg8cToEeemcu), in n8n Workflow SDK form.
+// Saved 2026-11-17 so the workflow is in git. Stored as .txt so typecheck/lint skip it.
+// The live workflow in n8n is the source of truth; re-export after edits there.
+
+import { workflow, node, trigger, sticky, ifElse, splitInBatches, nextBatch, expr } from '@n8n/workflow-sdk';
+
+const SB = 'https://qlcmgxgwpzmiebzxflai.supabase.co/rest/v1';
+const supabaseCred = { supabaseApi: { id: 'BpJOuYVDTTtsYa5o', name: 'Supabase Service Role' } };
+const openRouterCred = { httpBearerAuth: { id: 'SVSDm02sBIRA2I5k', name: 'OpenRouter API Key' } };
+
+const chartTrigger = trigger({
+  type: 'n8n-nodes-base.scheduleTrigger',
+  version: 1.3,
+  config: {
+    name: 'Daily 00:30 ET',
+    parameters: { rule: { interval: [{ field: 'cronExpression', expression: '30 0 * * *' }] } }
+  }
+});
+
+const readSettings = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Read picker settings',
+    parameters: {
+      url: `${SB}/music_picker_settings?id=eq.1&select=*`,
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      options: {}
+    },
+    credentials: supabaseCred,
+    output: [{ id: 1, dry_run: true, chart_source: 'sample', country: 'US', min_videos_per_day: 1000 }]
+  }
+});
+
+const isLiveChart = ifElse({
+  version: 2.2,
+  config: {
+    name: 'Live TokChart chart?',
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{ leftValue: expr('{{ $json.chart_source }}'), operator: { type: 'string', operation: 'equals' }, rightValue: 'tokchart' }],
+        combinator: 'and'
+      }
+    }
+  }
+});
+
+const fetchTokchart = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Fetch TokChart chart',
+    parameters: {
+      url: expr('https://tokchart.com/api/v1/tiktok/audio/trending/country/{{ $json.country }}?page=1&page_size=500'),
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpBearerAuth',
+      options: { timeout: 60000 }
+    },
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 5000,
+    output: [{ items: [{ chart_index: 1, sound_id: '7536694526191127327', title: 'Original sound', content_type: 'original', tokchart_score: 951, ugc_videos_per_day: 710 }] }]
+  }
+});
+
+const sampleChart = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Sample chart (until subscription)',
+    parameters: {
+      mode: 'runOnceForAllItems',
+      language: 'javaScript',
+      jsCode: `// Stand-in for TokChart's "trending TikTok audio by country" reply, shaped
+// like the example in their API docs (tokchart.com/docs/api, read 2026-11-17).
+// Real, well-known songs so the AI's story matching can be judged; the numbers
+// are MADE UP. Every row is saved with is_sample = true and the picker only
+// reads sample rows while music_picker_settings.chart_source = 'sample'.
+// Includes original sounds, a slowing song and a small song, which the
+// virality test must leave out.
+const S = (artists, title, genres, perDay, accel, score) => ({ artists, title, genres, perDay, accel, score });
+const songs = [
+  S(['Miley Cyrus'], 'Flowers', ['pop'], 41000, 900, 940),
+  S(['SZA'], 'Kill Bill', ['r&b'], 38000, 600, 925),
+  S(['Sabrina Carpenter'], 'Espresso', ['pop'], 52000, 1500, 960),
+  S(['Chappell Roan'], 'Good Luck, Babe!', ['pop'], 30000, 400, 900),
+  S(['Taylor Swift'], 'Shake It Off', ['pop'], 22000, 300, 870),
+  S(['Kelly Clarkson'], "Stronger (What Doesn't Kill You)", ['pop'], 18000, 250, 860),
+  S(['Gloria Gaynor'], 'I Will Survive', ['disco'], 15000, 200, 850),
+  S(['Beyoncé'], 'Irreplaceable', ['r&b'], 14000, 180, 845),
+  S(['Adele'], 'Rolling in the Deep', ['soul'], 21000, 350, 880),
+  S(['Doja Cat'], 'Woman', ['pop', 'r&b'], 26000, 420, 890),
+  S(['Lizzo'], 'Good as Hell', ['pop'], 17000, 150, 855),
+  S(['Sia'], 'Unstoppable', ['pop'], 24000, 500, 885),
+  S(['Rachel Platten'], 'Fight Song', ['pop'], 9000, 120, 800),
+  S(['Christina Aguilera'], 'Fighter', ['pop'], 8000, 90, 790),
+  S(['Ariana Grande'], 'thank u, next', ['pop'], 27000, 380, 895),
+  S(['Destiny\\'s Child'], 'Survivor', ['r&b'], 12000, 160, 830),
+  S(['Katy Perry'], 'Roar', ['pop'], 11000, 140, 825),
+  S(['Billie Eilish'], 'What Was I Made For?', ['pop'], 19000, 230, 865),
+  S(['Fleetwood Mac'], 'Dreams', ['rock'], 16000, 210, 850),
+  S(['Pink Floyd'], 'Time', ['rock'], 32000, 2100, 930),
+  S(['Lana Del Rey'], 'Young and Beautiful', ['pop'], 20000, 260, 870),
+  S(['Tate McRae'], 'greedy', ['pop'], 23000, 310, 878),
+  S(['Muni Long'], 'Made For Me', ['r&b'], 13000, 170, 835),
+  S(['Summer Walker'], 'Karma', ['r&b'], 10000, 130, 815),
+  S(['Tems'], 'Free Mind', ['afrobeats'], 9500, 110, 805),
+  S(['Prince Royce'], 'Rechazame', ['latin'], 47000, 800, 950),
+  S(['Olivia Rodrigo'], 'drivers license', ['pop'], 25000, -1800, 880),
+  S(['Little Known Band'], 'Small Song', ['indie'], 300, 20, 400)
+];
+const items = songs.map((s, i) => ({
+  chart_index: i + 1,
+  sound_id: 'sample-' + (i + 1),
+  title: s.title,
+  author: s.artists[0],
+  tokchart_score: s.score,
+  ugc_videos_total: s.perDay * 40,
+  ugc_videos_per_day: s.perDay,
+  ugc_videos_acceleration: s.accel,
+  content_type: 'song',
+  matched_song: { title: s.title, artists: s.artists, genres: s.genres },
+  tiktok_url: null,
+  trending_countries: ['US']
+}));
+['Original sound - dancemom', 'original sound - kvdysjams', 'Original audio - Heaven'].forEach((t, j) => items.push({
+  chart_index: items.length + 1,
+  sound_id: 'sample-orig-' + (j + 1),
+  title: t,
+  author: 'creator',
+  tokchart_score: 970,
+  ugc_videos_total: 900000,
+  ugc_videos_per_day: 60000,
+  ugc_videos_acceleration: 3000,
+  content_type: 'original',
+  matched_song: null
+}));
+return [{ json: { items, total_items: items.length, sample: true } }];`
+    },
+    output: [{ items: [{ chart_index: 1, sound_id: 'sample-1', title: 'Flowers', content_type: 'song' }], total_items: 31, sample: true }]
+  }
+});
+
+const shapeChart = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Shape chart rows',
+    parameters: {
+      mode: 'runOnceForAllItems',
+      language: 'javaScript',
+      jsCode: `// One row per sound for trending_songs. A sound counts as a released song only
+// when TikTok matched it to a real track with a title and artist; original
+// sounds are kept for the record but never picked.
+const settings = $('Read picker settings').first().json;
+const resp = $input.first().json || {};
+const list = Array.isArray(resp.items) ? resp.items : (Array.isArray(resp.data) ? resp.data : []);
+const isSample = settings.chart_source !== 'tokchart';
+const chartDate = $now.setZone('America/New_York').toFormat('yyyy-MM-dd');
+const names = (a) => (Array.isArray(a) ? a : []).map((x) => (typeof x === 'string' ? x : (x && x.name) || '')).filter(Boolean);
+const rows = [];
+for (const it of list) {
+  if (!it || it.sound_id === undefined || it.sound_id === null) continue;
+  const m = it.matched_song || null;
+  const artists = m ? names(m.artists) : [];
+  const title = m && m.title ? String(m.title) : (it.title || null);
+  const released = !!m && it.content_type !== 'original' && artists.length > 0 && !!(m && m.title);
+  rows.push({
+    chart_date: chartDate,
+    country: settings.country,
+    sound_id: String(it.sound_id),
+    chart_index: it.chart_index ?? null,
+    song: released ? artists.join(', ') + ' - ' + m.title : null,
+    title,
+    artists,
+    content_type: it.content_type || null,
+    is_released_song: released,
+    tokchart_score: it.tokchart_score ?? null,
+    ugc_videos_total: it.ugc_videos_total ?? null,
+    ugc_videos_per_day: it.ugc_videos_per_day ?? null,
+    ugc_videos_acceleration: it.ugc_videos_acceleration ?? null,
+    genres: m && Array.isArray(m.genres) ? m.genres : [],
+    tiktok_url: it.tiktok_url || null,
+    spotify_url: it.spotify_url || null,
+    is_sample: isSample,
+    raw: it
+  });
+}
+if (!rows.length) throw new Error('The chart came back empty (' + (isSample ? 'sample' : 'TokChart') + '). Posts keep their songs.');
+return [{ json: { rows, count: rows.length, released: rows.filter((r) => r.is_released_song).length } }];`
+    },
+    output: [{ rows: [{ chart_date: '2026-11-17', country: 'US', sound_id: 'sample-1', song: 'Miley Cyrus - Flowers', is_released_song: true }], count: 31, released: 28 }]
+  }
+});
+
+const saveChart = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Save chart',
+    parameters: {
+      method: 'POST',
+      url: `${SB}/trending_songs?on_conflict=chart_date,country,sound_id`,
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      sendHeaders: true,
+      headerParameters: { parameters: [
+        { name: 'Content-Type', value: 'application/json' },
+        { name: 'Prefer', value: 'resolution=merge-duplicates,return=minimal' }
+      ] },
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: expr('{{ JSON.stringify($json.rows) }}'),
+      options: {}
+    },
+    credentials: supabaseCred,
+    output: [{}]
+  }
+});
+
+const songsToDescribe = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Songs without notes',
+    executeOnce: true,
+    parameters: {
+      method: 'POST',
+      url: `${SB}/rpc/music_pick_songs_to_describe`,
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: '{}',
+      options: {}
+    },
+    credentials: supabaseCred,
+    output: [{ song: 'Miley Cyrus - Flowers', song_key: 'miley cyrus - flowers', genres: ['pop'] }]
+  }
+});
+
+const buildDescribe = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Build song-notes request',
+    parameters: {
+      mode: 'runOnceForAllItems',
+      language: 'javaScript',
+      jsCode: `// Each new song is described once: what it feels like and what it is about.
+// The picker matches stories against these notes, not against the title.
+const songs = $input.all().map((i) => i.json).filter((s) => s && s.song_key);
+if (!songs.length) return [];
+const sys = 'You describe songs so they can be matched to short social media photo carousels. ' +
+  'The carousels are written for women over 40: weight loss, body changes, family, friends, partners, and how people react when they change. ' +
+  'For each song, from what you know of it (lyrics, mood, how it is used on TikTok), write its mood, its themes, and what kind of carousel story it suits. ' +
+  'Say plainly if it has explicit lyrics or would clash with that audience. ' +
+  'If you do not know the song, set mood to "unknown" and leave themes empty. Never guess. ' +
+  'Return JSON only: {"notes":[{"song_key":"...","mood":"2 to 5 words","themes":["3 to 6 short themes"],"story_fit":"one sentence"}]} with one entry per song_key given.';
+const user = JSON.stringify({ songs: songs.map((s) => ({ song_key: s.song_key, song: s.song, genres: s.genres || [] })) });
+const models = ['qwen/qwen3.8-flash', 'deepseek/deepseek-v4.1-flash'];
+return [{ json: { songs, body: { model: models[0], models: models.slice(1), response_format: { type: 'json_object' }, reasoning: { enabled: false }, temperature: 0.2, max_tokens: 9000, messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] } } }];`
+    },
+    output: [{ songs: [{ song_key: 'miley cyrus - flowers', song: 'Miley Cyrus - Flowers' }], body: { model: 'qwen/qwen3.8-flash' } }]
+  }
+});
+
+const describeAI = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Describe songs (AI)',
+    parameters: {
+      method: 'POST',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpBearerAuth',
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: expr('{{ JSON.stringify($json.body) }}'),
+      options: { timeout: 180000 }
+    },
+    credentials: openRouterCred,
+    retryOnFail: true,
+    maxTries: 2,
+    waitBetweenTries: 5000,
+    output: [{ model: 'qwen/qwen3.8-flash', choices: [{ message: { content: '{"notes":[]}' } }] }]
+  }
+});
+
+const shapeNotes = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Shape song notes',
+    parameters: {
+      mode: 'runOnceForAllItems',
+      language: 'javaScript',
+      jsCode: `const asked = $('Build song-notes request').first().json.songs;
+const bySong = {};
+for (const s of asked) bySong[s.song_key] = s.song;
+const r = $input.first().json || {};
+let c = (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content) || '';
+c = String(c).replace(/^\`\`\`(?:json)?\\s*/i, '').replace(/\`\`\`\\s*$/, '').trim();
+const a = c.indexOf('{'), b = c.lastIndexOf('}');
+let o = null;
+try { o = JSON.parse(a >= 0 && b > a ? c.slice(a, b + 1) : c); } catch (e) { o = null; }
+if (!o || !Array.isArray(o.notes)) throw new Error('Song notes: the AI did not return valid JSON (model ' + (r.model || 'unknown') + ')');
+const rows = o.notes
+  .filter((n) => n && bySong[n.song_key])
+  .map((n) => ({
+    song_key: n.song_key,
+    song: bySong[n.song_key],
+    mood: String(n.mood || 'unknown').slice(0, 80),
+    themes: Array.isArray(n.themes) ? n.themes.map(String).slice(0, 8) : [],
+    story_fit: n.story_fit ? String(n.story_fit).slice(0, 400) : null,
+    model: r.model || null
+  }));
+if (!rows.length) return [];
+return [{ json: { rows, count: rows.length } }];`
+    },
+    output: [{ rows: [{ song_key: 'miley cyrus - flowers', song: 'Miley Cyrus - Flowers', mood: 'breezy, self-assured', themes: ['moving on'] }], count: 1 }]
+  }
+});
+
+const saveNotes = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Save song notes',
+    parameters: {
+      method: 'POST',
+      url: `${SB}/song_notes?on_conflict=song_key`,
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      sendHeaders: true,
+      headerParameters: { parameters: [
+        { name: 'Content-Type', value: 'application/json' },
+        { name: 'Prefer', value: 'resolution=merge-duplicates,return=minimal' }
+      ] },
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: expr('{{ JSON.stringify($json.rows) }}'),
+      options: {}
+    },
+    credentials: supabaseCred,
+    output: [{}]
+  }
+});
+
+const pickTrigger = trigger({
+  type: 'n8n-nodes-base.scheduleTrigger',
+  version: 1.3,
+  config: {
+    name: 'Pick 01:05 + 09:50 ET',
+    parameters: { rule: { interval: [
+      { field: 'cronExpression', expression: '5 1 * * *' },
+      { field: 'cronExpression', expression: '50 9 * * *' }
+    ] } }
+  }
+});
+
+const findPosts = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Find posts needing a song',
+    parameters: {
+      method: 'POST',
+      url: `${SB}/rpc/music_pick_candidates`,
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: '{}',
+      options: {}
+    },
+    credentials: supabaseCred,
+    output: [{ content_type: 'jealousy_carousel', source_table: 'jealousy_carousels', content_id: 'JC-1', geelark_profile: 'p1', platform: 'TikTok', posting_date: '2026-11-18', story: 'hook...', current_song: 'SZA - Saturn', recent_songs: [] }]
+  }
+});
+
+const songPool = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Song pool today',
+    executeOnce: true,
+    parameters: {
+      method: 'POST',
+      url: `${SB}/rpc/music_pick_pool`,
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: '{}',
+      options: {}
+    },
+    credentials: supabaseCred,
+    output: [{ song: 'Miley Cyrus - Flowers', song_key: 'miley cyrus - flowers', ugc_videos_per_day: 41000, mood: 'breezy', themes: ['moving on'], story_fit: '...' }]
+  }
+});
+
+const pairPosts = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Pair posts with songs',
+    parameters: {
+      mode: 'runOnceForAllItems',
+      language: 'javaScript',
+      jsCode: `// One item per post, carrying the day's songs minus the ones this account
+// had recently. No songs on the chart (stale or failed pull): nothing runs
+// and every post keeps the song it has.
+const posts = $('Find posts needing a song').all().map((i) => i.json).filter((p) => p && p.content_id);
+const pool = $('Song pool today').all().map((i) => i.json).filter((s) => s && s.song_key);
+if (!posts.length || !pool.length) return [];
+return posts.map((p) => {
+  const recent = new Set(p.recent_songs || []);
+  return { json: { post: p, songs: pool.filter((s) => !recent.has(s.song_key)) } };
+});`
+    },
+    output: [{ post: { content_type: 'jealousy_carousel', content_id: 'JC-1', story: 'hook...' }, songs: [{ song: 'Miley Cyrus - Flowers' }] }]
+  }
+});
+
+const eachPost = splitInBatches({ version: 3, config: { name: 'Each post', parameters: { batchSize: 1, options: {} } } });
+
+const buildPick = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Build pick request',
+    parameters: {
+      mode: 'runOnceForEachItem',
+      language: 'javaScript',
+      jsCode: `const post = $json.post;
+const songs = $json.songs || [];
+const list = songs.map((s) => ({ song: s.song, mood: s.mood, themes: s.themes, suits: s.story_fit, new_videos_per_day: s.ugc_videos_per_day }));
+const sys = 'You choose the background song for one short social media photo carousel, written for women over 40. ' +
+  'You get the post (hook, slides, caption) and a list of songs trending on TikTok today, each with its mood, themes and what it suits. ' +
+  'Choose up to 3 songs that fit the feeling of this story and would feel natural playing under it, best first. ' +
+  'Match the emotional arc (hurt, defiance, quiet pride, humour, nostalgia, relief), not a word in the title. ' +
+  'Leave out songs whose lyrics or mood would clash with the story or feel wrong for this audience: explicit sex, violence, mocking weight or bodies. ' +
+  'If no song fits well, return no choices and say why in one sentence. Only use songs from the list, copied exactly. ' +
+  'Return JSON only: {"choices":[{"song":"Artist - Title","reason":"one short sentence"}],"no_fit_reason":null}';
+const user = 'Platform: ' + (post.platform || '') + '\\n\\nThe post:\\n' + (post.story || '') + '\\n\\nSongs trending today:\\n' + JSON.stringify(list);
+const models = ['qwen/qwen3.8-flash', 'deepseek/deepseek-v4.1-flash'];
+return { json: { post, songCount: songs.length, body: { model: models[0], models: models.slice(1), response_format: { type: 'json_object' }, reasoning: { enabled: false }, temperature: 0.3, max_tokens: 1200, messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] } } };`
+    },
+    output: [{ post: { content_type: 'jealousy_carousel', content_id: 'JC-1' }, songCount: 25, body: { model: 'qwen/qwen3.8-flash' } }]
+  }
+});
+
+const pickAI = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Pick song (AI)',
+    parameters: {
+      method: 'POST',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpBearerAuth',
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: expr('{{ JSON.stringify($json.body) }}'),
+      options: { timeout: 90000 }
+    },
+    credentials: openRouterCred,
+    retryOnFail: true,
+    maxTries: 2,
+    waitBetweenTries: 3000,
+    onError: 'continueRegularOutput',
+    output: [{ model: 'qwen/qwen3.8-flash', choices: [{ message: { content: '{"choices":[{"song":"Miley Cyrus - Flowers","reason":"moving on"}],"no_fit_reason":null}' } }] }]
+  }
+});
+
+const readChoices = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Read AI choices',
+    parameters: {
+      mode: 'runOnceForEachItem',
+      language: 'javaScript',
+      jsCode: `// A failed or garbled AI answer is not an error: the post keeps its song
+// and the reason is logged.
+const req = $('Build pick request').item.json;
+const r = $json || {};
+let choices = [];
+let noFit = null;
+try {
+  let c = r.choices[0].message.content;
+  c = String(c).replace(/^\`\`\`(?:json)?\\s*/i, '').replace(/\`\`\`\\s*$/, '').trim();
+  const a = c.indexOf('{'), b = c.lastIndexOf('}');
+  const o = JSON.parse(a >= 0 && b > a ? c.slice(a, b + 1) : c);
+  choices = (Array.isArray(o.choices) ? o.choices : [])
+    .filter((x) => x && x.song)
+    .slice(0, 3)
+    .map((x) => ({ song: String(x.song), reason: x.reason ? String(x.reason).slice(0, 300) : null }));
+  noFit = o.no_fit_reason ? String(o.no_fit_reason).slice(0, 300) : null;
+} catch (e) {
+  const err = r.error ? (r.error.message || JSON.stringify(r.error)) : e.message;
+  noFit = 'the AI gave no usable answer: ' + String(err).slice(0, 200);
+}
+return { json: {
+  p_content_type: req.post.content_type,
+  p_content_id: req.post.content_id,
+  p_choices: choices,
+  p_model: r.model || null,
+  p_no_fit_reason: noFit
+} };`
+    },
+    output: [{ p_content_type: 'jealousy_carousel', p_content_id: 'JC-1', p_choices: [{ song: 'Miley Cyrus - Flowers', reason: 'moving on' }], p_model: 'qwen/qwen3.8-flash', p_no_fit_reason: null }]
+  }
+});
+
+const applyPick = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Apply pick',
+    parameters: {
+      method: 'POST',
+      url: `${SB}/rpc/music_pick_apply`,
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: expr('{{ JSON.stringify($json) }}'),
+      options: {}
+    },
+    credentials: supabaseCred,
+    output: [{ outcome: 'would_apply', new_song: 'Miley Cyrus - Flowers', old_song: 'SZA - Saturn' }]
+  }
+});
+
+const note = sticky(
+  '## Trending Song Picker\n' +
+  'Gives each upcoming Character 6 post a song that is trending on TikTok AND fits its story, before the 01:15 ET hand-out to the To-do list.\n\n' +
+  'All rules live in Supabase (migration 20261117120000_music_picker.sql). Switches in `music_picker_settings`:\n' +
+  '- `dry_run` true: picks are only logged in `music_picks`; no post changes.\n' +
+  '- `chart_source` sample until the TokChart subscription, then tokchart (and attach the TokChart API credential).\n\n' +
+  'Plan: docs/MUSIC-PICKER-PLAN.md',
+  [chartTrigger, pickTrigger],
+  { color: 4 }
+);
+
+export default workflow('music-trending-song-picker', '[Music] Trending Song Picker')
+  .add(chartTrigger)
+  .to(readSettings)
+  .to(isLiveChart
+    .onTrue(fetchTokchart.to(shapeChart))
+    .onFalse(sampleChart.to(shapeChart)))
+  .add(shapeChart)
+  .to(saveChart)
+  .to(songsToDescribe)
+  .to(buildDescribe)
+  .to(describeAI)
+  .to(shapeNotes)
+  .to(saveNotes)
+  .add(pickTrigger)
+  .to(findPosts)
+  .to(songPool)
+  .to(pairPosts)
+  .to(eachPost
+    .onEachBatch(buildPick.to(pickAI).to(readChoices).to(applyPick).to(nextBatch(eachPost))))
+  .add(note)
+  .group('Chart pull', [readSettings, isLiveChart, fetchTokchart, sampleChart, shapeChart, saveChart], {
+    description: "Fetches today's US trending sounds (sample list until the TokChart subscription) and saves them in trending_songs."
+  })
+  .group('Song notes', [songsToDescribe, buildDescribe, describeAI, shapeNotes, saveNotes], {
+    description: 'Describes each new song once (mood, themes, what it suits) so stories can be matched to it.'
+  })
+  .group('Pick songs', [findPosts, songPool, pairPosts, eachPost, buildPick, pickAI, readChoices, applyPick], {
+    description: 'For each upcoming post, the AI ranks fitting songs; Supabase applies the first that passes every rule.'
+  });
