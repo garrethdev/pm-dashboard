@@ -74,7 +74,10 @@ stay on the list and only lose their trending mark; the refresh runs weekly.
 
 **Not yet proven:**
 
-- The Tuesday schedule runs only after this branch is deployed from `main`.
+- The Tuesday schedule: merged and deployed 2026-11-18 (PR #106). The
+  production route answers "wrong or missing token" to a call without the
+  scheduler's key, which is correct. The first scheduled run is Tuesday
+  2026-11-24, 12:00 UTC (7:00 ET).
 - The first growth figures, which decide whether Spotify songs are added and
   whether library songs keep their mark, arrive with the second run.
 - The first run hit its credit cap, so library songs that aren't on a list get
