@@ -23,3 +23,18 @@ describe("the track a deck is given (PR #31 review item 7)", () => {
     expect(chooseTrack([], "Someone Else - Not In The Library", "deck-1", null)).toEqual({ music: "Someone Else - Not In The Library", status: "not_found", asked: "Someone Else - Not In The Library" });
   });
 });
+
+describe("trending songs come first (weekly music refresh, 2026-11-18)", () => {
+  const withTrend: TrackRow[] = [
+    ...library,
+    { id: "3", artist: "Teddy Swims", title: "What More Can I Say", pillar_fit: ["universal"], usage_count: 9, is_trending: true },
+  ];
+  it("picks a trending song even when an older one is less used", () => {
+    for (const seed of ["a", "b", "deck-1", "deck-2"]) {
+      expect(chooseTrack(withTrend, null, seed, null).music).toBe("Teddy Swims - What More Can I Say");
+    }
+  });
+  it("still keeps the writer's own track when the library has it", () => {
+    expect(chooseTrack(withTrend, "Noor - Glass Water", "deck-1", null).music).toBe("Noor - Glass Water");
+  });
+});

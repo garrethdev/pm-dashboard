@@ -20,6 +20,72 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-18 — The music list now adds trending songs every week
+
+**Where it came from:** Garreth decided TokChart costs too much (its API is
+about $148 a month), so the TokChart picker built the day before is shelved.
+He asked for the music list itself to keep up with what is trending. Nothing
+had been added to it since 2026-09-10. His decisions: songs that stop trending
+stay on the list and only lose their trending mark; the refresh runs weekly.
+
+**What changed:**
+
+- **A weekly refresh, Tuesdays.**
+  - It reads two free trend lists: Metricool's weekly top 10 of TikTok songs,
+    and a fan-kept Spotify playlist of trending TikTok songs.
+  - It checks on TikTok how many videos use each song, then checks again a
+    week later.
+  - Songs gaining at least 1,000 new videos a day count as trending. On a
+    song's first check, being in Metricool's top 10 counts instead.
+  - The AI turns away songs that don't suit a Character 6 post: meme sounds,
+    game music, children's songs, songs mainly about drugs or violence.
+  - The songs that pass join the music list with a trending mark and the usual
+    mood notes. Songs already on the list get the mark, or lose it, the same
+    way.
+- **The Carousel Generator writer picks trending songs first.** When the writer
+  asks for no particular song, or for one the list doesn't have, a trending
+  song is chosen before older ones. The older n8n music selectors don't know
+  about the mark. New songs start at zero uses, though, so the selectors that
+  pick the least-used songs reach them first.
+- **Yurie's To-do list is unchanged.** It shows whatever song the post carries.
+- **The TokChart picker workflow stays switched off and in test mode.** Its
+  plan doc says it was shelved.
+- It uses ScrapeCreators credits we already pay for: at most 250 a run,
+  expected 500–600 a month. How it works and how to check on it is in
+  `docs/MUSIC-LIBRARY-REFRESH.md`.
+
+**Verified (2026-11-18, live database, run from a local copy of this branch):**
+
+- **Dry run** (40 credits, nothing written): read Metricool's list for the
+  week of Nov 16th (10 songs) and 152 songs from the Spotify playlist.
+- **First real run** (250 credits, 3 minutes):
+  - Measured 126 songs.
+  - Added **9 trending songs**: Noah Preminger "Sunset in Girona" (85 million
+    TikTok videos), Mark Allan Wolfe "Self Aware", Ian Asher "Take Me (To The
+    Moon)", Teddy Swims "What More Can I Say" and 5 more.
+  - Turned down 1, "Final Game Showdown", as a video-game meme sound.
+  - Could not find a TikTok sound for 1 song.
+  - The music list went from 76 to 85 active songs.
+- **Sound matching:** 15 Spotify songs picked at random were all matched to the
+  right TikTok sound.
+- **Tests:** the rules have tests built on today's real Metricool page and
+  TikTok search results. The full suite passes (938), and so do typecheck and
+  lint.
+
+**Not yet proven:**
+
+- The Tuesday schedule runs only after this branch is deployed from `main`.
+- The first growth figures, which decide whether Spotify songs are added and
+  whether library songs keep their mark, arrive with the second run.
+- The first run hit its credit cap, so library songs that aren't on a list get
+  their first measurement over the next weeks.
+
+**Files:** `src/server/music-trends.ts`, `src/server/music-trends-rules.ts` (+
+test), `src/app/api/music-library/refresh/route.ts`,
+`src/server/carousel/services/music.ts` (+ test), `src/proxy.ts`,
+`vercel.json`, `supabase/migrations/20261118120000_music_trend_refresh.sql`,
+`docs/MUSIC-LIBRARY-REFRESH.md`, `docs/MUSIC-PICKER-PLAN.md`.
+
 ## 2026-11-17 — Trending song picker built, in test mode (no post changes yet)
 
 **Where it came from:** Garreth asked to use TokChart to choose the songs on

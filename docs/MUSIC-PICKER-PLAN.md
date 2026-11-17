@@ -2,6 +2,11 @@
 
 Garreth, 2026-11-17. Branch `garrethdev/Music-intergration-tokchart`.
 
+> **Shelved 2026-11-18 (Garreth): TokChart is too expensive.** The music list
+> now keeps up with trends on its own; see `docs/MUSIC-LIBRARY-REFRESH.md`.
+> Everything below stays in place, with the workflow switched off and in dry
+> run, in case a chart subscription is ever bought.
+
 ## What it is for
 
 Each Character 6 post carries a song name ("Artist - Title"). Yurie's To-do
