@@ -20,6 +20,38 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-18 — The To-do list warns when a phone's internet is not American
+
+**Where it came from:** Garreth's decision (2026-11-18). The warmup robot is
+getting a new check: before a phone's warmups it looks at which country the
+phone's internet connection comes from. If it is not the United States
+(usually because the phone's proxy has dropped), the warmup does not run, and
+the robot sends a report saying so (`connection_not_us: PH`, or `unknown` when
+it cannot tell the country). Until now the dashboard had no name for that
+stop.
+
+**What changed:**
+
+- **On the To-do list,** that account's robot warmups for today carry a line
+  in orange: "Phone's connection is not American (PH) at 2:14 AM: check the
+  phone's proxy". It is based on the account's newest warmup report today (New
+  York day). As soon as a later warmup for that account reports anything else,
+  the line goes away. It shows on today's list only, on warmups not yet done,
+  and only for accounts on Automated.
+- **On the Warmups page,** this stop is called "Connection not American" in
+  the reasons, Needs a look and the strips. Like a disconnected phone, it is
+  left out of the robot's 7-day finish rate: it is a problem with the phone's
+  setup, not with the robot. The note under the finish rate says so.
+- **Claude's review of a stopped warmup** now counts the phone's internet
+  connection as part of "the phone", so it files this stop there.
+- `docs/WARMUP-RUNNER-API.md` describes the new report.
+
+No database change. Nothing new is written anywhere.
+
+**Verified:** tests only, with made-up reports, on a local copy. No real report
+of this kind exists yet: the robot's side is still being built. The first real
+one will be the first live check.
+
 ## 2026-11-18 — The music list now adds trending songs every week
 
 **Where it came from:** Garreth decided TokChart costs too much (its API is

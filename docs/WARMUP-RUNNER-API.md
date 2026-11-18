@@ -77,7 +77,12 @@ York days.
 7. **The warmup's report.** Sent once after every warmup that reached the
    phone, finished or stopped for any reason, including a stop before
    Running (`feed_not_loading`, `wrong_account`, ...), which has no run. Not
-   sent for a session skipped before the phone was touched.
+   sent for a session skipped before the phone was touched, with one
+   exception (Garreth, 2026-11-18): when the phone's internet connection is
+   not American, the warmup does not run but a report is sent, outcome
+   `"stopped"`, note `connection_not_us: <country code>` (`PH`, or `unknown`),
+   and no session row. The To-do list warns on the account's warmups and the
+   Warmups page leaves it out of the finish rate.
    - `startedAt` is the run's start (the same instant as operation 3) when
      Running was said; otherwise when the session began on the phone. Same
      window as operation 3: the last 36 hours, at most 5 minutes ahead.
