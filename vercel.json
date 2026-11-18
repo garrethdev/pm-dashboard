@@ -6,6 +6,7 @@
     { "path": "/api/content-tags/run", "schedule": "30 14 * * 5" },
     { "path": "/api/screen-readings/relink", "schedule": "30 15 * * *" },
     { "path": "/api/follow-creators/refresh?part=recheck", "schedule": "0 13 1 * *" },
-    { "path": "/api/follow-creators/refresh?part=topup", "schedule": "30 13 1 * *" }
+    { "path": "/api/follow-creators/refresh?part=topup", "schedule": "30 13 1 * *" },
+    { "path": "/api/music-library/refresh", "schedule": "0 12 * * 2" }
   ]
 }

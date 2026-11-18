@@ -21,13 +21,15 @@ export interface TrackRow {
   title: string;
   pillar_fit: string[] | null;
   usage_count: number | null;
+  /** Growing on TikTok as of the weekly music refresh (src/server/music-trends.ts). */
+  is_trending?: boolean | null;
 }
 
 let cache: { at: number; rows: TrackRow[] } | null = null;
 
 async function tracks(): Promise<TrackRow[]> {
   if (cache && Date.now() - cache.at < 60_000) return cache.rows;
-  const rows = await dbGetAll<TrackRow>("music_library?select=id,artist,title,pillar_fit,usage_count&is_active=eq.true");
+  const rows = await dbGetAll<TrackRow>("music_library?select=id,artist,title,pillar_fit,usage_count,is_trending&is_active=eq.true");
   cache = { at: Date.now(), rows };
   return rows;
 }
@@ -55,7 +57,10 @@ export function chooseTrack(rows: TrackRow[], hint: string | null, seed: string,
     if (loose) return { music: `${loose.artist} - ${loose.title}`, status: "found", asked: null };
   }
   const fitting = pillar ? rows.filter((r) => r.pillar_fit?.some((p) => pillar.includes(p) || p === "universal")) : rows;
-  const pool = fitting.length ? fitting : rows;
+  const fits = fitting.length ? fitting : rows;
+  // Songs trending on TikTok this week come first (Garreth, 2026-11-18).
+  const trending = fits.filter((r) => r.is_trending);
+  const pool = trending.length ? trending : fits;
   const n = Math.abs([...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 3));
   const sorted = [...pool].sort((a, b) => (a.usage_count ?? 0) - (b.usage_count ?? 0));
   const pick = sorted[n % Math.min(sorted.length, 12)];

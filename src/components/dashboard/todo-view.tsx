@@ -19,6 +19,7 @@ import {
   Rows,
   Smartphone,
   SquaresFour,
+  TriangleAlert,
 } from "@/components/ui/icons";
 import { StatusPill } from "@/components/ui/pill";
 import { PlatformIcon } from "@/components/ui/platform-icon";
@@ -652,6 +653,7 @@ function ItemRow({
           {item.postUrl && <LinkedPill url={item.postUrl} />}
         </span>
         <ItemDetail item={item} />
+        {item.connectionWarning && <ConnectionWarning text={item.connectionWarning} />}
         {isPost && post?.song && <SongLine song={post.song} />}
         {!finished && !scheduled && isPost && firstMedia && <PostMediaCard media={media} url={firstMedia} />}
       </div>
@@ -680,6 +682,20 @@ function ItemRow({
         </div>
       )}
     </li>
+  );
+}
+
+/**
+ * The robot did not start this warmup because the phone's internet connection
+ * was not American (Garreth, 2026-11-18). A line of its own under the task, in
+ * the warning colour, because it says what to do and is too long for a pill.
+ */
+function ConnectionWarning({ text }: { text: string }) {
+  return (
+    <p role="status" className="mt-0.5 flex items-start gap-1 text-xs font-medium text-warn">
+      <TriangleAlert className="mt-px size-3.5 shrink-0" />
+      <span className="min-w-0 break-words">{text}</span>
+    </p>
   );
 }
 

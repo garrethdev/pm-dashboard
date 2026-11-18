@@ -10,6 +10,7 @@ import type { WarmupReport } from "@/lib/data/warmup-reports";
 /** What a stopped warmup ran into, in the few groups a person acts on. */
 export type StopKind =
   | "phone"
+  | "connection"
   | "wrong_account"
   | "warning"
   | "lost"
@@ -20,6 +21,7 @@ export type StopKind =
 
 export const STOP_LABEL: Record<StopKind, string> = {
   phone: "Phone disconnected",
+  connection: "Connection not American",
   wrong_account: "Wrong account",
   warning: "Warning on screen",
   lost: "Lost its place",
@@ -28,6 +30,26 @@ export const STOP_LABEL: Record<StopKind, string> = {
   shut_down: "Robot shut down",
   other: "Other",
 };
+
+/**
+ * The stops that are about the phone's setup, not the robot: a phone off its
+ * cable (Czedrick, 2026-11-13) or on an internet connection that is not
+ * American (Garreth, 2026-11-18). They are left out of the robot's finish
+ * rate, neither finished nor failed, but still show as stops everywhere else.
+ */
+export const NOT_THE_ROBOTS_STOPS: readonly StopKind[] = ["phone", "connection"];
+
+/** The robot's note when the phone's internet connection is not American,
+ *  sent as `connection_not_us: <country>` (warmup-connection.ts). */
+export const CONNECTION_NOT_US = "connection_not_us";
+
+/**
+ * A note's code: what comes before any ": detail", lower-cased.
+ * "connection_not_us: PH" is "connection_not_us"; "device_lost" is itself.
+ */
+export function noteCode(note: string | null): string {
+  return (note ?? "").split(":")[0]!.trim().toLowerCase();
+}
 
 /**
  * Sort the robot's stop note into a kind.
@@ -42,6 +64,9 @@ export function stopKind(note: string | null): StopKind {
   // phone_not_connected: the Air did not see the phone on its cable when the
   // warmup was due, so the robot never started (warmup-runner, 2026-11-13).
   if (n === "device_lost" || n === "phone_not_connected") return "phone";
+  // connection_not_us: <country>: the phone's internet connection is not
+  // American, so the robot did not start (warmup-runner, 2026-11-18).
+  if (noteCode(n) === CONNECTION_NOT_US) return "connection";
   if (n === "wrong_account") return "wrong_account";
   if (n === "warning_on_screen") return "warning";
   if (n === "feed_not_loading") return "feed";
@@ -157,10 +182,13 @@ export function buildOverview(input: {
   const weekReports = reports.filter((r) => week.has(etDay(r.startedAt)));
   const weekFinished = weekReports.filter((r) => r.outcome === "finished").length;
   // The finish rate measures the robot, not the cables (Czedrick, 2026-11-13):
-  // a warmup stopped because the phone was disconnected is left out of it
-  // altogether, neither finished nor failed. It still shows as a stop, under
-  // "Phone disconnected", in the reasons, the strips and Needs a look.
-  const weekRated = weekReports.filter((r) => !(r.outcome === "stopped" && stopKind(r.note) === "phone")).length;
+  // a warmup stopped because the phone was disconnected, or because its
+  // internet connection was not American (Garreth, 2026-11-18), is left out
+  // of it altogether, neither finished nor failed. It still shows as a stop,
+  // under its own name, in the reasons, the strips and Needs a look.
+  const weekRated = weekReports.filter(
+    (r) => !(r.outcome === "stopped" && NOT_THE_ROBOTS_STOPS.includes(stopKind(r.note))),
+  ).length;
 
   // Needs a look: the account's newest warmup stopped, within the week. One
   // that stopped and then finished has recovered and is left off.
