@@ -20,6 +20,1159 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-18 — One shared rule still allowed "read up, asked questions"
+
+**Where it came from:** found while writing the writer handover for Garreth.
+The shared slide rules every writer reads (`slide_rules_shared`) still said
+"reading up, asking questions or looking into them are all fine". That line
+was left over from the morning's loosening, and it contradicted his later ban
+and the voice rules.
+
+**What changed:** that line now matches the voice rules. She mentions
+peptides in passing, never says how she decided to start them, and never
+says who talked her into it unless her real post says so. The old text is
+backed up in the session scratchpad.
+
+**Verified:** read back from Supabase after the change. No test run since;
+the code checks already blocked these phrases, so this only stops the
+instructions from contradicting each other.
+
+## 2026-11-18 — Viral Theories writes a real viral theory again, not a vent story
+
+**Where it came from:** Garreth said Viral Theories "is weird and it should
+not be how we write it". We pulled all 67 past Viral Theories decks and found
+the lane was built as a "body theory" deck. Each one made a surprising claim
+about women's bodies after 40, explained why, and tied it to one small moment
+from her life. The best posted decks (LEA-B3) did exactly that. The writer
+had drifted into the same vent-story shape as Comparison and Divorce. Garreth
+chose "theory first": take the theory from real viral claims women share, and
+take her moment from a real comment. He also decided that any women's-health
+topic is fine, with weight and body theories first, and approved a check
+against repeated phrases.
+
+**What changed:**
+- **A bank of 34 real theories** (`viral_theory_bank` in the writers' shared
+  text in Supabase). We pulled 573 TikTok videos (the top 60 with their
+  spoken words and comments) and 213 Reddit threads. Each theory has what women
+  say, the reason they give, how many videos make the claim, and 3–8 real
+  comments copied word for word. Supplement and drink pitches, PCOS, hormone
+  therapy, GLP-1, injections and doctor-only symptoms were left out. 18
+  theories are marked weight and body, and 16 are mood and perimenopause.
+- **The Viral Theories writer (draft only) now:**
+  - picks an unused theory, weight and body about 2 decks in 3;
+  - takes one real comment as her moment;
+  - skips comments from women in menopause or outside their 40s, and
+    comments about serious illness or loss;
+  - no longer takes stories from the story bank.
+- **Six slides:**
+  1. the theory as a full sentence that surprised her;
+  2. her moment;
+  3. why it happens, in plain words;
+  4. why it's worse in her 40s, said by her and never as "women say";
+  5. what she does now, with peptides in passing;
+  6. where she is now.
+  The voice is the same one approved for the other lanes. The old "This is
+  me X. This is me now, Y" ending is gone, and every deck now has a caption.
+- **New checks:**
+  - numbers only from her own moment;
+  - no doctor or textbook words on the why slide;
+  - no "this is me now" ending;
+  - the same 4+ word phrase can't appear on two slides.
+  The editor also fails a deck that has no theory. Viral's list of feeling
+  words was widened (sad, frustrated, worried, tired, fed up, discouraged and
+  others). Comparison's draft got part of that wider list.
+
+**Verified:** five test runs of 2 decks each, none saved (216501, 216505,
+216508, 216511, 216520). In the last run both decks passed every check after
+one repair. The repeated-phrase check flags "at the back end of menopause"
+on an old deck and stays quiet on clean ones. Nothing is published. Viral
+Theories and Comparison are drafts; their live versions are untouched.
+
+**Things to watch:**
+- A real comment can hand her a big life fact. For example, one deck took
+  "divorce, anxiety, depression" from a Reddit post. Her divorce fits her
+  character, but the rest is new.
+- Nothing keeps her facts consistent from one deck to the next.
+- The typing step sometimes joins two sentences with no space.
+- Theories are used up over time, so the bank will need a refresh pull.
+
+## 2026-11-18 — Peptides said in passing, like real women do (all story lanes)
+
+**Where it came from:** Garreth said "Yes go ahead" to the plan in the entry
+below, which was built from the real posts we pulled.
+
+**What changed:**
+- **Planners no longer get a decision story or a recommender.** Comparison's
+  planner was handed one of five hard-coded "how she came to it" lines ("she
+  looked into it quietly…", "she kept asking the person who mentioned it", "sat
+  on the idea", "talked it over with a doctor") and a random kind person ("her
+  yoga instructor", "her sister"…). The other lanes had the same thing in their
+  own form. For story decks these are gone. A friend telling her about peptides
+  is only allowed when her real post says so.
+- **The peptide slide says it in passing:** a plain fact inside a sentence about
+  something else, like what she noticed, someone's reaction, a downside, nerves,
+  keeping it quiet, or sharing the credit with something else she did.
+- **The code check catches the decision story** (read up, asked questions,
+  thought about it, finally tried them…), **hype** (changed everything, game
+  changer, miracle, telling the viewer to try them) and **a recommender who isn't
+  in her post**. The editor fails the same three.
+- **The shared voice** explains how real women mention it. Its example lines are
+  now marked as showing how she talks only, never facts: one Jealousy test deck
+  picked up "$13,000" for a maid of honor from an example line that wasn't in
+  her post. That example no longer has the number.
+- Journey is unchanged: its lines can't mention peptides at all.
+
+**Verified:** 2 test decks per lane, saving off (Comparison run 216431,
+Jealousy 216432, Viral Theories 216430, Divorce Recovery 216433). In all 8
+decks peptides come up in passing, and none has a decision story, recommender
+or hype. Examples: "I kept walking once I was on peptides, but I wasn't making
+myself miserable over every walk anymore", "im on peptides now, but honestly,
+weighing less wouldn't make that okay." One false alarm showed up in
+Comparison ("I didn't feel defeated before starting" counted as a decision).
+The pattern was narrowed in all four lanes afterwards; that fix hasn't met a
+test deck yet. All lanes are still drafts; nothing published.
+
+**Still watching:** two Divorce Recovery decks both said "even on a peptide",
+and two Viral Theories decks both opened "I'm on peptides, but…". A new
+repeated phrase could become the next template. The typing step capitalized
+"Workouts" after "5 a.m." in one deck.
+
+## 2026-11-18 — Peptides: no more "I read up, asked questions, and started" (all story lanes)
+
+**Where it came from:** Garreth, on the review decks: "let's put back in the
+rules of not allowing this I read up, asked questions, and started. It looks
+fake and heavily promoting peptides." He had allowed that wording earlier the
+same day when he loosened the rules.
+
+**What changed:**
+- **The shared voice (`story_voice` in `writer_resources`) bans the decision
+  story again**, for every story lane: no read up, asked questions, looked into
+  them, did research, thought about it, took her time, talked to her doctor.
+  The old line suggesting "she read up, asked questions" is gone.
+
+**What we found:** all 8 sample decks on the review page used one template on
+the peptide slide: "[someone] mentioned peptides, I [read up / asked questions /
+thought about it], then started." The writers are told to write it that way
+("how she came to peptides is one plain line: who told her", plus a made-up
+recommender). A friend recommends it, she tries it, it works: that's the shape
+of a testimonial ad. We pulled about 1,500 real posts and comments where women
+talk about peptides and weight shots (Reddit, Threads, TikTok comments). Real
+women almost never tell how they decided. They say they're on it in passing,
+inside a sentence about something else ("I've lost 60lbs on it", "I didn't
+expect this reaction when I started"). Changing the lanes' peptide-slide
+instructions to match is waiting on Garreth's go-ahead.
+
+**Verified:** the live `story_voice` row was read back after the update and
+matches. No deck has been written with it yet. The code check on each lane
+doesn't block these phrases yet; that comes with the lane change.
+
+## 2026-11-18 — More human texture, and two samples per lane
+
+**Where it came from:** Garreth: "i like the tone now but we need to up a
+bit the number of informal words, missed spellings, and any minor nuances and
+ques that this is written by human that is emotional and vulnerable. Can you
+also make 2nd deck sample for all other decks similar to comparison".
+
+**What changed:**
+- **`story_voice` gets a new section, "She is emotional and a little
+  vulnerable".** A few per deck, different each time:
+  - admitting something;
+  - correcting herself ("I didn't cry. I cried.");
+  - repeating when it hurts;
+  - a small aside "(yes I'm still salty)";
+  - trailing off.
+
+  The casual-talk floor is raised to 4 of 8 slides (3 in the 5-slide lanes),
+  and idk, ok and salty now count as casual words.
+- **The typing step (`her_typing_v9`, every lane):**
+  - 2 to 5 visible typos per deck, mostly 3 or 4, varied;
+  - more real misspellings: wierd, untill, seperate, embarassed, u, ur, cuz,
+    gonna, wanna;
+  - slightly more lowercase starts and missing full stops.
+- **`her_typing_v10` bug fix, every lane:** the typing step turned the
+  writer's CAPS "I'M" into "iM" (Comparison run 216358). It no longer
+  touches words typed in capitals. Tested on 300 sample decks.
+- **Divorce Recovery:** its "flat sting, no joke" rule now applies only to
+  her line under his text, not to the story slides, so lol and emoji can
+  appear.
+
+**Verification:** two samples per lane, every run with saving off and every
+story handed back. All are on the review page.
+
+| Run | Lane | Result |
+| --- | --- | --- |
+| 216358 | Comparison | Both clean ("soo embarrassed", "like a million questions", "STILL"). |
+| 216360 | Jealousy | Deck 1 passed. Deck 2's copy is fine, but its picture step returned an unreadable reply. |
+| 216361 | Viral Theories | Deck 2 passed. Deck 1 was flagged because slide 6 jumps back in time after the peptide slide. |
+| 216362 | Divorce Recovery | Both opening lines failed the hook check. Deck 2 missed the casual-talk and feeling floors after its one repair. |
+| 216359 | Journey | Two lines. Most alternatives are rejected by its 45-character limit. |
+
+**Open:**
+- Divorce Recovery was handed story 1746, where the ex never texts her or
+  wants anything. The lane needs a text, so "hey" was made up. The story
+  picker should only give Divorce Recovery stories where the ex still wants
+  something from her.
+- Viral Theories' two decks share almost the same peptide line ("told me
+  about peptides, and I started them").
+
+## 2026-11-18 — The vibe is back after loosening (all story lanes)
+
+**Where it came from:** Garreth, after the loosened-rules decks: "I think the
+copies got worse. We lost the personality, tone and vibe that i liked on the
+last run. No mispellings, not much lol, ..., capitalized letters." Then: "i
+dont want them to be limited. It can appear more often but not too much the
+visible typo, expressions, etc."
+
+**What was measured** (Comparison, the run he liked vs the loosened run):
+
+| | Run he liked (216301) | Loosened run (216330) |
+| --- | --- | --- |
+| Words per deck | 110–138 | 164–170 |
+| Slides with casual words | 2–3 of 7 | 1–2 of 7 |
+| Typing step | added "soo", "sooo", "stilll" | only lowercase starts and missing full stops |
+
+**Cause:**
+- "No limit on casual words" was applied as "no minimum" as well as no
+  maximum.
+- With only the 30-word cap left, slides grew.
+- The typing step could pick no visible typo at all.
+
+**What changed** (floors only, no upper caps):
+- **`story_voice` gets a "Keep the vibe" section:**
+  - casual talk on most slides (at least 3);
+  - CAPS, lol or emoji, and "..." where she would use them;
+  - it varies from deck to deck, never on every slide and never forced;
+  - decks stay short, about 110–140 words, most slides 8–18 words.
+- **Checks in every lane fail a deck** with:
+  - casual talk on fewer than 3 slides;
+  - no CAPS word;
+  - too many words in total (Comparison over 150; scaled down for the
+    5-slide lanes).
+
+  Feelings on at least 2 slides and at least one lol or emoji stay.
+- **The typing step (`her_typing_v8`)**, in every lane:
+  - always at least one visible word typo, and 1 to 4 per deck, varied
+    (mostly 2 or 3);
+  - at most one dot quirk, and none if she already uses "..". The Viral
+    Theories test read heavy with three.
+- **Jealousy:** its editor no longer fails "my barista" for not naming a
+  specific person.
+- **Viral Theories:** the "kind person" wording that produced "A kind woman"
+  is replaced with plain wording.
+
+**Verification:** every run had saving off, and every story was handed back.
+
+| Run | Lane | Result |
+| --- | --- | --- |
+| 216354 | Comparison, 2 decks | "I was SO done", "I stilll wanted results NOW, tho … damn hard", "Apparently that makes ME cruel lol"; 123 and 139 words. |
+| 216353 | Jealousy | "it hurt like hell. She was my BEST friend", "silly me lol"; 90 words. |
+| 216352 | Viral Theories | "God forbid she gets upset lol", "HONEST"; 90 words. Hook failed after a retry (separate check). |
+| 216351 | Divorce Recovery | "soo", "didnt", "YES"; marked for review because it has no lol or emoji. |
+
+The Jealousy, Viral and Divorce runs used the typing step from before the dot
+limit, which is now added but not yet re-run.
+
+## 2026-11-18 — Writers follow Garreth's taste test and looser rules (all story lanes)
+
+**Where it came from:**
+- **The rules review.** Garreth: "we might need to loosen up some rules a bit
+  because AI writers tend to stick to following rules … so it outputs a
+  safe, common, and conventional writing".
+- **His rule changes.**
+- **His 20-round taste test.** The page is
+  https://claude.ai/artifact/4tYUbBpfMz5Wc87aZDzx8F, and his votes and
+  comments are in its `votes` collection.
+
+**What the taste test showed** (his own words in quotes):
+- **Straightforward, like telling a friend.** He picked this in 7 rounds.
+  He rejected anything that sounded like "narration", a "novel", "poetic",
+  "written" or "too neat".
+- **Plain but warm.** A run-on vent beat a cold short line ("too cold").
+  Saying the link out loud ("it hit so hard because") won.
+- **Named feelings.** "I was so embarrassed" beat "My face was on fire"
+  ("trying to be poetic").
+- **Her facts, not her narration.** Her post's exact words lost to a
+  retelling, but real numbers won.
+- **Voice touches he liked:** CAPS, lol and emoji, mild swearing, sarcasm,
+  questions to the viewer, "like / for like", heavy slang, and endings with
+  attitude.
+- **What he disliked:** a story opening with "So…", clipped dramatic
+  fragments, and ", so I left".
+- **Men's texts:** "hey" then "??" beat "been doing a lot of reflecting",
+  because men don't show that vulnerability.
+
+**His rule changes:**
+- Peptides can appear on more than one slide, but never on every slide.
+- Weight claims are allowed.
+- Real first names and nicknames are allowed (never full names), so the
+  name-leak block from earlier today is removed.
+- The only length rule is a 30-word cap, and never all short or all long.
+- Petty lines, casual words and CAPS have no limits.
+- The "what changed" slide and the ending can be anything (varied).
+- Feelings must appear on at least 2 slides, and lol or emoji at least once.
+- Any natural wording on the peptide slide ("read up", "looked into them" and
+  the like are fine).
+
+**What changed:**
+- **Shared rules (`writer_resources`):**
+  - `story_voice` was rewritten around his picks. The old copy-prone examples
+    are gone, and a "men text like men" section is new.
+  - `slide_rules_shared`: numbers allowed, peptides on more than one slide, no
+    stock-phrase ban.
+  - `hook_rules`: "plain, not messy" is replaced with "straightforward".
+  - `hook_hard_limits`: numbers, ages and years are allowed.
+  - `story_hook_rules`: slide number wording updated.
+  - The old versions are backed up in the session scratchpad.
+- **Comparison:**
+  - The slide instructions are loosened as above, and the slide-6 idea
+    rotation is removed.
+  - The story check is rebuilt with only the minimums he asked for.
+  - The editor carries his taste.
+  - The opening-line checks no longer ban numbers.
+- **Jealousy, Viral Theories, Divorce Recovery and Journey** got the same
+  changes, each mapped to its own slides. Viral Theories kept its structure
+  and theory slide. Journey only got what fits a one-line opener.
+- **Two false alarms fixed in every lane:**
+  - The clipped-sentence check read "a.m." and a lone emoji as sentence
+    breaks.
+  - The typing step turned "a.m. workouts" into "a.m.workouts".
+
+**Verification:** every run had saving off, and every story was handed back.
+
+| Run | Lane | Result |
+| --- | --- | --- |
+| 216330 | Comparison, 2 decks | Clean, no repair needed. |
+| 216333 | Jealousy | Passed everything. |
+| 216331 | Viral Theories | Passed after one repair (it added an emoji). |
+| 216332 | Divorce Recovery | His text is "can we talk", her real names and ending are used. It was marked for review only because of the "a.m." false alarm, which is now fixed but not re-run. |
+| 216329 | Journey | "Pounds, I'm done being a 4 out of 10 to you 😤" |
+
+**Open:**
+- Viral Theories used to cap slides at 25 words. A 30-word slide hasn't been
+  checked on its renderer.
+- Journey's 45-character limit rejects most lines that carry real specifics.
+
+## 2026-11-18 — Story slides connect (Comparison, Jealousy, Divorce Recovery)
+
+**Where it came from:** Garreth: "some decks like the first comparison deck,
+the story on some slides seems disconnected … i feel like slide 3 should be
+on slide 2 and slide 2 should be on slide 3. Just update how the story and
+copies on each slides connect but do not change the tone, voice, typing way,
+because it is good now." He also said he likes how Viral Theories is
+written, so that lane was left untouched.
+
+**What changed** (story decks only; the voice, tone and typing rules were
+not touched):
+- **Comparison's slide order:**
+  - Slide 2 is now the moment the opening line points to, with the words
+    said to her.
+  - Slide 3 is why it hit so hard: what she'd been trying for her weight.
+  - Slide 4 is how she felt and what she did right then.
+  - The planner, the slide-2 quote check and the editor's slide numbers
+    were updated to match.
+  - The writer is told to follow this order, not the plan's.
+- **Every slide must follow from the one before it**, or say how it
+  connects. "Before any of this" counts as a jump. The editors fail jumps and
+  a first slide that doesn't pay off the opening line. Divorce Recovery also
+  requires anyone new (the friend, the book page) to be introduced the first
+  time they appear.
+- **Jealousy:** the peptide slide links back as the reason she was losing
+  weight. It is no longer a "before any of this" flashback. A code check
+  fails that phrase.
+- **Fewer "And" starts in Comparison:** the first test opened slides 3 and 6
+  with "And" in both decks. That came from the example links in the prompt,
+  which are now removed, and at most one slide may start with "And". Not yet
+  tested; see below.
+
+**Verification so far:**
+- **Comparison run 216283:** slide 2 now follows straight on from the
+  opening line in both decks ("Was I supposed to let his mom call me fat in
+  front of my daughter?" → "His mom screamed, 'Your fat ass ruined my son!…'
+  My daughter was right there.").
+- **The editor did not run** in that test, and the Jealousy test (216286)
+  wrote nothing. **The shared OpenRouter key hit its $100 lifetime limit**
+  ("Key limit exceeded (total limit) … does not reset"). Jealousy's story
+  hold was released by hand. No more tests can run until the key's limit is
+  raised in OpenRouter.
+- **After Garreth raised the key limit:**
+
+  | Run | Lane | Result |
+  | --- | --- | --- |
+  | 216301 | Comparison, 2 decks | No problems left. The editor's new connection rule caught two jumps (to peptides, to the eviction), and the repair linked them ("I still wanted to feel better in my body. My yoga instructor swore by peptides…"). Only one slide starts with "And". |
+  | 216302 | Jealousy | Reads as one thread ("And all this started because my hairdresser mentioned peptides…"). The editor wrongly called the "stepped back" ending invented, so it now allows that one plain line when her post doesn't say how things ended. Not re-run. |
+  | 216303 | Divorce Recovery | One thread, no real names, and the friend is introduced before the book page. Marked for review because the slides are still too even. The opening line ("october's been interesting") is vague. |
+
+## 2026-11-18 — Story decks stay true to her post, her words, her names kept private
+
+**Where it came from:** Garreth: "Are these based on the stories our research
+agent have and the way of writing/speaking is based on real people? It seems
+not", and "focus on the structure of the copies. Sometimes it sounds
+professionally written and not usual casual white american speaking."
+
+**What a check against the real posts found:**
+- **Comparison and Viral Theories** kept the core moment but rewrote it.
+- **Divorce Recovery** mostly ignored the story:
+  - The lane's 30 made-up setups won over the real story (shirts, ironing,
+    spaghetti).
+  - This morning's text rotation forced a made-up excuse onto a story where
+    the ex really texted after his girlfriend left.
+- **One woman's age was changed:** a 31-year-old was written as 40-something.
+- **Sentence shape** (4,587 sentences from women's 40+ groups compared with
+  ours):
+  - ours opened with a scene and a comma ("Over coffee, …") 5 times as often
+    (8.9% vs 1.9%);
+  - ours used ", saying …" tails 3 times as often (4.4% vs 1.4%);
+  - ours rarely started with And, So, But or Then (2.2% vs 7.7%).
+- **Her post was cut short** at 2,500 characters (some lanes at 3,000).
+  That's 10 of 37 Comparison stories, 9 of 31 Divorce, 4 of 18 Jealousy, 3 of
+  18 Viral and 7 of 24 Journey; the writer never saw how those stories ended.
+  Journey's story path only got a short summary.
+
+**What changed** (all story lanes, drafts only):
+- **Voice guide (`story_voice`).** New sections:
+  - "It is her story, not a new one": her people, places, events and own
+    sentences; names swapped the same way every time; only the weight,
+    peptide and change parts are new.
+  - "How she builds a sentence", with the numbers above.
+  - "If her post gives her age, that is her age."
+- **The slides that retell her post** use her own sentences and only things
+  in her post. Comparison's slide 8 no longer offers made-up examples.
+- **Divorce Recovery, for story decks:**
+  - the made-up setups and text rotation are off;
+  - his text comes from what she says he sent.
+  - The opening line must come from a real line or fact in her post. A check
+    fails new framing, like "emergency contact".
+- **Code checks** fail:
+  - a sentence that opens with a scene and a comma;
+  - ", saying/hoping …" tails;
+  - writer words (which, although, eventually, somehow, notoriously,
+    "I decided to" and others). A word that is in her own post is allowed.
+- **The editors**:
+  - fail details on the retold slides that aren't in her post ("invented: …");
+  - allow the added parts.
+- **Her whole post now reaches every writer**, up to 8,000 characters.
+- **Privacy: real names.**
+  - In the Divorce Recovery test (run 216078), the editor flagged the swapped
+    names as "invented" and the repair put her real names back on the slides.
+  - Every editor is now told swapped names are on purpose.
+  - A new check (`realNames`/`nameLeaks`) blocks any real name from her post
+    on the opening line, slides, his text, captions or send line. It runs
+    before and after the repair; a leak left after the repair blocks the deck
+    (Divorce Recovery also skips saving it).
+  - Tested on 5 stories: it finds exactly the real names in story 1856 and
+    nothing in the other four.
+- **Bug fix:** the feelings check never counted "crying" (`cri(ed|es|ying)`).
+  Fixed in every lane.
+- **Jealousy:** a slide may no longer start mid-sentence. In run 216077,
+  slide 3 began "for losing weight. Seriously??".
+- **Journey:** its line must come from a real fact in her post.
+
+**Verification:** every run had saving off, and every story was handed back.
+
+| Run | Lane | Result |
+| --- | --- | --- |
+| 216081 | Comparison | "I filed eviction paperwork so she has 30 days, and yes, I canceled her Netflix too lol". The second deck was marked for review because "notoriously" was flagged, though it's her husband's word from her post; the check now lets words from her post through. |
+| 216077 | Jealousy | Her post is one line; nothing invented on the retold slides. |
+| 216073 | Viral Theories | Slide 3 is nearly word for word from her post. |
+| 216082 | Divorce Recovery | Her real story and her real ending, with names swapped (Matt, Ruth, Beth), and no real names after the repair. Marked for review: slides too even, and slide 6 opens like slide 4. |
+
+The page shows each deck next to her real post.
+
+**Still open:**
+- Slides still come out too even after the one repair.
+- The story picker can still choose stories about women under 35. The writer
+  no longer changes her age, but filtering by age is a separate change to the
+  story picker.
+
+## 2026-11-18 — The ex's text reads like a real ex (Divorce Recovery)
+
+**Where it came from:** Garreth on the slide 2 text, "abby's left, can we
+talk friday at 7 because i think leaving u was a mistake??": "No one does
+that and it feels unauthentic."
+
+**What was looked at:** about 115 Reddit posts about exes texting, from
+r/Divorce, r/ExNoContact, r/BreakUps and r/AmIOverreacting.
+- **Real ex texts are short and vague:** "I miss you", "hope you're doing
+  okay", "Am I blocked or like no."
+- **Or they use a pretext:** the $65 hoodie, "are you still in town?"
+- **Or they react to her:** "congratulations, I hope all your dreams come
+  true".
+- **They never explain the plot.** She learns the reason somewhere else.
+
+**What changed** (draft `MLp2no3qGDAcDuLD`, every deck in the lane; live
+is still 29795438):
+- **His text** is one or two bubbles of 2 to 12 words.
+- **Each deck gets one of four kinds of text:**
+  - a vague opener;
+  - a pretext about stuff;
+  - a reaction to her;
+  - a late-night check-in.
+- **Her line and slides carry the context:** what he's really after, or how
+  she found out.
+- **A code check fails his text** if it has:
+  - a bubble over 12 words, or more than 2 bubbles;
+  - "because" or "leaving you";
+  - the new partner's name;
+  - a booked weekday and time, unless it's about the kids or stuff.
+- **Story, opening line and slide 2 now agree.** The story writer drafts his
+  text in the deck's kind, and the slide writer starts from it.
+- **The opening line** may not name the new partner or quote his text.
+- **Verification:**
+  - Run 216061 produced "hey can we talk", but showed the opening line and
+    slide 2 disagreeing.
+  - Run 216063 produced "Still got my shirts?". The opening line passed its
+    check, and story, opening line and slide 2 match. The deck is still
+    marked for review because it has no short slide after its one repair.
+- **Not yet checked:** a two-bubble text on the rendered slide.
+
+## 2026-11-18 — Story decks vent instead of report (all story lanes)
+
+**Where it came from:** Garreth, reading the sample page: "I think it started
+to become flat again. Where are the nuances, expressions like 'lol'. Some
+emotions. I don't see it."
+
+**What was measured** (per 100 words, 86 real posts from women's 40+ Reddit
+groups against our 6 sample decks):
+
+| | Real posts | Our decks |
+| --- | --- | --- |
+| Feeling words | 1.2 | 1.5 |
+| Questions | 0.83 | 0.17 |
+| "I just…" | 0.16 | 0 |
+| Talking to the reader | 0.16 | 0 |
+
+Feeling words were not the gap. Real women think out loud and say what a
+feeling did to them; ours stated each feeling once and moved on. The old
+checks also only failed a deck with zero casual touches, so the writer aimed
+for the minimum.
+
+**What changed:**
+- **The shared voice guide (`writer_resources.story_voice`)** has a new
+  section, "She vents, she does not report". It asks for:
+  - at least one question to herself or the reader;
+  - an "I just…" moment;
+  - feelings on two or more slides, said with what they did to her;
+  - talking to the reader once if it fits;
+  - casual words on 3 to 5 slides (was 2 to 4);
+  - "lol" or an emoji once or twice.
+
+  It also says never to reuse the example lines.
+- **Story checks in Comparison, Jealousy, Viral Theories and Divorce
+  Recovery** fail a deck when it has:
+  - no question, where a question typed without a "?" still counts;
+  - a feeling on fewer than 2 slides;
+  - no "lol" or emoji anywhere;
+  - casual words on too few slides.
+
+  "lol" is now allowed up to twice.
+- **The story editors** also fail a deck that "reports instead of vents".
+- **Jealousy:** the writer is told its no-emoji and no-"!" rules cover the
+  hook only.
+- **Divorce Recovery:** its own rules fought venting. These changes are being
+  made now, for story decks only:
+  - the editor counted a feeling as a second "beat";
+  - a question used up one of the slide's 2 sentences;
+  - emoji were banned.
+
+**Verification:** test decks with saving off, every story handed back.
+
+| Run | Lane | Result |
+| --- | --- | --- |
+| 216050 | Comparison | Both decks have a question and a lol ("His mom was 63. Was she too old to behave at dinner? lol"). |
+| 216053 | Jealousy | "I just cried. My weight was the problem?" … "Cheaper that way lol." |
+| 216052 | Viral Theories | "Was I supposed to thank him for humiliating me lol". This deck is why typed questions without a "?" now count. |
+| 216051 | Divorce Recovery | Vents, but the hook failed, and its own rules flattened the feelings before the new checks ran. |
+| 216055 | Divorce Recovery, after relaxing those rules | "Abby's left him, so now he misses me? That's convenient lol." Marked for review: the hook check failed, and the editor sent back an empty reply (fixed by raising its limit to 12,000 tokens with low reasoning, as on Comparison). |
+
+**Divorce Recovery's relaxed rules** (story decks only):
+- A feeling or question about the same moment counts as part of that beat,
+  not a second one.
+- Her slides may have 3 sentences, and a question or a lone "lol" doesn't
+  count toward that.
+- Up to two slides may run to 28 words.
+- One emoji is allowed in the whole deck, but not in the hook.
+- The feeling-word list now also catches "couldn't stand", "couldn't look"
+  and "hated myself".
+
+**Still repeating:** Comparison's slide 4 came out the same shape in both
+decks ("I just smiled, SO angry." / "I just left, SO embarrassed.").
+
+## 2026-11-17 — The 40s voice on every lane, plus a varied ending and change slide
+
+**Where it came from:** Garreth on the Comparison decks: "i like the voice
+and tone now. Is it applied on all lanes?" He also asked for the ending and
+the change slide to be fixed.
+
+**Comparison** (draft `rUSLiVHflfg0hJLg`):
+- **The last slide** must say something concrete about where she stands now:
+  she doesn't go over there anymore, how the holidays go, what her kids see.
+  The divorce can come up in passing only. A check fails a slide 8 that ends
+  on "divorced (now)", or mentions divorce in 6 words or fewer.
+- **The change slide (6)** fails on "easier", workouts, exercise or the gym,
+  on top of "clothes looser".
+- **Each deck gets its own starting idea for slide 6**, picked from its story
+  out of six:
+  - saying yes to something she used to skip;
+  - someone noticing;
+  - a person or place feeling different;
+  - stopping a coping habit;
+  - being more up for things with kids or friends;
+  - photos.
+
+  Before this, run 216013 had both decks on photos.
+
+**The other four lanes** got the same voice, as drafts. One worker per lane
+ported it, mapped to each lane's own slides and rules:
+- **Jealousy** (`LNryf7UU2kxhfNvC`):
+  - a new voice step and one voice-repair round;
+  - voice problems are kept as review notes, not blocks, because a block
+    would skip the lane's editor and image steps;
+  - the editor sentences;
+  - Her Typing, which keeps its clean copy inside `review.typing` because
+    this lane saves every deck field as a column;
+  - this lane's own rule wins over the voice guide: no ages or counts
+    outside the quoted words.
+- **Viral Theories** (`QLzaVESTlkPsAkjv`):
+  - a story-only prompt and check for its 5 written slides (casual words on
+    1 to 3 slides, a 25-word cap);
+  - the editor sentences;
+  - the editor-reply fix (12,000 tokens, low reasoning);
+  - Her Typing.
+- **Divorce Recovery** (`MLp2no3qGDAcDuLD`):
+  - the draft only; the live version is still 29795438, and the 11-16 draft
+    changes are untouched;
+  - the prompt, checks and editor rules;
+  - Her Typing. It doesn't change capitals here, because the lane already
+    sets each line's capitals. Collect Decks now keeps a word in CAPS when it
+    lowercases a line.
+  - This lane is written British, so the writer is told to use British
+    casual words. Whether it should become American is open for Garreth.
+- **Journey** (`HzSsCHrhfMd6CZy4`):
+  - It writes one line, so only a short voice block and the slang and swear
+    checks apply, on story runs only.
+  - Garreth's decision stands: the old prompt runs when no story is used.
+  - The shared voice guide isn't attached, because it bans "pounds" and every
+    Journey line names the weight.
+  - Her Typing isn't added.
+
+**Verification:** one test per lane, all with saving off, every story handed
+back, every run successful. The decks are on the review page.
+
+| Run | Lane | Result |
+| --- | --- | --- |
+| 216027 | Comparison, 2 decks | Varied change slides ("saying yes to friends", "my own backyard felt a little less awful"). Endings: "I still don't think I owed his mom Christmas dinner…", "My ex can pay for 'temporary' himself lol." No problems left. |
+| 216026 | Jealousy | Passed. The voice note says slides are still too even after the repair. |
+| 216016 | Viral Theories | Passed after one repair. |
+| 216015 | Divorce Recovery | Passed after one repair. |
+| 216014 | Journey | "Pounds, I'm done being rated by you 😤" |
+
+**Divorce Recovery is now American** (Garreth, after being asked: "Yes do it
+for divorce recovery"; the audience is US only). Draft only; live is still
+29795438.
+- **Everywhere in the lane, not only story decks.** The persona, setups,
+  story rules, examples of his texts, hook and editor prompts, and picture
+  descriptions are all switched: Mom, dollars, American words and spellings,
+  American names (Colin→Craig, Gemma→Jenna, Kayleigh→Kayla…), and
+  #divorcedmom / #singlemom.
+- **A new code check fails British words in any part of a deck:** Mum,
+  bloody, knackered, gutted, mate, colour, realise, favourite, whilst, £,
+  quid.
+- **The lane's other rules stay** (no "!", no dashes, the slide limits),
+  because none of them is British.
+- **Verification:** execution 216033, saving off, story handed back.
+  - No British words came out.
+  - The deck is marked for review: the hook check failed after a retry (that
+    check is older than this change), and the slides were still too even
+    after the repair.
+
+**Left as they are** (Garreth said to ignore these for now):
+- The typing step can add both ".." and "..." to one deck.
+- Jealousy and Divorce Recovery don't rotate the change idea, and both
+  landed on photos.
+
+## 2026-11-17 — Story decks talk like a woman in her 40s (Comparison)
+
+**Where it came from:** Garreth, after the typing step: "Still feels
+unnatural. Though the misspelled and other characters looks good. But somehow
+we need to incorporate some slang words and how really a 40 to 50 year old
+white american types."
+
+**What was measured:**
+- **Sources.** About 2,200 posts and comments from the month's top threads in
+  ten Reddit groups for women over 40, perimenopause, menopause, divorce and
+  GLP-1 weight loss, plus our 1,470 saved TikTok comments.
+- **The tone.** Women that age are not sad the whole way through. They are
+  dry, a bit petty, and funny about the worst part. Examples: "Nope nope
+  nope", "Yes, I am that petty", "my dumbass ex", "lol" or 🙄 after a painful
+  line, one word in CAPS, and "..." before the punchline.
+- **How much slang.** It is sprinkled, not dense: each word shows up in 1 to 8
+  in 100 comments.
+- **No Gen Z words.** No slay, bestie, ngl or rn.
+- **Where it's from.** The Reddit pull cost about 90 ScrapeCreators credits.
+  The raw text stays in the session scratchpad only.
+
+**What changed** (Comparison draft, story decks only):
+- **The voice guide (`writer_resources.story_voice`) is rewritten for her
+  age.**
+  - It says she is an American woman in her 40s.
+  - It adds a "how women her age actually talk" section with 13 real lines.
+  - It asks for 2 to 4 casual touches per deck, on different slides.
+  - Mild swearing is allowed; stronger words get a star (sh*t).
+  - Gen Z slang is banned.
+  - The old text is backed up in the scratchpad.
+- **New code checks** send a deck to repair when it:
+  - has no casual touch at all ("reads too clean");
+  - has casual words on more than 4 slides;
+  - uses Gen Z slang or an uncensored swear;
+  - has more than 2 words in capitals or more than one "lol".
+- **The story editor is told** that casual words, mild swearing, capitals,
+  "..." and a petty line are right, so it doesn't fail them as unpolished.
+- **Her Typing** can now also add "...", not only "..".
+
+**Verification:** the checks were tested by hand on three sample decks (a
+clean one, an overdone one, and a fine one), and each got the expected
+result.
+
+Live test: execution 216004, 2 decks, saving off.
+- **Casual touches appeared, without overdoing it.** Deck 1 has "felt like
+  crap", "SO embarrassed. I left." and "Honestly, that part was hard to stop."
+  Deck 2 has "honestly" and "I remembered every damn word."
+- **Neither deck has a petty beat or a "lol".**
+- **Still open:**
+  - Slide 6 is the same formula in both decks ("Slowly, my clothes felt less
+    tight").
+  - "I looked into them" is still on slide 5.
+  - Deck 2's hook failed its check after a retry.
+  - Deck 1's last slide went flat after the editor removed a divorce that
+    wasn't in her post.
+
+**Follow-up the same day (Garreth: "I don't like this type of 2 short
+sentences 'I was furious. I smiled.' … sounds scripted and tried being poetic
+and not natural"):**
+- **No more clipped pairs.**
+  - The slide instructions now say a short slide is one thing she would
+    really say ("Yep.", "I just walked out lol"). Two clipped sentences set
+    against each other are banned.
+  - A code check catches any two sentences of 4 words or fewer in a row. A
+    reaction word like "Yep." doesn't count.
+  - The story editor fails them too.
+- **Slide 5 (peptides)** is said the way she'd tell a friend. "I looked into
+  them" and "I did my research" now fail the check.
+- **Slide 6** must be one specific change from her life: something she did
+  again, or something someone noticed. "Clothes looser / less tight" now
+  fails the check.
+- **One dry, petty or funny take** is asked for, usually on slide 7 or 8. The
+  editor fails a deck that has none.
+- **The editor no longer treats "she is divorced now" as drift** when her
+  husband is in the story. That rule is ours on purpose. It had flattened
+  deck 1's ending.
+- **Verification:** execution 216010, 2 decks, saving off. Both hooks passed,
+  and neither deck has a clipped pair, "looked into them" or "clothes looser".
+  - Deck 1: "SOOO embarrassed I just left." Its petty line: "His mom was 63,
+    by the way lol".
+  - Deck 2: "I was pissed but actually smiled."
+  - Still open: both decks end "We're divorced now", both change slides are
+    "exercise felt easier", and deck 2's slide 7 is muddled.
+
+## 2026-11-17 — Story decks get uneven rhythm and her own typing (Comparison)
+
+**Where it came from:** Garreth: "it feels rhythmic like equal length of lines
+and if you read it, it sounds robotic … some are not capitalized, some are a
+bit misspelled, some have doubled letters … some use .. and uneven spaces …
+please pull the real typed texts."
+
+**What was measured** in our own collected text:
+
+| Source | What real typing looks like |
+| --- | --- |
+| 1,535 comments | 29% no full stop at the end, 14% start lowercase, 24% emoji, 6% "!!" or "??", 5% ".." |
+| 181 Reddit posts | 17% missing apostrophes, 15% "i", 13% "..", 23% double spaces |
+| 325 viral TikTok slides | fairly clean (2% start lowercase) |
+| 33 viral carousels | slide lengths vary about twice as much as our test deck |
+
+**What changed** (Comparison draft, story decks only):
+- **The writer gets real comments as examples.** `story_voice` now has 8 real
+  comments showing how women type and talk, and says not to add typos itself.
+- **Uneven slides.** The slide plan asks for 2 or 3 slides of 2 to 6 words and
+  1 or 2 of 20 to 30. A code check sends a deck to repair when its slide
+  lengths are too even or it has no short slide. The cap is now 30 words.
+- **A new step, *Her Typing*, runs after every check.** At about the measured
+  rates, it adds:
+  - lowercase slide starts;
+  - missing last full stops;
+  - one or two of: "i", a missing apostrophe, "..", a stretched "soo", a
+    common misspelling ("loose", "alot", "bc"), a doubled letter, or a
+    missing space after a full stop;
+  - sometimes a lowercase caption.
+
+  It never touches the word peptides or the words said to her, and it keeps
+  the clean text in `clean_slides`. The step that gathers decks now reads from
+  it.
+- **Not added:** double spaces, because the renderer may collapse them.
+
+**Verification:** execution 215974, 2 decks, saving off, both stories handed
+back.
+- Slides ran 3 to 26 words.
+- The typing step added three lowercase starts and "couldnt" to one deck, and
+  "to loose weight" and missing full stops to the other.
+
+**Still to fix:**
+- Slide 6 came out almost the same in both decks ("Slowly, my clothes felt
+  looser").
+- "I looked into them" keeps appearing.
+- One hook failed its check after a retry.
+- The other four lanes are unchanged.
+
+## 2026-11-17 — Story decks written as a normal woman, not a writer (Comparison first)
+
+**Where it came from:** Garreth: the story decks read "made by a writer
+rather than a normal person ... not relatable, feels fake and performative",
+and "the point of pulling real posts and comments is for the writer to write
+as a normal woman battling these emotions". The real posts behind our
+stories that reached over a million views are plain and specific. Ours were
+compressed and literary.
+
+**Causes found:**
+- The Character 6 voice guide teaches a writer's tricks: objects standing in
+  for feelings, a joke in the middle of a serious moment, a neat closing line.
+- The planner had to invent a before-and-after scene.
+- The slide writer never saw her post, only an outline.
+- Slides were capped at 16 words, and ages, years and counts were banned.
+
+**What changed:** in the Comparison writer's draft, on story decks only.
+Decks written from a random topic are untouched.
+- **A new shared voice text, `story_voice`** in `writer_resources`, for every
+  lane to use:
+  - write as the woman herself and keep her words;
+  - say what happened and how she felt, with real specifics;
+  - two real posts that reached millions show the tone;
+  - no writer's tricks, no neat last line, no lesson.
+- **The slide writer and repair step** read her post and its top comments,
+  and follow a plain slide plan of 10 to 45 words a slide.
+- **The planner** loses the voice guide's tricks, the invented
+  before-and-after scene, the Character 6 life details and the "read up,
+  asked questions" line.
+- **The checks:**
+  - ages and counts are allowed, with one emoji at most;
+  - pounds, sizes and counted time on the peptide slides are still caught;
+  - the final check compares the deck with her real post.
+- **The Character 6 voice guide itself is unchanged.** It is synced from a
+  shared doc, and other writers read it.
+
+**Verification:** two runs with saving off on the same story as before.
+- **Execution 215955** showed the leftover "read up" line and an unfair final
+  check; both were fixed.
+- **Execution 215956** passed every check, with no repair. The old and new
+  decks are side by side on the review page
+  (https://claude.ai/artifact/2FinYWvTK4zaj8uaSVy9fB).
+
+**Shorter, after Garreth's review** ("I think it is a little bit too long"):
+- Each slide is now one or two short sentences, at most 25 words (was 45).
+  `story_voice` says the same.
+- The final check (deepseek) had been running out of its 6000-token budget
+  while thinking and returning nothing. It now gets 12000 tokens with low
+  thinking.
+- **Execution 215967:**
+  - slides ran 9 to 21 words;
+  - the final check flagged "I was furious" as not in her post, and the
+    repair removed it;
+  - the deck ended with no problems.
+
+**Not yet done:**
+- Slides can be longer than before (25 words, was 16), and nobody has checked
+  the renderer fits them.
+- The other four lanes still write the old way.
+
+## 2026-11-17 — Garreth's five decisions on the story decks
+
+**Where it came from:** Garreth answered the five open questions on the review
+page (https://claude.ai/artifact/2FinYWvTK4zaj8uaSVy9fB).
+
+1. **Jealousy:** when a story has no real quote, the writer may invent a likely
+   line for the person who hurt her. No change was needed.
+2. **Divorce Recovery** takes only stories where the ex still wants something
+   from her.
+   - The lane description in `story_lanes` says so.
+   - All 169 stories were scored again for this lane. 31 now fit at 7 or more
+     (was 53).
+3. **3-Slide Journey** uses its old prompt by default. A new form question,
+   "Build from a real story?", turns stories on.
+4. **Numbers are allowed inside the exact words said to her**, in quotes
+   ("For looks, I gave you four out of ten").
+   - Her own lines still never count weeks or months.
+   - Pounds, sizes and other units are still caught everywhere, quoted or not.
+   - Updated: `slide_rules_shared`, and the checks and prompts in Comparison,
+     Jealousy, Viral Theories and Divorce Recovery.
+5. **Publishing waits** until everything is settled. All five writers stay
+   drafts.
+
+**Verification:**
+- **Divorce Recovery** wrote a new deck with saving off (execution 215951).
+  - The story is an ex who comes back wanting her (lane fit 10), and the hook
+    passed first time.
+  - The deck's final editor got no answer from any of its three AI models,
+    so the deck is marked for review. That may be a passing error or low
+    OpenRouter credit; not checked yet.
+- **3-Slide Journey** ran with the default (execution 215949) and took no story.
+- **The quoted-number checks** were tested on sample lines in each writer, not
+  in a full run.
+
+## 2026-11-17 — Right stories, hooks that say what happened, and one set of slide rules
+
+**Where it came from:** Garreth, on the first test deck from each lane: "Yes
+go ahead fix 1 then 2 and 3".
+
+**Fix 1: the right stories.**
+- **New rule for every lane.** The job that matches stories to lanes (n8n
+  *Story Lane Fit*, published) now gives a story 0 to 3 for a lane when:
+  - it has no moment about her own weight or body. Someone else's body,
+    menopause or marriage trouble alone don't count.
+  - she is told she is too thin.
+  - surgery or a weight-loss drug changed her body.
+- **Three lane descriptions changed:**
+  - Divorce Recovery says its stories don't need a weight moment.
+  - Viral Theories counts menopause only when her body is part of it.
+  - 3-Slide Journey skips stories where she has already lost the weight.
+- **All 169 waiting stories were scored again.** The old scores are kept in
+  `story_lane_fit_bak_20261117` (it can be dropped once this settles). The
+  job now scores 60 stories a run instead of 30.
+- **Stories that fit (7 or more), before → after:**
+  - Comparison 40 → 37
+  - Divorce Recovery 59 → 53
+  - 3-Slide Journey 36 → 24
+  - Jealousy 19 → 18
+  - Viral Theories 35 → 18
+- **The three wrong stories from the first tests now score 1 to 3** in the
+  lanes that took them.
+
+**Fix 2: Divorce Recovery hooks.** On story decks:
+- No hook may open on a time word.
+- The judge marks down a hook that gives away his text on slide 2.
+
+**Fix 3: one set of slide rules.** A new `writer_resources` text,
+`slide_rules_shared`, goes to every slide and repair writer:
+- no numbers as digits or words;
+- no counted weeks or months;
+- no stock lines about how she decided ("after researching", "read up",
+  "talked with my doctor");
+- peptides are linked only to a slow change in her weight;
+- she is divorced.
+
+Each writer's code check now catches number words, counted time and those
+stock lines, and sends the deck to its repair step. Jealousy no longer gives
+its writer a number of months. In Comparison, any doctor on the peptide
+slide is also caught.
+
+**Verification:** one new deck per lane with saving off. Every story was
+handed back, and no new deck had a number or a stock line.
+
+| Lane | Run | Result |
+| --- | --- | --- |
+| Comparison | 215929 | Clean, apart from "I called my doctor", which is now caught |
+| Jealousy | 215931 | Clean. Its hook quote is invented because the story has none. |
+| Viral Theories | 215928 | Right story now. Slide 3 reads garbled, and a check raised a false alarm. |
+| Divorce Recovery | 215927 | Followed the rules, but swapped the real story for the lane's stock plot |
+| 3-Slide Journey | 215930 | Right story now |
+
+The decks are on a review page for Garreth:
+https://claude.ai/artifact/2FinYWvTK4zaj8uaSVy9fB
+
+All five writers are still drafts.
+
+## 2026-11-17 — The other four writers can take real stories (drafts, one test deck each)
+
+**Where it came from:** Garreth asked whether the narration problem was only
+in Comparison: "Can we produce 1 deck for each lane for me to check using
+our updated infrastructure". This covers tickets SW-05 (Jealousy, Viral
+Theories), SW-06 (Divorce Recovery) and SW-07 (3-Slide Journey).
+
+**What changed:** each writer below now asks `next_story` for its lane and
+ends with `finish_story_run`. Each falls back to its old source when no story
+comes back, and the hook writer and judge read the shared `story_hook_rules`
+and `story_hook_judge`. All four are saved as drafts, and none is published.
+- **Jealousy** (`LNryf7UU2kxhfNvC`, off): takes the story instead of
+  `jealousy_insights`. It has a new save switch, off for now.
+- **Viral Theories** (`QLzaVESTlkPsAkjv`, off): takes the story instead of
+  `over40_insights`, which had only 5 approved stories left.
+- **Divorce Recovery** (`MLp2no3qGDAcDuLD`, live): the story feeds its
+  existing seven-step story writer. The British wording stays. The draft
+  sits on top of three unpublished changes from 11-16: picture names on
+  each slide, plus outfit and before/after. Publishing it would ship those
+  too.
+- **3-Slide Journey** (`HzSsCHrhfMd6CZy4`, off): one story per hook, with a
+  save switch on the form.
+
+**Verification:** one run each with saving off, and every story was handed
+back.
+
+| Lane | Run | Story | Result |
+| --- | --- | --- | --- |
+| Jealousy | 215881 | 375, fired as maid of honor after losing weight | Good fit. Slide 5 says "Four months". |
+| Viral Theories | 215880 | 58, menopause and her husband's touch | No weight moment. Keeps her married. Implies peptides changed it. |
+| Divorce Recovery | 215879 | 1856, ex comes back | All five hooks open on a time word. The winner nearly gives away his text. |
+| 3-Slide Journey | 215878 | 1058, "too skinny" after surgery | Picked a story already excluded for Comparison. The line it chose fights the after photo. |
+
+**Not yet done:** no save-on run in these four, and nothing is published.
+
+## 2026-11-17 — Hooks built on a real story say what happened, not where
+
+**Where it came from:** Garreth, on the first two saved story decks
+(CC-0026, CC-0027): "Why does the hook on those 2 decks sound like
+narration?" Five causes were found in the Comparison writer:
+1. It was fed sentences from the middle of her story instead of short lines.
+2. It hid the whole event to keep slide 3 a surprise.
+3. One of the five hooks it must write had to open with a time or a place.
+4. The research agent's drafted hooks were allowed in unchanged.
+5. The hook judge was told to prefer hooks that sound like those
+   storytelling lines, and it gave every hook full marks.
+
+**What changed:**
+- **Two shared rule texts.** They live in `writer_resources` as
+  `story_hook_rules` (for the hook writer) and `story_hook_judge` (for the
+  judge). They are written once, so every lane that takes stories reads the
+  same rules. They say:
+  - build from the post's own title and the most-liked comments first;
+  - say plainly who did what to her, keeping only the exact words said to
+    her for slide 3;
+  - never open by setting a scene;
+  - treat drafted hooks as material to rework, never as finished hooks;
+  - the judge compares the hooks against each other, and a hook that holds
+    back who did what to her scores 0 on curiosity.
+- **In the Comparison writer**, on story decks only:
+  - the post title now comes first in the lines the hook is built from;
+  - the "time or a place" hook becomes "who did what to her";
+  - two small new steps give the judge the shared judge rules.
+
+  Decks written from a random topic are unchanged.
+
+**Verification:** a run with saving off (execution 215875, 2 decks, new
+stories). Every candidate hook in both decks said who did what. The winners:
+- *I let his mom move in. She mocked my body in front of the neighbors.*
+- *His best friend judged my daughter's body at my husband's birthday
+  dinner.*
+
+Both stories were handed back ("recorded 0, released 2").
+
+Seen and not fixed:
+- The second story is about her daughter's body rather than hers.
+- That deck's slide 3 has "Lose ten pounds". The writer's own check caught
+  it and marked the deck for review.
+
+The change is saved as a draft and not yet published. CC-0026 and CC-0027
+keep their old hooks.
+
+## 2026-11-17 — The Comparison writer builds each deck on a real story
+
+**Where it came from:** the story wiring plan, ticket SW-04 (Comparison
+first). Garreth said to include the two unfinished Comparison changes from
+11-12 (decks written side by side; judges get more room to answer) and to
+test three decks with saving off first.
+
+**What changed:** in the Comparison Carousel writer (n8n
+`rUSLiVHflfg0hJLg`), each deck now starts by taking a story from the Story
+Research Agent (`next_story`, the pick-up point below), instead of a random
+topic and a fixed list of forum lines.
+
+- **The planner gets the story.** It gets her account, what readers said,
+  the most-liked comments and why the story fits the lane. It is told to keep
+  the story's people, moment and the words said to her (they become slide 3),
+  to add how she tried to lose weight, and never to copy anything that could
+  identify the woman who wrote it.
+- **The hook writer gets the story's own lines.** Her sentences, the
+  most-liked comments and the hooks the agent already drafted for the story
+  (and, later, hooks proven in views) replace the fixed lines. The hook checks
+  are unchanged.
+- **One call at the end.** A new database function, `finish_story_run`,
+  records each saved deck against its story and lets every other story that
+  run held go at once. With saving off, nothing is recorded and every story
+  goes back. Each saved deck also carries its story's number.
+- **The old way stays as a fallback.** If no story is left, the database call
+  fails, or a run asks for a named topic (or `"stories": false`), the deck is
+  written from a random topic as before.
+- **What the run sends back** now ends with the batch plus which decks were
+  saved and what happened to the stories (it used to be the first saved row).
+
+**One brief tightened.** The third test story was about a husband who calls
+her "too skinny" after weight-loss surgery: it scored 9 for the lane but
+cannot end the way every Comparison deck does. The Comparison brief now
+says to skip stories where she is told she is too thin, or where surgery or
+a weight-loss drug changed her body, and the two stories like that were sent
+back to be scored again.
+
+**Verification:** a real run with saving off (execution 215842, 3 decks,
+3.5 minutes). Each deck took a different story (all scoring 9, lane fit 9),
+all three passed the writer's own checks (one after its repair), and all
+three stories were let go at the end ("recorded 0, released 3"). One deck
+used a hook the agent had drafted for its story. The new function was first
+run inside a rolled-back test (one deck saved, one not: recorded 1,
+released 1).
+
+**Published and run with saving on** (Garreth: "publish it and do the 2-deck
+run with saving on"). Live version `d39dc799`. Execution 215863, 2 decks,
+2 minutes 15 seconds: both saved as CC-0026 and CC-0027 in batch
+`cc-20261117-story`, both on Hold for approval as usual, neither flagged by
+the writer. Both stories are now recorded as used against their deck and
+hook (`story_uses` rows 8 and 9), so neither can come back to Comparison.
+**Seen in the decks, not fixed:** CC-0026 again says "four out of ten"
+(numbers spelled out get past the number check); CC-0027 mentions "a baby",
+which does not fit Character 6 (mid 40s, two kids), and its slide 2 says the
+first way "shrank" her although that way is meant to fail.
+
+## 2026-11-17 — Stories and hooks get a pick-up point that any writer can use
+
+**Where it came from:** Garreth gave the go to build the story wiring as
+planned (docs/STORY-AGENT-WRITER-WIRING-PLAN.md), with one condition: "it
+should allow us to expand and be flexible enough that it can extend to new
+workflows and how a new workflow pulls from the right stories and hooks".
+
+**What changed:** the database side and the lane-fit job are built. No writer
+uses them yet; each Character 6 writer switches over on its own, Comparison
+first.
+
+- **One list of lanes.** `story_lanes` has one row per workflow that takes
+  stories: its key, a short brief in plain words describing what kind of story
+  fits, and its slide count. That row is the only thing a new workflow needs.
+  The five Character 6 lanes are in it.
+- **Lane fit, scored by the agent's side.** A new n8n workflow, *Story Lane
+  Fit* (`ChyrbxyPvYOppSfQ`, every hour at :20), finds waiting stories (score 7
+  or more) that have no fit score yet for some lane, and scores them 0 to 10
+  against each lane's brief, 10 stories a call. It reads the lanes from the
+  list, so a new lane's stories get scored with no change to the job. About
+  a fifth of a cent per 30 stories.
+- **"Next story for my lane".** One call, `next_story('<lane>')`, gives a
+  writer the best story it may use (score 8 or more, fits the lane at 7 or
+  more, used fewer than 5 times, never before in that lane; falls back to 7s),
+  holds it for the run, and hands back everything in one bundle: the story,
+  its tags, what the comments said, the most-liked comments, the hooks the
+  agent drafted for it, and the proven hooks (this lane's first, then ones on
+  the same theme).
+- **Recording a use.** After saving a deck, the writer calls
+  `record_story_use` with the deck's id and its hook; a run that writes
+  nothing lets the story go (or it is let go after 12 hours). `story_uses`
+  keeps every use, and the database refuses a second use in the same lane.
+- **Breakout check.** Every day at 9am ET the database looks up the best
+  single post of every recorded deck on Instagram, TikTok and Facebook. When
+  one reaches 3,000 views, the deck's hook goes into `hook_library` as
+  `proven`, with its lane and view count. The 3,000 is one setting
+  (`story_wiring_settings`) and a lane can have its own.
+
+**Lane briefs, reworded once.** In the first scoring run Comparison matched 0
+of 30 stories and 3-Slide Journey 2, because the briefs asked for stories
+that were already about comparing diets. Reworded to ask for what the story
+must supply (the person and the moment around her weight; the writer adds the
+rest): Comparison then matched 11 of 30, Journey 8. The briefs are plain rows
+anyone can edit.
+
+**Verification:** every function was run inside a rolled-back test first:
+picks the top story, refuses the same story twice in a lane, lets another
+lane take it, and a deck over the bar (tested at 900 views with a real
+Comparison deck) sends its hook in as proven once, not twice. That test found
+one bug (the breakout check wrote a column `hook_library` fills itself),
+fixed before anything used it. Three real lane-fit runs saved every score
+asked for (150 of 150 on the first). Permissions read back as service role
+only. Not yet met a real writer run or a real breakout: no deck has been
+recorded yet.
+
 ## 2026-11-16 — Story Research Agent reads how people reacted to each story
 
 **Where it came from:** Garreth asked for the agent to collect the comments
