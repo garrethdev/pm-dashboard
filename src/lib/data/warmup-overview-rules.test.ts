@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildOverview, etDay, lastDays, stopKind, type OverviewReport } from "@/lib/data/warmup-overview-rules";
+import {
+  STOP_LABEL,
+  buildOverview,
+  etDay,
+  lastDays,
+  noteCode,
+  stopKind,
+  type OverviewReport,
+} from "@/lib/data/warmup-overview-rules";
 import { diaryForReview } from "@/lib/data/warmup-report-review";
 import { parseWarmupReview } from "@/lib/data/warmup-review-shape";
 
@@ -16,6 +24,17 @@ describe("stopKind", () => {
     expect(stopKind('error: refused to swipe: it would start on "Create anytime"')).toBe("lost");
     expect(stopKind("something new")).toBe("other");
     expect(stopKind(null)).toBe("other");
+  });
+
+  it("reads a note's code before any detail, so the connection stop is one kind whatever the country (2026-11-18)", () => {
+    expect(noteCode("connection_not_us: PH")).toBe("connection_not_us");
+    expect(noteCode("device_lost")).toBe("device_lost");
+    expect(noteCode(null)).toBe("");
+    expect(stopKind("connection_not_us: PH")).toBe("connection");
+    expect(stopKind("connection_not_us: unknown")).toBe("connection");
+    expect(stopKind("connection_not_us")).toBe("connection");
+    expect(stopKind("connection_not_usable")).toBe("other");
+    expect(STOP_LABEL.connection).toBe("Connection not American");
   });
 });
 
@@ -99,6 +118,25 @@ describe("buildOverview", () => {
     });
     expect(onlyPhone.today.finishRate).toBeNull();
     expect(onlyPhone.today.stopped).toBe(1);
+  });
+
+  it("leaves a connection that is not American out of the finish rate too, but still shows it as a stop (2026-11-18)", () => {
+    const o = buildOverview({
+      now,
+      accounts: [account("10", "a")],
+      runs: [],
+      reports: [
+        report({ id: "1", outcome: "stopped", note: "connection_not_us: PH", minutes: 0 }),
+        report({ id: "2", startedAt: "2026-10-27T14:00:00Z" }),
+        report({ id: "3", outcome: "stopped", note: "feed_not_loading", startedAt: "2026-10-26T14:00:00Z" }),
+        report({ id: "4", outcome: "stopped", note: "connection_not_us: unknown", startedAt: "2026-10-26T18:00:00Z", sessionNo: 2 }),
+      ],
+    });
+    // One finished of the two the robot actually ran.
+    expect(o.today.finishRate).toBe(0.5);
+    expect(o.today.stopped).toBe(1);
+    expect(o.reasons).toEqual(expect.arrayContaining([{ kind: "connection", count: 2 }, { kind: "feed", count: 1 }]));
+    expect(o.needsLook.map((n) => n.kind)).toEqual(["connection"]);
   });
 
   it("asks for a look only when an account's newest warmup stopped", () => {

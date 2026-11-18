@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Compass,
+  Globe,
   Hourglass,
   Power,
   Robot,
@@ -47,6 +48,7 @@ import { cn } from "@/lib/utils";
 
 const STOP_ICON: Record<StopKind, React.ComponentType<{ className?: string }>> = {
   phone: SmartphoneOff,
+  connection: Globe,
   wrong_account: UserSwitch,
   warning: ShieldAlert,
   lost: Compass,
@@ -424,7 +426,7 @@ export function WarmupsView({ data }: { data: WarmupOverview }) {
           label="Finish rate · 7 days"
           value={rate == null ? "–" : `${Math.round(rate * 100)}%`}
           ring={rate}
-          hint="Warmups stopped because a phone was disconnected are left out."
+          hint="Warmups stopped because a phone was disconnected, or its connection was not American, are left out."
         />
       </div>
 

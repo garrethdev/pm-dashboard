@@ -35,7 +35,7 @@ The people reading your answer run the phones but are not developers. Write in p
 
 Work out:
 - what happened, in order, and why the warmup ended
-- where the problem is: "phone" (the phone or its USB connection, e.g. it disconnected or locked), "platform" (the app: an update, a pop-up, a slow feed, a changed screen), "robot" (the robot misread a screen or got lost, and the app itself looked normal), "account" (the wrong account was signed in, or the account is logged out, restricted or warned), "none" (the warmup finished normally), or "unknown"
+- where the problem is: "phone" (the phone, its USB connection or its internet connection, e.g. it disconnected or locked, or a connection_not_us stop: its internet was not American, usually its proxy), "platform" (the app: an update, a pop-up, a slow feed, a changed screen), "robot" (the robot misread a screen or got lost, and the app itself looked normal), "account" (the wrong account was signed in, or the account is logged out, restricted or warned), "none" (the warmup finished normally), or "unknown"
 - whether the platform showed anything that suggests the account itself is at risk: a warning, a restriction, a ban notice, a login or verification wall
 - the single most useful thing for a person to do next
 
