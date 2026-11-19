@@ -20,6 +20,68 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-19 — Creators to follow: US women aged 40 to 50 only
+
+**Where it came from:** Garreth's decision. He asked that every creator on the
+list fit our ICP: health and wellness, women aged 40 to 50, and "most
+importantly lives in the US". When the list was built on 2026-11-13, nobody
+checked country or age. Nobody had followed anyone from it yet, so the cleanup
+cost nothing.
+
+**What the check found** (110 creators, checked one by one):
+
+- **23 were not in the US**, or their account was gone. TikTok places them in
+  the UK (9), Canada (3), Australia (2), South Africa, and Trinidad and Tobago.
+  An Instagram creator counts as wherever her TikTok is.
+- **26 looked under 40.** One says she is 36, one was born in 1987, and the
+  rest look 20s to 30s in their photo.
+- **5 were over 50.** They give ages of 55 and 59, or say "50+" or "after 50".
+- **8 were not health and wellness, or sold something.** That covers a books
+  page, a law page, a poetry page, a couple's page, a declutter page, a beauty
+  page (on both TikTok and Instagram), and one whose bio link promotes
+  supplements.
+- **19 fit otherwise, but their age could not be told** (a cartoon photo and no
+  age in the bio). Garreth chose to take these off too.
+- **29 fit clearly** and stayed. Most give their age in their bio ("47",
+  "45-year-old mom", "almost 50", "Gen X", a birth year in the handle). The
+  rest were judged from their photo.
+
+Everyone taken off keeps a reason that starts "ICP check 2026-11-19". The
+refresh never adds her back.
+
+**Refilled the same day.** 62 TikTok searches (the usual phrases plus
+age-specific ones like "47 year old weight loss") found 184 small creators. 147
+were in the US. Only 12 of those clearly fit, by the same bio-and-photo check:
+most of the rest were coaches selling programmes, or women over 50. 11 of the
+12 reply to comments, and 4 of them have an Instagram that fits. That is 15
+added. **The list is now 33 TikTok and 11 Instagram, all in the US.** About 550
+ScrapeCreators credits in all (5,821 left).
+
+**What changed for the monthly refresh:**
+
+- Before adding a new TikTok creator, it asks TikTok which country her account
+  is in. Anyone outside the US is left out, and so is anyone TikTok won't place.
+  The country is saved on each creator (new `country` column). An Instagram
+  creator takes her TikTok's.
+- The AI that judges new creators must now see a sign she is 40 to 50: her
+  age, a birth year from 1976 to 1986, "in my 40s", "turning 50", or "over 40"
+  with nothing saying older. With no sign, she is left out. "Gen X" alone is
+  not enough, because it runs past 60.
+- The age-specific search phrases are added to the monthly rotation.
+
+**Limits, said plainly:** the AI only reads words. It does not look at
+photos, so a woman whose age shows only in her photo will be missed. Today's
+photo judgments were made by eye in the session. The AI still can't add new
+TikTok creators until the OpenRouter key is topped up (it hit its limit
+2026-11-18). Without the AI, the refresh still checks the existing list.
+
+**Verified:** the database change and the cleanup are live, confirmed by
+query. Compiles, and the follow-list tests pass. The refresh's new country
+check has not met a real run yet; the first is the scheduled one on 2026-12-01,
+and it needs a deploy from `main`.
+
+---
+
 ## 2026-11-18 — Adjust posting cadence now always shows the real numbers
 
 **Where it came from:** a bug seen in production. Right after the Character 6

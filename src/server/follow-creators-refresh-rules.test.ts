@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  CLASSIFY_PROMPT,
+  COUNTRY,
   SEARCH_PHRASES,
   SEARCHES_PER_RUN,
   instagramFromBio,
@@ -80,5 +82,15 @@ describe("looksLikeSamePerson", () => {
 describe("topicsOf", () => {
   it("tags the obvious topics", () => {
     expect(topicsOf("Mounjaro journey at 50, down 30 lbs, walking daily")).toEqual(["GLP-1", "Over 40/50", "Weight loss", "Fitness"]);
+  });
+});
+
+describe("who she must be (ICP, 2026-11-19)", () => {
+  it("adds US creators only", () => {
+    expect(COUNTRY).toBe("US");
+  });
+  it("asks the AI for a sign she is 40 to 50, and rejects her without one", () => {
+    expect(CLASSIFY_PROMPT).toContain("show she is 40 to 50");
+    expect(CLASSIFY_PROMPT).toContain("No sign of her age");
   });
 });
