@@ -20,6 +20,485 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-19 — All six Character 6 story writers are published
+
+**Where it came from:** Garreth: "Publish all writers now". Each writer was
+published at exactly the version last tested. Every worker checked first
+that nobody had edited the draft since, and afterwards that the live
+version equals the tested one.
+
+| Writer | Workflow | Live before | Live now |
+|---|---|---|---|
+| Comparison | `rUSLiVHflfg0hJLg` | `d39dc799` | `9964269c` |
+| Jealousy | `LNryf7UU2kxhfNvC` | never published | `1f7f7167` |
+| Viral Theories | `QLzaVESTlkPsAkjv` | never published | `52455a6a` |
+| Divorce Recovery | `MLp2no3qGDAcDuLD` | `29795438` | `07aff46c` |
+| 3-Slide Journey | `HzSsCHrhfMd6CZy4` | never published | `445205a3` |
+| Camera Roll Story | `46N0wgmfjXzs7PWB` | never published | `18e6ed0e` |
+
+**What this means:**
+- **Nothing runs on its own.** None of the six has a schedule. Each one
+  writes only when its webhook, form or manual button is used.
+- **Saving:**
+  - **Comparison, Viral Theories and Camera Roll** save only when a call
+    asks for it, and saved decks go on Hold.
+  - **Divorce Recovery** saves only when asked. It puts a deck on Hold
+    only when the call also asks for that, as before.
+  - **Journey** saves only if "Save to the table?" is set to yes on its
+    form.
+  - **Jealousy** still has saving switched off inside the workflow, as it
+    was tested. Its decks can't reach the table until that one setting is
+    turned on.
+- **Divorce Recovery now writes from real stories.** A normal call claims
+  stories from the story bank. Its live version also picked up three
+  picture-naming drafts from 16 Nov.
+
+**Verified:** the live and tested versions match for all six. Each writer's
+last test run is listed in the entries below.
+
+**Not verified:**
+- No writer has saved a real deck since these changes.
+- Camera Roll Story has no stories to write from until the Story Research
+  Agent scores some for it.
+
+**Risks to know:**
+- **No login:** the webhooks and Journey's form are open to anyone with
+  the address, and every run spends OpenRouter credit (about $38 left).
+- **An old script won't work:** `ingest_decks.py` in an older copy of the
+  render scripts calls the Divorce webhook expecting decks back. It
+  wouldn't get any, and it needs updating before use.
+- **Two names still say "(draft)":** the Comparison and Camera Roll
+  workflow names and webhook addresses.
+
+
+## 2026-11-19 — Camera Roll Story gets a story lane and a writer (draft)
+
+**Where it came from:** Garreth: "we have a new content type that we need to
+wire in the story agent. It is called Camera Roll Story". The lane went live
+for posting at 5 a week with 19 hand-written decks and no writer, so it
+would run dry after the first planning run.
+
+**His decisions for this lane:**
+1. Peptides are the turn of the story. A kind person mentioning them and her
+   starting is allowed here, said subtly.
+2. The same rough voice as the other lanes.
+3. Never drop a story for her age; fit the facts to her.
+4. GLP-1 posts are allowed as sources, with peptides swapped in and the drug
+   never named.
+
+**What changed:**
+- **A `story_lanes` row, `camera_roll_story`.** It asks for one small
+  everyday moment with her own body, where nobody has to hurt her. Its
+  score floor is 7, falling back to 6.
+- **A new draft writer, "Camera Roll Story: copy writer (draft)"**
+  (`46N0wgmfjXzs7PWB`), copied from the Comparison writer.
+  - **Beats and picture moods:** the lane's 8 beats, plus the picture moods
+    and reveal slide the renderer needs.
+  - **Peptide checks:** relaxed to allow one plain "someone mentioned them
+    and I started". The research montage and hype stay banned.
+  - **Drug names:** blocked in hook, slides and caption, Zepbound included.
+  - **Saving:** decks are saved on Hold for rendering on Garreth's Mac.
+
+**Verified:** test run 216956 on 3 stories, saving off, cost $0.25. 2 decks
+were clean and 1 was flagged for a repeated peptide opener.
+
+**Not verified / open:**
+- **One skeleton:** the 3 decks shared it (cycling and yoga, "nothing at
+  first", "five months"). Fixed afterwards in draft 18e6ed0e, not re-run
+  yet:
+  - slides 4, 6 and 7 now come from her post and vary from deck to deck;
+  - a check catches the same activity or time span in two decks;
+  - deck ids now come from the table's own counter.
+- **Renderer status:** the row status the renderer picks up ("render
+  pending") is a guess and has to be checked on Garreth's Mac.
+- **Stories:** no story has been scored for this lane yet.
+- **Not published.**
+
+
+## 2026-11-19 — Story Research Agent: finds and judges stories for the Camera Roll Story lane (live, not yet run)
+
+**Where it came from:** Garreth approved wiring the new Camera Roll Story lane
+into the research agent. That lane needs a woman's post about one small
+everyday moment with her own body: a seat belt, a booth, a towel, a zip that
+finally closed, a photo, a stranger's comment, her kids noticing. The first
+20 hand-written decks came from "non-scale victory" (NSV) posts in the
+weight-loss and GLP-1 subreddits. Garreth had already decided that for this
+lane a post naming a GLP-1 drug is fine, because the writer swaps in
+peptides, and that the poster's age does not matter, because the writer fits
+the facts to her.
+
+**What changed** (n8n "Story Research Agent"; done in two steps the same
+day, live version `ef466213`):
+- **12 new searches across all of Reddit:** "non scale victory", and NSV
+  together with one everyday word: seatbelt, zipped, camera, photos, mirror,
+  towel, booth, chair, stairs, stranger, my kids. The time window rotates by
+  weekday like the Jealousy searches.
+- **NSV posts from 5 subreddits,** most upvoted first: r/Mounjaro,
+  r/Zepbound, r/Semaglutide, r/WegovyWeightLoss and r/loseit. They look at
+  the past year on Tue/Thu/Sat and the past month on other days.
+- New stories are labelled `camera_roll: ...`, and everything below applies
+  only to posts with that label.
+- **Comment reading:** these posts get at most 5 of the 25 places for
+  reading comments each run, beside the 8 for the confession subreddits.
+  Other searches get the rest, and capped posts only fill places left empty.
+- **Drug names no longer throw these posts out.** Before saving, the agent
+  drops any post that names a GLP-1 drug. Camera Roll posts are now kept,
+  with the drug name left in the saved text for the writer to swap.
+- **Their own judge rubric.** The usual rubric was written for stories where
+  someone hurts her, so it would have scored these 5 to 6, below the lane's
+  bar of 7. It also rejected anyone naming a drug or clearly under 30.
+  Camera Roll posts now go to the judge in separate batches with their own
+  rubric. A high score needs one concrete everyday body moment told in first
+  person, specific and emotional, with strong engagement. Progress updates
+  with no single moment, tips, men, weight-loss surgery, eating disorders and
+  stories mainly about a child score low. A missing person, a drug name or
+  the poster's age costs nothing. Everyone else's rubric is unchanged, word
+  for word.
+- **Kept out of the other writers' pools.** Kept stories that score well are
+  normally also copied into the Over 40 and Jealousy collections. Camera Roll
+  stories are not, because they may name a drug. Their verdicts are marked
+  `camera_roll v1` so we can tell them apart.
+- **Cost:** 17 more ScrapeCreators credits a day (192 searches instead of
+  175), plus a few more judge calls.
+
+**Verified:**
+- A probe beforehand (35 credits including the checks) showed that NSV plus
+  an everyday word is very precise. Seatbelt gave 8 of 8, zipped 7 of 7,
+  camera 7 of 7 and towel 4 of 4 real first-person moments among the posts
+  past the agent's vote bar. Booth gave about 7 of 10, such as "I almost
+  cried at the diner yesterday after getting seated at a booth".
+- Every new search address, called exactly as the agent builds it, returned
+  posts.
+- Sample runs of the changed steps: the comment-reading cap picks 8
+  confession, 5 Camera Roll and 12 others when there is plenty of
+  everything. A post naming Mounjaro is kept only when a Camera Roll search
+  found it. Normal posts get exactly the old judge instructions. A Camera
+  Roll story scoring 9 is kept but not copied into the other collections.
+- Each time, before publishing, the draft differed from the live version
+  only in the steps listed here. After publishing, the live version is
+  `ef466213`, and the schedule is unchanged: every day at 07:00 New York
+  time.
+- No Camera Roll post had been judged yet, so there were no rejected ones to
+  send back for judging (0 rows reset).
+
+**Not verified, and open:**
+- No full run yet. The run on 2026-11-20 at 07:00 is the first real test of
+  the searches and of the new rubric's scores.
+- **The Camera Roll copy writer does not block "Zepbound".** Its hook and
+  slide checks block GLP, Ozempic, Wegovy, Mounjaro, semaglutide and
+  tirzepatide, but not Zepbound. The caption writer blocks all of them. The
+  copy writer is still an unpublished draft, so Zepbound needs adding to its
+  hook check and its two slide-check word lists before it goes live.
+- Kept Camera Roll stories that score 7 or more still get three hooks
+  drafted by the shared hook writer, like every other story. Its checks
+  block drug names, but these stories now share its 36 places per run with
+  the others.
+- A post found first by another search keeps that search's label and the
+  usual rubric.
+
+## 2026-11-19 — Story Research Agent: offmychest sources and non-wedding Jealousy searches (live, not yet run)
+
+**Where it came from:** Garreth asked to "expand our story research sources
+like ... the getoffmychest subreddit, there are a lot of good stories there",
+and wanted more Jealousy stories that are not weddings. The Jealousy pool was
+11 weddings out of 28. Garreth approved the change and said to publish.
+
+**What changed** (n8n "Story Research Agent", live version `90ad9e91`; only
+the search list and the comment-reading pick changed):
+- **10 new Jealousy searches across all of Reddit**, written as a woman would
+  put it: coworkers and a boss treating her differently since she lost
+  weight, a jealous sister, a jealous mother, friends who stopped inviting
+  her, a husband worried she'll leave, a husband jealous of the attention,
+  in-laws' comments, a family reunion, and family not supporting her. The
+  time window rotates by weekday (all time, past year, past month), so the
+  same search brings different posts on different days.
+- **r/offmychest and r/TrueOffMyChest searched for weight stories:** the
+  exact phrases "my weight", "my weight loss" and "losing weight", most
+  upvoted first, over the past year on Tue/Thu/Sat and the past month on
+  other days. r/TrueOffMyChest was already searched with four story phrases,
+  and that stays.
+- **A cap on comment reading.** Each run reads the comments on up to 25 new
+  Reddit posts, most upvoted first. Posts from the two confession
+  subreddits have huge vote counts and would take most of those places, so
+  they now get at most 8. The other searches get the rest, and confession
+  posts only fill places the others leave empty.
+- **Cost:** 16 more ScrapeCreators credits a day (175 searches instead of
+  159), plus comment reading within the existing limits.
+
+**Verified:**
+- A probe run beforehand (46 credits) showed that plain first-person
+  sentences work best. About 9 to 12 of every 25 posts were real stories that
+  got past the agent's vote bar.
+- Inside the confession subreddits, loose words matched almost anything:
+  about 15 of 102 new posts were on topic. Exact phrases in quotes brought
+  that to about half, which is why the searches use quoted phrases.
+- Reading those subreddits' front pages whole gave 0 of 23 on topic, so
+  they are not read whole.
+- Every new search address, called exactly as the agent builds it, returned
+  posts. On the first day the Jealousy searches alone found 19 stories we did
+  not have, such as a boss who said she'd be prettier if she lost weight.
+- The comment-reading cap was checked with sample mixes: 8 confession posts
+  when there are plenty of others, more only when the others run out.
+- Before publishing, the draft differed from the live version in those two
+  steps only. After publishing, the live version is `90ad9e91` and the
+  schedule is unchanged: every day at 07:00 New York time.
+
+**Not verified:** no full run yet. The judge uses OpenRouter, which is out of
+credit, so judging will fail until it is topped up. Search results are not
+filtered by age, so keeping stories to women 35 and over is left to the
+judge.
+
+## 2026-11-19 — Round 4: real test runs on all four story writers (drafts)
+
+**Where it came from:** Garreth topped up OpenRouter and asked for the next
+step. That step is a real 5-deck test run per lane, after fixing the
+leftovers from the offline round.
+
+**What changed (drafts only):**
+- **The peptide sentence** can no longer open with "I'm on peptides", and
+  two decks in a run can't open it with the same 3 words.
+- **Jealousy:**
+  - Its writer had no token limit set, so OpenRouter set aside 65,536
+    tokens for every call. It now has a cap.
+  - "I'd barely mentioned it" no longer counts as someone recommending
+    peptides.
+- **Comparison:** the planner no longer steers slide 6 toward clothes.
+- **Divorce:** slides 2 and 3 can't repeat the hook's fact.
+
+**Verified:** one real test-set run per lane, saving off, no stories
+claimed.
+- **Clean decks:** Viral Theories 5 of 5 (run 216951), Comparison 4 of 5
+  (216952), Divorce 3 of 5 (216950), Jealousy 2 of 5 (216949). Of the 3
+  flagged Jealousy decks, 2 failed only on pictures and 1 was a false
+  "invented $13k".
+- **Cost:** all four runs together cost about $1.64 of OpenRouter credit,
+  so a full test set costs well under $1 per lane.
+- **The fix held:** no deck opens its peptide sentence with "I'm on
+  peptides".
+- **The 20 real decks** are on the review page.
+
+**Still open:**
+- Ideas still repeat across decks in different words: "getting dressed was
+  still hard on a peptide", "peptides in the mix", "Apparently" opening
+  slide 3, "embarrassed" in 4 of 5 Viral decks.
+- The editor sometimes calls real names or numbers from her post invented.
+- "which" can survive a repair.
+- Jealousy picks the same "pensive" photo for slide 2 every time.
+
+## 2026-11-19 — Story writers rotate the kind of story; Jealousy gets non-wedding stories
+
+**Where it came from:** Garreth: "in Jealousy samples, we are only using 1
+story of getting kicked out of the wedding. Do we have other stories for
+Jealousy?" Then "Yes do all four".
+
+**What changed:**
+- **Rotation (all story lanes, live).** New migration
+  `story_kind_rotation`.
+  - Each story gets a kind: wedding, friends, family, partner, work or other.
+  - When a writer asks for its next story, it now gets a different kind
+    from the lane's last 2 picks where one exists.
+  - Before this, the best-scoring Jealousy stories were mostly weddings, so
+    weddings kept coming first.
+- **Three misfits are out of the Jealousy pool:** a story about a man, one
+  about diabetes, and one about weight-loss surgery.
+- **The Jealousy test set is varied.** One wedding story (fired as maid of
+  honor), plus the friends' group chat, the "dressing up for a hookup"
+  comment, a husband's cousin's girlfriend at a family reunion, and hostile
+  bosses after a 150 lb loss. Before, 4 of the 5 were weddings, and two of
+  those were the same story.
+
+**Verified:** in a test that was rolled back, 5 picks in a row for Jealousy
+came out partner, wedding, friends, partner, family, with no stories held
+afterwards. The Jealousy pool is wedding 11, friends 10, family 4, partner 2,
+work 1, so it is still thin outside weddings and friends.
+
+**Still open:** more Jealousy stories and new sources (r/offmychest,
+r/TrueOffMyChest) for the Story Research Agent are being prepared
+separately.
+
+## 2026-11-19 — Round 3: simpler hooks, varied openers, real names only (drafts, partly tested)
+
+**Where it came from:** the round-2 scorecards on the review page. Viral's
+hooks had got too clever, Jealousy kept opening hooks with "apparently",
+Comparison's slide 3 opened with "It hurt because" in every deck, and
+Divorce's own hook setup forced the quote formula.
+
+**What changed:**
+- **Shared rules:**
+  - "Witty means simple": a hook a stranger has to read twice gets 0 for
+    take.
+  - The voice rules' example line "and it hit so hard because…", which
+    every deck copied, is now an instruction to say it a different way each
+    time.
+- **Every lane:** no more than 2 hooks in a run may start with the same
+  word.
+- **Jealousy:**
+  - The "first season / five months" hint is gone.
+  - The minimums are checked again after the hook is picked.
+  - The image-picking step had two bugs: it ran out of room, and it named
+    photos by file name or by an id it was never shown. Both are fixed.
+- **Comparison:**
+  - The slide-3 opener and slide-6 change idea can't repeat within a run.
+  - Swapped-in hooks get typos too.
+  - The hook judge got more room.
+- **Divorce:**
+  - The quote formula is no longer forced into hooks, and neither is "the
+    father of my children" as his name.
+  - Hooks can't start with "So" or contain a semicolon.
+  - A man's name that isn't in her post can't appear in the slides; the
+    contact label on his text is the only exception.
+  - The editor checks the caption against the slides and her post.
+  - An editor that gives no answer gets one retry on another model.
+- **Viral:** the simplicity rule is in its own hook prompts. The "before 40"
+  number bug is fixed, and typos no longer glue onto "I'm" or CAPS words.
+
+**Verified:**
+- **Jealousy, run 216788:** 5 different hook openers, no "five months",
+  every hook scored 2 for take.
+- **Divorce, run 216790:** 4 of 5 hooks scored 2 for take, and the story
+  that used to fail came out clean.
+- **Comparison, run 216791:** 5 different hook openers. The repeat check
+  caught the slide-3 template.
+- **Viral, run 216789:** 4 decks, with plainer hooks.
+
+**Not verified:** the follow-up runs (Jealousy 216793, Comparison 216794,
+Divorce 216795) and Viral's fifth deck failed, because the OpenRouter
+account ran out of credit ($260 of $260). So the last fixes in each lane
+haven't met a real run yet. The account also pays for other OpenRouter
+callers, which fail until it is topped up.
+
+**Offline check (Garreth asked):** while there was no credit, Claude wrote the
+20 test decks by following each writer's exact prompts. Each writer's real
+check code and real typing step ran on them locally.
+- **Result:** Comparison, Viral Theories and Divorce Recovery 5 of 5 clean,
+  Jealousy 3 of 5. One Jealousy flag is a false alarm: "mentioned" counts
+  as someone recommending peptides.
+- **Shown on the review page** and labelled as written by Claude. This
+  shows what the instructions produce, not what the live models write.
+- **Templates it found:**
+  - "I'm on peptides too / now" opens the peptide line in nearly every deck.
+  - Comparison's planner still steers slide 6 toward clothes.
+  - Deck 5 in Divorce says "12 years divorced" in both the hook and
+    slide 3.
+
+## 2026-11-19 — Decks stop repeating each other (all story lanes)
+
+**Where it came from:** Garreth's answers on the first scorecards. Doctor
+words like "hormones" are fine. A casual word may appear "more than twice but
+not too much". He approved a check for phrases repeated across decks, a filter
+on stories where she is under 35, and a higher word limit for Divorce. The
+rest fixes the writers' own habits that the scorecards showed.
+
+**What changed:**
+- **Shared rules:**
+  - **No lines left to copy.** The voice rules' examples of vulnerable cues
+    are now descriptions. "it hurt, like really rly hurt" had been copied
+    into about 5 decks.
+  - **The minimums are a floor, not a target.** Every deck had landed on
+    exactly 2 CAPS words and 2 lol.
+  - **A new "never the same deck twice" section** gives a wide range of
+    ideas for the change slide, not "my clothes felt looser" every time.
+  - **The hook rules and judge** name the "report + sarcastic tag" hook
+    ("… Lucky me.") as a formula. Hooks must also be simple, read once and
+    got.
+- **Stories where she is under 35:** every story lane's brief now scores
+  them 0–3. 21 stories that state a young age were sent back to be scored
+  again.
+- **The fixed test set:** two stories where she was in her 20s and one
+  weight-loss surgery story were swapped out.
+- **Each writer** (drafts only):
+  - **Phrases from the lane's last 20 saved decks:** the writer gets them as
+    a list to avoid.
+  - **A repeated 4+ word phrase,** within the run or from those recent
+    decks, sends the deck to repair.
+  - **Each deck gets its own random amounts** of CAPS and emoji (2–5).
+  - **One casual word on more than half the slides** sends the deck to
+    repair.
+  - **Lane fixes:**
+    - Viral no longer flags doctor words.
+    - Divorce's word limit went from 150 to 170.
+    - Divorce no longer forces the quote formula or "the father of my
+      children" into hooks, and hooks can't start with "So".
+    - Comparison's hook prompt no longer bans numbers.
+    - The hook judges and writers in Comparison, Divorce and Jealousy got
+      more room: they had been running out before giving scores.
+
+**Verified:** one test-set run per lane, nothing saved or claimed:
+Jealousy 216771 (5 of 5 clean), Viral Theories 216782 (4 of 5), Comparison
+216781 (3 of 5; one flag came from the hook judge running out of room, since
+fixed), Divorce Recovery 216780 (0 of 5; its hook and repeat-check problems
+were fixed afterwards and not re-run yet).
+- **Amounts vary:** CAPS and emoji now range from 2 to 5 per deck.
+- **No casual word dominates.**
+- **No sarcastic-tag hooks** in Comparison, Jealousy or Viral Theories.
+- **The 20 decks** are on the review page.
+
+**Still open:**
+- Viral's hooks got too clever ("my over 40 muscles have dragged dinner
+  into my strength training"); the simplicity rule is new and untested.
+- 3 of 5 Jealousy hooks opened with "apparently".
+- Jealousy's change slide still lands on "five months".
+- Divorce's fixes are untested.
+
+## 2026-11-19 — Rougher copy, hooks with her take, and a fixed test set (all story lanes)
+
+**Where it came from:** team feedback on the sample hooks. They called "I gave
+my divorce too much credit for how exhausted I felt" witty and simple. They
+called the quote formula ("'You're out as maid of honor,' my best friend said
+before her wedding") "too perfectly structured". Garreth then asked for more
+imperfections on every slide, "5-6" instead of about 3: "we are moving away
+with this clean, well-written, and polished copies". He also asked for
+quality that holds from deck to deck.
+
+**What changed:**
+- **Shared rules** (Supabase `writer_resources`):
+  - **Hooks:** they are her take on what happened, not a report. The quote
+    formula is discouraged, and hooks may look unfinished: a lowercase
+    start, no period, one emoji, "??".
+  - **The hook judge:** it scores "take" (her attitude, 0 to 2) and gives
+    the quote formula 0. The team's four rated hooks guide its scores; only
+    the judge sees them.
+  - **The voice:** a new "not polished" section. The minimums went up:
+    casual talk on 6 of 8 slides (4 of 6), at least 2 CAPS words, at least 2
+    lol or emoji, "..." once, and at least 3 vulnerable cues.
+  - **Backups:** the old rows are in `~/story-writer-backups/2026-11-19/`.
+    The earlier session-folder backups were lost when that folder was
+    cleared.
+- **Each writer** (Comparison, Jealousy, Viral Theories, Divorce Recovery;
+  drafts only):
+  - **Hooks:** it drafts 6 hooks. The winner needs take of 1 or more and
+    can't be the quote formula. After one retry, a weak hook sends the deck
+    to review instead of shipping.
+  - **The checks** use the new minimums and count the hook.
+  - **Her Typing:** 5–6 typos per deck instead of about 3, on every slide
+    including the hook. New kinds: "&", "w/", "tho", "ur", "thru" and a
+    dropped comma. Lowercase starts and missing periods are more frequent.
+  - **Jealousy** now writes a caption.
+- **A fixed test set** (`quality_test_set`): 5 stories or theories per lane.
+  `{"test_set":true}` re-runs them without saving or claiming a story, and
+  the writer returns a scorecard for each deck.
+
+**Verified:** one test-set run per lane, nothing saved and no story claimed:
+Comparison 216768, Jealousy 216767, Viral Theories 216766, Divorce Recovery
+216765.
+- **Hook take:** 19 of 20 final hooks scored 1 or more, and none used the
+  quote formula.
+- **Typos:** every deck got 5 or 6.
+- **Clean decks:** Comparison 5/5, Viral Theories 4/5, Jealousy 2/5 (the
+  other three failed at the image steps or because the editor's reply was
+  cut off), Divorce Recovery 0/5. In Divorce the hook missed the bar in 3
+  decks, and 3 decks went over the 150-word cap.
+
+**Still open:**
+- New repeats across decks: "my clothes slowly felt less tight" on the
+  change slide, "it hurt, like really rly hurt" (copied from the voice
+  examples), and hooks ending in a sarcastic tag ("Lucky me", "how
+  generous").
+- The writers treat the minimums as targets: exactly 2 CAPS and 2 lol in
+  almost every deck.
+- Stories whose woman is in her 20s still come through: "at 26", "I was 24".
+- Divorce's 150-word cap fights the higher minimums.
+
 ## 2026-11-18 — One shared rule still allowed "read up, asked questions"
 
 **Where it came from:** found while writing the writer handover for Garreth.
