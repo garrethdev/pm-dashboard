@@ -21,9 +21,18 @@ export const INSTAGRAM_NEW_ACTIVE_DAYS = 30;
 export const TARGET = { tiktok: 100, instagram: 40 } as const;
 
 /**
- * TikTok searches, Character 6's audience: women 40+, weight loss, GLP-1,
- * menopause. The 44 phrases the first list was built from. Each month takes
- * the next SEARCHES_PER_RUN of them, so the whole set is used over the year.
+ * Who she must be (Garreth, 2026-11-19): our ICP is US women aged 40 to 50 in
+ * health and wellness. TikTok's region lookup gives her country; only "US"
+ * gets on the list. Her age comes from what she writes (CLASSIFY_PROMPT).
+ */
+export const COUNTRY = "US";
+
+/**
+ * TikTok searches, Character 6's audience: women 40 to 50, weight loss, GLP-1,
+ * menopause. The 44 phrases the first list was built from, then the
+ * age-specific ones added 2026-11-19, which found most of that day's new
+ * creators. Each month takes the next SEARCHES_PER_RUN of them, so the whole
+ * set is used over the year.
  */
 export const SEARCH_PHRASES = [
   "glp1 journey over 40", "glp1 journey over 50", "weight loss over 50", "weight loss over 40",
@@ -37,6 +46,11 @@ export const SEARCH_PHRASES = [
   "glp1 real talk", "weight loss after 45", "healthy over 50 women", "menopause weight gain",
   "wegovy weigh in", "semaglutide update", "glp1 non scale victory", "losing weight in my 40s",
   "midlife glow up", "walking pad weight loss", "fitness over 40 women", "weight loss update women",
+  "45 year old weight loss", "46 year old weight loss", "47 year old woman weight loss", "48 years old weight loss journey",
+  "49 year old weight loss", "turning 50 weight loss", "in my 40s weight loss", "glp1 at 45",
+  "perimenopause glp1", "zepbound over 40", "mounjaro over 40", "wegovy over 40",
+  "menopause mounjaro", "weight loss at 47", "40s mom weight loss journey", "44 year old weight loss",
+  "42 year old weight loss journey", "perimenopause weight loss journey 40s",
 ];
 export const SEARCHES_PER_RUN = 10;
 
@@ -106,12 +120,16 @@ export function instagramFromBio(bio: string, link: string | null | undefined): 
  * professionals posting as such, product brands, sellers and affiliates,
  * repost and quote pages, off-topic accounts and non-English ones, and kept
  * women sharing their OWN weight-loss, GLP-1, menopause or midlife journey.
+ * Since 2026-11-19 she must also show she is 40 to 50 (Garreth: "women age
+ * 40-50"); with no sign of her age she is left out, as the hand check that day
+ * left out every creator whose age could not be told.
  */
 export const CLASSIFY_PROMPT = `You are choosing small social media creators for a weight-loss brand's accounts to follow.
-The accounts are written as women over 40 on a weight-loss / GLP-1 / menopause journey, so they follow peers.
+The accounts are written as women aged 40 to 50 on a weight-loss / GLP-1 / menopause journey, so they follow peers.
 
 KEEP a creator only if ALL are true:
 - She is a woman sharing her OWN life: her weight-loss, GLP-1, menopause, midlife health or fitness journey.
+- Her name, bio or captions show she is 40 to 50: she gives her age (40 to 50), a birth year from 1976 to 1986, "in my 40s", "turning 50", or "over 40" / "40+" with nothing saying she is older.
 - She posts in English.
 - She is a regular person, not a business.
 
@@ -120,6 +138,7 @@ REJECT if any is true:
 - A coach, personal trainer, nutritionist, doctor, nurse practitioner or other professional whose page sells programmes, coaching or services ("I help women...", "DM to work with me", booking links).
 - Sells or promotes GLP-1s, peptides, supplements or MLM products, or links to an affiliate shop for them.
 - A repost, quote or motivation page, or off topic (fragrance, books, gaming, beauty-only).
+- No sign of her age, or a sign she is under 40 or over 50 (gives an age outside 40 to 50, "50+", "over 50", "in my 30s", "late 20s"). "Gen X" alone is not enough: it runs past 60.
 
 Answer with JSON: {"results":[{"handle":"...","keep":true|false,"reason":"a few words"}]} with one entry per creator, same handles.`;
 
