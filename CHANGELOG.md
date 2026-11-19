@@ -20,6 +20,54 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-19 — Story stock topped up: every Character 6 story lane has at least 3 weeks
+
+**Where it came from:** Garreth asked that every Character 6 lane have at
+least 3 weeks of usable stories, with 7 accounts posting. Jealousy and Camera
+Roll were far short. 960 found stories had never been judged because
+OpenRouter ran out of credit.
+
+**What changed:**
+- **The 960 waiting stories were judged.** I used the research agent's own
+  judging code, run by hand rather than as a full agent run, so it did not
+  repeat the day's searches. That kept 132.
+- **Lane Fit caught up:** every kept story now has a fit score for every
+  lane. The robot's own steps were run by hand in a loop; its hourly setting
+  was not changed.
+- **One-off backfill for the two short lanes:** deeper pulls (up to 3 pages,
+  all-time and past-year) of the searches that paid off. That saved 571
+  Camera Roll posts and 441 Jealousy posts as new, labelled
+  `backfill camera_roll: …` and `backfill jealousy: …`, then judged and
+  scored the same way.
+- The research agent now treats `backfill camera_roll:` posts like
+  `camera_roll:` posts, so they get the Camera Roll rubric (live version
+  `4f743ea1`).
+
+**Usable stories** (what the writers can be served now):
+
+| Lane | Before | After | Needed for 3 weeks | Weeks covered |
+|---|---|---|---|---|
+| Divorce | 104 | 137 | 105 | 3.9 |
+| Camera Roll | 4 | 337 | 105 | 9.6 |
+| Jealousy | 20 | 70 | 63 | 3.3 |
+| Comparison | 90 | 174 | 42 | 12.4 |
+| Journey | 73 | 219 | 42 | 15.6 |
+
+**Cost:** OpenRouter $0.56, ScrapeCreators 303 credits.
+
+**Verified:** all counts come from the database, using the same rules the
+writers use to pick a story.
+
+**Not done or open:**
+- Stories judged by hand did not get hooks drafted. That only happens during
+  the agent's own run, and the writers write their own hooks anyway.
+- 10 stories are still pending, because the model service keeps cutting off
+  one batch partway through. The next agent run will try them again.
+- One story can count in more than one lane; each story can be used up to 5
+  times in all.
+- Jealousy is the thinnest lane: only 51 of its 70 meet its preferred score
+  of 8; the rest are at the fallback score of 7.
+
 ## 2026-11-20 — Camera Roll Story is switched on, and shares first place with Divorce Recovery
 
 **Where it came from:** Garreth's decision. He asked for the new Character 6
@@ -236,11 +284,9 @@ day, live version `ef466213`):
 **Not verified, and open:**
 - No full run yet. The run on 2026-11-20 at 07:00 is the first real test of
   the searches and of the new rubric's scores.
-- **The Camera Roll copy writer does not block "Zepbound".** Its hook and
-  slide checks block GLP, Ozempic, Wegovy, Mounjaro, semaglutide and
-  tirzepatide, but not Zepbound. The caption writer blocks all of them. The
-  copy writer is still an unpublished draft, so Zepbound needs adding to its
-  hook check and its two slide-check word lists before it goes live.
+- ~~The Camera Roll copy writer does not block "Zepbound".~~ Fixed the same
+  day: the copy writer was published with Zepbound blocked in its hook check
+  and slide checks (checked in the live version).
 - Kept Camera Roll stories that score 7 or more still get three hooks
   drafted by the shared hook writer, like every other story. Its checks
   block drug names, but these stories now share its 36 places per run with
