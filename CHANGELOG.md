@@ -20,6 +20,62 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-20 — Camera Roll Story is switched on, and shares first place with Divorce Recovery
+
+**Where it came from:** Garreth's decision. He asked for the new Character 6
+lane to be wired all the way through and released, with it and Divorce Recovery
+ahead of the other carousel types. He picked the split below from three
+options.
+
+**What Camera Roll Story is:** eight-slide carousels, each telling one small
+everyday moment about her body (a camera she dodged, a coat that zipped) and her
+slow change on peptides. The lane was set up in the database on 2026-11-19 at 0
+a week. On the same day its 20 decks were rendered, given music, and 19 got a
+caption and passed the content check. The full story is in the Claude Doc
+"Handover: Camera Roll Story lane".
+
+**The new split per account:** Camera Roll Story 5, Divorce Recovery 5,
+Jealousy 3, Comparison 2, Journey 2, Viral Theories 1. It was Divorce Recovery
+6, Journey 4, Jealousy 3, Comparison 3, Viral Theories 2. Still 18 a week, so
+the cadence page keeps saving. Jealousy kept 3 because it has the most decks in
+stock (27).
+
+**Released:** 19 of the 20 decks came off Hold and are marked ready to be
+scheduled. CRS-0003 stays on Hold because it has no caption: released without
+one, the nightly content check would pass it empty, and a caption added later
+would then post without being checked.
+
+**Also fixed:** the 2026-11-19 set-up rebuilt the stock count's cached copy and
+dropped a read permission every other cached copy has. Nothing was failing
+because of it, but it is back now.
+
+**What to expect:**
+
+- **Camera Roll Story will run out in about three days.** For its first week a
+  new type gets every account's first slot each working day. With 8 Character 6
+  accounts, the next planning run (night of Nov 22 to 23, 01:00 New York time)
+  will likely book all 19. There is no writer for this lane yet, so no more
+  decks will come until one is built. When it runs out, those slots go to
+  whatever lane has stock.
+- **Divorce Recovery's 5 does nothing yet.** All its unposted decks are still on
+  Hold (85 checked, 27 not), and Garreth chose to leave them held for now.
+  Comparison also has 0 in stock.
+
+**Checked live after the change:** the split reads 18 of 18; stock reads 19 for
+Camera Roll Story; the 19 decks show in the calendar and posting view with all
+8 pictures; all 19 songs match the music list, written the same way as
+Jealousy's. **Not yet met a real run:** no Camera Roll Story deck has been
+scheduled or posted.
+
+**Smart Scheduler (n8n):** Garreth added `camera_roll_story:'slide_8_url'` to
+its list of each lane's picture column by hand in the editor, the same as
+Comparison's 8-slide decks, and published it. Read back the same day: the
+published version is the saved one and contains the entry. Before a deck is
+planned, the scheduler now also checks that its last slide is there. Every
+other lane already had this second check.
+
+---
+
 ## 2026-11-19 — Creators to follow: US women aged 40 to 50 only
 
 **Where it came from:** Garreth's decision. He asked that every creator on the
