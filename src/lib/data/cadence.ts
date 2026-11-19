@@ -202,4 +202,13 @@ async function fetchCadence(): Promise<CadenceData> {
   };
 }
 
-export const getCadence = cachedFetcher(CADENCE_TAG, TTL.supabase, fetchCadence);
+/**
+ * Read live, not from the cache (2026-11-18). The Adjust posting cadence window
+ * writes back whatever it shows, so it must never show an old copy. On the live
+ * site the cached copy stopped refreshing around 2026-11-10 and the window kept
+ * showing that week's mix (no Comparison, old ready counts) after the database
+ * had moved on twice. It is opened now and then, so reading live costs nothing.
+ */
+export const getCadence = cachedFetcher(CADENCE_TAG, TTL.supabase, fetchCadence, {
+  bypass: true,
+});

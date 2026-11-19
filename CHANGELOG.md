@@ -20,6 +20,35 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-18 — Adjust posting cadence now always shows the real numbers
+
+**Where it came from:** a bug seen in production. Right after the Character 6
+split was changed in the database (Divorce Recovery 6, Journey 4, Jealousy 3,
+Comparison 3, Viral Theories 2), Garreth opened Adjust posting cadence and it
+still showed the mix from about 2026-11-10: Divorce Recovery 5, Jealousy 5,
+Viral Theories 4, Journey 4, no Comparison at all, and "45 ready" Divorce
+Recovery decks when there were 0. The database had the new split; only the
+window was wrong.
+
+**Why:** the window read a saved copy of the numbers that is meant to refresh
+every minute. On the live site that copy stopped refreshing around 2026-11-10
+and survived every deploy since. The split was changed straight in the database
+both times (Nov 10 and today), which never tells the site to drop its copy. Why
+the minute-by-minute refresh stopped is not known.
+
+**Why it mattered:** the window saves back what it shows. Pressing Save on the
+old copy would have tried to put the Nov 10 split back.
+
+**What changed:** the window now reads the database every time the Content
+Calendar page loads, for both the lane mix and the fleet numbers. If that read
+fails, the Adjust Cadence button is hidden rather than showing an old copy.
+Other pages that show the same numbers still use the saved copy.
+
+**Verified:** compiles, and the cadence and cache tests pass. Not yet seen on
+the live site; that needs a deploy.
+
+---
+
 ## 2026-11-18 — One shared rule still allowed "read up, asked questions"
 
 **Where it came from:** found while writing the writer handover for Garreth.
@@ -628,6 +657,8 @@ No database change. Nothing new is written anywhere.
 **Verified:** tests only, with made-up reports, on a local copy. No real report
 of this kind exists yet: the robot's side is still being built. The first real
 one will be the first live check.
+
+---
 
 ## 2026-11-18 — The music list now adds trending songs every week
 
