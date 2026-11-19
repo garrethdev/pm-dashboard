@@ -9,7 +9,7 @@ import { getCadence } from "@/lib/data/cadence";
 import { etToday, getCalendarMonth, getRecentSchedulerRun } from "@/lib/data/calendar";
 import { getAccounts } from "@/lib/data/accounts";
 import {
-  getFleetDefaults,
+  getFleetDefaultsLive,
   getSchedulerConfig,
   limitSchedulerConfig,
 } from "@/lib/data/scheduler-config";
@@ -77,10 +77,13 @@ async function RunPill() {
 async function CadenceEditor() {
   let cadence, fleet;
   try {
-    [cadence, fleet] = await Promise.all([getCadence(), getFleetDefaults()]);
+    [cadence, fleet] = await Promise.all([getCadence(), getFleetDefaultsLive()]);
   } catch {
     return null;
   }
+  // A live read that failed falls back to an old copy. The editor saves what it
+  // shows, so an old copy is worse than no button.
+  if (cadence.stale || fleet.stale) return null;
   return <AdjustCadenceButton cadence={cadence.data} fleet={fleet.data} />;
 }
 

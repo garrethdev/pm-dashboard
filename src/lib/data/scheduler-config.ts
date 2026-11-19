@@ -235,3 +235,13 @@ export const getFleetDefaults = cachedFetcher(
   TTL.supabase,
   fetchFleetDefaults,
 );
+
+/** The same numbers read live, for the Adjust posting cadence window, which
+ *  saves back what it shows (see getCadence). Same key, so a failed live read
+ *  can still fall back to the cached copy, marked stale. */
+export const getFleetDefaultsLive = cachedFetcher(
+  "scheduler-buckets",
+  TTL.supabase,
+  fetchFleetDefaults,
+  { bypass: true },
+);

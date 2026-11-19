@@ -13,8 +13,9 @@
  *
  * TOPUP runs when a platform has fewer than its target. It searches TikTok with
  * this month's ten phrases, keeps creators in range who replied to a comment on
- * their busiest video, drops seller links, and asks the AI the same question
- * the first list was picked by (CLASSIFY_PROMPT). Then it looks for each new
+ * their busiest video, drops anyone TikTok does not place in the US and seller
+ * links, and asks the AI the same question the first list was picked by
+ * (CLASSIFY_PROMPT), which since 2026-11-19 includes being 40 to 50. Then it looks for each new
  * TikTok creator's Instagram (the handle her bio names, else the same handle),
  * which is where the Instagram list comes from: Instagram's own search finds
  * almost no small creators.
@@ -22,12 +23,13 @@
  * Each part stops itself before the limit and records a row in
  * `follow_creator_runs`. The oldest checks go first, so a run cut short is
  * finished by the next one. About 110 credits for a recheck and 100 to 250 for
- * a top-up.
+ * a top-up, plus one per creator for the country lookup.
  */
 
 import { sbFetch } from "@/lib/data/warmup-sessions";
 import {
   CLASSIFY_PROMPT,
+  COUNTRY,
   INSTAGRAM_NEW_ACTIVE_DAYS,
   TARGET,
   inRange,
@@ -144,6 +146,12 @@ async function tiktokProfile(run: Run, handle: string): Promise<Profile> {
     userId: u.id ? String(u.id) : null,
     daysSincePost: null,
   };
+}
+
+/** The country TikTok places her account in ("US", "GB"…), or null when it would not say. */
+async function tiktokRegion(run: Run, handle: string): Promise<string | null> {
+  const d = await sc<{ region?: string }>(run, "/v1/tiktok/profile/region", { handle });
+  return typeof d?.region === "string" && d.region ? d.region.toUpperCase() : null;
 }
 
 async function instagramProfile(run: Run, handle: string): Promise<Profile> {
@@ -287,6 +295,8 @@ export interface Candidate {
   captions: string[];
   replied?: number;
   seen?: number;
+  /** TikTok's country for her account; null when it would not say. */
+  region?: string | null;
   profile?: Profile;
 }
 
@@ -295,8 +305,8 @@ export async function topUpCreators(dry = false, now = new Date()): Promise<Refr
   const startedAt = now.toISOString();
   const report: RefreshReport = { part: "topup", dry, checked: 0, retired: [], added: [], rejected: [], credits: 0, stoppedEarly: false, note: null };
 
-  const all = await db<{ id: number; platform: Platform; handle: string; display_name: string | null; retired_at: string | null; tiktok_twin: string | null; twin_checked_at: string | null; bio: string | null }[]>(
-    "follow_creators?select=id,platform,handle,display_name,retired_at,tiktok_twin,twin_checked_at,bio",
+  const all = await db<{ id: number; platform: Platform; handle: string; display_name: string | null; retired_at: string | null; tiktok_twin: string | null; twin_checked_at: string | null; bio: string | null; country: string | null }[]>(
+    "follow_creators?select=id,platform,handle,display_name,retired_at,tiktok_twin,twin_checked_at,bio,country",
   );
   // Never re-add anyone already seen, retired included: she came off for a reason.
   const known = { tiktok: new Set<string>(), instagram: new Set<string>() };
@@ -344,13 +354,14 @@ export async function topUpCreators(dry = false, now = new Date()): Promise<Refr
       .sort((a, b) => b.bestComments - a.bestComments)
       .slice(0, MAX_CANDIDATES);
 
-    // 2. Did she reply to anyone? Then her bio.
+    // 2. Did she reply to anyone? Is she in the US? Then her bio.
     report.stoppedEarly = await pool(candidates, run, async (c) => {
       const d = await sc<{ comments?: { reply_comment?: { user?: { unique_id?: string } }[] }[] }>(run, "/v1/tiktok/video/comments", { url: c.bestUrl });
       const cs = d?.comments ?? [];
       c.seen = cs.length;
       c.replied = cs.filter((x) => (x.reply_comment ?? []).some((r) => r.user?.unique_id?.toLowerCase() === c.handle)).length;
-      if (c.replied > 0) c.profile = await tiktokProfile(run, c.handle);
+      if (c.replied > 0) c.region = await tiktokRegion(run, c.handle);
+      if (c.replied > 0 && c.region === COUNTRY) c.profile = await tiktokProfile(run, c.handle);
       report.checked += 1;
     });
 
@@ -358,6 +369,7 @@ export async function topUpCreators(dry = false, now = new Date()): Promise<Refr
     for (const c of candidates) {
       if (c.replied === undefined) continue; // not reached before the time ran out
       if (!c.replied) report.rejected.push({ handle: c.handle, reason: "no replies to comments seen" });
+      else if (c.region !== COUNTRY) report.rejected.push({ handle: c.handle, reason: c.region ? `not in the US (${c.region})` : "country unknown" });
       else if (!c.profile?.found) report.rejected.push({ handle: c.handle, reason: "profile not found" });
       else if (c.profile.isPrivate) report.rejected.push({ handle: c.handle, reason: "private" });
       else if (!inRange(c.profile.followers)) report.rejected.push({ handle: c.handle, reason: "out of range" });
@@ -397,6 +409,7 @@ export async function topUpCreators(dry = false, now = new Date()): Promise<Refr
         replies_seen: `${c.replied} of ${c.seen}`,
         evidence_url: c.bestUrl,
         platform_user_id: p.userId,
+        country: COUNTRY,
         source: "refresh",
         checked_at: new Date().toISOString(),
       };
@@ -419,11 +432,12 @@ export async function topUpCreators(dry = false, now = new Date()): Promise<Refr
     }
 
     // 5. Instagram: the Instagram account of a TikTok creator we keep. New ones
-    // first, then older ones whose Instagram was never looked for.
+    // first, then older ones whose Instagram was never looked for. Instagram
+    // gives no country, so she takes her TikTok's: US only.
     if (needInstagram > 0 && !run.late) {
       const twins = new Set(all.filter((c) => c.platform === "instagram" && c.tiktok_twin).map((c) => c.tiktok_twin));
       const older = all
-        .filter((c) => c.platform === "tiktok" && !c.retired_at && !c.twin_checked_at && !twins.has(c.handle))
+        .filter((c) => c.platform === "tiktok" && !c.retired_at && c.country === COUNTRY && !c.twin_checked_at && !twins.has(c.handle))
         .map((c) => ({ id: c.id, handle: c.handle, name: c.display_name, bio: c.bio ?? "", link: null as string | null }));
       const queue = [
         ...newTikTok.map(({ id, c }) => ({ id, handle: c.handle, name: c.profile!.name, bio: c.profile!.bio, link: c.profile!.link })),
@@ -493,6 +507,7 @@ export async function topUpCreators(dry = false, now = new Date()): Promise<Refr
             replies_seen: "on her TikTok",
             platform_user_id: p.userId,
             tiktok_twin: t.handle,
+            country: COUNTRY,
             source: "refresh",
             checked_at: new Date().toISOString(),
           }),

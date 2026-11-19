@@ -20,6 +20,60 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-20 — Camera Roll Story is switched on, and shares first place with Divorce Recovery
+
+**Where it came from:** Garreth's decision. He asked for the new Character 6
+lane to be wired all the way through and released, with it and Divorce Recovery
+ahead of the other carousel types. He picked the split below from three
+options.
+
+**What Camera Roll Story is:** eight-slide carousels, each telling one small
+everyday moment about her body (a camera she dodged, a coat that zipped) and her
+slow change on peptides. The lane was set up in the database on 2026-11-19 at 0
+a week. On the same day its 20 decks were rendered, given music, and 19 got a
+caption and passed the content check. The full story is in the Claude Doc
+"Handover: Camera Roll Story lane".
+
+**The new split per account:** Camera Roll Story 5, Divorce Recovery 5,
+Jealousy 3, Comparison 2, Journey 2, Viral Theories 1. It was Divorce Recovery
+6, Journey 4, Jealousy 3, Comparison 3, Viral Theories 2. Still 18 a week, so
+the cadence page keeps saving. Jealousy kept 3 because it has the most decks in
+stock (27).
+
+**Released:** 19 of the 20 decks came off Hold and are marked ready to be
+scheduled. CRS-0003 stays on Hold because it has no caption: released without
+one, the nightly content check would pass it empty, and a caption added later
+would then post without being checked.
+
+**Also fixed:** the 2026-11-19 set-up rebuilt the stock count's cached copy and
+dropped a read permission every other cached copy has. Nothing was failing
+because of it, but it is back now.
+
+**What to expect:**
+
+- **Camera Roll Story will run out in about three days.** For its first week a
+  new type gets every account's first slot each working day. With 8 Character 6
+  accounts, the next planning run (night of Nov 22 to 23, 01:00 New York time)
+  will likely book all 19. There is no writer for this lane yet, so no more
+  decks will come until one is built. When it runs out, those slots go to
+  whatever lane has stock.
+- **Divorce Recovery's 5 does nothing yet.** All its unposted decks are still on
+  Hold (85 checked, 27 not), and Garreth chose to leave them held for now.
+  Comparison also has 0 in stock.
+
+**Checked live after the change:** the split reads 18 of 18; stock reads 19 for
+Camera Roll Story; the 19 decks show in the calendar and posting view with all
+8 pictures; all 19 songs match the music list, written the same way as
+Jealousy's. **Not yet met a real run:** no Camera Roll Story deck has been
+scheduled or posted.
+
+**Smart Scheduler (n8n):** Garreth added `camera_roll_story:'slide_8_url'` to
+its list of each lane's picture column by hand in the editor, the same as
+Comparison's 8-slide decks, and published it. Read back the same day: the
+published version is the saved one and contains the entry. Before a deck is
+planned, the scheduler now also checks that its last slide is there. Every
+other lane already had this second check.
+
 ## 2026-11-19 — All six Character 6 story writers are published
 
 **Where it came from:** Garreth: "Publish all writers now". Each writer was
@@ -70,7 +124,6 @@ last test run is listed in the entries below.
 - **Two names still say "(draft)":** the Comparison and Camera Roll
   workflow names and webhook addresses.
 
-
 ## 2026-11-19 — Camera Roll Story gets a story lane and a writer (draft)
 
 **Where it came from:** Garreth: "we have a new content type that we need to
@@ -113,7 +166,6 @@ were clean and 1 was flagged for a repeated peptide opener.
   pending") is a guess and has to be checked on Garreth's Mac.
 - **Stories:** no story has been scored for this lane yet.
 - **Not published.**
-
 
 ## 2026-11-19 — Story Research Agent: finds and judges stories for the Camera Roll Story lane (live, not yet run)
 
@@ -498,6 +550,93 @@ Comparison 216768, Jealousy 216767, Viral Theories 216766, Divorce Recovery
   almost every deck.
 - Stories whose woman is in her 20s still come through: "at 26", "I was 24".
 - Divorce's 150-word cap fights the higher minimums.
+
+## 2026-11-19 — Creators to follow: US women aged 40 to 50 only
+
+**Where it came from:** Garreth's decision. He asked that every creator on the
+list fit our ICP: health and wellness, women aged 40 to 50, and "most
+importantly lives in the US". When the list was built on 2026-11-13, nobody
+checked country or age. Nobody had followed anyone from it yet, so the cleanup
+cost nothing.
+
+**What the check found** (110 creators, checked one by one):
+
+- **23 were not in the US**, or their account was gone. TikTok places them in
+  the UK (9), Canada (3), Australia (2), South Africa, and Trinidad and Tobago.
+  An Instagram creator counts as wherever her TikTok is.
+- **26 looked under 40.** One says she is 36, one was born in 1987, and the
+  rest look 20s to 30s in their photo.
+- **5 were over 50.** They give ages of 55 and 59, or say "50+" or "after 50".
+- **8 were not health and wellness, or sold something.** That covers a books
+  page, a law page, a poetry page, a couple's page, a declutter page, a beauty
+  page (on both TikTok and Instagram), and one whose bio link promotes
+  supplements.
+- **19 fit otherwise, but their age could not be told** (a cartoon photo and no
+  age in the bio). Garreth chose to take these off too.
+- **29 fit clearly** and stayed. Most give their age in their bio ("47",
+  "45-year-old mom", "almost 50", "Gen X", a birth year in the handle). The
+  rest were judged from their photo.
+
+Everyone taken off keeps a reason that starts "ICP check 2026-11-19". The
+refresh never adds her back.
+
+**Refilled the same day.** 62 TikTok searches (the usual phrases plus
+age-specific ones like "47 year old weight loss") found 184 small creators. 147
+were in the US. Only 12 of those clearly fit, by the same bio-and-photo check:
+most of the rest were coaches selling programmes, or women over 50. 11 of the
+12 reply to comments, and 4 of them have an Instagram that fits. That is 15
+added. **The list is now 33 TikTok and 11 Instagram, all in the US.** About 550
+ScrapeCreators credits in all (5,821 left).
+
+**What changed for the monthly refresh:**
+
+- Before adding a new TikTok creator, it asks TikTok which country her account
+  is in. Anyone outside the US is left out, and so is anyone TikTok won't place.
+  The country is saved on each creator (new `country` column). An Instagram
+  creator takes her TikTok's.
+- The AI that judges new creators must now see a sign she is 40 to 50: her
+  age, a birth year from 1976 to 1986, "in my 40s", "turning 50", or "over 40"
+  with nothing saying older. With no sign, she is left out. "Gen X" alone is
+  not enough, because it runs past 60.
+- The age-specific search phrases are added to the monthly rotation.
+
+**Limits, said plainly:** the AI only reads words. It does not look at
+photos, so a woman whose age shows only in her photo will be missed. Today's
+photo judgments were made by eye in the session. The AI still can't add new
+TikTok creators until the OpenRouter key is topped up (it hit its limit
+2026-11-18). Without the AI, the refresh still checks the existing list.
+
+**Verified:** the database change and the cleanup are live, confirmed by
+query. Compiles, and the follow-list tests pass. The refresh's new country
+check has not met a real run yet; the first is the scheduled one on 2026-12-01,
+and it needs a deploy from `main`.
+
+## 2026-11-18 — Adjust posting cadence now always shows the real numbers
+
+**Where it came from:** a bug seen in production. Right after the Character 6
+split was changed in the database (Divorce Recovery 6, Journey 4, Jealousy 3,
+Comparison 3, Viral Theories 2), Garreth opened Adjust posting cadence and it
+still showed the mix from about 2026-11-10: Divorce Recovery 5, Jealousy 5,
+Viral Theories 4, Journey 4, no Comparison at all, and "45 ready" Divorce
+Recovery decks when there were 0. The database had the new split; only the
+window was wrong.
+
+**Why:** the window read a saved copy of the numbers that is meant to refresh
+every minute. On the live site that copy stopped refreshing around 2026-11-10
+and survived every deploy since. The split was changed straight in the database
+both times (Nov 10 and today), which never tells the site to drop its copy. Why
+the minute-by-minute refresh stopped is not known.
+
+**Why it mattered:** the window saves back what it shows. Pressing Save on the
+old copy would have tried to put the Nov 10 split back.
+
+**What changed:** the window now reads the database every time the Content
+Calendar page loads, for both the lane mix and the fleet numbers. If that read
+fails, the Adjust Cadence button is hidden rather than showing an old copy.
+Other pages that show the same numbers still use the saved copy.
+
+**Verified:** compiles, and the cadence and cache tests pass. Not yet seen on
+the live site; that needs a deploy.
 
 ## 2026-11-18 — One shared rule still allowed "read up, asked questions"
 
@@ -1107,6 +1246,8 @@ No database change. Nothing new is written anywhere.
 **Verified:** tests only, with made-up reports, on a local copy. No real report
 of this kind exists yet: the robot's side is still being built. The first real
 one will be the first live check.
+
+---
 
 ## 2026-11-18 — The music list now adds trending songs every week
 
