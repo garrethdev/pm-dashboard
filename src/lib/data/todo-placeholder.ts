@@ -83,6 +83,14 @@ export type TodoItem = {
    * last time it was heard from. Absent when no run is open.
    */
   run?: { state: "running" | "stopped"; at: string };
+  /**
+   * Warmups only, today only: the robot did not start because the phone's
+   * internet connection was not American at the account's newest warmup
+   * today, e.g. "Phone's connection is not American (PH) at 2:14 AM: check
+   * the phone's proxy" (Garreth, 2026-11-18; warmup-connection.ts). Gone once
+   * a later warmup reports anything else.
+   */
+  connectionWarning?: string;
 };
 
 export type TodoAccount = {
