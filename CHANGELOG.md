@@ -20,6 +20,22 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-20 — SocialFlared added to Resources
+
+**Where it came from:** Garreth's request, to keep the supplier we use to buy
+followers, accounts and proxies one click away.
+
+**What changed:** the Resources page has a new card for SocialFlared
+(socialflared.com) with a one-line description taken from its own site:
+followers, likes and comments, aged and warmed-up TikTok and Instagram
+accounts, and mobile proxies. The card opens the site in a new tab and says
+"Open site" rather than "Open doc", with a globe icon, so it is not mistaken for
+one of our reference documents.
+
+**Verified:** it type-checks. I have not opened the page in a browser.
+
+---
+
 ## 2026-11-20 — Camera Roll Story is switched on, and shares first place with Divorce Recovery
 
 **Where it came from:** Garreth's decision. He asked for the new Character 6
