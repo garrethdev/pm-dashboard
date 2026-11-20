@@ -56,7 +56,6 @@ others.
 - `[Captions]`'s first run on the new version.
 - The Camera Roll writer's caption step in a real run.
 
-
 ## 2026-11-20 — No hashtags on Character 6 captions, for now
 
 **Where it came from:** Garreth: "We need to remove all hashtags for now".
@@ -106,6 +105,19 @@ others.
 `divorce-life-chapter-transformation-frame`). The strip step removes any
 hashtags they cause. Whether to switch them off is Garreth's call.
 
+## 2026-11-20 — SocialFlared added to Resources
+
+**Where it came from:** Garreth's request, to keep the supplier we use to buy
+followers, accounts and proxies one click away.
+
+**What changed:** the Resources page has a new card for SocialFlared
+(socialflared.com) with a one-line description taken from its own site:
+followers, likes and comments, aged and warmed-up TikTok and Instagram
+accounts, and mobile proxies. The card opens the site in a new tab and says
+"Open site" rather than "Open doc", with a globe icon, so it is not mistaken for
+one of our reference documents.
+
+**Verified:** it type-checks. I have not opened the page in a browser.
 
 ## 2026-11-19 — First real saved decks from the new writers (9 decks, all on Hold)
 
@@ -159,7 +171,6 @@ The 9 decks cost about $2 in all.
 
 **Not done:** no deck was rendered, given music, checked or released. Those
 steps are Garreth's.
-
 
 ## 2026-11-19 — Story stock topped up: every Character 6 story lane has at least 3 weeks
 

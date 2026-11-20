@@ -11,6 +11,9 @@ export interface Resource {
   /** A page inside the dashboard rather than a Claude Doc: opens in the same
    *  tab (Creators to follow, 2026-11-13). */
   internal?: boolean;
+  /** An outside website (a supplier or tool) rather than a Claude Doc
+   *  (SocialFlared, 2026-11-20). */
+  site?: boolean;
 }
 
 export const RESOURCES: Resource[] = [
@@ -44,5 +47,11 @@ export const RESOURCES: Resource[] = [
     summary: "Small weight-loss and midlife creators who reply to comments, for following by hand on the phones, with who has followed whom.",
     url: "/resources/follow-creators",
     internal: true,
+  },
+  {
+    title: "SocialFlared",
+    summary: "Where we buy followers, likes and comments, aged and warmed-up TikTok and Instagram accounts, and mobile proxies.",
+    url: "https://socialflared.com/",
+    site: true,
   },
 ];

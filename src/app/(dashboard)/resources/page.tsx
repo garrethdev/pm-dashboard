@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, UserPlus } from "@/components/ui/icons";
+import { BookOpen, Globe, UserPlus } from "@/components/ui/icons";
 import { RESOURCES } from "@/lib/resources";
 
 /*
@@ -15,14 +15,14 @@ export default function ResourcesPage() {
       <h1 className="text-lg font-semibold">Resources</h1>
       <div className="grid gap-3 sm:grid-cols-2">
         {RESOURCES.map((r) => {
-          const Icon = r.internal ? UserPlus : BookOpen;
+          const Icon = r.internal ? UserPlus : r.site ? Globe : BookOpen;
           const body = (
             <>
               <Icon className="mt-0.5 size-5 shrink-0 text-text-muted" />
               <div>
                 <div className="font-medium">{r.title}</div>
                 <div className="mt-1 text-sm text-text-muted">{r.summary}</div>
-                <div className="mt-2 text-xs text-accent">{r.internal ? "Open page →" : "Open doc ↗"}</div>
+                <div className="mt-2 text-xs text-accent">{r.internal ? "Open page →" : r.site ? "Open site ↗" : "Open doc ↗"}</div>
               </div>
             </>
           );
