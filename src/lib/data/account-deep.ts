@@ -14,6 +14,47 @@
  * shows as a dash.
  */
 
+/**
+ * Fewest views a post needs before its early skips (or hold) are judged. The
+ * skip rate is a share of the viewers, so on a handful of views it says
+ * nothing: one viewer who stays reads as 0% (Garreth asked for this floor on
+ * 2026-11-04 for the best and worst hooks, and kept it for the marker on
+ * 2026-11-20).
+ */
+export const MIN_VIEWS_TO_JUDGE = 50;
+
+/** Early skips under this % mark a post as a strong opener (Garreth, 2026-11-20). */
+export const LOW_EARLY_SKIPS = 20;
+
+/** Instagram's early skips (its skip rate: % who swiped away within 3 seconds) are low enough, on enough views, to mark the post. */
+export function lowEarlySkips(earlySkips: number | null, views: number | null): boolean {
+  return earlySkips !== null && views !== null && views >= MIN_VIEWS_TO_JUDGE && earlySkips < LOW_EARLY_SKIPS;
+}
+
+/** A count per 100 people reached, one decimal; null when either side is missing or nobody was reached. */
+export function per100Reached(count: number | null, reach: number | null): number | null {
+  if (count === null || reach === null || reach <= 0) return null;
+  return Math.round((count / reach) * 1000) / 10;
+}
+
+/** One Instagram post on the Deep side's post list (Garreth, 2026-11-20). */
+export interface InstagramPostRow {
+  postUrl: string | null;
+  postedAt: string;
+  /** The hook words if tagged, else the caption. */
+  text: string;
+  /** "video" | "carousel" | "photo" | ... as the ingest stored it. */
+  format: string | null;
+  views: number | null;
+  /** % who swiped away within 3 seconds. Reels only; null on carousels and photos. */
+  earlySkips: number | null;
+  reach: number | null;
+  likesPer100: number | null;
+  sharesPer100: number | null;
+  /** Early skips under LOW_EARLY_SKIPS on at least MIN_VIEWS_TO_JUDGE views. */
+  low: boolean;
+}
+
 export interface HookTypeRow {
   /** The hook family as DA-03 groups it, e.g. "question", "declaration". */
   type: string;
@@ -114,6 +155,8 @@ export interface AccountDeep {
   worst: HookPost[];
   /** Carousels and photos only; empty on an account that posts none. */
   carousels: CarouselRow[];
+  /** Instagram accounts only: each post of the last 3 months that has a reach, best early skips first; the card filters by range. Empty elsewhere. */
+  instagramPosts: InstagramPostRow[];
 }
 
 /** Made-up numbers for drawing the screen. Shaped like a Journey account: a few hook families, one month. */
@@ -197,5 +240,13 @@ export const SAMPLE_DEEP: AccountDeep = {
     { type: "surprising fact", posts: 4, medianReach: 140, savesPer100: 6.4, sharesPer100: 2.1, followsPer100: 2.9 },
     { type: "declaration", posts: 4, medianReach: 61, savesPer100: 1.6, sharesPer100: 0.0, followsPer100: 0.8 },
     { type: "talking to the weight", posts: 3, medianReach: 18, savesPer100: 0.0, sharesPer100: null, followsPer100: null },
+  ],
+  instagramPosts: [
+    { postUrl: "https://www.instagram.com/p/sample1/", postedAt: "2026-10-18T19:05:00Z", text: "Nobody told me the 3pm crash was a sleep problem", format: "video", views: 341, earlySkips: 14.2, reach: 298, likesPer100: 6.4, sharesPer100: 1.3, low: true },
+    { postUrl: "https://www.instagram.com/p/sample2/", postedAt: "2026-10-14T18:40:00Z", text: "What would you do with the energy back?", format: "video", views: 228, earlySkips: 18.9, reach: 201, likesPer100: 4.5, sharesPer100: 0.5, low: true },
+    { postUrl: "https://www.instagram.com/p/sample3/", postedAt: "2026-10-09T17:12:00Z", text: "Day 40. The scale moved before the mirror did", format: "video", views: 196, earlySkips: 37.5, reach: 170, likesPer100: 3.5, sharesPer100: 0.0, low: false },
+    { postUrl: "https://www.instagram.com/p/sample7/", postedAt: "2026-10-20T16:02:00Z", text: "I stopped weighing myself for a month", format: "video", views: 12, earlySkips: 0, reach: 11, likesPer100: 9.1, sharesPer100: 0.0, low: false },
+    { postUrl: "https://www.instagram.com/p/sample4/", postedAt: "2026-10-18T19:05:00Z", text: "Hear me out, I'm going to lose this weight", format: "video", views: 53, earlySkips: 69, reach: 49, likesPer100: 2.0, sharesPer100: 0.0, low: false },
+    { postUrl: "https://www.instagram.com/p/sample8/", postedAt: "2026-10-16T18:20:00Z", text: "Three things I wish I knew at 45", format: "carousel", views: 140, earlySkips: null, reach: 140, likesPer100: 5.0, sharesPer100: 2.1, low: false },
   ],
 };

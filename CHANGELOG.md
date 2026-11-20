@@ -20,6 +20,53 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-20 — Instagram: early skips, people reached, likes and shares per 100 reached
+
+**Where it came from:** Garreth asked for these four numbers on each Instagram
+post, with posts under 20% early skips marked. He chose to have them in both
+places (the Deep side and the All posts tab), to keep the 50-view minimum
+before a post is marked, and to call the number "Early skips". All four were
+already stored: nothing new is fetched or saved. The "per 100 reached"
+figures are worked out on the page from the likes, shares and reach.
+
+**What changed:**
+- **The Deep side of an Instagram account has a new "Posts" card.** It lists
+  each post from the last 30 days with its views, early skips, people
+  reached, and likes and shares per 100 reached. Posts with enough views come
+  first, lowest early skips at the top. Then come Reels with too few views to
+  judge, then carousels and photos. Instagram gives no early skips for
+  carousels and photos, so theirs show a dash. The card's header counts the
+  marked posts.
+- **The Posts card has its own range: 7 days, 2 weeks, 1 month (the default)
+  or 3 months** (asked for by Garreth the same day). The marked count follows
+  the range. Only this card reaches back 3 months; the rest of the Deep side
+  still covers the last 30 days. Instagram only started giving reach and
+  early skips around 9 Oct, so for now "3 months" adds just the older posts
+  that have them (on trina_triumphs, 46 posts against 40 for 1 month).
+- **Posts under 20% early skips get a green mark**, but only with at least
+  50 views. On a handful of views one viewer who stays reads as 0%, the same
+  reason the best and worst hooks need 50 views.
+- **All posts tab:** "Skip rate" is now "Early skips", with the same green
+  mark. Likes and shares per 100 reached are a small grey line under the
+  likes and shares counts. Extra columns would have pushed the table off a
+  1440px-wide screen (measured: 217px too wide).
+- **The Overview tile "Skip rate" is now "Early skips"**, so one number has
+  one name on the page.
+
+**Checked 2026-11-20, locally against the live database (headless Chrome):**
+the four ranges on trina_triumphs show 8, 22, 40 and 46 posts, and the
+1-month list matches a database count. All five live Instagram accounts
+(trina_triumphs, hey.imani.vaughn, nikki_wilsonxoxo, kathy_spd,
+sar.ahkellerxo) show the card. Every Reel from
+the last 30 days has early skips and reach, and every carousel has reach. The
+marked counts match a database count: 8, 0, 0, 4 and 2. Likes and shares per
+100 reached are low everywhere (0.2 to 0.3 likes and 0 to 0.2 shares per 100
+reached). The stored likes match what Instagram sent, and the Instagram fetch
+rewrites each post's numbers on every run for 28 days, so these are the real
+figures, not stale ones. Not yet deployed.
+
+---
+
 ## 2026-11-20 — Camera Roll Story captions work like the other Character 6 lanes
 
 **Where it came from:** Garreth asked whether we use one universal caption

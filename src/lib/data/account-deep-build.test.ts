@@ -114,3 +114,48 @@ describe("buildDeep", () => {
     expect(deep.forYou!.heldPosts[0]!.postUrl).toBe("https://x/t1");
   });
 });
+
+describe("Instagram post list (Garreth, 2026-11-20)", () => {
+  const posts = [
+    P("ok", { views: 400, reach: 300, skipRate: 35, likes: 12, shares: 3, postedAt: "2026-10-18T10:00:00Z" }),
+    P("low", { contentId: "L", views: 200, reach: 160, skipRate: 15.5, likes: 8, shares: 0, postedAt: "2026-10-12T10:00:00Z" }),
+    P("tiny", { views: 9, reach: 9, skipRate: 0, likes: 1, shares: 0 }),
+    P("edge", { views: 120, reach: 100, skipRate: 20, likes: 5, shares: 1 }),
+    P("carousel", { format: "carousel", views: 90, reach: 80, likes: 4, shares: 2 }),
+    P("noviews", { views: 0, reach: 0, skipRate: 0, likes: 0, shares: 0 }),
+    P("noreach", { views: 300, skipRate: 10 }),
+  ];
+  const deep = buildDeep(posts, [T("L", "question")], [], "instagram");
+  const byId = (id: string) => deep.instagramPosts.find((p) => p.postUrl === `https://x/${id}`)!;
+
+  it("marks early skips under 20% only on posts with at least 50 views", () => {
+    expect(byId("low").low).toBe(true);
+    expect(byId("edge").low).toBe(false); // exactly 20% is not under
+    expect(byId("tiny").low).toBe(false); // 0% on 9 views says nothing
+    expect(deep.instagramPosts.filter((p) => p.low)).toHaveLength(1);
+  });
+
+  it("works out likes and shares per 100 reached, and leaves them empty with nobody reached", () => {
+    expect(byId("ok")).toMatchObject({ likesPer100: 4, sharesPer100: 1, reach: 300, earlySkips: 35 });
+    expect(byId("noviews")).toMatchObject({ earlySkips: null, likesPer100: null, sharesPer100: null });
+    expect(byId("carousel").earlySkips).toBeNull();
+    expect(byId("low").text).toBe("words of L");
+  });
+
+  it("lists judged posts by lowest early skips, then too-few-views Reels, then carousels; skips posts without a reach", () => {
+    expect(deep.instagramPosts.map((p) => p.postUrl?.slice(10))).toEqual(["low", "edge", "ok", "tiny", "carousel", "noviews"]);
+  });
+
+  it("lists the longer post window it is given while the rest of the side keeps its own posts", () => {
+    const older = P("older", { contentId: "O", views: 300, reach: 250, skipRate: 12, likes: 5, postedAt: "2026-08-30T10:00:00Z" });
+    const both = buildDeep(posts, [T("L", "question"), T("O", "declaration")], [], "instagram", new Date(), [...posts, older]);
+    expect(both.instagramPosts.map((p) => p.postUrl?.slice(10))).toContain("older");
+    expect(both.instagramPosts[0]!.text).toBe("words of O");
+    expect(both.totalPosts).toBe(posts.length);
+    expect(both.hooks.map((h) => h.type)).not.toContain("declaration");
+  });
+
+  it("is empty off Instagram", () => {
+    expect(buildDeep(posts, [], [], "tiktok").instagramPosts).toEqual([]);
+  });
+});

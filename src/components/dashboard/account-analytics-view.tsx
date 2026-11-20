@@ -156,7 +156,7 @@ export function AccountAnalyticsView({
             <>
               <MetricTile
                 id="skip"
-                label="Skip rate"
+                label="Early skips"
                 value={s.skipRate === null ? "—" : `${s.skipRate}%`}
                 delta={data.deltas.skipRate}
                 spark={present(data.series.map((p) => p.skipRate))}

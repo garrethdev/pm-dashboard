@@ -1,5 +1,5 @@
 import { accountAnalyticsTag } from "@/lib/data/account-analytics";
-import type { AccountDeep, Audience, CarouselRow, CurvePoint, ForYou, HookPost, HookTypeRow, NamedPct, Watching, WeekValue } from "@/lib/data/account-deep";
+import { MIN_VIEWS_TO_JUDGE, lowEarlySkips, per100Reached, type AccountDeep, type Audience, type CarouselRow, type CurvePoint, type ForYou, type HookPost, type HookTypeRow, type InstagramPostRow, type NamedPct, type Watching, type WeekValue } from "@/lib/data/account-deep";
 import { ACCOUNT_ANALYTICS_TAG, TTL, cachedFetcher, type Cached } from "@/lib/data/cache";
 import { sbRestAll } from "@/lib/data/supabase";
 import { type AnalyticsPlatform, perfTable } from "@/lib/platform";
@@ -22,6 +22,9 @@ import { type AnalyticsPlatform, perfTable } from "@/lib/platform";
 
 /** Period the Deep side covers: "this month". */
 export const DEEP_DAYS = 30;
+
+/** How far back Instagram's post list reaches: its longest range is 3 months (Garreth, 2026-11-20). */
+export const POST_LIST_DAYS = 90;
 
 export interface DeepPost {
   postId: string;
@@ -224,9 +227,9 @@ function hooksByFamily(rows: Joined[]): HookTypeRow[] {
  * hold is a share of the viewers, so on a handful of views it says nothing:
  * hey.imani.vaughn's "best" hook (2026-11-04) was a post with 1 view that its
  * one viewer watched past 3 seconds, and the three "worst" had 2 to 10 views
- * (Garreth asked for a floor).
+ * (Garreth asked for a floor). The same floor marks low early skips.
  */
-export const MIN_VIEWS_TO_RANK = 50;
+export const MIN_VIEWS_TO_RANK = MIN_VIEWS_TO_JUDGE;
 
 function bestAndWorst(rows: Joined[]): { best: HookPost[]; worst: HookPost[] } {
   const scored = rows
@@ -273,6 +276,42 @@ function carouselsByFamily(rows: Joined[]): CarouselRow[] {
       };
     })
     .sort((a, b) => (b.medianReach ?? -1) - (a.medianReach ?? -1));
+}
+
+/**
+ * Instagram's post list (Garreth, 2026-11-20): early skips, people reached,
+ * likes and shares per 100 reached, one row per post that has a reach. Order:
+ * posts with enough views to judge, lowest early skips first; then the Reels
+ * on too few views to judge; then carousels and photos (Instagram gives them
+ * no skip rate), most reached first.
+ */
+function instagramPosts(rows: Joined[], platform: AnalyticsPlatform): InstagramPostRow[] {
+  if (platform !== "instagram") return [];
+  const list = rows
+    .filter((r) => r.post.reach !== null)
+    .map(({ post, tag }): InstagramPostRow => {
+      // With no viewers there is nothing to skip: Instagram reports 0%, which would read as a perfect opener.
+      const earlySkips = post.views ? post.skipRate : null;
+      return {
+        postUrl: post.postUrl,
+        postedAt: post.postedAt,
+        text: (tag?.hookText || post.caption || "(no caption)").trim(),
+        format: post.format,
+        views: post.views,
+        earlySkips,
+        reach: post.reach,
+        likesPer100: per100Reached(post.likes, post.reach),
+        sharesPer100: per100Reached(post.shares, post.reach),
+        low: lowEarlySkips(earlySkips, post.views),
+      };
+    });
+  const group = (p: InstagramPostRow) => (p.earlySkips === null ? 2 : (p.views ?? 0) >= MIN_VIEWS_TO_JUDGE ? 0 : 1);
+  return list.sort(
+    (a, b) =>
+      group(a) - group(b) ||
+      (group(a) < 2 ? (a.earlySkips as number) - (b.earlySkips as number) : (b.reach ?? 0) - (a.reach ?? 0)) ||
+      Date.parse(b.postedAt) - Date.parse(a.postedAt),
+  );
 }
 
 function weekly(rows: Joined[], value: (r: Joined) => number | null): WeekValue[] {
@@ -342,7 +381,18 @@ function forYou(rows: Joined[], platform: AnalyticsPlatform): ForYou | null {
   };
 }
 
-export function buildDeep(posts: DeepPost[], tags: DeepTag[], readings: DeepReading[], platform: AnalyticsPlatform, now = new Date()): AccountDeep {
+/**
+ * `listPosts` feeds only Instagram's post list, which reaches further back
+ * (POST_LIST_DAYS) than the rest of the side; it defaults to `posts`.
+ */
+export function buildDeep(
+  posts: DeepPost[],
+  tags: DeepTag[],
+  readings: DeepReading[],
+  platform: AnalyticsPlatform,
+  now = new Date(),
+  listPosts: DeepPost[] = posts,
+): AccountDeep {
   const rows = join(posts, tags, readings, platform);
   const read = rows.filter((r) => r.reading !== null);
   const sourceReadings = read.map((r) => r.reading!).filter((r) => r.trafficSources && Object.keys(r.trafficSources).length);
@@ -363,6 +413,7 @@ export function buildDeep(posts: DeepPost[], tags: DeepTag[], readings: DeepRead
     best,
     worst,
     carousels: carouselsByFamily(rows),
+    instagramPosts: instagramPosts(listPosts === posts ? rows : join(listPosts, tags, [], platform), platform),
   };
 }
 
@@ -454,7 +505,10 @@ export function toDeepReading(r: RawReading): DeepReading {
 }
 
 async function fetchAccountDeep(account: string, platform: AnalyticsPlatform): Promise<AccountDeep> {
-  const since = new Date(Date.now() - DEEP_DAYS * 86_400_000).toISOString();
+  // Instagram reads 3 months for its post list; everything else uses the last 30 days of them.
+  const days = platform === "instagram" ? POST_LIST_DAYS : DEEP_DAYS;
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  const recentFrom = Date.now() - DEEP_DAYS * 86_400_000;
   const cols = "post_id,post_url,posted_at,format,caption_snippet,carousel_id,views,likes,comments,shares,saves" + (platform === "instagram" ? ",reach,skip_rate,follows" : "");
   const [rawPosts, rawReadings] = await Promise.all([
     sbRestAll<RawPost>(
@@ -471,17 +525,23 @@ async function fetchAccountDeep(account: string, platform: AnalyticsPlatform): P
     const list = ids.slice(i, i + 100).map((id) => `"${id.replace(/"/g, "")}"`).join(",");
     rawTags.push(...(await sbRestAll<RawTag>(`content_tags?select=content_id,hook_text,hook_family,hook_type&content_id=in.(${encodeURIComponent(list)})`)));
   }
+  const all = rawPosts.map(toDeepPost);
   return buildDeep(
-    rawPosts.map(toDeepPost),
+    all.filter((p) => Date.parse(p.postedAt) >= recentFrom),
     rawTags.map((t) => ({ contentId: t.content_id, hookText: t.hook_text, hookFamily: t.hook_family, hookType: t.hook_type })),
     rawReadings.map(toDeepReading),
     platform,
+    new Date(),
+    all,
   );
 }
 
-/** Same tags as the Analytics and All posts tabs, so Refresh expires all three together. */
+/**
+ * Same tags as the Analytics and All posts tabs, so Refresh expires all three
+ * together. v3 (2026-11-20): the payload gained instagramPosts, 3 months of them.
+ */
 export function getAccountDeep(account: string, platform: AnalyticsPlatform): Promise<Cached<AccountDeep>> {
-  return cachedFetcher(`account-deep-v1:${account}:${platform}`, TTL.supabase, () => fetchAccountDeep(account, platform), {
+  return cachedFetcher(`account-deep-v3:${account}:${platform}`, TTL.supabase, () => fetchAccountDeep(account, platform), {
     tags: [ACCOUNT_ANALYTICS_TAG, accountAnalyticsTag(account)],
   })();
 }

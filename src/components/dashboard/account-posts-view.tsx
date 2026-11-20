@@ -7,9 +7,11 @@ import { FilterPills } from "@/components/ui/filter-pills";
 import { ExternalLink, LayoutList } from "@/components/ui/icons";
 import { SortButton, cycleSort, type SortDir } from "@/components/ui/sort-button";
 import { ACCOUNT_RANGES, type AccountRangeKey } from "@/lib/data/account-analytics";
+import { LOW_EARLY_SKIPS, lowEarlySkips, per100Reached } from "@/lib/data/account-deep";
 import type { AccountPostRow } from "@/lib/data/account-posts";
 import { formatEtDate } from "@/lib/data/format";
 import type { AnalyticsPlatform } from "@/lib/platform";
+import { cn } from "@/lib/utils";
 
 /**
  * Every post one account has made, with every number we hold for it (the
@@ -23,10 +25,18 @@ interface Column {
   /** The number the column sorts by; null shows a dash. */
   value: (p: AccountPostRow) => number | null;
   format?: (v: number, p: AccountPostRow) => string;
-  /** Skip rate: the useful end is the low one, so a fresh sort opens there. */
+  /** Early skips: the useful end is the low one, so a fresh sort opens there. */
   first?: SortDir;
   /** Reads as words rather than a count, so the phone list puts the label first. */
   words?: boolean;
+  /** Marks the cell as good news, e.g. early skips under 20% (Garreth, 2026-11-20). */
+  mark?: (p: AccountPostRow) => boolean;
+  /** What a marked cell means, for the hover. */
+  markTitle?: string;
+  /** A second, smaller figure under the number, e.g. likes per 100 reached. */
+  sub?: (p: AccountPostRow) => string | null;
+  /** What the second figure means, for the hover and the phone list. */
+  subTitle?: string;
 }
 
 const nf = (v: number) => v.toLocaleString("en-US");
@@ -53,20 +63,39 @@ const FOR_YOU: Column = {
 };
 
 /**
+ * Likes and shares per 100 people reached (Garreth, 2026-11-20), worked out
+ * here from the counts, so nothing new is stored. They sit under the count
+ * rather than in columns of their own: two more columns pushed Instagram's
+ * table 217px past the card at 1440px wide.
+ */
+const per100Line = (count: (p: AccountPostRow) => number | null) => (p: AccountPostRow) => {
+  const v = per100Reached(count(p), p.reach);
+  return v === null ? null : `${v.toFixed(1)} /100`;
+};
+
+/**
  * What each platform measures, in the order a person reads a post's story.
  * The API's numbers first, then the screen reading's. Twelve columns is the
  * most that fit at desktop width without sideways scrolling, so the reading's
  * words (where the views came from, the crosspost's Facebook views) go under
  * the caption, as the type goes under the date, and TikTok's total play time
- * is left out (it is views times watch time).
+ * is left out (it is views times watch time). Instagram's ten already fill a
+ * 1440px screen.
  */
 const COLUMNS: Record<AnalyticsPlatform, Column[]> = {
   instagram: [
-    ...BASE,
-    col("shares", "Shares"),
+    col("views", "Views"),
+    col("likes", "Likes", { sub: per100Line((p) => p.likes), subTitle: "per 100 reached" }),
+    col("comments", "Comments"),
+    col("shares", "Shares", { sub: per100Line((p) => p.shares), subTitle: "per 100 reached" }),
     col("saves", "Saves"),
     col("reach", "Reach"),
-    col("skipRate", "Skip rate", { format: (v) => `${v}%`, first: "asc" }),
+    col("skipRate", "Early skips", {
+      format: (v) => `${v}%`,
+      first: "asc",
+      mark: (p) => lowEarlySkips(p.skipRate, p.views),
+      markTitle: `Under ${LOW_EARLY_SKIPS}% early skips`,
+    }),
     col("avgWatchSec", "Watch", { format: (v) => `${v}s` }),
     col("follows", "Follows"),
     col("profileVisits", "Visits"),
@@ -176,8 +205,9 @@ export function AccountPostsView({ posts, platform }: { posts: AccountPostRow[];
                     .map((c) => [c, shown(p, c)] as const)
                     .filter(([, text]) => text !== null)
                     .map(([c, text]) => (
-                      <span key={c.key} className="tnum">
+                      <span key={c.key} className={cn("tnum", c.mark?.(p) && "font-medium text-ok")} title={c.mark?.(p) ? c.markTitle : undefined}>
                         {c.words ? `${c.label} ${text}` : `${text} ${c.label.toLowerCase()}`}
+                        {c.sub?.(p) ? ` (${c.sub(p)} reached)` : ""}
                       </span>
                     ))}
                 </div>
@@ -231,7 +261,18 @@ export function AccountPostsView({ posts, platform }: { posts: AccountPostRow[];
                     </td>
                     {columns.map((c) => (
                       <td key={c.key} className="py-2.5 text-right whitespace-nowrap tnum">
-                        {cell(p, c)}
+                        {c.mark?.(p) ? (
+                          <span className="rounded-full bg-ok/15 px-2 py-0.5 font-medium text-ok" title={c.markTitle}>
+                            {cell(p, c)}
+                          </span>
+                        ) : (
+                          cell(p, c)
+                        )}
+                        {c.sub?.(p) && (
+                          <span className="block text-xs text-text-muted" title={`${c.label} ${c.subTitle ?? ""}`.trim()}>
+                            {c.sub(p)}
+                          </span>
+                        )}
                       </td>
                     ))}
                   </tr>
