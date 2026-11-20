@@ -2766,6 +2766,42 @@ Each of these is deliberately parked, not unfinished. Every one records why it
 was deferred and what is already confirmed, so it can start from evidence rather
 than from a fresh investigation.
 
+## Retire the Instagram Graph API once the analytics robot works
+
+**Deferred by Garreth on 2026-10-26.** Start only after the DA-06 robot reads
+all three apps reliably for several Fridays. As of 2026-11-20 it does not:
+its one full run (2026-11-05) read Facebook 12 of 12 and TikTok 10 of 12 but
+stored no Instagram posts, Instagram was read on its own on 2026-11-11 (12
+posts), and there have been no readings since.
+
+**Why.** Garreth asked whether the Meta API ties our Instagram accounts
+together. It does: every connected account is a Tester on one developer app
+that only our accounts use, and the daily pull comes from one n8n server. So
+the app's user list is a list of the farm. Whether Meta uses that link to ban
+accounts is not known. The robot reads each account's numbers on its own phone,
+which is what a real owner does, so it adds no such link. The robot's Instagram
+readings already matched the API exactly (readings 1–5, 2026-10-23).
+Facebook (ScrapeCreators, public pages, no login) does not have this problem.
+
+**What has to change first.**
+1. The robot matches each reading to a post by looking in the API's own table
+   (`recentPosts` in `src/server/screen-readings.ts` reads `post_performance`).
+   Point it at our posting records instead, after checking those are complete
+   for every Instagram account.
+2. Everything that reads `post_performance` moves to the robot's readings or
+   accepts weekly numbers. In this repo: `lib/platform.ts`,
+   `lib/data/supabase.ts`, `lib/data/top-posts.ts`,
+   `lib/data/account-analytics.ts`. Outside it, not yet checked: the n8n
+   Analysis Engine (which fills the table), the health detector and the digest
+   emails. The health detector needs most thought, because it judges
+   suppression from day-to-day view changes.
+3. Accept the loss. Instagram numbers go from daily to weekly, so a dud or a
+   ban shows up later in a post's first days.
+
+**Order.** Run the robot and the API side by side for about four Fridays and
+compare; do steps 1 and 2; turn off the API pull; then remove the accounts as
+Testers on the app. That last step is what breaks the link Meta can see.
+
 ## Tap-to-post: download the next video before it is tapped
 
 **Deferred by Garreth on 2026-10-02**, after Czedrick's iPhone test of
