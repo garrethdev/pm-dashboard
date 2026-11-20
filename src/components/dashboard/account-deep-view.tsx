@@ -1,12 +1,14 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricTile } from "@/components/dashboard/account-analytics-view";
 import { AudienceSection, Bars, Table, Td, basis, extremes, nf, num, pct, per100, secs, tone } from "@/components/dashboard/deep-bits";
 import { DashCard } from "@/components/ui/card";
+import { FilterPills } from "@/components/ui/filter-pills";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ChartBar } from "@/components/ui/icons";
-import type { AccountDeep, CarouselRow, CurvePoint, ForYou, HookPost, HookTypeRow, Watching, WeekValue } from "@/lib/data/account-deep";
+import { LOW_EARLY_SKIPS, type AccountDeep, type CarouselRow, type CurvePoint, type ForYou, type HookPost, type HookTypeRow, type InstagramPostRow, type Watching, type WeekValue } from "@/lib/data/account-deep";
 import { formatEtDate } from "@/lib/data/format";
 import { cn } from "@/lib/utils";
 
@@ -205,11 +207,92 @@ function CarouselsTable({ rows }: { rows: CarouselRow[] }) {
   );
 }
 
+// --- Instagram's posts (Garreth, 2026-11-20) -----------------------------------------
+
+function postType(format: string | null): string {
+  if (format === "video") return "Reel";
+  if (format === "carousel") return "Carousel";
+  if (format === "photo") return "Photo";
+  return "Post";
+}
+
+/** One row per post: early skips, people reached, likes and shares per 100 reached; low early skips marked. */
+function InstagramPostsTable({ rows }: { rows: InstagramPostRow[] }) {
+  return (
+    <Table head={["Post", "Views", "Early skips", "Reached", "Likes /100 reached", "Shares /100 reached"]}>
+      {rows.map((p) => (
+        <tr key={`${p.postedAt}-${p.postUrl ?? p.text}`} className="border-t border-border">
+          <td className="max-w-72 min-w-48 py-2.5">
+            {p.postUrl ? (
+              <a href={p.postUrl} target="_blank" rel="noreferrer" className="line-clamp-1 hover:text-accent">
+                {p.text}
+              </a>
+            ) : (
+              <span className="line-clamp-1">{p.text}</span>
+            )}
+            <span className="block text-xs text-text-muted tnum">
+              {formatEtDate(p.postedAt)} · {postType(p.format)}
+            </span>
+          </td>
+          <Td>{num(p.views)}</Td>
+          <Td>
+            {p.low ? (
+              <span className="rounded-full bg-ok/15 px-2 py-0.5 font-medium text-ok" title={`Under ${LOW_EARLY_SKIPS}% early skips`}>
+                {pct(p.earlySkips as number)}
+              </span>
+            ) : (
+              num(p.earlySkips, pct)
+            )}
+          </Td>
+          <Td>{num(p.reach)}</Td>
+          <Td>{num(p.likesPer100, per100)}</Td>
+          <Td>{num(p.sharesPer100, per100)}</Td>
+        </tr>
+      ))}
+    </Table>
+  );
+}
+
+/** The post list's ranges (Garreth, 2026-11-20); the loader reads 3 months back. */
+const POST_RANGES = [
+  { key: "7d", label: "7 days", days: 7 },
+  { key: "14d", label: "2 weeks", days: 14 },
+  { key: "30d", label: "1 month", days: 30 },
+  { key: "90d", label: "3 months", days: 90 },
+] as const;
+type PostRangeKey = (typeof POST_RANGES)[number]["key"];
+
+function InstagramPostsCard({ rows }: { rows: InstagramPostRow[] }) {
+  const [range, setRange] = useState<PostRangeKey>("30d");
+  // Read the clock once, when the card first shows, not on every render.
+  const [now] = useState(() => Date.now());
+  const shown = useMemo(() => {
+    const days = POST_RANGES.find((r) => r.key === range)?.days ?? 30;
+    const since = now - days * 86_400_000;
+    return rows.filter((p) => Date.parse(p.postedAt) >= since);
+  }, [rows, range, now]);
+  return (
+    <DashCard
+      title="Posts"
+      toolbar={
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs whitespace-nowrap text-text-muted tnum">
+            {nf(shown.filter((p) => p.low).length)} under {LOW_EARLY_SKIPS}% early skips
+          </span>
+          <FilterPills value={range} onChange={(r) => setRange(r as PostRangeKey)} options={POST_RANGES.map((r) => ({ value: r.key, label: r.label }))} />
+        </div>
+      }
+    >
+      {shown.length ? <InstagramPostsTable rows={shown} /> : <p className="text-sm text-text-muted">No posts in this range</p>}
+    </DashCard>
+  );
+}
+
 // --- The side ------------------------------------------------------------------------
 
 /** `aside` is the Overview / Deep switch, placed at the right end of the first row. */
 export function AccountDeepView({ deep, aside }: { deep: AccountDeep | null; aside?: React.ReactNode }) {
-  if (!deep || (deep.taggedPosts === 0 && deep.readPosts === 0)) {
+  if (!deep || (deep.taggedPosts === 0 && deep.readPosts === 0 && deep.instagramPosts.length === 0)) {
     return (
       <div className="flex min-h-full flex-col gap-6">
         {aside && <div className="flex items-center justify-end">{aside}</div>}
@@ -244,6 +327,8 @@ export function AccountDeepView({ deep, aside }: { deep: AccountDeep | null; asi
           <ForYouSection f={deep.forYou} />
         </DashCard>
       )}
+
+      {deep.instagramPosts.length > 0 && <InstagramPostsCard rows={deep.instagramPosts} />}
 
       {/* One section for the comparisons by hook type (Garreth, 2026-10-23):
           a heading and a rule set it apart from the robot's readings above,
