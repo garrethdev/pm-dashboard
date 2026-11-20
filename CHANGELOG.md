@@ -20,6 +20,147 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-20 — Camera Roll Story captions work like the other Character 6 lanes
+
+**Where it came from:** Garreth asked whether we use one universal caption
+maker. We don't: the story writers write their own captions, the hourly
+`[Captions]` workflow covered only three Character 6 lanes, and Camera Roll
+had a manual caption tool. He approved making Camera Roll work like the
+others.
+
+**What changed:**
+- **The Camera Roll writer (`c3a113f8`) writes its own caption.** It is
+  written in the same run as the slides: one casual line about her moment,
+  with no peptides, no numbers and no hashtags. It goes through the same
+  checks, and the editor reads it too.
+- **`[Captions]` (`56ced75a`) is now the safety net for all six Character 6
+  tables.** Jealousy, Divorce Recovery and Camera Roll were added.
+  - **What it fills:** only empty captions, on decks that are real
+    candidates. It skips rejected, flagged and posted decks, and never
+    overwrites a caption.
+  - **What it writes:** each lane's caption is written from that deck's own
+    slides.
+  - **Re-check:** a deck that gets a caption after it was approved goes back
+    through the content check.
+- **Retired:** the manual "[Camera Roll Story] Caption Writer" is renamed
+  "retired 2026-11-20", left switched off, and not deleted.
+- **Comparison writer (`6996919e`):** one leftover line about caption
+  hashtags is gone.
+
+**Verified:**
+- The new code was run on real deck text from each new table.
+- A read-only count showed the hourly run would currently fill 2 Camera
+  Roll captions (CRS-0003 and CRS-0021) and nothing else.
+
+**Not yet seen live:**
+- `[Captions]`'s first run on the new version.
+- The Camera Roll writer's caption step in a real run.
+
+
+## 2026-11-20 — No hashtags on Character 6 captions, for now
+
+**Where it came from:** Garreth: "We need to remove all hashtags for now".
+
+**What changed:**
+- **Captions already waiting to post.** Hashtags were removed from 308
+  unposted captions across all six Character 6 tables (Divorce 184,
+  Jealousy 60, Journey 21, Camera Roll 19, Viral 17, Comparison 7).
+  - **Checks:** none was left empty, none had already been handed to a
+    phone, and posted decks were not touched.
+  - **Backup:** every old and new caption is saved in
+    `~/story-writer-backups/2026-11-20/captions/caption_backup_before_strip.json`.
+- **Every caption source now writes no hashtags.** Each one was changed in
+  three ways:
+  - the AI is told "no hashtags";
+  - the caption check requires none, where it used to require 3–6;
+  - a last step strips any that slip through.
+
+  Each has one `NO_HASHTAGS = true` switch, so hashtags can come back
+  later.
+
+  | Workflow | Live version |
+  |---|---|
+  | Comparison writer | `26da214b` |
+  | Jealousy writer | `c9213f45` |
+  | Viral Theories writer | `6eef2c62` |
+  | Divorce Recovery writer | `7bfed67d` |
+  | Camera Roll writer | `6ad7812a` (its broken "Set Content Id" step is also gone) |
+  | `[Captions]` hourly workflow | `4935e68c` (it had required 4–6 hashtags) |
+  | Camera Roll manual Caption Writer | draft only |
+
+  The 3-Slide Journey writer never writes captions, so it needed no change.
+- **Checked and found fine:**
+  - The Pre-Publish Gate and the content risk check don't require
+    hashtags; their only hashtag rules ban bad ones.
+  - The Divorce `ingest_decks.py` only copies the writer's caption.
+
+**Verified:**
+- After the strip, no unposted caption in the six tables has a hashtag.
+  This was checked twice, the second time after another session's Jealousy
+  runs.
+- The strip and check code was run on sample captions.
+- No writer has run since the change.
+
+**Still recommending hashtags (not changed):** two approved rules in
+`content_knowledge_base` (`use-lifeafterdivorce-realtalk-hashtags-facebook`,
+`divorce-life-chapter-transformation-frame`). The strip step removes any
+hashtags they cause. Whether to switch them off is Garreth's call.
+
+
+## 2026-11-19 — First real saved decks from the new writers (9 decks, all on Hold)
+
+**Where it came from:** Garreth: "ok do it". Every earlier test ran with
+saving off. This checked that a saved deck makes it from the writer to the
+point where it can post.
+
+**What was saved (nothing posted; every deck is on Hold):**
+- **Comparison:** CC-0028 and CC-0029 (run 216982).
+- **Camera Roll Story:** CRS-0021 to CRS-0023 (run 216983), its first real
+  save.
+- **Viral Theories:** VTS-261119-1823-01 and -02 (run 216981).
+- **Divorce Recovery:** DRC-0208 and DRC-0209 (run 216980).
+
+The 9 decks cost about $2 in all.
+
+**Verified:**
+- Every row landed with the same columns as older rendered decks of its
+  lane.
+- Each story deck's story is marked used, with no holds left behind.
+- Camera Roll's ids came from the table's own counter.
+
+**Found:**
+- **Most decks are flagged for review over small things:** a leftover
+  "which", or a phrase another deck in the same run used. Divorce 2 of 2,
+  Camera Roll 2 of 3, Comparison 1 of 2. A flagged deck needs a person
+  before it can render.
+- **Music isn't filled in for most lanes:**
+  - **Divorce:** added only by the `ingest_decks.py` script on main.
+  - **Viral Theories:** the music workflow's live version doesn't cover it;
+    an unpublished draft does.
+  - **Camera Roll:** has its own manual Music Selector.
+  - **Comparison:** no tool was found.
+- **Rendering is a manual step, and each lane's renderer looks for
+  something different:**
+  - **Viral:** needs `approved = true`.
+  - **Divorce and Camera Roll:** need render status "pending".
+  - **Comparison:** its renderer wasn't found in the repo.
+- **Camera Roll Story:**
+  - **A harmless error:** its "Set Content Id" step fails on every run,
+    because the table already fills that column. The step should be
+    removed.
+  - **Repeats:** all three decks phrase the peptide slide almost the same
+    way.
+  - **An invented change:** one deck (CRS-0022) made up a body change her
+    post doesn't have.
+  - **Batch label:** its Caption Writer and Music Selector have the old
+    batch label in their filter, so they need it changed by hand per batch.
+- **The content check skips decks on Hold.** It checks them on its next
+  daily run after Hold is cleared.
+
+**Not done:** no deck was rendered, given music, checked or released. Those
+steps are Garreth's.
+
+
 ## 2026-11-19 — Story stock topped up: every Character 6 story lane has at least 3 weeks
 
 **Where it came from:** Garreth asked that every Character 6 lane have at
