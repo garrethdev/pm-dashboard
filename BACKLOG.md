@@ -302,6 +302,61 @@ executions, which is not evidence that expected rows arrived; and
 `analytics_freshness_check()` may already cover some feeds, but its SQL is not
 in the repo.
 
+**It happened (found 2026-11-12).** The Virlo receiver stopped saving posts to
+`content_posts` around Sept 12, and the Virlo → machine_hooks robot failed
+every run from at least Oct 28 ("Unregistered API key"). Nothing reached
+`machine_hooks` for two months and nobody was told. The robot is now off and
+the Story Research Agent replaces it, but the receiver's old branch is still
+disconnected: anything else that reads `content_posts` in the bw project is
+reading data frozen at Sept 12. The new agent (`iW82SsE2IcVucaZY`) should be on
+whatever watch list this item produces: the check that matters is "new rows in
+`story_bank` in the last 4 days", not "the workflow ran".
+
+## Story Research Agent follow-ups (2026-11-12)
+
+- **Kept hooks into `hook_library`** (changed 2026-11-13: `machine_hooks` is
+  being retired). 100 hooks are on the review page
+  (https://claude.ai/artifact/7gTeEiEEA7dyKWfRbRtHZo), all passing the hard
+  limits since 2026-11-13. Once the review is done, the kept ones (with any
+  rewording) go in as `approved` with `source` `review_2026_11_12`.
+- **`machine_hooks` lanes need a new hook source.** All six workflows that used
+  it were switched off on 2026-11-13 with Garreth's sign-off (see
+  CHANGELOG): Embarrassed Angle Hook Writer (gJoDyLHc7NB3mLfM), BA Older
+  Woman Hook Generator (YrVGDxC6G1F2urSl), 2-slide BA Scriptwriter
+  (zeMbOTbgRqcowz3g), Machine Hooks Tag Labeler (DNnvnZGhf4L63QfF), Pillar A
+  Promoter (RkSgeE8lw41rZk6z), GLP-1 Hooks Promoter (yjhz2j3IerPZvwqz). The
+  table is kept as an archive. If the Embarrassed Angle or BA lanes are wanted
+  again, point their writers at approved rows in `hook_library` and switch them
+  back on.
+- **No writer reads `hook_library` yet.** The agent fills it with `pending`
+  hooks; a review step and the writers' side are still to build.
+- **Handler is wired in (2026-11-13) but has not yet kept a story.** Starter
+  plan, 100 calls a day; the agent uses at most 30 a run. First live run kept
+  0 of 17 (all staged app ads); the filter was tightened afterwards. Check
+  Monday's run: `story_bank` rows with `found_by` like `handler:%`. If Handler
+  still brings nothing usable, cut it to a few words or drop it. Garreth has 22
+  candidates queued and 28 finished story records in `~/story-research/` on
+  his own Mac (not on Czedrick's Mac, Handler's library, Drive or claude.ai);
+  loading them needs the file.
+- **The weekly Hook Rules → `writer_resources` sync was not found**
+  (2026-11-13): not in n8n, claude.ai routines, this Mac or the repos. The
+  table's own comment says "Synced weekly from the Claude Docs". Asked Garreth.
+  The doc's "Real stories from women over 40" research section is not copied
+  into any `writer_resources` row, so writers never see it.
+- **TikTok videos are judged by caption only.** Photo carousels now have their
+  slides read; videos still rely on their comments. ScrapeCreators can return a
+  transcript (`/v1/tiktok/video/transcript`) if videos turn out to matter.
+- **`slide_images` links expire** about two weeks after they are found. The
+  slide text is saved, so this only matters if someone wants the pictures.
+- **Divorce Recovery and Comparison writers** still build from lists typed
+  into their Code nodes. Decided 2026-11-12 not to connect them yet; the team
+  will point them at `story_bank` once the agent is approved.
+- **The judge does not catch young posters** when the age is only implied (a
+  story whose mother is 54 was kept at 9/10). Unknown age is allowed on purpose;
+  a tighter rule would drop good material. Watch it in review.
+- **`story_bank` has no screen.** Kept stories sit at status `new`; nothing yet
+  moves them to `approved` or `used`.
+
 ## Settled — no action
 
 **The review's "registry identity inconsistency" caution.**
