@@ -20,6 +20,44 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-23 — Three 0-view posts in a row now flags an account "collapsing"
+
+**Where it came from:** Yurie saw accounts getting 0 views on post after post
+while the Accounts page still said "watch". Garreth: "We want to see
+immediately if an account has 0 views 3 times in a row to flag it as
+collapsing."
+
+**Why it was late before:** the health check ignores posts younger than two
+days and looks at how much of a whole week's posts got under 10 views. A fresh
+run of zeros was diluted by the older, better posts, so an account was named 2
+to 5 days after the zeros started. Profile 81 (Facebook) is the example: low
+posts from Nov 17 to 19, flagged collapsing only on Nov 22.
+
+**What changed:** one new rule in the account health check. If an account's
+three newest recorded posts all got exactly 0 views, and it would otherwise
+read "watch" or "healthy", it now reads **collapsing**, with the reason "last 3
+posts got 0 views" on the pill.
+
+- Posts count straight away; there is no two-day wait.
+- View counts are re-read on every analytics pull for a week, so if one of
+  those posts picks up views, the flag clears on the next pull.
+- Banned, shadowbanned, idle, warming, no data and system error are untouched.
+- **On purpose:** the Smart Scheduler posts a collapsing account at most twice
+  a day, so a flagged account slows down automatically.
+
+**Checked live:** tried first in a test that undid itself, then applied. Every
+account's verdict read back the same as before (banned 30, collapsing 1,
+healthy 11, idle 3, no data 32, warming 4, watch 1), because no account at
+"watch" or "healthy" was on a run of three zeros that day. The five-minute
+refresh that keeps the Accounts page current ran fine on the new version. The
+new rule has
+**not yet flagged a real account**. Recorded as
+`supabase/migrations/20261123125828_health_zero_streak_collapsing.sql`.
+
+**Known gap:** it needs exactly 0 views. A run like Profile 81's (2, 3 and 7
+views) still isn't caught early. A looser rule, such as "3 of the last 5 posts
+under 10 views", would catch it if Garreth wants that.
+
 ## 2026-11-23 — Jealousy takes a wider range of stories
 
 **Where it came from:** Garreth: "I prefer a looser rule for Jealousy". The lane
