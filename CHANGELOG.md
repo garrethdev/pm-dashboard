@@ -20,6 +20,115 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-23 — Jealousy takes a wider range of stories
+
+**Where it came from:** Garreth: "I prefer a looser rule for Jealousy". The lane
+had almost run out. Only 21 stories it hadn't used yet scored 8+ and matched
+it, because the old rule wanted one person who was openly jealous and a line
+they said.
+
+**What changed:** the Jealousy lane's description, which the hourly Story Lane
+Fit uses to match stories to it:
+
+- The anchor stays: someone close to her reacts badly to **her change**.
+- Change now includes trying to lose weight, starting to look after herself, or
+  getting her confidence back, as well as having lost weight.
+- The reaction can be jealousy, backhanded compliments, sabotage, mocking her
+  effort, going cold or leaving her out. It no longer needs a quotable line,
+  because the writer already supplies a likely one.
+- A husband or boyfriend now counts too.
+- Unchanged: stories where she is under 35 are scored down, and hurt that has
+  nothing to do with her changing (an affair, money) doesn't count.
+
+The 258 near-miss stories (matched 2 to 6 before, story score 7+) were matched
+again under the new rule. 74 of them now fit.
+
+**Result, checked live:** Jealousy can now take **60** stories at 8+ (was 21),
+or **112** counting the 7s the writer falls back to (was 49). Recorded as
+`supabase/migrations/20261123101702_jealousy_looser_lane_rule.sql`.
+
+**How it was applied:** through the database's web interface with the service
+key, because this session's Supabase connector declined the change. That route
+can't create a table, so the backup of the old rule and all 1,480 old Jealousy
+scores is a file on Czedrick's Mac:
+`~/story-writer-backups/2026-11-23/jealousy_lane_fit_and_brief_before_loosening.json`.
+
+**Not yet seen:** no Jealousy deck has been written from the wider stories. A
+few matches look borderline, for example a husband's comments about her
+postpartum body, which may be a younger woman. The writer's own checks are the
+next filter.
+
+## 2026-11-23 — Story Research Agent was stalled for two days by an AI spending cap
+
+**Where it came from:** found while rewriting the Story Research Agent
+architecture page.
+
+**What happened:** the OpenRouter key shared by the agent, the hourly Story Lane
+Fit and all six Character 6 writers had its own spending cap ($120). It ran out
+around 21 Nov. From then on every AI call was refused, but n8n still marked each
+run "success". The agent kept collecting posts (758 on 21–22 Nov) but judged
+none, and Story Lane Fit had saved nothing since 19 Nov.
+
+**Fix:** Garreth removed the cap on 23 Nov. The agent was then run by hand: it
+judged the whole backlog (788 waiting stories down to 61, which are mostly
+comments saved after that run's judging step) and drafted 75 hooks. Story Lane
+Fit was run by hand four times to match every story to the lanes. Confirmed
+live.
+
+**Still open:** nothing warns when a run judges or matches zero stories. That is
+how two days went unnoticed.
+
+The architecture page was rewritten to show the system as built:
+https://claude.ai/artifact/SrXti77NWD4Tp11PY9Neng
+
+## 2026-11-21 — Handover: where the Story Research Agent keeps its stories
+
+**Where it came from:** Garreth asked for a handover so a separate Claude
+session can make pictures from scenes in the collected stories.
+
+**What changed:** new file `docs/STORY-BANK-HANDOVER.md`. It says which table
+holds the stories (`story_bank`), which rows are usable (`status = 'new'`), what
+each tag column means, how to find stories by setting, feeling or carousel type,
+and how to see which stories already became carousels. It also lists what the
+picture session must not touch, chiefly the functions the writers use to
+reserve stories, which would take a story away from them.
+
+**Verification:** the column names, tag values and counts were read from the
+live database on 2026-11-21. Documentation only; nothing in the app or the
+agent changed.
+
+## 2026-11-20 — Account Health email: clearer wording for new accounts
+
+**Where it came from:** Czedrick, reading the Nov 13 Account Health email. It
+listed two new Instagram accounts (ander.sonsophie14, heyheyjenks) as "IG tokens
+expiring (unknown)" and put a new TikTok account (sophiaanderson621) under "Our
+tracking is broken". Both sounded like faults. They weren't.
+
+**What was really going on:** the two Instagram accounts were never connected to
+Instagram analytics, so there was no token to expire. Auto-refresh can only
+renew a token that exists. The TikTok account has never posted, so there was
+nothing to track. Nobody had logged a warmup for it either, because it isn't on
+a phone in the dashboard.
+
+**What changed** (n8n "[Health] View-Collapse Detector", the twice-weekly
+Account Health email, live version `d4bd52e8`):
+
+- An Instagram account with no token now shows as **"Not connected to Instagram
+  analytics"**, with a short reminder of the three connection steps. Accounts
+  with a real expiry date still show under "IG tokens expiring".
+- An account that has never posted is no longer listed under "Our tracking is
+  broken". It goes in a new **"Not started yet"** section with a "Last warmup"
+  column. "never" there usually means the account isn't on a phone. These
+  accounts no longer count as a "pipeline issue" in the subject line.
+
+**Verified:** I ran the old and new versions on the real Nov 17 data, on this
+Mac, with nothing sent. The old version gave the exact subject that went out
+("2 accounts need attention + 1 pipeline issue"). The new one gives "2 accounts
+need attention", plus the new sections. With the database lookups failing, it
+falls back to the old layout instead of breaking. Its first real email is the
+Friday Nov 20 8 AM ET run. Backup of the previous version: this session's
+scratchpad only.
+
 ## 2026-11-20 — Instagram: early skips, people reached, likes and shares per 100 reached
 
 **Where it came from:** Garreth asked for these four numbers on each Instagram
@@ -900,6 +1009,8 @@ backed up in the session scratchpad.
 the code checks already blocked these phrases, so this only stops the
 instructions from contradicting each other.
 
+---
+
 ## 2026-11-18 — Viral Theories writes a real viral theory again, not a vent story
 
 **Where it came from:** Garreth said Viral Theories "is weird and it should
@@ -959,6 +1070,8 @@ Theories and Comparison are drafts; their live versions are untouched.
 - The typing step sometimes joins two sentences with no space.
 - Theories are used up over time, so the bank will need a refresh pull.
 
+---
+
 ## 2026-11-18 — Peptides said in passing, like real women do (all story lanes)
 
 **Where it came from:** Garreth said "Yes go ahead" to the plan in the entry
@@ -1000,6 +1113,8 @@ and two Viral Theories decks both opened "I'm on peptides, but…". A new
 repeated phrase could become the next template. The typing step capitalized
 "Workouts" after "5 a.m." in one deck.
 
+---
+
 ## 2026-11-18 — Peptides: no more "I read up, asked questions, and started" (all story lanes)
 
 **Where it came from:** Garreth, on the review decks: "let's put back in the
@@ -1028,6 +1143,8 @@ instructions to match is waiting on Garreth's go-ahead.
 **Verified:** the live `story_voice` row was read back after the update and
 matches. No deck has been written with it yet. The code check on each lane
 doesn't block these phrases yet; that comes with the lane change.
+
+---
 
 ## 2026-11-18 — More human texture, and two samples per lane
 
@@ -1077,6 +1194,8 @@ story handed back. All are on the review page.
   something from her.
 - Viral Theories' two decks share almost the same peptide line ("told me
   about peptides, and I started them").
+
+---
 
 ## 2026-11-18 — The vibe is back after loosening (all story lanes)
 
@@ -1134,6 +1253,8 @@ visible typo, expressions, etc."
 
 The Jealousy, Viral and Divorce runs used the typing step from before the dot
 limit, which is now added but not yet re-run.
+
+---
 
 ## 2026-11-18 — Writers follow Garreth's taste test and looser rules (all story lanes)
 
@@ -1215,6 +1336,8 @@ limit, which is now added but not yet re-run.
   checked on its renderer.
 - Journey's 45-character limit rejects most lines that carry real specifics.
 
+---
+
 ## 2026-11-18 — Story slides connect (Comparison, Jealousy, Divorce Recovery)
 
 **Where it came from:** Garreth: "some decks like the first comparison deck,
@@ -1264,6 +1387,8 @@ not touched):
   | 216301 | Comparison, 2 decks | No problems left. The editor's new connection rule caught two jumps (to peptides, to the eviction), and the repair linked them ("I still wanted to feel better in my body. My yoga instructor swore by peptides…"). Only one slide starts with "And". |
   | 216302 | Jealousy | Reads as one thread ("And all this started because my hairdresser mentioned peptides…"). The editor wrongly called the "stepped back" ending invented, so it now allows that one plain line when her post doesn't say how things ended. Not re-run. |
   | 216303 | Divorce Recovery | One thread, no real names, and the friend is introduced before the book page. Marked for review because the slides are still too even. The opening line ("october's been interesting") is vague. |
+
+---
 
 ## 2026-11-18 — Story decks stay true to her post, her words, her names kept private
 
@@ -1347,6 +1472,8 @@ The page shows each deck next to her real post.
   no longer changes her age, but filtering by age is a separate change to the
   story picker.
 
+---
+
 ## 2026-11-18 — The ex's text reads like a real ex (Divorce Recovery)
 
 **Where it came from:** Garreth on the slide 2 text, "abby's left, can we
@@ -1387,6 +1514,8 @@ is still 29795438):
     check, and story, opening line and slide 2 match. The deck is still
     marked for review because it has no short slide after its one repair.
 - **Not yet checked:** a two-bubble text on the rendered slide.
+
+---
 
 ## 2026-11-18 — Story decks vent instead of report (all story lanes)
 
@@ -1459,6 +1588,8 @@ for the minimum.
 
 **Still repeating:** Comparison's slide 4 came out the same shape in both
 decks ("I just smiled, SO angry." / "I just left, SO embarrassed.").
+
+---
 
 ## 2026-11-18 — The To-do list warns when a phone's internet is not American
 
@@ -1563,6 +1694,35 @@ test), `src/app/api/music-library/refresh/route.ts`,
 `vercel.json`, `supabase/migrations/20261118120000_music_trend_refresh.sql`,
 `docs/MUSIC-LIBRARY-REFRESH.md`, `docs/MUSIC-PICKER-PLAN.md`.
 
+---
+
+## 2026-11-18 — Character 6 puts Divorce Recovery first: one a day per account
+
+**Where it came from:** Garreth asked for every account to post one Divorce
+Recovery carousel a day (6 a week, with Sunday off), and for the best of the
+other carousel types to come second.
+
+**How second place was picked:** median views per post over the last 28 days,
+Instagram and TikTok together (Facebook has no carousel view numbers).
+Divorce Recovery 615, 3-Slide Journey 212, Jealousy 142, Comparison 124, Viral
+Theories 91. Journey is the clear second. On Instagram alone, Jealousy (156) and
+Journey (144) are about level; on TikTok Journey is well ahead (296 against
+104). The numbers are still small, 7 to 22 posts per type.
+
+**The new split per account:** Divorce Recovery 6, Journey 4, Jealousy 3,
+Comparison 3, Viral Theories 2 (was Comparison 5, Divorce Recovery 4, Jealousy
+4, Journey 3, Viral Theories 2). Still 18 a week, so the cadence page keeps
+saving. Saved through the same database function the cadence editor uses, and
+read back afterwards. The scheduler uses the new split the next time it plans.
+
+**It will not show up in posting until Divorce Recovery has decks ready.** On
+the day of the change, 0 Divorce Recovery decks were ready to be scheduled:
+85 approved decks are on Hold and 27 more are on Hold and not yet checked.
+Comparison also had 0 ready. Until decks come off Hold, those slots go to
+whatever has stock.
+
+---
+
 ## 2026-11-17 — The 40s voice on every lane, plus a varied ending and change slide
 
 **Where it came from:** Garreth on the Comparison decks: "i like the voice
@@ -1656,6 +1816,8 @@ for divorce recovery"; the audience is US only). Draft only; live is still
 - Jealousy and Divorce Recovery don't rotate the change idea, and both
   landed on photos.
 
+---
+
 ## 2026-11-17 — Story decks talk like a woman in her 40s (Comparison)
 
 **Where it came from:** Garreth, after the typing step: "Still feels
@@ -1740,6 +1902,8 @@ and not natural"):**
   - Still open: both decks end "We're divorced now", both change slides are
     "exercise felt easier", and deck 2's slide 7 is muddled.
 
+---
+
 ## 2026-11-17 — Story decks get uneven rhythm and her own typing (Comparison)
 
 **Where it came from:** Garreth: "it feels rhythmic like equal length of lines
@@ -1788,6 +1952,8 @@ back.
 - "I looked into them" keeps appearing.
 - One hook failed its check after a retry.
 - The other four lanes are unchanged.
+
+---
 
 ## 2026-11-17 — Story decks written as a normal woman, not a writer (Comparison first)
 
@@ -1849,6 +2015,8 @@ Decks written from a random topic are untouched.
   the renderer fits them.
 - The other four lanes still write the old way.
 
+---
+
 ## 2026-11-17 — Garreth's five decisions on the story decks
 
 **Where it came from:** Garreth answered the five open questions on the review
@@ -1882,6 +2050,8 @@ page (https://claude.ai/artifact/2FinYWvTK4zaj8uaSVy9fB).
 - **3-Slide Journey** ran with the default (execution 215949) and took no story.
 - **The quoted-number checks** were tested on sample lines in each writer, not
   in a full run.
+
+---
 
 ## 2026-11-17 — Right stories, hooks that say what happened, and one set of slide rules
 
@@ -1945,6 +2115,8 @@ https://claude.ai/artifact/2FinYWvTK4zaj8uaSVy9fB
 
 All five writers are still drafts.
 
+---
+
 ## 2026-11-17 — The other four writers can take real stories (drafts, one test deck each)
 
 **Where it came from:** Garreth asked whether the narration problem was only
@@ -1979,6 +2151,8 @@ back.
 | 3-Slide Journey | 215878 | 1058, "too skinny" after surgery | Picked a story already excluded for Comparison. The line it chose fights the after photo. |
 
 **Not yet done:** no save-on run in these four, and nothing is published.
+
+---
 
 ## 2026-11-17 — Hooks built on a real story say what happened, not where
 
@@ -2026,6 +2200,8 @@ Seen and not fixed:
 
 The change is saved as a draft and not yet published. CC-0026 and CC-0027
 keep their old hooks.
+
+---
 
 ## 2026-11-17 — The Comparison writer builds each deck on a real story
 
@@ -2084,6 +2260,8 @@ hook (`story_uses` rows 8 and 9), so neither can come back to Comparison.
 which does not fit Character 6 (mid 40s, two kids), and its slide 2 says the
 first way "shrank" her although that way is meant to fail.
 
+---
+
 ## 2026-11-17 — Stories and hooks get a pick-up point that any writer can use
 
 **Where it came from:** Garreth gave the go to build the story wiring as
@@ -2138,6 +2316,8 @@ fixed before anything used it. Three real lane-fit runs saved every score
 asked for (150 of 150 on the first). Permissions read back as service role
 only. Not yet met a real writer run or a real breakout: no deck has been
 recorded yet.
+
+---
 
 ## 2026-11-17 — Trending song picker built, in test mode (no post changes yet)
 
@@ -2202,6 +2382,8 @@ docs and has not been seen; the first live pull will confirm it. Files:
 `supabase/migrations/20261117130000_music_picker_test_isolation.sql`,
 `docs/MUSIC-PICKER-PLAN.md`, `docs/n8n/music-trending-song-picker.workflow-sdk.txt`.
 
+---
+
 ## 2026-11-16 — Story Research Agent reads how people reacted to each story
 
 **Where it came from:** Garreth asked for the agent to collect the comments
@@ -2238,6 +2420,8 @@ not read yet; only posts.
 38 credits. The full agent with these steps has not run yet; its first run
 is the scheduled one on Monday 16 November at 7am ET. The hook writer using
 reactions has not been seen in a real run yet.
+
+---
 
 ## 2026-11-13 — Creators to follow refreshes itself every month
 
@@ -2428,6 +2612,8 @@ Gmail Sent folder (30 Oct – 13 Nov) and the live n8n workflows. He decided eac
 **Kept as is:** the Winner-Pattern Playbook, the scheduler crash and missed-run
 alarms, the analytics freshness alarm, and Content Audit (rejections only).
 
+---
+
 ## 2026-11-13 — Warmups page: a disconnected phone no longer lowers the finish rate
 
 **Where it came from:** Czedrick, in chat on 13 November. The robot's
@@ -2450,6 +2636,191 @@ disconnected as a failure, and those were a third of the week's warmups
 **How far it was checked:** the page's arithmetic in tests (899 pass), and
 the 26% / 38% worked out by a query on the live data. Not yet seen on the
 deployed page.
+
+---
+
+## 2026-11-13 — The six robots that used `machine_hooks` are switched off
+
+**Where it came from:** Garreth decided on 2026-11-12 to retire
+`machine_hooks` entirely (its hooks were too on the nose and not story-driven),
+and signed off on switching its robots off on 2026-11-13.
+
+**What changed:** six n8n workflows were switched off (paused, not deleted):
+
+- **Pillar A Promoter** and **GLP-1 Hooks Promoter**, which added new hooks to
+  `machine_hooks` on a schedule. Pillar A was still working; GLP-1 had failed
+  on its last 20 runs.
+- **Machine Hooks Tag Labeler**, which tagged those hooks. It had failed on its
+  last 20 runs.
+- **Embarrassed Angle Hook Writer**, **BA Older Woman Hook Generator** and
+  **2-slide BA Scriptwriter**, which wrote posts from those hooks. Embarrassed
+  Angle had failed since at least Nov 9; the two BA ones run only when someone
+  starts them, and n8n had no run on record for either.
+
+The `machine_hooks` table itself is kept as an archive. Nothing was deleted.
+
+**What this means:** nothing adds to `machine_hooks` any more. The Embarrassed
+Angle and BA lanes get no new hooks until someone points them at the new
+`hook_library`. Embarrassed Angle was already failing, so nothing that was
+working stopped except the Pillar A Promoter.
+
+**Verified:** each workflow read back as switched off in n8n straight after.
+
+---
+
+## 2026-11-13 — Story Research Agent reads slides, tags every story and writes its own hooks
+
+**Where it came from:** Garreth's notes and voice memo (relayed in a working
+session by Czedrick, 2026-11-12/13), plus Garreth's Handler research recap of
+12 November. He asked for hooks and stories to be catalogued with tags any
+carousel type can use (setting, emotion, what happened), for `machine_hooks` to
+be retired, and for the agent to keep drafting hooks so nobody starts from
+zero. His recap showed why our TikTok search came back thin: only TikTok's
+"Top" search returns photo carousels, and stories are found by how they are
+told ("storytime", "aita"), not by topic. Czedrick confirmed keeping the
+original post text is fine as long as some of it is also paraphrased.
+
+**What changed:**
+- **A hook library.** New table `hook_library` replaces `machine_hooks` as the
+  place hooks live. Every hook is linked to the real story it came from and
+  tagged: theme, opening pattern (promised message, line of dialogue, private
+  admission and so on), carousel format, where a product could quietly enter,
+  setting, emotion, what happened, and who did it. Hooks arrive as `pending`;
+  nothing is used until a person approves it.
+- **The agent writes hooks.** For every new story it keeps with a score of 7
+  or more (up to 36 a run), Claude Sonnet 5.5 writes three hooks in different
+  opening patterns. The rules come live from the Hook Rules doc (through
+  `writer_resources`), so editing that doc changes what it writes. A code
+  check then drops any hook over 75 characters, with a number, a banned word
+  or symbol, or a banned phrase. Sonnet was picked over the cheaper Qwen after
+  a side-by-side test on six real stories: 18 of 18 Sonnet hooks passed the
+  rules and sounded spoken, against 13 of 18 for Qwen. It costs about a cent
+  per story.
+- **Stories are tagged and paraphrased.** The judge now adds a short summary
+  in its own words (the original stays too), the carousel format the story
+  would suit, how the post opens, where a product could enter, the setting,
+  the emotion and what happened.
+- **TikTok carousels are read.** The agent now uses TikTok's "Top" search with
+  story-shaped hashtag searches and also watches six storyteller accounts
+  written for women 45 and over (from Garreth's recap). For each new photo
+  carousel, a vision model reads the text off every slide (about a fifth of a
+  cent each), so the judge sees the whole story instead of an empty caption.
+  Posts are now judged against their account's usual reach (the "outlier"
+  idea from the recap), not raw views, so small accounts with a breakout post
+  count.
+- **The 100 review hooks were fixed and tagged.** 72 of them broke a Hook
+  Rules hard limit (mostly numbers and length). All were rewritten to pass,
+  and the review page shows the earlier wording under each changed one:
+  https://claude.ai/artifact/7gTeEiEEA7dyKWfRbRtHZo
+
+**Verification (confirmed live):** a real run on 2026-11-13 (execution 214351,
+2.5 minutes) made 45 searches, saved 153 new candidates, judged 268 stories,
+kept 41 (24 copied to `over40_insights`, 4 to `jealousy_insights`), and saved
+81 hooks to `hook_library` (3 more were drafted and dropped by the code check).
+40 of 41 kept stories have every tag. Two faults showed up and were fixed the
+same day:
+- 43 of 48 carousels from the watched accounts could not be read, because
+  their feed gives slide pictures in Apple's HEIC format first. The agent now
+  takes the WebP copy; a re-test read one word for word. The 39 that had been
+  rejected on their caption alone were deleted, so Monday's run finds them
+  again and reads them properly.
+- The vision model sometimes answers with a bare list instead of the asked-for
+  shape; that is now accepted. Tested on both shapes, not yet on a real run.
+
+**Handler added as a fourth source (same day).** Garreth upgraded Handler to the
+Starter plan (100 calls a day) and said it "has good stories". Czedrick signed
+n8n into Handler once (credential "Handler MCP"), and n8n now keeps that login
+fresh by itself. Each run does about ten one- or two-word searches, skips app
+demos, pranks and tool ads, puts storyteller slideshows first, and pulls
+Handler's full breakdown (transcript, why it works, which product rides inside
+it, what the comments say) for up to 20 posts it has not seen before. That is
+at most 30 of the 100 daily calls. Slideshows get their slides read like any
+other TikTok carousel. Handler posts promote an app on purpose, so the judge
+now scores the story and not the app for them (a weight-loss product is still
+a hard reject).
+- Confirmed live: the login works (test call answered in about a second), and
+  run 214359 searched, broke down 20 posts and saved 17.
+- **All 17 were rejected, rightly:** they were staged app ads (cheating-detector
+  and couple-quiz apps). Handler's library is mostly app marketing, and the
+  first version picked its biggest outliers, which are the ads. The filter and
+  search words were changed after a look at four searches; checked against that
+  run's 53 search results it now keeps the story slideshows first. Not yet
+  proven on a real run; Monday's run is the first.
+
+**Not done (see BACKLOG.md):** retiring `machine_hooks` (all six robots that use
+it are still on, two still write to it); a writer that reads `hook_library`;
+the weekly Hook Rules sync, which could not be found.
+
+Database change: `supabase/migrations/20261113090026_hook_library_and_story_tags.sql`.
+
+---
+
+## 2026-11-12 — Story Research Agent replaces the dead Virlo hook robot
+
+**Where it came from:** a request in a working session (the person asking
+referred to Garreth by name, so this may have been Czedrick; to confirm). The
+hooks in `machine_hooks` were "too on the nose": product lines like "Watch me
+lose 50 pounds this year!!" instead of stories. The ask was to make the research
+find story-driven material that fits the Character 6 viewer (an American woman
+in her 40s or 50s, friction with husband, family and friends), with peptides
+only ever a quiet turn later in the deck.
+
+**What was actually wrong:** two things.
+- **It was looking in the wrong place.** The old robot copied the opening line
+  of any high-view post from six Virlo topics, and those topics were peptides,
+  GLP-1, weight loss, "BnA Transformation" and two Black-women wellness topics.
+  It could only ever bring back product hooks.
+- **It had been dead for two months, unnoticed.** The Virlo receiver stopped
+  saving posts around Sept 12 (its old branch was disconnected when the Trends
+  library part was added), and the robot itself failed every run from at least
+  Oct 28 with "Unregistered API key". Nothing reached `machine_hooks` after
+  Sept 13. No screen said so (see the open Virlo monitoring item in
+  `BACKLOG.md`).
+
+**The research behind the new agent:** 358 real stories pulled from Reddit and
+TikTok, plus our own posting numbers. Strongest for this audience: the
+"divorce effect" (she looks better after he leaves; TikTok posts around 6M views
+typical), friends and family turning on her when she loses weight, a husband
+threatened by her weight loss, mother or mother-in-law weight comments, and the
+husband who stopped seeing her. Weak: invisibility as a lament, empty nest, the
+ex's younger wife.
+
+**The change:**
+- **New n8n workflow, Story Research Agent** (`iW82SsE2IcVucaZY`), Mondays and
+  Thursdays 07:00 New York time. It searches Reddit and TikTok through
+  ScrapeCreators and three new Virlo story topics, saves anything new, reads the
+  comments on the biggest new threads (on TikTok the story is usually in the
+  comments, not the caption), and has an AI judge (Qwen 3.8 Flash) score each
+  story for this viewer. Stories that mention peptides or weight-loss shots are
+  dropped before judging.
+- **New table `story_bank`** holds every judged story, kept or not, so nothing
+  is paid for twice. Strong ones (score 7+) are also copied into
+  `over40_insights` (marked not approved, so a person still signs off) and
+  `jealousy_insights`, where the Viral Theories and Jealousy writers already
+  look.
+- **Three new Virlo topics**: divorce glow-up over 40; people changed when she
+  lost weight; the wife nobody sees over 40. Virlo gathered a first batch as
+  soon as they were created (125 stories, 28 kept in the test runs) and
+  refreshes them every Sunday. The agent reads these three topics directly
+  from Virlo, not through the Virlo receiver, and ignores the 13 older topics.
+- **The old Virlo → machine_hooks robot is switched off**, not deleted.
+- Not changed, by decision in the same session: the Divorce Recovery and
+  Comparison writers still use their built-in lists (the team will connect them
+  once this is approved), and the British wording in some Divorce Recovery
+  copy stays.
+
+**Verification:** confirmed live on two test runs. First: 35 searches,
+429 stories saved, 400 judged, 95 kept, 54 copied to `over40_insights` and 21
+to `jealousy_insights`. Second: 30 new stories out of 395 seen (repeats skipped
+as designed), 26 more kept. 121 kept in total. The scheduled runs and the
+Virlo topics' weekly refresh have not happened on their own yet. Cost estimate: about 45
+ScrapeCreators credits a run, roughly 400 a month.
+
+**Also:** 100 hooks written from the kept stories are waiting for review on a
+claude.ai page (https://claude.ai/artifact/7gTeEiEEA7dyKWfRbRtHZo). None are
+in `machine_hooks` yet.
+
+---
 
 ## 2026-11-11 — Warmup robot: a warned account rests for the day; each account's start date sent to the robot
 
@@ -2480,6 +2851,8 @@ any more" and skips it.
 898 dashboard tests pass); eslint clean on the changed files. Not yet seen
 on the live dashboard, and no warmup has stopped for a warning since
 4 November, so the marker has not shown on a real account yet.
+
+---
 
 ## 2026-11-11 — To-do: tomorrow's tab no longer shows today's unfinished posts
 
