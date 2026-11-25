@@ -164,16 +164,21 @@ export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet
   const section = sectionName(pathname.split("/")[1] ?? "");
   const initials = (userEmail ?? "?").slice(0, 2).toUpperCase();
 
+  // Which items are new is worked out from `readIds` as it stands, before the
+  // update. It used to be worked out INSIDE the setReadIds updater and checked
+  // straight after; React runs that updater later, at the next render, so the
+  // check always saw an empty list and returned before saving. The dot cleared
+  // on screen and nothing reached the server: no read was saved for anyone
+  // from 2026-09-12 to 2026-11-25, which is why everything came back unread on
+  // every reload (Garreth, 2026-11-25).
   const markRead = useCallback((marking: NotificationItem[]) => {
-    let fresh: NotificationItem[] = [];
+    const fresh = marking.filter((i) => !readIds.has(i.id));
+    if (fresh.length === 0) return;
     setReadIds((prev) => {
-      fresh = marking.filter((i) => !prev.has(i.id));
-      if (fresh.length === 0) return prev;
       const next = new Set(prev);
       fresh.forEach((i) => next.add(i.id));
       return next;
     });
-    if (fresh.length === 0) return;
 
     // Optimistic: the dot clears on click and the write follows.
     //
@@ -204,7 +209,7 @@ export function Topbar({ userEmail, fleet }: { userEmail?: string; fleet?: Fleet
           return next;
         });
       });
-  }, []);
+  }, [readIds]);
 
   /**
    * Open a bell item, switching fleet first when it belongs to the other one.

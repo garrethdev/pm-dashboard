@@ -65,13 +65,19 @@ const FOLLOW_CREATORS_REFRESH_PATH = "/api/follow-creators/refresh";
 const MUSIC_LIBRARY_REFRESH_PATH = "/api/music-library/refresh";
 
 /**
+ * The daily run of the automatic account rules (zero views, robot failing).
+ * It demands CRON_SECRET (src/app/api/accounts/auto-holds/run/route.ts).
+ */
+const AUTO_HOLDS_RUN_PATH = "/api/accounts/auto-holds/run";
+
+/**
  * Auth gate (Next 16 "proxy", formerly middleware): refreshes the Supabase
  * session cookie and redirects unauthenticated / non-allowlisted visitors to
  * /login. API routes re-check the session themselves — this is the outer door.
  */
 export async function proxy(request: NextRequest) {
   const p = request.nextUrl.pathname;
-  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH || p === SCREEN_READINGS_PATH || p === SCREEN_READINGS_RELINK_PATH || p === FOLLOW_CREATORS_REFRESH_PATH || p === MUSIC_LIBRARY_REFRESH_PATH) {
+  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH || p === SCREEN_READINGS_PATH || p === SCREEN_READINGS_RELINK_PATH || p === FOLLOW_CREATORS_REFRESH_PATH || p === MUSIC_LIBRARY_REFRESH_PATH || p === AUTO_HOLDS_RUN_PATH) {
     return NextResponse.next({ request });
   }
 
