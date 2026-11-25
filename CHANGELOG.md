@@ -20,6 +20,46 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-25 — Character 6 carousels: new text look (Inter, outline, a little movement, emoji)
+
+**Where it came from:** Czedrick, after checking what fonts real people use on
+their carousels. The 48 most-viewed TikTok carousels in our reference library
+mostly use TikTok's plain default text; on Instagram, the 11 US women aged 40–50
+we follow mostly post Reels, and about half use that same plain look. Czedrick
+compared TikTok Sans, DM Sans and Inter on a real slide and picked Inter with a
+black outline (the "outline 4" sample). This is the renderers, not the
+dashboard: `garrethdev/content-render-scripts`, pull requests #11 and #12.
+
+**What changed, in all six carousel lanes** (Jealousy, Comparison, Camera Roll
+Story, Divorce Recovery, 3-Slide Journey, Viral Theories):
+
+- Slide text is white Inter with a black outline and a soft shadow. Before,
+  the lanes used three different fonts: TikTok Sans, Gotham, and the iPhone
+  font.
+- The text no longer sits in exactly the same spot on every deck. It shifts a
+  little inside the area the renderer already chose, and about one slide in
+  three is tilted slightly. Text at the bottom only moves up, so it never goes
+  lower into TikTok's caption area. Text at the top only moves down. A deck
+  re-rendered later comes out the same.
+- Emoji now show in colour in every lane. Before, four lanes would have drawn
+  an empty box, and Camera Roll refused any slide with an emoji in it.
+- Divorce Recovery keeps its white boxes, now in Inter. Its lock-screen slide
+  keeps the iPhone's own font because it imitates a real iPhone.
+- The Comparison renderer is now on `main` too. Until now it lived only on a
+  side branch.
+
+**Not changed:** decks already rendered keep their old look (Czedrick's
+choice). Only decks rendered from now on get the new text.
+
+**Verified:** one real deck from each lane was rendered on Czedrick's Mac with
+the new code, with nothing uploaded. With the movement switched off, the new
+Jealousy slide matches the approved sample. A fresh download of the renderers
+draws with the bundled font. No real batch has been rendered with it yet.
+
+**Found while testing:** some decks point at photos that have since been
+deleted from the photo library. These would fail if re-rendered: CC-0020,
+CRS-0004, and slide 3 of VTS-261111-03.
+
 ## 2026-11-25 — The bell now remembers what you read
 
 **Where it came from:** Garreth: "I think the current dashboard bell
