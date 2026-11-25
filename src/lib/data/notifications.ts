@@ -502,7 +502,9 @@ async function storedNotifications(
           ? `/carousel-generator/batches/${r.target ?? ""}`
           : r.type === "proxy_replace"
             ? "/proxies"
-            : "/accounts",
+            : r.type === "auto_hold" && profileNum(r.target)
+              ? `/accounts/${profileNum(r.target)}`
+              : "/accounts",
       };
     }
 

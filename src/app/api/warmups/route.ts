@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/api-auth";
 import { actingUserEmail, auditLog } from "@/lib/data/writes";
 import { WarmupWriteError, logSession } from "@/lib/data/warmup-sessions";
 import { parseAccountId } from "@/lib/data/account-id";
+import { settleAccountHold } from "@/server/auto-holds";
 
 /**
  * POST /api/warmups — record a warmup session done by hand (PF-04).
@@ -84,6 +85,10 @@ export async function POST(request: Request) {
     });
 
     revalidateTag(TODO_TAG, { expire: 0 });
+    // If this account is on an automatic hold and this was the last warmup it
+    // needed, it goes back now rather than at tomorrow's run (2026-11-25).
+    // Never throws, so the saved warmup always stands.
+    await settleAccountHold(accountId);
     return NextResponse.json({ ok: true, session });
   } catch (err) {
     if (err instanceof WarmupWriteError) {

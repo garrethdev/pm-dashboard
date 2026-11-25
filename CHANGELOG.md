@@ -20,6 +20,76 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-25 — The bell now remembers what you read
+
+**Where it came from:** Garreth: "I think the current dashboard bell
+notifications are not working properly." Checked in the database: no "read"
+had been saved for anyone since early September.
+
+**What was wrong:** clicking a notification, or "Mark all read", cleared the
+dot on screen but never told the server. So after a reload, on another device,
+or the next morning, everything was unread again. The fault came in on
+2026-09-12, in the change that made a failed save put the dot back. The code
+checked "which of these are new?" before React had worked out the answer, saw
+nothing new, and stopped before saving.
+
+**What changed:** the bell now works out what is new first, then saves it.
+Read state is still per person: everyone sees the same notifications, and each
+person's "read" is their own.
+
+**Verified:** in headless Chrome on a local copy against the live database,
+signed in as a test user: 4 unread, "Mark all read", reload, 0 unread. The
+saved reads were for that test user only. Not yet checked on the live site or
+in Safari.
+
+## 2026-11-25 — Two automatic account rules: 0-view pause, and robot-failure handover
+
+**Where it came from:** a post on X (Ramzi B.) claiming TikTok accounts left
+unused for 48 hours get stuck at 0 views. Our own data did not back that up
+(videos posted more than 48 hours after a warmup did no worse), but Garreth
+took two rules from it, decided 2026-11-25.
+
+**Rule 1, three 0-view posts in a row (TikTok only).** The account's posting is
+paused and its warmups are set to Manual, so they appear on the To-do list.
+When both warmups have been done by hand on 2 days, posting resumes and its
+warmups go back to what they were. If it gets three 0-view posts in a row
+again after that, it stays paused and the bell asks whether to retire it.
+Garreth: "Having consecutive 0 view post even after human intervention is a
+clear signal of a collapsing account that we should retire."
+
+**Rule 2, robot warmups failing (TikTok and Instagram).** An Automated account
+that has gone 2 full working days without a finished warmup is set to Manual
+for a day. As soon as both of that day's warmups are ticked done, it goes back
+to Automated.
+
+**Details that matter:**
+- Days off (Sunday) never count, for either rule (Garreth).
+- A post's 0 only counts once it was read at least 12 hours after posting;
+  TikTok often shows nothing before then.
+- The zeros that set off a hold cannot set it off again afterwards: only posts
+  made after the hold ended count.
+- If somebody changes a held account by hand (unpauses it, or sets it back to
+  Automated), the dashboard steps aside and stops managing it.
+- An account somebody had already paused is left alone.
+- No new rule starts on a day off, because nobody is there to do the warmups.
+- Every change goes to the bell for everyone, under "Account rules", and into
+  the account's history as "system:auto-hold".
+- **The robot on the Air needs no change.** It only warms accounts set to
+  Automated, so setting one to Manual takes it off the robot's list.
+
+**How it runs:** once a day at 05:30 UTC (00:30 New York in winter, 01:30 in
+summer), and again for one account whenever a warmup is logged by hand, so
+an account goes back the moment its last warmup is ticked. New table
+`account_auto_holds` remembers each hold and what the account was set to
+before, so the restore puts back exactly that.
+
+**Verified:** 18 new tests pass, 975 in total. Table created live 2026-11-25.
+A dry run against live data (nothing written) said it would hand one account
+to a person today: @ander.sonsophie14 (Instagram, Automated, last finished
+warmup Nov 20). No TikTok account is on a 0-view run right now. The first
+real run happens after this is merged and deployed; nothing has been paused or
+switched yet.
+
 ## 2026-11-23 — Three 0-view posts in a row now flags an account "collapsing"
 
 **Where it came from:** Yurie saw accounts getting 0 views on post after post

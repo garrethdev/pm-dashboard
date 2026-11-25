@@ -67,6 +67,7 @@ const CATEGORY: Record<string, string> = {
   pipeline_stalled: "Carousel analysis",
   pipeline_stuck: "Carousel analysis",
   pipeline_failing: "Carousel analysis",
+  auto_hold: "Account rules",
 };
 
 export function categoryLabel(type: string): string {
