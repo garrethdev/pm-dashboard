@@ -56,9 +56,13 @@ the new code, with nothing uploaded. With the movement switched off, the new
 Jealousy slide matches the approved sample. A fresh download of the renderers
 draws with the bundled font. No real batch has been rendered with it yet.
 
-**Found while testing:** some decks point at photos that have since been
-deleted from the photo library. These would fail if re-rendered: CC-0020,
-CRS-0004, and slide 3 of VTS-261111-03.
+**Found while testing:** many older decks point at source photos that have
+since been deleted from the photo library. A check on 2026-11-26 found that
+18 of the 29 Comparison decks use at least one of 30 deleted photos, and
+CRS-0004 and VTS-261111-03 were affected too. Almost all of those decks have
+already posted, and their finished slides are stored separately, so nothing
+live is broken. Re-rendering one of them fails until it is given new photos.
+New decks pick from the current library and are not affected.
 
 ## 2026-11-25 — The bell now remembers what you read
 
