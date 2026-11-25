@@ -20,6 +20,47 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-25 — New Character 6 content type: Story Wall
+
+**Where it came from:** Garreth: "a new content type that will be looping video
+footage that includes the woman and then a story from one of our story bank, but
+a huge block of text". He then set the length ("about 6 seconds", then "make it
+8 seconds"), the last second ("the text should disappear at the end of the video
+and just show her, so it forces them to rewatch the video"), the text size (he
+approved a 124-word story at 53 px and turned down a 164-word one at 46 px), and
+asked for "slightly different light silhouettes so it's more readable". He chose
+3 posts a week, one each from Camera Roll Story, Divorce Recovery and Jealousy.
+
+**What it is:** an 8 second clip of her in the kitchen (the same clips as Kitchen
+Quote Video, white and blue shirt) with one whole story from the story bank on
+screen as one paragraph. A soft dark shade sits behind the text, a little
+stronger or lighter on each video (22 to 38%). For the last second the text and
+shade are gone and only she shows. The video is silent; the song name is added
+at posting, like Kitchen Quote Video.
+
+**What changed on the dashboard side:** Story Wall appears on Inventory, the
+cadence page and the calendar like any other lane. Character 6 is now Camera
+Roll 3, Divorce Recovery 2, Jealousy 2, Kitchen Quote 3, Story Wall 3, Journey 2,
+Comparison 2, Viral Theories 1 = 18 a week, the same total as before. The
+database change is `supabase/migrations/20261125195746_story_wall_video_lane.sql`.
+
+**Outside the dashboard:** the renderer is `renderers/story_wall_video` in
+`content-render-scripts` (branch `story-wall-video-renderer`); the n8n caption
+writer now writes Story Wall captions in the Character 6 voice; the nightly
+content check now only checks Story Wall rows once they are rendered and
+captioned.
+
+**Verified:** the database change was run once and rolled back first (a test row
+became ready to post, showed in stock and in the posting view, Character 6 still
+added up to 18, nothing left behind), then applied. 20 videos (SW-001 to SW-020)
+were rendered and uploaded, each checked to be 1080 x 1920 and 8 seconds. The
+caption writer wrote 18 captions in manual runs; SW-014 and SW-020 kept failing
+its checks and are retried every hour. The content check approved all 18 (with
+its reasons written on each row), and a live query shows 18 Story Wall videos in
+stock and 20 rows in the posting view. No Story Wall video has been scheduled or
+posted yet. The Smart Scheduler's media list in n8n was left alone, as for
+Kitchen Quote: the ready switch already requires a video.
+
 ## 2026-11-25 — Character 6 carousels: new text look (Inter, outline, a little movement, emoji)
 
 **Where it came from:** Czedrick, after checking what fonts real people use on
