@@ -20,32 +20,6 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## 2026-11-26 — Inventory page simplified to one table
-
-**Where it came from:** Garreth: "The only important thing to see here is the
-content types, status, ready, and number of items to do, and the generate
-button. The rest we can hide or remove."
-
-**What changed:** the Inventory page is now just the "What to make next" table,
-with five columns: content type, status, ready (decks or videos ready to post),
-to do (how many to make), and the Generate button.
-
-- **Removed from the table:** the Character column and its filter (only
-  Character 6 posts now, so every row said the same thing), days of cover,
-  quarantined, demand per week, and the Buffer menu. "To do" is now always the
-  amount needed to hold two weeks of posts, which was the menu's default.
-- **Removed from the page:** the "Demand vs supply" card (with its window
-  pills and "Simulate new accounts") and the "Waiting to be switched on" note
-  about paused characters.
-- **Unchanged:** the numbers themselves, the Cloud / Physical switch, and the
-  "New" tag on a content type in its first week. The Generate button still
-  says "Coming soon"; it was a placeholder before and still is.
-
-**Verified:** it type-checks and lints, and the page loads locally showing the
-nine Character 6 content types. Not yet looked at in Safari.
-
----
-
 ## 2026-11-26 — Character 6 mix: Divorce Recovery first, then the three new types
 
 **Where it came from:** Garreth: prioritise the newer content types and
