@@ -44,6 +44,33 @@ keeps its own title.
 
 ---
 
+## 2026-11-26 — Divorce Recovery: old-renderer decks archived, 22 new ones released
+
+**Where it came from:** Garreth, after an audit of the Divorce Recovery lane:
+keep only the decks from the new renderer, archive the rest "because they came
+from an old renderer", and release the 22 approved new decks that were on Hold.
+This is a change to the content table only; no code changed.
+
+- **80 old decks archived** (marked Canceled, the status the system already uses
+  for content pulled for good). 60 were finished 6-slide decks on Hold from the
+  Nov 4, Nov 10 and Nov 10b batches. 20 were from the Nov 6 "v2" batch and never
+  got pictures. They were not deleted and can be brought back. 25 more old
+  Nov 4 decks were already Canceled. Decks that already posted or failed were
+  left alone, so their Analytics history stays.
+- **22 new decks released** (8–9 slides, Nov 15 and Nov 19 batches, already
+  approved by the content check). Divorce stock went from 30 to **52**, checked
+  live in the scheduler's stock count.
+- **Still on Hold:** 23 new decks that never went through the content check
+  (Nov 12 batches), 2 the check rejected (a weight number next to "peptide"),
+  and 2 still in review without pictures.
+
+**Not yet seen working:** no 9-slide deck from any lane has posted yet (8-slide
+ones have). Divorce is also behind the two new video types this week, which go
+first while they are new, so the first Divorce bookings are expected from the
+Nov 29 planning night at the earliest.
+
+---
+
 ## 2026-11-25 — New Character 6 content type: Story Wall
 
 **Where it came from:** Garreth: "a new content type that will be looping video
