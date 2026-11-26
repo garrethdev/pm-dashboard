@@ -20,6 +20,31 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-25 — New Character 6 content type: Women's Complaints
+
+**Where it came from:** Garreth. He asked for a writer agent and a render agent for three complaints real women have: chin and neck fat, upper arm fat and belly fat. He set the hook rule: every hook uses one exact phrase a real woman wrote and one power word. He approved six hooks. He asked for "more variance per slide its a story right so the cadence should change a bit". He set the picture rules: slide 1 is from his approved complaint photos; then "nature or 'before' and 'older'"; and "'after' and 'older' for the final 2 slides". He asked for recent music. Then he said: "Get everything setup including the render agent".
+
+**What it is:** an eight-slide carousel about one complaint. Each one is built on a real woman's post. Slide 1 is the hook. The middle slides tell the story: the moment it showed, how she felt, what she tried, someone kind mentions peptides, then the slow change. The last two slides are the reveal. Captions come from the writer, and the song is one of the 10 newest songs the music trend refresh added.
+
+**What changed on the dashboard side:** Women's Complaints appears on Inventory, the cadence page and the calendar like any other lane. It is wired at **0 posts a week**, so Character 6 still adds up to 18, and every deck is on Hold. Nothing is scheduled until Garreth sets a cadence and lifts Hold. There are three database changes:
+
+- `supabase/migrations/20261125231015_womens_complaints_lane.sql` adds the table, the registry row, the ready switch and the two views.
+- `supabase/migrations/20261125231031_womens_complaints_picture_pool_view.sql` adds the photo list the renderer reads.
+- `supabase/migrations/20261125231608_womens_complaints_pick_music.sql` adds the song picker.
+
+**Outside the dashboard:**
+
+- The renderer is `renderers/womens_complaints` in `content-render-scripts`, branch `womens-complaints-renderer`. It reads the photo tags fresh on every run and only uses photos from the Character 6 folder.
+- The n8n writer `OUNkXW14hBlslnDg` saves its decks to the new table. Before this, it was pointed at the Camera Roll Story table and its save step was off.
+
+**Verified:**
+
+- Each change was applied live, and each file's checksum matches what the database recorded.
+- The lane checks all pass: registry row, Character 6's allowed list, ready switch, both views, and a Character 6 total of 18.
+- 21 decks are in the table. 20 were loaded from writer runs, and the writer saved one more itself as an end-to-end test (WC-0021). All 21 were rendered and uploaded and passed the content check (all medium risk, which counts as approved). All are on Hold.
+- The posting view shows 21 rows and stock shows 0, which is right while they are on Hold.
+- Not done yet: a cadence, lifting Hold, and Garreth's review of the photo library. That review decides which photos count as before, after and nature.
+
 ## 2026-11-25 — New Character 6 content type: Story Wall
 
 **Where it came from:** Garreth: "a new content type that will be looping video
