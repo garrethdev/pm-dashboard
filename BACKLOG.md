@@ -1782,6 +1782,27 @@ meets real frames.
 
 # V1 — open work
 
+## Character 6: put the new types' weekly limit back to 7 (around 2026-12-05)
+
+**Set 2026-11-26 (Garreth).** Women's Complaints, Story Wall and Kitchen Quote
+were limited to 1 per account per week so Divorce Recovery stays first during
+their new-type week. Their first weeks end around Dec 2 (Story Wall, Kitchen
+Quote) and Dec 5 (Women's Complaints). After that, put
+`cadence_ceiling_per_week` back to 7 for all three. Left at 1, the two
+2-a-day accounts can never get more than 1 of each a week.
+
+## Smart Scheduler backup media check: three Character 6 lanes left out (skipped 2026-11-26)
+
+**Decided by Garreth, 2026-11-26: skip for now.** The scheduler's `MEDIA`
+list in n8n (`Jaf78Yt9XAuj9PNJ`, node "Plan Day + Apply") has no entry for
+`kitchen_quote_video`, `story_wall_video` or `womens_complaints`. Nothing is
+broken: each lane's ready switch already refuses a row without its video or
+all 8 slides. The entry only matters if a file is removed *after* a row was
+released; that row would be booked and then silently never post. To add it
+(by hand in the n8n editor, the node holds a key): append
+`kitchen_quote_video:'video_url', story_wall_video:'video_url', womens_complaints:'slide_8_url'`
+to `MEDIA`, bump to 1.4.2, save, then publish.
+
 ## Move accounts off Geelark onto real iPhones
 
 **Ticketed separately — see [Phone farm — dashboard tickets](#phone-farm--dashboard-tickets)

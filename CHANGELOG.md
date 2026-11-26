@@ -20,6 +20,76 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-26 — Inventory page simplified to one table
+
+**Where it came from:** Garreth: "The only important thing to see here is the
+content types, status, ready, and number of items to do, and the generate
+button. The rest we can hide or remove."
+
+**What changed:** the Inventory page is now just the "What to make next" table,
+with five columns: content type, status, ready (decks or videos ready to post),
+to do (how many to make), and the Generate button.
+
+- **Removed from the table:** the Character column and its filter (only
+  Character 6 posts now, so every row said the same thing), days of cover,
+  quarantined, demand per week, and the Buffer menu. "To do" is now always the
+  amount needed to hold two weeks of posts, which was the menu's default.
+- **Removed from the page:** the "Demand vs supply" card (with its window
+  pills and "Simulate new accounts") and the "Waiting to be switched on" note
+  about paused characters.
+- **Unchanged:** the numbers themselves, the Cloud / Physical switch, and the
+  "New" tag on a content type in its first week. The Generate button still
+  says "Coming soon"; it was a placeholder before and still is.
+
+**Verified:** it type-checks and lints, and the page loads locally showing the
+nine Character 6 content types. Not yet looked at in Safari.
+
+---
+
+## 2026-11-26 — Character 6 mix: Divorce Recovery first, then the three new types
+
+**Where it came from:** Garreth: prioritise the newer content types and
+Divorce, with "Divorce still the top priority than the new ones". The numbers
+are Claude's suggestion, which he approved.
+
+**The new weekly mix** (per account; still adds up to 18, so the cadence page
+keeps saving):
+
+| Content type | Before | Now |
+|---|---|---|
+| Divorce Recovery | 2 | **5** |
+| Women's Complaints | 0 | **3** |
+| Story Wall | 3 | 3 |
+| Kitchen Quote | 3 | 3 |
+| Jealousy | 2 | 2 |
+| Journey | 2 | **1** |
+| Viral Theories | 1 | 1 |
+| Comparison | 2 | **0** (nothing in stock) |
+| Camera Roll Story | 3 | **0** (nothing in stock) |
+
+**Why there is also a limit on the new types.** New content types go first on
+every account for their first week, whatever their weekly number. With all
+three new at once, Divorce would have got almost no slots until about Dec 5.
+So Women's Complaints, Story Wall and Kitchen Quote are limited to **1 per
+account per week** for now (it was 7). Put back to 7 when their first weeks
+end, around Dec 5; that is in `BACKLOG.md`.
+
+**What to expect** (worked out from the scheduler's rules, not yet seen in a
+real run): an account that posts once a day gets about 3 Divorce, 1 Women's
+Complaints, 1 Story Wall and 1 Kitchen Quote a week. Jealousy, Journey and
+Viral Theories show up only on the two accounts that post twice a day. The
+first planning night with this mix is Nov 29. Recorded in the dashboard audit
+log (entry 2286, with the old numbers).
+
+**Inventory looks odd for a few days.** Its forecast still counts Camera Roll
+Story as a new type in its first week, so it asks for about 30 of them even
+though the scheduler will not book a type with nothing in stock.
+
+**Skipped on purpose:** adding the three new lanes to the Smart Scheduler's
+backup media check (Garreth, same day). See `BACKLOG.md`.
+
+---
+
 ## 2026-11-26 — Women's Complaints released (20 of 21 decks)
 
 **Where it came from:** Garreth: "We will release now the women's complaints."
