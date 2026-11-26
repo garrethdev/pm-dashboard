@@ -20,6 +20,58 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-26 — Claude can read the dashboard (read-only MCP server, phase 1)
+
+**Where it came from:** Garreth: "create an MCP that allows us to directly
+within Claude have access to the full data of the PM dashboard… read-only, so
+we're not pushing data back upwards… anything can be exported from the PM
+dashboard directly into the Claude console." He chose to start with himself, in
+Claude Code, behind a personal token. The plan, with the later phases, is at
+https://claude.ai/artifact/VE88TW8UTsoFdYU4ePQKtk.
+
+**What changed:**
+- **A new address, `/api/mcp`, that Claude Code connects to.** It offers 17
+  tools, one per area of the dashboard: today at a glance, accounts, one
+  account, the calendar, inventory, content types, analytics, reports and
+  incidents, automation, the to-do list, phones and proxies, warmups, recorded
+  sessions, the Carousel Generator, Trends, the story bank and hooks, and
+  Resources. Each tool runs the same code its page runs, so Claude and the
+  screens give the same numbers. The story bank, hook library and writer
+  rules had no page; they now have a tool.
+- **Nothing it offers can change anything.** Every tool is marked read-only, and
+  a new test fails if the MCP code ever imports anything that writes or reads
+  a secret. Two display caches still refresh, exactly as they do when the page
+  is opened: post thumbnails and an account's profile card. Reading the Trends
+  feed does not mark anything as seen.
+- **A personal token, not the sign-in cookie.** Vercel holds only a scrambled
+  copy of each token, in a new setting, `MCP_TOKENS`, next to the person's
+  email. That email must also be in `ALLOWED_EMAILS`. With the setting empty
+  the address answers "not set up" and stays shut. `scripts/mcp-token.mjs`
+  makes a token. Recorded sessions stay reviewers-only, as on the page.
+- **Private data stays private.** Fields named like passwords, tokens, secrets
+  or keys are dropped from every reply. Links to private files (screenshots,
+  creator photos) are not passed on. Emails, phone numbers and proxy addresses
+  come back masked.
+- **Gentle on the database.** At most three questions run at once, 60 a
+  minute per person, and the pages' own 60-second cache is reused. Long lists
+  come a page at a time, and every reply says how many rows exist, how many
+  came back, how old the data is, and whether anything was shortened to fit.
+- `docs/MCP.md` explains how to connect and what each tool reads.
+
+**How far it is checked:** on a local server pointed at the live database,
+every tool view was called once, one at a time (59 calls in one minute). 57
+answered, one was an intended "no such account", and one failed because this
+Mac has no TextVerified key: the Proxies view, which production can read.
+Account totals matched the database (31 physical, 54 cloud). The first run
+showed two people's emails in "who did it" fields (`review.by`, `doneBy`);
+emails are now masked in every field, and the rerun showed none. Wrong and
+missing tokens got 401, and pages still need a sign-in. The pooler logged no
+connection errors during the run. Not yet used from Claude Code itself, and
+not yet deployed: it goes live once this is merged and `MCP_TOKENS` is set in
+Vercel.
+
+---
+
 ## 2026-11-26 — Who watches: Instagram's own audience numbers, and why a box is empty
 
 **Where it came from:** Garreth: on the Deep side, many accounts (Instagram
