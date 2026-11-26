@@ -37,6 +37,35 @@ export async function sbRpc<T>(fn: string, args: Record<string, unknown> = {}): 
 }
 
 /**
+ * One page of a read, with the total the whole query would return.
+ *
+ * For the MCP server (2026-11-26), whose replies must always say how many rows
+ * exist and how many came back. The total comes from PostgREST's
+ * `Content-Range` header (`Prefer: count=exact`), so it is one extra count on
+ * the database, not a second request. Read-only, like `sbRest`.
+ */
+export async function sbRestPage<T>(
+  path: string,
+  page: { limit: number; offset: number },
+): Promise<{ rows: T[]; total: number | null }> {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/${path}${sep}limit=${page.limit}&offset=${page.offset}`,
+    {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact" },
+      signal: AbortSignal.timeout(10_000),
+      cache: "no-store",
+    },
+  );
+  if (!res.ok) throw new Error(`supabase HTTP ${res.status} on ${path.split("?")[0]}`);
+  const range = res.headers.get("content-range") ?? "";
+  const total = Number(range.split("/")[1]);
+  return { rows: (await res.json()) as T[], total: Number.isFinite(total) ? total : null };
+}
+
+/**
  * PostgREST's hard response cap.
  *
  * Measured live 2026-09-11: a plain `select=post_id` over `tt_post_performance`

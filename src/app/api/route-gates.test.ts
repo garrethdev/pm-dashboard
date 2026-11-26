@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 // and tokens one table away from every one of these routes.
 
 const API = join(__dirname);
-const GATES = /\b(requireSession|requireReviewer|requireSchedulerToken|requireRunnerToken|requireBearerToken|guard)\(/;
+const GATES = /\b(requireSession|requireReviewer|requireSchedulerToken|requireRunnerToken|requireBearerToken|guard|authenticateMcp)\(/;
 const WORK = /\b(req|request)\.(json|formData|text)\(|\b(sbRest|sbRpc|dbGet|dbGetAll|dbInsert|dbPatch|dbDelete|fetch)\(/;
 
 /** Routes proxy.ts lets in with no session, and the token check each must make. */
@@ -25,6 +25,8 @@ const OPEN: { prefix: string; token: RegExp }[] = [
   { prefix: "content-tags/run", token: /requireSchedulerToken\(|requireBearerToken\(/ },
   { prefix: "screen-readings/run", token: /requireSchedulerToken\(|requireBearerToken\(/ },
   { prefix: "follow-creators/refresh", token: /requireSchedulerToken\(/ },
+  // The read-only MCP server Claude connects to (2026-11-26): a personal token.
+  { prefix: "mcp", token: /authenticateMcp\(/ },
 ];
 
 function routes(dir: string): string[] {

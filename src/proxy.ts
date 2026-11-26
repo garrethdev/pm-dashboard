@@ -77,13 +77,20 @@ const AUTO_HOLDS_RUN_PATH = "/api/accounts/auto-holds/run";
 const AUDIENCE_INSTAGRAM_PATH = "/api/audience-readings/instagram";
 
 /**
+ * The read-only MCP server Claude connects to (Garreth, 2026-11-26). Claude is
+ * not a browser and has no cookie, so the route demands a personal token
+ * instead (`authenticateMcp` in src/server/mcp/auth.ts). Exactly this path.
+ */
+const MCP_PATH = "/api/mcp";
+
+/**
  * Auth gate (Next 16 "proxy", formerly middleware): refreshes the Supabase
  * session cookie and redirects unauthenticated / non-allowlisted visitors to
  * /login. API routes re-check the session themselves — this is the outer door.
  */
 export async function proxy(request: NextRequest) {
   const p = request.nextUrl.pathname;
-  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH || p === SCREEN_READINGS_PATH || p === SCREEN_READINGS_RELINK_PATH || p === FOLLOW_CREATORS_REFRESH_PATH || p === MUSIC_LIBRARY_REFRESH_PATH || p === AUTO_HOLDS_RUN_PATH || p === AUDIENCE_INSTAGRAM_PATH) {
+  if (authBypassed() || p.startsWith(RUNNER_API_PREFIX) || p.startsWith(MAINTENANCE_PREFIX) || p === SHEET_INVENTORY_PATH || p === FACEBOOK_INGEST_PATH || p === CONTENT_TAGS_PATH || p === SCREEN_READINGS_PATH || p === SCREEN_READINGS_RELINK_PATH || p === FOLLOW_CREATORS_REFRESH_PATH || p === MUSIC_LIBRARY_REFRESH_PATH || p === AUTO_HOLDS_RUN_PATH || p === AUDIENCE_INSTAGRAM_PATH || p === MCP_PATH) {
     return NextResponse.next({ request });
   }
 
