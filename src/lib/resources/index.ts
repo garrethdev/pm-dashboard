@@ -33,7 +33,7 @@ export const RESOURCES: Resource[] = [
     url: "https://claude.ai/artifact/21BD6CPdzo6H7eCoaQ7S21",
   },
   {
-    title: "Story Research Agent Architecture",
+    title: "Story Research Agent and Writer Architecture",
     summary: "How real stories become Character 6 carousels: the story agent, lane matching, the six writers and renderers, the big writer changes, the writer rules and captions.",
     url: "https://claude.ai/artifact/SrXti77NWD4Tp11PY9Neng",
   },

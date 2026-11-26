@@ -20,7 +20,7 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
-## 2026-11-26 — Story Research Agent Architecture on the Resources page
+## 2026-11-26 — Story Research Agent and Writer Architecture on the Resources page
 
 **Where it came from:** Garreth's request, to keep the story agent and writer
 reference page one click away.
@@ -35,6 +35,10 @@ changes, the writer rules and captions. File: `src/lib/resources/index.ts`.
 change, so its renderer section still lists the old fonts and still says the
 Comparison renderer is only on a side branch. It is on `main` now. The writer
 sections are current.
+
+**Card title:** Garreth asked for the writers to be in the name, so the card
+reads "Story Research Agent and Writer Architecture". The artifact itself
+keeps its own title.
 
 **Verified:** it type-checks. I have not opened the page in a browser.
 
