@@ -1,13 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Sparkles, Users } from "@/components/ui/icons";
+import { CalendarRange, Sparkles, Users } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashCard } from "@/components/ui/card";
 import { Dropdown } from "@/components/ui/dropdown";
 import { StatusPill } from "@/components/ui/pill";
 import { Tooltip } from "@/components/ui/tooltip";
-import type { ProductionOrderRow } from "@/lib/data/inventory";
+import {
+  INVENTORY_RANGES,
+  type InventoryRangeKey,
+  type ProductionOrderRow,
+} from "@/lib/data/inventory";
 import { newTypeDetail, toProduce } from "@/lib/data/production-order-rules";
 import { cn } from "@/lib/utils";
 
@@ -21,25 +25,25 @@ const ORDER_TONE: Record<string, "gray" | "danger" | "warn" | "ok" | "neutral"> 
 };
 
 /**
- * "To do" is what to make to hold a 14-day buffer, the old Buffer menu's
- * default. Simplified on 2026-11-26 (Garreth): only content type, status,
- * ready, to do and Generate remain. The character column and filter went
- * because only Character 6 posts; days of cover, quarantined, demand per week
- * and the buffer menu went as detail nobody acted on. "To do" is the column
- * to act on, so it is the one that stands out: a light band, a bolder header
- * and larger numbers, red when there is something to make. The band is rounded
- * at both ends with the same space above the header as below the last number,
- * so every header carries that top padding to stay on one line.
+ * Simplified on 2026-11-26 (Garreth): only content type, status, ready, to do
+ * and Generate remain. Days of cover, quarantined and demand per week went as
+ * detail nobody acted on, and the character column went because only
+ * Character 6 posts.
+ *
+ * Two dropdowns at the top right, both working in the browser on rows already
+ * loaded: Character (ready for when another character comes back) and Buffer.
+ * "To do" is what to make to hold the chosen buffer: 7 days, 14 days (the
+ * default) or 1 month. It is the column to act on, so it stands out: a light
+ * band, a bolder header and larger numbers, red when there is something to
+ * make. The band is rounded at both ends with the same space above the header
+ * as below the last number, so every header carries that top padding to stay
+ * on one line.
  */
-const BUFFER_DAYS = 14;
 
 /** "Character 6" shown as "Char 6", as everywhere else on the page. */
 const short = (c: string) => c.replace("Character ", "Char ");
 
-/** The scheduler's own ranking, worst cover first. The character filter is a
- *  dropdown (Garreth 2026-11-26): only Character 6 posts today, but it is
- *  ready for when another character comes back. It filters in the browser;
- *  every row is already loaded. */
+/** The scheduler's own ranking, worst cover first. */
 export function ProductionOrderCard({
   rows,
   fetchedAt,
@@ -48,40 +52,34 @@ export function ProductionOrderCard({
   fetchedAt?: string;
 }) {
   const [char, setChar] = useState("all");
+  const [buffer, setBuffer] = useState<InventoryRangeKey>("14d");
   const characters = useMemo(() => [...new Set(rows.map((r) => r.character))].sort(), [rows]);
   const shown = char === "all" ? rows : rows.filter((r) => r.character === char);
+  const bufferEntry = INVENTORY_RANGES.find((r) => r.key === buffer) ?? INVENTORY_RANGES[1];
 
   return (
     <DashCard
       title="What to make next"
       fetchedAt={fetchedAt}
       actions={
-        <Dropdown
-          align="right"
-          label={char === "all" ? "All characters" : short(char)}
-          icon={<Users className="size-3.5" />}
-        >
-          {(close) => (
-            <div className="flex flex-col p-1">
-              {["all", ...characters].map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => {
-                    setChar(c);
-                    close();
-                  }}
-                  className={cn(
-                    "rounded-lg px-3 py-1.5 text-left text-xs font-medium whitespace-nowrap transition-colors hover:bg-card-raised",
-                    c === char ? "text-accent" : "text-text-muted",
-                  )}
-                >
-                  {c === "all" ? "All characters" : short(c)}
-                </button>
-              ))}
-            </div>
-          )}
-        </Dropdown>
+        <>
+          <OptionMenu
+            icon={<Users className="size-3.5" />}
+            value={char}
+            onChange={setChar}
+            options={[
+              { value: "all", label: "All characters" },
+              ...characters.map((c) => ({ value: c, label: short(c) })),
+            ]}
+          />
+          <OptionMenu
+            icon={<CalendarRange className="size-3.5" />}
+            value={buffer}
+            onChange={(v) => setBuffer(v as InventoryRangeKey)}
+            prefix="Buffer: "
+            options={INVENTORY_RANGES.map((r) => ({ value: r.key, label: r.label }))}
+          />
+        </>
       }
     >
       <div className="overflow-x-auto">
@@ -102,7 +100,7 @@ export function ProductionOrderCard({
           </thead>
           <tbody>
             {shown.map((o, i) => {
-              const todo = toProduce(o, BUFFER_DAYS);
+              const todo = toProduce(o, bufferEntry.days);
               return (
                 <tr key={`${o.character}-${o.contentType}`} className="border-t border-border">
                   <td className="py-2.5 font-mono text-xs text-text-muted whitespace-nowrap">
@@ -172,5 +170,46 @@ function GenerateButton({ contentType }: { contentType: string }) {
         <span className="sr-only">{contentType} coming soon</span>
       </span>
     </Tooltip>
+  );
+}
+
+/** A small pick-one menu: the button shows the current choice. */
+function OptionMenu({
+  icon,
+  value,
+  onChange,
+  options,
+  prefix = "",
+}: {
+  icon: React.ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  prefix?: string;
+}) {
+  const current = options.find((o) => o.value === value)?.label ?? value;
+  return (
+    <Dropdown align="right" label={`${prefix}${current}`} icon={icon}>
+      {(close) => (
+        <div className="flex flex-col p-1">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => {
+                onChange(o.value);
+                close();
+              }}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-left text-xs font-medium whitespace-nowrap transition-colors hover:bg-card-raised",
+                o.value === value ? "text-accent" : "text-text-muted",
+              )}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </Dropdown>
   );
 }

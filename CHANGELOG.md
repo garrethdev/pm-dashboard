@@ -34,9 +34,11 @@ to do (how many to make), and the Generate button.
   is gone (only Character 6 posts now, so every row said the same thing), and
   the row of character buttons became an "All characters" dropdown at the top
   right of the table, ready for when another character comes back.
-- **Removed from the table:** days of cover,
-  quarantined, demand per week, and the Buffer menu. "To do" is now always the
-  amount needed to hold two weeks of posts, which was the menu's default.
+- **The Buffer menu stays** (Garreth's follow-up, after it was first taken
+  out). It sits beside the character dropdown: 7 days, 14 days (the default)
+  or 1 month, and "To do" shows how many to make to cover that long. Checked
+  locally: at 1 month, Story Wall's "To do" goes from 8 to 31.
+- **Removed from the table:** days of cover, quarantined and demand per week.
 - **Removed from the page:** the "Demand vs supply" card (with its window
   pills and "Simulate new accounts") and the "Waiting to be switched on" note
   about paused characters.
