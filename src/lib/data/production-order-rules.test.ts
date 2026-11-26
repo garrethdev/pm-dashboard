@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newTypeLabel, toProduce } from "@/lib/data/production-order-rules";
+import { newTypeDetail, toProduce } from "@/lib/data/production-order-rules";
 
 /**
  * The numbers are Character 6's on 2026-10-19, read from
@@ -34,12 +34,12 @@ describe("toProduce", () => {
   });
 });
 
-describe("newTypeLabel", () => {
+describe("newTypeDetail", () => {
   it("names the last day of the priority week", () => {
-    expect(newTypeLabel("2026-10-22")).toBe("New · until Oct 22");
+    expect(newTypeDetail("2026-10-22")).toBe("Goes first on every account until Oct 22");
   });
 
   it("says when the week has not started", () => {
-    expect(newTypeLabel(null)).toBe("New · starts at first piece");
+    expect(newTypeDetail(null)).toBe("Goes first on every account for 7 days, starting with its first post");
   });
 });

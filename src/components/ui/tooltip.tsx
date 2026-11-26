@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * `side` matters more than it looks. A table that scrolls horizontally computes
  * `overflow-y` to `auto` as well, so a tooltip placed above its trigger is
  * clipped by the scroll container rather than floating over it. Inside such a
- * table use "left", which stays within the row's own height.
+ * table use "left" or "right", which stay within the row's own height.
  *
  * The group is named so it does not fire from an unrelated `group` further up.
  */
@@ -21,7 +21,7 @@ export function Tooltip({
   children,
 }: {
   label: string;
-  side?: "top" | "left";
+  side?: "top" | "left" | "right";
   className?: string;
   children: React.ReactNode;
 }) {
@@ -34,9 +34,9 @@ export function Tooltip({
           "pointer-events-none absolute z-20 rounded-nested border border-border glass-overlay px-2 py-1",
           "text-xs font-medium whitespace-nowrap text-text-primary opacity-0 shadow-card",
           "transition-opacity duration-100 group-hover/tt:opacity-100",
-          side === "top"
-            ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
-            : "top-1/2 right-full mr-1.5 -translate-y-1/2",
+          side === "top" && "bottom-full left-1/2 mb-1.5 -translate-x-1/2",
+          side === "left" && "top-1/2 right-full mr-1.5 -translate-y-1/2",
+          side === "right" && "top-1/2 left-full ml-1.5 -translate-y-1/2",
         )}
       >
         {label}

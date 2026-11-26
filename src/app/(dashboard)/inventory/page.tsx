@@ -1,24 +1,24 @@
 import { Suspense } from "react";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
-import { getDemandSupply, getInventory } from "@/lib/data/inventory";
-import { DemandSupplyCard } from "@/components/dashboard/demand-supply-card";
+import { getInventory } from "@/lib/data/inventory";
 import { ProductionOrderCard } from "@/components/dashboard/production-order-card";
-import { PausedCharacterNote } from "@/components/dashboard/paused-character-note";
 import { getFleet } from "@/lib/fleet-server";
 import { formatEtShort } from "@/lib/data/format";
 
+/**
+ * Simplified on 2026-11-26 (Garreth): one table, "What to make next". The
+ * Demand vs supply card and the "Waiting to be switched on" note were removed.
+ */
 async function InventoryLive() {
-  let data, fetchedAt, demand;
+  let data, fetchedAt;
   try {
     // Only the fleet being looked at (Cloud or Physical, top right).
     const fleet = await getFleet();
     ({ data, fetchedAt } = await getInventory(fleet));
-    // 14d is the default window.
-    demand = (await getDemandSupply(14, 0, null, fleet)).data;
   } catch (err) {
     return (
-      <DashCard title="Demand vs supply">
+      <DashCard title="What to make next">
         <p className="text-sm text-text-muted">
           Supabase unreachable: {err instanceof Error ? err.message : "unknown error"}
         </p>
@@ -26,24 +26,14 @@ async function InventoryLive() {
     );
   }
 
-  const fetched = formatEtShort(fetchedAt);
-
-  return (
-    <>
-      <DemandSupplyCard initial={demand} />
-
-      <ProductionOrderCard rows={data.productionOrder} fetchedAt={fetched} />
-
-      <PausedCharacterNote characters={data.pausedCharacters} />
-    </>
-  );
+  return <ProductionOrderCard rows={data.productionOrder} fetchedAt={formatEtShort(fetchedAt)} />;
 }
 
 export default function InventoryPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Inventory</h1>
-      <Suspense fallback={<CardSkeleton title="Demand vs supply" lines={8} />}>
+      <Suspense fallback={<CardSkeleton title="What to make next" lines={8} />}>
         <InventoryLive />
       </Suspense>
     </div>

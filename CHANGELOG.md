@@ -20,6 +20,43 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-26 — Inventory page simplified to one table
+
+**Where it came from:** Garreth: "The only important thing to see here is the
+content types, status, ready, and number of items to do, and the generate
+button. The rest we can hide or remove."
+
+**What changed:** the Inventory page is now just the "What to make next" table,
+with five columns: content type, status, ready (decks or videos ready to post),
+to do (how many to make), and the Generate button.
+
+- **Character is a dropdown now** (Garreth's follow-up). The Character column
+  is gone (only Character 6 posts now, so every row said the same thing), and
+  the row of character buttons became an "All characters" dropdown at the top
+  right of the table, ready for when another character comes back.
+- **Removed from the table:** days of cover,
+  quarantined, demand per week, and the Buffer menu. "To do" is now always the
+  amount needed to hold two weeks of posts, which was the menu's default.
+- **Removed from the page:** the "Demand vs supply" card (with its window
+  pills and "Simulate new accounts") and the "Waiting to be switched on" note
+  about paused characters.
+- **"To do" stands out** (Garreth's follow-up): a light band down the column,
+  a bolder header, and larger numbers, red when there is something to make.
+- **The "New" tag just says "New"** (Garreth's follow-up). Before, it read
+  "New · until Nov 26" or "New · starts at first piece". That detail now shows
+  when you hover over the tag: "Goes first on every account until Nov 26", or
+  for a type that has not posted yet, that its 7 days start with its first post.
+- **Unchanged:** the numbers themselves and the Cloud / Physical switch. The
+  Generate button still says "Coming soon"; it was a placeholder before and
+  still is.
+
+**Verified:** it type-checks, lints and passes its tests. The page loads
+locally with the nine Character 6 content types, and a headless Chrome
+screenshot shows the highlighted column and the hover text. Not yet looked at
+in Safari.
+
+---
+
 ## 2026-11-26 — Character 6 mix: Divorce Recovery first, then the three new types
 
 **Where it came from:** Garreth: prioritise the newer content types and

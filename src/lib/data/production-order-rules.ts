@@ -29,9 +29,13 @@ export function toProduce(
   return Math.max(0, Math.ceil(Math.round((need - row.usablePool) * 1e6) / 1e6));
 }
 
-/** "New · until Oct 26", or before its first piece "New · starts at first piece". */
-export function newTypeLabel(priorityUntil: string | null): string {
-  if (!priorityUntil) return "New · starts at first piece";
+/**
+ * The hover text on a new content type's "New" pill (the pill itself just says
+ * "New", Garreth 2026-11-26): when its priority week ends, or that it starts
+ * with its first post.
+ */
+export function newTypeDetail(priorityUntil: string | null): string {
+  if (!priorityUntil) return "Goes first on every account for 7 days, starting with its first post";
   const d = new Date(`${priorityUntil}T00:00:00Z`);
-  return `New · until ${d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
+  return `Goes first on every account until ${d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
 }
