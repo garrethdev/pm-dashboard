@@ -32,6 +32,8 @@ and is summarised rather than itemised — the commit messages are the detail.
 - `supabase/migrations/20261125231031_womens_complaints_picture_pool_view.sql` adds the photo list the renderer reads.
 - `supabase/migrations/20261125231608_womens_complaints_pick_music.sql` adds the song picker.
 
+**Same day, after his first look:** he rejected the massage-table deck (WC-0009). It is marked rejected and stays on Hold. He also asked: "remove as many images of her in the middle slides and tell the renderer to balance out more just nature or food shots". Slides 2 to 6 are now nature and food only, alternating, with no photo of her or her hands. To do that, the photo list now also includes the `nature-basis` and `food-basis` folders (`supabase/migrations/20261126012928_character6_picture_pool_nature_food.sql`). All 20 remaining decks were re-rendered and uploaded.
+
 **Outside the dashboard:**
 
 - The renderer is `renderers/womens_complaints` in `content-render-scripts`, branch `womens-complaints-renderer`. It reads the photo tags fresh on every run and only uses photos from the Character 6 folder.
