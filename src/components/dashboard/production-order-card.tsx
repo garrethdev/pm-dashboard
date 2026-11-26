@@ -40,6 +40,7 @@ const ORDER_TONE: Record<string, "gray" | "danger" | "warn" | "ok" | "neutral"> 
  * on one line. Status, Ready, To do and Generate are one fixed width each
  * (Garreth: "make the space on these 4 columns equal"); Content type takes
  * the rest, and a narrow screen scrolls sideways instead of squeezing them.
+ * The To do header and numbers are centred in their band.
  */
 
 /** "Character 6" shown as "Char 6", as everywhere else on the page. */
@@ -94,7 +95,7 @@ export function ProductionOrderCard({
               <th className="pt-2.5 pb-2 font-medium whitespace-nowrap">Content type</th>
               <th className="w-32 pt-2.5 pb-2 font-medium whitespace-nowrap">Status</th>
               <th className="w-32 pt-2.5 pb-2 font-medium whitespace-nowrap">Ready</th>
-              <th className="w-32 rounded-t-lg bg-card-raised pt-2.5 pb-2 font-semibold whitespace-nowrap text-text-primary">
+              <th className="w-32 rounded-t-lg bg-card-raised text-center pt-2.5 pb-2 font-semibold whitespace-nowrap text-text-primary">
                 To do
               </th>
               <th className="w-32 pt-2.5 pb-2 font-medium whitespace-nowrap">Generate</th>
@@ -127,7 +128,7 @@ export function ProductionOrderCard({
                       "0" would read as an alarm for a healthy lane. */}
                   <td
                     className={cn(
-                      "bg-card-raised py-2.5 text-base font-semibold tnum",
+                      "bg-card-raised py-2.5 text-center text-base font-semibold tnum",
                       // The band's bottom matches its rounded top.
                       i === shown.length - 1 && "rounded-b-lg",
                       todo > 0 ? "text-pill-red" : "text-text-muted",
