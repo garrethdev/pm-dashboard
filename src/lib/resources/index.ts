@@ -33,6 +33,11 @@ export const RESOURCES: Resource[] = [
     url: "https://claude.ai/artifact/21BD6CPdzo6H7eCoaQ7S21",
   },
   {
+    title: "Story Research Agent Architecture",
+    summary: "How real stories become Character 6 carousels: the story agent, lane matching, the six writers and renderers, the big writer changes, the writer rules and captions.",
+    url: "https://claude.ai/artifact/SrXti77NWD4Tp11PY9Neng",
+  },
+  {
     title: "Wiring a New Content Type",
     summary: "The columns a new carousel table needs, the eight wiring steps across Supabase and n8n, and the query that proves a lane is live.",
     url: "https://claude.ai/artifact/XUj99rfkXJfy4HMzCYtLp2",

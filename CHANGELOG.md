@@ -20,6 +20,26 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-26 — Story Research Agent Architecture on the Resources page
+
+**Where it came from:** Garreth's request, to keep the story agent and writer
+reference page one click away.
+
+**What changed:** the Resources page has a new card, placed after Hook Rules,
+linking to the Story Research Agent Architecture page (a Claude artifact last
+updated 23 Nov). It shows how real stories become Character 6 carousels: the
+story agent, lane matching, the six writers and renderers, the big writer
+changes, the writer rules and captions. File: `src/lib/resources/index.ts`.
+
+**Known out of date on that page:** it was written before the 25 Nov text-look
+change, so its renderer section still lists the old fonts and still says the
+Comparison renderer is only on a side branch. It is on `main` now. The writer
+sections are current.
+
+**Verified:** it type-checks. I have not opened the page in a browser.
+
+---
+
 ## 2026-11-25 — New Character 6 content type: Story Wall
 
 **Where it came from:** Garreth: "a new content type that will be looping video
@@ -60,6 +80,8 @@ its reasons written on each row), and a live query shows 18 Story Wall videos in
 stock and 20 rows in the posting view. No Story Wall video has been scheduled or
 posted yet. The Smart Scheduler's media list in n8n was left alone, as for
 Kitchen Quote: the ready switch already requires a video.
+
+---
 
 ## 2026-11-25 — Character 6 carousels: new text look (Inter, outline, a little movement, emoji)
 
