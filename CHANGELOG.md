@@ -20,6 +20,24 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-26 — Women's Complaints released (20 of 21 decks)
+
+**Where it came from:** Garreth: "We will release now the women's complaints."
+A change to the content table only; no code changed.
+
+- **20 decks taken off Hold** (WC-0001 to WC-0021, except WC-0009). Checked
+  live: all 20 are marked ready to post and Character 6 stock shows 20.
+- **WC-0009 stays on Hold.** Garreth rejected it (the massage-table deck), but
+  that rejection sits in a notes field the ready switch does not read. Released,
+  it would have posted. Hold is the only thing keeping it out, so it must not be
+  bulk-released with the others later.
+- **Its weekly cadence is still 0.** It is a new content type, so from the next
+  planning night (Nov 29) it goes first on every account for its first week
+  anyway, until the 20 run out. The Character 6 cadence was not changed in this
+  entry.
+
+---
+
 ## 2026-11-26 — Story Research Agent and Writer Architecture on the Resources page
 
 **Where it came from:** Garreth's request, to keep the story agent and writer
