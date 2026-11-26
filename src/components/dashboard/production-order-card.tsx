@@ -37,7 +37,9 @@ const ORDER_TONE: Record<string, "gray" | "danger" | "warn" | "ok" | "neutral"> 
  * band, a bolder header and larger numbers, red when there is something to
  * make. The band is rounded at both ends with the same space above the header
  * as below the last number, so every header carries that top padding to stay
- * on one line.
+ * on one line. Status, Ready, To do and Generate are one fixed width each
+ * (Garreth: "make the space on these 4 columns equal"); Content type takes
+ * the rest, and a narrow screen scrolls sideways instead of squeezing them.
  */
 
 /** "Character 6" shown as "Char 6", as everywhere else on the page. */
@@ -85,17 +87,17 @@ export function ProductionOrderCard({
       <div className="overflow-x-auto">
         <table
           hidden={shown.length === 0}
-          className="w-full text-left text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0"
+          className="w-full min-w-[720px] table-fixed text-left text-sm [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0"
         >
           <thead>
             <tr className="text-left text-xs text-text-muted">
               <th className="pt-2.5 pb-2 font-medium whitespace-nowrap">Content type</th>
-              <th className="pt-2.5 pb-2 font-medium whitespace-nowrap">Status</th>
-              <th className="w-px pt-2.5 pb-2 font-medium whitespace-nowrap">Ready</th>
-              <th className="w-px rounded-t-lg bg-card-raised pt-2.5 pb-2 font-semibold whitespace-nowrap text-text-primary">
+              <th className="w-32 pt-2.5 pb-2 font-medium whitespace-nowrap">Status</th>
+              <th className="w-32 pt-2.5 pb-2 font-medium whitespace-nowrap">Ready</th>
+              <th className="w-32 rounded-t-lg bg-card-raised pt-2.5 pb-2 font-semibold whitespace-nowrap text-text-primary">
                 To do
               </th>
-              <th className="w-px pt-2.5 pb-2 font-medium whitespace-nowrap">Generate</th>
+              <th className="w-32 pt-2.5 pb-2 font-medium whitespace-nowrap">Generate</th>
             </tr>
           </thead>
           <tbody>

@@ -44,6 +44,9 @@ to do (how many to make), and the Generate button.
   about paused characters.
 - **"To do" stands out** (Garreth's follow-up): a light band down the column,
   a bolder header, and larger numbers, red when there is something to make.
+- **Even columns** (Garreth's follow-up): Status, Ready, To do and Generate
+  are now the same width, so they sit evenly spaced. Before, Status took all
+  the spare room and the other three were squeezed together on the right.
 - **The "New" tag just says "New"** (Garreth's follow-up). Before, it read
   "New · until Nov 26" or "New · starts at first piece". That detail now shows
   when you hover over the tag: "Goes first on every account until Nov 26", or
