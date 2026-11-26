@@ -1,6 +1,6 @@
 "use client";
 
-import type { Audience, NamedPct } from "@/lib/data/account-deep";
+import type { Audience, AudienceGapReason, NamedPct } from "@/lib/data/account-deep";
 import { cn } from "@/lib/utils";
 
 /**
@@ -87,6 +87,22 @@ export function SplitBar({ left, right }: { left: NamedPct; right: NamedPct }) {
     </div>
   );
 }
+
+/** What the "Who watches" card's numbers rest on. */
+export function audienceBasis(a: Audience): string {
+  if (!a.whole) return basis(a.readPosts);
+  const who = a.whole.people !== null ? `${nf(a.whole.people)} people` : "Audience screen";
+  return a.whole.source === "instagram_api" ? `${who} engaged this month` : who;
+}
+
+/** Why the card has no gender, age or country (Garreth, 2026-11-26). */
+export const AUDIENCE_GAP_TEXT: Record<AudienceGapReason, string> = {
+  too_few_followers: "Instagram shows this from 100 followers",
+  not_enough_engagement: "Too few people engaged this month",
+  not_read: "Not read by the robot yet",
+  stale: "No readings in the last 30 days",
+  small_posts: "Posts too small to show an audience",
+};
 
 export function AudienceSection({ a }: { a: Audience }) {
   const followers = a.followersPct === null ? null : { name: "Followers", pct: a.followersPct };

@@ -16,6 +16,7 @@ const checkIn = vi.fn();
 const closeRun = vi.fn();
 const recheckCreators = vi.fn();
 const topUpCreators = vi.fn();
+const runInstagramAudience = vi.fn();
 
 vi.mock("@/server/carousel/services/slide-copies", () => ({ copyOutstanding: (...a: unknown[]) => copyOutstanding(...a) }));
 vi.mock("@/server/carousel/services/picture-copies", () => ({ makeOutstandingCopies: (...a: unknown[]) => makeOutstandingCopies(...a) }));
@@ -29,6 +30,7 @@ vi.mock("@/server/screen-readings", () => ({
   },
   runReadings: (...a: unknown[]) => runReadings(...a),
 }));
+vi.mock("@/server/audience-readings", () => ({ runInstagramAudience: (...a: unknown[]) => runInstagramAudience(...a) }));
 vi.mock("@/server/follow-creators-refresh", () => ({
   recheckCreators: (...a: unknown[]) => recheckCreators(...a),
   topUpCreators: (...a: unknown[]) => topUpCreators(...a),
@@ -45,6 +47,7 @@ import { GET as facebookIngest } from "./facebook-analytics/ingest/route";
 import { GET as contentTags } from "./content-tags/run/route";
 import { POST as screenReadings } from "./screen-readings/run/route";
 import { GET as followRefresh } from "./follow-creators/refresh/route";
+import { GET as instagramAudience } from "./audience-readings/instagram/route";
 import { POST as runCheckIn } from "./warmup-runner/runs/check-in/route";
 import { POST as runClose } from "./warmup-runner/runs/close/route";
 
@@ -63,7 +66,7 @@ beforeEach(() => {
   vi.stubEnv("CRON_SECRET", SECRET);
   vi.stubEnv("WARMUP_RUNNER_TOKEN", RUNNER);
   vi.spyOn(console, "error").mockImplementation(() => {});
-  for (const m of [copyOutstanding, makeOutstandingCopies, runFacebookIngest, runContentTags, runReadings, checkIn, closeRun, recheckCreators, topUpCreators]) m.mockReset().mockResolvedValue({ done: true });
+  for (const m of [copyOutstanding, makeOutstandingCopies, runFacebookIngest, runContentTags, runReadings, checkIn, closeRun, recheckCreators, topUpCreators, runInstagramAudience]) m.mockReset().mockResolvedValue({ done: true });
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -78,6 +81,7 @@ const SCHEDULED: [string, (r: Request) => Promise<Response>, string, () => Reque
   ["screen readings", screenReadings, "POST", () => post("/api/screen-readings/run", { posts: [] }), runReadings],
   ["follow-creators recheck", followRefresh, "GET", () => get("/api/follow-creators/refresh?part=recheck"), recheckCreators],
   ["follow-creators top-up", followRefresh, "GET", () => get("/api/follow-creators/refresh?part=topup"), topUpCreators],
+  ["instagram audience", instagramAudience, "GET", () => get("/api/audience-readings/instagram"), runInstagramAudience],
 ];
 
 describe.each(SCHEDULED)("%s: the door", (_name, handler, _m, make, work) => {
@@ -161,6 +165,15 @@ describe("follow-creators refresh", () => {
   it("answers 500 when the run throws", async () => {
     recheckCreators.mockRejectedValueOnce(new Error("boom"));
     expect((await followRefresh(get("/api/follow-creators/refresh?part=recheck", SECRET))).status).toBe(500);
+  });
+});
+
+describe("instagram audience", () => {
+  it("reads dry=1 and answers a failure with a 500", async () => {
+    await instagramAudience(get("/api/audience-readings/instagram?dry=1", SECRET));
+    expect(runInstagramAudience).toHaveBeenCalledWith(true);
+    runInstagramAudience.mockRejectedValueOnce(new Error("boom"));
+    expect((await instagramAudience(get("/api/audience-readings/instagram", SECRET))).status).toBe(500);
   });
 });
 

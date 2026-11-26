@@ -120,7 +120,12 @@ export interface NamedPct {
   pct: number;
 }
 
-/** Who watched, summed over the period's readings. */
+/**
+ * Who watched. Gender, age and country come from the whole account when we
+ * have that (Instagram's engaged audience this month, or the robot's photo of
+ * the app's audience screen; `whole` says which), else they are averaged over
+ * the period's post readings. The follower split is always from the posts.
+ */
 export interface Audience {
   readPosts: number;
   followersPct: number | null;
@@ -129,7 +134,16 @@ export interface Audience {
   age: NamedPct[];
   country: NamedPct[];
   gender: NamedPct[];
+  whole?: { source: "instagram_api" | "robot"; readAt: string; people: number | null; timeframe: string | null } | null;
 }
+
+/**
+ * Why there is no gender, age or country to show (Garreth, 2026-11-26).
+ * too_few_followers / not_enough_engagement: Instagram's own limits.
+ * not_read: the robot has never read this account. stale: it has, but not
+ * the period's posts. small_posts: it read them, the app showed no audience.
+ */
+export type AudienceGapReason = "too_few_followers" | "not_enough_engagement" | "not_read" | "stale" | "small_posts";
 
 /** TikTok's For You verdicts this period. */
 export interface ForYou {
@@ -148,6 +162,8 @@ export interface AccountDeep {
   /** Where the views came from, summed over the period's readings. */
   sources: { readPosts: number; items: NamedPct[] } | null;
   audience: Audience | null;
+  /** Set when there is no gender, age or country to show. */
+  audienceGap: AudienceGapReason | null;
   /** TikTok accounts only. */
   forYou: ForYou | null;
   hooks: HookTypeRow[];
@@ -210,6 +226,7 @@ export const SAMPLE_DEEP: AccountDeep = {
     ],
     gender: [{ name: "Women", pct: 71.5 }, { name: "Men", pct: 28.5 }],
   },
+  audienceGap: null,
   forYou: {
     videosRead: 9,
     held: 2,

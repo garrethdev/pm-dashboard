@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricTile } from "@/components/dashboard/account-analytics-view";
-import { AudienceSection, Bars, Table, Td, basis, extremes, nf, num, pct, per100, secs, tone } from "@/components/dashboard/deep-bits";
+import { AUDIENCE_GAP_TEXT, AudienceSection, Bars, audienceBasis, Table, Td, basis, extremes, nf, num, pct, per100, secs, tone } from "@/components/dashboard/deep-bits";
 import { DashCard } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/filter-pills";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -317,8 +317,11 @@ export function AccountDeepView({ deep, aside }: { deep: AccountDeep | null; asi
         <DashCard className="min-w-0" title="Where views come from" toolbar={deep.sources ? <span className="text-xs text-text-muted tnum">{basis(deep.sources.readPosts)}</span> : undefined}>
           {deep.sources && deep.sources.items.length ? <Bars items={deep.sources.items} max={100} /> : <p className="text-sm text-text-muted">Not read yet</p>}
         </DashCard>
-        <DashCard className="min-w-0" title="Who watches" toolbar={deep.audience ? <span className="text-xs text-text-muted tnum">{basis(deep.audience.readPosts)}</span> : undefined}>
-          {deep.audience ? <AudienceSection a={deep.audience} /> : <p className="text-sm text-text-muted">Not read yet</p>}
+        <DashCard className="min-w-0" title="Who watches" toolbar={deep.audience ? <span className="text-xs text-text-muted tnum">{audienceBasis(deep.audience)}</span> : undefined}>
+          <div className="flex flex-col gap-3">
+            {deep.audience && <AudienceSection a={deep.audience} />}
+            {deep.audienceGap ? <p className="text-sm text-text-muted">{AUDIENCE_GAP_TEXT[deep.audienceGap]}</p> : !deep.audience && <p className="text-sm text-text-muted">Not read yet</p>}
+          </div>
         </DashCard>
       </div>
 
