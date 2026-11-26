@@ -87,6 +87,12 @@ cadence change, and the scheduler will act on it.
 
 The only thing local-only is the sign-in bypass.
 
+## Claude access (MCP)
+
+Claude Code can read the dashboard's data through a read-only MCP server at
+`/api/mcp`. It cannot change anything. How to connect, and what each tool
+reads: [`src/server/mcp/README.md`](src/server/mcp/README.md).
+
 ## The other files worth knowing
 
 | File | What it is |
@@ -95,6 +101,7 @@ The only thing local-only is the sign-in bypass.
 | `BACKLOG.md` | Open work, split V1 (shipping) / V2 (deferred) / V3 (architecture) |
 | `supabase/migrations/` | Every schema change the dashboard depends on, plus a README that explains what the folder is and is not |
 | `CLAUDE.md` | Conventions for Claude Code working in this repo |
+| `src/server/mcp/README.md` | The read-only MCP server Claude connects to |
 | `.github/workflows/ci.yml` | The checks GitHub runs on every push, and why lint is not one of the blocking ones |
 | `src/**/*.test.ts` | The unit tests, each one sitting next to the file it tests |
 

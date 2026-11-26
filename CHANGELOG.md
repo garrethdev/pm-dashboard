@@ -56,7 +56,7 @@ https://claude.ai/artifact/VE88TW8UTsoFdYU4ePQKtk.
   minute per person, and the pages' own 60-second cache is reused. Long lists
   come a page at a time, and every reply says how many rows exist, how many
   came back, how old the data is, and whether anything was shortened to fit.
-- `docs/MCP.md` explains how to connect and what each tool reads.
+- `src/server/mcp/README.md` explains how to connect and what each tool reads.
 
 **How far it is checked:** on a local server pointed at the live database,
 every tool view was called once, one at a time (59 calls in one minute). 57

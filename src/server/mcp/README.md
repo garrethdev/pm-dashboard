@@ -1,141 +1,109 @@
-# The dashboard's MCP server
+# PM Dashboard MCP
 
-Claude can read the dashboard's data straight from the dashboard. It connects to
-one address, `/api/mcp`, and asks questions through 17 tools. Every tool runs
-the same code the matching page runs, so Claude and the screens give the same
-numbers. **Nothing it offers can change anything.**
+Lets Claude read the dashboard's data directly. Claude Code connects to
+`https://pm-dashboard-ashen.vercel.app/api/mcp` and asks questions through 17
+tools. Each tool runs the same code as its page, so Claude and the screens give
+the same numbers.
 
-Built 2026-11-26 (Garreth: "an MCP that allows us to directly within Claude have
-access to the full data of the PM dashboard… read-only"). This is phase 1 of the
-plan at https://claude.ai/artifact/VE88TW8UTsoFdYU4ePQKtk: one person, in Claude
-Code, with a personal token.
+It only reads. Nothing it offers can change anything.
 
 ## Connect
 
-1. Make a token. On a Mac with this repo:
+1. Make a token:
 
    ```bash
    node scripts/mcp-token.mjs you@example.com
    ```
 
-   It prints the token, the line for Vercel, and the Claude Code command. It
-   saves nothing and sends nothing.
+   It prints your token, a line for Vercel, and a Claude Code command. It saves
+   and sends nothing.
 
-2. In Vercel, add the printed line to **MCP_TOKENS** (Production), then
-   redeploy. Vercel holds only the token's SHA-256, never the token. Your email
-   must also be in **ALLOWED_EMAILS**.
+2. Add the printed line to **`MCP_TOKENS`** in Vercel (Production) and
+   redeploy. Your email must also be in `ALLOWED_EMAILS`.
 
-3. Run the printed `claude mcp add …` command. Then, in Claude Code, `/mcp`
-   should list `pm-dashboard` as connected.
+3. Run the printed `claude mcp add …` command. In Claude Code, `/mcp` should
+   show `pm-dashboard` as connected.
 
-To switch a token off, delete its entry from MCP_TOKENS and redeploy. Removing
-someone from ALLOWED_EMAILS switches theirs off too.
+To switch a token off, delete its entry from `MCP_TOKENS` and redeploy.
 
-## The tools
+## Tools
 
-| Tool | Pages | What it reads |
-|---|---|---|
-| `pm_overview` | Home, the bell | Headline counts, pipeline and n8n health, open notifications, today's to-do totals |
-| `pm_accounts` | Accounts, Settings | Every account with health, tier, median views, errors, last post and warmup |
-| `pm_account` | One account, Forensics | One account: row, detail and task log, posts, analytics, deep analysis, ban forensics, warmup reports |
-| `pm_calendar` | Content calendar | A month, a day, the last scheduler run, the cadence, each account's limits |
-| `pm_inventory` | Inventory | Ready stock per content type; demand against supply with a what-if |
-| `pm_content_types` | Content types | Every lane with its performance; each character |
-| `pm_analytics` | Analytics, Analysis | Views summary, top content, top posts, stored audience readings |
-| `pm_reports` | Reports, Incidents | Issues and observations; incident history |
-| `pm_automation` | Automation | The daily n8n workflows and their last runs |
-| `pm_todo` | To-do | Each phone's list for a day, open and posted deliveries, days off |
-| `pm_devices` | Devices, Proxies | The phones and their accounts; proxies and numbers (masked) |
-| `pm_warmups` | Warmups | The overview, runs and sessions by day, one report's diary |
-| `pm_sessions` | Sessions | Recorded posting sessions and reviews. Reviewers only |
-| `pm_carousels` | Carousel Generator | Types, batches, decks, templates, writing, image libraries |
-| `pm_trends` | Trends | Your unseen feed, seen, saved, trending, one carousel's study, digests, knowledge |
-| `pm_stories` | (no page yet) | Story bank, comments, lane fit, uses, hook library, writer rules |
-| `pm_resources` | Resources | The source-of-truth docs; Creators to follow |
+| Tool | What you can ask |
+|---|---|
+| `pm_overview` | What needs attention today, pipeline and n8n health, the bell |
+| `pm_accounts` | Every account with health, tier, median views, errors, last post |
+| `pm_account` | One account: detail, posts, analytics, deep analysis, forensics, warmup reports |
+| `pm_calendar` | A month or a day of the schedule, the last scheduler run, cadence, limits |
+| `pm_inventory` | Ready stock per content type, demand against supply |
+| `pm_content_types` | Every lane and how it performs, each character |
+| `pm_analytics` | Views over a range, top content, top posts, audience readings |
+| `pm_reports` | Issues, observations and the incident history |
+| `pm_automation` | The daily n8n workflows and their last runs |
+| `pm_todo` | Each phone's list for a day, open and posted deliveries, days off |
+| `pm_devices` | The phones and their accounts, proxies and numbers |
+| `pm_warmups` | Warmup overview, runs and sessions by day, one report's diary |
+| `pm_sessions` | Recorded posting sessions and reviews (reviewers only) |
+| `pm_carousels` | Carousel types, batches, decks, templates, image libraries |
+| `pm_trends` | The Trends feed, saved and seen, one carousel's study, knowledge |
+| `pm_stories` | The story bank, comments, lane fit, uses, hook library, writer rules |
+| `pm_resources` | The source-of-truth docs, Creators to follow |
 
-The Generate pages, sign-in and not-found have no tool, with the reason in
-`src/server/mcp/coverage.test.ts`. That test fails when a new page has neither.
+Tools read the **physical** fleet unless Claude asks for `cloud`.
 
-## Every reply
+## What a reply looks like
 
 ```json
 {
   "data": [ ... ],
   "meta": {
-    "tool": "pm_accounts", "view": "list", "fleet": "physical",
+    "tool": "pm_accounts", "fleet": "physical",
     "fetchedAt": "2026-11-26T15:04:05Z", "stale": false,
-    "total": 59, "returned": 50, "nextCursor": "bzo1MA",
+    "total": 31, "returned": 31, "nextCursor": null,
     "truncated": false
   }
 }
 ```
 
-- **Fleet.** Tools read the physical fleet unless asked for `cloud`
-  (`MCP_DEFAULT_FLEET` changes the default).
-- **Paging.** `total` is how many exist; pass `nextCursor` back as `cursor`.
-  Lists default to 50 rows, at most 500.
-- **No silent cuts.** A reply is held under 60,000 characters (Claude Code stops
-  at 25,000 tokens). When a list is shortened to fit, `meta.cut` says which and
-  how long it was.
-- **Age.** `fetchedAt` is when the data was read. The readers cache for 60
-  seconds, as the pages do. `stale: true` means a remembered copy was served
-  because the live read failed.
+- `total` is how many rows exist. `nextCursor` gets the next page.
+- `fetchedAt` is when the data was read. The dashboard caches for 60 seconds.
+- `cut` appears when a list was shortened to fit one reply. Nothing is shortened
+  without saying so.
 
-## What keeps it read-only
+## Safety
 
-- **Only read tools exist.** Each is registered with `readOnlyHint: true`.
-- **An import fence.** `src/server/mcp/fence.test.ts` fails if anything in
-  `src/server/mcp/` imports a write module (`writes.ts`, `*-writes.ts` and the
-  rest), a function named like a write (`set…`, `mark…`, `save…`), or a secret
-  reader (`createAdminClient`, `fetchProxyCredentials`, `readConnection`,
-  `signStorageUrls`).
-- **Two display caches still refresh, as on the pages.** Opening an account's
-  analytics or the top posts refreshes post thumbnails (`post_thumbnails`), and
-  an account's detail refreshes its profile card (`account_profile_cards`),
-  exactly as opening those pages does. Nothing else is written.
-- **The Trends feed does not mark anything seen.** Only scrolling on the page
-  does that.
+- **Read-only.** Every tool is marked read-only. `fence.test.ts` fails if this
+  folder imports anything that writes or reads a secret. Two display caches
+  (post thumbnails, profile cards) refresh as they do when the page is opened.
+- **Private data.** Passwords, tokens and keys are dropped from every reply.
+  Links to private files are not passed on. Emails, phone numbers and proxy
+  addresses are masked.
+- **Shut by default.** With `MCP_TOKENS` empty the address answers "not set up".
+  The dev sign-in bypass does not open it.
+- **Gentle on the database.** At most 3 questions at once, 60 a minute per
+  person. One log line per call in Vercel's logs. Nothing is written to the
+  database.
 
-## Private data
+## Files
 
-- **Secrets never leave.** Every reply passes `scrub()` in `shape.ts`: any field
-  named like a password, token, secret, cookie or key is dropped, and any value
-  shaped like a login token or a vendor key is blanked. `meta.removed` counts
-  them. The readers already pick columns by name; this is the last check.
-- **Private files are not linked.** A signed link to a private bucket
-  (screenshots, creator photos, device proofs) is replaced with
-  `[private file: link not shared]`. Public picture links stay.
-- **Masked:** emails (`g***@example.com`), phone numbers (`•••0142`) and proxy
-  addresses (`203.x.x.x:8080`).
-
-## Load on the database
-
-- At most 3 tool calls run at once on a server instance; others wait up to 20
-  seconds, then answer "busy".
-- 60 calls a minute per person.
-- Both limits live in one server instance's memory, so they are a brake, not a
-  guarantee. The readers' 60-second cache is what keeps repeated questions cheap.
-- The server never fetches a picture.
-- One log line per call in Vercel's logs (`{"mcp": tool, "who", "ok", "ms"}`).
-  Nothing is written to the database.
-
-## Code
-
-| File | What |
+| File | What it does |
 |---|---|
-| `src/app/api/mcp/route.ts` | The route. A fresh server and transport per request, no sessions, JSON replies |
-| `src/server/mcp/auth.ts` | The door: MCP_TOKENS, ALLOWED_EMAILS, reviewers |
-| `src/server/mcp/server.ts` | Registers the tools, read-only, through the gate |
-| `src/server/mcp/gate.ts` | The line of 3, the call limit, the log line |
-| `src/server/mcp/shape.ts` | Scrub, mask, page, fit, the reply envelope |
-| `src/server/mcp/tools/*.ts` | One file per tool |
-| `src/proxy.ts` | Lets `/api/mcp` past the cookie check |
+| `src/app/api/mcp/route.ts` | The address Claude calls |
+| `auth.ts` | Checks the token and the email |
+| `server.ts` | Registers the tools as read-only |
+| `gate.ts` | The 3-at-once line, the call limit, the log line |
+| `shape.ts` | Removes secrets, masks, pages and sizes every reply |
+| `tools/` | One file per tool |
+| `*.test.ts` | The import fence, page coverage, the reply rules, the door |
 | `scripts/mcp-token.mjs` | Makes a token |
 
-## Not in phase 1
+A new dashboard page needs a tool, or a reason in `coverage.test.ts`, or that
+test fails.
 
-- The table tools (any table, SQL, file export) need a read-only database role.
-  That is phase 2 and needs a migration.
-- Sign-in for the Claude apps (web, desktop, phone) is phase 3.
-- Wallet balances, Trends search (it spends embedding credit) and the recorded
-  frames of a posting session are left out.
+## Coming later
+
+- **Table tools:** any table, SQL questions and file exports, through a
+  read-only database role.
+- **Sign-in for the Claude apps** (web, desktop, phone).
+- **Writing back,** as its own group of tools with its own approval.
+
+The plan: https://claude.ai/artifact/VE88TW8UTsoFdYU4ePQKtk

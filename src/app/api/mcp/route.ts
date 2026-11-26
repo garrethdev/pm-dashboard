@@ -7,7 +7,7 @@ import { buildServer } from "@/server/mcp/server";
  * POST /api/mcp — the read-only MCP server Claude connects to (Garreth,
  * 2026-11-26). Streamable HTTP with no sessions and plain JSON replies: each
  * request gets a fresh server and transport, which suits Vercel, and nothing
- * is kept between calls. `docs/MCP.md` says how to connect.
+ * is kept between calls. `src/server/mcp/README.md` says how to connect.
  *
  * This route is let past the sign-in cookie check in `proxy.ts` and demands
  * its own token instead (`authenticateMcp`).
