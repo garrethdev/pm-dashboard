@@ -20,6 +20,51 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-26 — Who watches: Instagram's own audience numbers, and why a box is empty
+
+**Where it came from:** Garreth: on the Deep side, many accounts (Instagram
+most of all) showed no gender, age or country. The cause, checked the same
+day: that box was filled only by the phone robot's photos of each post's
+insights, and the robot has only ever read one account per app (the ones
+signed in on phone 1), last on 5 and 11 November. Garreth asked for
+Instagram's own numbers (the audience only, not the followers), and for the
+box to say why it is empty.
+
+**What changed:**
+- **A weekly Instagram audience pull, Fridays at 9 AM New York time.** For
+  every active Instagram account it asks Instagram who engaged this month
+  (liked, commented, shared or saved), by gender, age and country, and keeps
+  it in a new table, `audience_readings`. It uses the same Instagram
+  connection the daily numbers already use, so nothing new is linked to
+  Meta. Gender is shown as women and men only, the way the app shows it;
+  people Instagram doesn't know the gender of are left out of that split.
+- **"Who watches" uses it.** On an Instagram account with these numbers, the
+  box shows the whole account's audience ("128 people engaged this month")
+  instead of an average of the few posts the robot read. The followers split
+  still comes from the robot's post readings.
+- **The box says why it is empty**: "Instagram shows this from 100
+  followers", "Too few people engaged this month", "Not read by the robot
+  yet", "No readings in the last 30 days", or "Posts too small to show an
+  audience".
+
+**What it found:** on 26 November only kathy_spd has numbers: 128 people,
+87.5% women, the United States first at 38%, then the United Kingdom at 16%.
+hey.imani.vaughn and trina_triumphs have over 100 followers but too few
+people engaged ("Not enough users"; no other time window helps). The other
+eight have under 100 followers, where Instagram gives nothing. Followers
+were left out on purpose: on all three bigger accounts most followers are
+in India, which says nothing about who watches.
+
+**How far it is checked:** the first pull was run by hand on 26 November
+and stored 11 rows (1 with numbers, 2 too little engagement, 8 under 100
+followers). The account pages were checked in the local app against those
+rows (kathy_spd, trina_triumphs, nikki_wilsonxoxo, and sarah.keller52 on
+TikTok). The Friday schedule has not run yet. A table called
+`account_audience` already existed (five rows from 21 August, from the
+Geelark days, used by nothing); it was left alone, hence the new name.
+
+---
+
 ## 2026-11-26 — Inventory page simplified to one table
 
 **Where it came from:** Garreth: "The only important thing to see here is the

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { averageCurve, averageNamed, buildDeep, curveAt, familyLabel, mean, median, weekOf, type DeepPost, type DeepReading, type DeepTag } from "./account-deep-build";
+import { audienceGap, averageCurve, averageNamed, buildDeep, curveAt, familyLabel, mean, median, weekOf, withWholeAudience, type DeepPost, type DeepReading, type DeepTag, type WholeAudience } from "./account-deep-build";
+import type { Audience } from "./account-deep";
 
 const blankPost: Omit<DeepPost, "postId" | "postUrl"> = {
   postedAt: "2026-10-18T19:05:00Z",
@@ -157,5 +158,47 @@ describe("Instagram post list (Garreth, 2026-11-20)", () => {
 
   it("is empty off Instagram", () => {
     expect(buildDeep(posts, [], [], "tiktok").instagramPosts).toEqual([]);
+  });
+});
+
+describe("whole-account audience (2026-11-26)", () => {
+  const now = new Date("2026-11-26T12:00:00Z");
+  const kathy: WholeAudience = {
+    source: "instagram_api",
+    readAt: "2026-11-26T11:00:00Z",
+    timeframe: "this_month",
+    people: 128,
+    gender: { Women: 87.5, Men: 12.5 },
+    age: { "45-54": 26.6, "35-44": 30.5 },
+    country: { "United States": 38.3, "United Kingdom": 15.6 },
+    gap: null,
+  };
+  const empty = (gap: string, readAt = "2026-11-26T11:00:00Z"): WholeAudience => ({ ...kathy, readAt, people: null, gender: null, age: null, country: null, gap });
+  const perPost: Audience = { readPosts: 3, followersPct: 20, newViewersPct: null, age: [{ name: "18-24", pct: 100 }], country: [], gender: [{ name: "Men", pct: 100 }] };
+
+  it("takes gender, age and country from the whole account, keeps the posts' follower split", () => {
+    const a = withWholeAudience(perPost, [kathy], now)!;
+    expect(a.gender[0]).toEqual({ name: "Women", pct: 87.5 });
+    expect(a.age.map((x) => x.name)).toEqual(["35-44", "45-54"]);
+    expect(a.followersPct).toBe(20);
+    expect(a.whole?.people).toBe(128);
+  });
+  it("ignores a whole-account reading that is too old or has no numbers", () => {
+    expect(withWholeAudience(perPost, [{ ...kathy, readAt: "2026-10-01T00:00:00Z" }], now)).toBe(perPost);
+    expect(withWholeAudience(null, [empty("not_enough_engagement")], now)).toBeNull();
+  });
+  it("says why there is nothing, Instagram's reason first", () => {
+    expect(audienceGap(null, [empty("too_few_followers")], 0, true)).toBe("too_few_followers");
+    expect(audienceGap(null, [empty("not_enough_engagement")], 5, true)).toBe("not_enough_engagement");
+    expect(audienceGap(null, [], 0, false)).toBe("not_read");
+    expect(audienceGap(null, [], 0, true)).toBe("stale");
+    expect(audienceGap({ ...perPost, age: [], gender: [], country: [] }, [], 4, true)).toBe("small_posts");
+    expect(audienceGap(perPost, [empty("too_few_followers")], 3, true)).toBeNull();
+  });
+  it("buildDeep carries both through", () => {
+    const deep = buildDeep([], [], [], "instagram", now, [], { whole: [kathy], everRead: false });
+    expect(deep.audience?.whole?.source).toBe("instagram_api");
+    expect(deep.audienceGap).toBeNull();
+    expect(buildDeep([], [], [], "tiktok", now).audienceGap).toBe("not_read");
   });
 });

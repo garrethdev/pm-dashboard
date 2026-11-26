@@ -1,5 +1,5 @@
 import { accountAnalyticsTag } from "@/lib/data/account-analytics";
-import { MIN_VIEWS_TO_JUDGE, lowEarlySkips, per100Reached, type AccountDeep, type Audience, type CarouselRow, type CurvePoint, type ForYou, type HookPost, type HookTypeRow, type InstagramPostRow, type NamedPct, type Watching, type WeekValue } from "@/lib/data/account-deep";
+import { MIN_VIEWS_TO_JUDGE, lowEarlySkips, per100Reached, type AccountDeep, type Audience, type AudienceGapReason, type CarouselRow, type CurvePoint, type ForYou, type HookPost, type HookTypeRow, type InstagramPostRow, type NamedPct, type Watching, type WeekValue } from "@/lib/data/account-deep";
 import { ACCOUNT_ANALYTICS_TAG, TTL, cachedFetcher, type Cached } from "@/lib/data/cache";
 import { sbRestAll } from "@/lib/data/supabase";
 import { type AnalyticsPlatform, perfTable } from "@/lib/platform";
@@ -49,6 +49,21 @@ export interface DeepTag {
   hookFamily: string | null;
   hookType: string | null;
 }
+
+/** One row of audience_readings: who the whole account reaches. */
+export interface WholeAudience {
+  source: "instagram_api" | "robot";
+  readAt: string;
+  timeframe: string | null;
+  people: number | null;
+  gender: Record<string, number> | null;
+  age: Record<string, number> | null;
+  country: Record<string, number> | null;
+  gap: string | null;
+}
+
+/** A whole-account audience older than this is not shown. */
+export const WHOLE_AUDIENCE_DAYS = 35;
 
 export interface DeepReading {
   postUrl: string | null;
@@ -364,6 +379,43 @@ function audience(rows: Joined[]): Audience | null {
   };
 }
 
+const hasSplit = (d: Record<string, number> | null) => !!d && Object.keys(d).length > 0;
+
+/**
+ * The newest whole-account audience with numbers in it, from the last
+ * WHOLE_AUDIENCE_DAYS; its gender, age and country take the place of the
+ * posts' average. The follower split still comes from the posts.
+ */
+export function withWholeAudience(perPost: Audience | null, whole: WholeAudience[], now: Date): Audience | null {
+  const since = now.getTime() - WHOLE_AUDIENCE_DAYS * 86_400_000;
+  const w = [...whole]
+    .filter((r) => Date.parse(r.readAt) >= since && (hasSplit(r.gender) || hasSplit(r.age) || hasSplit(r.country)))
+    .sort((a, b) => Date.parse(b.readAt) - Date.parse(a.readAt))[0];
+  if (!w) return perPost;
+  return {
+    readPosts: perPost?.readPosts ?? 0,
+    followersPct: perPost?.followersPct ?? null,
+    newViewersPct: perPost?.newViewersPct ?? null,
+    age: averageNamed([w.age], undefined, AGE_ORDER),
+    country: averageNamed([w.country], 5),
+    gender: averageNamed([w.gender]),
+    whole: { source: w.source, readAt: w.readAt, people: w.people, timeframe: w.timeframe },
+  };
+}
+
+/**
+ * Why gender, age and country are missing, or null when they are there.
+ * Instagram's own answer comes first: it is the real reason when it says one.
+ */
+export function audienceGap(a: Audience | null, whole: WholeAudience[], readPosts: number, everRead: boolean): AudienceGapReason | null {
+  if (a && (a.gender.length || a.age.length || a.country.length)) return null;
+  const newest = [...whole].sort((x, y) => Date.parse(y.readAt) - Date.parse(x.readAt))[0];
+  if (newest?.gap === "too_few_followers" || newest?.gap === "not_enough_engagement") return newest.gap;
+  if (!everRead) return "not_read";
+  if (!readPosts) return "stale";
+  return "small_posts";
+}
+
 function forYou(rows: Joined[], platform: AnalyticsPlatform): ForYou | null {
   if (platform !== "tiktok") return null;
   const judged = rows.filter((r) => r.reading?.fypRestricted !== null && r.reading?.fypRestricted !== undefined);
@@ -392,6 +444,7 @@ export function buildDeep(
   platform: AnalyticsPlatform,
   now = new Date(),
   listPosts: DeepPost[] = posts,
+  extra: { whole?: WholeAudience[]; everRead?: boolean } = {},
 ): AccountDeep {
   const rows = join(posts, tags, readings, platform);
   const read = rows.filter((r) => r.reading !== null);
@@ -400,6 +453,8 @@ export function buildDeep(
   const latestPost = posts.map((p) => Date.parse(p.postedAt)).filter(Number.isFinite);
   const asOf = latestRead.length ? new Date(Math.max(...latestRead)) : latestPost.length ? new Date(Math.max(...latestPost)) : now;
   const { best, worst } = bestAndWorst(rows);
+  const whole = extra.whole ?? [];
+  const audienceAll = withWholeAudience(audience(rows), whole, now);
   return {
     asOf: asOf.toISOString(),
     taggedPosts: rows.filter((r) => r.tag !== null).length,
@@ -407,7 +462,8 @@ export function buildDeep(
     totalPosts: posts.length,
     watching: watching(rows),
     sources: sourceReadings.length ? { readPosts: sourceReadings.length, items: averageNamed(sourceReadings.map((r) => r.trafficSources), 6) } : null,
-    audience: audience(rows),
+    audience: audienceAll,
+    audienceGap: audienceGap(audienceAll, whole, read.length, extra.everRead ?? readings.length > 0),
     forYou: forYou(rows, platform),
     hooks: hooksByFamily(rows),
     best,
@@ -463,6 +519,18 @@ interface RawReading {
   fyp_restricted: boolean | null;
 }
 
+interface RawWholeAudience {
+  id: number;
+  source: "instagram_api" | "robot";
+  read_at: string;
+  timeframe: string | null;
+  people: number | null;
+  gender: Record<string, number> | null;
+  age: Record<string, number> | null;
+  country: Record<string, number> | null;
+  gap: string | null;
+}
+
 const num = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v));
 
 export function toDeepPost(r: RawPost): DeepPost {
@@ -510,13 +578,18 @@ async function fetchAccountDeep(account: string, platform: AnalyticsPlatform): P
   const since = new Date(Date.now() - days * 86_400_000).toISOString();
   const recentFrom = Date.now() - DEEP_DAYS * 86_400_000;
   const cols = "post_id,post_url,posted_at,format,caption_snippet,carousel_id,views,likes,comments,shares,saves" + (platform === "instagram" ? ",reach,skip_rate,follows" : "");
-  const [rawPosts, rawReadings] = await Promise.all([
+  const [rawPosts, rawReadings, rawWhole] = await Promise.all([
     sbRestAll<RawPost>(
       `${perfTable(platform)}?select=${cols}&account=eq.${encodeURIComponent(account)}&posted_at=gte.${encodeURIComponent(since)}&order=posted_at.desc`,
     ),
     sbRestAll<RawReading>(
       "post_screen_readings?select=post_url,read_at,viewers,new_followers,avg_watch_s,watched_full_pct,drop_off_s,retention_curve,followers_pct,new_viewers_pct,traffic_sources,audience_age,audience_country,audience_gender,fyp_restricted" +
         `&account=eq.${encodeURIComponent(account)}&platform=eq.${platform}&post_url=not.is.null&order=read_at.desc`,
+    ),
+    sbRestAll<RawWholeAudience>(
+      "audience_readings?select=id,source,read_at,timeframe,people,gender,age,country,gap" +
+        `&account=eq.${encodeURIComponent(account)}&platform=eq.${platform}&order=read_at.desc,id.desc`,
+      { maxRows: 500 },
     ),
   ]);
   const ids = [...new Set(rawPosts.map((p) => p.carousel_id).filter((id): id is string => !!id))];
@@ -533,15 +606,20 @@ async function fetchAccountDeep(account: string, platform: AnalyticsPlatform): P
     platform,
     new Date(),
     all,
+    {
+      whole: rawWhole.map((w) => ({ source: w.source, readAt: w.read_at, timeframe: w.timeframe, people: w.people, gender: w.gender, age: w.age, country: w.country, gap: w.gap })),
+      everRead: rawReadings.length > 0,
+    },
   );
 }
 
 /**
  * Same tags as the Analytics and All posts tabs, so Refresh expires all three
  * together. v3 (2026-11-20): the payload gained instagramPosts, 3 months of them.
+ * v4 (2026-11-26): audienceGap, and the whole account's audience.
  */
 export function getAccountDeep(account: string, platform: AnalyticsPlatform): Promise<Cached<AccountDeep>> {
-  return cachedFetcher(`account-deep-v3:${account}:${platform}`, TTL.supabase, () => fetchAccountDeep(account, platform), {
+  return cachedFetcher(`account-deep-v4:${account}:${platform}`, TTL.supabase, () => fetchAccountDeep(account, platform), {
     tags: [ACCOUNT_ANALYTICS_TAG, accountAnalyticsTag(account)],
   })();
 }
