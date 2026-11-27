@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getRobotUpdateStatus } from "@/lib/data/robot-updates";
 import { getWarmupReportDiary } from "@/lib/data/warmup-reports";
 import { getWarmupOverview } from "@/lib/data/warmup-overview";
 import { getRunsOnDay } from "@/lib/data/warmup-runs";
@@ -12,10 +13,10 @@ export const pmWarmups = defineTool({
   name: "pm_warmups",
   title: "Warmups",
   description:
-    "Account warm-up on the physical fleet. view=overview: the Warmups page (each account's recent warmups, who did them, gaps and overdue accounts). view=runs: the warmup robot's runs on one day. view=sessions: every warmup session logged on one day, by hand or by the robot. view=diary: one robot report with its step-by-step diary, by report id (pm_account view=warmup_reports lists them).",
-  pages: ["/warmups"],
+    "Account warm-up on the physical fleet. view=overview: the Warmups page (each account's recent warmups, who did them, gaps and overdue accounts). view=runs: the warmup robot's runs on one day. view=sessions: every warmup session logged on one day, by hand or by the robot. view=diary: one robot report with its step-by-step diary, by report id (pm_account view=warmup_reports lists them). view=robot_updates: Settings > Robot updates, every published robot version newest first with its notes (the page's Changelog tab), which are installed, and whether the MacBook Air runs the newest (from its warmup reports).",
+  pages: ["/warmups", "/settings/robot-updates", "/settings/robot-updates/changelog", "/settings/robot-updates/[version]"],
   input: {
-    view: z.enum(["overview", "runs", "sessions", "diary"]).optional().describe("overview (default), runs, sessions or diary."),
+    view: z.enum(["overview", "runs", "sessions", "diary", "robot_updates"]).optional().describe("overview (default), runs, sessions, diary or robot_updates."),
     day: z.number().int().min(-30).max(0).optional().describe("For runs and sessions: 0 is today, -1 yesterday."),
     id: z.string().optional().describe("For view=diary: the warmup report id."),
     fields: fieldsInput,
@@ -26,6 +27,10 @@ export const pmWarmups = defineTool({
     const view = args.view ?? "overview";
     const meta = { tool: "pm_warmups", view, fleet: "physical", ...stamp() };
     if (view === "overview") return reply(await getWarmupOverview(), meta);
+    if (view === "robot_updates") {
+      const s = await getRobotUpdateStatus();
+      return reply({ ...s, installed: [...s.installed] }, meta);
+    }
     if (view === "runs") return listReply(meta, await getRunsOnDay(args.day ?? 0), args, { day: args.day ?? 0 });
     if (view === "sessions") return listReply(meta, await getSessionsOnDay({}, args.day ?? 0), args, { day: args.day ?? 0 });
     if (!args.id) return failure("pm_warmups", "view=diary needs id.");

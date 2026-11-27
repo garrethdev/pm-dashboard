@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { RobotUpdateBanner } from "@/components/dashboard/robot-updates";
 import { ReportButton } from "@/components/shell/report-button";
 import { MobileNavProvider, ShellColumn } from "@/components/shell/mobile-nav";
 import { PageGlow } from "@/components/shell/page-glow";
@@ -49,6 +51,13 @@ export async function AppShell({ nav, children }: { nav: SidebarNav; children: R
           {/* pb-24: room under the last card for the floating report button,
               so whatever ends a page can always be scrolled clear of it. */}
           <main className="flex w-full flex-1 flex-col px-6 pt-6 pb-24 [&_:has([data-empty-fill])]:grow">
+            {/* A robot update the Air has not installed (2026-11-27). Streamed,
+                so a slow read never holds the page up. */}
+            {nav === "dashboard" && (
+              <Suspense fallback={null}>
+                <RobotUpdateBanner />
+              </Suspense>
+            )}
             {children}
           </main>
         </ShellColumn>

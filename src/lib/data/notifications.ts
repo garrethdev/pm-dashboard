@@ -10,6 +10,7 @@ import { AUTOMATED_WARMUP_OVERDUE_DAYS } from "@/lib/data/warmup-run-state";
 import { pipelineNotifications } from "@/lib/data/pipeline-health";
 import { getN8nHealth, type N8nHealth } from "@/lib/data/n8n-health";
 import { fleetOfEntity, getPhysicalProfiles } from "@/lib/data/fleet-accounts";
+import { getCachedAirState, versionDay, versionParts, type AirState } from "@/lib/data/robot-updates";
 import type { Fleet } from "@/lib/fleet";
 import {
   categoryLabel,
@@ -458,6 +459,41 @@ async function n8nNotifications(): Promise<NotificationItem[]> {
   return item ? [item] : [];
 }
 
+/**
+ * A robot update is waiting (2026-11-27): the newest version on Settings ->
+ * Robot updates is not what the Air's warmup reports say it runs. Updates
+ * used to be missed for days with nobody knowing (the Air was still on the
+ * 26 November version after the 27 November one was sent).
+ *
+ * Keyed on the newest version, so dismissing it holds until the next one is
+ * published, and it goes by itself once a report shows the new version.
+ */
+export function robotUpdateItem(state: AirState): NotificationItem | null {
+  if (state.kind !== "behind") return null;
+  const { latest, air } = state;
+  const parts = versionParts(air.version);
+  const onAir = parts ? `${versionDay(air.version)} (${parts.code})` : `"${air.version}"`;
+  return {
+    fleet: "physical",
+    id: `robot_update:${latest.version}`,
+    markKeys: [`robot_update:${latest.version}`],
+    type: "robot_update",
+    category: categoryLabel("robot_update"),
+    severity: "warning",
+    title: `Robot update waiting: ${latest.label}`,
+    body: `The Air is still on the ${onAir} version`,
+    target: null,
+    href: `/settings/robot-updates/${encodeURIComponent(latest.version)}`,
+    at: latest.publishedAt,
+    read: false,
+  };
+}
+
+async function robotUpdateNotifications(): Promise<NotificationItem[]> {
+  const item = robotUpdateItem(await getCachedAirState());
+  return item ? [item] : [];
+}
+
 /** "Profile 34" -> "34". Empty when the target is not a numbered profile. */
 function profileNum(target: string | null): string {
   return String(target ?? "").replace(/\D/g, "");
@@ -573,15 +609,16 @@ async function buildFeed(): Promise<NotificationItem[]> {
       .then((r) => r.data)
       .catch(() => [] as string[]),
   );
-  const [stored, warmup, todo, overdue, n8n, pipeline] = await Promise.all([
+  const [stored, warmup, todo, overdue, n8n, pipeline, robot] = await Promise.all([
     storedNotifications(physical).catch(() => [] as NotificationItem[]),
     warmupFailNotifications(physical).catch(() => [] as NotificationItem[]),
     todoNotifications().catch(() => [] as NotificationItem[]),
     warmupOverdueNotifications().catch(() => [] as NotificationItem[]),
     n8nNotifications().catch(() => [] as NotificationItem[]),
     pipelineNotifications().catch(() => [] as NotificationItem[]),
+    robotUpdateNotifications().catch(() => [] as NotificationItem[]),
   ]);
-  return [...stored, ...warmup, ...todo, ...overdue, ...n8n, ...pipeline];
+  return [...stored, ...warmup, ...todo, ...overdue, ...n8n, ...pipeline, ...robot];
 }
 
 /**
