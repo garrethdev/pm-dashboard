@@ -164,7 +164,7 @@ export function averageNamed(dicts: (Record<string, number> | null)[], top?: num
 /** "talking_to" → "talking to": the family as DA-03 stores it, in words. */
 export const familyLabel = (family: string) => family.replace(/[_:]+/g, " ").trim();
 
-const AGE_ORDER = ["13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
+const AGE_ORDER = ["13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "55+", "65+"];
 
 /** The Monday a date falls in, as "Oct 6", New York time, for the weekly trend lines. */
 export function weekOf(iso: string): string {
