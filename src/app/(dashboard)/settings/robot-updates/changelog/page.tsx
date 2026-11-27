@@ -21,18 +21,18 @@ export default async function RobotUpdatesChangelogPage() {
   } catch (err) {
     return (
       <div className="flex flex-col gap-6">
-        <RobotUpdatesHeader state={{ kind: "none" }} tab="changelog" />
+        <RobotUpdatesHeader tab="changelog" />
         <Card>
           <p className="text-sm text-text-muted">{upstreamMessage(err, "Supabase")}</p>
         </Card>
       </div>
     );
   }
-  const { updates, state, installed } = status;
+  const { updates, installed } = status;
 
   return (
     <div className="flex flex-col gap-6">
-      <RobotUpdatesHeader state={state} tab="changelog" />
+      <RobotUpdatesHeader tab="changelog" />
       {updates.length === 0 ? (
         <EmptyState icon={Robot}>No robot updates yet.</EmptyState>
       ) : (

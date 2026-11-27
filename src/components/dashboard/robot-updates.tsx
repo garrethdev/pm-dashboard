@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { CtaButton } from "@/components/ui/cta-button";
-import { ArrowLeft, ChevronRight, Download, Robot } from "@/components/ui/icons";
+import { ArrowLeft, Check, ChevronRight, Download, Robot } from "@/components/ui/icons";
 import { StatusPill } from "@/components/ui/pill";
 import { cn } from "@/lib/utils";
 import {
@@ -40,8 +40,10 @@ function downloadHref(version: string): string {
   return `/api/robot-updates/${encodeURIComponent(version)}/download`;
 }
 
-/** Switched off once the version is installed: downloading it again could
- *  only take the robot backwards. */
+/** Once the version is installed it is no longer a button at all: a grey
+ *  "Installed" in its place (asked for 2026-11-27), since downloading it
+ *  again could only take the robot backwards. Same size as the button, so
+ *  the cards stay level. */
 export function DownloadButton({
   version,
   installed,
@@ -51,19 +53,24 @@ export function DownloadButton({
   installed: boolean;
   className?: string;
 }) {
-  const inner = (
-    <>
+  if (installed) {
+    return (
+      <span
+        aria-disabled="true"
+        className={cn(
+          "inline-flex cursor-default items-center justify-center gap-2 rounded-[18px] bg-card-raised px-[22px] py-[10px] text-[0.85rem] leading-none font-medium text-text-muted",
+          className,
+        )}
+      >
+        <Check className="size-4" />
+        Installed
+      </span>
+    );
+  }
+  return (
+    <CtaButton href={downloadHref(version)} className={className}>
       <Download className="size-4" />
       Download
-    </>
-  );
-  return installed ? (
-    <CtaButton disabled className={className}>
-      {inner}
-    </CtaButton>
-  ) : (
-    <CtaButton href={downloadHref(version)} className={className}>
-      {inner}
     </CtaButton>
   );
 }
@@ -82,18 +89,19 @@ export function BackButton({ href, label }: { href: string; label: string }) {
   );
 }
 
-/** Back button, title, the Air's state, and the Updates / Changelog switch. */
-export function RobotUpdatesHeader({ state, tab }: { state: AirState; tab: "updates" | "changelog" }) {
+/** Back button and title on the left; the Updates / Changelog switch on
+ *  the right (moves under the title on a phone). A waiting update is told
+ *  by the banner and by the newest card's Download, not by a pill here. */
+export function RobotUpdatesHeader({ tab }: { tab: "updates" | "changelog" }) {
   const tabs = [
     { key: "updates", label: "Updates", href: "/settings/robot-updates" },
     { key: "changelog", label: "Changelog", href: "/settings/robot-updates/changelog" },
   ] as const;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex items-center gap-3">
         <BackButton href="/settings" label="Back to Settings" />
         <h1 className="text-xl font-semibold">Robot updates</h1>
-        <AirStatusPill state={state} />
       </div>
       <nav className="flex w-fit items-center gap-0.5 rounded-full bg-card-raised p-0.5">
         {tabs.map((t) => (
@@ -127,16 +135,12 @@ export function UpdateCard({
 }) {
   return (
     <Card glass={newest} className="flex h-full flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {newest && <StatusPill tone="accent">Newest</StatusPill>}
-          {installed && <StatusPill tone="ok">Installed</StatusPill>}
-        </div>
-        <span className="shrink-0 text-xs text-text-muted tnum">
+      <div className="flex items-start justify-between gap-3">
+        <h2 className={cn("text-base font-semibold leading-snug", newest && "text-accent")}>{update.label}</h2>
+        <span className="shrink-0 pt-0.5 text-xs text-text-muted tnum">
           {versionDay(update.version) ?? update.version} · {fileSize(update.fileBytes)}
         </span>
       </div>
-      <h2 className="text-base font-semibold leading-snug">{update.label}</h2>
       <p className="line-clamp-4 flex-1 text-sm leading-relaxed text-text-muted">{update.whatChanged}</p>
       <div className="flex flex-col items-stretch gap-2.5">
         <DownloadButton version={update.version} installed={installed} className="w-full" />
@@ -188,7 +192,7 @@ export async function RobotUpdateBanner() {
   return (
     <Link
       href={installHref(state.latest.version)}
-      className="mb-4 flex items-center gap-3 rounded-nested border border-warn/30 bg-warn/10 px-4 py-2.5 text-sm text-warn transition-colors hover:bg-warn/15"
+      className="mb-4 flex items-center gap-3 rounded-nested border border-accent/30 bg-accent/10 px-4 py-2.5 text-sm text-accent transition-colors hover:bg-accent/15"
     >
       <Robot className="size-4 shrink-0" />
       <span className="min-w-0 flex-1">

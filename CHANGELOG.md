@@ -20,6 +20,31 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-27 — Robot updates: a cyan banner, plainer cards, "Installed" instead of a dimmed Download
+
+**Where it came from:** asked for in the session after PR #119 went live.
+
+**What changed:**
+- **The "Robot update waiting" strip across the top of the pages is in the
+  dashboard's cyan** instead of yellow.
+- **A version already installed shows a grey "Installed" with a tick** where
+  its Download button was. Before, it showed the blue Download button,
+  dimmed and unclickable. It is the same size, so the cards stay level.
+- **No "Up to date" / "Update waiting" pill by the title.** The banner and
+  the newest card's Download button already say it. The Settings entry
+  keeps its pill.
+- **The Updates / Changelog switch sits on the right**, level with the
+  title, instead of under it. On a phone it drops below the title.
+- **The cards lost their pills.** No "Newest" or "Installed" pill: the
+  newest version's title is in the dashboard's blue instead, and an
+  installed one is told by its grey button. The date and size sit to the
+  right of the title.
+
+**Verified:** checked on a local copy in headless Chrome, with the Air behind
+on 663fec4 so the strip showed.
+
+---
+
 ## 2026-11-27 — Robot updates come from the dashboard (PR #119)
 
 **Where it came from:** asked for in the session on 2026-11-27: make robot
