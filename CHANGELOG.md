@@ -20,6 +20,116 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-27 — Robot updates come from the dashboard (branch `RPA-Patch-Feature`, not merged)
+
+**Where it came from:** asked for in the session on 2026-11-27: make robot
+updates simpler, and make it impossible for Yurie to miss one. That morning
+the Air was still on the 26 November version after the 27 November one had
+been sent on WhatsApp, and nobody knew until it was checked by hand. Decided in
+the same session:
+- Claude publishes each version, after Garreth or Czedrick says go.
+- The steps go on their own page, not in the list.
+- The person in the session tells Yurie about the page themselves.
+
+**What changed:**
+- **Settings → Robot updates.** Every robot version, newest first, each with a
+  Download button and what changed. The top line says which version the Air
+  is on and whether it is up to date.
+- **A "How to install" page for each version.** It replaces the Word guide:
+  - the same four steps every time: download, stop the robot, Update the
+    robot, start the robot;
+  - that version's own steps in between, marked out;
+  - the exact words each window must show when it worked;
+  - what to do if a window says STOPPED.
+- **The dashboard knows what the Air runs.** Every warmup report already starts
+  with the robot's version. The database now copies it into its own column as
+  each report arrives, and filled it in for the reports it already had.
+- **The bell and a strip at the top of every page say "Robot update waiting"**
+  while the Air is behind. Both go by themselves once a warmup report shows
+  the new version. Dismissing the bell item holds until the next version.
+- **A publish command for Claude** (`scripts/publish-robot-update.mjs`). It
+  builds the package from the robot's `main` on GitHub, never from a local
+  copy's branch (the copy on this Mac was 8 changes behind that day). It shows
+  everything first, then uploads only with `--go`. The procedure is in
+  `docs/ROBOT-UPDATES.md`.
+- **Claude's read-only MCP tool `pm_warmups` gained `view=robot_updates`,**
+  so the new pages are readable from Claude like every other page.
+- Nothing changed in the robot.
+
+**Verified:** type-check and the unit tests pass, 20 of them new: the version
+comparison, which versions count as installed, the steps, the bell item and
+the notes reader.
+
+**Redesigned the same day, at the requester's ask, after seeing it:**
+- **Title row:** a round back button, "Robot updates", and one Up to date or
+  Update waiting pill. The line spelling out the Air's version and when it
+  was last seen is gone.
+- **Tabs:** an **Updates / Changelog** switch under the title. Changelog is a
+  new page with every version's full notes, newest first.
+- **Version cards:** vertical cards in a grid. The package's date and size
+  sit top right, beside the pills, so Yurie can see at a glance which
+  package it is. Download runs across the bottom, with "How to install" in
+  grey under it.
+- **Installed versions:** "On the Air" became **Installed**, and an installed
+  version's Download is switched off. Every version older than the one the
+  Air runs also counts as installed, because updates build on each other and
+  downloading an old one could only take the robot backwards.
+- **How to install page:**
+  - one list with a short bold action per step and the how in grey under it;
+  - "You should see" boxes in the normal font;
+  - the STOPPED help shortened to two lines;
+  - "What changed" moved off this page to the Changelog tab.
+
+**Applied live 2026-11-27, by hand in the Supabase SQL editor** (the Supabase
+connector declined it twice). It went in as two parts: the first try, done in
+one go, filled in the version for 30 days of reports and failed with "Unable
+to reach the server" while the database was short of memory.
+- **Part 1:** the table, the private `robot-updates` storage folder, and the
+  version column with its automatic filling-in. Checked from outside: the
+  table answers, the folder is private with a 100 MB limit, and the public key
+  is refused.
+- **Part 2:** filled in the version for the last 3 days of reports only (49).
+  The newest says the Air runs `warmup-runner-2026-11-27-eedde13`.
+- A 65 MB test file uploaded and was deleted, so a full-size package fits.
+
+**First version published 2026-11-27, by Czedrick's go:** the 27 November
+package (`warmup-runner-2026-11-27-eedde13`, "Friday analytics in robot
+hours", 63.5 MB), with install notes taken from that day's Word guide. The Air
+already runs it, so the page says Up to date and nothing nags anyone.
+Downloaded back through the dashboard's Download link on a local copy, it
+matched the original file exactly (same SHA-256 fingerprint, `Update the
+robot` inside). The list, its How to install page and the Settings entry were
+looked at in headless Chrome on a local copy.
+
+**The three packages before it were added as history the same day,**
+asked for so the Changelog tab shows the updates already made:
+- 25 November (`b8f5c5e`), fixes for the stops of 23 to 25 November;
+- 26 November (`d3647dd`), Friday analytics;
+- 26 November, second (`0339216`), Friday analytics at a time Yurie picks.
+
+Their notes were written from that day's Word guide and the robot's own
+changelog. Each is dated from when its package file was made, so the 27
+November one stays Newest. The publish command gained `--published-at` for
+this. All four are marked Installed. Packages older than 25 November are no
+longer on this Mac, so they are not listed.
+
+**The first update the Air does not have yet was published the same day,**
+by Czedrick's go: `warmup-runner-2026-11-27-663fec4`, "Smarter warmups,
+TikTok viewers and Instagram search" (warmup-runner PR #35), built and
+written up by the deep-analytics session. Before publishing it was checked
+again here: newest commit on main, the same SHA-256 as that session's file,
+and notes that parse. A local copy of the page then read Update waiting.
+
+**Not verified yet:**
+- Not in Safari, and not on the live site: this branch is not merged.
+- Nothing has been downloaded in Safari on the Air.
+- Yurie has not seen the page yet: the live site gets it when this branch
+  is merged. The bell item and the banner have not been seen on it either.
+
+The first real use is planned to be the deep-analytics robot update.
+
+---
+
 ## 2026-11-26 — Claude can read the dashboard (read-only MCP server, phase 1)
 
 **Where it came from:** Garreth: "create an MCP that allows us to directly

@@ -2842,6 +2842,40 @@ Each of these is deliberately parked, not unfinished. Every one records why it
 was deferred and what is already confirmed, so it can start from evidence rather
 than from a fresh investigation.
 
+## The robot updates itself (true one-click update)
+
+**Deferred by Garreth on 2026-11-27.** Start only after the Robot updates page
+(Settings → Robot updates, branch `RPA-Patch-Feature`) has carried at least one
+real update to the Air. That page's list of versions is what this would read.
+
+**Why.** Today every robot update needs Yurie to download a file, stop the
+robot, double-click "Update the robot" and start it again, and updates get
+missed: on 2026-11-27 the Air was still on the 26 November version
+(`0339216`) after the 27 November one (`eedde13`) had been sent. The Robot
+updates page cuts that to one download plus the same double-click and nags
+her until the Air reports the new version. This would remove her part
+altogether.
+
+**What it needs. Nearly all of it is robot code (`garrethdev/warmup-runner`),
+done in a session in that project:**
+1. A token-gated dashboard route the robot asks for the newest *released*
+   version, with a short-lived download link and the file's checksum. Small,
+   in this repo.
+2. The robot asks when Yurie starts it and between its working hours, and
+   only when no warmup is running.
+3. It downloads, checks the checksum, and installs with the same rules as
+   `air/Update the robot.command` (keeps `.env`, `config/fleet.json`,
+   `state/`, `logs/`; `npm ci` only when the lock file changed).
+4. It restarts itself on the new version. This is the hard part: a program
+   cannot cleanly replace itself while running, so it needs a small outer
+   program around "Start the robot" that restarts it.
+5. Safety: only versions Garreth or Czedrick marked released; if the new
+   version will not start, it goes back to the old one, so a bad update
+   cannot stop every phone while nobody is at the Air.
+
+The first self-updating version still has to be installed the manual way
+once. Test on the pretend phone before the Air.
+
 ## Retire the Instagram Graph API once the analytics robot works
 
 **Deferred by Garreth on 2026-10-26.** Start only after the DA-06 robot reads

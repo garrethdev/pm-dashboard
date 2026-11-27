@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { AccountManagement } from "@/components/dashboard/account-management";
 import { HiggsfieldConnection } from "@/components/dashboard/higgsfield-connection";
+import { RobotUpdatesEntry } from "@/components/dashboard/robot-updates";
 import { WorkWeekCard } from "@/components/dashboard/work-week-card";
 import { DashCard } from "@/components/ui/card";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
@@ -74,6 +75,10 @@ export default async function SettingsPage({
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Settings</h1>
+      {/* The warmup robot's updates, for Yurie to install (2026-11-27). */}
+      <Suspense fallback={<CardSkeleton title="Robot updates" lines={1} />}>
+        <RobotUpdatesEntry />
+      </Suspense>
       {/* The days off (Garreth, 2026-10-16). Never fails: unreadable reads
           as Sunday, which is what was decided. */}
       <WorkWeekCard initial={await getDaysOff()} />
