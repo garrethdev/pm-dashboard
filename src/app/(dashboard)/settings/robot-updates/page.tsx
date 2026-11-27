@@ -24,18 +24,18 @@ export default async function RobotUpdatesPage() {
   } catch (err) {
     return (
       <div className="flex flex-col gap-6">
-        <RobotUpdatesHeader state={{ kind: "none" }} tab="updates" />
+        <RobotUpdatesHeader tab="updates" />
         <Card>
           <p className="text-sm text-text-muted">{upstreamMessage(err, "Supabase")}</p>
         </Card>
       </div>
     );
   }
-  const { updates, state, installed } = status;
+  const { updates, installed } = status;
 
   return (
     <div className="flex flex-col gap-6">
-      <RobotUpdatesHeader state={state} tab="updates" />
+      <RobotUpdatesHeader tab="updates" />
       {updates.length === 0 ? (
         <EmptyState icon={Robot}>No robot updates yet.</EmptyState>
       ) : (
