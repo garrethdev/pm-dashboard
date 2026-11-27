@@ -34,7 +34,7 @@ Small numbers are accepted for `deviceId`.
 **Times** are ISO 8601 instants (`2026-09-28T13:14:15.123Z`). Days are New
 York days.
 
-## The eleven operations
+## The operations
 
 | # | Call | Body or query | Answer |
 |---|---|---|---|
@@ -155,6 +155,16 @@ York days.
     no numbers) and `unread` (not reached in time: send those again), with
     one line per post. 503 `ai_unavailable` means the AI could not be
     reached: send the whole call again later.
+14. **Who watches, the Viewers hand-off (Garreth, 2026-11-27).**
+    `POST /api/warmup-runner/audience-readings` with `{ read_by: "robot",
+    audiences: [{ platform, account, period, screenshots, problem }] }`: per
+    account, the photos of the app's own "who watched" page (TikTok Studio >
+    Analytics > Viewers, `period` "28 days" when the robot tapped it),
+    uploaded as in 12. The dashboard reads them with the AI into one
+    `audience_readings` row (source `robot`; a second hand-off the same day
+    replaces it), which the account's Deep page shows under "Who watches".
+    The answer has one line per account: `stored`, `gap` (why there are no
+    numbers, or null) and `problem`. 503 `ai_unavailable`: send it again later.
 
 **Safe to retry.** Starting a run twice returns the same run. Closing twice
 keeps the first close. Writing the same session twice answers

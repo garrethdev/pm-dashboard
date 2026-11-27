@@ -20,6 +20,36 @@ and is summarised rather than itemised — the commit messages are the detail.
 
 ---
 
+## 2026-11-27 — Who watches on TikTok: the robot reads each account's Viewers page
+
+**Where it came from:** Garreth, 27 November, after Yurie's two screen
+recordings (asked for on 26 November): build the TikTok Viewers reading into
+the robot's Friday analytics. Her TikTok recording showed that TikTok Studio >
+Analytics > Viewers gives gender, age and country of the people who watched,
+even on an account with 3 followers (sarah.keller52: women 79%, US 96.3%).
+Her Facebook recording showed only the followers' make-up, which we never show
+(Garreth, 26 November), so Facebook is not read.
+
+**What changed:**
+- **A new address for the robot, `/api/warmup-runner/audience-readings`**
+  (operation 14 in `docs/WARMUP-RUNNER-API.md`). The robot sends the photos of
+  each TikTok account's Viewers page; the dashboard reads them with the AI
+  (the same one that reads post screens) and stores one "who watches" reading
+  per account and day, next to Instagram's.
+- **The account's Deep page shows it under "Who watches"** with no change to
+  the page: it already showed the newest whole-account reading. TikTok's
+  "55+" age group now sorts after the others.
+- Empty is not 0: when TikTok shows no numbers, or the robot could not reach
+  the page, the reading is stored with no numbers and the reason.
+
+**How far it is checked:** tests (the hand-off is refused unless it comes from
+the robot with this platform's own photo paths; the AI's answer becomes the
+row the Deep page reads; empty stays empty). The AI's reading was tried for
+real on four frames of Yurie's recording on this Mac (27 November) and gave
+back every number exactly as the screen shows it (1.1K viewers, women 79,
+men 20, other 1, the five age groups, US 96.3). **Not yet run with the
+robot's own photos**: that is its first Friday analytics after the update.
+
 ## 2026-11-26 — Claude can read the dashboard (read-only MCP server, phase 1)
 
 **Where it came from:** Garreth: "create an MCP that allows us to directly

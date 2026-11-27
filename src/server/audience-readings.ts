@@ -16,6 +16,8 @@
  * (`accounts.access_token`); adds no new connection to Meta.
  */
 
+import { AiUnavailable, DEFAULT_MODEL, downloadScreen, SCREEN_PATH_RE } from "./screen-readings";
+
 const GRAPH = "https://graph.instagram.com/v23.0";
 const MIN_FOLLOWERS = 100;
 const TIMEFRAME = "this_month";
@@ -34,6 +36,9 @@ export interface AudienceRow {
   gap: AudienceGap | null;
   notes: string | null;
   raw: unknown;
+  /** Robot readings only: the photos in the post-screens bucket, and the AI that read them. */
+  screenshots?: string[];
+  model?: string | null;
 }
 
 interface Result {
@@ -192,4 +197,190 @@ export async function runInstagramAudience(dry: boolean): Promise<InstagramAudie
       return { account: r.account, people: r.people, gap: r.gap, notes: r.notes, topCountry: top ? `${top[0]} ${top[1]}%` : null, women: r.gender?.Women ?? null };
     }),
   };
+}
+
+// ---------------------------------------------------------------------------
+// The robot's readings (Garreth, 2026-11-27)
+//
+// TikTok has no API for who watches an account, but its own app shows it:
+// TikTok Studio > Analytics > Viewers > Viewer insights, by gender, age and
+// location, even on accounts with 3 followers (Yurie's recording,
+// 2026-11-27). The robot's Friday analytics photographs that page (28 days)
+// and hands the photos over here (operation 14, POST
+// /api/warmup-runner/audience-readings); the AI reads them into one
+// audience_readings row, source 'robot'. Viewers are people who watched, so
+// they are the audience, not the followers' make-up (Garreth, 2026-11-26).
+// Facebook shows only its followers' make-up: the robot does not read it.
+
+export const ROBOT_AUDIENCE_MODEL = DEFAULT_MODEL;
+
+export interface RobotAudienceItem {
+  platform: "tiktok" | "instagram" | "facebook";
+  account: string;
+  /** The period the robot tapped ("28 days"), or null when the page's own was kept. */
+  period: string | null;
+  screenshots: string[];
+  /** Why the robot could not read it in full, or null. */
+  problem: string | null;
+}
+
+const PLATFORMS = ["tiktok", "instagram", "facebook"] as const;
+
+/** The robot's hand-off, checked: each item's photos must be this account's, in the bucket's own naming. */
+export function parseAudienceHandoff(body: unknown): RobotAudienceItem[] {
+  const b = body as { read_by?: unknown; audiences?: unknown };
+  if (!b || typeof b !== "object" || b.read_by !== "robot") throw new Error('read_by must be "robot"');
+  if (!Array.isArray(b.audiences) || b.audiences.length === 0 || b.audiences.length > 20) throw new Error("audiences must be a list of 1 to 20");
+  return b.audiences.map((raw, i) => {
+    const a = raw as Record<string, unknown>;
+    const platform = a.platform as RobotAudienceItem["platform"];
+    if (!PLATFORMS.includes(platform)) throw new Error(`audiences[${i}].platform is not one of ${PLATFORMS.join(", ")}`);
+    if (typeof a.account !== "string" || !a.account.trim() || a.account.length > 80) throw new Error(`audiences[${i}].account is missing`);
+    const account = a.account.trim().replace(/^@/, "");
+    const shots = Array.isArray(a.screenshots) ? a.screenshots : null;
+    if (!shots || shots.length > 12 || shots.some((p) => typeof p !== "string" || !SCREEN_PATH_RE.test(p) || !p.startsWith(`${platform}/`))) {
+      throw new Error(`audiences[${i}].screenshots must be up to 12 of this platform's bucket paths`);
+    }
+    const period = typeof a.period === "string" && a.period.trim() ? a.period.trim().slice(0, 40) : null;
+    const problem = typeof a.problem === "string" && a.problem.trim() ? a.problem.trim().slice(0, 300) : null;
+    return { platform, account, period, screenshots: shots as string[], problem };
+  });
+}
+
+export const AUDIENCE_SCREEN_PROMPT = `These are screenshots of one account's own analytics in a social media app, from its
+"Viewers" page: who watched the account's videos. The first usually shows the total
+number of viewers and the dates covered; the others show "Viewer insights" by Gender,
+by Age, and by Locations (countries).
+
+Read the numbers exactly as printed. Reply with one JSON object and nothing else:
+{
+  "timeframe": the dates or period the page covers as printed (e.g. "Oct 30 - Nov 26"), or null,
+  "people": the total number of viewers as a whole number ("1.1K" is 1100), or null,
+  "gender": {"Women": pct, "Men": pct, "Other": pct} from Female / Male / Other, or null,
+  "age": {"18-24": pct, "25-34": pct, ...} using the page's own age groups written with a plain hyphen, or null,
+  "country": {"United States": pct, ...} each country shown with its percent, or null,
+  "too_few": true when the page says there is not enough data instead of numbers, else false,
+  "notes": anything odd, in a few words, or null
+}
+Percents are numbers without the % sign. Never invent a number: use null for anything
+the screenshots do not show. Empty is not 0.`;
+
+/** A percent split as the AI gave it, kept only when every value is a number from 0 to 100. */
+function splitOrNull(v: unknown, rename: (k: string) => string = (k) => k): Record<string, number> | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const out: Record<string, number> = {};
+  for (const [k, raw] of Object.entries(v as Record<string, unknown>)) {
+    const n = typeof raw === "string" ? Number(raw.replace("%", "")) : raw;
+    if (typeof n !== "number" || !Number.isFinite(n) || n < 0 || n > 100) continue;
+    const name = rename(k.trim());
+    if (name) out[name] = round1(n);
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+const GENDER_NAMES: Record<string, string> = { female: "Women", women: "Women", male: "Men", men: "Men", other: "Other" };
+
+/** "18 -24" → "18-24", "55 +" → "55+": the age groups as the other readings name them. */
+export function ageGroup(k: string): string {
+  return k.replace(/\s+/g, "").replace(/[–—]/g, "-");
+}
+
+/** The AI's reading of the robot's photos, as one audience_readings row. */
+export function robotAudienceRow(item: RobotAudienceItem, ai: unknown, model: string | null): AudienceRow {
+  const r = (ai && typeof ai === "object" ? ai : {}) as Record<string, unknown>;
+  const gender = splitOrNull(r.gender, (k) => GENDER_NAMES[k.toLowerCase()] ?? "");
+  const age = splitOrNull(r.age, ageGroup);
+  const country = splitOrNull(r.country);
+  const people = typeof r.people === "number" && Number.isFinite(r.people) && r.people >= 0 ? Math.round(r.people) : null;
+  const shown = typeof r.timeframe === "string" && r.timeframe.trim() ? r.timeframe.trim().slice(0, 60) : null;
+  const timeframe = [item.period ? `Last ${item.period}` : null, shown].filter(Boolean).join(", ") || null;
+  const nothing = !gender && !age && !country;
+  const aiNotes = typeof r.notes === "string" && r.notes.trim() ? r.notes.trim() : null;
+  const notes = [item.problem ? `robot: ${item.problem}` : null, aiNotes].filter(Boolean).join("; ").slice(0, 300) || null;
+  return {
+    platform: item.platform,
+    account: item.account,
+    source: "robot",
+    timeframe,
+    people,
+    gender,
+    age,
+    country,
+    gap: nothing ? (r.too_few === true ? "not_enough_engagement" : item.problem || !ai ? "error" : "not_shown") : null,
+    notes,
+    raw: ai ?? null,
+    screenshots: item.screenshots,
+    model,
+  };
+}
+
+/** One account's photos read by the AI. Throws AiUnavailable when the AI cannot be reached. */
+async function readAudienceScreens(item: RobotAudienceItem, model: string): Promise<unknown> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new AiUnavailable("The AI is not connected: OPENROUTER_API_KEY is not set");
+  const shots = await Promise.all(item.screenshots.map((p) => downloadScreen(p)));
+  const content: ({ type: "image_url"; image_url: { url: string } } | { type: "text"; text: string })[] = shots.map((s) => ({
+    type: "image_url",
+    image_url: { url: `data:${s.mediaType};base64,${s.data.toString("base64")}` },
+  }));
+  content.push({ type: "text", text: AUDIENCE_SCREEN_PROMPT });
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://pm-dashboard-ashen.vercel.app",
+      "X-Title": "PM Dashboard Audience Readings",
+    },
+    body: JSON.stringify({ model, max_tokens: 4000, response_format: { type: "json_object" }, messages: [{ role: "user", content }] }),
+    signal: AbortSignal.timeout(120_000),
+  });
+  if (res.status === 401 || res.status === 402 || res.status === 429 || res.status >= 500) {
+    throw new AiUnavailable(res.status === 402 ? "The AI account is out of credit" : `The AI could not be reached (HTTP ${res.status})`);
+  }
+  if (!res.ok) throw new Error(`the AI refused these screens (HTTP ${res.status}): ${(await res.text().catch(() => "")).slice(0, 200)}`);
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const text = json.choices?.[0]?.message?.content ?? "";
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end <= start) throw new Error(`the AI's reply could not be read: ${text.slice(0, 160) || "(empty)"}`);
+  return JSON.parse(text.slice(start, end + 1));
+}
+
+export interface RobotAudienceReport {
+  dry: boolean;
+  audiences: { account: string; platform: string; stored: boolean; gap: AudienceGap | null; problem: string | null; women: number | null; topCountry: string | null }[];
+}
+
+/** Reads each account's photos and stores one row per account (a second hand-off the same day replaces it). */
+export async function runRobotAudience(items: RobotAudienceItem[], opts: { dry?: boolean; model?: string } = {}): Promise<RobotAudienceReport> {
+  const model = opts.model ?? process.env.AUDIENCE_READINGS_MODEL ?? ROBOT_AUDIENCE_MODEL;
+  const report: RobotAudienceReport = { dry: !!opts.dry, audiences: [] };
+  for (const item of items) {
+    let row: AudienceRow;
+    let problem: string | null = item.problem;
+    if (item.screenshots.length === 0) {
+      row = robotAudienceRow(item, null, null);
+    } else {
+      try {
+        row = robotAudienceRow(item, await readAudienceScreens(item, model), model);
+      } catch (err) {
+        if (err instanceof AiUnavailable) throw err;
+        problem = (err instanceof Error ? err.message : String(err)).slice(0, 300);
+        row = { ...robotAudienceRow(item, null, model), gap: "error", notes: problem };
+      }
+    }
+    if (!opts.dry) await saveAudienceRows([row]);
+    const top = row.country ? Object.entries(row.country).sort((x, y) => y[1] - x[1])[0] : undefined;
+    report.audiences.push({
+      account: item.account,
+      platform: item.platform,
+      stored: !opts.dry,
+      gap: row.gap,
+      problem,
+      women: row.gender?.Women ?? null,
+      topCountry: top ? `${top[0]} ${top[1]}%` : null,
+    });
+  }
+  return report;
 }
